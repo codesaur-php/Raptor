@@ -1,0 +1,507 @@
+{% set languageCode = localization.code ?? 'en' %}
+<!doctype html>
+<!-- template example by Mark Otto, Jacob Thornton, and Bootstrap contributors => https://getbootstrap.com/docs/5.1/examples/sign-in -->
+<html lang="{{ languageCode }}">
+    <head>
+        <meta charset="{{ meta['charset'] ?? 'utf-8' }}">
+        <title>{{ meta['title']|default('login'|text) }}</title>
+        <meta name="author" content="{{ meta['author']|default('Narankhuu, contact@ololt.mn, +976 99000287') }}">
+        <meta name="robots" content="index,follow">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        {% if meta['generator'] is defined %}<meta name="generator" content="{{ meta['generator'] }}">{% endif %}
+        {% if meta['description'] is defined %}<meta name="description" content="{{ meta['description'] }}">{% endif %}
+        {% if meta['keywords'] is defined %}<meta name="keywords" content="{{ meta['keywords'] }}">{% endif %}
+        <link rel="icon" href="{{ meta['icon']|default('https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets/dist/ololt/ololt-leafs.png') }}" type="image/png">
+        <link rel="shortcut icon" href="{{ meta['shortcut icon']|default('https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets/dist/ololt/ololt.ico') }}" type="image/x-icon">
+        <link rel="apple-touch-icon" href="{{ meta['apple-touch-icon']|default('https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets/dist/ololt/ololt-leafs-iphone-touch-icon.png') }}">
+
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-F3w7mX95PdgyTmZZMECAngseQB83DfGTowi0iMjiWaeVhAn4FJkqJByhZMI3AhiU" crossorigin="anonymous">
+        <link href="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets/vendor/bootstrap-addon/inline-button-loader/css/component-spinners.min.css" rel="stylesheet">
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css" rel="stylesheet">
+        <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.0.0/animate.compat.css" rel="stylesheet">
+        <link href="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets/dist/styles/bootstrap-extend.css" rel="stylesheet">
+
+        <script defer src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+        <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jquery.blockUI/2.70/jquery.blockUI.min.js"></script>
+        <script defer src="https://cdn.jsdelivr.net/npm/jquery-validation@1.19.2/dist/jquery.validate.min.js"></script>
+        <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jquery.form/4.3.0/jquery.form.min.js"></script>
+        <script defer src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets/vendor/bootstrap-addon/inline-button-loader/js/component-spinners.min.js"></script>
+        <script defer src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-/bQdsTh/da6pkI1MST/rWKFNjaCP5gBSY4sEBT38Q/9RBh9AH40zEOg7Hlq2THRZ" crossorigin="anonymous"></script>
+        
+        <meta name="theme-color" content="#7952b3">
+        <style>
+            html,
+            body {
+                height: 100%;
+            }
+            body {
+                display: flex;
+                align-items: center;
+                padding-top: 40px;
+                padding-bottom: 40px;
+                background-color: #f5f5f5;
+            }
+            .form-signin {
+                width: 100%;
+                max-width: 420px;
+                padding: 15px;
+                margin: auto;
+            }
+            .form-signin .checkbox {
+                font-weight: 400;
+            }
+            .form-signin .form-floating:focus-within {
+                z-index: 2;
+            }
+            .form-signin input[type="email"] {
+                margin-bottom: -1px;
+                border-bottom-right-radius: 0;
+                border-bottom-left-radius: 0;
+            }
+            .form-signin input[type="password"] {
+                margin-bottom: 10px;
+                border-top-left-radius: 0;
+                border-top-right-radius: 0;
+            }
+            .bd-placeholder-img {
+                font-size: 1.125rem;
+                text-anchor: middle;
+                -webkit-user-select: none;
+                -moz-user-select: none;
+                user-select: none;
+            }
+            @media (min-width: 768px) {
+                .bd-placeholder-img-lg {
+                    font-size: 3.5rem;
+                }
+            }
+      </style>
+    </head>
+    <body class="text-center">
+        <main class="form-signin">
+            <div class="text-center mb-4" id="logo">
+                <img src="{{ meta['logo']['src']|default('https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets/dist/ololt/ololt-logo-hor-' ~ languageCode ~ '.png') }}">
+            </div>
+            <form id="login_form" action="{{ 'entry'|link }}" method="POST">                
+                <div class="form-floating" id="user">
+                    <input autofocus type="text" class="form-control" name="username" id="username" autocomplete="on" placeholder="user">
+                    <label for="username">{{ 'user'|text }}</label>
+                </div>
+                <div class="form-floating" id="pass">
+                    <input type="password" class="form-control" name="password" id="password" placeholder="password">
+                    <label for="password">{{ 'password'|text }}</label>
+                </div>                
+                <button id="login_signin_submit" class="w-100 btn btn-lg btn-{{ button|default('primary') }} text-uppercase btn-spinner mb-4" data-spinner-type="grow">
+                    <i class="bi-person-check"></i> &nbsp;{{ 'signin'|text }}
+                </button>
+                <a href="javascript:;" id="forget_password">
+                    <span>{{ 'forgot-password'|text }}</span>
+                </a>
+                {% if content is defined %}<hr>{{ content }}{% endif %}
+                <hr>
+                <div class="text-center">
+                    <span>{{ 'dont-have-account-yet'|text }}</span>
+                    <a href="javascript:;" id="signup">{{ 'signup'|text }}</a>
+                </div>
+                <hr>
+                <p class="mt-3 mb-3 text-muted text-center">
+                    {{ 'now'|date('Y') }} &copy; {{ meta['copyright']|default(languageCode == 'mn' ? 'Мөнхийн-Ололт ХХК, Монгол улс' : 'Munkhiin-Ololt LLC, Mongolia') }}
+                </p>
+                <div class="text-center">
+                    <span id="language">
+                    {%  if languageCode == 'mn' %}
+                        Click for <a href="{{ 'language'|link({'language': 'en'}) }}">English</a>
+                    {% else %}
+                        Системийн хэлийг <a href="{{ 'language'|link({'language': 'mn'}) }}">Монгол</a> болго
+                    {% endif %}
+                    </span>
+                </div>
+            </form>
+                    
+            <form id="forgot_form" class="d-none" action="{{ 'login-request-password'|link }}" method="POST">
+                <h3 class="text-center mb-4">{{ 'forgotten-password-reset'|text }}</h3>
+                <span>{{ 'enter-email-below'|text }}</span>
+                <div class="form-group">
+                    <input class="form-control" type="email" placeholder="{{ 'email'|text }}" name="codeForgetEmail" id="codeForgetEmail" autocomplete="off">
+                </div>
+                <div class="mt-3">
+                    <button id="forget_password_submit" class="btn btn-lg btn-primary btn-spinner shadow-sm float-left" data-spinner-type="grow">{{ 'request'|text }}</button>
+                    <button id="forget_password_cancel" class="btn btn-lg btn-secondary shadow-sm float-right">{{ 'cancel'|text }}</button>
+                </div>
+            </form>
+
+            <form id="signup_form" class="d-none" action="{{ 'signup'|link }}" method="POST">
+                <h3 class="text-center mb-4">{{ 'signup'|text }}</h3>
+                <span>{{ 'enter-personal-details'|text }}</span>
+                <div class="form-group mt-4">
+                    <input class="form-control" type="text" placeholder="{{ 'username'|text }}/{{ 'login-name'|text }}" name="codeUsername" id="codeUsername" autocomplete="new-account">
+                </div>
+                <div class="form-group">
+                    <input class="form-control" type="text" placeholder="{{ 'email'|text }}" name="codeEmail" id="codeEmail" autocomplete="new-email">
+                </div>
+                <div class="form-group">
+                    <input class="form-control" type="password" placeholder="{{ 'password'|text }}" name="codePassword" id="codePassword" autocomplete="new-password">
+                </div>
+                <div class="form-group">
+                    <input class="form-control" type="password" placeholder="{{ 'retype-password'|text }}" name="codeRePassword" id="codeRePassword"  autocomplete="new-password-retype">
+                </div>
+                <div class="form-group">
+                    <label class="mt-2 mb-3">{{ 'organization'|text }}</label>
+                    <select class="form-control" name="organization_name" id="organization_name">
+                        <option value="" class="form-control"></option>
+                        {% for org in organizations %}
+                        <option value="{{ org['name'] }}" class="form-control">{{ org['name']|e }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <hr>
+                <div class="form-group text-center">
+                {% if languageCode == 'mn' %}
+                    Бүртгүүлэх товчыг дарснаар, та манай <a data-bs-toggle="modal" data-bs-target="#tos" href="javascript:;">системийг хэрэглэх ерөнхий нөхцөл</a>
+                    хүлээн зөвшөөрч, <a data-bs-toggle="modal" data-bs-target="#pp" href="javascript:;">хувийн нууцлалын бодлоготой</a> танилцсан болно.
+                {% else %}
+                    By clicking Sign Up, you agree to our <a data-bs-toggle="modal" data-bs-target="#tos" href="javascript:;">terms and conditions</a>
+                    and have read our <a data-bs-toggle="modal" data-bs-target="#pp" href="javascript:;">privacy policy</a>.
+                {% endif %}
+                </div>
+                <hr>
+                <div>
+                    <button id="signup_submit" class="btn btn-lg btn-primary btn-spinner shadow-sm" data-spinner-type="grow">{{ 'signup'|text }}</button>
+                    <button id="signup_cancel" class="btn btn-lg btn-secondary shadow-sm">{{ 'cancel'|text }}</button>
+                </div>
+            </form>
+        </main>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                let formLogin = $('#login_form');
+                let formForgot = $('#forgot_form');
+                let formSignUp = $('#signup_form');
+
+                function showMessage(form, type, msg) {
+                    var alert = $('<div class="alert alert-' + type + '" role="alert"></div>');
+
+                    form.find('.alert').remove();
+                    alert.prependTo(form);
+
+                    alert.html(msg);
+                };
+
+                function displaySignIn() {
+                    formSignUp.addClass('d-none');
+                    formForgot.addClass('d-none');
+
+                    formLogin.removeClass('d-none');            
+                    formLogin.addClass('animated flipInX');
+                    
+                    formSignUp.find('.alert').remove();
+                    formForgot.find('.alert').remove();
+                }
+
+                const queryString = window.location.search;
+                const urlParams = new URLSearchParams(queryString);
+                if (urlParams && urlParams.get('message')) {
+                    showMessage(formLogin, urlParams.get('message_type') ?? 'warning', urlParams.get('message'));
+                    window.history.replaceState({}, document.title, location.protocol + '//' + location.host + location.pathname);
+                }
+
+                jQuery.validator.addMethod('passwordMatch', function(value, element) {
+                    var password = $('#codePassword').val();
+                    var confirmPassword = $('#codeRePassword').val();
+
+                    return password === confirmPassword;
+                }, 'Passwords must match');
+
+                jQuery.validator.addMethod('passwordCheck', function(value, element) {
+                    var password = $('#codePassword').val();
+
+                    return /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#\$%\^&\*])(?=.{6,})/.test(password);
+                }, 'Password must contain at least 8 characters in that 1 upper case letter, 1 lower case letter, 1 number, 1 special character');
+
+                $('#login_signin_submit').click(function(e) {
+                    e.preventDefault();
+
+                    var btn = $(this);
+                    var form = $(this).closest('form');
+                    form.validate({
+
+                    }), form.valid() && (
+                            btn.buttonLoader('start'),
+                            btn.attr('disabled', true),
+                            $(document).ajaxStop($.unblockUI),
+                            $.blockUI({message: "{{ 'processing'|text }} ..."}),
+                    form.ajaxSubmit({
+                        url: form.attr('action'),
+                        method: form.attr('method'),
+                        data: form.serialize(),
+                        success: function(res, status, xhr, $form) {
+                            response = JSON.parse(res);
+                            let loginMsg;
+                            let type = 'danger';
+                            try {
+                                if (typeof response.message !== 'undefined') {
+                                    loginMsg = response.message;
+                                } else {
+                                    loginMsg = "{{ 'invalid-response!'|text }}";
+                                }
+                            } catch (e) {
+                                loginMsg = "{{ 'connection-error!'|text }}";
+                            }
+
+                            if (typeof response.type !== 'undefined') {
+                                type = response.type;
+                            }
+
+                            if (loginMsg === 'success') {
+                                if (typeof response.url === 'undefined') {
+                                    response.url = $('logo').children('a').attr('href');
+                                }
+                                window.location.href = response.url;
+                            } else {
+                                showMessage(form, type, loginMsg);
+                                btn.buttonLoader('stop');
+                                btn.attr('disabled', false);
+                            }
+                        },
+                        error: function (xhr, status, error)
+                        {
+                            showMessage(form, 'warning', "{{ 'something-went-wrong'|text }}");
+                            btn.buttonLoader('stop');
+                            btn.attr('disabled', false);
+                        }
+                    }));
+                });
+
+                $('#forget_password').click(function(e) {
+                    e.preventDefault();
+
+                    formLogin.addClass('d-none');
+                    formSignUp.addClass('d-none');
+
+                    formForgot.removeClass('d-none');            
+                    formForgot.addClass('animated flipInX');
+                });
+
+                $('#forget_password_cancel').click(function(e) {
+                    e.preventDefault();
+
+                    displaySignIn();
+                });
+
+                $('#signup').click(function(e) {
+                    e.preventDefault();
+
+                    formLogin.addClass('d-none');
+                    formForgot.addClass('d-none');
+
+                    formSignUp.removeClass('d-none');            
+                    formSignUp.addClass('animated flipInX');
+                });
+
+                $('#signup_cancel').click(function(e) {
+                    e.preventDefault();
+
+                    displaySignIn();
+                });
+
+                $('#forget_password_submit').click(function(e) {
+                    e.preventDefault();
+
+                    var btn = $(this),
+                    form = $(this).closest('form');
+                    form.validate({
+                        rules: {
+                            codeForgetEmail: {
+                                required: true,
+                                email: true
+                            }
+                        },
+                        messages: {
+                            codeForgetEmail: {
+                                required: '<span class="text-danger">{{ 'enter-email-empty'|text }}</span>',
+                                email: '<span class="text-danger">{{ 'enter-email-valid'|text }}</span>'
+                            }
+                        }
+                    }), form.valid() && (
+                            btn.buttonLoader('start'),
+                            btn.attr('disabled', true),
+                            $(document).ajaxStop($.unblockUI),
+                            $.blockUI({message: "{{ 'processing'|text }} ..."}),
+                    form.ajaxSubmit({
+                        url: form.attr('action'),
+                        method: form.attr('method'),
+                        data: form.serialize(),
+                        success: function(res, status, xhr, $form) {
+                            response = JSON.parse(res);
+                            let resetMsg;
+
+                            try {
+                                if (typeof response.message !== 'undefined') {
+                                    resetMsg = response.message;
+                                } else {
+                                    resetMsg = "{{ 'invalid-response!'|text }}";
+                                }
+                            } catch (e) {
+                                resetMsg = "{{ 'connection-error!'|text }}";
+                            }
+
+                            btn.buttonLoader('stop');
+                            btn.attr('disabled', false);
+
+                            if (typeof response.type !== 'undefined' && response.type === 'success') {
+                                form.clearForm();
+                                form.validate().resetForm();
+
+                                displaySignIn();
+
+                                formLogin.clearForm();
+                                formLogin.validate().resetForm();
+
+                                showMessage(formLogin, response.type, resetMsg);
+                            } else {
+                                showMessage(form, 'danger', resetMsg);
+                            }
+                        },
+                        error: function (xhr, status, error)
+                        {
+                            showMessage(form, 'warning', "{{ 'something-went-wrong'|text }}");
+
+                            btn.buttonLoader('stop');
+                            btn.attr('disabled', false);
+                        }
+                    }));
+                });
+
+                $('#signup_submit').click(function(e) {
+                    e.preventDefault();
+
+                    var btn = $(this);
+                    var form = $(this).closest('form');
+
+                    form.validate({
+                        rules: {
+                            codeUsername: {
+                                required: true
+                            },
+                            codeEmail: {
+                                required: true,
+                                email: true
+                            },
+                            codePassword: {
+                                required: true,
+                                minlength: 8,
+                                passwordCheck: true
+                            },
+                            codeRePassword: {
+                                required: true,
+                                minlength: 8,
+                                passwordMatch: true
+                            }
+                        },
+                        messages: {
+                            codeUsername: {
+                                required: '<span class="text-danger">{{ 'error-username-empty'|text }}</span>'
+                            },
+                            codeEmail: {
+                                required: '<span class="text-danger">{{ 'enter-email-empty'|text }}</span>',
+                                email: '<span class="text-danger">{{ 'enter-email-valid'|text }}</span>'
+                            },
+                            codePassword: {
+                                required: '<span class="text-danger">{{ 'error-password-empty'|text }}</span>',
+                                minlength: '<span class="text-danger">{{ 'password-format8'|text }}</span>',
+                                passwordCheck: '<span class="text-danger">{{ 'password-format8'|text }}</span>'
+                            },
+                            codeRePassword: {
+                                required: '<span class="text-danger">{{ 'password-must-confirm'|text }}</span>',
+                                minlength: '<span class="text-danger">{{ 'password-must-match'|text }}</span>',
+                                passwordMatch: '<span class="text-danger">{{ 'password-must-match'|text }}</span>'
+                            }
+                        }
+                    }), form.valid() && (
+                            btn.buttonLoader('start'),
+                            btn.attr('disabled', true),
+                            $(document).ajaxStop($.unblockUI),
+                            $.blockUI({message: "{{ 'processing'|text }} ..."}),
+                    form.ajaxSubmit({
+                        url: form.attr('action'),
+                        method: form.attr('method'),
+                        data: form.serialize(),
+                        success: function(res, status, xhr, $form) {
+                            response = JSON.parse(res);
+                            let signupMsg;
+
+                            try {
+                                if (typeof response.message !== 'undefined') {
+                                    signupMsg = response.message;
+                                } else {
+                                    signupMsg = "{{ 'invalid-response!'|text }}";
+                                }
+                            } catch (e) {
+                                signupMsg = "{{ 'connection-error!'|text }}";
+                            }
+
+                            btn.buttonLoader('stop');
+                            btn.attr('disabled', false);
+
+                            if (typeof response.type !== "undefined" && response.type === "success") {
+                                form.clearForm();
+                                form.validate().resetForm();
+
+                                displaySignIn();
+
+                                formLogin.clearForm();
+                                formLogin.validate().resetForm();
+
+                                showMessage(formLogin, response.type, signupMsg);
+                            } else {
+                                showMessage(form, 'danger', signupMsg);
+                            }
+                        },
+                        error: function (xhr, status, error)
+                        {
+                            showMessage(form, 'warning', "{{ 'something-went-wrong'|text }}");
+
+                            btn.buttonLoader('stop');
+                            btn.attr('disabled', false);
+                        }
+                    }));
+                });
+            });
+        </script>
+        <div class="modal fade" id="tos" role="dialog" aria-labelledby="MyModalLabel" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-lg" role="document">
+                <div class="modal-content">
+                    <div class="modal-header modal-header-solid">
+                        <h5 class="modal-title text-primary text-uppercase" id="MyModalLabel">{{ tos['title'][languageCode] }}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'close'|text }}"></button>
+                    </div>            
+                    <div class="modal-body">
+                        <div style="height:400px;overflow-y:auto;overflow-x:hidden;">
+                            {{ tos['full'][languageCode] }}
+                        </div>
+                    </div>
+                    <div class="modal-footer modal-footer-solid">
+                         <button class="btn btn-primary shadow-sm" data-bs-dismiss="modal">{{ 'close'|text }}</button>
+                    </div>            
+                </div>
+            </div>
+        </div>
+        <div class="modal fade" id="pp" role="dialog" aria-labelledby="MyModalLabel" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-lg" role="document">
+                <div class="modal-content">            
+                    <div class="modal-header modal-header-solid">
+                        <h5 class="modal-title text-primary text-uppercase" id="MyModalLabel">{{ pp['title'][languageCode] }}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'close'|text }}"></button>
+                    </div>            
+                    <div class="modal-body">
+                        <div style="height:400px;overflow-y:auto;overflow-x:hidden;">
+                        {{ pp['full'][languageCode] }}
+                        </div>
+                    </div>
+                    <div class="modal-footer modal-footer-solid">
+                         <button class="btn btn-primary shadow-sm" data-bs-dismiss="modal">{{ 'close'|text }}</button>
+                    </div>            
+                </div>
+            </div>
+        </div>
+    </body>
+</html>

@@ -1,0 +1,33 @@
+{
+    "name": "codesaur/raptor",
+    "description": "An elegant object-oriented application development framework for PHP 7.2 or newer",
+    "keywords": [
+        "velociraptor", "indoraptor", "utahraptor", "raptor", "application", "http application", "server request handler", "psr-3", "psr-7", "psr-15",
+        "mongol", "mongolia", "mongolian", "монгол", "codesaur", "narankhuu", "coden", "кодзавр", "наранхүү", "коден",
+        "ololt", "ололт", "мөнхийн", "мөнхийн-ололт", "мөнхийн ололт", "munkhiin ololt"
+    ],
+    "homepage": "https://ololt.mn/codesaur",
+    "authors": [
+        {
+            "name": "Narankhuu",
+            "email": "codesaur@gmail.com",
+            "homepage": "https://ololt.mn/narankhuu"
+        }
+    ],
+    "require": {
+        "codesaur/indoraptor": ">=3.3.9",
+        "codesaur/template": ">=1.1.1",
+        "codesaur/globals": ">=1.2.1"
+    },
+    "autoload": {
+        "psr-4": {
+            "Raptor\\": "src/",
+            "Raptor\\Exception\\": "src/exception/",
+            "Raptor\\Authentication\\": "src/authentication/",
+            "Raptor\\Dashboard\\": "src/dashboard/",
+            "Raptor\\Account\\": "src/account/"
+        }
+    },
+    "license": "MIT",
+    "minimum-stability": "dev"
+}

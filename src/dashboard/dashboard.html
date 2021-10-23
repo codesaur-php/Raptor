@@ -1,0 +1,202 @@
+{% set languageCode = localization.code ?? 'en' %}
+{% set navbarColor = meta['navbar']|default('primary') %}
+<!DOCTYPE html>
+<html lang="{{ localization.code ?? 'en' }}">
+    <head>
+        <meta charset="{{ meta['charset'] ?? 'utf-8' }}">
+        <title>{{ meta['title']|default('dashboard'|text) }}</title>
+        <meta name="author" content="{{ meta['author']|default('Narankhuu, contact@ololt.mn, +976 99000287') }}">
+        <meta name="robots" content="{{ meta['author']|default('index,follow') }}">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        {% if meta['generator'] is defined %}<meta name="generator" content="{{ meta['generator'] }}">{% endif %}
+        {% if meta['description'] is defined %}<meta name="description" content="{{ meta['description'] }}">{% endif %}
+        {% if meta['keywords'] is defined %}<meta name="keywords" content="{{ meta['keywords'] }}">{% endif %}
+        <link rel="icon" href="{{ meta['icon']|default('https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets/dist/ololt/ololt-leafs.png') }}" type="image/png">
+        <link rel="shortcut icon" href="{{ meta['shortcut icon']|default('https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets/dist/ololt/ololt.ico') }}" type="image/x-icon">
+        <link rel="apple-touch-icon" href="{{ meta['apple-touch-icon']|default('https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets/dist/ololt/ololt-leafs-iphone-touch-icon.png') }}">
+        
+        {% if meta['google-site-verification'] is defined %}<meta name="google-site-verification" content="{{ meta['google-site-verification'] }}">{% endif %}
+        {% if meta['mobile-web-app-capable'] is defined %}<meta name="mobile-web-app-capable" content="{{ meta['mobile-web-app-capable'] }}">{% endif %}
+        {% if meta['apple-mobile-web-app-status-bar-style'] is defined %}<meta name="apple-mobile-web-app-status-bar-style" content="{{ meta['apple-mobile-web-app-status-bar-style'] }}">{% endif %}
+        {% if meta['og']['title'] is defined %}<meta name="og:title" content="{{ meta['og']['title'] }}">{% endif %}
+        {% if meta['og']['description'] is defined %}<meta name="og:description" content="{{ meta['og']['description'] }}">{% endif %}
+        {% if meta['og']['type'] is defined %}<meta name="og:type" content="{{ meta['og']['type'] }}">{% endif %}
+        {% if meta['og']['url'] is defined %}<meta name="og:url" content="{{ meta['og']['url'] }}">{% endif %}
+        {% if meta['og']['site_name'] is defined %}<meta name="og:site_name" content="{{ meta['og']['site_name'] }}">{% endif %}
+        {% if meta['og']['image'] is defined %}<meta name="og:image" content="{{ meta['og']['image'] }}">{% endif %}
+        {% if meta['og']['image:width'] is defined %}<meta name="og:image:width" content="{{ meta['og']['image:width'] }}">{% endif %}
+        {% if meta['og']['image:height'] is defined %}<meta name="og:image:height" content="{{ meta['og']['image:height'] }}">{% endif %}
+        {% if meta['fb']['app_id'] is defined %}<meta name="fb:app_id" content="{{ meta['fb']['app_id'] }}">{% endif %}
+        {% if meta['fb']['page_id'] is defined %}<meta name="fb:page_id" content="{{ meta['fb']['page_id'] }}">{% endif %}
+        {% if meta['fb']['admins'] is defined %}<meta name="fb:admins" content="{{ meta['fb']['admins'] }}">{% endif %}
+        {% if meta['twitter']['card'] is defined %}<meta name="twitter:card" content="{{ meta['twitter']['card'] }}">{% endif %}
+        {% if meta['twitter']['url'] is defined %}<meta name="twitter:url" content="{{ meta['twitter']['url'] }}">{% endif %}
+        {% if meta['twitter']['title'] is defined %}<meta name="twitter:title" content="{{ meta['twitter']['title'] }}">{% endif %}
+        {% if meta['twitter']['description'] is defined %}<meta name="twitter:description" content="{{ meta['twitter']['description'] }}">{% endif %}
+        {% if meta['twitter']['image'] is defined %}<meta name="twitter:image" content="{{ meta['twitter']['image'] }}">{% endif %}
+        {% if meta['twitter']['image:width'] is defined %}<meta name="twitter:image:width" content="{{ meta['twitter']['image:width'] }}">{% endif %}
+        {% if meta['twitter']['image:height'] is defined %}<meta name="twitter:image:height" content="{{ meta['twitter']['image:height'] }}">{% endif %}
+        {% if meta['twitter']['site'] is defined %}<meta name="twitter:site" content="{{ meta['twitter']['site'] }}">{% endif %}
+
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css" rel="stylesheet">
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" rel="stylesheet" crossorigin="anonymous">
+        <link href="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets/dist/styles/bootstrap-extend.css" rel="stylesheet">
+        <link href="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets/vendor/bootstrap-addon/inline-button-loader/css/component-spinners.min.css" rel="stylesheet">
+        <link href="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets/vendor/notifyme/notifyme.min.css" rel="stylesheet">
+        <link href="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets/dist/styles/dashboard.css" rel="stylesheet">
+
+        <script defer src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+        <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jquery.blockUI/2.70/jquery.blockUI.min.js"></script>
+        <script defer src="https://cdn.jsdelivr.net/npm/jquery-validation@1.19.2/dist/jquery.validate.min.js"></script>
+        <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jquery.form/4.3.0/jquery.form.min.js"></script>
+        <script defer src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>        
+        <script defer src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>        <script defer src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets/vendor/bootstrap-addon/inline-button-loader/js/component-spinners.min.js"></script>
+        <script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@9"></script>
+        <script defer src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets/vendor/notifyme/notifyme.min.js"></script>
+        <script defer src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets/dist/scripts/scroll-to-top.js"></script>
+        <script defer src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets/dist/scripts/dashboard.js"></script>
+        
+        <meta name="theme-color" content="#7952b3">
+    </head>
+    <body>
+        <header class="navbar navbar-dark sticky-top bg-{{ navbarColor }} flex-md-nowrap p-0 shadow">            
+            <a class="navbar-brand col-md-3 col-lg-2 me-0 px-3 text-uppercase" href="{{ 'home'|link }}">
+            {% if user.getOrganization()['logo'] is defined and user.getOrganization()['logo'] is not empty %}
+                <img class="pr-3" style="position:relative;top:-1px;" height="20px" src="{{ user.getOrganization()['logo'] }}">
+            {% endif %} &nbsp;{{ user.getOrganization()['name'] }}
+            </a>
+            <button class="navbar-toggler position-absolute d-md-none collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <input class="form-control form-control-dark w-100" type="text" placeholder="{{ 'search'|text }}" aria-label="{{ 'search'|text }}" />
+            <div class="dropdown px-3">
+                <button class="btn btn-{{ navbarColor }}" type="button" id="dropdownLanguage" data-bs-toggle="dropdown" aria-expanded="false">
+                    <img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets/dist/flags/25x15/{{ languageCode == 'en' ? 'gb' : languageCode }}.png" height="13px" class="shadow-sm">
+                </button>
+                <div class="dropdown-menu dropdown-menu-lg-end" aria-labelledby="dropdownLanguage">
+                    {% for lang, country in localization.language %}
+                    <a class="dropdown-item{{ lang == languageCode ? ' active' : '' }} language-item" href="{{ 'language'|link({'language': lang}) }}">
+                        <img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets/dist/flags/16x11/{{ lang == 'en' ? 'gb' : lang }}.png" style="position:relative;top:-2px"> {{ country }}
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </header>
+        <div class="container-fluid">
+            <div class="row">
+                <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-dark sidebar collapse">
+                {% for menu in sidemenu %}
+                    <div class="position-sticky pt-{{ loop.first ? '3' : '1' }}">
+                        <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-2 mb-1 text-muted">
+                            <span>{{ menu['title'] }}</span>
+                        </h6>
+                        <ul class="nav flex-column">
+                        {% for item in menu['submenu'] %}
+                            <li class="nav-item">
+                                {% set href = item['href']|trim('/', 'right') %}
+                                <a class="nav-link{{ (href == request_path or href == request_uri) ? ' active' : '' }}" href="{{ href }}">
+                                    <i class="{{ item['icon'] }} side-menu-icon"></i> {{ item['title'] }}
+                                </a>
+                            </li>
+                        {% endfor %}
+                        </ul>
+                    </div>
+                {% endfor %}
+                {% if user.getOrganizations()|length > 1 %}
+                    <div class="position-sticky mt-5">
+                        <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-2 mb-1 text-muted">
+                            <span>{{ 'organization'|text }}</span>
+                        </h6>
+                        <ul class="nav flex-column">
+                        {% for org in user.getOrganizations() %}
+                            <li class="nav-item">
+                                <a class="nav-link{{ org['id'] == user.getOrganization()['id'] ? ' active' : '' }}" href="{{ 'login-select-organization'|link({'id': org['id']}) }}">
+                                    {{ org['name'] }}
+                                </a>
+                            </li>
+                        {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
+                    <div class="position-sticky pb-3 {{ user.getOrganizations()|length > 1 ? 'pt-1' : 'mt-5'}}">
+                        <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-2 mb-1 text-muted">
+                            <a class="link-secondary text-decoration-none" href="{{ 'logout'|link }}">{{ 'account'|text }}</a>
+                            <a class="link-secondary" href="{{ 'logout'|link }}" aria-label="{{ 'logout'|text }}">
+                                <i class="bi bi-box-arrow-right" style="font-size:1.2rem;"></i>
+                            </a>
+                        </h6>
+                        <ul class="nav flex-column">
+                            {% set account_profile_link = 'crud'|link({'action': 'update'}) ~ '?logger=account&controller=Raptor\\Account\\AccountController&id=' ~ user.getAccount()['id'] %}
+                            <li class="nav-item">
+                                <a class="nav-link{{ request_path == account_profile_link ? ' active' : '' }}" href="{{ account_profile_link }}">
+                                    <img id="account_profile_image" src="{{ user.getAccount()['photo'] is not empty ? user.getAccount()['photo'] : ('https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets/dist/images/no-account.gif') }}" height="26px" class="rounded-circle shadow-sm"> &nbsp;{{ user.getAccount()['first_name'] ~ ' ' ~ user.getAccount()['last_name'] }}
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </nav>
+                <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 mt-3">{{ content }}</main>
+            </div>
+        </div>        
+        <script>
+            let textError = {{ 'error'|text|json_encode }};
+            let textNotice = {{ 'notice'|text|json_encode }};
+            let textClose = {{ 'close'|text|json_encode }};
+            let textConnError = {{ 'connection-error!'|text|json_encode }};
+            let textInvalidResponse = {{ 'invalid-response!'|text|json_encode }};
+            let textProcessing = {{ 'processing'|text|json_encode }};
+            let textFormError = {{ 'u-have-some-form-errors'|text|json_encode }};
+            let textCantComplete = {{ 'cant-complete-request'|text|json_encode }};
+            let textLoading = {{ 'loading'|text|json_encode }};
+            document.addEventListener('DOMContentLoaded', function() {
+                Dashboard.init({
+                    text: {
+                        error: textError,
+                        notice: textNotice,
+                        close: textClose,
+                        conn_error: textConnError,
+                        invalid_res: textInvalidResponse,
+                        processing: textProcessing + ' ...',
+                        form_error: textFormError,
+                        cant_complete: textCantComplete
+                    },
+                    modal: {
+                        size: 'modal-xl',
+                        loading: '<img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets/dist/images/spinner.gif"> &nbsp;&nbsp;&nbsp; ' + textLoading + ' ...'
+                    }
+                });
+                
+                ScrollToTop.add();
+            });
+        </script>
+        {% if meta['google']['analytics']['id'] is defined %}
+        <script>
+            (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments);},i[r].l=1*new Date();a=s.createElement(o),
+            m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m);
+            })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+            ga('create', '{{ meta['google']['analytics']['id'] }}', 'auto'); ga('send', 'pageview');
+        </script>
+        {%  endif %}        
+        {% if meta['fb']['page']['id'] is defined %}
+        <div id="fb-root"></div>
+        <script>
+            window.fbAsyncInit = function() {
+                FB.init({xfbml: true, version : 'v3.3'});
+            };
+            (function(d, s, id) {
+                var js, fjs = d.getElementsByTagName(s)[0];
+                if (d.getElementById(id)) return;
+                js = d.createElement(s); js.id = id;
+                js.src = 'https://connect.facebook.net/en_US/sdk/xfbml.customerchat.js#xfbml=1&version=v2.12&autoLogAppEvents=1';
+                fjs.parentNode.insertBefore(js, fjs);
+            }(document, 'script', 'facebook-jssdk'));
+        </script>
+        <div class="fb-customerchat" attribution=setup_tool page_id="{{ meta['fb']['page']['id'] }}"
+            {% if meta['fb']['page']['messenger_theme_color'] is defined %} theme_color="{{ meta['fb']['page']['messenger_theme_color'] }}"{% endif %}
+            logged_in_greeting="{{ meta['fb']['page']['messenger_in_greeting']|default('Сайн байна уу? Бидэнтэй холбогдож байгаа таньд баярлалаа') }}"
+            logged_out_greeting="{{ meta['fb']['page']['messenger_out_greeting']|default('Сайн байна уу? Бидэнтэй холбогдож байгаа таньд баярлалаа') }}">
+        </div>
+        {% endif %}        
+    </body>
+</html>
