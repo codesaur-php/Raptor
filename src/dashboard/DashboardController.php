@@ -15,7 +15,7 @@ class DashboardController extends \Raptor\Controller
     
     public function twigDashboard($title = null): DashboardTemplate
     {
-        $twigTemplate = new class extends DashboardTemplate {};
+        $twigTemplate = new DashboardTemplate();
         $twigTemplate->set('user', $this->getUser());
         $twigTemplate->set('localization', $this->getAttribute('localization'));
         $twigTemplate->set('request_path', rtrim($_SERVER['REQUEST_URI'], '/'));

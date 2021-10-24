@@ -4,7 +4,7 @@ namespace Raptor\Dashboard;
 
 use codesaur\Template\TwigTemplate;
 
-abstract class DashboardTemplate extends TwigTemplate
+class DashboardTemplate extends TwigTemplate
 {
     function __construct(array $vars = null)
     {

@@ -53,6 +53,8 @@
         <script defer src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets/dist/scripts/scroll-to-top.js"></script>
         <script defer src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets/dist/scripts/dashboard.js"></script>
         <meta name="theme-color" content="#7952b3">
+        <style>
+        </style>
     </head>
     <body>
         <header class="navbar navbar-dark sticky-top bg-{{ navbarColor }} flex-md-nowrap p-0 shadow">            
@@ -124,7 +126,7 @@
                             {% set account_profile_link = 'crud'|link({'action': 'update'}) ~ '?logger=account&controller=Raptor\\Account\\AccountController&id=' ~ user.getAccount()['id'] %}
                             <li class="nav-item">
                                 <a class="nav-link{{ request_path == account_profile_link ? ' active' : '' }}" href="{{ account_profile_link }}">
-                                    <img id="account_profile_image" src="{{ user.getAccount()['photo'] is not empty ? user.getAccount()['photo'] : ('https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets/dist/images/no-account.gif') }}" height="26px" class="rounded-circle shadow-sm"> &nbsp;{{ user.getAccount()['first_name'] ~ ' ' ~ user.getAccount()['last_name'] }}
+                                    <img class="account-profile-photo rounded-circle shadow-sm" src="{{ user.getAccount()['photo'] is not empty ? user.getAccount()['photo'] : ('https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets/dist/images/no-account.gif') }}"> {{ user.getAccount()['first_name'] ~ ' ' ~ user.getAccount()['last_name'] }}
                                 </a>
                             </li>
                         </ul>
