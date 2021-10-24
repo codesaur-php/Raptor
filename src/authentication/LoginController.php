@@ -40,7 +40,7 @@ class LoginController extends \Raptor\Controller
                 array('p.keyword' => 'pp', 'p.is_active' => 1, 'c.code' => $this->getLanguageCode()));
         $vars['pp'] = $content_pp['record']['content'] ?? [];
         
-        $this->twigTemplate(dirname(__FILE__) . '/login.html', $vars)->render();
+        $this->twigContent(dirname(__FILE__) . '/login.html', $vars)->render();
     }
         
     public function entry()
@@ -320,9 +320,9 @@ class LoginController extends \Raptor\Controller
             if (!empty($error)) {
                 $vars['error'] = $error;
             }
-            $this->twigTemplate(dirname(__FILE__) . '/login-reset-password.html', $vars)->render();
+            $this->twigContent(dirname(__FILE__) . '/login-reset-password.html', $vars)->render();
         } catch (Throwable $th) {
-            $this->twigTemplate(dirname(__FILE__) . '/login-forgot.html', array('notice' => $th->getMessage()))->render();
+            $this->twigContent(dirname(__FILE__) . '/login-forgot.html', array('notice' => $th->getMessage()))->render();
         }
     }
     
@@ -357,7 +357,7 @@ class LoginController extends \Raptor\Controller
             if (!isset($account_response['id'])) {
                 throw new Exception('Шалтгаан: Мэдээлэл буруу!');
             }
-            $this->twigTemplate(dirname(__FILE__) . '/login-forgot.html', array(
+            $this->twigContent(dirname(__FILE__) . '/login-forgot.html', array(
                 'title' => $this->text('success'),
                 'notice' => $this->text('set-new-password-success')                
             ))->render();

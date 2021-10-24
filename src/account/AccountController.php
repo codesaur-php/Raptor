@@ -12,6 +12,6 @@ class AccountController extends DashboardController
         if (!$this->getUser()->can('system_account_index')) {
             return $template->alertErrorPermission();
         }
-        $template->render($this->twigTemplate(dirname(__FILE__) . '/account-index.html'));
+        $template->render($this->twigContent(dirname(__FILE__) . '/account-index.html'));
     }
 }

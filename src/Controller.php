@@ -145,7 +145,7 @@ class Controller extends \codesaur\Http\Application\Controller
         exit;
     }
     
-    public function twigTemplate(string $template, array $vars = [])
+    public function twigContent(string $template, array $vars = [])
     {
         $twigTemplate = new TwigTemplate($template, $vars);
         $twigTemplate->set('localization', $this->getAttribute('localization'));
