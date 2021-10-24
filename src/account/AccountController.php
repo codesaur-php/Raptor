@@ -8,7 +8,7 @@ class AccountController extends DashboardController
 {    
     public function index()
     {
-        $template = $this->createTemplate($this->text('accounts'));
+        $template = $this->twigDashboard($this->text('accounts'));
         if (!$this->getUser()->can('system_account_index')) {
             return $template->alertErrorPermission();
         }

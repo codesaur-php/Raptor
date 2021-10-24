@@ -10,10 +10,10 @@ class DashboardController extends \Raptor\Controller
 {
     public function index()
     {
-        $this->createTemplate()->render();
+        $this->twigDashboard()->render();
     }
     
-    public function createTemplate($title = null): DashboardTemplate
+    public function twigDashboard($title = null): DashboardTemplate
     {
         $twigTemplate = new class extends DashboardTemplate {};
         $twigTemplate->set('user', $this->getUser());
@@ -76,7 +76,7 @@ class DashboardController extends \Raptor\Controller
         if (isset($main['id'])) {
             $this->indopost($pattern, array(
                 'content' => array('mn' => array('title' => 'Хянах самбар'), 'en' => array('title' => 'Dashboard')),
-                'record' => array('parent_id' => $main['id'], 'position' => '11', 'icon' => 'bi bi-house-fill', 'href' => $this->generateLink('home'))
+                'record' => array('parent_id' => $main['id'], 'position' => '11', 'icon' => 'bi bi-easel', 'href' => $this->generateLink('home'))
             ));
             $script_path = dirname($this->getRequest()->getServerParams()['SCRIPT_NAME']);
             $path = (strlen($script_path) > 1 ? $script_path : '');
@@ -97,7 +97,7 @@ class DashboardController extends \Raptor\Controller
             ));
             $this->indopost($pattern, array(
                 'content' => array('mn' => array('title' => 'Баримт бичиг загвар'), 'en' => array('title' => 'Document templates')),
-                'record' => array('parent_id' => $contents['id'], 'position' => '230', 'icon' => 'bi bi-file-post-fill', 'href' => $this->generateLink('document-templates'))
+                'record' => array('parent_id' => $contents['id'], 'position' => '230', 'icon' => 'bi bi-layout-wtf', 'href' => $this->generateLink('document-templates'))
             ));
         }
         $system = $this->indopost($pattern, array('content' => array('mn' => array('title' => 'Систем'), 'en' => array('title' => 'System')), 'record' => array('position' => '300')));
