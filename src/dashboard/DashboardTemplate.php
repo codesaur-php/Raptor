@@ -46,4 +46,9 @@ class DashboardTemplate extends TwigTemplate
         
         parent::render();
     }
+    
+    public function alertNoPermission($alert = null)
+    {
+        $this->render(new TwigTemplate(dirname(__FILE__) . '/alert-no-permission.html', array('alert' => $alert ?? $this->get('system-no-permission'))));
+    }
 }

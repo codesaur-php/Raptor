@@ -19,18 +19,21 @@ class Controller extends \codesaur\Http\Application\Controller
 {
     public function indo(string $pattern, array $payload = array(), string $method = 'INTERNAL', bool $assoc = true)
     {
-        ob_start();
         try {
+            $indo_buffer = true;
+            ob_start();
             $jwt = $_SESSION[$this->getSessionJWTIndex()] ?? null;
             $indo_request = new InternalRequest($method, $pattern, $payload, $jwt);
             $this->getAttribute('indo')->handle($indo_request);
+            $response = json_decode(ob_get_contents(), $assoc);
+            ob_end_clean();
+            $indo_buffer = false;
         } catch (Throwable $th) {
-            $error = array('code' => $th->getCode(), 'message' => $th->getMessage());
-            echo json_encode(array('error' => $error));
+            if ($indo_buffer) {
+                ob_end_clean();
+            }
+            $response = array('error' => array('code' => $th->getCode(), 'message' => $th->getMessage()));
         }
-        $response = json_decode(ob_get_contents(), $assoc);
-        ob_end_clean();
-        
         return $response;
     }
     
@@ -82,7 +85,7 @@ class Controller extends \codesaur\Http\Application\Controller
             if (!$is_absolute) {
                 return $pattern;
             }
-            return $this->getRequest()->getUri()->withPath($pattern);
+            return (string)$this->getRequest()->getUri()->withPath($pattern);
         } catch (Throwable $th) {
             if ($this->isDevelopment()) {
                 error_log($th->getMessage());
@@ -148,7 +151,10 @@ class Controller extends \codesaur\Http\Application\Controller
     public function twigContent(string $template, array $vars = [])
     {
         $twigTemplate = new TwigTemplate($template, $vars);
+        $twigTemplate->set('user', $this->getUser());
         $twigTemplate->set('localization', $this->getAttribute('localization'));
+        $twigTemplate->set('request_path', rtrim($_SERVER['REQUEST_URI'], '/'));
+        $twigTemplate->set('request_uri', (string)$this->getRequest()->getUri());
         $twigTemplate->addFilter(new TwigFilter('text', function ($key): string
         {
             return $this->text($key);

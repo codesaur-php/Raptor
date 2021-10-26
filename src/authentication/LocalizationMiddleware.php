@@ -15,16 +15,19 @@ class LocalizationMiddleware implements MiddlewareInterface
 {
     function request($indo, string $method, string $pattern, $payload = array())
     {
-        ob_start();
         try {
+            $indo_buffer = true;
+            ob_start();
             $indo->handle(new InternalRequest($method, $pattern, $payload));
+            $response = json_decode(ob_get_contents(), true);
+            ob_end_clean();
+            $indo_buffer = false;
         } catch (Throwable $th) {
-            $error = array('code' => $th->getCode(), 'message' => $th->getMessage());
-            echo json_encode(array('error' => $error));
+            if ($indo_buffer) {
+                ob_end_clean();
+            }
+            $response = array('error' => array('code' => $th->getCode(), 'message' => $th->getMessage()));
         }
-        $response = json_decode(ob_get_contents(), true);
-        ob_end_clean();
-
         return $response;
     }
     

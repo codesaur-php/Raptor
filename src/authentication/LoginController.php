@@ -13,7 +13,6 @@ use codesaur\Template\MemoryTemplate;
 
 use Indoraptor\Account\AccountErrorCode;
 use Indoraptor\Account\ForgotModel;
-use Indoraptor\Record\ContentModel;
 use Indoraptor\Account\OrganizationModel;
 use Indoraptor\Account\OrganizationUserModel;
 
@@ -30,16 +29,11 @@ class LoginController extends \Raptor\Controller
             return $this->redirectTo('home');
         }
         
-        $vars = array(
-            'organizations' => $this->indo('/record/rows?model=' . OrganizationModel::class)['rows'] ?? []
-        );
-        $content_tos = $this->indo('/record?model=' . ContentModel::class . '&table=templates',
-                array('p.keyword' => 'tos', 'p.is_active' => 1, 'c.code' => $this->getLanguageCode()));
-        $vars['tos'] = $content_tos['record']['content'] ?? [];
-        $content_pp = $this->indo('/record?model=' . ContentModel::class . '&table=templates',
-                array('p.keyword' => 'pp', 'p.is_active' => 1, 'c.code' => $this->getLanguageCode()));
-        $vars['pp'] = $content_pp['record']['content'] ?? [];
-        
+        $code = $this->getLanguageCode();
+        $vars = $this->indo('/lookup', array('table' => 'templates', 'condition' =>
+            array('WHERE' => "c.code='$code' AND (p.keyword='tos' OR p.keyword='pp') AND p.is_active=1")));
+        $vars['organizations'] = $this->indo('/record/rows?model=' . OrganizationModel::class)['rows'] ?? [];
+
         $this->twigContent(dirname(__FILE__) . '/login.html', $vars)->render();
     }
         
@@ -132,12 +126,12 @@ class LoginController extends \Raptor\Controller
                 'organization' => $this->getPostParam('organization_name')
             );
             
-            $contents = $this->indo('/record?model=' . ContentModel::class . '&table=templates',
-                    array('p.keyword' => 'request-new-account', 'p.is_active' => 1, 'c.code' => $payload['code']));
-            if (empty($contents['record'])) {
+            $lookup = $this->indo('/lookup', array('table' => 'templates', 'condition' =>
+                array('WHERE' => "c.code='{$payload['code']}' AND p.keyword='request-new-account' AND p.is_active=1")));
+            if (empty($lookup['request-new-account'])) {
                 throw new Exception($this->text('email-template-not-set'));
             }
-            $content = $contents['record']['content'];
+            $content = $lookup['request-new-account'];
             
             $response = $this->indopost('/account/signup', $payload);
             if (!isset($response['id'])) {
@@ -221,12 +215,12 @@ class LoginController extends \Raptor\Controller
                 'email' => $this->getPostParam('codeForgetEmail'), 
                 'login' => $this->generateLink('login', [], true));
             
-            $contents = $this->indo('/record?model=' . ContentModel::class . '&table=templates',
-                    array('p.keyword' => 'forgotten-password-reset', 'p.is_active' => 1, 'c.code' => $payload['code']));
-            if (empty($contents['record'])) {
+            $lookup = $this->indo('/lookup', array('table' => 'templates', 'condition' =>
+                array('WHERE' => "c.code='{$payload['code']}' AND p.keyword='forgotten-password-reset' AND p.is_active=1")));
+            if (empty($lookup['forgotten-password-reset'])) {
                 throw new Exception($this->text('email-template-not-set'));
             }
-            $content = $contents['record']['content'];
+            $content = $lookup['forgotten-password-reset'];
             
             $response = $this->indopost('/account/forgot', $payload);
             if (empty($response['use_id'])) {

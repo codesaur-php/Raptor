@@ -29,7 +29,8 @@ class DashboardController extends \Raptor\Controller
             return $this->generateLink($routeName, $params, $is_absolute);
         }));
         $twigTemplate->set('sidemenu', $this->getSideMenu());        
-        $twigTemplate->title($title);        
+        $twigTemplate->title($title);
+        $twigTemplate->set('system-no-permission', $this->text('system-no-permission'));
         return $twigTemplate;
     }
     
@@ -46,7 +47,6 @@ class DashboardController extends \Raptor\Controller
                 $sidemenu_rows = array();
             }
         }
-        
         $sidemenu = array();
         foreach ($sidemenu_rows as $row) {
             $title = $row['content']['title'][$this->getLanguageCode()];

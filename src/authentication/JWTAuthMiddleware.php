@@ -18,27 +18,29 @@ class JWTAuthMiddleware implements MiddlewareInterface
 {
     function retrieveUserFromIndo(ServerRequestInterface $request)
     {
-        ob_start();
         $sess_jwt_key = 'indo/jwt' . $request->getAttribute('pipe', '');
         try {
             if (empty($_SESSION[$sess_jwt_key])) {
                 throw new Exception('There is no JWT!');
-            }            
-            $request->getAttribute('indo')->handle(
-                    new InternalRequest('POST', '/auth/jwt', array('jwt' => $_SESSION[$sess_jwt_key])));
+            }
+            $indo_buffer = true;
+            ob_start();
+            $indo_request = new InternalRequest('POST', '/auth/jwt', array('jwt' => $_SESSION[$sess_jwt_key]));
+            $request->getAttribute('indo')->handle($indo_request);
+            $response = json_decode(ob_get_contents(), true);
+            ob_end_clean();
+            $indo_buffer = false;
         } catch (Throwable $th) {
+            if ($indo_buffer) {
+                ob_end_clean();
+            }
             if (isset($_SESSION[$sess_jwt_key])
                     && session_status() == PHP_SESSION_ACTIVE
             ) {
                 unset($_SESSION[$sess_jwt_key]);
-            }            
-            $error = array('code' => $th->getCode(), 'message' => $th->getMessage());
-            echo json_encode(array('error' => $error));
+            }
+            $response = array('error' => array('code' => $th->getCode(), 'message' => $th->getMessage()));
         }
-        $response = json_decode(ob_get_contents(), true);
-        ob_end_clean();
-
-        
         return $response;
     }
     

@@ -51,10 +51,8 @@
         <script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@9"></script>
         <script defer src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets/vendor/notifyme/notifyme.min.js"></script>
         <script defer src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets/dist/scripts/scroll-to-top.js"></script>
-        <script defer src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets/dist/scripts/dashboard.js"></script>
+        <script defer src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@1.2/dist/scripts/dashboard.js"></script>
         <meta name="theme-color" content="#7952b3">
-        <style>
-        </style>
     </head>
     <body>
         <header class="navbar navbar-dark sticky-top bg-{{ navbarColor }} flex-md-nowrap p-0 shadow">            
@@ -83,7 +81,7 @@
             <div class="row">
                 <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-dark sidebar collapse">
                 {% for menu in sidemenu %}
-                    <div class="position-sticky pt-{{ loop.first ? '3' : '1' }}">
+                    <div class="position-sticky mt-{{ loop.first ? '3' : '1' }}">
                         <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-2 mb-1 text-muted">
                             <span>{{ menu['title'] }}</span>
                         </h6>
@@ -99,23 +97,7 @@
                         </ul>
                     </div>
                 {% endfor %}
-                {% if user.getOrganizations()|length > 1 %}
-                    <div class="position-sticky mt-5">
-                        <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-2 mb-1 text-muted">
-                            <span>{{ 'organization'|text }}</span>
-                        </h6>
-                        <ul class="nav flex-column">
-                        {% for org in user.getOrganizations() %}
-                            <li class="nav-item">
-                                <a class="nav-link{{ org['id'] == user.getOrganization()['id'] ? ' active' : '' }}" href="{{ 'login-select-organization'|link({'id': org['id']}) }}">
-                                    {{ org['name'] }}
-                                </a>
-                            </li>
-                        {% endfor %}
-                        </ul>
-                    </div>
-                {% endif %}
-                    <div class="position-sticky pb-3 {{ user.getOrganizations()|length > 1 ? 'pt-1' : 'mt-5'}}">
+                    <div class="position-sticky pb-3 mt-5">
                         <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-2 mb-1 text-muted">
                             <a class="link-secondary text-decoration-none" href="{{ 'logout'|link }}">{{ 'account'|text }}</a>
                             <a class="link-secondary" href="{{ 'logout'|link }}" aria-label="{{ 'logout'|text }}">
@@ -131,6 +113,22 @@
                             </li>
                         </ul>
                     </div>
+                {% if user.getOrganizations()|length > 1 %}
+                    <div class="position-sticky mt-1">
+                        <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-2 mb-1 text-muted">
+                            <span>{{ 'organization'|text }}</span>
+                        </h6>
+                        <ul class="nav flex-column">
+                        {% for org in user.getOrganizations() %}
+                            <li class="nav-item">
+                                <a class="nav-link{{ org['id'] == user.getOrganization()['id'] ? ' active' : '' }}" href="{{ 'login-select-organization'|link({'id': org['id']}) }}">
+                                    {{ org['name'] }}
+                                </a>
+                            </li>
+                        {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
                 </nav>
                 <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 mt-3">{{ content }}</main>
             </div>
