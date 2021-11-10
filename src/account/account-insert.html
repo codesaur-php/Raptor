@@ -1,0 +1,113 @@
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center mb-4 mt-2">
+    <h3 class="text-success text-uppercase" style="padding-right:10px"><i class="bi bi-person-plus-fill"></i>  {{ 'new-account'|text }}</h3>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            {% if user.can('system_account_insert') %}
+            <button class="submit btn btn-success shadow-sm ">
+                <i class="bi bi-check"></i> {{ 'submit'|text }}
+            </button>
+            {% endif %}
+            <button class="btn btn-outline-dark shadow-sm" onclick="window.history.go(-1);return false;">{{ 'back'|text }}</button>
+        </div>
+    </div>
+</div>
+<ul class="nav nav-tabs mb-4" role="tablist">
+    <li class="nav-item"><a class="nav-link active show" data-bs-toggle="tab" href="#tab-personal">{{ 'personal-info'|text }}</a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-picture">{{ 'image'|text }}</a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-organization">{{ 'organization'|text }}</a></li>
+</ul>
+<form id="account_insert" class="needs-validation" action="{{ 'accounts-account-insert'|link }}" method="POST" enctype="multipart/form-data" novalidate>
+    <div class="tab-content mb-5">
+        <div class="tab-pane active show" id="tab-personal" role="tabpanel">
+            <div class="form-group mb-3">
+                <label class="form-label">{{ 'login'|text }}</label>
+                <input name="username" value="" maxlength="128" placeholder="" required type="text" autocomplete="off" class="form-control">
+                <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
+            </div>
+            <div class="form-group mb-3">
+                <label class="form-label">{{ 'password'|text }}</label>
+                <input name="password" value="" maxlength="256" required placeholder="" type="password" autocomplete="off" class="form-control">
+                <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
+            </div>
+            <div class="form-group mb-3">
+                <label class="form-label">{{ 'firstname'|text }}</label>
+                <input name="first_name" value="" maxlength="128" autocomplete="off" required class="form-control">
+                <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
+            </div>
+            <div class="form-group mb-3">
+                <label class="form-label">{{ 'lastname'|text }}</label>
+                <input name="last_name" value="" maxlength="128" placeholder="" required type="text" autocomplete="off" class="form-control">
+                <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
+            </div>
+            <div class="form-group mb-3">
+                <label class="form-label">{{ 'telephone'|text }}</label>
+                <input name="phone" value="" maxlength="128" placeholder="" required type="text" autocomplete="off" class="form-control">
+                <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
+            </div>
+            <div class="form-group mb-3">
+                <label class="form-label">{{ 'address'|text }}</label>
+                <textarea name="address" maxlength="256" rows="2" class="form-control"></textarea>
+            </div>
+            <div class="form-group mb-3">
+                <label class="form-label">{{ 'email'|text }}</label>
+                <div class="input-group">
+                    <div class="input-group-prepend"><span class="input-group-text">@</span></div>
+                    <input name="email" value="" maxlength="128" placeholder="" required type="email" autocomplete="off" class="form-control">
+                    <div class="invalid-feedback">{{ 'enter-valid-email'|text }}</div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">{{ 'status'|text }}</label>
+                <div class="form-check form-switch">
+                  <input class="form-check-input" type="checkbox" role="switch" name="status" checked aria-describedby="activeHelpBlock" onclick="warnStatus(this.checked);">
+                </div>
+                <div id="activeHelpBlock" class="form-text">{{ 'active-account-can-login'|text }}</div>
+            </div>
+        </div>
+        <div class="tab-pane" id="tab-picture" role="tabpanel">
+            <div class="form-group">
+                <input type="file" name="photo" id="photo">
+            </div>
+        </div>
+        <div class="tab-pane" id="tab-organization" role="tabpanel">
+            <div class="form-group mb-3">
+                <label class="form-label">{{ 'organization'|text }}</label>
+                <select class="form-control" name="organization" id="organization">
+                    <option value="0" class="form-control"></option>
+                    {% for org in organizations %}
+                    <option value="{{ org['id'] }}" class="form-control">{{ org['name']|e }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+    </div>
+</form>
+<div class="btn-toolbar mb-4">
+{% if user.can('system_account_insert') %}
+    <button class="submit btn btn-lg btn-success shadow-sm"><i class="bi bi-check"></i> {{ 'submit'|text }}</button>
+{% endif %}
+    <button class="btn btn-lg  btn-secondary shadow-sm mx-2" onclick="window.history.go(-1);return false;">{{ 'back'|text }}</button>
+</div>
+<script>
+function warnStatus(checked) {
+    if (checked) {
+        return;
+    }
+    
+    Swal.fire({
+        position: 'top-end',
+        icon: 'warning',
+        html: "{{ 'active-account-can-login'|text }}",
+        showConfirmButton: false,
+        timer: 1500
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    Dashboard.activateLink("{{ 'accounts'|link }}");
+    
+    document.getElementsByName('photo')[0].imageInput(null, "{{ 'select-image'|text }}", "{{ 'choose'|text }}", "{{ 'change'|text }}", "{{ 'remove'|text }}");
+    
+    SubmitForm('.submit', 'form#account_insert');
+});
+</script>

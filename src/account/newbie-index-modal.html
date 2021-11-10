@@ -1,0 +1,166 @@
+<div class="modal-dialog modal-xl" role="document">
+    <div class="modal-content">
+        <div class="modal-header modal-header-solid">
+            <h5 class="modal-title text-uppercase text-primary" id="MyModalLabel"><i class="bi bi-person-plus-fill"></i> {{ 'request-new-account'|text }}</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'close'|text|e }}"></button>
+        </div>
+        <div class="modal-body">
+            <table class="table table-hover" id="new_account_requests">
+                <thead>
+                    <tr>
+                        <th scope="col" class="text-primary">#</th>
+                        <th scope="col" class="text-primary">{{ 'username'|text }}</th>
+                        <th scope="col" class="text-primary">{{ 'email'|text }}</th>
+                        <th scope="col" class="text-primary">{{ 'language'|text }}</th>
+                        <th scope="col" class="text-primary">{{ 'date-created'|text }}</th>
+                        <th scope="col" class="text-primary">{{ 'status'|text }}</th>
+                        <th scope="col" class="text-primary">{{ 'action'|text }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for row in rows %}    
+                    <tr>
+                        <th scope="row">{{ row['id'] }}</th>
+                        <td><strong>{{ row['username'] }}</strong></th>
+                        <td>{{ row['email'] }}</td>
+                        <td><img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.0/images/flags/{{ row['code'] }}.png"></td>
+                        <td>{{ row['created_at'] }}</td>
+                        <td>
+                        {% if row['status'] == 2 %}
+                            <span class="badge bg-info">approved</span>
+                        {% elseif row['is_active'] == 0 %}
+                            <span class="badge bg-danger">deleted</span>
+                        {% else %}
+                            <span class="badge bg-warning">waiting</span>
+                        {% endif %}    
+                        </td>
+                        <td>
+                        {% if row['is_active'] == 1 %}
+                            {% if user.can('system_account_insert') %}
+                            <a href="{{ row['id'] }}" data-account-name="{{ row['username']|e }} => {{ row['email']|e }}" class="approve-request btn btn-sm btn-success shadow-sm"><i class="bi bi-person-check"></i> {{ 'accept'|text }}</a>
+                            {% endif %}
+                            {% if user.can('system_account_delete') %}
+                            <a href="{{ row['id'] }}" data-account-name="{{ row['username']|e }}" class="delete-request btn btn-sm btn-danger shadow-sm"><i class="bi bi-trash"></i> {{ 'delete'|text }}</a>
+                            {% endif %}
+                        {% else %}
+                            {{ row['reserved'] }}
+                        {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="modal-footer modal-footer-solid">
+            <button class="btn btn-primary shadow-sm" data-bs-dismiss="modal">{{ 'close'|text }}</button>
+        </div>
+    </div>
+</div>
+<script type="text/javascript">
+var approveAskHtml = {% if localization.code == 'mn' %}'<p class="text-primary">Та ({0}) хэрэглэгчийн бүртгүүлэх хүсэлтийг зөвшөөрөхдөө итгэлтэй байна уу?</p>'{% else %}'<p class="text-primary">Are you sure to accept this account request ({0})?</p>'{% endif %};
+var deleteRequestAskHtml = {% if localization.code == 'mn' %}'<p class="text-danger">Та ({0}) хэрэглэгчийн бүртгүүлэх хүсэлтийг устгахдаа итгэлтэй байна уу?</p>'{% else %}'<p class="text-danger">Are you sure to delete this account request ({0})?</p>'{% endif %};
+$('table#new_account_requests').DataTable({
+    pageLength: 5, responsive: true,
+    lengthMenu: [[5, 10, 20, 50, -1], [5, 10, 20, 50, "{{ 'all'|text|e }}"]]
+    {% if localization.code == 'mn' %}, language: {url: 'https://cdn.datatables.net/plug-ins/1.11.3/i18n/mn.json'}{% endif %}
+});
+
+document.querySelectorAll('#new_account_requests a.approve-request').forEach(function(a) {
+    a.addEventListener('click', function(e) {
+        e.preventDefault();
+        Swal.fire({
+            html: '<i class="bi bi-person-plus text-info mb-2" style="font-size:3rem"></i>' + approveAskHtml.format(a.getAttribute('data-account-name')),
+            showCancelButton: true,
+            cancelButtonText: '{{ 'no'|text|e }}',
+            confirmButtonText: '<i class="bi bi-check"></i> {{ 'yes'|text|e }}',
+            confirmButtonColor: '#0d6efd',
+            showLoaderOnConfirm: true,
+            allowOutsideClick: () => !Swal.isLoading(),
+            backdrop: true,
+            preConfirm: (willAccept) => {
+                if (!willAccept) {
+                    return;
+                }
+
+                return fetch(
+                    '{{ 'accounts-account-accept'|link }}',
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({id: a.getAttribute('href')})
+                    }
+                ).then(res => {
+                    if (!res.ok) {
+                        throw new Error(res.statusText);
+                    }
+                    return res.json();
+                }).then(response => {
+                    if (response.status !== 'success') {
+                        throw new Error(response.message ? response.message : 'Invalid response!');
+                    }
+
+                    NotifyTop('success', "{{ 'success'|text|e }}", response.message ? response.message : '');
+
+                    window.location.href = "{{ 'accounts'|link }}";
+                })
+                .catch(error => {
+                    Swal.showValidationMessage(error.message);
+                });
+            }
+        });
+    });
+});
+
+document.querySelectorAll('#new_account_requests a.delete-request').forEach(function(a) {
+    a.addEventListener('click', function(e) {
+        e.preventDefault();
+        Swal.fire({
+            html: '<i class="bi bi-person-x-fill text-danger mb-2" style="font-size:3rem"></i>' + deleteRequestAskHtml.format(a.getAttribute('data-account-name')),
+            showCancelButton: true,
+            cancelButtonText: '{{ 'no'|text|e }}',
+            confirmButtonText: '<i class="bi bi-check"></i> {{ 'yes'|text|e }}',
+            confirmButtonColor: '#f32750',
+            showLoaderOnConfirm: true,
+            allowOutsideClick: () => !Swal.isLoading(),
+            backdrop: true,
+            preConfirm: (willDelete) => {
+                if (!willDelete) {
+                    return;
+                }
+
+                return fetch(
+                    '{{ 'accounts-account-delete'|link }}',
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            table: 'newbie',
+                            id: a.getAttribute('href')
+                        })
+                    }
+                ).then(res => {
+                    if (!res.ok) {
+                        throw new Error(res.statusText);
+                    }
+                    return res.json();
+                }).then(response => {
+                    if (response.status !== 'success') {
+                        throw new Error(response.message ? response.message : 'Invalid response!');
+                    }
+
+                    NotifyTop('success', "{{ 'success'|text|e }}", response.message ? response.message : '');
+
+                    window.location.href = "{{ 'accounts'|link }}";
+                })
+                .catch(error => {
+                    Swal.showValidationMessage(error.message);
+                });
+            }
+        });
+    });
+});
+</script>

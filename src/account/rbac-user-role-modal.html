@@ -1,0 +1,78 @@
+<div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+    <div class="modal-content">
+        <div class="modal-header modal-header">
+            <h5 class="modal-title text-danger" id="MyModalLabel"><i class="bi bi-shield-lock-fill"></i> {{ 'role2'|text }}</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'close'|text|e }}"></button>
+        </div>
+        <div class="modal-body">
+            <form autocomplete="off" id="rbac_user_role" role="form" action="{{ 'accounts-rbac-user-role'|link({'id': account['id']}) }}" method="POST" enctype="multipart/form-data">
+                <div style="height:400px;overflow-y:auto;overflow-x:hidden;">
+                    <div class="form-group">
+                        <label>{{ account['first_name'] ~ ' ' ~ account['last_name'] ~ ' (' ~ account['username'] ~ ' => ' ~ account['email'] ~ ')' }} хэрэглэгчийн дүрийг сонгон тохируулна уу!</label>
+                        <select id="roles" name="roles[]" class="form-control" multiple>
+                            {% for key,data in roles %}
+                            <optgroup label="{{ rbacs[key] }}" alias="{{ key }}">
+                                {% for value,name in data %}
+                                <option value="{{ value }}" data-description="{{ name[1] }}">{{ name[0]|e }}</option>
+                                {% endfor %}
+                            </optgroup>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer modal-footer-solid">
+            <button class="submit-user-role btn btn-danger shadow-sm" type="submit">
+                <i class="bi bi-check"></i> <strong>{{ 'save'|text }}</strong>
+            </button>
+        </div>
+    </div>
+</div>
+<script type="text/javascript">
+    (function($) {
+        $.fn.Select2Roles = function() {            
+            var formatSelection = function(state) {
+                if (!state.id) {
+                    return state.text;
+                }
+                
+                let option = $(state.element);
+                let group = option.closest('optgroup');
+                if (group) {
+                    return group.attr('alias') + '_' + state.text;
+                } else {
+                    return state.text;
+                }
+            };
+
+            var formatMenu = function(state) {
+                if (!state.id) {
+                    return state.text;
+                }
+
+                return state.text + ' &nbsp;<span class="text-muted float-right">' + $(state.element).data('description') + '</span>';
+            };
+
+            if (jQuery().select2) {
+                this.select2({
+                    width: '100%',
+                    templateResult: formatMenu,
+                    templateSelection: formatSelection,
+                    dropdownParent: $('#dashboard-modal'),
+                    escapeMarkup: function(m) { return m; }
+                });
+            };
+
+            return this;
+        };
+    } (jQuery));
+    
+    $('#roles').Select2Roles();    
+    {% if current_role is defined and current_role is not empty %}
+    $('#roles').val([{{ current_role }}]);
+    $('#roles').trigger('change');
+    {% endif %}
+        
+    SubmitForm('.submit-user-role', 'form#rbac_user_role');
+</script>

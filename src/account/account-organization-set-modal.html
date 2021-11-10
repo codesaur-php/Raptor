@@ -1,0 +1,50 @@
+<div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+    <div class="modal-content">
+        <div class="modal-header modal-header">
+            <h5 class="modal-title text-uppercase" id="MyModalLabel">{{ 'organization'|text }}</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'close'|text|e }}"></button>
+        </div>
+        <div class="modal-body">
+            <form autocomplete="off" id="account_organization_set" role="form" action="{{ 'accounts-organization-set'|link({'account_id': account['id']}) }}" method="POST" enctype="multipart/form-data">
+                <div style="height:400px;overflow-y:auto;overflow-x:hidden;">
+                    <div class="form-group">
+                        <label>{{ account['first_name'] ~ ' ' ~ account['last_name'] ~ ' (' ~ account['username'] ~ ' => ' ~ account['email'] ~ ')' }} хэрэглэгчийн харъяалагдах байгууллагыг сонгон тохируулна уу!</label>
+                        <select id="organizations" name="organizations[]" class="form-control" multiple>
+                            {% for organization in organizations %}
+                            <option value="{{ organization['id'] }}">{{ organization['name'] }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer modal-footer-solid">
+            <button class="submit-organization-set btn btn-dark shadow-sm" type="submit">
+                <i class="bi bi-check"></i> <strong>{{ 'save'|text }}</strong>
+            </button>
+        </div>
+    </div>
+</div>
+<script type="text/javascript">
+    (function($) {
+        $.fn.Select2Organizations = function() {
+            if (jQuery().select2) {
+                this.select2({
+                    width: '100%',
+                    dropdownParent: $('#dashboard-modal'),
+                    escapeMarkup: function(m) { return m; }
+                });
+            };
+
+            return this;
+        };
+    } (jQuery));
+    
+    $('#organizations').Select2Organizations();    
+    {% if current_organizations is defined and current_organizations is not empty %}
+    $('#organizations').val([{{ current_organizations }}]);
+    $('#organizations').trigger('change');
+    {% endif %}
+        
+    SubmitForm('.submit-organization-set', 'form#account_organization_set');
+</script>

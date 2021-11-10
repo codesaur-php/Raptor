@@ -34,15 +34,16 @@ class LoginController extends \Raptor\Controller
             array('WHERE' => "c.code='$code' AND (p.keyword='tos' OR p.keyword='pp') AND p.is_active=1")));
         $vars['organizations'] = $this->indo('/record/rows?model=' . OrganizationModel::class)['rows'] ?? [];
 
-        $this->twigContent(dirname(__FILE__) . '/login.html', $vars)->render();
+        $this->twigTemplate(dirname(__FILE__) . '/login.html', $vars)->render();
     }
         
     public function entry()
     {
         try {
             $sess_jwt_key = $this->getSessionJWTIndex();
-            $username = $this->getPostParam('username');
-            $password = $this->getPostParam('password');
+            $payload = $this->getParsedBody();
+            $username = $payload['username'];
+            $password = $payload['password'];
             if ($this->isUserAuthorized()
                     || empty($username) || empty($password)
             ) {
@@ -56,7 +57,7 @@ class LoginController extends \Raptor\Controller
             }
             
             $_SESSION[$sess_jwt_key] =  $response['account']['jwt'];
-            echo json_encode(array('type' => 'success', 'message' => 'success', 'url' => $this->generateLink('home', [], true)));
+            $this->respondJSON(array('type' => 'success', 'message' => 'success', 'url' => $this->generateLink('home', [], true)));
 
             $log_message ="Хэрэглэгч {$response['account']['first_name']} " .
                     "{$response['account']['last_name']} системд нэвтрэв.";
@@ -81,13 +82,13 @@ class LoginController extends \Raptor\Controller
                 'username' => $username ?? ''
             );
             
-            echo json_encode(array('type' => 'danger', 'message' => $log_message));
+            $this->respondJSON(array('type' => 'danger', 'message' => $log_message));
 
             if ($this->isDevelopment()) {
                 error_log($e->getMessage());
             }
         } finally {            
-            $this->indolog($log_message, $log_context, 'dashboard', LogLevel::INFO, $response['data']['account']['id'] ?? null);
+            $this->indolog('dashboard', LogLevel::NOTICE, $log_message, $log_context, $response['data']['account']['id'] ?? null);
         }
     }
 
@@ -98,7 +99,7 @@ class LoginController extends \Raptor\Controller
             $account = $this->getUser()->getAccount();
             $message = "Хэрэглэгч {$account['first_name']} {$account['last_name']} системээс гарлаа.";
             $context = array('reason' => 'logout', 'jwt' => $_SESSION[$sess_jwt_key]);
-            $this->indolog($message, $context, 'dashboard', LogLevel::INFO);
+            $this->indolog('dashboard', LogLevel::NOTICE, $message, $context);
 
             unset($_SESSION[$sess_jwt_key]);
         }
@@ -109,10 +110,11 @@ class LoginController extends \Raptor\Controller
     public function signup()
     {
         try {
-            $username = $this->getPostParam('codeUsername');
-            $password = $this->getPostParam('codePassword');
-            $passwordRe = $this->getPostParam('codeRePassword');
-            $email = $this->getPostParam('codeEmail', FILTER_SANITIZE_EMAIL);
+            $requestBody = $this->getParsedBody();
+            $username = $requestBody['username'];
+            $password = $requestBody['password'];
+            $passwordRe = $requestBody['password_re'];
+            $email = filter_var($requestBody['email'], FILTER_SANITIZE_EMAIL);
             if (empty($username) || empty($email)
                 || empty($password) || $password != $passwordRe
             ) {
@@ -151,7 +153,7 @@ class LoginController extends \Raptor\Controller
             if (empty($email_response['success']['message'])) {
                 throw new Exception($email_response['error']['message'] ?? $this->text('something-went-wrong'), $email_response['error']['code'] ?? 0);
             }
-            echo json_encode(array('type' => 'success', 'message' => $this->text('to-complete-registration-check-email')));
+            $this->respondJSON(array('type' => 'success', 'message' => $this->text('to-complete-registration-check-email')));
         } catch (Throwable $th) {
             switch ((int)$th->getCode()) {
                 case AccountErrorCode::INSERT_DUPLICATE_EMAIL: {
@@ -193,16 +195,16 @@ class LoginController extends \Raptor\Controller
             }
             
             if (isset($log_message) && isset($log_context)) {
-                echo json_encode(array('type' => 'danger', 'message' => $log_message));
+                $this->respondJSON(array('type' => 'danger', 'message' => $log_message));
                 
                 $log_context['error'] = array(
                     'code' => $th->getCode(),
                     'message' => $th->getMessage()
                 );
                 $log_context['reason'] = 'request-new-account';
-                $this->indolog($log_message, $log_context, 'account', LogLevel::INFO);
+                $this->indolog('account', LogLevel::NOTICE, $log_message, $log_context);
             }  else {
-                echo json_encode(array('type' => 'danger', 'message' => $th->getMessage()));
+                $this->respondJSON(array('type' => 'danger', 'message' => $th->getMessage()));
             }
         }
     }
@@ -212,7 +214,7 @@ class LoginController extends \Raptor\Controller
         try {
             $payload = array(
                 'code' => $this->getLanguageCode(),
-                'email' => $this->getPostParam('codeForgetEmail'), 
+                'email' => $this->getParsedBody()['email'], 
                 'login' => $this->generateLink('login', [], true));
             
             $lookup = $this->indo('/lookup', array('table' => 'templates', 'condition' =>
@@ -241,7 +243,7 @@ class LoginController extends \Raptor\Controller
             if (empty($email_response['success']['message'])) {
                 throw new Exception($email_response['error']['message'] ?? $this->text('something-went-wrong'), $email_response['error']['code'] ?? 0);
             }
-            echo json_encode(array('type' => 'success', 'message' => $this->text('reset-email-sent')));
+            $this->respondJSON(array('type' => 'success', 'message' => $this->text('reset-email-sent')));
         } catch (Throwable $th) {
             switch ((int)$th->getCode()) {
                 case AccountErrorCode::ACCOUNT_NOT_FOUND: {
@@ -268,16 +270,16 @@ class LoginController extends \Raptor\Controller
             }
             
             if (isset($log_message) && isset($log_context)) {
-                echo json_encode(array('type' => 'danger', 'message' => $log_message));
+                $this->respondJSON(array('type' => 'danger', 'message' => $log_message));
                 
                 $log_context['error'] = array(
                     'code' => $th->getCode(),
                     'message' => $th->getMessage()
                 );
                 $log_context['reason'] = 'request-password';
-                $this->indolog($log_message, $log_context, 'account', LogLevel::INFO);
+                $this->indolog('account', LogLevel::INFO, $log_message, $log_context);
             }  else {
-                echo json_encode(array('type' => 'danger', 'message' => $th->getMessage()));
+                $this->respondJSON(array('type' => 'danger', 'message' => $th->getMessage()));
             }
         }
     }
@@ -314,9 +316,11 @@ class LoginController extends \Raptor\Controller
             if (!empty($error)) {
                 $vars['error'] = $error;
             }
-            $this->twigContent(dirname(__FILE__) . '/login-reset-password.html', $vars)->render();
+            $this->twigTemplate(dirname(__FILE__) . '/login-reset-password.html', $vars)->render();
         } catch (Throwable $th) {
-            $this->twigContent(dirname(__FILE__) . '/login-forgot.html', array('notice' => $th->getMessage()))->render();
+            $this->twigTemplate(dirname(__FILE__) . '/login-forgot.html', array('notice' => $th->getMessage()))->render();
+        } finally {
+            // TODO: Nuuts ugee sergeeheer oroldoj buig log hiih
         }
     }
     
@@ -351,11 +355,11 @@ class LoginController extends \Raptor\Controller
             if (!isset($account_response['id'])) {
                 throw new Exception('Шалтгаан: Мэдээлэл буруу!');
             }
-            $this->twigContent(dirname(__FILE__) . '/login-forgot.html', array(
+            $this->twigTemplate(dirname(__FILE__) . '/login-forgot.html', array(
                 'title' => $this->text('success'),
                 'notice' => $this->text('set-new-password-success')                
             ))->render();
-            $this->indolog('Нууц үг шинээр тохируулав.', array('use_id' => $use_id, 'created_at' => $created_at, 'account' => $account_response), 'account', LogLevel::NOTICE);
+            $this->indolog('account', LogLevel::INFO, 'Нууц үг шинээр тохируулав.', array('use_id' => $use_id, 'created_at' => $created_at, 'account' => $account_response));
         } catch (Throwable $th) {
             $log_message = 'Нууц үг шинээр тохируулах үйлдэл амжилтгүй боллоо.';
             
@@ -369,7 +373,7 @@ class LoginController extends \Raptor\Controller
                 'created_at' => $created_at
             );
             $log_context['reason'] = 'reset-password';
-            $this->indolog($log_message, $log_context, 'account', LogLevel::ALERT);
+            $this->indolog('account', LogLevel::ALERT, $log_message, $log_context);
         }
     }
     
@@ -408,7 +412,7 @@ class LoginController extends \Raptor\Controller
             $_SESSION[$this->getSessionJWTIndex()] = $jwt_result['jwt'];
             $message = "Хэрэглэгч {$this->getUser()->getAccount()['first_name']} {$this->getUser()->getAccount()['last_name']} нэвтэрсэн байгууллага сонгов.";
             $context = array('reason' => 'login-to-organization', 'enter' => $id, 'leave' => $current_org_id, 'jwt' => $jwt_result['jwt']);
-            $this->indolog($message, $context, 'dashboard', LogLevel::INFO);
+            $this->indolog('dashboard', LogLevel::NOTICE, $message, $context);
         }
 
         $this->redirectTo('home');

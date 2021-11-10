@@ -1,0 +1,87 @@
+<div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+    <div class="modal-content">
+        <div class="modal-header modal-header-solid">
+            <h6 class="modal-title text-uppercase text-info" id="MyModalLabel"><i class="bi bi-eye"></i> {{ 'organization'|text }}</h6>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'close'|text|e }}"></button>
+        </div>
+        <div class="modal-body">
+            <div style="height:400px;overflow-y:auto;overflow-x:hidden;">
+                <div class="form-group row mb-2">
+                    <label class="col-3 col-form-label">{{ 'id'|text }}</label>
+                    <div class="col-9">
+                        <input readonly value="{{ record['id'] }}" type="text" class="form-control">
+                    </div>
+                </div>
+                <div class="form-group row mb-2">
+                    <label class="col-3 col-form-label">{{ 'name'|text }}</label>
+                    <div class="col-9">
+                        <input readonly value="{{ record['name']|e }}" type="text" class="form-control">
+                    </div>
+                </div>
+                <div class="form-group row mb-2">
+                    <label class="col-3 col-form-label">{{ 'logo'|text }}</label>
+                    <div class="col-9 text-left">
+                        <div class="input-group col-5">
+                        {% if record['logo'] is defined and record['logo'] is not empty %}
+                            <img src="{{ record['logo'] }}" style="max-height:120px" class="img-fluid">
+                        {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group row mb-2">
+                    <label class="col-3 col-form-label">RBAC (alias)</label>
+                    <div class="col-9">
+                        <input readonly value="{{ record['alias']|e }}" type="text" class="form-control">
+                    </div>
+                </div>
+                <div class="form-group row mb-2">
+                    <label class="col-3 col-form-label">Home URL</label>
+                    <div class="col-9">
+                        <input readonly value="{{ record['home_url']|e }}" type="text" class="form-control">
+                    </div>
+                </div>
+                <hr>
+                <div class="form-group row mb-2">
+                    <label class="col-3 col-form-label">{{ 'parent'|text }}</label>
+                    <div class="col-9">
+                        <input readonly value="{{ record['parent_name']|e }}" type="text" class="form-control">
+                    </div>
+                </div>
+                <div class="form-group row mb-2">
+                    <label class="col-3 col-form-label">External</label>
+                    <div class="col-9">
+                        <input readonly value="{{ record['external']|e }}" type="text" class="form-control">
+                    </div>
+                </div>
+                <hr>
+                <div class="form-group row mb-2">
+                    <label class="col-3 col-form-label">{{ 'date-created'|text }}</label>
+                    <div class="col-9">
+                        <input readonly value="{{ record['created_at']|e }}" type="text" class="form-control">
+                    </div>
+                </div>
+                <div class="form-group row mb-2">
+                    <label class="col-3 col-form-label">{{ 'created-by'|text }}</label>
+                    <div class="col-9">
+                        <input readonly value="{{ (accounts[record['created_by']] ?? record['created_by'])|e }}" type="text" class="form-control">
+                    </div>
+                </div>
+                <div class="form-group row mb-2">
+                    <label class="col-3 col-form-label">{{ 'date-modified'|text }}</label>
+                    <div class="col-9">
+                        <input readonly value="{{ record['updated_at']|e }}" type="text" class="form-control">
+                    </div>
+                </div>
+                <div class="form-group row mb-2">
+                    <label class="col-3 col-form-label">{{ 'updated-by'|text }}</label>
+                    <div class="col-9">
+                        <input readonly value="{{ (accounts[record['updated_by']] ?? record['updated_by'])|e }}" type="text" class="form-control">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer modal-footer-solid">
+            <button class="btn btn-secondary shadow-sm" data-bs-dismiss="modal">{{ 'close'|text }}</button>
+        </div>
+    </div>
+</div>

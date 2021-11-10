@@ -1,8 +1,6 @@
-<link href="//cdn.datatables.net/1.10.21/css/jquery.dataTables.min.css" rel="stylesheet">
-<script defer src="//cdn.datatables.net/1.10.21/js/jquery.dataTables.min.js"></script>
 <div class="bd-callout bd-callout-primary bg-light alert alert-dismissible fade show shadow-sm" style="top:-6px">
     <p><i class="bi bi-person-lines-fill pr-2" style="padding-right:8px;"></i> {{ 'accounts-note'|text }}
-    <button type="button" class="btn-close" style="font-size:0.7rem" data-bs-dismiss="alert" aria-label="{{ 'close'|text }}"></button>
+    <button type="button" class="btn-close" style="font-size:0.7rem" data-bs-dismiss="alert" aria-label="{{ 'close'|text|e }}"></button>
     </p>
 </div>
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-4">
@@ -11,20 +9,20 @@
         <div class="btn-group me-2">
             {% if user.can('system_forgot_index') %}
             <a class="btn btn-outline-dark shadow-sm" data-bs-target="#dashboard-modal" data-bs-toggle="modal"
-               href="{{ 'crud'|link({'action':'index'}) }}?logger=account&table=forgot&controller=Velociraptor\Account\AccountController">
+               href="{{ 'accounts-requests-modal'|link({'table': 'forgot'}) }}">
                 {{ 'password-reset-request'|text }}
             </a>
             {% endif %}
             {% if user.can('system_newbie_index') %}
             <a class="btn btn-outline-primary shadow-sm" data-bs-target="#dashboard-modal" data-bs-toggle="modal"
-               href="{{ 'crud'|link({'action':'index'}) }}?logger=account&table=newbie&controller=Velociraptor\Account\AccountController">
+               href="{{ 'accounts-requests-modal'|link({'table': 'newbie'}) }}">
                 {{ 'request-new-account'|text }}
             </a>
             {% endif %}
             {% if user.can('system_account_insert') %}
             <a class="btn btn-outline-success shadow-sm"
-               href="{{ 'crud'|link({'action':'insert'}) }}?logger=account&table=account&controller=Velociraptor\Account\AccountController">
-                <i class="bi bi-person-plus-fill" style="margin-right:4px;"></i> {{ 'add-new-account'|text }}
+               href="{{ 'accounts-account-insert'|link }}">
+                <i class="bi bi-person-plus-fill" style="margin-right:4px;"></i> {{ 'create-new-account'|text }}
             </a>
             {% endif %}
         </div>
@@ -47,59 +45,128 @@
     {% for account in accounts %}
         <tr id="account_{{ account['id'] }}">
             <th scope="row">{{ account['id'] }}</th>
-            <td><img alt="{{ account['first_name'] ~ ' ' ~ account['last_name'] }}" src="{{ account['photo']|default('https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets/dist/images/no-account.gif') }}" width="60px"></td>
+            <td>
+                {% if account['photo'] is not empty %}
+                    <img alt="{{ (account['first_name'] ~ ' ' ~ account['last_name'])|e }}" src="{{ account['photo'] }}" width="60px">
+                {% else %}
+                    <i class="bi bi-person-bounding-box text-secondary" style="font-size:2rem"></i>
+                {% endif %}                
+            </td>
             <td>
                 {{ account['first_name'] ~ ' ' ~ account['last_name'] }}
-                {% if account['phone'] is not null and account['phone'] is not empty %}<br/><a class="badge bg-info fw-normal text-decoration-none mt-1" href="tel:{{ account['phone'] }}"><i class="bi bi-telephone-fill"></i> {{ account['phone'] }}</a>{% endif %}
+                {% if account['phone'] is not null and account['phone'] is not empty %}<br/><a class="badge bg-info fw-normal text-decoration-none mt-1" href="tel:{{ account['phone']|e }}"><i class="bi bi-telephone-fill"></i> {{ account['phone'] }}</a>{% endif %}
             </td>
             <td>
                 {{ account['username'] }}
-                <br/><a class="badge bg-success fw-normal text-decoration-none mt-1" href="mailto:{{ account['email'] }}"><i class="bi bi-envelope"></i> {{ account['email'] }}</a>
+                <br/><a class="badge bg-success fw-normal text-decoration-none mt-1" href="mailto:{{ account['email']|e }}"><i class="bi bi-envelope"></i> {{ account['email'] }}</a>
             </td>
             <td>
-                <a href="{{ 'account-organization-set'|link({'id':account['id']}) }}"
+                <a href="{{ 'accounts-organization-set'|link({'account_id': account['id']}) }}"
                    class="btn btn-dark btn-sm shadow-sm" data-bs-target="#dashboard-modal" data-bs-toggle="modal"><i class="bi bi-bank"></i>
                 </a>
             {% for org in account['organizations'] %}
-                <a href="{{ 'crud'|link({'action':'retrieve'}) }}?logger=organization&controller=Velociraptor\Organization\OrganizationController&id={{ organizations[org]['id'] }}"
-                   class="badge bg-{{ organizations[org]['alias'] == 'system' ? 'primary' : 'warning' }} fw-normal text-decoration-none" data-bs-target="#dashboard-modal" data-bs-toggle="modal">
+                <a href="{{ 'accounts-organization-view'|link({'id': organizations[org]['id']}) }}" class="badge bg-{{ organizations[org]['alias'] == 'system' ? 'primary' : 'warning' }} fw-normal text-decoration-none" data-bs-target="#dashboard-modal" data-bs-toggle="modal">
                     {{ organizations[org]['name'] }}
                 </a>
             {% endfor %}
             </td>
             <td>
-                <a href="{{ 'crud'|link({'action':'update'}) }}?logger=rbac&controller=Velociraptor\RBAC\RBACController&thing=user_role&id={{ account['id'] }}"
-                   class="btn btn-danger btn-sm shadow-sm" data-bs-target="#dashboard-modal" data-bs-toggle="modal"><i class="bi bi-shield-fill-check"></i>
+                <a href="{{ 'accounts-rbac-user-role'|link({'id': account['id']}) }}" class="btn btn-danger btn-sm shadow-sm" data-bs-target="#dashboard-modal" data-bs-toggle="modal"><i class="bi bi-shield-fill-check"></i>
                 </a>
             {% for role in account['roles'] %}
-                <span class="badge bg-{{ role == 'system_coder' ? 'primary' : 'warning' }} shadow-sm">{{ role }}</span>
+                <a href="{{ 'accounts-rbac-role-view'|link }}?role={{ role }}" class="badge bg-{{ role == 'system_coder' ? 'primary' : 'warning' }} text-decoration-none shadow-sm" data-bs-target="#dashboard-modal" data-bs-toggle="modal">
+                    {{ role }}
+                </a>
             {% endfor %}
             </td>
             <td>
-                <span class="badge bg-{{ account['status'] ? 'dark' : 'secondary' }}">{{ statuses[account['status']]['title'][localization.code] ?? account['status'] }}</span>
+                <span class="badge bg-{{ account['status'] ? 'light' : 'secondary' }} text-{{ account['status'] ? 'success' : 'light' }}">{{ statuses[account['status']]['title'][localization.code] ?? account['status'] }}</span>
             </td>
             <td>
-                {% if user.can('system_account_retrieve') %}
-                <a href="{{ 'crud'|link({'action':'retrieve'}) }}?logger=account&controller=Velociraptor\Account\AccountController&id={{ account['id'] }}" class="btn btn-sm btn-info shadow-sm"><i class="bi bi-eye"></i></a>
+                {% if account['id'] == user.getAccount()['id'] or user.can('system_account_retrieve') %}
+                <a href="{{ 'accounts-account-view'|link({'id': account['id']}) }}" class="btn btn-sm btn-info shadow-sm"><i class="bi bi-eye"></i></a>
                 {% endif %}
-                {% if account['id'] == user.account('id') or (account['id'] != 1 and user.can('system_account_update')) %}
-                <a href="{{ 'crud'|link({'action':'update'}) }}?logger=account&controller=Velociraptor\Account\AccountController&id={{ account['id'] }}" class="btn btn-sm btn-primary shadow-sm"><i class="bi bi-pencil-square"></i></a>
+                {% if account['id'] == user.getAccount()['id'] or (account['id'] != 1 and user.can('system_account_update')) %}
+                <a href="{{ 'accounts-account-update'|link({'id': account['id']}) }}" class="btn btn-sm btn-primary shadow-sm"><i class="bi bi-pencil-square"></i></a>
                 {% endif %}
-                {% if account['id'] != user.account('id') and account['id'] != 1 and user.can('system_account_delete') %}
-                <a href="{{ account['id'] }}" on-success="$('#account_{{ account['id'] }}').remove();" class="delete btn btn-sm btn-danger shadow-sm"><i class="bi bi-trash"></i></a>
+                {% if account['id'] != user.getAccount()['id'] and account['id'] != 1 and user.can('system_account_delete') %}
+                <a href="{{ account['id'] }}" data-account-name="{{ account['first_name'] ~ ' ' ~ account['last_name'] }}" class="delete-account btn btn-sm btn-danger shadow-sm"><i class="bi bi-trash"></i></a>
                 {% endif %}
             </td>
         </tr>
     {% endfor %}
     </tbody>
     <tfoot></tfoot>
-</table>
+</table>    
+<link href="https://cdn.datatables.net/1.11.3/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
+<script defer src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+<script defer src="https://cdn.datatables.net/1.11.3/js/jquery.dataTables.min.js"></script>
+<script defer src="https://cdn.datatables.net/1.11.3/js/dataTables.bootstrap5.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script type="text/javascript">
-    document.addEventListener('DOMContentLoaded', function() {
-        $('table#account').DataTable({
-            lengthMenu: [[5, 10, 30, -1], [5, 10, 30, "{{ 'all1'|text }}"]],
-            responsive: true, bStateSave: true, pagingType: 'full_numbers', pageLength: 10, order: [[0, 'asc']]
-            {% if localization.code == 'mn' %}, language: {url: "https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets/dist/datatables/mongolian.json"}{% endif %}
+var deleteAskHtml = {% if localization.code == 'mn' %}'<p class="text-danger mb-3">Та ({0}) хэрэглэгчийг устгахдаа итгэлтэй байна уу?</p><p>Хэрвээ тийм бол шалтгаан тайлбар бичнэ үү</p>'{% else %}'<p class="text-danger mb-3">Are you sure to delete this account ({0})?</p><p>If so, please provide a reason</p>'{% endif %};
+
+document.addEventListener('DOMContentLoaded', function() {    
+    let accountTable = document.querySelector('table#account');
+    $(accountTable).DataTable({
+        lengthMenu: [[5, 10, 30, -1], [5, 10, 30, "{{ 'all'|text|e }}"]],
+        responsive: true, bStateSave: true, pagingType: 'full_numbers', pageLength: 10, order: [[0, 'asc']]
+        {% if localization.code == 'mn' %}, language: {url: 'https://cdn.datatables.net/plug-ins/1.11.3/i18n/mn.json'}{% endif %}
+    });
+    
+    document.querySelectorAll('.delete-account').forEach(function(a) {
+        a.addEventListener('click', function(e) {
+            e.preventDefault();
+            Swal.fire({
+                icon: 'question',
+                html: deleteAskHtml.format(a.getAttribute('data-account-name')),
+                input: 'text',
+                showCancelButton: true,
+                cancelButtonText: '{{ 'cancel'|text|e }}',
+                confirmButtonText: '<i class="bi bi-trash"></i> {{ 'delete'|text|e }}',
+                confirmButtonColor: '#df4759',
+                showLoaderOnConfirm: true,
+                allowOutsideClick: () => !Swal.isLoading(),
+                backdrop: true,
+                preConfirm: (reason) => {
+                    return fetch(
+                        '{{ 'accounts-account-delete'|link }}',
+                        {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                reason: reason,
+                                id: a.getAttribute('href')
+                            })
+                        }
+                    ).then(res => {
+                        if (!res.ok) {
+                            throw new Error(res.statusText);
+                        }
+                        return res.json();
+                    }).then(response => {
+                        if (response.status !== 'success') {
+                            throw new Error(response.message ? response.message : 'Invalid response!');
+                        }
+                        
+                        Swal.close();
+                        
+                        NotifyTop('success', "{{ 'success'|text|e }}", response.message ? response.message : '');
+                        
+                        let row = accountTable.querySelector('#account_' + a.getAttribute('href'));
+                        if (row && row.parentNode !== null) {
+                            row.parentNode.removeChild(row);
+                        }
+                    })
+                    .catch(error => {
+                        Swal.showValidationMessage(error.message);
+                    });
+                }
+            });
         });
     });
+});
 </script>

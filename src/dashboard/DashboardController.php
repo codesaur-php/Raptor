@@ -4,6 +4,8 @@ namespace Raptor\Dashboard;
 
 use Twig\TwigFilter;
 
+use codesaur\RBAC\Accounts;
+
 use Indoraptor\Account\MenuModel;
 
 class DashboardController extends \Raptor\Controller
@@ -32,6 +34,32 @@ class DashboardController extends \Raptor\Controller
         $twigTemplate->title($title);
         $twigTemplate->set('system-no-permission', $this->text('system-no-permission'));
         return $twigTemplate;
+    }
+    
+    public function getAccounts(): array
+    {
+        $rows = $this->indo('/record/rows?model=' . Accounts::class)['rows'] ?? array();
+        $accounts = array();
+        foreach ($rows as $rows) {
+            $accounts[$rows['id']] = $rows['username'] . ' » ' . $rows['first_name'] . ' ' . $rows['last_name'] . ' (' . $rows['email'] . ')';
+        }        
+        return $accounts;
+    }    
+    
+    public function getLastLog(int $id, $reason, $level, $table = 'dashboard')
+    {
+        $response = $this->indopost('/log/select', array(
+            'table' => $table,
+            'ORDER BY' => 'id Desc LIMIT 1',
+            'WHERE' => "created_by=$id",
+            'level'      => $level,            
+        ));
+        
+        if (isset($response['data'])) {
+            return end($response['data']['rows']);
+        }
+        
+        return null;
     }
     
     function getSideMenu()
@@ -82,22 +110,22 @@ class DashboardController extends \Raptor\Controller
             $path = (strlen($script_path) > 1 ? $script_path : '');
             $this->indopost($pattern, array(
                 'content' => array('mn' => array('title' => 'Хостны эхлэл'), 'en' => array('title' => 'Host home')),
-                'record' => array('parent_id' => $main['id'], 'position' => '12', 'icon' => 'bi bi-house-door', 'href' => (string)$this->getRequest()->getUri()->withPath($path))
+                'record' => array('parent_id' => $main['id'], 'position' => '12', 'icon' => 'bi bi-house-door', 'href' => (string)$this->getRequest()->getUri()->withPath($path) . '" target="__blank')
             ));
         }
         $contents = $this->indopost($pattern, array('content' => array('mn' => array('title' => 'Агуулгууд'), 'en' => array('title' => 'Contents')), 'record' => array('position' => '200')));
         if (isset($contents['id'])) {
             $this->indopost($pattern, array(
                 'content' => array('mn' => array('title' => 'Хэл'), 'en' => array('title' => 'Languages')),
-                'record' => array('parent_id' => $contents['id'], 'position' => '210', 'icon' => 'bi bi-flag-fill', 'href' => $this->generateLink('languages'))
+                'record' => array('parent_id' => $contents['id'], 'position' => '280', 'icon' => 'bi bi-flag-fill', 'href' => $this->generateLink('languages'))
             ));
             $this->indopost($pattern, array(
                 'content' => array('mn' => array('title' => 'Орчуулга'), 'en' => array('title' => 'Translations')),
-                'record' => array('parent_id' => $contents['id'], 'position' => '220', 'icon' => 'bi bi-translate', 'href' => $this->generateLink('translations'))
+                'record' => array('parent_id' => $contents['id'], 'position' => '285', 'icon' => 'bi bi-translate', 'href' => $this->generateLink('translations'))
             ));
             $this->indopost($pattern, array(
                 'content' => array('mn' => array('title' => 'Баримт бичиг загвар'), 'en' => array('title' => 'Document templates')),
-                'record' => array('parent_id' => $contents['id'], 'position' => '230', 'icon' => 'bi bi-layout-wtf', 'href' => $this->generateLink('document-templates'))
+                'record' => array('parent_id' => $contents['id'], 'position' => '290', 'icon' => 'bi bi-layout-wtf', 'href' => $this->generateLink('document-templates'))
             ));
         }
         $system = $this->indopost($pattern, array('content' => array('mn' => array('title' => 'Систем'), 'en' => array('title' => 'System')), 'record' => array('position' => '300')));
@@ -111,13 +139,30 @@ class DashboardController extends \Raptor\Controller
                 'record' => array('parent_id' => $system['id'], 'position' => '320', 'icon' => 'bi bi-bank2', 'href' => $this->generateLink('organizations'))
             ));
             $this->indopost($pattern, array(
-                'content' => array('mn' => array('title' => 'Шууданч'), 'en' => array('title' => 'Mail carrier')),
-                'record' => array('parent_id' => $system['id'], 'position' => '330', 'icon' => 'bi bi-mailbox2', 'href' => $this->generateLink('mailer'))
+                'content' => array('mn' => array('title' => 'Тохируулгууд'), 'en' => array('title' => 'Settings')),
+                'record' => array('parent_id' => $system['id'], 'position' => '330', 'icon' => 'bi bi-gear-wide-connected', 'href' => $this->generateLink('settings'))
             ));
             $this->indopost($pattern, array(
                 'content' => array('mn' => array('title' => 'Хандалтын протокол'), 'en' => array('title' => 'Access logs')),
                 'record' => array('parent_id' => $system['id'], 'position' => '340', 'icon' => 'bi bi-list-stars', 'href' => $this->generateLink('logs'))
             ));
         }
+    }
+    
+    public function errorNoPermissionModal()
+    {
+        return
+        '<div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-body">
+                    <div class="alert alert-danger shadow-sm fade mt-3 show" role="alert">
+                        <i class="bi bi-shield-fill-exclamation" style="margin-right:6px"></i>' . $this->text('system-no-permission')
+                . '</div>
+                </div>
+                <div class="modal-footer modal-footer-solid">
+                    <button class="btn btn-secondary shadow-sm" data-bs-dismiss="modal">' . $this->text('close') . '</button>
+                </div>
+            </div>
+        </div>';
     }
 }

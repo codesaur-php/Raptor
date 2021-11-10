@@ -136,11 +136,11 @@ class Controller extends \codesaur\Http\Application\Controller
             
             if ($this->isUserAuthorized()) {
                 $account_id = $this->getUser()->getAccount()['id'];
-                $record = array(
+                $payload = array(
                     'record' => array('code' => $code),
                     'condition' => array('WHERE' => "id=$account_id")
                 );
-                $this->indoput('/record?model=' . Accounts::class, $record);
+                $this->indoput('/record?model=' . Accounts::class, $payload);
             }
         }
         
@@ -148,7 +148,7 @@ class Controller extends \codesaur\Http\Application\Controller
         exit;
     }
     
-    public function twigContent(string $template, array $vars = [])
+    public function twigTemplate(string $template, array $vars = [])
     {
         $twigTemplate = new TwigTemplate($template, $vars);
         $twigTemplate->set('user', $this->getUser());
@@ -166,12 +166,8 @@ class Controller extends \codesaur\Http\Application\Controller
         return $twigTemplate;
     }
     
-    public function indolog($message, array $context, $table = null, $level = null, $created_by = null)
+    public function indolog(string $table, string $level, $message, array $context, $created_by = null)
     {
-        if (empty($table)) {
-            $table = $this->getQueryParam('logger') ?? 'default';
-        }
-        
         $context['server_request'] = array(
             'code' => $this->getLanguageCode(),
             'method' => $this->getRequest()->getMethod(),
@@ -181,6 +177,7 @@ class Controller extends \codesaur\Http\Application\Controller
         
         $payload = array(
             'table' => $table,
+            'level' => $level,
             'message' => $message,
             'context' => json_encode($context)
         );
@@ -197,10 +194,6 @@ class Controller extends \codesaur\Http\Application\Controller
             }
         }
         
-        if (!empty($level)) {
-            $payload['level'] = $level;
-        }
-        
         $this->indo('/log', $payload);
     }
     
@@ -212,5 +205,14 @@ class Controller extends \codesaur\Http\Application\Controller
     final public function getSessionLangCodeIndex()
     {
         return 'language/code' . $this->getAttribute('pipe', '');
+    }
+    
+    public function respondJSON(array $res)
+    {
+        if (!headers_sent()) {
+            header('Content-Type: application/json');
+        }
+        
+        echo json_encode($res);
     }
 }

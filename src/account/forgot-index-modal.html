@@ -1,0 +1,55 @@
+<div class="modal-dialog modal-xl" role="document">
+    <div class="modal-content">
+        <div class="modal-header modal-header-solid">
+            <h5 class="modal-title text-uppercase" id="MyModalLabel"><i class="bi bi-shield-lock-fill"></i> {{ 'password-reset-request'|text }}</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'close'|text|e }}"></button>
+        </div>
+        <div class="modal-body">
+            <table class="table table-hover" id="forgot_requests">
+                <thead>
+                    <tr>
+                        <th scope="col">#</th>
+                        <th scope="col">{{ 'email'|text }}</th>
+                        <th scope="col">{{ 'account'|text }}</th>
+                        <th scope="col">{{ 'language'|text }}</th>
+                        <th scope="col">{{ 'status'|text }}</th>
+                        <th scope="col">{{ 'date-created'|text }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for row in rows %}
+                    <tr>
+                        <th scope="row">{{ row['use_id'] }}</th>
+                        <td>{{ row['email'] }}</td>
+                        <td>{{ row['first_name'] }} {{ row['last_name'] }} [{{ row['username'] }}: {{ row['account'] }}]</td>
+                        <td><img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.0/images/flags/{{ row['code'] }}.png"></td>
+                        <td>
+                            {% if row['is_active'] == 0 %}
+                            <span class="badge bg-success">used</span>
+                            {% else %}
+                                {% if isExpired(row['created_at']) %}
+                                <span class="badge bg-danger">expired</span>
+                                {% else %}
+                                <span class="badge bg-primary">ready</span>
+                                {% endif %}
+                            {% endif %}
+                        </td>
+                        <td>{{ row['created_at'] }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+                <tfoot></tfoot>
+            </table>
+        </div>
+        <div class="modal-footer modal-footer-solid">
+            <button class="btn btn-dark shadow-sm" data-bs-dismiss="modal">{{ 'close'|text }}</button>
+        </div>
+    </div>
+</div>
+<script type="text/javascript">
+    $('table#forgot_requests').DataTable({
+        pageLength: 5, responsive: true,
+        lengthMenu: [[5, 10, 20, 50, -1], [5, 10, 20, 50, "{{ 'all'|text|e }}"]]
+        {% if localization.code == 'mn' %}, language: {url: 'https://cdn.datatables.net/plug-ins/1.11.3/i18n/mn.json'}{% endif %}
+    });
+</script>
