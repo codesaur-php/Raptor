@@ -55,12 +55,22 @@ class JWTAuthMiddleware implements MiddlewareInterface
         }
         
         $uri_path = rawurldecode($request->getUri()->getPath());
-        $script_path = dirname($request->getServerParams()['SCRIPT_NAME']);
-        $strip_path = (strlen($script_path) > 1 ? $script_path : '') . $request->getAttribute('pipe', '');
-        $target_path = $strip_path != '' ? str_replace($strip_path, '', $uri_path) : $uri_path;
-        $parts = explode('/', $target_path);
+        $script_path = $request->getServerParams()['SCRIPT_TARGET_PATH'] ?? null;
+        if (!isset($script_path)) {
+            $script_path = dirname($request->getServerParams()['SCRIPT_NAME']);
+            if ($script_path == '\\' || $script_path == '/') {
+                $script_path = '';
+            }
+        }
+        if (!empty($script_path)) {
+            $uri_path = substr($uri_path, strlen($script_path));
+        }
+        if (empty($uri_path)) {
+            $uri_path = '/';
+        }        
+        $parts = explode('/', $uri_path);
         if (($parts[1] ?? '') != 'login') {
-            $loginUri = (string)$request->getUri()->withPath("$strip_path/login");
+            $loginUri = (string)$request->getUri()->withPath("$script_path/login");
             header("Location: $loginUri", false, 302);
             exit;
         }

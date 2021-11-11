@@ -12,9 +12,9 @@
         {% if meta['generator'] is defined %}<meta name="generator" content="{{ meta['generator']|e }}">{% endif %}
         {% if meta['description'] is defined %}<meta name="description" content="{{ meta['description']|e }}">{% endif %}
         {% if meta['keywords'] is defined %}<meta name="keywords" content="{{ meta['keywords']|e }}">{% endif %}
-        <link rel="icon" href="{{ meta['icon']|default('https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.0/images/ololt/ololt-leafs.png') }}" type="image/png">
-        <link rel="shortcut icon" href="{{ meta['shortcut icon']|default('https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.0/images/ololt/ololt.ico') }}" type="image/x-icon">
-        <link rel="apple-touch-icon" href="{{ meta['apple-touch-icon']|default('https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.0/images/ololt/ololt-leafs-iphone-touch-icon.png') }}">        
+        {% if meta['icon'] is defined %}<link rel="icon" href="{{ meta['icon'] }}" type="image/png">{% endif %}
+        {% if meta['shortcut icon'] is defined %}<link rel="shortcut icon" href="{{ meta['shortcut icon'] }}" type="image/x-icon">{% endif %}
+        {% if meta['apple-touch-icon'] is defined %}<link rel="apple-touch-icon" href="{{ meta['apple-touch-icon'] }}">{% endif %}
         {% if meta['google-site-verification'] is defined %}<meta name="google-site-verification" content="{{ meta['google-site-verification']|e }}">{% endif %}
         {% if meta['mobile-web-app-capable'] is defined %}<meta name="mobile-web-app-capable" content="{{ meta['mobile-web-app-capable']|e }}">{% endif %}
         {% if meta['apple-mobile-web-app-status-bar-style'] is defined %}<meta name="apple-mobile-web-app-status-bar-style" content="{{ meta['apple-mobile-web-app-status-bar-style']|e }}">{% endif %}
@@ -52,10 +52,9 @@
         <script defer src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.0.6/scripts/imageInput.js"></script>
         <script defer src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.0.1/scripts/SubmitForm.js"></script>
         <script defer src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.0.5/scripts/Dashboard.js"></script>
-        <meta name="theme-color" content="#7952b3">
     </head>
     <body>
-        <header class="navbar navbar-dark sticky-top bg-{{ navbarColor }} flex-md-nowrap p-0 shadow">            
+        <header class="navbar navbar-dark sticky-top bg-{{ navbarColor }} flex-md-nowrap p-0 shadow">
             <a class="navbar-brand col-md-3 col-lg-2 me-0 px-3 text-uppercase" href="{{ 'home'|link }}">
                 {% if user.getOrganization()['logo'] is defined and user.getOrganization()['logo'] is not empty %}<img src="{{ user.getOrganization()['logo'] }}">{% endif %}
                 {{ user.getOrganization()['name'] }}
