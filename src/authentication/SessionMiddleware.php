@@ -35,7 +35,7 @@ class SessionMiddleware implements MiddlewareInterface
                 $uri_path = '/';
             }
             $parts = explode('/', $uri_path);
-            if (($parts[1] ?? '') != 'login') {
+            if ($parts[1] != 'login') {
                 // Only login routes needs write access on $_SESSION,
                 // otherwise we better write_close the session as soon as possible
                 session_write_close();

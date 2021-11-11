@@ -39,7 +39,7 @@ class LocalizationMiddleware implements MiddlewareInterface
         if (isset($languages['error'])) {
             $languages = array('en' => 'English');
         }
-        $sess_lang_key = 'language/code' .  $request->getAttribute('pipe', '');
+        $sess_lang_key = __NAMESPACE__ . '\\language\\code';
         if (isset($_SESSION[$sess_lang_key])
                 && isset($languages[$_SESSION[$sess_lang_key]])) {
             $code = $_SESSION[$sess_lang_key];

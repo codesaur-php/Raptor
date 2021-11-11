@@ -16,65 +16,69 @@ use Raptor\Authentication\User;
 
 class JWTAuthMiddleware implements MiddlewareInterface
 {
-    function retrieveUserFromIndo(ServerRequestInterface $request)
+    public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
-        $sess_jwt_key = 'indo/jwt' . $request->getAttribute('pipe', '');
+        $sess_jwt_key = __NAMESPACE__ . '\\indo\\jwt';
         try {
             if (empty($_SESSION[$sess_jwt_key])) {
                 throw new Exception('There is no JWT!');
             }
+            
+            $jwt = $_SESSION[$sess_jwt_key];
             $indo_buffer = true;
             ob_start();
-            $indo_request = new InternalRequest('POST', '/auth/jwt', array('jwt' => $_SESSION[$sess_jwt_key]));
+            $indo_request = new InternalRequest('POST', '/auth/jwt', array('jwt' => $jwt));
             $request->getAttribute('indo')->handle($indo_request);
             $response = json_decode(ob_get_contents(), true);
             ob_end_clean();
             $indo_buffer = false;
+            
+            if (!is_array($response['rbac'])
+                    || empty($response['account']['id'])
+                    || !isset($response['organizations'][0]['id'])
+            ) {
+                throw new Exception('Invalid RBAC user information!');
+            }
+            
+            return $handler->handle($request->withAttribute('user',
+                    new User($jwt, $response['rbac'], $response['account'], $response['organizations'])));
         } catch (Throwable $th) {
             if ($indo_buffer) {
                 ob_end_clean();
             }
+            
             if (isset($_SESSION[$sess_jwt_key])
                     && session_status() == PHP_SESSION_ACTIVE
             ) {
                 unset($_SESSION[$sess_jwt_key]);
             }
-            $response = array('error' => array('code' => $th->getCode(), 'message' => $th->getMessage()));
-        }
-        return $response;
-    }
-    
-    public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
-    {
-        $resource = $this->retrieveUserFromIndo($request);
-        if (is_array($resource['rbac'])
-                && isset($resource['account']['id'])
-                && isset($resource['organizations'][0]['id'])
-        ) {
-            return $handler->handle($request->withAttribute('user', new User($resource)));
-        }
-        
-        $uri_path = rawurldecode($request->getUri()->getPath());
-        $script_path = $request->getServerParams()['SCRIPT_TARGET_PATH'] ?? null;
-        if (!isset($script_path)) {
-            $script_path = dirname($request->getServerParams()['SCRIPT_NAME']);
-            if ($script_path == '\\' || $script_path == '/') {
-                $script_path = '';
+            
+            if ($th->getCode() >= 5000 && defined('CODESAUR_DEVELOPMENT') && CODESAUR_DEVELOPMENT) {
+                error_log($th->getMessage());
             }
+            
+            $uri_path = rawurldecode($request->getUri()->getPath());
+            $script_path = $request->getServerParams()['SCRIPT_TARGET_PATH'] ?? null;
+            if (!isset($script_path)) {
+                $script_path = dirname($request->getServerParams()['SCRIPT_NAME']);
+                if ($script_path == '\\' || $script_path == '/') {
+                    $script_path = '';
+                }
+            }
+            if (!empty($script_path)) {
+                $uri_path = substr($uri_path, strlen($script_path));
+            }
+            if (empty($uri_path)) {
+                $uri_path = '/';
+            }        
+            $parts = explode('/', $uri_path);
+            if ($parts[1] != 'login') {
+                $loginUri = (string)$request->getUri()->withPath("$script_path/login");
+                header("Location: $loginUri", false, 302);
+                exit;
+            }
+
+            return $handler->handle($request);
         }
-        if (!empty($script_path)) {
-            $uri_path = substr($uri_path, strlen($script_path));
-        }
-        if (empty($uri_path)) {
-            $uri_path = '/';
-        }        
-        $parts = explode('/', $uri_path);
-        if (($parts[1] ?? '') != 'login') {
-            $loginUri = (string)$request->getUri()->withPath("$script_path/login");
-            header("Location: $loginUri", false, 302);
-            exit;
-        }
-        
-        return $handler->handle($request);
     }
 }

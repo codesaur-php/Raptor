@@ -2,32 +2,26 @@
 
 namespace Raptor\Authentication;
 
-use Exception;
 
 class User implements RBACUserInterface
 {
+    private $_jwt;
     private $_rbac;
     private $_account;
     private $_organizations;
     
-    function __construct(array $data)
+    function __construct(string $token, array $rbac, array $account, array $organizations)
     {
-        if (empty($data['rbac'])
-                || empty($data['account']['id'])
-                || empty($data['organizations'][0]['id'])
-        ) {           
-            throw new Exception('Invalid RBAC user information!');
-        }
-
-        $this->_rbac = $data['rbac'];
-        $this->_account = $data['account'];
-        $this->_organizations = $data['organizations'];
+        $this->_jwt = $token;
+        $this->_rbac = $rbac;
+        $this->_account = $account;
+        $this->_organizations = $organizations;
         
         putenv("CODESAUR_ACCOUNT_ID={$this->_account['id']}");
     }
 
     public function is($role): bool
-    {        
+    {
         if (isset($this->_rbac['system_coder'])) {
             return true;
         }
@@ -52,6 +46,11 @@ class User implements RBACUserInterface
         }
         
         return false;
+    }
+    
+    public function getToken()
+    {
+        return $this->_jwt;
     }
 
     public function getAccount(): array

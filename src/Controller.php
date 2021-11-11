@@ -9,7 +9,6 @@ use Twig\TwigFilter;
 use codesaur\Globals\Server;
 use codesaur\Router\RouterInterface;
 use codesaur\Template\TwigTemplate;
-use codesaur\RBAC\Accounts;
 
 use Indoraptor\InternalRequest;
 
@@ -22,7 +21,7 @@ class Controller extends \codesaur\Http\Application\Controller
         try {
             $indo_buffer = true;
             ob_start();
-            $jwt = $_SESSION[$this->getSessionJWTIndex()] ?? null;
+            $jwt = $this->isUserAuthorized() ? $this->getUser()->getToken() : null;
             $indo_request = new InternalRequest($method, $pattern, $payload, $jwt);
             $this->getAttribute('indo')->handle($indo_request);
             $response = json_decode(ob_get_contents(), $assoc);
@@ -75,13 +74,15 @@ class Controller extends \codesaur\Http\Application\Controller
     final public function generateLink(string $routeName, array $params = [], $is_absolute = false, $default = 'javascript:;'): string
     {
         try {
-            $route_path = $this->getRouter()->generate($routeName, $params);
-            $script_path = dirname($this->getRequest()->getServerParams()['SCRIPT_NAME']);
-            if (strlen($script_path) <= 1) {
-                $script_path = '';
+            $route_path = $this->getRouter()->generate($routeName, $params);            
+            $script_path = $this->getRequest()->getServerParams()['SCRIPT_TARGET_PATH'] ?? null;
+            if (!isset($script_path)) {
+                $script_path = dirname($this->getRequest()->getServerParams()['SCRIPT_NAME']);
+                if ($script_path == '\\' || $script_path == '/') {
+                    $script_path = '';
+                }
             }
-            $app_path = $this->getAttribute('pipe', '');
-            $pattern = $script_path . $app_path . $route_path;
+            $pattern = $script_path . $route_path;
             if (!$is_absolute) {
                 return $pattern;
             }
@@ -117,35 +118,6 @@ class Controller extends \codesaur\Http\Application\Controller
         }
 
         return '{' . $key . '}';
-    }
-    
-    public function language(string $code)
-    {
-        $script_path = dirname($this->getRequest()->getServerParams()['SCRIPT_NAME']);
-        if (strlen($script_path) <= 1) {
-            $script_path = '';
-        }                
-        $app_path = $this->getAttribute('pipe', '');
-        $pattern = $script_path . $app_path;
-        $home = (string)$this->getRequest()->getUri()->withPath($pattern);
-        $referer = $this->getRequest()->getServerParams()['HTTP_REFERER'];
-        $location = strpos($referer, $home) !== false ? $referer : $home;        
-        $language = $this->getAttribute('localization')['language'];
-        if (isset($language[$code])) {
-            $_SESSION[$this->getSessionLangCodeIndex()] = $code;
-            
-            if ($this->isUserAuthorized()) {
-                $account_id = $this->getUser()->getAccount()['id'];
-                $payload = array(
-                    'record' => array('code' => $code),
-                    'condition' => array('WHERE' => "id=$account_id")
-                );
-                $this->indoput('/record?model=' . Accounts::class, $payload);
-            }
-        }
-        
-        header("Location: $location", false, 302);
-        exit;
     }
     
     public function twigTemplate(string $template, array $vars = [])
@@ -195,16 +167,6 @@ class Controller extends \codesaur\Http\Application\Controller
         }
         
         $this->indo('/log', $payload);
-    }
-    
-    final public function getSessionJWTIndex()
-    {
-        return 'indo/jwt' . $this->getAttribute('pipe', '');
-    }
-    
-    final public function getSessionLangCodeIndex()
-    {
-        return 'language/code' . $this->getAttribute('pipe', '');
     }
     
     public function respondJSON(array $res)

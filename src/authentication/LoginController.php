@@ -40,7 +40,8 @@ class LoginController extends \Raptor\Controller
     public function entry()
     {
         try {
-            $sess_jwt_key = $this->getSessionJWTIndex();
+            $sess_jwt_key = __NAMESPACE__ . '\\indo\\jwt';
+            
             $payload = $this->getParsedBody();
             $username = $payload['username'];
             $password = $payload['password'];
@@ -68,7 +69,7 @@ class LoginController extends \Raptor\Controller
                         array('record' => array('code' => $this->getLanguageCode()), 'condition' => array('WHERE' => 'id=' . $response['account']['id'])));
             } elseif ($response['account']['code'] != $this->getLanguageCode()) {
                 if (isset($this->getAttribute('localization')['language'][$response['account']['code']])) {
-                    $_SESSION[$this->getSessionLangCodeIndex()] = $response['account']['code'];
+                    $_SESSION[__NAMESPACE__ . '\\language\\code'] = $response['account']['code'];
                 }
             }
         } catch (Exception $e) {
@@ -94,7 +95,7 @@ class LoginController extends \Raptor\Controller
 
     public function logout()
     {
-        $sess_jwt_key = $this->getSessionJWTIndex();
+        $sess_jwt_key = __NAMESPACE__ . '\\indo\\jwt';
         if (isset($_SESSION[$sess_jwt_key])) {
             $account = $this->getUser()->getAccount();
             $message = "Хэрэглэгч {$account['first_name']} {$account['last_name']} системээс гарлаа.";
@@ -295,7 +296,7 @@ class LoginController extends \Raptor\Controller
             $code = $forgot['code'];
             if ($code != $this->getLanguageCode()) {
                 if (isset($this->getAttribute('localization')['language'][$code])) {
-                    $_SESSION[$this->getSessionLangCodeIndex()] = $code;
+                    $_SESSION[__NAMESPACE__ . '\\language\\code'] = $code;
                     $link = $this->generateLink('login') . "?forgot=$use_id";
                     header("Location: $link", false, 302);
                     exit;
@@ -409,12 +410,42 @@ class LoginController extends \Raptor\Controller
             'account_id' => (int)$account_id);
         $jwt_result = $this->indopost('/auth/organization', $jwt_info);
         if (!empty($jwt_result['jwt'])) {
-            $_SESSION[$this->getSessionJWTIndex()] = $jwt_result['jwt'];
+            $_SESSION[__NAMESPACE__ . '\\indo\\jwt'] = $jwt_result['jwt'];
             $message = "Хэрэглэгч {$this->getUser()->getAccount()['first_name']} {$this->getUser()->getAccount()['last_name']} нэвтэрсэн байгууллага сонгов.";
             $context = array('reason' => 'login-to-organization', 'enter' => $id, 'leave' => $current_org_id, 'jwt' => $jwt_result['jwt']);
             $this->indolog('dashboard', LogLevel::NOTICE, $message, $context);
         }
 
         $this->redirectTo('home');
+    }
+    
+    public function language(string $code)
+    {
+        $script_path = $this->getRequest()->getServerParams()['SCRIPT_TARGET_PATH'] ?? null;
+        if (!isset($script_path)) {
+            $script_path = dirname($this->getRequest()->getServerParams()['SCRIPT_NAME']);
+            if ($script_path == '\\' || $script_path == '/') {
+                $script_path = '';
+            }
+        }
+        $home = (string)$this->getRequest()->getUri()->withPath($script_path);
+        $referer = $this->getRequest()->getServerParams()['HTTP_REFERER'];
+        $location = strpos($referer, $home) !== false ? $referer : $home;        
+        $language = $this->getAttribute('localization')['language'];
+        if (isset($language[$code])) {
+            $_SESSION[__NAMESPACE__ . '\\language\\code'] = $code;
+            
+            if ($this->isUserAuthorized()) {
+                $account_id = $this->getUser()->getAccount()['id'];
+                $payload = array(
+                    'record' => array('code' => $code),
+                    'condition' => array('WHERE' => "id=$account_id")
+                );
+                $this->indoput('/record?model=' . Accounts::class, $payload);
+            }
+        }
+        
+        header("Location: $location", false, 302);
+        exit;
     }
 }
