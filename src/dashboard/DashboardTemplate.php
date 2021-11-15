@@ -24,14 +24,15 @@ class DashboardTemplate extends TwigTemplate
 
     public function addContent($content)
     {
-        $contents = $this->get('content');
-        if (isset($contents)) {
+        if ($this->has('content')) { 
+            $contents = $this->get('content');
             if (!is_array($contents)) {
                 $contents = array($contents);
             }
         } else {
             $contents = array();
         }
+        
         $contents[] = $content;
         $this->set('content', $contents);
     }
@@ -42,7 +43,9 @@ class DashboardTemplate extends TwigTemplate
             $this->addContent($content);
         }
         
-        $this->set('content', $this->stringify($this->get('content')));
+        if ($this->has('content')) {
+            $this->set('content', $this->stringify($this->get('content')));
+        }
         
         parent::render();
     }

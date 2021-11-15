@@ -33,7 +33,8 @@ class JWTAuthMiddleware implements MiddlewareInterface
             ob_end_clean();
             $indo_buffer = false;
             
-            if (!is_array($response['rbac'])
+            if (empty($response['rbac'])
+                    || !is_array($response['rbac'])
                     || empty($response['account']['id'])
                     || !isset($response['organizations'][0]['id'])
             ) {
