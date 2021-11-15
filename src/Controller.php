@@ -71,6 +71,11 @@ class Controller extends \codesaur\Http\Application\Controller
         return $this->getUser() instanceof RBACUserInterface;
     }
     
+    final public function isUserCan(string $permission): bool
+    {
+        return $this->isUserAuthorized() && $this->getUser()->can($permission);
+    }
+    
     final public function generateLink(string $routeName, array $params = [], $is_absolute = false, $default = 'javascript:;'): string
     {
         try {

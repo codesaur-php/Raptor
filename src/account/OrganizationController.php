@@ -13,9 +13,7 @@ class OrganizationController extends DashboardController
     public function view(int $id)
     {
         try {
-            if (!$this->isUserAuthorized()
-                    || !$this->getUser()->can('system_org_retrieve')
-            ) {
+            if (!$this->isUserCan('system_org_retrieve')) {
                 throw new Exception($this->text('system-no-permission'));
             }
             

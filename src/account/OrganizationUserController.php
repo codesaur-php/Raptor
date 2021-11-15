@@ -18,9 +18,7 @@ class OrganizationUserController extends DashboardController
     public function set(int $account_id)
     {
         if ($this->getRequest()->getMethod() == 'POST') {
-            if (!$this->isUserAuthorized()
-                    || !$this->getUser()->can('system_account_organization_set')
-            ) {
+            if (!$this->isUserCan('system_account_organization_set')) {
                 return $this->respondJSON(array(
                     'status'  => 'error',
                     'title'   => $this->text('error'),
@@ -76,9 +74,7 @@ class OrganizationUserController extends DashboardController
                 'message' => $this->text('record-update-success'),
                 'href'    => $this->generateLink('accounts')
             ));
-        } elseif (!$this->isUserAuthorized()
-                    || !$this->getUser()->can('system_account_organization_set')
-        ) {
+        } elseif (!$this->isUserCan('system_account_organization_set')) {
             die($this->errorNoPermissionModal());
         } else {
             $sql =  'SELECT ou.organization_id as id ' .

@@ -11,5 +11,6 @@ class Application extends \codesaur\Http\Application\Application
         $this->use(new Dashboard\BaseRouter());
         $this->use(new Authentication\LoginRouter());
         $this->use(new Account\AccountRouter());
+        $this->use(new Log\LogsRouter());
     }
 }

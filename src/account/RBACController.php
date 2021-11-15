@@ -15,9 +15,7 @@ class RBACController extends DashboardController
 {
     public function viewRole()
     {
-        if (!$this->isUserAuthorized()
-                    || !$this->getUser()->can('system_rbac')
-        ) {
+        if (!$this->isUserCan('system_rbac')) {
             die($this->errorNoPermissionModal());
         }
         
@@ -34,9 +32,7 @@ class RBACController extends DashboardController
     public function setUserRole(int $id)
     {
         if ($this->getRequest()->getMethod() == 'POST') {
-            if (!$this->isUserAuthorized()
-                    || !$this->getUser()->can('system_rbac')
-            ) {
+            if (!$this->isUserCan('system_rbac')) {
                 return $this->respondJSON(array(
                     'status'  => 'error',
                     'title'   => $this->text('error'),
@@ -92,9 +88,7 @@ class RBACController extends DashboardController
                 'message' => $this->text('record-update-success'),
                 'href'    => $this->generateLink('accounts')
             ));
-        } elseif (!$this->isUserAuthorized()
-                    || !$this->getUser()->can('system_rbac')
-        ) {
+        } elseif (!$this->isUserCan('system_rbac')) {
             die($this->errorNoPermissionModal());
         } else {
             $vars = array('account' => $this->indo('/record?model=' . Accounts::class, array('id' => $id))['record'] ?? array());

@@ -1,0 +1,43 @@
+{% macro formGroupRow(label, content, class, col, accounts) %}
+    {% import _self as self %}
+    
+    {% if content is iterable %}
+        <hr><strong>{{ self.formGroupRow(label|upper, '', 'col-6 text-warning text-right', 6, accounts) }}</strong>
+        {% for key,value in content %}
+            {{ self.formGroupRow(key, value, 'col-3 text-primary text-right', 9, accounts) }}
+        {% endfor %}
+        <hr>
+    {% else %}
+        <div class="form-group row">
+            <div class="{{ class }}">{{ label }}</div>
+            <div class="col-{{ col }}">
+                {% if label == 'url' %}
+                    {{ content }}
+                {% elseif label == 'created_by' %}
+                    {{ accounts[content] ?? content }}
+                {% else %}
+                    {{ content }}
+                {% endif %}
+            </div>
+        </div>
+    {% endif %}
+    
+{% endmacro %}
+
+{% from _self import formGroupRow %}
+
+<div class="modal-dialog modal-xl modal-dialog-centered" role="document">
+    <div class="modal-content">
+        <div class="modal-header modal-header-info">
+            <h5 class="modal-title text-uppercase" id="MyModalLabel">{{ detailed }} ({{ table }}/{{ id }})</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ close }}"></button>
+        </div>
+        <div class="modal-body">
+            <div style="height:400px;overflow-y:auto;overflow-x:hidden;">
+            {% for key,value in data %}
+                {{ formGroupRow(key, value, 'col-3 text-danger text-right', 9, accounts) }}
+            {% endfor %}          
+            </div>
+        </div>
+    </div>
+</div>

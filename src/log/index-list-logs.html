@@ -1,0 +1,63 @@
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center mb-4 mt-2">
+    <h3 class="text-secondary text-uppercase" style="padding-right:10px"><i class="bi bi-list"></i>  {{ 'logs'|text }}</h3>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <button class="btn btn-outline-dark shadow-sm" onclick="window.history.go(-1);return false;">{{ 'back'|text }}</button>
+        </div>
+    </div>
+</div>
+<ul class="nav nav-tabs mb-4" role="tablist">
+{% for name in names %}
+    <li class="nav-item">
+        <a class="nav-link{% if name == 'dashboard' %} active{% endif %}" role="tab" data-bs-toggle="tab" href="#log_{{ name }}">{{ name|upper }}</a>
+    </li>
+{% endfor %}
+</ul>
+<div class="tab-content">
+{% for name in names %}
+    <div class="tab-pane{% if name == 'dashboard' %} active{% endif %}" id="log_{{ name }}" style="width:100%;height:78vh;min-height:400px;overflow-y:auto;overflow-x:hidden;">
+        <ul class="list-group">
+        {% for item in logs[name] %}
+            {% if item['level'] == 'notice' %}
+                {% set type='light' %}
+            {%  elseif item['level'] == 'info' %}
+                {% set type='primary' %}
+            {%  elseif item['level'] == 'error' %}
+                {% set type='danger' %}
+            {%  elseif item['level'] == 'warning' %}
+                {% set type='warning' %}
+            {%  elseif item['level'] == 'alert' %}
+                {% set type='info' %}
+            {%  elseif item['level'] == 'debug' %}
+                {% set type='secondary' %}
+            {%  else %}
+                {% set type='dark' %}
+            {% endif %}
+
+            {% set info_uri=('logs-view'|link) ~ '?table=' ~ name ~ '&id=' ~ item['id'] %}
+
+            <li class="list-group-item list-group-item-action list-group-item-{{ type }}">
+                <span class="float-left pr-2">[{{ item['id'] }}]</span>
+                <a data-bs-target="#dashboard-modal" data-bs-toggle="modal" class="float-left" href="{{ info_uri|e }}">{{ item['created_at'] }}</a> 
+                <span class="pl-2 pr-2">
+                {% if item['message'] is not defined or item['message'] is empty %}
+                    <span class="text-danger">{{ item['context']['reason'] }}</span> {{ item['context']['server_request']['uri']|e }}
+                {% elseif '</a>' in item['message'] %}
+                    {{ item['message'] }}
+                {% else %}
+                    {{ item['message']|e }}
+                {% endif %}
+                </span>
+                {% if item['created_by'] is defined and accounts[item['created_by']] is defined %}
+                    {% set account = accounts[item['created_by']] %}
+                    <span class="text-muted small"><u>{{ item['reason'] }} by {{ account|replace({ (' =>' ~ account|split(' =>')|last): '' }) }}</u></span>
+                {% endif %}
+                {% if item['info']['path'] is defined %}
+                <a target="_blank" href="{{ item['context']['path'] }}" class="float-right">{{ item['context']['path']|replace({ ('.' ~ item['context']['path']|split('.')|last): '' }) }}</a>
+                {% endif %}
+            </li>
+        {% endfor %}
+        </ul>
+    </div>
+ {% endfor %}
+</div>

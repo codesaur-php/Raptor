@@ -26,9 +26,7 @@ class AccountController extends DashboardController
     public function index()
     {
         $template = $this->twigDashboard($this->text('accounts'));
-        if (!$this->isUserAuthorized()
-                || !$this->getUser()->can('system_account_index')
-        ) {
+        if (!$this->isUserCan('system_account_index')) {
             return $template->alertNoPermission();
         }
         
@@ -74,9 +72,7 @@ class AccountController extends DashboardController
     public function insert()
     {
         try {
-            if (!$this->isUserAuthorized()
-                    || !$this->getUser()->can('system_account_insert')
-            ) {
+            if (!$this->isUserCan('system_account_insert')) {
                 throw new Exception($this->text('system-no-permission'));
             }
             
@@ -431,8 +427,7 @@ class AccountController extends DashboardController
     public function approve()
     {
         try {
-            if (!$this->isUserAuthorized()
-                    || !$this->getUser()->can('system_account_insert')) {
+            if (!$this->isUserCan('system_account_insert')) {
                 throw new Exception('No permission for an action [approval]!');
             }
             
@@ -532,8 +527,7 @@ class AccountController extends DashboardController
     public function delete()
     {
         try {
-            if (!$this->isUserAuthorized()
-                    || !$this->getUser()->can('system_account_delete')) {
+            if (!$this->isUserCan('system_account_delete')) {
                 throw new Exception('No permission for an action [delete]!');
             }
             
@@ -574,8 +568,7 @@ class AccountController extends DashboardController
     {
         $modal = dirname(__FILE__) . "/$table-index-modal.html";
         if (!file_exists($modal)
-                || !$this->isUserAuthorized()
-                || !$this->getUser()->can('system_account_index')
+                || !$this->isUserCan('system_account_index')
                 || !in_array($table, array('forgot', 'newbie'))
         ) {
             die($this->errorNoPermissionModal());
