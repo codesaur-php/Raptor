@@ -41,8 +41,8 @@ class JWTAuthMiddleware implements MiddlewareInterface
                 throw new Exception('Invalid RBAC user information!');
             }
             
-            return $handler->handle($request->withAttribute('user',
-                    new User($jwt, $response['rbac'], $response['account'], $response['organizations'])));
+            $request = $request->withAttribute('user',
+                    new User($jwt, $response['rbac'], $response['account'], $response['organizations']));
         } catch (Throwable $th) {
             if ($indo_buffer ?? false) {
                 ob_end_clean();
@@ -78,8 +78,8 @@ class JWTAuthMiddleware implements MiddlewareInterface
                 header("Location: $loginUri", false, 302);
                 exit;
             }
-
-            return $handler->handle($request);
         }
+        
+        return $handler->handle($request);
     }
 }
