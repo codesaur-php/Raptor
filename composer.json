@@ -26,7 +26,8 @@
             "Raptor\\Authentication\\": "src/authentication/",
             "Raptor\\Dashboard\\": "src/dashboard/",
             "Raptor\\File\\": "src/file/",
-            "Raptor\\Account\\": "src/account/"
+            "Raptor\\Account\\": "src/account/",
+            "Raptor\\Log\\": "src/log/"
         }
     },
     "license": "MIT",
