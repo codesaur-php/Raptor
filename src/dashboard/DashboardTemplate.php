@@ -24,7 +24,7 @@ class DashboardTemplate extends TwigTemplate
 
     public function addContent($content)
     {
-        if ($this->has('content')) { 
+        if ($this->has('content')) {
             $contents = $this->get('content');
             if (!is_array($contents)) {
                 $contents = array($contents);
