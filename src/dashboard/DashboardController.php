@@ -44,22 +44,6 @@ class DashboardController extends \Raptor\Controller
             $accounts[$rows['id']] = $rows['username'] . ' » ' . $rows['first_name'] . ' ' . $rows['last_name'] . ' (' . $rows['email'] . ')';
         }        
         return $accounts;
-    }    
-    
-    public function getLastLog(int $id, $reason, $level, $table = 'dashboard')
-    {
-        $response = $this->indopost('/log/select', array(
-            'table' => $table,
-            'ORDER BY' => 'id Desc LIMIT 1',
-            'WHERE' => "created_by=$id",
-            'level'      => $level,            
-        ));
-        
-        if (isset($response['data'])) {
-            return end($response['data']['rows']);
-        }
-        
-        return null;
     }
     
     function getSideMenu()
