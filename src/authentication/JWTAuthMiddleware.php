@@ -43,7 +43,7 @@ class JWTAuthMiddleware implements MiddlewareInterface
             return $handler->handle($request->withAttribute('user',
                     new User($jwt, $response['rbac'], $response['account'], $response['organizations'])));
         } catch (Throwable $th) {
-            if ($indo_buffer) {
+            if ($indo_buffer ?? false) {
                 ob_end_clean();
             }
             
