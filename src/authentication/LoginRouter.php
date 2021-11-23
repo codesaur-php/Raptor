@@ -14,8 +14,7 @@ class LoginRouter extends Router
         $this->POST('/login/signup', [LoginController::class, 'signup'])->name('signup');
         $this->GET('/login/language/{language}', [LoginController::class, 'language'])->name('language');
         $this->POST('/login/set/password', [LoginController::class, 'setPassword'])->name('login-set-password');
-        $this->GET('/login/reset/password', [LoginController::class, 'resetPassword'])->name('login-reset-password');
         $this->POST('/login/request/password', [LoginController::class, 'requestPassword'])->name('login-request-password');
-        $this->GET('/login/organization/{int:id}', [LoginController::class, 'selectOrganization'])->name('login-select-organization');
+        $this->GET('/login/organization/{uint:id}', [LoginController::class, 'selectOrganization'])->name('login-select-organization');
     }
 }

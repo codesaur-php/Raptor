@@ -2,6 +2,8 @@
 
 namespace Raptor\Dashboard;
 
+use Exception;
+
 use Twig\TwigFilter;
 
 use codesaur\RBAC\Accounts;
@@ -38,29 +40,30 @@ class DashboardController extends \Raptor\Controller
     
     public function getAccounts(): array
     {
-        $rows = $this->indo('/record/rows?model=' . Accounts::class)['rows'] ?? array();
         $accounts = array();
-        foreach ($rows as $rows) {
-            $accounts[$rows['id']] = $rows['username'] . ' » ' . $rows['first_name'] . ' ' . $rows['last_name'] . ' (' . $rows['email'] . ')';
-        }        
+        try {
+            $rows = $this->indo('/record/rows?model=' . Accounts::class);
+            foreach ($rows as $rows) {
+                $accounts[$rows['id']] = $rows['username'] . ' » ' . $rows['first_name'] . ' ' . $rows['last_name'] . ' (' . $rows['email'] . ')';
+            }
+        } catch (Exception $e) {
+            $this->errorLog($e);
+        }
         return $accounts;
     }
     
     function getSideMenu()
     {
-        $sidemenu_rows = $this->indoget('/account/get/menu');
-        if (isset($sidemenu_rows['error'])) {
-            $error = $sidemenu_rows['error'];
-            if ($error['code'] == 404 && $error['message'] == 'Menu not defined') {
-                $this->insertSideMenuDefault();
-                $sidemenu_rows = $this->indoget('/account/get/menu');
-            }
-            if (isset($sidemenu_rows['error']['code'])) {
-                $sidemenu_rows = array();
+        try {
+            $menu = $this->indoget('/account/get/menu');            
+        } catch (Exception $e) {
+            if ($e->getCode() == 404 && $e->getMessage() == 'Menu not defined') {
+                $menu = $this->getDefaultMenu();
             }
         }
+        
         $sidemenu = array();
-        foreach ($sidemenu_rows as $row) {
+        foreach ($menu as $row) {
             $title = $row['content']['title'][$this->getLanguageCode()];
             unset($row['content']);
             if ($row['parent_id'] == 0) {
@@ -81,66 +84,71 @@ class DashboardController extends \Raptor\Controller
         return $sidemenu;
     }
     
-    function insertSideMenuDefault()
+    function getDefaultMenu()
     {
-        $pattern = '/record?model=' . MenuModel::class;
-        $main = $this->indopost($pattern, array('content' => array('mn' => array('title' => 'Үндсэн'), 'en' => array('title' => 'Main')), 'record' => array('position' => '10')));
-        if (isset($main['id'])) {
+        try {
+            $pattern = '/record?model=' . MenuModel::class;
+
+            $main_id = $this->indopost($pattern, array('content' => array('mn' => array('title' => 'Үндсэн'), 'en' => array('title' => 'Main')), 'record' => array('position' => '10')));
             $this->indopost($pattern, array(
                 'content' => array('mn' => array('title' => 'Хянах самбар'), 'en' => array('title' => 'Dashboard')),
-                'record' => array('parent_id' => $main['id'], 'position' => '11', 'icon' => 'bi bi-easel', 'href' => $this->generateLink('home'))
+                'record' => array('parent_id' => $main_id, 'position' => '11', 'icon' => 'bi bi-easel', 'href' => $this->generateLink('home'))
             ));
             $script_path = dirname($this->getRequest()->getServerParams()['SCRIPT_NAME']);
             $path = (strlen($script_path) > 1 ? $script_path : '');
             $this->indopost($pattern, array(
-                'content' => array('mn' => array('title' => 'Хостны эхлэл'), 'en' => array('title' => 'Host home')),
-                'record' => array('parent_id' => $main['id'], 'position' => '12', 'icon' => 'bi bi-house-door', 'href' => (string)$this->getRequest()->getUri()->withPath($path) . '" target="__blank')
+                'content' => array('mn' => array('title' => 'Нүүр хуудас'), 'en' => array('title' => 'Visit Home')),
+                'record' => array('parent_id' => $main_id, 'position' => '12', 'icon' => 'bi bi-house-door', 'href' => (string)$this->getRequest()->getUri()->withPath($path) . '" target="__blank')
             ));
-        }
-        $contents = $this->indopost($pattern, array('content' => array('mn' => array('title' => 'Агуулгууд'), 'en' => array('title' => 'Contents')), 'record' => array('position' => '200')));
-        if (isset($contents['id'])) {
+
+            $contents_id = $this->indopost($pattern, array('content' => array('mn' => array('title' => 'Агуулгууд'), 'en' => array('title' => 'Contents')), 'record' => array('position' => '200')));
             $this->indopost($pattern, array(
                 'content' => array('mn' => array('title' => 'Хэл'), 'en' => array('title' => 'Languages')),
-                'record' => array('parent_id' => $contents['id'], 'position' => '280', 'icon' => 'bi bi-flag-fill', 'href' => $this->generateLink('languages'))
+                'record' => array('parent_id' => $contents_id, 'position' => '280', 'icon' => 'bi bi-flag-fill', 'href' => $this->generateLink('languages'))
             ));
             $this->indopost($pattern, array(
                 'content' => array('mn' => array('title' => 'Орчуулга'), 'en' => array('title' => 'Translations')),
-                'record' => array('parent_id' => $contents['id'], 'position' => '285', 'icon' => 'bi bi-translate', 'href' => $this->generateLink('translations'))
+                'record' => array('parent_id' => $contents_id, 'position' => '285', 'icon' => 'bi bi-translate', 'href' => $this->generateLink('translations'))
             ));
             $this->indopost($pattern, array(
                 'content' => array('mn' => array('title' => 'Баримт бичиг загвар'), 'en' => array('title' => 'Document templates')),
-                'record' => array('parent_id' => $contents['id'], 'position' => '290', 'icon' => 'bi bi-layout-wtf', 'href' => $this->generateLink('document-templates'))
+                'record' => array('parent_id' => $contents_id, 'position' => '290', 'icon' => 'bi bi-layout-wtf', 'href' => $this->generateLink('document-templates'))
             ));
-        }
-        $system = $this->indopost($pattern, array('content' => array('mn' => array('title' => 'Систем'), 'en' => array('title' => 'System')), 'record' => array('position' => '300')));
-        if (isset($system['id'])) {
+            
+            $system_id = $this->indopost($pattern, array('content' => array('mn' => array('title' => 'Систем'), 'en' => array('title' => 'System')), 'record' => array('position' => '300')));
             $this->indopost($pattern, array(
                 'content' => array('mn' => array('title' => 'Хэрэглэгчид'), 'en' => array('title' => 'Accounts')),
-                'record' => array('parent_id' => $system['id'], 'position' => '310', 'icon' => 'bi bi-people-fill', 'href' => $this->generateLink('accounts'))
+                'record' => array('parent_id' => $system_id, 'position' => '310', 'icon' => 'bi bi-people-fill', 'href' => $this->generateLink('accounts'))
             ));
             $this->indopost($pattern, array(
-                'content' => array('mn' => array('title' => 'Байгууллага'), 'en' => array('title' => 'Organizations')),
-                'record' => array('parent_id' => $system['id'], 'position' => '320', 'icon' => 'bi bi-bank2', 'href' => $this->generateLink('organizations'))
+                'content' => array('mn' => array('title' => 'Байгууллагууд'), 'en' => array('title' => 'Organizations')),
+                'record' => array('parent_id' => $system_id, 'position' => '320', 'icon' => 'bi bi-building', 'href' => $this->generateLink('organizations'))
             ));
             $this->indopost($pattern, array(
                 'content' => array('mn' => array('title' => 'Тохируулгууд'), 'en' => array('title' => 'Settings')),
-                'record' => array('parent_id' => $system['id'], 'position' => '330', 'icon' => 'bi bi-gear-wide-connected', 'href' => $this->generateLink('settings'))
+                'record' => array('parent_id' => $system_id, 'position' => '330', 'icon' => 'bi bi-gear-wide-connected', 'href' => $this->generateLink('settings'))
             ));
             $this->indopost($pattern, array(
                 'content' => array('mn' => array('title' => 'Хандалтын протокол'), 'en' => array('title' => 'Access logs')),
-                'record' => array('parent_id' => $system['id'], 'position' => '340', 'icon' => 'bi bi-list-stars', 'href' => $this->generateLink('logs'))
+                'record' => array('parent_id' => $system_id, 'position' => '340', 'icon' => 'bi bi-list-stars', 'href' => $this->generateLink('logs'))
             ));
+            
+            return $this->indoget('/account/get/menu');
+        } catch (Exception $e) {
+            $this->errorLog($e);
+            
+            return array();
         }
     }
     
-    public function errorNoPermissionModal()
+    public function errorNoPermissionModal($content)
     {
         return
         '<div class="modal-dialog modal-dialog-centered" role="document">
             <div class="modal-content">
                 <div class="modal-body">
                     <div class="alert alert-danger shadow-sm fade mt-3 show" role="alert">
-                        <i class="bi bi-shield-fill-exclamation" style="margin-right:6px"></i>' . $this->text('system-no-permission')
+                        <i class="bi bi-shield-fill-exclamation" style="margin-right:6px"></i> ' . $content
                 . '</div>
                 </div>
                 <div class="modal-footer modal-footer-solid">

@@ -3,6 +3,7 @@
 namespace Raptor;
 
 use Throwable;
+use Exception;
 
 use Twig\TwigFilter;
 
@@ -19,41 +20,29 @@ class Controller extends \codesaur\Http\Application\Controller
     public function indo(string $pattern, array $payload = array(), string $method = 'INTERNAL', bool $assoc = true)
     {
         try {
-            $indo_buffer = true;
             ob_start();
             $jwt = $this->isUserAuthorized() ? $this->getUser()->getToken() : null;
-            $indo_request = new InternalRequest($method, $pattern, $payload, $jwt);
-            $this->getAttribute('indo')->handle($indo_request);
+            $request = new InternalRequest($method, $pattern, $payload, $jwt);
+            $this->getAttribute('indo')->handle($request);
             $response = json_decode(ob_get_contents(), $assoc);
             ob_end_clean();
-            $indo_buffer = false;
-        } catch (Throwable $th) {
-            if ($indo_buffer) {
-                ob_end_clean();
-            }
-            $response = array('error' => array('code' => $th->getCode(), 'message' => $th->getMessage()));
+        } catch (Throwable $throwable) {
+            ob_end_clean();
         }
-        return $response;
-    }
-    
-    final public function indoget(string $pattern, $payload = [], bool $assoc = true)
-    {
-        return $this->indo($pattern, $payload, 'GET', $assoc);
-    }
-    
-    final public function indopost(string $pattern, $payload = [], bool $assoc = true)
-    {
-        return $this->indo($pattern, $payload, 'POST', $assoc);
-    }
 
-    final public function indoput(string $pattern, $payload = [], bool $assoc = true)
-    {
-        return $this->indo($pattern, $payload, 'PUT', $assoc);
-    }
-    
-    final public function indodelete(string $pattern, $payload = [], bool $assoc = true)
-    {
-        return $this->indo($pattern, $payload, 'DELETE', $assoc);
+        if (isset($throwable)) {
+            if ($throwable instanceof Exception) {
+                throw $throwable;
+            } else {
+                throw new Exception($throwable->getMessage(), $throwable->getCode());
+            }
+        } elseif (isset($response['error']['code'])
+                && isset($response['error']['message'])
+        ) {
+            throw new Exception($response['error']['message'], $response['error']['code']);
+        }
+        
+        return $response;
     }
     
     final public function getRouter(): ?RouterInterface
@@ -92,19 +81,11 @@ class Controller extends \codesaur\Http\Application\Controller
                 return $pattern;
             }
             return (string)$this->getRequest()->getUri()->withPath($pattern);
-        } catch (Throwable $th) {
-            if ($this->isDevelopment()) {
-                error_log($th->getMessage());
-            }
+        } catch (Exception $e) {
+            $this->errorLog($e);
+
             return $default;
         }
-    }
-    
-    public function redirectTo(string $routeName, array $params = [])
-    {
-        $link = $this->generateLink($routeName, $params);
-        header("Location: $link", false, 302);
-        exit;
     }
 
     final public function getLanguageCode()
@@ -143,37 +124,6 @@ class Controller extends \codesaur\Http\Application\Controller
         return $twigTemplate;
     }
     
-    public function indolog(string $table, string $level, $message, array $context, $created_by = null)
-    {
-        $context['server_request'] = array(
-            'code' => $this->getLanguageCode(),
-            'method' => $this->getRequest()->getMethod(),
-            'uri' => (string)$this->getRequest()->getUri(),
-            'remote_addr' => (new Server())->getRemoteAddr()
-        );
-        
-        $payload = array(
-            'table' => $table,
-            'level' => $level,
-            'message' => $message,
-            'context' => json_encode($context)
-        );
-        
-        try {
-            if (isset($created_by)) {
-                $payload['created_by'] = $created_by;
-            } elseif ($this->isUserAuthorized()) {
-                $payload['created_by'] = $this->getUser()->getAccount()['id'];
-            }
-        } catch (Throwable $th) {
-            if ($this->isDevelopment()) {
-                error_log($th->getMessage());
-            }
-        }
-        
-        $this->indo('/log', $payload);
-    }
-    
     public function respondJSON(array $res)
     {
         if (!headers_sent()) {
@@ -181,5 +131,70 @@ class Controller extends \codesaur\Http\Application\Controller
         }
         
         echo json_encode($res);
+    }
+    
+    public function redirectTo(string $routeName, array $params = [])
+    {
+        $link = $this->generateLink($routeName, $params);
+        header("Location: $link", false, 302);
+        exit;
+    }
+    
+    final public function indoget(string $pattern, $payload = [], bool $assoc = true)
+    {
+        return $this->indo($pattern, $payload, 'GET', $assoc);
+    }
+    
+    final public function indopost(string $pattern, $payload = [], bool $assoc = true)
+    {
+        return $this->indo($pattern, $payload, 'POST', $assoc);
+    }
+
+    final public function indoput(string $pattern, $payload = [], bool $assoc = true)
+    {
+        return $this->indo($pattern, $payload, 'PUT', $assoc);
+    }
+    
+    final public function indodelete(string $pattern, $payload = [], bool $assoc = true)
+    {
+        return $this->indo($pattern, $payload, 'DELETE', $assoc);
+    }
+    
+    final public function indolog(string $table, string $level, $message, array $context = [], $created_by = null)
+    {
+        try {
+            $context['server_request'] = array(
+                'code' => $this->getLanguageCode(),
+                'method' => $this->getRequest()->getMethod(),
+                'uri' => (string)$this->getRequest()->getUri(),
+                'remote_addr' => (new Server())->getRemoteAddr()
+            );
+
+            $payload = array(
+                'table' => $table,
+                'level' => $level,
+                'message' => $message,
+                'context' => json_encode($context)
+            );
+            
+            if (isset($created_by)) {
+                $payload['created_by'] = $created_by;
+            } elseif ($this->isUserAuthorized()) {
+                $payload['created_by'] = $this->getUser()->getAccount()['id'];
+            }
+            
+            $this->indo('/log', $payload);
+        } catch (Exception $e) {
+            $this->errorLog($e);
+        }
+    }
+    
+    final function errorLog(Throwable $e)
+    {
+        if (!$this->isDevelopment()) {
+            return;
+        }
+        
+        error_log($e->getMessage());
     }
 }

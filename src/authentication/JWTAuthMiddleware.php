@@ -16,6 +16,35 @@ use Raptor\Authentication\User;
 
 class JWTAuthMiddleware implements MiddlewareInterface
 {
+    public function retrieveIndoUser(ServerRequestInterface $request, $jwt): User
+    {
+        try {
+            ob_start();
+            $request->getAttribute('indo')->handle(
+                    new InternalRequest('POST', '/auth/jwt', array('jwt' => $jwt)));
+            $response = json_decode(ob_get_contents(), true);
+            ob_end_clean();
+        } catch (Throwable $th) {
+            ob_end_clean();
+            
+            $response = array('error' => array('code' => $th->getCode(), 'message' => $th->getMessage()));
+        }
+        
+        if (isset($response['error']['code'])
+                && isset($response['error']['message'])
+        ) {
+            throw new Exception($response['error']['message'], $response['error']['code']);
+        } elseif (empty($response['rbac'])
+                || !is_array($response['rbac'])
+                || empty($response['account']['id'])
+                || !isset($response['organizations'][0]['id'])
+        ) {
+            throw new Exception('Invalid RBAC user information!');
+        }
+        
+        return new User($jwt, $response['rbac'], $response['account'], $response['organizations']);
+    }
+    
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
         $sess_jwt_key = __NAMESPACE__ . '\\indo\\jwt';
@@ -23,29 +52,14 @@ class JWTAuthMiddleware implements MiddlewareInterface
             if (empty($_SESSION[$sess_jwt_key])) {
                 throw new Exception('There is no JWT!');
             }
-            
-            $jwt = $_SESSION[$sess_jwt_key];
-            $indo_buffer = true;
-            ob_start();
-            $indo_request = new InternalRequest('POST', '/auth/jwt', array('jwt' => $jwt));
-            $request->getAttribute('indo')->handle($indo_request);
-            $response = json_decode(ob_get_contents(), true);
-            ob_end_clean();
-            $indo_buffer = false;
-            
-            if (empty($response['rbac'])
-                    || !is_array($response['rbac'])
-                    || empty($response['account']['id'])
-                    || !isset($response['organizations'][0]['id'])
+
+            $user = $this->retrieveIndoUser($request, $_SESSION[$sess_jwt_key]);
+        } catch (Exception $e) {
+            if ($e->getCode() >= 5000
+                    && defined('CODESAUR_DEVELOPMENT')
+                    && CODESAUR_DEVELOPMENT
             ) {
-                throw new Exception('Invalid RBAC user information!');
-            }
-            
-            $request = $request->withAttribute('user',
-                    new User($jwt, $response['rbac'], $response['account'], $response['organizations']));
-        } catch (Throwable $th) {
-            if ($indo_buffer ?? false) {
-                ob_end_clean();
+                error_log($e->getMessage());
             }
             
             if (isset($_SESSION[$sess_jwt_key])
@@ -53,11 +67,7 @@ class JWTAuthMiddleware implements MiddlewareInterface
             ) {
                 unset($_SESSION[$sess_jwt_key]);
             }
-            
-            if ($th->getCode() >= 5000 && defined('CODESAUR_DEVELOPMENT') && CODESAUR_DEVELOPMENT) {
-                error_log($th->getMessage());
-            }
-            
+ 
             $uri_path = rawurldecode($request->getUri()->getPath());
             $script_path = $request->getServerParams()['SCRIPT_TARGET_PATH'] ?? null;
             if (!isset($script_path)) {
@@ -71,15 +81,17 @@ class JWTAuthMiddleware implements MiddlewareInterface
             }
             if (empty($uri_path)) {
                 $uri_path = '/';
-            }        
+            }
             $parts = explode('/', $uri_path);
             if ($parts[1] != 'login') {
                 $loginUri = (string)$request->getUri()->withPath("$script_path/login");
                 header("Location: $loginUri", false, 302);
                 exit;
             }
+            
+            return $handler->handle($request);
         }
         
-        return $handler->handle($request);
+        return $handler->handle($request->withAttribute('user', $user));
     }
 }

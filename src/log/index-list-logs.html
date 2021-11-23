@@ -38,7 +38,7 @@
 
             <li class="list-group-item list-group-item-action list-group-item-{{ type }}">
                 <span class="float-left pr-2">[{{ item['id'] }}]</span>
-                <a data-bs-target="#dashboard-modal" data-bs-toggle="modal" class="float-left" href="{{ info_uri|e }}">{{ item['created_at'] }}</a> 
+                <a class="float-left" data-bs-target="#dashboard-modal" data-bs-toggle="modal" href="{{ info_uri|e }}">{{ item['created_at'] }}</a> 
                 <span class="pl-2 pr-2">
                 {% if item['message'] is not defined or item['message'] is empty %}
                     <span class="text-danger">{{ item['context']['reason'] }}</span> {{ item['context']['server_request']['uri']|e }}
@@ -49,11 +49,11 @@
                 {% endif %}
                 </span>
                 {% if item['created_by'] is defined and accounts[item['created_by']] is defined %}
-                    {% set account = accounts[item['created_by']] %}
-                    <span class="text-muted small"><u>{{ item['reason'] }} by {{ account|replace({ (' =>' ~ account|split(' =>')|last): '' }) }}</u></span>
+                {% set account = accounts[item['created_by']] %}
+                <span class="text-muted small"><u>{{ item['reason'] }} by {{ account|replace({ (' =>' ~ account|split(' =>')|last): '' }) }}</u></span>
                 {% endif %}
                 {% if item['info']['path'] is defined %}
-                <a target="_blank" href="{{ item['context']['path'] }}" class="float-right">{{ item['context']['path']|replace({ ('.' ~ item['context']['path']|split('.')|last): '' }) }}</a>
+                <p class="text-end"><a target="_blank" href="{{ item['context']['path'] }}">{{ item['context']['path']|replace({ ('.' ~ item['context']['path']|split('.')|last): '' }) }}</a></p>
                 {% endif %}
             </li>
         {% endfor %}

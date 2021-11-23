@@ -2,6 +2,8 @@
 
 namespace Raptor\File;
 
+use Exception;
+
 use Psr\Log\LogLevel;
 
 use Indoraptor\Record\FileModel;
@@ -109,40 +111,39 @@ class FileController extends Controller
             if (isset($table_record['type'])) {
                 $existing = $this->getLast($record_id, $table_record['type'], $table_record['code'] ?? '');                
                 if ($existing) {
-                    $del = $this->indodelete("/record?table=$this->table&model=" . FilesModel::class, array('WHERE' => "id={$existing['files_id']}"));
-                    if (isset($del['id'])) {
+                    try {
+                        $this->indodelete("/record?table=$this->table&model=" . FilesModel::class, array('WHERE' => "id={$existing['files_id']}"));
                         $text = "Мэдээллийн $this->table хүснэгтийн $record_id-р бичлэгийн {$existing['type']} төрлийн ({$existing['code']}') хэл дээрх файлыг бүртгэлээс хаслаа.";
                         $this->indolog('file', LogLevel::INFO, $text, array('reason' => 'strip-file', 'table' => $this->table, 'record' => $record_id, 'type' => $existing['type']));
                         if ($existing['protection'] == 1) {
-                            $delete = $this->indodelete('/record?model=' . FileModel::class, array('WHERE' => "id={$existing['id']}"));
-                            if (isset($delete['id'])) {
-                                $text = "Мэдээллийн file хүснэгтийн {$existing['id']}-р бичлэг дээрх файлыг устгалаа.";
-                                $this->indolog('file', LogLevel::INFO, $text, array('reason' => 'delete-file', 'record' => $existing));
-                            }
+                            $this->indodelete('/record?model=' . FileModel::class, array('WHERE' => "id={$existing['id']}"));
+                            $text = "Мэдээллийн file хүснэгтийн {$existing['id']}-р бичлэг дээрх файлыг устгалаа.";
+                            $this->indolog('file', LogLevel::INFO, $text, array('reason' => 'delete-file', 'record' => $existing));
                         }
+                    } catch (Exception $e) {
+                        $this->errorLog($e);
                     }
                 }
             }
             
-            if (!isset($file_record['content'])) {
-                foreach ($language_codes as $code) {
-                    $file_record['content'][$code] = array('title' => '');
-                }
-            }
-            
-            $file_record['record']['file'] = $upload['dir'] . $upload['name'];
-            $file_record['record']['path'] = $this->getPathUrl($upload['name']);            
-            $file = $this->indopost('/record?model=' . FileModel::class, $file_record);
-            
-            if (isset($file['id'])) {
+            try {
+                if (!isset($file_record['content'])) {
+                    foreach ($language_codes as $code) {
+                        $file_record['content'][$code] = array('title' => '');
+                    }
+                }                
+                $file_record['record']['file'] = $upload['dir'] . $upload['name'];
+                $file_record['record']['path'] = $this->getPathUrl($upload['name']);
+                $file_id = $this->indopost('/record?model=' . FileModel::class, $file_record);
+                
+                $table_record['file'] = $file_id;
                 $table_record['record'] = $record_id;
-                $table_record['file'] = $file['id'];
-                $post = $this->indopost("/record?table=$this->table&model=" . FilesModel::class, array('record' => $table_record));
-                if (isset($post['id'])) {
-                    $text = "Мэдээллийн $this->table хүснэгтийн $record_id-р бичлэгт зориулж {$file['id']} дугаартай файлыг байршууллаа.";
-                    $this->log($text, array('table' => $this->table, 'reason' => 'insert-file', 'record' => $record_id, 'file' => $file_record['record']['file'], 'path' => $file_record['record']['path']), 'file');
-                    return $file_record;
-                }
+                $this->indopost("/record?table=$this->table&model=" . FilesModel::class, array('record' => $table_record));
+                $text = "Мэдээллийн $this->table хүснэгтийн $record_id-р бичлэгт зориулж $file_id дугаартай файлыг байршууллаа.";
+                $this->log($text, array('table' => $this->table, 'reason' => 'insert-file', 'record' => $record_id, 'file' => $file_record['record']['file'], 'path' => $file_record['record']['path']), 'file');
+                return $file_record;
+            } catch (Exception $e) {
+                $this->errorLog($e);
             }
         }
         
@@ -151,80 +152,46 @@ class FileController extends Controller
     
     public function getRecord($record, $code = null)
     {
-        if (empty($record['file'])) {
-            return null;            
-        }
-        
-        $response = $this->indo('/record?model=' . FileModel::class, array('p.id' => $record['file'], 'c.code' => $code));
-        if (empty($response['record'])) {
-            return null;
-        }
-
-        $result             = $response['record'];
-        $result['files_id'] = $record['id'];
-        $result['record']   = $record['record'];
-        $result['type']     = $record['type'] ?? null;
-        $result['code']     = $record['code'] ?? null;
-        $result['rank']     = $record['rank'] ?? null;
-
-        return $result;
-    }
-    
-    public function getLast(int $record, int $type, string $code = '', array $condition = [])
-    {
-        if ($this->isEmpty($this->table)) {
-            return null;
-        }
-        
-        $condition['WHERE'] = "record=$record AND type=$type";
-        if (!empty($code)) {
-            $condition['WHERE'] .= " AND code='$code'";
-        }
-        
-        $response = $this->indo("/record/rows?table={$this->table}&model=" . FilesModel::class, $condition);
-        
-        if (empty($response['rows'])) {
-            return null;
-        }
-        
-        return $this->getRecord(end($response['rows']));
-    }
-    
-    public function getAsTwigColumn(string $name, $record, int $type = 1, string $flag = ''): array
-    {
-        $result = array('name' => $name);
-        
-        $image = is_array($record) ? $record : $this->getLast($record, $type, $flag);
-        
-        if (isset($image['record'])
-                && isset($image['files_id'])
-        ) {
-            $result['record'] = $image['record'];
-            $result['files_id'] = $image['files_id'];
-            if (isset($image['path'])) {
-                $result['path'] = $image['path'];
+        try {
+            if (empty($record['file'])) {
+                throw new Exception('Please provide valid file record info');
             }
+            $result = $this->indo('/record?model=' . FileModel::class, array('p.id' => $record['file'], 'c.code' => $code));
+            $result['files_id'] = $record['id'];
+            $result['record'] = $record['record'];
+            $result['type'] = $record['type'] ?? null;
+            $result['code'] = $record['code'] ?? null;
+            $result['rank'] = $record['rank'] ?? null;
+            return $result;
+        } catch (Exception $e) {
+            $this->errorLog($e);
+            
+            return null;
         }
-        
-        return array($name => $result);
     }
     
-    public function getAsTwigMultiColumn(string $name, int $record, int $type): array
+    public function getLast(int $record, int $type, string $code = '')
     {
-        $language_codes = array_keys($this->getAttribute('localization')['language'] ?? array());
-        $result = array();
-        foreach ($language_codes as $code) {
-            $result[$name][$code]['name'] = $name . "[$code]";
-            $image = $this->getLast($record, $type, $code);
-            if ($image) {
-                $result[$name][$code]['record'] = $image['record'];
-                $result[$name][$code]['files_id'] = $image['files_id'];
-                if (isset($image['path'])) {
-                    $result[$name][$code]['path'] = $image['path'];
-                }
+        try {
+            if ($this->isEmpty($this->table)) {
+                throw new Exception('File table name not set');
             }
+            
+            $condition = array(
+                'WHERE' => "record=$record AND type=$type",
+                'ORDER BY' => 'id desc',
+                'LIMIT' => '1'
+            );
+            if (!empty($code)) {
+                $condition['WHERE'] .= " AND code='$code'";
+            }
+
+            $rows = $this->indo("/record/rows?table=$this->table&model=" . FilesModel::class, $condition);
+            return $this->getRecord(current($rows));
+        } catch (Exception $e) {
+            $this->errorLog($e);
+            
+            return null;
         }
-        
-        return $result;
     }
 }

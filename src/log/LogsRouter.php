@@ -8,7 +8,7 @@ class LogsRouter extends Router
 {
     function __construct()
     {
-        $this->GET('/logs', [AdvancedLogController::class, 'index'])->name('logs');
-        $this->GET('/logs/view', [AdvancedLogController::class, 'view'])->name('logs-view');
+        $this->GET('/logs', [LogsController::class, 'index'])->name('logs');
+        $this->GET('/logs/view', [LogsController::class, 'view'])->name('logs-view');
     }
 }

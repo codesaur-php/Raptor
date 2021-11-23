@@ -18,12 +18,10 @@
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.6.1/font/bootstrap-icons.css">
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
         <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.0.0/animate.compat.css" rel="stylesheet">
-        <link href="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.0/styles/bootstrap-extend.css" rel="stylesheet">
+        <link href="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.1/styles/bootstrap-extend.css" rel="stylesheet">
 
         <script defer src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
-        <script defer src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.0/scripts/spinner.js"></script>
-        
-        <link href="styles/bootstrap-extend.css" rel="stylesheet">
+        <script defer src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.1/scripts/spinner.js"></script>
         <style>
             html,
             body {
@@ -41,22 +39,6 @@
                 max-width: 420px;
                 padding: 15px;
                 margin: auto;
-            }
-            .form-signin .checkbox {
-                font-weight: 400;
-            }
-            .form-signin .form-floating:focus-within {
-                z-index: 2;
-            }
-            .form-signin input[type="email"] {
-                margin-bottom: -1px;
-                border-bottom-right-radius: 0;
-                border-bottom-left-radius: 0;
-            }
-            .form-signin input[type="password"] {
-                margin-bottom: 10px;
-                border-top-left-radius: 0;
-                border-top-right-radius: 0;
             }
             .bd-placeholder-img {
                 font-size: 1.125rem;
@@ -80,18 +62,18 @@
             </div>
             {% endif %}
             <form id="login_form" action="{{ 'entry'|link }}" method="POST">                
-                <div class="form-floating" id="user">
-                    <input autofocus type="text" class="form-control" name="username" id="username" autocomplete="on" placeholder="user" required>
-                    <label for="username">{{ 'user'|text }}</label>
+                <div class="form-floating mb-3">
+                    <input class="form-control" autofocus required type="text" name="username" id="username" autocomplete="on" placeholder="{{ 'user'|text|e }}">
+                    <label>{{ 'user'|text }}</label>
                 </div>
-                <div class="form-floating" id="pass">
-                    <input type="password" class="form-control" name="password" id="password" placeholder="password" required>
-                    <label for="password">{{ 'password'|text }}</label>
+                <div class="form-floating mb-4">
+                    <input class="form-control" required type="password" name="password" id="password" placeholder="{{ 'password'|text|e }}">
+                    <label>{{ 'password'|text }}</label>
                 </div>
-                <button id="login_signin_submit" class="w-100 btn btn-lg btn-{{ button|default('primary') }} text-uppercase mb-4">
+                <button class="w-100 btn btn-lg btn-{{ button|default('primary') }} text-uppercase mb-4" id="login_signin_submit">
                     <i class="bi-person-check"></i> {{ 'signin'|text }}
                 </button>
-                <a href="javascript:;" id="forgot_password">
+                <a id="forgot_password" href="javascript:;">
                     <span>{{ 'forgot-password'|text }}</span>
                 </a>
                 {% if content is defined %}<hr>{{ content }}{% endif %}
@@ -115,44 +97,50 @@
                 </div>
             </form>
                     
-            <form id="forgot_form" class="d-none" action="{{ 'login-request-password'|link }}" method="POST">
+            <form class="d-none" id="forgot_form" action="{{ 'login-request-password'|link }}" method="POST">
                 <h3 class="text-center mb-4">{{ 'forgotten-password-reset'|text }}</h3>
                 <span>{{ 'enter-email-below'|text }}</span>
-                <div class="form-group">
+                <div class="form-floating mt-2">
                     <input class="form-control" type="email" placeholder="{{ 'email'|text|e }}" name="codeForgetEmail" id="codeForgetEmail" autocomplete="off">
+                    <label>{{ 'email'|text }}</label>
                 </div>
+ 
                 <div class="mt-3">
-                    <button id="forgot_password_submit" class="btn btn-lg btn-primary shadow-sm float-left">{{ 'request'|text }}</button>
-                    <button class="cancel btn btn-lg btn-secondary shadow-sm float-right">{{ 'cancel'|text }}</button>
+                    <button class="btn btn-primary shadow-sm float-left" id="forgot_password_submit">{{ 'request'|text }}</button>
+                    <button class="cancel btn btn-secondary shadow-sm float-right">{{ 'cancel'|text }}</button>
                 </div>
             </form>
 
             <form id="signup_form" class="d-none" action="{{ 'signup'|link }}" method="POST">
                 <h3 class="text-center mb-4">{{ 'signup'|text }}</h3>
                 <span>{{ 'enter-personal-details'|text }}</span>
-                <div class="form-group mt-4">
+                <div class="form-floating mt-3 mb-2">
                     <input class="form-control" type="text" placeholder="{{ 'username'|text|e }}" name="codeUsername" id="codeUsername" autocomplete="new-account">
+                    <label>{{ 'username'|text }}</label>
                 </div>
-                <div class="form-group">
+                <div class="form-floating mb-2">
                     <input class="form-control" type="text" placeholder="{{ 'email'|text|e }}" name="codeEmail" id="codeEmail" autocomplete="new-email">
+                    <label>{{ 'email'|text }}</label>
                 </div>
-                <div class="form-group">
+                <div class="form-floating mb-2">
                     <input class="form-control" type="password" placeholder="{{ 'password'|text|e }}" name="codePassword" id="codePassword" autocomplete="new-password">
+                    <label>{{ 'password'|text }}</label>
                 </div>
-                <div class="form-group">
+                <div class="form-floating mb-3">
                     <input class="form-control" type="password" placeholder="{{ 'retype-password'|text|e }}" name="codeRePassword" id="codeRePassword"  autocomplete="new-password-retype">
+                    <label>{{ 'retype-password'|text }}</label>
                 </div>
-                <div class="form-group">
+                <div class="mb-2">
                     <label class="mt-2 mb-3">{{ 'organization'|text }}</label>
-                    <select class="form-control" name="organization_name" id="organization_name">
-                        <option value="" class="form-control"></option>
+                    <select class="form-control" id="organization">
+                        <option value=""></option>
                         {% for org in organizations %}
-                        <option value="{{ org['name']|e }}" class="form-control">{{ org['name']|e }}</option>
+                        <option value="{{ org['name']|e }}">{{ org['name']|e }}</option>
                         {% endfor %}
                     </select>
                 </div>
                 <hr>
-                <div class="form-group text-center">
+                <div class="text-center mb-2">
                 {% if languageCode == 'mn' %}
                     Бүртгүүлэх товчыг дарснаар, та манай <a data-bs-toggle="modal" data-bs-target="#tos" href="javascript:;">системийг хэрэглэх ерөнхий нөхцөл</a>
                     хүлээн зөвшөөрч, <a data-bs-toggle="modal" data-bs-target="#pp" href="javascript:;">хувийн нууцлалын бодлоготой</a> танилцсан болно.
@@ -162,13 +150,13 @@
                 {% endif %}
                 </div>
                 <hr>
-                <div>
-                    <button id="signup_submit" class="btn btn-lg btn-primary shadow-sm">{{ 'signup'|text }}</button>
-                    <button class="cancel btn btn-lg btn-secondary shadow-sm">{{ 'cancel'|text }}</button>
+                <div class="mt-2">
+                    <button class="btn btn-primary shadow-sm" id="signup_submit">{{ 'signup'|text }}</button>
+                    <button class="cancel btn btn-secondary shadow-sm">{{ 'cancel'|text }}</button>
                 </div>
             </form>
         </main>
-        <script>
+        <script type="text/javascript">
             document.addEventListener('DOMContentLoaded', function() {
                 let formLogin = document.querySelector('#login_form');
                 let formForgot = document.querySelector('#forgot_form');
@@ -346,6 +334,13 @@
                         return showMessage(formSignUp, 'danger', "{{ 'password-must-match'|text|e }}");
                     }
                     
+                    let payload = { username, email, password, password_re };
+                    
+                    const organization = formSignUp.querySelector('#signup_form select#organization').value;
+                    if (!isBlank(organization)) {
+                        payload.organization = organization;
+                    }
+                    
                     this.spinner('start', 'grow', true);                    
                     fetch(
                         formSignUp.getAttribute('action'),
@@ -354,12 +349,7 @@
                             headers: {
                                 'Content-Type': 'application/json'
                             },
-                            body: JSON.stringify({
-                                username: username,
-                                email: email,
-                                password: password,
-                                password_re: password_re
-                            })
+                            body: JSON.stringify(payload)
                         }
                     ).then(res => {
                         this.spinner('stop');
@@ -381,12 +371,12 @@
                 });
             });
         </script>
-        <div class="modal fade" id="tos" role="dialog" aria-labelledby="MyModalLabel" tabindex="-1" aria-hidden="true">
+        <div class="modal fade" id="tos" role="dialog" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-lg" role="document">
                 <div class="modal-content">
                     <div class="modal-header modal-header-solid">
-                        <h5 class="modal-title text-primary text-uppercase" id="MyModalLabel">{{ tos['title'][languageCode] }}</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'close'|text|e }}"></button>
+                        <h5 class="modal-title text-primary text-uppercase">{{ tos['title'][languageCode] }}</h5>
+                        <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="{{ 'close'|text|e }}"></button>
                     </div>            
                     <div class="modal-body">
                         <div style="height:400px;overflow-y:auto;overflow-x:hidden;">
@@ -399,12 +389,12 @@
                 </div>
             </div>
         </div>
-        <div class="modal fade" id="pp" role="dialog" aria-labelledby="MyModalLabel" tabindex="-1" aria-hidden="true">
+        <div class="modal fade" id="pp" role="dialog" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-lg" role="document">
                 <div class="modal-content">            
                     <div class="modal-header modal-header-solid">
-                        <h5 class="modal-title text-primary text-uppercase" id="MyModalLabel">{{ pp['title'][languageCode] }}</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'close'|text|e }}"></button>
+                        <h5 class="modal-title text-primary text-uppercase">{{ pp['title'][languageCode] }}</h5>
+                        <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="{{ 'close'|text|e }}"></button>
                     </div>            
                     <div class="modal-body">
                         <div style="height:400px;overflow-y:auto;overflow-x:hidden;">

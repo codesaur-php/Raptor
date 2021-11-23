@@ -1,15 +1,15 @@
 <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
     <div class="modal-content">
         <div class="modal-header modal-header">
-            <h5 class="modal-title text-danger" id="MyModalLabel"><i class="bi bi-shield-lock-fill"></i> {{ 'role2'|text }}</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'close'|text|e }}"></button>
+            <h5 class="modal-title text-danger"><i class="bi bi-shield-lock-fill"></i> {{ 'role2'|text }}</h5>
+            <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="{{ 'close'|text|e }}"></button>
         </div>
         <div class="modal-body">
-            <form autocomplete="off" id="rbac_user_role" role="form" action="{{ 'accounts-rbac-user-role'|link({'id': account['id']}) }}" method="POST" enctype="multipart/form-data">
+            <form autocomplete="off" id="rbac_user_role" role="form" action="{{ 'rbac-set-user-role'|link({'id': account['id']}) }}" method="POST" enctype="multipart/form-data">
                 <div style="height:400px;overflow-y:auto;overflow-x:hidden;">
                     <div class="form-group">
                         <label>{{ account['first_name'] ~ ' ' ~ account['last_name'] ~ ' (' ~ account['username'] ~ ' => ' ~ account['email'] ~ ')' }} хэрэглэгчийн дүрийг сонгон тохируулна уу!</label>
-                        <select id="roles" name="roles[]" class="form-control" multiple>
+                        <select class="form-control" multiple name="roles[]" id="roles">
                             {% for key,data in roles %}
                             <optgroup label="{{ rbacs[key] }}" alias="{{ key }}">
                                 {% for value,name in data %}

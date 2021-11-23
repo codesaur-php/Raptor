@@ -36,7 +36,7 @@ $application = new class extends Application
         $this->use(function ($request, $handler)
         {
             $indo = new IndoApplication();
-            $indo->use(new PDOConnectMiddleware());
+            $indo->use(new PDOConnectMiddleware());            
             return $handler->handle($request->withAttribute('indo', $indo));
         });
 

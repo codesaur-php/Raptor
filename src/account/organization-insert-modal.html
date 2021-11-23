@@ -1,0 +1,70 @@
+<div class="modal-dialog modal-xl modal-dialog-centered" role="document">
+    <div class="modal-content">
+        <div class="modal-header modal-header-solid">
+            <h6 class="modal-title text-uppercase text-success"><i class="bi bi-plus-circle"></i> {{ 'add-record'|text }}</h6>
+            <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="{{ 'close'|text|e }}"></button>
+        </div>
+        <div class="modal-body">
+            <div style="height:500px;overflow-y:auto;overflow-x:hidden;">
+                <form class="needs-validation" novalidate id="organization_insert" action="{{ 'organization-insert'|link }}" method="POST" enctype="multipart/form-data">
+                    <div class="row mb-3">
+                        <div class="col">
+                            <div class="form-floating">
+                                <select class="form-select" name="org_parent_id">
+                                    <option value="0" selected>- {{ localization.code == 'mn' ? 'Үндсэн байгууллага' : 'Main organization' }} -</option>
+                                    {% for org in parents %}
+                                    <option value="{{ org['id'] }}">{{ org['name']|e }}</option>
+                                    {% endfor %}
+                                </select>
+                                <label>{{ 'parent'|text }}</label>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="form-floating">
+                                <input class="form-control" required name="org_alias" value="common" maxlength="16" placeholder="RBAC" type="text" autocomplete="off">
+                                <label>RBAC</label>
+                                <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col">
+                            <div class="form-floating">
+                                <input class="form-control" required name="org_name" maxlength="512" placeholder="{{ 'name'|text|e }}" type="text" autocomplete="off">
+                                <label>{{ 'name'|text }}</label>
+                                <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="form-floating">
+                                <input class="form-control" name="org_home_url" maxlength="512" placeholder="{{ 'website'|text|e }}" type="text" autocomplete="off">
+                                <label>{{ 'website'|text }}</label>
+                                <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">{{ 'logo'|text }}</label>
+                        <input type="file" name="org_logo">
+                    </div>
+                    <div class="form-floating mb-3">
+                        <input class="form-control" name="org_external" maxlength="256" placeholder="External" type="text" autocomplete="off">
+                        <label>External</label>
+                        <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <div class="modal-footer modal-footer-solid">
+        {% if user.can('system_organization_insert') %}
+            <button class="submit-new-organization btn btn-success shadow-sm"><i class="bi bi-check"></i> {{ 'submit'|text }}</button>
+        {% endif %}
+            <button class="btn btn-secondary shadow-sm" data-bs-dismiss="modal">{{ 'cancel'|text }}</button>
+        </div>
+    </div>
+</div>
+<script type="text/javascript">
+document.getElementsByName('org_logo')[0].imageInput(null, "{{ 'select-image'|text }}", "{{ 'choose'|text }}", "{{ 'change'|text }}", "{{ 'remove'|text }}", 240);
+
+SubmitForm('.submit-new-organization', 'form#organization_insert');
+</script>

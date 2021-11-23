@@ -52,6 +52,15 @@ class DashboardTemplate extends TwigTemplate
     
     public function alertNoPermission($alert = null)
     {
-        $this->render(new TwigTemplate(dirname(__FILE__) . '/alert-no-permission.html', array('alert' => $alert ?? $this->get('system-no-permission'))));
+        if (empty($alert)) {
+            $alert = $this->get('system-no-permission');
+        }
+        
+        $html = '<div class="alert alert-danger shadow-sm fade mt-4 show" role="alert">
+                    <i class="bi bi-shield-fill-exclamation" style="margin-right:6px"></i>' . $alert .
+                    '<i class="bi bi-arrow-repeat float-right" style="cursor:pointer;font-size:1.2rem;right:10px;top:11px;position:absolute" onclick="window.location.reload();"></i>
+                </div>';
+                
+        $this->render($html);
     }
 }

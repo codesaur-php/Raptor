@@ -2,7 +2,6 @@
 
 namespace Raptor\Authentication;
 
-use Throwable;
 use Exception;
 use DateTime;
 
@@ -15,6 +14,8 @@ use Indoraptor\Account\AccountErrorCode;
 use Indoraptor\Account\ForgotModel;
 use Indoraptor\Account\OrganizationModel;
 use Indoraptor\Account\OrganizationUserModel;
+
+define('CODESAUR_PASSWORD_RESET_MINUTES', $_ENV['CODESAUR_PASSWORD_RESET_MINUTES'] ?? 10);
 
 class LoginController extends \Raptor\Controller
 {
@@ -29,67 +30,63 @@ class LoginController extends \Raptor\Controller
             return $this->redirectTo('home');
         }
         
-        $code = $this->getLanguageCode();
+        $code = preg_replace('/[^a-z]/', '', $this->getLanguageCode());
         $vars = $this->indo('/lookup', array('table' => 'templates', 'condition' =>
             array('WHERE' => "c.code='$code' AND (p.keyword='tos' OR p.keyword='pp') AND p.is_active=1")));
-        $vars['organizations'] = $this->indo('/record/rows?model=' . OrganizationModel::class)['rows'] ?? [];
+        
+        try {
+            $vars['organizations'] = $this->indo('/record/rows?model=' . OrganizationModel::class);
+        } catch (Exception $e) {
+            $this->errorLog($e);
+        }
 
         $this->twigTemplate(dirname(__FILE__) . '/login.html', $vars)->render();
     }
         
     public function entry()
     {
-        try {
-            $sess_jwt_key = __NAMESPACE__ . '\\indo\\jwt';
-            
-            $payload = $this->getParsedBody();
-            $username = $payload['username'];
-            $password = $payload['password'];
-            if ($this->isUserAuthorized()
-                    || empty($username) || empty($password)
-            ) {
+        $payload = $this->getParsedBody();
+        $sess_jwt_key = __NAMESPACE__ . '\\indo\\jwt';
+        $context = $payload;
+        if (isset($context['password'])) {
+            unset($context['password']);
+        }
+        
+        try {            
+            if ($this->isUserAuthorized()) {
                 throw new Exception($this->text('invalid-request'));
             }
 
-            $response = $this->indopost('/auth/entry',
-                    array('username' => $username, 'password' => $password));
-            if (!isset($response['account']['jwt'])) {
-                throw new Exception($response['error']['message'] ?? $this->text('invalid-response!'));
-            }
-            
-            $_SESSION[$sess_jwt_key] =  $response['account']['jwt'];
+            $account = $this->indopost('/auth/entry', $payload);
+            $_SESSION[$sess_jwt_key] =  $account['jwt'];
             $this->respondJSON(array('type' => 'success', 'message' => 'success', 'url' => $this->generateLink('home', [], true)));
-
-            $log_message ="Хэрэглэгч {$response['account']['first_name']} " .
-                    "{$response['account']['last_name']} системд нэвтрэв.";
-            $log_context = array('reason' => 'login', 'account' => $username);
             
-            if (empty($response['account']['code'])) {
-                $this->indo('/record/update?model=' . Accounts::class,
-                        array('record' => array('code' => $this->getLanguageCode()), 'condition' => array('WHERE' => 'id=' . $response['account']['id'])));
-            } elseif ($response['account']['code'] != $this->getLanguageCode()) {
-                if (isset($this->getAttribute('localization')['language'][$response['account']['code']])) {
-                    $_SESSION[__NAMESPACE__ . '\\language\\code'] = $response['account']['code'];
-                }
+            if (empty($account['code'])) {
+                $this->postAccountLanguageCode($account['id'], $this->getLanguageCode());
+            } elseif ($account['code'] != $this->getLanguageCode()
+                    && isset($this->getAttribute('localization')['language'][$account['code']])
+            ) {
+                $_SESSION[__NAMESPACE__ . '\\language\\code'] = $account['code'];
             }
+            
+            $level = LogLevel::INFO;
+            $context['reason'] = 'login';
+            $message = "Хэрэглэгч {$account['first_name']} {$account['last_name']} системд нэвтрэв.";
         } catch (Exception $e) {
+            $this->errorLog($e);
+            
             if (isset($_SESSION[$sess_jwt_key])) {
                 unset($_SESSION[$sess_jwt_key]);
             }
 
-            $log_message = $e->getMessage();
-            $log_context = array(
-                'reason' => 'attempt',
-                'username' => $username ?? ''
-            );
-            
-            $this->respondJSON(array('type' => 'danger', 'message' => $log_message));
+            $message = $e->getMessage();
+            $this->respondJSON(array('type' => 'danger', 'message' => $message));
 
-            if ($this->isDevelopment()) {
-                error_log($e->getMessage());
-            }
+            $level = LogLevel::ERROR;
+            $context['reason'] = 'attempt';
+            $context['error'] = array('code' => $e->getCode(), 'message' => $e->getMessage());
         } finally {            
-            $this->indolog('dashboard', LogLevel::NOTICE, $log_message, $log_context, $response['data']['account']['id'] ?? null);
+            $this->indolog('dashboard', $level, $message, $context, $account['id'] ?? null);
         }
     }
 
@@ -110,24 +107,20 @@ class LoginController extends \Raptor\Controller
     
     public function signup()
     {
+        $payload = $this->getParsedBody();
+        $context = array('reason' => 'request-new-account');
+        
         try {
-            $requestBody = $this->getParsedBody();
-            $username = $requestBody['username'];
-            $password = $requestBody['password'];
-            $passwordRe = $requestBody['password_re'];
-            $email = filter_var($requestBody['email'], FILTER_SANITIZE_EMAIL);
-            if (empty($username) || empty($email)
-                || empty($password) || $password != $passwordRe
-            ) {
+            $password = $payload['password'];
+            $passwordRe = $payload['password_re'];
+            if (empty($password) || $password != $passwordRe) {
                 throw new Exception($this->text('invalid-request'));
+            } else {
+                unset($payload['password_re']);
             }
-            $payload = array(
-                'email' => $email,
-                'username' => $username,
-                'password' => password_hash($password, PASSWORD_BCRYPT),
-                'code' => $this->getLanguageCode(),
-                'organization' => $this->getPostParam('organization_name')
-            );
+            $payload['password'] = password_hash($password, PASSWORD_BCRYPT);
+            $payload['code'] = preg_replace('/[^a-z]/', '', $this->getLanguageCode());
+            $context['payload'] = $payload;
             
             $lookup = $this->indo('/lookup', array('table' => 'templates', 'condition' =>
                 array('WHERE' => "c.code='{$payload['code']}' AND p.keyword='request-new-account' AND p.is_active=1")));
@@ -136,87 +129,49 @@ class LoginController extends \Raptor\Controller
             }
             $content = $lookup['request-new-account'];
             
-            $response = $this->indopost('/account/signup', $payload);
-            if (!isset($response['id'])) {
-                throw new Exception($response['error']['message'] ?? $this->text('something-went-wrong'), $response['error']['code'] ?? 0);
-            }
+            $this->indopost('/account/signup', $payload);
+
             $template = new MemoryTemplate();
             $template->set('email', $payload['email']);
             $template->set('username', $payload['username']);
             $template->source($content['full'][$payload['code']]);
-            $email_response = $this->indo('/send/stmp/email', array(
+            $this->indo('/send/stmp/email', array(
                 'name' => $payload['username'],
                 'to' => $payload['email'],
                 'code' => $payload['code'],
                 'message' => $template->output(),
                 'subject' => $content['title'][$payload['code']]
             ));
-            if (empty($email_response['success']['message'])) {
-                throw new Exception($email_response['error']['message'] ?? $this->text('something-went-wrong'), $email_response['error']['code'] ?? 0);
-            }
             $this->respondJSON(array('type' => 'success', 'message' => $this->text('to-complete-registration-check-email')));
-        } catch (Throwable $th) {
-            switch ((int)$th->getCode()) {
-                case AccountErrorCode::INSERT_DUPLICATE_EMAIL: {
-                    $log_message = "Бүртгэлтэй [{$payload['email']}] хаягаар шинэ хэрэглэгч үүсгэх хүсэлт ирүүллээ. Татгалзав.";
-                    $log_context = array(
-                        'result' => 'email',
-                        'email' => $payload['email'],
-                        'username' => $payload['username'],
-                        'organization' => $payload['organization'] ?? ''
-                    );
-                } break;
-                case AccountErrorCode::INSERT_DUPLICATE_USERNAME: {
-                    $log_message = "Бүртгэлтэй {$payload['username']} хэрэглэгчийн нэрээр шинэ хэрэглэгч үүсгэх хүсэлт ирүүллээ. Татгалзав.";
-                    $log_context = array(
-                        'result' => 'username',
-                        'email' => $payload['email'],
-                        'username' => $payload['username'],
-                        'organization' => $payload['organization'] ?? ''
-                    );
-                } break;
-                case AccountErrorCode::INSERT_DUPLICATE_NEWBIE: {
-                    $log_message = "Шинээр {$payload['username']} нэртэй [{$payload['email']}] хаягтай хэрэглэгч үүсгэх хүсэлт ирүүлсэн боловч, уг мэдээллээр урьд нь хүсэлт өгч байсныг бүртгэсэн байсан учир дахин хүсэлт бүртгэхээс татгалзав.";
-                    $log_context = array(
-                        'result' => 'newbie-duplicate',
-                        'email' => $payload['email'],
-                        'username' => $payload['username'],
-                        'organization' => $payload['organization'] ?? ''
-                    );
-                } break;
-                case AccountErrorCode::INSERT_NEWBIE_FAILURE: {
-                    $log_message = "Шинээр {$payload['username']} нэртэй [{$payload['email']}] хаягтай хэрэглэгч үүсгэх хүсэлт ирүүлснийг мэдээлллийн санд бүртгэн хадгалах үйлдэл гүйцэтгэх явцад алдаа гарч зогслоо.";
-                    $log_context = array(
-                        'result' => 'newbie',
-                        'email' => $payload['email'],
-                        'username' => $payload['username'],
-                        'organization' => $payload['organization'] ?? ''
-                    );
-                } break;
+            
+            $level = LogLevel::ALERT;
+            $message = "{$payload['username']} нэртэй {$payload['email']} хаягтай шинэ хэрэглэгч үүсгэх хүсэлт бүртгүүллээ";
+        } catch (Exception $e) {
+            $level = LogLevel::ERROR;
+            $context['error'] = array('code' => $e->getCode(), 'message' => $e->getMessage());
+            
+            switch ($e->getCode()) {
+                case AccountErrorCode::INSERT_DUPLICATE_EMAIL: $message = "Бүртгэлтэй [{$payload['email']}] хаягаар шинэ хэрэглэгч үүсгэх хүсэлт ирүүллээ. Татгалзав"; break;
+                case AccountErrorCode::INSERT_DUPLICATE_USERNAME: $message = "Бүртгэлтэй {$payload['username']} хэрэглэгчийн нэрээр шинэ хэрэглэгч үүсгэх хүсэлт ирүүллээ. Татгалзав"; break;
+                case AccountErrorCode::INSERT_DUPLICATE_NEWBIE: $message = "Шинээр {$payload['username']} нэртэй [{$payload['email']}] хаягтай хэрэглэгч үүсгэх хүсэлт ирүүлсэн боловч, уг мэдээллээр урьд нь хүсэлт өгч байсныг бүртгэсэн байсан учир дахин хүсэлт бүртгэхээс татгалзав"; break;
+                case AccountErrorCode::INSERT_NEWBIE_FAILURE: $message = "Шинээр {$payload['username']} нэртэй [{$payload['email']}] хаягтай хэрэглэгч үүсгэх хүсэлт ирүүлснийг мэдээлллийн санд бүртгэн хадгалах үйлдэл гүйцэтгэх явцад алдаа гарч зогслоо"; break;
+                default: $message = 'Шинэ хэрэглэгч үүсгэх хүсэлт бүртгүүлэх үед алдаа гарч зогслоо. <p>' . $e->getMessage() . '</p>'; break;
             }
             
-            if (isset($log_message) && isset($log_context)) {
-                $this->respondJSON(array('type' => 'danger', 'message' => $log_message));
-                
-                $log_context['error'] = array(
-                    'code' => $th->getCode(),
-                    'message' => $th->getMessage()
-                );
-                $log_context['reason'] = 'request-new-account';
-                $this->indolog('account', LogLevel::NOTICE, $log_message, $log_context);
-            }  else {
-                $this->respondJSON(array('type' => 'danger', 'message' => $th->getMessage()));
-            }
+            $this->respondJSON(array('type' => 'danger', 'message' => $message));
+        } finally {
+            $this->indolog('account', $level, $message, $context);
         }
     }
     
     public function requestPassword()
     {
+        $payload = $this->getParsedBody();
+        $context = array('reason' => 'request-password', 'payload' => $payload);
+        
         try {
-            $payload = array(
-                'code' => $this->getLanguageCode(),
-                'email' => $this->getParsedBody()['email'], 
-                'login' => $this->generateLink('login', [], true));
+            $payload['code'] = $this->getLanguageCode();
+            $payload['login'] = $this->generateLink('login', [], true);
             
             $lookup = $this->indo('/lookup', array('table' => 'templates', 'condition' =>
                 array('WHERE' => "c.code='{$payload['code']}' AND p.keyword='forgotten-password-reset' AND p.is_active=1")));
@@ -225,74 +180,48 @@ class LoginController extends \Raptor\Controller
             }
             $content = $lookup['forgotten-password-reset'];
             
-            $response = $this->indopost('/account/forgot', $payload);
-            if (empty($response['use_id'])) {
-                throw new Exception($response['error']['message'] ?? $this->text('something-went-wrong'), $response['error']['code'] ?? 0);
-            }
+            $forgot = $this->indopost('/account/forgot', $payload);
+            $context['forgot'] = $forgot;
+            
             $template = new MemoryTemplate();
             $template->set('email', $payload['email']);
-            $template->set('link', "{$payload['login']}?forgot={$response['use_id']}");
+            $template->set('minutes', CODESAUR_PASSWORD_RESET_MINUTES);
+            $template->set('link', "{$payload['login']}?forgot={$forgot['use_id']}");
             $template->source($content['full'][$payload['code']]);
-            $receiver = $response['first_name'] . ' ' . $response['last_name'];
-            $email_response = $this->indo('/send/stmp/email', array(
+            $receiver = $forgot['first_name'] . ' ' . $forgot['last_name'];
+            $this->indo('/send/stmp/email', array(
                 'name' => $receiver,
                 'to' => $payload['email'],
                 'code' => $payload['code'],
                 'message' => $template->output(),
-                'subject' => $content['title'][$payload['code']]
+                'subject' => $content['title'][$payload['code']]                
             ));
-            if (empty($email_response['success']['message'])) {
-                throw new Exception($email_response['error']['message'] ?? $this->text('something-went-wrong'), $email_response['error']['code'] ?? 0);
-            }
             $this->respondJSON(array('type' => 'success', 'message' => $this->text('reset-email-sent')));
-        } catch (Throwable $th) {
-            switch ((int)$th->getCode()) {
-                case AccountErrorCode::ACCOUNT_NOT_FOUND: {
-                    $log_message = "Бүртгэлгүй [{$payload['email']}] хаяг дээр нууц үг шинээр тааруулах хүсэлт илгээхийг оролдлоо. Татгалзав.";
-                    $log_context = array(
-                        'result' => 'inactive',
-                        'username' => $payload['email']
-                    );
-                } break;
-                case AccountErrorCode::ACCOUNT_NOT_ACTIVE: {
-                    $log_message = "Эрх нь нээгдээгүй хэрэглэгч [{$payload['email']}] нууц үг шинэчлэх хүсэлт илгээх оролдлого хийв. Татгалзав.";
-                    $log_context = array(
-                        'result' => 'not-found',
-                        'username' => $payload['email']
-                    );
-                } break;
-                case AccountErrorCode::INSERT_FORGOT_FAILURE: {
-                    $log_message = "Хэрэглэгч [{$payload['email']}] нууц үг шинэчлэх хүсэлт илгээснийг мэдээлллийн санд бүртгэн хадгалах үйлдэл гүйцэтгэх явцад алдаа гарч зогслоо.";
-                    $log_context = array(
-                        'result' => 'forgot-failure',
-                        'username' => $payload['email']
-                    );
-                } break;
-            }
-            
-            if (isset($log_message) && isset($log_context)) {
-                $this->respondJSON(array('type' => 'danger', 'message' => $log_message));
-                
-                $log_context['error'] = array(
-                    'code' => $th->getCode(),
-                    'message' => $th->getMessage()
-                );
-                $log_context['reason'] = 'request-password';
-                $this->indolog('account', LogLevel::INFO, $log_message, $log_context);
-            }  else {
-                $this->respondJSON(array('type' => 'danger', 'message' => $th->getMessage()));
-            }
+
+            $level = LogLevel::INFO;
+            $message = "{$payload['email']} хаягтай хэрэглэгч  нууц үгээ шинээр тааруулах хүсэлт илгээснийг бүртгүүллээ";
+        } catch (Exception $e) {
+            $level = LogLevel::ERROR;
+            $context['error'] = array('code' => $e->getCode(), 'message' => $e->getMessage());
+            switch ($e->getCode()) {
+                case AccountErrorCode::ACCOUNT_NOT_FOUND: $message = "Бүртгэлгүй [{$payload['email']}] хаяг дээр нууц үг шинээр тааруулах хүсэлт илгээхийг оролдлоо. Татгалзав."; break;
+                case AccountErrorCode::ACCOUNT_NOT_ACTIVE: $message = "Эрх нь нээгдээгүй хэрэглэгч [{$payload['email']}] нууц үг шинэчлэх хүсэлт илгээх оролдлого хийв. Татгалзав."; break;
+                case AccountErrorCode::INSERT_FORGOT_FAILURE: $message = "Хэрэглэгч [{$payload['email']}] нууц үг шинэчлэх хүсэлт илгээснийг мэдээлллийн санд бүртгэн хадгалах үйлдэл гүйцэтгэх явцад алдаа гарч зогслоо."; break;
+                default: $message = 'Хэрэглэгч нууц үгээ шинэчлэх хүсэлт илгээх үед алдаа гарч зогслоо'; break;
+            }            
+            $this->respondJSON(array('type' => 'danger', 'message' => $message));
+        } finally {
+            $this->indolog('account', $level, $message, $context);
         }
     }
     
-    public function forgotPassword($use_id, $error = null)
+    public function forgotPassword($use_id)
     {
+        $vars = array('use_id' => $use_id);
+        $context = array('reason' => 'forgot-password') + $vars;
+        
         try {
-            $response = $this->indo('/record?model=' . ForgotModel::class, array('use_id' => $use_id, 'is_active' => 1));
-            $forgot = $response['record'] ?? [];
-            if (!isset($forgot['is_active'])) {
-                throw new Exception('Хуурамч мэдээлэл ашиглан нууц үг тааруулахыг оролдлоо. Татгалзав.');
-            }
+            $forgot = $this->indo('/record?model=' . ForgotModel::class, array('use_id' => $use_id, 'is_active' => 1));
             $code = $forgot['code'];
             if ($code != $this->getLanguageCode()) {
                 if (isset($this->getAttribute('localization')['language'][$code])) {
@@ -302,85 +231,86 @@ class LoginController extends \Raptor\Controller
                     exit;
                 }
             }
+            $context['forgot'] = $forgot;
             
             $now_date = new DateTime();
             $then = new DateTime($forgot['created_at']);
             $diff = $then->diff($now_date);
-            if ($diff->y > 0 || $diff->m > 0 || $diff->d > 0 || $diff->h > 0 || $diff->i > 5) {
-                throw new Exception('Хугацаа дууссан код ашиглан нууц үг шинээр тааруулахыг хүсэв. Татгалзав.');
+            if ($diff->y > 0 || $diff->m > 0 || $diff->d > 0 || $diff->h > 0 || $diff->i > (int)CODESAUR_PASSWORD_RESET_MINUTES) {
+                throw new Exception('Хугацаа дууссан код ашиглан нууц үг шинээр тааруулахыг хүсэв');
             }
-            $vars = array(
-                'use_id' => $use_id,
-                'account' => $forgot['account'],
-                'created_at' => $forgot['created_at']
-            );
-            if (!empty($error)) {
-                $vars['error'] = $error;
+            $vars += array('use_id' => $use_id, 'account' => $forgot['account']);
+            
+            $level = LogLevel::NOTICE;
+            $message = 'Нууц үгээ шинээр тааруулж эхэллээ.';           
+        } catch (Exception $e) {
+            if ($e->getCode() == 404) {
+                $notice = 'Хуурамч/устгагдсан/хэрэглэгдсэн мэдээлэл ашиглан нууц үг тааруулахыг оролдов';
+            } else {
+                $notice = $e->getMessage();
             }
-            $this->twigTemplate(dirname(__FILE__) . '/login-reset-password.html', $vars)->render();
-        } catch (Throwable $th) {
-            $this->twigTemplate(dirname(__FILE__) . '/login-forgot.html', array('notice' => $th->getMessage()))->render();
+            $vars += array('title' => $this->text('error'), 'notice' => $notice);
+
+            $level = LogLevel::ERROR;
+            $message = 'Нууц үгээ шинээр тааруулж эхлэх үед алдаа гарч зогслоо';
+            $context['error'] = array('code' => $e->getCode(), 'message' => $e->getMessage());
         } finally {
-            // TODO: Nuuts ugee sergeeheer oroldoj buig log hiih
+            $this->twigTemplate(dirname(__FILE__) . '/login-reset-password.html', $vars)->render();
+            $this->indolog('account', $level, $message, $context, $forgot['account'] ?? null);
         }
     }
     
     public function setPassword()
     {
+        $use_id = $this->getPostParam('use_id');
+        $vars = array('use_id' => $use_id);
+        $context = array('reason' => 'reset-password') + $vars;
+        
         try {
-            $use_id = $this->getPostParam('use_id');
-            $account = $this->getPostParam('account');
-            $created_at = $this->getPostParam('created_at');
+            $account_id = $this->getPostParam('account', FILTER_VALIDATE_INT);
+            $vars += array('account' => $account_id);
+
             $password_new = $this->getPostParam('password_new');
             $password_retype = $this->getPostParam('password_retype');
-            if (empty($use_id) || empty($account) || empty($created_at)
+            if (empty($use_id) || empty($account_id)
                     || !isset($password_new) || !isset($password_retype)
             ) {
                 return $this->redirectTo('home');
             }
+            
             if (empty($password_new) || $password_new != $password_retype) {
-                throw new Exception('Шалтгаан: Шинэ нууц үгээ буруу бичсэн.<br/>' . $this->text('password-must-match'));
+                throw new Exception('Шинэ нууц үгээ буруу бичсэн.<br/>' . $this->text('password-must-match'));
             }
-            $response = $this->indo('/record?model=' . ForgotModel::class, array('use_id' => $use_id, 'is_active' => 1));
-            $forgot = $response['record'] ?? [];
-            if (!isset($forgot['account']) || $forgot['account'] != $account) {
-                throw new Exception('Шалтгаан: Мэдээлэл олдсонгүй!');
-            }
+
             $payload = array(
                 'use_id' => $use_id,
-                'created_at' => $created_at,
-                'account' => (int)$account,
+                'account' => $account_id,
                 'password' => password_hash($password_new, PASSWORD_BCRYPT)
             );
-            $account_response = $this->indopost('/account/password', $payload);
-            if (!isset($account_response['id'])) {
-                throw new Exception('Шалтгаан: Мэдээлэл буруу!');
-            }
-            $this->twigTemplate(dirname(__FILE__) . '/login-forgot.html', array(
-                'title' => $this->text('success'),
-                'notice' => $this->text('set-new-password-success')                
-            ))->render();
-            $this->indolog('account', LogLevel::INFO, 'Нууц үг шинээр тохируулав.', array('use_id' => $use_id, 'created_at' => $created_at, 'account' => $account_response));
-        } catch (Throwable $th) {
-            $log_message = 'Нууц үг шинээр тохируулах үйлдэл амжилтгүй боллоо.';
+            $context['account_id'] = $account_id;
             
-            $this->forgotPassword($use_id, $log_message . ' ' . $th->getMessage());
+            $account = $this->indopost('/account/password', $payload);
+            $vars += array('title' => $this->text('success'), 'notice' => $this->text('set-new-password-success'));
+
+            $level = LogLevel::INFO;
+            $message = 'Нууц үг шинээр тохируулав';
+            $context['account'] = $account;
+        } catch (Exception $e) {
+            $vars['error'] = $e->getMessage();
             
-            $log_context['error'] = array(
-                'code' => $th->getCode(),
-                'message' => $th->getMessage(),
-                'use_id' => $use_id,
-                'account' => $account,
-                'created_at' => $created_at
-            );
-            $log_context['reason'] = 'reset-password';
-            $this->indolog('account', LogLevel::ALERT, $log_message, $log_context);
+            $level = LogLevel::ERROR;
+            $message = 'Шинээр нууц үг тааруулж  үед алдаа гарлаа';
+            $context['error'] = array('code' => $e->getCode(), 'message' => $e->getMessage());
+        } finally {
+            $this->twigTemplate(dirname(__FILE__) . '/login-reset-password.html', $vars)->render();
+            
+            $this->indolog('account', $level, $message, $context, $account['id'] ?? null);
         }
     }
     
-    public function selectOrganization($id)
+    public function selectOrganization(int $id)
     {
-        if (!$this->isUserAuthorized()) {
+        if (!$this->isUserAuthorized() || $id == 0) {
             return $this->redirectTo('home');
         }
         
@@ -389,34 +319,29 @@ class LoginController extends \Raptor\Controller
             return $this->redirectTo('home');
         }
         
-        $account_id = $this->getUser()->getAccount()['id'];
-        $response = $this->indo('/record?model=' . OrganizationUserModel::class,
-                array('account_id' => $account_id, 'organization_id' => $id, 'is_active' => 1));
-        $record = $response['record'] ?? [];
-        if (empty($record['organization_id'])) {
-            if (!$this->getUser()->can('system_org_index')) {
-                return $this->redirectTo('home');
-            }
+        $referer = $this->getRequest()->getServerParams()['HTTP_REFERER'];
+        try {
+            $account_id = $this->getUser()->getAccount()['id'];
+            $payload = array('account_id' => $account_id, 'organization_id' => $id);
+            $this->indo('/record?model=' . OrganizationUserModel::class, $payload + array('is_active' => 1));
             
-            $res = $this->indo('/record?model=' . OrganizationModel::class, array('id' => $id, 'is_active' => 1));
-            $org = $res['record'] ?? [];
-            if (!isset($org['id'])) {
-                return $this->redirectTo('home');
-            }
-        }
-        
-        $jwt_info = array(
-            'organization_id' => $id,
-            'account_id' => (int)$account_id);
-        $jwt_result = $this->indopost('/auth/organization', $jwt_info);
-        if (!empty($jwt_result['jwt'])) {
+            $jwt_result = $this->indopost('/auth/organization', $payload);
             $_SESSION[__NAMESPACE__ . '\\indo\\jwt'] = $jwt_result['jwt'];
             $message = "Хэрэглэгч {$this->getUser()->getAccount()['first_name']} {$this->getUser()->getAccount()['last_name']} нэвтэрсэн байгууллага сонгов.";
             $context = array('reason' => 'login-to-organization', 'enter' => $id, 'leave' => $current_org_id, 'jwt' => $jwt_result['jwt']);
-            $this->indolog('dashboard', LogLevel::NOTICE, $message, $context);
-        }
 
-        $this->redirectTo('home');
+            $this->indolog('dashboard', LogLevel::NOTICE, $message, $context);
+
+            $home = $this->generateLink('home');
+            $location = strpos($referer, $home) !== false ? $referer : $home;
+        } catch (Exception $e) {
+            $this->errorLog($e);
+            
+            $location = $referer;
+        } finally {
+            header("Location: $location", false, 302);
+            exit;
+        }
     }
     
     public function language(string $code)
@@ -433,19 +358,34 @@ class LoginController extends \Raptor\Controller
         $location = strpos($referer, $home) !== false ? $referer : $home;        
         $language = $this->getAttribute('localization')['language'];
         if (isset($language[$code])) {
-            $_SESSION[__NAMESPACE__ . '\\language\\code'] = $code;
-            
+            $_SESSION[__NAMESPACE__ . '\\language\\code'] = $code;            
             if ($this->isUserAuthorized()) {
-                $account_id = $this->getUser()->getAccount()['id'];
-                $payload = array(
-                    'record' => array('code' => $code),
-                    'condition' => array('WHERE' => "id=$account_id")
-                );
-                $this->indoput('/record?model=' . Accounts::class, $payload);
+                try {
+                    $account_id = $this->getUser()->getAccount()['id'];
+                    $payload = array(
+                        'record' => array('code' => $code),
+                        'condition' => array('WHERE' => "id=$account_id")
+                    );
+                    $this->indoput('/record?model=' . Accounts::class, $payload);
+                } catch (Exception $e) {
+                    $this->errorLog($e);
+                }
             }
         }
         
         header("Location: $location", false, 302);
         exit;
+    }
+    
+    function postAccountLanguageCode(int $id, string $code)
+    {
+        try {
+            return $this->indo('/record/update?model=' . Accounts::class,
+                    array('record' => array('code' => $code), 'condition' => array('WHERE' => "id=$id")));
+        } catch (Exception $e) {
+            $this->errorLog($e);
+            
+            return false;
+        }
     }
 }

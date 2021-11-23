@@ -1,15 +1,15 @@
 <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
     <div class="modal-content">
         <div class="modal-header modal-header">
-            <h5 class="modal-title text-uppercase" id="MyModalLabel">{{ 'organization'|text }}</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'close'|text|e }}"></button>
+            <h5 class="modal-title text-uppercase">{{ 'organization'|text }}</h5>
+            <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="{{ 'close'|text|e }}"></button>
         </div>
         <div class="modal-body">
-            <form autocomplete="off" id="account_organization_set" role="form" action="{{ 'accounts-organization-set'|link({'account_id': account['id']}) }}" method="POST" enctype="multipart/form-data">
+            <form autocomplete="off" id="account_organization_set" role="form" action="{{ 'organization-user-set'|link({'account_id': account['id']}) }}" method="POST" enctype="multipart/form-data">
                 <div style="height:400px;overflow-y:auto;overflow-x:hidden;">
                     <div class="form-group">
                         <label>{{ account['first_name'] ~ ' ' ~ account['last_name'] ~ ' (' ~ account['username'] ~ ' => ' ~ account['email'] ~ ')' }} хэрэглэгчийн харъяалагдах байгууллагыг сонгон тохируулна уу!</label>
-                        <select id="organizations" name="organizations[]" class="form-control" multiple>
+                        <select class="form-control" multiple name="organizations[]" id="organizations">
                             {% for organization in organizations %}
                             <option value="{{ organization['id'] }}">{{ organization['name'] }}</option>
                             {% endfor %}

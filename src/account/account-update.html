@@ -1,6 +1,6 @@
 {% set can_update = user.can('system_account_update') or (user.getAccount()['id'] == record['id']) %}
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center mb-4 mt-2">
-    <h3 class="text-primary text-uppercase" style="padding-right:10px"><i class="bi bi-person-lines-fill"></i>  {{ record['first_name'] ~ ' ' ~ record['last_name'] }}</h3>
+    <h3 class="text-primary text-uppercase" style="padding-right:10px"><i class="bi bi-person-lines-fill"></i> {{ record['first_name'] ~ ' ' ~ record['last_name'] }}</h3>
     <div class="btn-toolbar mb-2 mb-md-0">
         <div class="btn-group me-2">
             {% if can_update %}
@@ -17,79 +17,77 @@
     <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-picture">{{ 'image'|text }}</a></li>
     <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-options">{{ 'options'|text }}</a></li>
 </ul>
-<form id="account_update" class="needs-validation" action="{{ 'accounts-account-update'|link({'id': record['id']}) }}" method="POST" enctype="multipart/form-data" novalidate>
+<form class="needs-validation" novalidate id="account_update" action="{{ 'account-update'|link({'id': record['id']}) }}" method="POST" enctype="multipart/form-data">
     <div class="tab-content mb-5">
         <div class="tab-pane active show" id="tab-personal" role="tabpanel">
-            <div class="form-group mb-3">
+            <div class="mb-3">
                 <label class="form-label">{{ 'login'|text }}</label>
-                <input name="username" value="{{ record['username']|e }}" maxlength="128" placeholder="" required type="text" autocomplete="off" class="form-control">
+                <input class="form-control" required name="username" value="{{ record['username']|e }}" maxlength="128" placeholder="" type="text" autocomplete="off">
                 <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
             </div>
             {% if user.is('system_coder') %}
-            <div class="form-group mb-3">
+            <div class="mb-3">
                 <label class="form-label">{{ 'password'|text }}</label>
-                <input name="password" value="" maxlength="256" placeholder="" type="password" autocomplete="off" class="form-control">
+                <input class="form-control" name="password" value="" maxlength="256" placeholder="" type="password" autocomplete="off">
             </div>
             {% endif %}
-            <div class="form-group mb-3">
+            <div class="mb-3">
                 <label class="form-label">{{ 'firstname'|text }}</label>
-                <input name="first_name" value="{{ record['first_name']|e }}" maxlength="128" autocomplete="off" required class="form-control">
+                <input class="form-control" required name="first_name" value="{{ record['first_name']|e }}" maxlength="128" autocomplete="off">
                 <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
             </div>
-            <div class="form-group mb-3">
+            <div class="mb-3">
                 <label class="form-label">{{ 'lastname'|text }}</label>
-                <input name="last_name" value="{{ record['last_name']|e }}" maxlength="128" placeholder="" required type="text" autocomplete="off" class="form-control">
+                <input class="form-control" required name="last_name" value="{{ record['last_name']|e }}" maxlength="128" placeholder="" type="text" autocomplete="off">
                 <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
             </div>
-            <div class="form-group mb-3">
+            <div class="mb-3">
                 <label class="form-label">{{ 'telephone'|text }}</label>
-                <input name="phone" value="{{ record['phone']|e }}" maxlength="128" placeholder="" required type="text" autocomplete="off" class="form-control">
+                <input class="form-control" required name="phone" value="{{ record['phone']|e }}" maxlength="128" placeholder="" type="text" autocomplete="off">
                 <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
             </div>
-            <div class="form-group mb-3">
+            <div class="mb-3">
                 <label class="form-label">{{ 'address'|text }}</label>
-                <textarea name="address" maxlength="256" rows="2" class="form-control">{{ record['address'] }}</textarea>
+                <textarea class="form-control" name="address" maxlength="256" rows="2">{{ record['address'] }}</textarea>
             </div>
-            <div class="form-group mb-3">
+            <div class="mb-3">
                 <label class="form-label">{{ 'email'|text }}</label>
                 <div class="input-group">
                     <div class="input-group-prepend"><span class="input-group-text">@</span></div>
-                    <input name="email" value="{{ record['email']|e }}" maxlength="128" placeholder="" required type="email" autocomplete="off" class="form-control">
+                    <input class="form-control" required name="email" value="{{ record['email']|e }}" maxlength="128" placeholder="" type="email" autocomplete="off">
                     <div class="invalid-feedback">{{ 'enter-valid-email'|text }}</div>
                 </div>
             </div>
             {% if user.is('system_coder') %}
-            <div class="form-group">
+            <div class="mb-3">
                 <label class="form-label">{{ 'status'|text }}</label>
                 <div class="form-check form-switch">
                   <input class="form-check-input" type="checkbox" role="switch" name="status" {{ record['status'] == 1 ? 'checked ' : '' }}aria-describedby="activeHelpBlock" onclick="warnStatus(this.checked);">
                 </div>
-                <div id="activeHelpBlock" class="form-text">{{ 'active-account-can-login'|text }}</div>
+                <div class="form-text" id="activeHelpBlock">{{ 'active-account-can-login'|text }}</div>
             </div>
             {% endif %}
         </div>
         <div class="tab-pane" id="tab-picture" role="tabpanel">
-            <div class="form-group col-6">
+            <div class="mb-3">
                 <input type="file" name="photo">
             </div>
         </div>
         <div class="tab-pane" id="tab-options" role="tabpanel">
-            <div class="form-group mb-3">
+            <div class="mb-3">
                 <label class="form-label">{{ 'organization'|text }}</label>
-                {% if user.can('system_account_organization_set') %}
-                <select id="organizations" name="organizations[]" class="form-control" multiple aria-describedby="organzationHelpBlock">
+                <select class="form-control" multiple name="organizations[]" id="organizations" aria-describedby="organzationHelpBlock">
                     {% for organization in organizations %}
                         <option value="{{ organization['id'] }}">{{ organization['name'] }}</option>
                     {% endfor %}
                 </select>
-                {% endif %}
-                <div id="organzationHelpBlock" class="form-text">хэрэглэгчийн харъяалагдах байгууллагыг сонгон тохируулна уу</div>
+                <div class="form-text" id="organzationHelpBlock">хэрэглэгчийн харъяалагдах байгууллагыг сонгон тохируулна уу</div>
             </div>
             <hr>
-            <div class="form-group mb-3">
+            <div class="mb-3">
                 <label>{{ 'role2'|text }}</label>
                 {% if user.can('system_rbac') %}
-                <select id="roles" name="roles[]" class="form-control" multiple aria-describedby="roleHelpBlock">
+                <select class="form-control" multiple name="roles[]" id="roles" aria-describedby="roleHelpBlock">
                     {% for key,data in roles %}
                     <optgroup label="{{ rbacs[key] }}" alias="{{ key }}">
                         {% for value,name in data %}
@@ -99,7 +97,7 @@
                     {% endfor %}
                 </select>
                 {% endif %}
-                <div id="roleHelpBlock" class="form-text">хэрэглэгчийн дүрийг сонгон тохируулна уу</div>
+                <div class="form-text" id="roleHelpBlock">хэрэглэгчийн дүрийг сонгон тохируулна уу</div>
             </div>
         </div>
     </div>
@@ -108,12 +106,12 @@
 {% if can_update %}
     <button class="submit btn btn-lg btn-primary shadow-sm"><i class="bi bi-check"></i> {{ 'submit'|text }}</button>
 {% endif %}
-    <button class="btn btn-lg  btn-secondary shadow-sm mx-2" onclick="window.history.go(-1);return false;">{{ 'back'|text }}</button>
+    <button class="btn btn-lg  btn-secondary shadow-sm mx-2" onclick="window.history.go(-1);return false;">{{ 'cancel'|text }}</button>
 </div>
 <script defer src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
 <script defer src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-<script>
+<script type="text/javascript">
 function warnStatus(checked) {
     if (checked) {
         return;
@@ -140,7 +138,6 @@ document.addEventListener('DOMContentLoaded', function() {
             if (jQuery().select2) {
                 this.select2({
                     width: '100%',
-                    //dropdownParent: $('#dashboard-modal'),
                     escapeMarkup: function(m) { return m; }
                 });
             };
@@ -176,7 +173,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     width: '100%',
                     templateResult: formatMenu,
                     templateSelection: formatSelection,
-                    //dropdownParent: $('#dashboard-modal'),
                     escapeMarkup: function(m) { return m; }
                 });
             };

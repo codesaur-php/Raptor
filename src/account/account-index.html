@@ -1,27 +1,22 @@
 <div class="bd-callout bd-callout-primary bg-light alert alert-dismissible fade show shadow-sm" style="top:-6px">
     <p><i class="bi bi-person-lines-fill pr-2" style="padding-right:8px;"></i> {{ 'accounts-note'|text }}
-    <button type="button" class="btn-close" style="font-size:0.7rem" data-bs-dismiss="alert" aria-label="{{ 'close'|text|e }}"></button>
+    <button class="btn-close" type="button" style="font-size:0.7rem" data-bs-dismiss="alert" aria-label="{{ 'close'|text|e }}"></button>
     </p>
 </div>
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-4">
     <h3 class="text-primary" style="padding-right:10px"><i class="bi bi-people-fill"></i>  {{ 'accounts'|text }}</h3>
     <div class="btn-toolbar mb-2 mb-md-0">
         <div class="btn-group me-2">
-            {% if user.can('system_forgot_index') %}
-            <a class="btn btn-outline-dark shadow-sm" data-bs-target="#dashboard-modal" data-bs-toggle="modal"
-               href="{{ 'accounts-requests-modal'|link({'table': 'forgot'}) }}">
+            {% if user.can('system_account_index') %}
+            <a class="btn btn-outline-dark shadow-sm" href="{{ 'accounts-requests-modal'|link({'table': 'forgot'}) }}" data-bs-target="#dashboard-modal" data-bs-toggle="modal">
                 {{ 'password-reset-request'|text }}
             </a>
-            {% endif %}
-            {% if user.can('system_newbie_index') %}
-            <a class="btn btn-outline-primary shadow-sm" data-bs-target="#dashboard-modal" data-bs-toggle="modal"
-               href="{{ 'accounts-requests-modal'|link({'table': 'newbie'}) }}">
+            <a class="btn btn-outline-primary shadow-sm" href="{{ 'accounts-requests-modal'|link({'table': 'newbie'}) }}" data-bs-target="#dashboard-modal" data-bs-toggle="modal">
                 {{ 'request-new-account'|text }}
             </a>
             {% endif %}
             {% if user.can('system_account_insert') %}
-            <a class="btn btn-outline-success shadow-sm"
-               href="{{ 'accounts-account-insert'|link }}">
+            <a class="btn btn-outline-success shadow-sm" href="{{ 'account-insert'|link }}">
                 <i class="bi bi-person-plus-fill" style="margin-right:4px;"></i> {{ 'create-new-account'|text }}
             </a>
             {% endif %}
@@ -43,11 +38,11 @@
     </thead>
     <tbody>
     {% for account in accounts %}
-        <tr id="account_{{ account['id'] }}">
+        <tr>
             <th scope="row">{{ account['id'] }}</th>
             <td>
                 {% if account['photo'] is not empty %}
-                    <img alt="{{ (account['first_name'] ~ ' ' ~ account['last_name'])|e }}" src="{{ account['photo'] }}" width="60px">
+                    <img class="img-fluid img-thumbnail" src="{{ account['photo'] }}" style="max-width:120px;max-height:80px">
                 {% else %}
                     <i class="bi bi-person-bounding-box text-secondary" style="font-size:2rem"></i>
                 {% endif %}                
@@ -61,20 +56,20 @@
                 <br/><a class="badge bg-success fw-normal text-decoration-none mt-1" href="mailto:{{ account['email']|e }}"><i class="bi bi-envelope"></i> {{ account['email'] }}</a>
             </td>
             <td>
-                <a href="{{ 'accounts-organization-set'|link({'account_id': account['id']}) }}"
+                <a href="{{ 'organization-user-set'|link({'account_id': account['id']}) }}"
                    class="btn btn-dark btn-sm shadow-sm" data-bs-target="#dashboard-modal" data-bs-toggle="modal"><i class="bi bi-bank"></i>
                 </a>
             {% for org in account['organizations'] %}
-                <a href="{{ 'accounts-organization-view'|link({'id': organizations[org]['id']}) }}" class="badge bg-{{ organizations[org]['alias'] == 'system' ? 'primary' : 'warning' }} fw-normal text-decoration-none" data-bs-target="#dashboard-modal" data-bs-toggle="modal">
+                <a class="badge bg-{{ organizations[org]['alias'] == 'system' ? 'primary' : 'warning' }} fw-normal text-decoration-none" href="{{ 'organization-view'|link({'id': organizations[org]['id']}) }}" data-bs-target="#dashboard-modal" data-bs-toggle="modal">
                     {{ organizations[org]['name'] }}
                 </a>
             {% endfor %}
             </td>
             <td>
-                <a href="{{ 'accounts-rbac-user-role'|link({'id': account['id']}) }}" class="btn btn-danger btn-sm shadow-sm" data-bs-target="#dashboard-modal" data-bs-toggle="modal"><i class="bi bi-shield-fill-check"></i>
+                <a class="btn btn-danger btn-sm shadow-sm" href="{{ 'rbac-set-user-role'|link({'id': account['id']}) }}" data-bs-target="#dashboard-modal" data-bs-toggle="modal"><i class="bi bi-shield-fill-check"></i>
                 </a>
             {% for role in account['roles'] %}
-                <a href="{{ 'accounts-rbac-role-view'|link }}?role={{ role }}" class="badge bg-{{ role == 'system_coder' ? 'primary' : 'warning' }} text-decoration-none shadow-sm" data-bs-target="#dashboard-modal" data-bs-toggle="modal">
+                <a class="badge bg-{{ role == 'system_coder' ? 'primary' : 'warning' }} text-decoration-none shadow-sm" href="{{ 'rbac-role-view'|link }}?role={{ role }}" data-bs-target="#dashboard-modal" data-bs-toggle="modal">
                     {{ role }}
                 </a>
             {% endfor %}
@@ -83,14 +78,14 @@
                 <span class="badge bg-{{ account['status'] ? 'light' : 'secondary' }} text-{{ account['status'] ? 'success' : 'light' }}">{{ statuses[account['status']]['title'][localization.code] ?? account['status'] }}</span>
             </td>
             <td>
-                {% if account['id'] == user.getAccount()['id'] or user.can('system_account_retrieve') %}
-                <a href="{{ 'accounts-account-view'|link({'id': account['id']}) }}" class="btn btn-sm btn-info shadow-sm"><i class="bi bi-eye"></i></a>
+                {% if account['id'] == user.getAccount()['id'] or user.can('system_account_index') %}
+                <a class="btn btn-sm btn-info shadow-sm" href="{{ 'account-view'|link({'id': account['id']}) }}"><i class="bi bi-eye"></i></a>
                 {% endif %}
                 {% if account['id'] == user.getAccount()['id'] or (account['id'] != 1 and user.can('system_account_update')) %}
-                <a href="{{ 'accounts-account-update'|link({'id': account['id']}) }}" class="btn btn-sm btn-primary shadow-sm"><i class="bi bi-pencil-square"></i></a>
+                <a class="btn btn-sm btn-primary shadow-sm" href="{{ 'account-update'|link({'id': account['id']}) }}"><i class="bi bi-pencil-square"></i></a>
                 {% endif %}
                 {% if account['id'] != user.getAccount()['id'] and account['id'] != 1 and user.can('system_account_delete') %}
-                <a href="{{ account['id'] }}" data-account-name="{{ account['first_name'] ~ ' ' ~ account['last_name'] }}" class="delete-account btn btn-sm btn-danger shadow-sm"><i class="bi bi-trash"></i></a>
+                <a class="delete-account btn btn-sm btn-danger shadow-sm" href="{{ account['id'] }}"><i class="bi bi-trash"></i></a>
                 {% endif %}
             </td>
         </tr>
@@ -118,9 +113,22 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.delete-account').forEach(function(a) {
         a.addEventListener('click', function(e) {
             e.preventDefault();
+            
+            let name = a.parentNode.parentNode.children[3].innerHTML.replace(/<\/?[^>]+(>|$)/g, '');
+            let question = deleteAskHtml.format(name);
+            
+            var src = '';
+            let photo = a.parentNode.parentNode.children[1].querySelector('img');
+            if (photo) {
+                src = photo.src;
+            } else {
+                question = '<i class="bi bi-person-x-fill text-danger mb-2" style="font-size:3rem"></i>' + question;
+            }
+            
             Swal.fire({
-                icon: 'question',
-                html: deleteAskHtml.format(a.getAttribute('data-account-name')),
+                imageUrl: src,
+                imageHeight: 60,
+                html: question,
                 input: 'text',
                 showCancelButton: true,
                 cancelButtonText: '{{ 'cancel'|text|e }}',
@@ -131,15 +139,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 backdrop: true,
                 preConfirm: (reason) => {
                     return fetch(
-                        '{{ 'accounts-account-delete'|link }}',
+                        '{{ 'account-delete'|link }}',
                         {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json'
                             },
                             body: JSON.stringify({
+                                name,
                                 reason: reason,
-                                id: a.getAttribute('href')
+                                id: a.getAttribute('href'),
                             })
                         }
                     ).then(res => {
@@ -156,7 +165,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         
                         NotifyTop('success', "{{ 'success'|text|e }}", response.message ? response.message : '');
                         
-                        let row = accountTable.querySelector('#account_' + a.getAttribute('href'));
+                        let row = a.parentNode.parentNode;
                         if (row && row.parentNode !== null) {
                             row.parentNode.removeChild(row);
                         }

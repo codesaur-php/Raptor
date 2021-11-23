@@ -2,7 +2,7 @@
 
 namespace Raptor\Account;
 
-use PDO;
+use Exception;
 
 use Psr\Log\LogLevel;
 
@@ -14,100 +14,136 @@ use Indoraptor\Account\OrganizationUserModel;
 use Raptor\Dashboard\DashboardController;
 
 class OrganizationUserController extends DashboardController
-{    
+{
+    public function index()
+    {
+        $template = $this->twigDashboard($this->text('organizations'));
+        
+        try {
+            if (!$this->isUserAuthorized()) {
+                throw new Exception($this->text('system-no-permission'));
+            }
+
+            $user_orgs_query =
+                    'SELECT t2.* FROM organization_users as t1 JOIN organizations as t2 ON t1.organization_id=t2.id ' .
+                    'WHERE t1.is_active=1 AND t2.is_active=1 AND t1.account_id=' . $this->getUser()->getAccount()['id'];
+            $organizations = $this->indo('/statement', array('query' => $user_orgs_query));
+
+            $template->render($this->twigTemplate(dirname(__FILE__) . '/organization-user.html', array('organizations' => $organizations)));
+            
+            $level = LogLevel::NOTICE;
+            $message = 'Хэрэглэгч өөрийн байгууллагуудын жагсаалтыг нээж үзэж байна';
+        } catch (Exception $e) {
+            $level = LogLevel::ERROR;
+            $message = $e->getMessage();
+            
+            $template->alertNoPermission($message);
+        } finally {
+            $this->indolog('account', $level, $message);
+        }        
+    }
+    
     public function set(int $account_id)
     {
-        if ($this->getRequest()->getMethod() == 'POST') {
+        $is_submit = $this->getRequest()->getMethod() == 'POST';
+        $context = array('reason' => 'organization-user-set', 'account_id' => $account_id);
+        
+        try {
             if (!$this->isUserCan('system_account_organization_set')) {
-                return $this->respondJSON(array(
-                    'status'  => 'error',
-                    'title'   => $this->text('error'),
-                    'message' => $this->text('system-no-permission')
-                ));
-            }
-            $organizations = array();
-            $post_organizations = $this->getPostParam('organizations', FILTER_VALIDATE_INT, FILTER_REQUIRE_ARRAY) ?? array();
-            foreach ($post_organizations as $id) {
-                $organizations[$id] = true;
+                throw new Exception($this->text('system-no-permission'));
             }
             
-            $org_user = $this->indo('/statement', array(
-                'bind' => array(':id' => array('var' => $account_id, 'type' => PDO::PARAM_INT)),
-                'query' => 'SELECT id,organization_id FROM organization_users WHERE account_id=:id AND is_active=1'));
-            if (!isset($org_user['error']['code'])
-                    && !empty($org_user)
-            ) {
-                foreach ($org_user as $row) {
+            if ($is_submit) {
+                $organizations = array();
+                $post_organizations = $this->getPostParam('organizations', FILTER_VALIDATE_INT, FILTER_REQUIRE_ARRAY) ?? array();
+                foreach ($post_organizations as $id) {
+                    $organizations[$id] = true;
+                }
+
+                $user_orgs = $this->indo('/statement', array(
+                    'query' => "SELECT id,organization_id FROM organization_users WHERE account_id=$account_id AND is_active=1"));
+                foreach ($user_orgs as $row) {
                     if (isset($organizations[(int)$row['organization_id']])) {
                         unset($organizations[(int)$row['organization_id']]);
                     } else {
-                        $org_delete = $this->indodelete('/record?model=' . OrganizationUserModel::class, array('WHERE' => "id={$row['id']}"));
-                        if (!empty($org_delete['id'])) {
-                            $this->indolog(
-                                    'account',
-                                    LogLevel::ALERT,
-                                    "{$row['organization_id']} дугаартай байгууллагын хэрэглэгчийн бүртгэлээс $account_id дугаар бүхий хэрэглэгчийг хаслаа.",
-                                    array('reason' => 'organization-strip', 'account_id' => $account_id, 'organization_id' => $row['organization_id'])
-                            );
-                        }
-
+                        $this->indodelete('/record?model=' . OrganizationUserModel::class, array('WHERE' => "id={$row['id']}"));
+                        $this->indolog(
+                                'account',
+                                LogLevel::ALERT,
+                                "{$row['organization_id']} дугаартай байгууллагын хэрэглэгчийн бүртгэлээс $account_id дугаар бүхий хэрэглэгчийг хаслаа",
+                                array('reason' => 'organization-strip', 'account_id' => $account_id, 'organization_id' => $row['organization_id'])
+                        );
                     }
                 }
-            }
 
-            foreach (array_keys($organizations) as $id) {
-                $org_set = $this->indopost('/record?model=' . OrganizationUserModel::class,
-                        array('record' => array('account_id' => $account_id, 'organization_id' => $id)));                
-                if (isset($org_set['id'])) {
+                foreach (array_keys($organizations) as $id) {
+                    $record_id = $this->indopost('/record?model=' . OrganizationUserModel::class,
+                            array('record' => array('account_id' => $account_id, 'organization_id' => $id)));
                     $this->indolog(
                             'account',
                             LogLevel::ALERT,
-                            "$account_id дугаартай хэрэглэгчийг $id дугаар бүхий байгууллагад нэмэх үйлдлийг амжилттай гүйцэтгэлээ.",
-                            array('reason' => 'organization-set', 'account_id' => $account_id, 'organization_id' => $id)
+                            "$account_id дугаартай хэрэглэгчийг $id дугаар бүхий байгууллагад нэмэх үйлдлийг амжилттай гүйцэтгэлээ",
+                            array('reason' => 'organization-set', 'account_id' => $account_id, 'organization_id' => $id, 'record_id' => $record_id)
                     );
                 }
-            }
-            
-            return $this->respondJSON(array(
-                'status'  => 'success',
-                'title'   => $this->text('success'),
-                'message' => $this->text('record-update-success'),
-                'href'    => $this->generateLink('accounts')
-            ));
-        } elseif (!$this->isUserCan('system_account_organization_set')) {
-            die($this->errorNoPermissionModal());
-        } else {
-            $sql =  'SELECT ou.organization_id as id ' .
-                    'FROM organization_users as ou JOIN organizations as o ON ou.organization_id=o.id ' .
-                    'WHERE ou.account_id=:id AND ou.is_active=1 AND o.is_active=1';
-            $response = $this->indo('/statement', array('query' => $sql,
-                'bind' => array(':id' => array('var' => $account_id, 'type' => PDO::PARAM_INT))));
-            if (!isset($response['error']['code'])
-                    && !empty($response)
-            ) {
+
+                return $this->respondJSON(array(
+                    'status'  => 'success',
+                    'title'   => $this->text('success'),
+                    'message' => $this->text('record-update-success'),
+                    'href'    => $this->generateLink('accounts')
+                ));
+            } else {
+                $query =
+                        'SELECT ou.organization_id as id ' .
+                        'FROM organization_users as ou JOIN organizations as o ON ou.organization_id=o.id ' .
+                        "WHERE ou.account_id=$account_id AND ou.is_active=1 AND o.is_active=1";
+                $response = $this->indo('/statement', array('query' => $query));
                 $ids = array();
                 foreach ($response as $org) {
                     $ids[] = $org['id'];
                 }
                 $current_organizations = implode(',', $ids);
+
+                $account = $this->indo('/record?model=' . Accounts::class, array('id' => $account_id));
+                $vars = array(
+                    'account' => $account,
+                    'current_organizations' => $current_organizations,
+                    'organizations' => $this->indo('/record/rows?model=' . OrganizationModel::class),
+                );
+                
+                $template_path = dirname(__FILE__) . '/organization-user-set-modal.html';
+                if (!file_exists($template_path)) {
+                    throw new Exception("$template_path file not found!");
+                }
+                $this->twigTemplate($template_path, $vars)->render();
+
+                $context['account'] = $account;
+                $context['current_organizations'] = $current_organizations;
+                $this->indolog(
+                        'account',
+                        LogLevel::NOTICE,
+                        "$account_id дугаартай хэрэглэгчийн байгууллагын мэдээллийг өөрчлөх үйлдлийг эхлүүллээ",
+                        $context
+                );
+            }
+        } catch (Exception $e) {
+            if ($is_submit) {
+                $this->respondJSON(array(
+                    'status'  => 'error',
+                    'title'   => $this->text('error'),
+                    'message' => $e->getMessage()
+                ));
             } else {
-                $current_organizations = null;
+                echo $this->errorNoPermissionModal($e->getMessage());
             }
             
-            $account = $this->indo('/record?model=' . Accounts::class, array('id' => $account_id))['record'] ?? array();
-            $organizations = $this->indo('/record/rows?model=' . OrganizationModel::class)['rows'] ?? array();
-            $vars = array(
-                'account' => $account,
-                'organizations' => $organizations,
-                'current_organizations' => $current_organizations
-            );
-            $this->twigTemplate(dirname(__FILE__) . '/account-organization-set-modal.html', $vars)->render();
-            
+            $context['error'] = array('code' => $e->getCode(), 'message' => $e->getMessage());
             $this->indolog(
                     'account',
-                    LogLevel::NOTICE,
-                    "$account_id дугаартай хэрэглэгчийн байгууллагын мэдээллийг өөрчлөх үйлдлийг эхлүүллээ.",
-                    array('reason' => 'organization-set', 'account' => $account, 'organizations' => $current_organizations)
+                    LogLevel::ERROR,
+                    "$account_id дугаартай хэрэглэгчийн байгууллагын мэдээллийг өөрчлөх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо",
+                    $context
             );
         }
     }

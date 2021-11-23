@@ -1,20 +1,20 @@
 <div class="modal-dialog modal-xl" role="document">
     <div class="modal-content">
         <div class="modal-header modal-header-solid">
-            <h5 class="modal-title text-uppercase text-primary" id="MyModalLabel"><i class="bi bi-person-plus-fill"></i> {{ 'request-new-account'|text }}</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'close'|text|e }}"></button>
+            <h5 class="modal-title text-uppercase text-primary"><i class="bi bi-person-plus-fill"></i> {{ 'request-new-account'|text }}</h5>
+            <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="{{ 'close'|text|e }}"></button>
         </div>
         <div class="modal-body">
             <table class="table table-hover" id="new_account_requests">
                 <thead>
                     <tr>
-                        <th scope="col" class="text-primary">#</th>
-                        <th scope="col" class="text-primary">{{ 'username'|text }}</th>
-                        <th scope="col" class="text-primary">{{ 'email'|text }}</th>
-                        <th scope="col" class="text-primary">{{ 'language'|text }}</th>
-                        <th scope="col" class="text-primary">{{ 'date-created'|text }}</th>
-                        <th scope="col" class="text-primary">{{ 'status'|text }}</th>
-                        <th scope="col" class="text-primary">{{ 'action'|text }}</th>
+                        <th class="text-primary" scope="col">#</th>
+                        <th class="text-primary" scope="col">{{ 'username'|text }}</th>
+                        <th class="text-primary" scope="col">{{ 'email'|text }}</th>
+                        <th class="text-primary" scope="col">{{ 'language'|text }}</th>
+                        <th class="text-primary" scope="col">{{ 'date-created'|text }}</th>
+                        <th class="text-primary" scope="col">{{ 'status'|text }}</th>
+                        <th class="text-primary" scope="col">{{ 'action'|text }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -23,7 +23,7 @@
                         <th scope="row">{{ row['id'] }}</th>
                         <td><strong>{{ row['username'] }}</strong></th>
                         <td>{{ row['email'] }}</td>
-                        <td><img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.0/images/flags/{{ row['code'] }}.png"></td>
+                        <td><img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.1/images/flags/{{ row['code'] }}.png"></td>
                         <td>{{ row['created_at'] }}</td>
                         <td>
                         {% if row['status'] == 2 %}
@@ -37,10 +37,10 @@
                         <td>
                         {% if row['is_active'] == 1 %}
                             {% if user.can('system_account_insert') %}
-                            <a href="{{ row['id'] }}" data-account-name="{{ row['username']|e }} => {{ row['email']|e }}" class="approve-request btn btn-sm btn-success shadow-sm"><i class="bi bi-person-check"></i> {{ 'accept'|text }}</a>
+                            <a class="approve-request btn btn-sm btn-success shadow-sm" href="{{ row['id'] }}"><i class="bi bi-person-check"></i> {{ 'accept'|text }}</a>
                             {% endif %}
                             {% if user.can('system_account_delete') %}
-                            <a href="{{ row['id'] }}" data-account-name="{{ row['username']|e }}" class="delete-request btn btn-sm btn-danger shadow-sm"><i class="bi bi-trash"></i> {{ 'delete'|text }}</a>
+                            <a class="delete-request btn btn-sm btn-danger shadow-sm" href="{{ row['id'] }}"><i class="bi bi-trash"></i> {{ 'delete'|text }}</a>
                             {% endif %}
                         {% else %}
                             {{ row['reserved'] }}
@@ -60,7 +60,7 @@
 var approveAskHtml = {% if localization.code == 'mn' %}'<p class="text-primary">Та ({0}) хэрэглэгчийн бүртгүүлэх хүсэлтийг зөвшөөрөхдөө итгэлтэй байна уу?</p>'{% else %}'<p class="text-primary">Are you sure to accept this account request ({0})?</p>'{% endif %};
 var deleteRequestAskHtml = {% if localization.code == 'mn' %}'<p class="text-danger">Та ({0}) хэрэглэгчийн бүртгүүлэх хүсэлтийг устгахдаа итгэлтэй байна уу?</p>'{% else %}'<p class="text-danger">Are you sure to delete this account request ({0})?</p>'{% endif %};
 $('table#new_account_requests').DataTable({
-    pageLength: 5, responsive: true,
+    pageLength: 10, responsive: true, order: [[ 4, 'desc' ]],
     lengthMenu: [[5, 10, 20, 50, -1], [5, 10, 20, 50, "{{ 'all'|text|e }}"]]
     {% if localization.code == 'mn' %}, language: {url: 'https://cdn.datatables.net/plug-ins/1.11.3/i18n/mn.json'}{% endif %}
 });
@@ -68,8 +68,9 @@ $('table#new_account_requests').DataTable({
 document.querySelectorAll('#new_account_requests a.approve-request').forEach(function(a) {
     a.addEventListener('click', function(e) {
         e.preventDefault();
+        let name = (a.parentNode.parentNode.children[1].innerHTML + ' => ' + a.parentNode.parentNode.children[2].innerHTML).replace(/<\/?[^>]+(>|$)/g, '');
         Swal.fire({
-            html: '<i class="bi bi-person-plus text-info mb-2" style="font-size:3rem"></i>' + approveAskHtml.format(a.getAttribute('data-account-name')),
+            html: '<i class="bi bi-person-plus text-info mb-2" style="font-size:3rem"></i>' + approveAskHtml.format(name),
             showCancelButton: true,
             cancelButtonText: '{{ 'no'|text|e }}',
             confirmButtonText: '<i class="bi bi-check"></i> {{ 'yes'|text|e }}',
@@ -83,7 +84,7 @@ document.querySelectorAll('#new_account_requests a.approve-request').forEach(fun
                 }
 
                 return fetch(
-                    '{{ 'accounts-account-accept'|link }}',
+                    '{{ 'account-request-approve'|link }}',
                     {
                         method: 'POST',
                         headers: {
@@ -102,7 +103,7 @@ document.querySelectorAll('#new_account_requests a.approve-request').forEach(fun
                     }
 
                     NotifyTop('success', "{{ 'success'|text|e }}", response.message ? response.message : '');
-
+                    
                     window.location.href = "{{ 'accounts'|link }}";
                 })
                 .catch(error => {
@@ -116,8 +117,9 @@ document.querySelectorAll('#new_account_requests a.approve-request').forEach(fun
 document.querySelectorAll('#new_account_requests a.delete-request').forEach(function(a) {
     a.addEventListener('click', function(e) {
         e.preventDefault();
+        let name = (a.parentNode.parentNode.children[1].innerHTML + ' => ' + a.parentNode.parentNode.children[2].innerHTML).replace(/<\/?[^>]+(>|$)/g, '');
         Swal.fire({
-            html: '<i class="bi bi-person-x-fill text-danger mb-2" style="font-size:3rem"></i>' + deleteRequestAskHtml.format(a.getAttribute('data-account-name')),
+            html: '<i class="bi bi-person-x-fill text-danger mb-2" style="font-size:3rem"></i>' + deleteRequestAskHtml.format(name),
             showCancelButton: true,
             cancelButtonText: '{{ 'no'|text|e }}',
             confirmButtonText: '<i class="bi bi-check"></i> {{ 'yes'|text|e }}',
@@ -131,16 +133,13 @@ document.querySelectorAll('#new_account_requests a.delete-request').forEach(func
                 }
 
                 return fetch(
-                    '{{ 'accounts-account-delete'|link }}',
+                    '{{ 'account-request-delete'|link }}',
                     {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'
                         },
-                        body: JSON.stringify({
-                            table: 'newbie',
-                            id: a.getAttribute('href')
-                        })
+                        body: JSON.stringify({id: a.getAttribute('href'), name})
                     }
                 ).then(res => {
                     if (!res.ok) {
@@ -154,7 +153,10 @@ document.querySelectorAll('#new_account_requests a.delete-request').forEach(func
 
                     NotifyTop('success', "{{ 'success'|text|e }}", response.message ? response.message : '');
 
-                    window.location.href = "{{ 'accounts'|link }}";
+                    let row = a.parentNode.parentNode;
+                    if (row && row.parentNode !== null) {
+                        row.parentNode.removeChild(row);
+                    }
                 })
                 .catch(error => {
                     Swal.showValidationMessage(error.message);

@@ -6,107 +6,107 @@
         </div>
     </div>
 </div>
-    <div class="form-group row mb-2">
-        <label class="col-3 col-form-label">ID</label>
+    <div class="row mb-2">
+        <label class="col-3 col-form-label text-end text-end">ID</label>
         <div class="col-9">
             <input class="form-control" disabled value="{{ record['id'] }}" type="number">
         </div>
     </div>
-    <div class="form-group row mb-2">
-        <label class="col-3 col-form-label">{{ 'login'|text }}</label>
+    <div class="row mb-2">
+        <label class="col-3 col-form-label text-end text-end">{{ 'login'|text }}</label>
         <div class="col-9">
             <input class="form-control" disabled value="{{ record['username']|e }}" type="text">
         </div>
     </div>
     <hr>
-    <div class="form-group row mb-2">
-        <label class="col-3 col-form-label">{{ 'firstname'|text }}</label>
+    <div class="row mb-2">
+        <label class="col-3 col-form-label text-end text-end">{{ 'firstname'|text }}</label>
         <div class="col-9">
             <input class="form-control" disabled value="{{ record['first_name']|e }}" type="text">
         </div>
     </div>
-    <div class="form-group row mb-2">
-        <label class="col-3 col-form-label">{{ 'lastname'|text }}</label>
+    <div class="row mb-2">
+        <label class="col-3 col-form-label text-end text-end">{{ 'lastname'|text }}</label>
         <div class="col-9">
             <input class="form-control" disabled value="{{ record['last_name']|e }}" type="text">
         </div>
     </div>
-    <div class="form-group row mb-2">
-        <label class="col-3 col-form-label">{{ 'photo'|text }}</label>
+    <div class="row mb-2">
+        <label class="col-3 col-form-label text-end text-end">{{ 'photo'|text }}</label>
         <div class="col-9">
         {% if record['photo'] is not empty %}
-            <img src="{{ record['photo'] }}" class="img-fluid" style="max-height:480px;">
+            <img class="img-fluid img-thumbnail" src="{{ record['photo'] }}" style="max-height:480px;">
         {% else %}
             <i class="bi bi-person-bounding-box text-secondary" style="font-size:2rem"></i>
         {% endif %}
         </div>
     </div>
-    <div class="form-group row mb-2">
-        <label class="col-3 col-form-label">{{ 'email'|text }}</label>
+    <div class="row mb-2">
+        <label class="col-3 col-form-label text-end text-end">{{ 'email'|text }}</label>
         <div class="col-9">
             <input class="form-control" disabled value="{{ record['email']|e }}" type="text">
         </div>
     </div>
-    <div class="form-group row mb-2">
-        <label class="col-3 col-form-label">{{ 'telephone'|text }}</label>
+    <div class="row mb-2">
+        <label class="col-3 col-form-label text-end text-end">{{ 'telephone'|text }}</label>
         <div class="col-9">
             <input class="form-control" disabled value="{{ record['phone']|e }}" type="text">
         </div>
     </div>
-    <div class="form-group row mb-2">
-        <label class="col-3 col-form-label">{{ 'address'|text }}</label>
+    <div class="row mb-2">
+        <label class="col-3 col-form-label text-end text-end">{{ 'address'|text }}</label>
         <div class="col-9">
             <input class="form-control" disabled value="{{ record['address']|e }}" type="text">
         </div>
     </div>
-    <div class="form-group row mb-2">
-        <label class="col-3 col-form-label">{{ 'status'|text }}</label>
+    <div class="row mb-2">
+        <label class="col-3 col-form-label text-end text-end">{{ 'status'|text }}</label>
         <div class="col-9">
             <div class="form-check form-switch">
               <input class="form-check-input" type="checkbox" role="switch" disabled {{ record['status'] == 1 ? 'checked ' : '' }}aria-describedby="activeHelpBlock">
             </div>
-            <div id="activeHelpBlock" class="form-text">{{ 'active-account-can-login'|text }}</div>
+            <div class="form-text" id="activeHelpBlock">{{ 'active-account-can-login'|text }}</div>
         </div>
     </div>
     <hr>
-    <div class="form-group row mb-2">
-        <label class="col-3 col-form-label">{{ 'organization'|text }}</label>
+    <div class="row mb-2">
+        <label class="col-3 col-form-label text-end text-end">{{ 'organization'|text }}</label>
         <div class="col-9">
             <input class="form-control" disabled value="{% for org in organizations %}{{ org['name'] ~ (not loop.last ? ', ' : '')}}{% endfor %}" type="text">
         </div>
     </div>
-    <div class="form-group row mb-2">
-        <label class="col-3 col-form-label">{{ 'role2'|text }}</label>
+    <div class="row mb-2">
+        <label class="col-3 col-form-label text-end text-end">{{ 'role2'|text }}</label>
         <div class="col-9">
             <input class="form-control" disabled value="{% for role in roles %}{{ role['name'] ~ (not loop.last ? ', ' : '')}}{% endfor %}" type="text">
         </div>
     </div>
     <hr>
-    <div class="form-group row mb-2">
-        <label class="col-3 col-form-label">{{ 'date-created'|text }}</label>
+    <div class="row mb-2">
+        <label class="col-3 col-form-label text-end text-end">{{ 'date-created'|text }}</label>
         <div class="col-9">
             <input class="form-control" disabled value="{{ record['created_at']|e }}" type="text">
         </div>
     </div>
-    <div class="form-group row mb-2">
-        <label class="col-3 col-form-label">{{ 'created-by'|text }}</label>
+    <div class="row mb-2">
+        <label class="col-3 col-form-label text-end text-end">{{ 'created-by'|text }}</label>
         <div class="col-9">
             <input class="form-control" disabled value="{{ accounts[record['created_by']]  }}" type="text">
         </div>
     </div>
-    <div class="form-group row mb-2">
-        <label class="col-3 col-form-label">{{ 'date-modified'|text }}</label>
+    <div class="row mb-2">
+        <label class="col-3 col-form-label text-end text-end">{{ 'date-modified'|text }}</label>
         <div class="col-9">
             <input class="form-control" disabled value="{{ record['updated_at']|e }}" type="text">
         </div>
     </div>
-    <div class="form-group row mb-2">
-        <label class="col-3 col-form-label">{{ 'updated-by'|text }}</label>
+    <div class="row mb-2">
+        <label class="col-3 col-form-label text-end text-end">{{ 'updated-by'|text }}</label>
         <div class="col-9">
             <input class="form-control" disabled value="{{ accounts[record['updated_by']] }}" type="text">
         </div>
     </div>
-<script>
+<script type="text/javascript">
 document.addEventListener('DOMContentLoaded', function() {
     Dashboard.activateLink("{{ 'accounts'|link }}");
 });
