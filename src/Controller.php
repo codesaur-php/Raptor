@@ -106,22 +106,23 @@ class Controller extends \codesaur\Http\Application\Controller
         return '{' . $key . '}';
     }
     
-    public function twigTemplate(string $template, array $vars = [])
+    public function twigTemplate(string $template_path, array $vars = [])
     {
-        $twigTemplate = new TwigTemplate($template, $vars);
-        $twigTemplate->set('user', $this->getUser());
-        $twigTemplate->set('localization', $this->getAttribute('localization'));
-        $twigTemplate->set('request_path', rtrim($_SERVER['REQUEST_URI'], '/'));
-        $twigTemplate->set('request_uri', (string)$this->getRequest()->getUri());
-        $twigTemplate->addFilter(new TwigFilter('text', function ($key): string
+        $template = new TwigTemplate($template_path, $vars);
+        $template->set('user', $this->getUser());
+        $template->set('localization', $this->getAttribute('localization'));
+        $template->set('request_path', rtrim($_SERVER['REQUEST_URI'], '/'));
+        $template->set('request_uri', (string)$this->getRequest()->getUri());
+        $template->addFilter(new TwigFilter('text', function ($key): string
         {
             return $this->text($key);
         }));
-        $twigTemplate->addFilter(new TwigFilter('link', function ($routeName, $params = [], $is_absolute = false): string
+        $template->addFilter(new TwigFilter('link', function ($routeName, $params = [], $is_absolute = false): string
         {
             return $this->generateLink($routeName, $params, $is_absolute);
         }));
-        return $twigTemplate;
+        
+        return $template;
     }
     
     public function respondJSON(array $res)

@@ -2,7 +2,7 @@
 {% set navbarColor = meta['navbar']|default('primary') %}
 <!DOCTYPE html>
 <!-- template example by Mark Otto, Jacob Thornton, and Bootstrap contributors => https://getbootstrap.com/docs/5.1/examples/dashboard -->
-<html lang="{{ localization.code ?? 'en' }}">
+<html lang="{{ languageCode }}">
     <head>
         <meta charset="{{ meta['charset'] ?? 'utf-8' }}">
         <title>{{ meta['title']|default('dashboard'|text) }}</title>

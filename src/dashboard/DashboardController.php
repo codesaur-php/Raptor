@@ -19,23 +19,24 @@ class DashboardController extends \Raptor\Controller
     
     public function twigDashboard($title = null): DashboardTemplate
     {
-        $twigTemplate = new DashboardTemplate();
-        $twigTemplate->set('user', $this->getUser());
-        $twigTemplate->set('localization', $this->getAttribute('localization'));
-        $twigTemplate->set('request_path', rtrim($_SERVER['REQUEST_URI'], '/'));
-        $twigTemplate->set('request_uri', (string)$this->getRequest()->getUri());
-        $twigTemplate->addFilter(new TwigFilter('text', function ($key): string
+        $template = new DashboardTemplate();
+        $template->set('user', $this->getUser());
+        $template->set('localization', $this->getAttribute('localization'));
+        $template->set('request_path', rtrim($_SERVER['REQUEST_URI'], '/'));
+        $template->set('request_uri', (string)$this->getRequest()->getUri());
+        $template->addFilter(new TwigFilter('text', function ($key): string
         {
             return $this->text($key);
         }));
-        $twigTemplate->addFilter(new TwigFilter('link', function ($routeName, $params = [], $is_absolute = false): string
+        $template->addFilter(new TwigFilter('link', function ($routeName, $params = [], $is_absolute = false): string
         {
             return $this->generateLink($routeName, $params, $is_absolute);
         }));
-        $twigTemplate->set('sidemenu', $this->getSideMenu());        
-        $twigTemplate->title($title);
-        $twigTemplate->set('system-no-permission', $this->text('system-no-permission'));
-        return $twigTemplate;
+        $template->set('sidemenu', $this->getSideMenu());        
+        $template->title($title);
+        $template->set('system-no-permission', $this->text('system-no-permission'));
+        
+        return $template;
     }
     
     public function getAccounts(): array
