@@ -1,6 +1,6 @@
 <?php
 
-namespace Raptor\Authentication;
+namespace Raptor\Localization;
 
 use Throwable;
 use Exception;

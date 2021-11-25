@@ -60,6 +60,8 @@ class DashboardController extends \Raptor\Controller
         } catch (Exception $e) {
             if ($e->getCode() == 404 && $e->getMessage() == 'Menu not defined') {
                 $menu = $this->getDefaultMenu();
+            } else {
+                $menu = array();
             }
         }
         

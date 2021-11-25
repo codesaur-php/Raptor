@@ -18,32 +18,17 @@ use Indoraptor\IndoApplication;
 use Indoraptor\PDOConnectMiddleware;
 
 use Raptor\Application;
-use Raptor\Exception\ErrorHandler;
 use Raptor\Authentication\SessionMiddleware;
 use Raptor\Authentication\JWTAuthMiddleware;
-use Raptor\Authentication\LocalizationMiddleware;
+use Raptor\Localization\LocalizationMiddleware;
 
 $autoload = require_once '../vendor/autoload.php';
 
-$application = new class extends Application
-{
-    function __construct()
-    {
-        parent::__construct();
-        
-        $this->use(new ErrorHandler());
+$request = (new ServerRequest())->initFromGlobal();
 
-        $this->use(function ($request, $handler)
-        {
-            $indo = new IndoApplication();
-            $indo->use(new PDOConnectMiddleware());            
-            return $handler->handle($request->withAttribute('indo', $indo));
-        });
+$indo = new IndoApplication();
+$indo->use(new PDOConnectMiddleware());
 
-        $this->use(new SessionMiddleware());
-        $this->use(new JWTAuthMiddleware());
-        $this->use(new LocalizationMiddleware());
-    }
-};
-
-$application->handle((new ServerRequest())->initFromGlobal());
+$application = new Application();
+$application->use(new JWTAuthMiddleware());
+$application->handle($request->withAttribute('indo', $indo));

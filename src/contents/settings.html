@@ -1,0 +1,24 @@
+{% set user_can = user.can('system_content_settings') %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center mb-4 mt-2">
+    <h3 class="text-primary text-uppercase" style="padding-right:10px"><i class="bi bi-gear-fill"></i> {{ 'settings'|text }}</h3>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <button class="btn btn-outline-dark shadow-sm" onclick="window.history.go(-1);return false;">{{ 'back'|text }}</button>
+        </div>
+    </div>
+</div>
+<ul class="nav nav-tabs mb-4" role="tablist">
+    <li class="nav-item"><a class="nav-link active show" data-bs-toggle="tab" href="#tab-general">{{ 'general'|text }}</a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-social">{{ 'social-network'|text }}</a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-options">{{ 'options'|text }}</a></li>
+</ul>
+<form class="needs-validation" novalidate id="account_update" action="{{ 'account-update'|link({'id': record['id']}) }}" method="POST" enctype="multipart/form-data">
+    <div class="tab-content mb-5">
+        <div class="tab-pane active show" id="tab-general" role="tabpanel">
+        </div>
+        <div class="tab-pane" id="tab-social" role="tabpanel">
+        </div>
+        <div class="tab-pane" id="tab-options" role="tabpanel">
+        </div>
+    </div>
+</form>

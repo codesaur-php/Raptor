@@ -15,8 +15,8 @@
         }
     ],
     "require": {
-        "codesaur/indoraptor": ">=3.4.6",
-        "codesaur/template": ">=1.1.4",
+        "codesaur/indoraptor": ">=3.4.7",
+        "codesaur/template": ">=1.1.5",
         "codesaur/globals": ">=1.2.1"
     },
     "autoload": {
