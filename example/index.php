@@ -18,9 +18,7 @@ use Indoraptor\IndoApplication;
 use Indoraptor\PDOConnectMiddleware;
 
 use Raptor\Application;
-use Raptor\Authentication\SessionMiddleware;
 use Raptor\Authentication\JWTAuthMiddleware;
-use Raptor\Localization\LocalizationMiddleware;
 
 $autoload = require_once '../vendor/autoload.php';
 
