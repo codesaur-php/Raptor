@@ -40,12 +40,12 @@ class LocalizationMiddleware implements MiddlewareInterface
     {
         try {
             return $this->request($request->getAttribute('indo'), 'GET', '/language');
-        } catch (Exception $e) {            
+        } catch (Exception $e) {
             if (defined('CODESAUR_DEVELOPMENT')
                     && CODESAUR_DEVELOPMENT
             ) {
                 error_log($e->getMessage());
-            }            
+            }
             return array('en' => 'English');
         }
     }
