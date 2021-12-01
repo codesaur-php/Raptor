@@ -177,6 +177,8 @@ class OrganizationController extends DashboardController
                     throw new Exception($this->text('invalid-request'));
                 }
                 
+                $existing = $this->indoSafe('/record?model=' . OrganizationModel::class, array('id' => $id, 'is_active' => 1));
+                $old_logo_file = basename($existing['logo'] ?? '');
                 if (isset($_FILES['org_logo'])) {
                     $file = new FileController($this->getRequest());
                     $file->init("/organizations/$id");
@@ -186,23 +188,14 @@ class OrganizationController extends DashboardController
                         $record['logo'] = $file->getPathUrl($logo['name']);
                     }
                 } else {
-                    $existing = $this->indo('/record?model=' . OrganizationModel::class, array('id' => $id));
-                    if (isset($existing['logo']) && !empty($existing['logo'])) {
-                        $file_name = basename($existing['logo']);
-                        if (!empty($file_name)) {
-                            try {
-                                $file_path = dirname($_SERVER['SCRIPT_FILENAME']) . "/public/organizations/$id/$file_name";
-                                if (file_exists($file_path)) {
-                                    unlink($file_path);
-                                }
-                            } catch (Exception $ex) {
-                                $this->errorLog($ex);
-                            }
-                        }
-                    }
                     $record['logo'] = '';
-                }                
-                $context['record']['logo'] = $record['logo'];
+                }
+                if (isset($record['logo'])) {
+                    if (!empty($old_logo_file)) {
+                        $this->tryDeleteFile(dirname($_SERVER['SCRIPT_FILENAME']) . "/public/organizations/$id/$old_logo_file");
+                    }
+                    $context['record']['logo'] = $record['logo'];
+                }
                 
                 $this->indoput('/record?model=' . OrganizationModel::class,
                         array('record' => $record, 'condition' => ['WHERE' => "id=$id"]));

@@ -9,6 +9,7 @@ use Psr\Log\LogLevel;
 
 use codesaur\RBAC\Accounts;
 use codesaur\Template\MemoryTemplate;
+use codesaur\Template\IndexTemplate;
 
 use Indoraptor\Account\AccountErrorCode;
 use Indoraptor\Account\ForgotModel;
@@ -42,6 +43,11 @@ class LoginController extends \Raptor\Controller
 
         $this->twigTemplate(dirname(__FILE__) . '/login.html', $vars)->render();
     }
+    
+    public function twigTemplate(string $template_path, array $vars = [])
+    {
+        return $this->setTemplateGlobal(new IndexTemplate($template_path, $vars));
+    }
         
     public function entry()
     {
@@ -66,7 +72,7 @@ class LoginController extends \Raptor\Controller
             } elseif ($account['code'] != $this->getLanguageCode()
                     && isset($this->getAttribute('localization')['language'][$account['code']])
             ) {
-                $_SESSION[__NAMESPACE__ . '\\language\\code'] = $account['code'];
+                $_SESSION[explode('\\', __NAMESPACE__)[0] . '\\language\\code'] = $account['code'];
             }
             
             $level = LogLevel::INFO;
@@ -225,7 +231,7 @@ class LoginController extends \Raptor\Controller
             $code = $forgot['code'];
             if ($code != $this->getLanguageCode()) {
                 if (isset($this->getAttribute('localization')['language'][$code])) {
-                    $_SESSION[__NAMESPACE__ . '\\language\\code'] = $code;
+                    $_SESSION[explode('\\', __NAMESPACE__)[0] . '\\language\\code'] = $code;
                     $link = $this->generateLink('login') . "?forgot=$use_id";
                     header("Location: $link", false, 302);
                     exit;
@@ -358,7 +364,7 @@ class LoginController extends \Raptor\Controller
         $location = strpos($referer, $home) !== false ? $referer : $home;        
         $language = $this->getAttribute('localization')['language'];
         if (isset($language[$code])) {
-            $_SESSION[__NAMESPACE__ . '\\language\\code'] = $code;            
+            $_SESSION[explode('\\', __NAMESPACE__)[0] . '\\language\\code'] = $code;            
             if ($this->isUserAuthorized()) {
                 try {
                     $account_id = $this->getUser()->getAccount()['id'];

@@ -204,14 +204,19 @@ class AccountController extends DashboardController
                     throw new Exception($this->text('invalid-request'));
                 }
                 
-                $existing_username = $this->getAccountBy(array('username' => $record['username']));
+                $pattern = '/record?model=' . Accounts::class;
+                
+                $existing_username = $this->indoSafe($pattern, array('username' => $record['username']));
                 if ($existing_username && $existing_username['id'] != $id) {
                     throw new Exception($this->text('account-exists') . " username => [{$record['username']}]");
                 }
-                $existing_email = $this->getAccountBy(array('email' => $record['email']));
+                $existing_email = $this->indoSafe($pattern, array('email' => $record['email']));
                 if ($existing_email && $existing_email['id'] != $id) {
                     throw new Exception($this->text('account-exists') . " email => [{$record['email']}]");
-                }                
+                }
+                
+                $existing = $this->indoSafe($pattern, array('id' => $id));
+                $old_photo_file = basename($existing['photo'] ?? '');
                 if (isset($_FILES['photo'])) {
                     $file = new FileController($this->getRequest());
                     $file->init("/accounts/$id");
@@ -221,26 +226,16 @@ class AccountController extends DashboardController
                         $record['photo'] = $file->getPathUrl($photo['name']);
                     }
                 } else {
-                    $existing = $this->getAccountBy(array('id' => $id));
-                    if (isset($existing['photo']) && !empty($existing['photo'])) {
-                        $file_name = basename($existing['photo']);
-                        if (!empty($file_name)) {
-                            try {
-                                $file_path = dirname($_SERVER['SCRIPT_FILENAME']) . "/public/accounts/$id/$file_name";
-                                if (file_exists($file_path)) {
-                                    unlink($file_path);
-                                }
-                            } catch (Exception $ex) {
-                                $this->errorLog($ex);
-                            }
-                        }
-                    }
                     $record['photo'] = '';
-                }                
-                $context['record']['photo'] = $record['photo'];
+                }
+                if (isset($record['photo'])) {
+                    if (!empty($old_photo_file)) {
+                        $this->tryDeleteFile(dirname($_SERVER['SCRIPT_FILENAME']) . "/public/accounts/$id/$old_photo_file");
+                    }
+                    $context['record']['photo'] = $record['photo'];
+                }
                 
-                $this->indoput('/record?model=' . Accounts::class, 
-                        array('record' => $record, 'condition' => ['WHERE' => "id=$id"]));
+                $this->indoput($pattern, array('record' => $record, 'condition' => ['WHERE' => "id=$id"]));
                 
                 $this->respondJSON(array(
                     'status' => 'success',
@@ -392,17 +387,6 @@ class AccountController extends DashboardController
             $context['error'] = array('code' => $e->getCode(), 'message' => $e->getMessage());
         } finally {
             $this->indolog('account', $level, $message, $context);
-        }
-    }
-    
-    function getAccountBy(array $with_values)
-    {
-        try {
-            return $this->indo('/record?model=' . Accounts::class, $with_values);
-        } catch (Exception $e) {
-            $this->errorLog($e);
-            
-            return false;
         }
     }
     

@@ -14,19 +14,11 @@ error_reporting(E_ALL & ~E_STRICT & ~E_NOTICE);
 
 use codesaur\Http\Message\ServerRequest;
 
-use Indoraptor\IndoApplication;
-use Indoraptor\PDOConnectMiddleware;
-
 use Raptor\Application;
-use Raptor\Authentication\JWTAuthMiddleware;
+use Indoraptor\IndoApplication;
 
 $autoload = require_once '../vendor/autoload.php';
 
-$request = (new ServerRequest())->initFromGlobal();
-
-$indo = new IndoApplication();
-$indo->use(new PDOConnectMiddleware());
-
-$application = new Application();
-$application->use(new JWTAuthMiddleware());
-$application->handle($request->withAttribute('indo', $indo));
+(new Application())->handle(
+        ((new ServerRequest())->initFromGlobal())
+        ->withAttribute('indo', new IndoApplication(false)));

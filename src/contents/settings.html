@@ -9,16 +9,229 @@
 </div>
 <ul class="nav nav-tabs mb-4" role="tablist">
     <li class="nav-item"><a class="nav-link active show" data-bs-toggle="tab" href="#tab-general">{{ 'general'|text }}</a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-logo">{{ 'logo'|text }}</a></li>
     <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-social">{{ 'social-network'|text }}</a></li>
     <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-options">{{ 'options'|text }}</a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-mailer">{{ 'mail-carrier'|text }}</a></li>
 </ul>
-<form class="needs-validation" novalidate id="account_update" action="{{ 'account-update'|link({'id': record['id']}) }}" method="POST" enctype="multipart/form-data">
-    <div class="tab-content mb-5">
-        <div class="tab-pane active show" id="tab-general" role="tabpanel">
-        </div>
-        <div class="tab-pane" id="tab-social" role="tabpanel">
-        </div>
-        <div class="tab-pane" id="tab-options" role="tabpanel">
-        </div>
+<div class="tab-content mb-5">
+    <div class="tab-pane active show" id="tab-general" role="tabpanel">
+        <form class="needs-validation" novalidate action="{{ 'settings'|link }}" method="POST" enctype="multipart/form-data">
+            <input name="alias" readonly value="{{ record['alias']|e }}" type="hidden">
+            {% for code in localization.language|keys %}
+            <div class="form-floating mt-2">
+                <input class="form-control" name="title[{{ code }}]" value="{{ record['content']['title'][code] }}" maxlength="70" autocomplete="off">
+                <label>{{ 'title'|text }} <img style="position:relative;top:-2px" src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.1/images/flags/{{ code }}.png"></label>
+            </div>
+            {% endfor %}
+            {% for code in localization.language|keys %}
+            <div class="form-floating mt-{{ loop.first ? '4' : '2' }}">
+                <input class="form-control" name="description[{{ code }}]" value="{{ record['content']['description'][code] }}" maxlength="155" autocomplete="off">
+                <label>{{ 'description'|text }} <img style="position:relative;top:-2px" src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.1/images/flags/{{ code }}.png"></label>
+            </div>
+            {% endfor %}
+            <div class="form-floating mt-4">
+                <input class="form-control" name="keywords" value="{{ record['keywords'] }}" maxlength="256" autocomplete="off">
+                <label>SEO search keywords</label>
+            </div>
+            <div class="form-floating mt-4">
+                <input class="form-control" name="email" type="email" value="{{ record['email'] }}" maxlength="70" autocomplete="off">
+                <label>{{ 'email'|text }}</label>
+            </div>
+            <div class="form-floating mt-4">
+                <input class="form-control" name="phone" value="{{ record['phone'] }}" maxlength="710" autocomplete="off">
+                <label>{{ 'phone'|text }}</label>
+            </div>
+            {% for code in localization.language|keys %}
+            <div class="form-floating mt-{{ loop.first ? '4' : '2' }}">
+                <input class="form-control" name="contact[{{ code }}]" value="{{ record['content']['contact'][code] }}" maxlength="512" autocomplete="off">
+                <label>{{ 'contact'|text }} <img style="position:relative;top:-2px" src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.1/images/flags/{{ code }}.png"></label>
+            </div>
+            {% endfor %}
+            {% for code in localization.language|keys %}
+            <div class="form-floating mt-{{ loop.first ? '4' : '2' }}">
+                <input class="form-control" name="address[{{ code }}]" value="{{ record['content']['address'][code] }}" maxlength="512" autocomplete="off">
+                <label>{{ 'address'|text }} <img style="position:relative;top:-2px" src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.1/images/flags/{{ code }}.png"></label>
+            </div>
+            {% endfor %}
+            {% for code in localization.language|keys %}
+            <div class="form-floating mt-{{ loop.first ? '4' : '2' }}">
+                <input class="form-control" name="copyright[{{ code }}]" value="{{ record['content']['copyright'][code] }}" maxlength="512" autocomplete="off">
+                <label>Copyright <img style="position:relative;top:-2px" src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.1/images/flags/{{ code }}.png"></label>
+            </div>
+            {% endfor %}
+            {% if user_can %}
+            <button class="submit-settings btn btn-lg btn-primary shadow-sm mt-4"><i class="bi bi-save" style="margin-right:5px;font-size:1.1rem"></i> {{ 'save'|text }}</button>
+            {% endif %}
+        </form>
     </div>
-</form>
+    <div class="tab-pane" id="tab-logo" role="tabpanel">
+        <form class="needs-validation" novalidate action="{{ 'settings-files'|link }}" method="POST" enctype="multipart/form-data">
+            <input name="alias" readonly value="{{ record['alias']|e }}" type="hidden">
+            <div class="row mb-3">
+                <div class="col">
+                    {% for code in localization.language|keys %}
+                    {% if not loop.first %}<hr>{% endif %}
+                    <label class="form-label">{{ 'logo'|text }} <img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.1/images/flags/{{ code }}.png"></label>
+                    <input type="file" name="logo_{{ code }}">
+                    {% endfor %}
+                </div>
+                <div class="col">
+                    <label class="form-label">{{ 'icon'|text }}</label>
+                    <input type="file" name="favico">
+                    <hr>
+                    <label class="form-label">Shortcut image icon</label>
+                    <input type="file" name="shortcut_icon">
+                    <hr>
+                    <label class="form-label">Apple touch image icon</label>
+                    <input type="file" name="apple_touch_icon">
+                </div>
+            </div>
+            {% if user_can %}
+            <button class="submit-settings btn btn-lg btn-primary shadow-sm mt-4"><i class="bi bi-save" style="margin-right:5px;font-size:1.1rem"></i> {{ 'save'|text }}</button>
+            {% endif %}
+        </form>
+    </div>
+    <div class="tab-pane" id="tab-social" role="tabpanel">
+        <form class="needs-validation" novalidate action="{{ 'settings'|link }}" method="POST" enctype="multipart/form-data">
+            <input name="alias" readonly value="{{ record['alias']|e }}" type="hidden">
+            <div class="form-floating">
+                <input class="form-control" name="facebook" value="{{ record['facebook'] }}" maxlength="255" autocomplete="off">
+                <label><i class="bi bi-facebook"></i> Facebook</label>
+            </div>
+            <div class="form-floating mt-2">
+                <textarea class="form-control" name="facebook_widget" rows="5" style="height:120px">{{ record['facebook_widget'] }}</textarea>
+                <label>Facebook widget</label>
+            </div>
+            <div class="form-floating mt-4">
+                <input class="form-control" name="twitter" value="{{ record['twitter'] }}" maxlength="255" autocomplete="off">
+                <label><i class="bi bi-twitter"></i> Twitter</label>
+            </div>
+            <div class="form-floating mt-2">
+                <textarea class="form-control" name="twitter_widget" rows="5" style="height:120px">{{ record['twitter_widget'] }}</textarea>
+                <label>Twitter widget</label>
+            </div>
+            <div class="form-floating mt-4">
+                <input class="form-control" name="youtube" value="{{ record['youtube'] }}" maxlength="255" autocomplete="off">
+                <label><i class="bi bi-youtube"></i> Youtube</label>
+            </div>
+            <hr>
+            <div class="form-floating mt-2">
+                <textarea class="form-control" name="socials" rows="12" style="height:240px">{{ record['socials'] }}</textarea>
+                <label>Additional settings for social networks (must be valid JSON)</label>
+            </div>
+            {% if user_can %}
+            <button class="submit-settings btn btn-lg btn-primary shadow-sm mt-4"><i class="bi bi-save" style="margin-right:5px;font-size:1.1rem"></i> {{ 'save'|text }}</button>
+            {% endif %}
+        </form>
+    </div>
+    <div class="tab-pane" id="tab-options" role="tabpanel">
+        <form class="needs-validation" novalidate action="{{ 'settings'|link }}" method="POST" enctype="multipart/form-data">
+            <input name="alias" readonly value="{{ record['alias']|e }}" type="hidden">
+            <div class="form-floating">
+                <textarea class="form-control" name="options" rows="25" style="height:500px">{{ record['options'] }}</textarea>
+                <label>Extra options (must be valid JSON)</label>
+            </div>
+            {% if user_can %}
+            <button class="submit-settings btn btn-lg btn-primary shadow-sm mt-4"><i class="bi bi-save" style="margin-right:5px;font-size:1.1rem"></i> {{ 'save'|text }}</button>
+            {% endif %}
+        </form>
+    </div>
+    <div class="tab-pane" id="tab-mailer" role="tabpanel">
+        <form class="needs-validation" novalidate action="{{ 'settings-mailer'|link }}" method="POST" enctype="multipart/form-data">
+            <div class="row mb-3">
+                <div class="col">
+                    <label class="form-label">IsSMTP</label>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" name="is_smtp"{{ mailer['is_smtp'] == 1 ? ' checked' : '' }} type="checkbox" role="switch">
+                    </div>
+                </div>
+                <div class="col">
+                    <label class="form-label">SMTP Auth</label>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" name="smtp_auth"{{ mailer['smtp_auth'] == 1 ? ' checked' : '' }} type="checkbox" role="switch">
+                    </div>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col">
+                    <div class="form-floating">
+                        <input class="form-control" required name="charset" value="{{ mailer['charset'] }}" maxlength="6" placeholder="Charset" type="text" autocomplete="off">
+                        <label>Charset</label>
+                        <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="form-floating">
+                        <input class="form-control" required name="smtp_secure" value="{{ mailer['smtp_secure'] }}" maxlength="6" placeholder="SMTP Secure" type="text" autocomplete="off">
+                        <label>SMTP Secure</label>
+                        <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col">
+                    <div class="form-floating">
+                        <input class="form-control" required name="host" value="{{ mailer['host'] }}" maxlength="255" placeholder="Host" type="text" autocomplete="off">
+                        <label>Host</label>
+                        <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="form-floating">
+                        <input class="form-control" required name="port" value="{{ mailer['port'] }}" maxlength="6" placeholder="Port" type="number" autocomplete="off">
+                        <label>Port</label>
+                        <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col">
+                    <div class="form-floating">
+                        <input class="form-control" required name="username" value="{{ mailer['username'] }}" maxlength="128" placeholder="Username" type="text" autocomplete="off">
+                        <label>Username</label>
+                        <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="form-floating">
+                        <input class="form-control" required name="password" value="{{ mailer['password'] }}" maxlength="255" placeholder="Password" type="password" autocomplete="off">
+                        <label>Password</label>
+                        <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col">
+                    <div class="form-floating">
+                        <input class="form-control" required name="name" value="{{ mailer['name'] }}" maxlength="255" placeholder="From" type="text" autocomplete="off">
+                        <label>From</label>
+                        <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="form-floating">
+                        <input class="form-control" required name="email" value="{{ mailer['email'] }}" maxlength="128" placeholder="Reply to" type="email" autocomplete="off">
+                        <label>Reply to</label>
+                        <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
+                    </div>
+                </div>
+            </div>
+            {% if user_can %}
+            <button class="submit-settings btn btn-lg btn-primary shadow-sm mt-4"><i class="bi bi-save" style="margin-right:5px;font-size:1.1rem"></i> {{ 'save'|text }}</button>
+            {% endif %}
+        </form>
+    </div>
+</div>
+<script type="text/javascript">
+document.addEventListener('DOMContentLoaded', function() {
+    {% for code in localization.language|keys %}
+    document.getElementsByName('logo_{{ code }}')[0].imageInput("{{ record['content']['logo'][code]|e }}", "{{ 'select-image'|text }}", "{{ 'choose'|text }}", "{{ 'change'|text }}", "{{ 'remove'|text }}", 480);
+    {% endfor %}
+    document.getElementsByName('favico')[0].imageInput("{{ record['favico']|e }}", "{{ 'select-image'|text }}", "{{ 'choose'|text }}", "{{ 'change'|text }}", "{{ 'remove'|text }}", 256, 256, '.ico');
+    document.getElementsByName('shortcut_icon')[0].imageInput("{{ record['shortcut_icon']|e }}", "{{ 'select-image'|text }}", "{{ 'choose'|text }}", "{{ 'change'|text }}", "{{ 'remove'|text }}", 32);
+    document.getElementsByName('apple_touch_icon')[0].imageInput("{{ record['apple_touch_icon']|e }}", "{{ 'select-image'|text }}", "{{ 'choose'|text }}", "{{ 'change'|text }}", "{{ 'remove'|text }}", 128);
+    
+    SubmitForm('.submit-settings');
+});
+</script>

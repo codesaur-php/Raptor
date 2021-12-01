@@ -62,7 +62,7 @@
             <div class="mb-3">
                 <label class="form-label">{{ 'status'|text }}</label>
                 <div class="form-check form-switch">
-                  <input class="form-check-input" type="checkbox" role="switch" name="status" {{ record['status'] == 1 ? 'checked ' : '' }}aria-describedby="activeHelpBlock" onclick="warnStatus(this.checked);">
+                  <input class="form-check-input" name="status" type="checkbox" role="switch" {{ record['status'] == 1 ? 'checked ' : '' }}aria-describedby="activeHelpBlock" onclick="warnStatus(this.checked);">
                 </div>
                 <div class="form-text" id="activeHelpBlock">{{ 'active-account-can-login'|text }}</div>
             </div>

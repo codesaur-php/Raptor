@@ -4,7 +4,7 @@ namespace Raptor\Dashboard;
 
 use Exception;
 
-use Twig\TwigFilter;
+use Psr\Log\LogLevel;
 
 use codesaur\RBAC\Accounts;
 
@@ -19,21 +19,10 @@ class DashboardController extends \Raptor\Controller
     
     public function twigDashboard($title = null): DashboardTemplate
     {
-        $template = new DashboardTemplate();
-        $template->set('user', $this->getUser());
-        $template->set('localization', $this->getAttribute('localization'));
-        $template->set('request_path', rtrim($_SERVER['REQUEST_URI'], '/'));
-        $template->set('request_uri', (string)$this->getRequest()->getUri());
-        $template->addFilter(new TwigFilter('text', function ($key): string
-        {
-            return $this->text($key);
-        }));
-        $template->addFilter(new TwigFilter('link', function ($routeName, $params = [], $is_absolute = false): string
-        {
-            return $this->generateLink($routeName, $params, $is_absolute);
-        }));
-        $template->set('sidemenu', $this->getSideMenu());        
+        $template = $this->setTemplateGlobal(new DashboardTemplate());
+        
         $template->title($title);
+        $template->set('sidemenu', $this->getSideMenu());        
         $template->set('system-no-permission', $this->text('system-no-permission'));
         
         return $template;
@@ -159,5 +148,18 @@ class DashboardController extends \Raptor\Controller
                 </div>
             </div>
         </div>';
+    }
+    
+    public function tryDeleteFile(string $filePath)
+    {
+        try {
+            if (file_exists($filePath)) {
+                unlink($filePath);
+                
+                $this->indolog('file', LogLevel::ALERT, "$filePath файлыг устгалаа");
+            }
+        } catch (Exception $ex) {
+            $this->errorLog($ex);
+        }
     }
 }

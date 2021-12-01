@@ -10,6 +10,7 @@ use Twig\TwigFilter;
 use codesaur\Globals\Server;
 use codesaur\Router\RouterInterface;
 use codesaur\Template\TwigTemplate;
+use codesaur\Template\IndexTemplate;
 
 use Indoraptor\InternalRequest;
 
@@ -93,6 +94,11 @@ class Controller extends \codesaur\Http\Application\Controller
         return $this->getAttribute('localization')['code'] ?? 'en';
     }
     
+    final public function getLanguages()
+    {
+        return $this->getAttribute('localization')['language'] ?? ['en' => 'English'];
+    }
+
     final public function text($key): string
     {
         if (isset($this->getAttribute('localization')['text'][$key])) {
@@ -108,7 +114,11 @@ class Controller extends \codesaur\Http\Application\Controller
     
     public function twigTemplate(string $template_path, array $vars = [])
     {
-        $template = new TwigTemplate($template_path, $vars);
+        return $this->setTemplateGlobal(new TwigTemplate($template_path, $vars));
+    }
+    
+    public function setTemplateGlobal(TwigTemplate &$template)
+    {
         $template->set('user', $this->getUser());
         $template->set('localization', $this->getAttribute('localization'));
         $template->set('request_path', rtrim($_SERVER['REQUEST_URI'], '/'));
@@ -121,6 +131,10 @@ class Controller extends \codesaur\Http\Application\Controller
         {
             return $this->generateLink($routeName, $params, $is_absolute);
         }));
+        
+        if ($template instanceof IndexTemplate) {
+            $template->set('meta', $this->getAttribute('meta'));
+        }
         
         return $template;
     }
@@ -187,6 +201,17 @@ class Controller extends \codesaur\Http\Application\Controller
             $this->indo('/log', $payload);
         } catch (Exception $e) {
             $this->errorLog($e);
+        }
+    }
+    
+    final public function indoSafe(string $pattern, array $payload = array(), string $method = 'INTERNAL', bool $assoc = true)
+    {
+        try {
+            return $this->indo($pattern, $payload, $method, $assoc);
+        } catch (Exception $e) {
+            $this->errorLog($e);
+            
+            return false;
         }
     }
     

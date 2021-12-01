@@ -5,42 +5,42 @@
 <html lang="{{ languageCode }}">
     <head>
         <meta charset="{{ meta['charset'] ?? 'utf-8' }}">
-        <title>{{ meta['title']|default('dashboard'|text) }}</title>
+        <title>{{ meta['content']['title'][languageCode] is not empty ? meta['content']['title'][languageCode] : 'dashboard'|text }}</title>
         <meta name="author" content="{{ meta['author']|default('Narankhuu, contact@ololt.mn, +976 99000287')|e }}">
         <meta name="robots" content="{{ meta['robots']|default('index,follow')|e }}">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         {% if meta['generator'] is defined %}<meta name="generator" content="{{ meta['generator']|e }}">{% endif %}
-        {% if meta['description'] is defined %}<meta name="description" content="{{ meta['description']|e }}">{% endif %}
+        {% if meta['content']['description'][languageCode] is not empty %}<meta name="description" content="{{ meta['content']['description'][languageCode]|e }}">{% endif %}
         {% if meta['keywords'] is defined %}<meta name="keywords" content="{{ meta['keywords']|e }}">{% endif %}
-        {% if meta['icon'] is defined %}<link rel="icon" href="{{ meta['icon'] }}" type="image/png">{% endif %}
-        {% if meta['shortcut icon'] is defined %}<link rel="shortcut icon" href="{{ meta['shortcut icon'] }}" type="image/x-icon">{% endif %}
-        {% if meta['apple-touch-icon'] is defined %}<link rel="apple-touch-icon" href="{{ meta['apple-touch-icon'] }}">{% endif %}
+        {% if meta['favico'] is defined %}<link rel="icon" href="{{ meta['favico'] }}" type="image/png">{% endif %}
+        {% if meta['shortcut_icon'] is defined %}<link rel="shortcut icon" href="{{ meta['shortcut_icon'] }}" type="image/x-icon">{% endif %}
+        {% if meta['apple_touch_icon'] is defined %}<link rel="apple-touch-icon" href="{{ meta['apple_touch_icon'] }}">{% endif %}
         {% if meta['google-site-verification'] is defined %}<meta name="google-site-verification" content="{{ meta['google-site-verification']|e }}">{% endif %}
         {% if meta['mobile-web-app-capable'] is defined %}<meta name="mobile-web-app-capable" content="{{ meta['mobile-web-app-capable']|e }}">{% endif %}
         {% if meta['apple-mobile-web-app-status-bar-style'] is defined %}<meta name="apple-mobile-web-app-status-bar-style" content="{{ meta['apple-mobile-web-app-status-bar-style']|e }}">{% endif %}
-        {% if meta['og']['title'] is defined %}<meta name="og:title" content="{{ meta['og']['title']|e }}">{% endif %}
-        {% if meta['og']['description'] is defined %}<meta name="og:description" content="{{ meta['og']['description']|e }}">{% endif %}
-        {% if meta['og']['type'] is defined %}<meta name="og:type" content="{{ meta['og']['type']|e }}">{% endif %}
-        {% if meta['og']['url'] is defined %}<meta name="og:url" content="{{ meta['og']['url']|e }}">{% endif %}
-        {% if meta['og']['site_name'] is defined %}<meta name="og:site_name" content="{{ meta['og']['site_name']|e }}">{% endif %}
-        {% if meta['og']['image'] is defined %}<meta name="og:image" content="{{ meta['og']['image']|e }}">{% endif %}
-        {% if meta['og']['image:width'] is defined %}<meta name="og:image:width" content="{{ meta['og']['image:width']|e }}">{% endif %}
-        {% if meta['og']['image:height'] is defined %}<meta name="og:image:height" content="{{ meta['og']['image:height']|e }}">{% endif %}
-        {% if meta['fb']['app_id'] is defined %}<meta name="fb:app_id" content="{{ meta['fb']['app_id']|e}}">{% endif %}
-        {% if meta['fb']['page_id'] is defined %}<meta name="fb:page_id" content="{{ meta['fb']['page_id']|e }}">{% endif %}
-        {% if meta['fb']['admins'] is defined %}<meta name="fb:admins" content="{{ meta['fb']['admins']|e }}">{% endif %}
-        {% if meta['twitter']['card'] is defined %}<meta name="twitter:card" content="{{ meta['twitter']['card']|e }}">{% endif %}
-        {% if meta['twitter']['url'] is defined %}<meta name="twitter:url" content="{{ meta['twitter']['url']|e }}">{% endif %}
-        {% if meta['twitter']['title'] is defined %}<meta name="twitter:title" content="{{ meta['twitter']['title']|e }}">{% endif %}
-        {% if meta['twitter']['description'] is defined %}<meta name="twitter:description" content="{{ meta['twitter']['description']|e }}">{% endif %}
-        {% if meta['twitter']['image'] is defined %}<meta name="twitter:image" content="{{ meta['twitter']['image']|e }}">{% endif %}
-        {% if meta['twitter']['image:width'] is defined %}<meta name="twitter:image:width" content="{{ meta['twitter']['image:width']|e }}">{% endif %}
-        {% if meta['twitter']['image:height'] is defined %}<meta name="twitter:image:height" content="{{ meta['twitter']['image:height']|e }}">{% endif %}
-        {% if meta['twitter']['site'] is defined %}<meta name="twitter:site" content="{{ meta['twitter']['site']|e }}">{% endif %}
+        {% if meta['socials']['og']['title'] is defined %}<meta name="og:title" content="{{ meta['socials']['og']['title']|e }}">{% endif %}
+        {% if meta['socials']['og']['description'] is defined %}<meta name="og:description" content="{{ meta['socials']['og']['description']|e }}">{% endif %}
+        {% if meta['socials']['og']['type'] is defined %}<meta name="og:type" content="{{ meta['socials']['og']['type']|e }}">{% endif %}
+        {% if meta['socials']['og']['url'] is defined %}<meta name="og:url" content="{{ meta['socials']['og']['url']|e }}">{% endif %}
+        {% if meta['socials']['og']['site_name'] is defined %}<meta name="og:site_name" content="{{ meta['socials']['og']['site_name']|e }}">{% endif %}
+        {% if meta['socials']['og']['image'] is defined %}<meta name="og:image" content="{{ meta['socials']['og']['image']|e }}">{% endif %}
+        {% if meta['socials']['og']['image:width'] is defined %}<meta name="og:image:width" content="{{ meta['socials']['og']['image:width']|e }}">{% endif %}
+        {% if meta['socials']['og']['image:height'] is defined %}<meta name="og:image:height" content="{{ meta['socials']['og']['image:height']|e }}">{% endif %}
+        {% if meta['socials']['fb']['app_id'] is defined %}<meta name="fb:app_id" content="{{ meta['socials']['fb']['app_id']|e}}">{% endif %}
+        {% if meta['socials']['fb']['page_id'] is defined %}<meta name="fb:page_id" content="{{ meta['socials']['fb']['page_id']|e }}">{% endif %}
+        {% if meta['socials']['fb']['admins'] is defined %}<meta name="fb:admins" content="{{ meta['socials']['fb']['admins']|e }}">{% endif %}
+        {% if meta['socials']['twitter']['card'] is defined %}<meta name="twitter:card" content="{{ meta['socials']['twitter']['card']|e }}">{% endif %}
+        {% if meta['socials']['twitter']['url'] is defined %}<meta name="twitter:url" content="{{ meta['socials']['twitter']['url']|e }}">{% endif %}
+        {% if meta['socials']['twitter']['title'] is defined %}<meta name="twitter:title" content="{{ meta['socials']['twitter']['title']|e }}">{% endif %}
+        {% if meta['socials']['twitter']['description'] is defined %}<meta name="twitter:description" content="{{ meta['socials']['twitter']['description']|e }}">{% endif %}
+        {% if meta['socials']['twitter']['image'] is defined %}<meta name="twitter:image" content="{{ meta['socials']['twitter']['image']|e }}">{% endif %}
+        {% if meta['socials']['twitter']['image:width'] is defined %}<meta name="twitter:image:width" content="{{ meta['socials']['twitter']['image:width']|e }}">{% endif %}
+        {% if meta['socials']['twitter']['image:height'] is defined %}<meta name="twitter:image:height" content="{{ meta['socials']['twitter']['image:height']|e }}">{% endif %}
+        {% if meta['socials']['twitter']['site'] is defined %}<meta name="twitter:site" content="{{ meta['socials']['twitter']['site']|e }}">{% endif %}
         
         <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.6.1/font/bootstrap-icons.css" rel="stylesheet">
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
-        <link href="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.1/styles/bootstrap-extend.css" rel="stylesheet">
+        <link href="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.1.4/styles/bootstrap-extend.css" rel="stylesheet">
         <link href="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.1/styles/dashboard.css" rel="stylesheet">
 
         <!-- JavaScript Bundle with Popper -->
@@ -51,7 +51,7 @@
         <script defer src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.1/scripts/NotifyTop.js"></script>
         <script defer src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.1/scripts/AjaxModal.js"></script>
         <script defer src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.1/scripts/imageInput.js"></script>
-        <script defer src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.1/scripts/SubmitForm.js"></script>
+        <script defer src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.1.3/scripts/SubmitForm.js"></script>
         <script defer src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.1/scripts/Dashboard.js"></script>
     </head>
     <body>
@@ -66,12 +66,12 @@
             <input class="form-control form-control-dark w-100" type="text" placeholder="{{ 'search'|text|e }}" aria-label="{{ 'search'|text|e }}" />
             <div class="dropdown px-2 lang-menu">
                 <button class="btn btn-{{ navbarColor }}" type="button" id="dropdownLanguage" data-bs-toggle="dropdown" aria-expanded="false">
-                    <img class="shadow-sm" src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.1/images/flags/{{ languageCode == 'en' ? 'gb' : languageCode }}.png">
+                    <img class="shadow-sm" src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.1/images/flags/{{ languageCode }}.png">
                 </button>
                 <div class="dropdown-menu bg-dark dropdown-menu-lg-end" aria-labelledby="dropdownLanguage">
                     {% for lang, country in localization.language %}
                     <a class="dropdown-item{{ lang == languageCode ? ' active' : '' }}" href="{{ 'language'|link({'language': lang}) }}">
-                        <img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.1/images/flags/{{ lang == 'en' ? 'gb' : lang }}.png"> {{ country }}
+                        <img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.1/images/flags/{{ lang }}.png"> {{ country }}
                     </a>
                     {% endfor %}
                 </div>
@@ -130,26 +130,25 @@
             </div>
         </div>        
         <script type="text/javascript">
+            window.texts = {
+                'success': "{{ 'success'|text|e }}",
+                'error': "{{ 'error'|text|e }}",
+                'form-validation-error': "{{ 'u-have-some-form-errors'|text|e }}"
+            };
             document.addEventListener('DOMContentLoaded', function() {
-                window.texts = {
-                    'success': "{{ 'success'|text|e }}",
-                    'error': "{{ 'error'|text|e }}",
-                    'form-validation-error': "{{ 'u-have-some-form-errors'|text|e }}"
-                };
-                
                 Dashboard.init("{{ ('loading')|text|e }}");
             });
         </script>
-        {% if meta['google']['analytics']['id'] is defined %}
+        {% if meta['socials']['google']['analytics']['id'] is defined %}
         <script type="text/javascript">
             (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
             (i[r].q=i[r].q||[]).push(arguments);},i[r].l=1*new Date();a=s.createElement(o),
             m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m);
             })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
-            ga('create', '{{ meta['google']['analytics']['id']|e }}', 'auto'); ga('send', 'pageview');
+            ga('create', '{{ meta['socials']['google']['analytics']['id']|e }}', 'auto'); ga('send', 'pageview');
         </script>
         {%  endif %}
-        {% if meta['fb']['page']['id'] is defined %}
+        {% if meta['socials']['fb']['page']['id'] is defined %}
         <div id="fb-root"></div>
         <script type="text/javascript">
             window.fbAsyncInit = function() {
@@ -164,9 +163,9 @@
             }(document, 'script', 'facebook-jssdk'));
         </script>
         <div class="fb-customerchat" attribution=setup_tool page_id="{{ meta['fb']['page']['id'] }}"
-            {% if meta['fb']['page']['messenger_theme_color'] is defined %} theme_color="{{ meta['fb']['page']['messenger_theme_color']|e }}"{% endif %}
-            logged_in_greeting="{{ meta['fb']['page']['messenger_in_greeting']|default('Сайн байна уу? Бидэнтэй холбогдож байгаа таньд баярлалаа')|e }}"
-            logged_out_greeting="{{ meta['fb']['page']['messenger_out_greeting']|default('Сайн байна уу? Бидэнтэй холбогдож байгаа таньд баярлалаа')|e }}">
+            {% if meta['socials']['fb']['page']['messenger_theme_color'] is defined %} theme_color="{{ meta['socials']['fb']['page']['messenger_theme_color']|e }}"{% endif %}
+            logged_in_greeting="{{ meta['socials']['fb']['page']['messenger_in_greeting']|default('Сайн байна уу? Бидэнтэй холбогдож байгаа таньд баярлалаа')|e }}"
+            logged_out_greeting="{{ meta['socials']['fb']['page']['messenger_out_greeting']|default('Сайн байна уу? Бидэнтэй холбогдож байгаа таньд баярлалаа')|e }}">
         </div>
         {% endif %}
     </body>

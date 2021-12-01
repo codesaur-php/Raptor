@@ -53,7 +53,7 @@ class LocalizationMiddleware implements MiddlewareInterface
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
         $language = $this->retrieveLanguage($request);
-        $sess_lang_key = __NAMESPACE__ . '\\language\\code';
+        $sess_lang_key = explode('\\', __NAMESPACE__)[0] . '\\language\\code';
         if (isset($_SESSION[$sess_lang_key])
                 && isset($language[$_SESSION[$sess_lang_key]])) {
             $code = $_SESSION[$sess_lang_key];

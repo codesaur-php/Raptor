@@ -39,7 +39,7 @@ class LanguageController extends DashboardController
                 $row = array($record['code']);
                 
                 $row[] = htmlentities($record['full']);
-                $row[] = '<img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.1/images/flags/' . ($record['code'] == 'en' ? 'gb' : $record['code']) . '.png">';
+                $row[] = '<img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.1/images/flags/' . $record['code'] . '.png">';
                 $row[] = htmlentities($record['app']);
                 $row[] = htmlentities($record['created_at']);
 
