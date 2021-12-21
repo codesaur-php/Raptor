@@ -3,6 +3,7 @@
 namespace Raptor\Account;
 
 use Exception;
+use Throwable;
 
 use Psr\Log\LogLevel;
 
@@ -88,7 +89,7 @@ class OrganizationController extends DashboardController
                 $level = LogLevel::NOTICE;
                 $message = 'Байгууллага үүсгэх үйлдлийг эхлүүллээ';
             }
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             if ($is_submit) {
                 echo $this->respondJSON(array('message' => $e->getMessage()));
             } else {
@@ -138,7 +139,7 @@ class OrganizationController extends DashboardController
 
             $level = LogLevel::NOTICE;
             $message = "{$record['name']} байгууллагын мэдээллийг нээж үзэж байна";
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             echo $this->errorNoPermissionModal($e->getMessage());
             
             $level = LogLevel::ERROR;
@@ -218,11 +219,11 @@ class OrganizationController extends DashboardController
                 }
                 $this->twigTemplate($template_path, array('record' => $record, 'parents' => $this->getParents()))->render();
                 
-                $context['record'] = $record;
                 $level = LogLevel::NOTICE;
+                $context['record'] = $record;
                 $message = "{$record['name']} байгууллагын мэдээллийг шинэчлэхээр нээж байна";
             }
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             if ($is_submit) {
                 echo $this->respondJSON(array('message' => $e->getMessage()));
             } else {
@@ -270,7 +271,7 @@ class OrganizationController extends DashboardController
             
             $level = LogLevel::ALERT;
             $message = "{$payload['name']} байгууллагыг устгалаа";
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             $this->respondJSON(array(
                 'status'  => 'error',
                 'title'   => $this->text('error'),
@@ -335,7 +336,7 @@ class OrganizationController extends DashboardController
 
                 $rows[] = $row;
             }
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             $this->errorLog($e);
         } finally {
             $this->respondJSON(array(

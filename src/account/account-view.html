@@ -63,7 +63,7 @@
         <label class="col-3 col-form-label text-end text-end">{{ 'status'|text }}</label>
         <div class="col-9">
             <div class="form-check form-switch">
-              <input class="form-check-input" type="checkbox" role="switch" disabled {{ record['status'] == 1 ? 'checked ' : '' }}aria-describedby="activeHelpBlock">
+                <input class="form-check-input" type="checkbox" role="switch" disabled {{ record['status'] == 1 ? 'checked ' : '' }}aria-describedby="activeHelpBlock">
             </div>
             <div class="form-text" id="activeHelpBlock">{{ 'active-account-can-login'|text }}</div>
         </div>

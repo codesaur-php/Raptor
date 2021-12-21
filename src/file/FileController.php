@@ -3,6 +3,7 @@
 namespace Raptor\File;
 
 use Exception;
+use Throwable;
 
 use Psr\Log\LogLevel;
 
@@ -120,7 +121,7 @@ class FileController extends Controller
                             $text = "Мэдээллийн file хүснэгтийн {$existing['id']}-р бичлэг дээрх файлыг устгалаа.";
                             $this->indolog('file', LogLevel::INFO, $text, array('reason' => 'delete-file', 'record' => $existing));
                         }
-                    } catch (Exception $e) {
+                    } catch (Throwable $e) {
                         $this->errorLog($e);
                     }
                 }
@@ -142,7 +143,7 @@ class FileController extends Controller
                 $text = "Мэдээллийн $this->table хүснэгтийн $record_id-р бичлэгт зориулж $file_id дугаартай файлыг байршууллаа.";
                 $this->log($text, array('table' => $this->table, 'reason' => 'insert-file', 'record' => $record_id, 'file' => $file_record['record']['file'], 'path' => $file_record['record']['path']), 'file');
                 return $file_record;
-            } catch (Exception $e) {
+            } catch (Throwable $e) {
                 $this->errorLog($e);
             }
         }
@@ -163,7 +164,7 @@ class FileController extends Controller
             $result['code'] = $record['code'] ?? null;
             $result['rank'] = $record['rank'] ?? null;
             return $result;
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             $this->errorLog($e);
             
             return null;
@@ -188,7 +189,7 @@ class FileController extends Controller
 
             $rows = $this->indo("/record/rows?table=$this->table&model=" . FilesModel::class, $condition);
             return $this->getRecord(current($rows));
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             $this->errorLog($e);
             
             return null;

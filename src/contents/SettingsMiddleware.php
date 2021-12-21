@@ -41,13 +41,13 @@ class SettingsMiddleware implements MiddlewareInterface
                 $settings['options'] = json_decode($settings['options'], true);
             }
             ob_end_clean();
-        } catch (Throwable $th) {
+        } catch (Throwable $e) {
             ob_end_clean();
             
             if (defined('CODESAUR_DEVELOPMENT')
                     && CODESAUR_DEVELOPMENT
             ) {
-                error_log($th->getMessage());
+                error_log($e->getMessage());
             }
         }
         

@@ -40,7 +40,7 @@ class LocalizationMiddleware implements MiddlewareInterface
     {
         try {
             return $this->request($request->getAttribute('indo'), 'GET', '/language');
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             if (defined('CODESAUR_DEVELOPMENT')
                     && CODESAUR_DEVELOPMENT
             ) {
@@ -69,7 +69,7 @@ class LocalizationMiddleware implements MiddlewareInterface
             foreach ($translations as $translation) {
                 $text += $translation;
             }
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             if (defined('CODESAUR_DEVELOPMENT')
                     && CODESAUR_DEVELOPMENT
             ) {

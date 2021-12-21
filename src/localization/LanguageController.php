@@ -2,11 +2,14 @@
 
 namespace Raptor\Localization;
 
+use Error;
 use Exception;
+use Throwable;
 
 use Psr\Log\LogLevel;
 
 use Indoraptor\Localization\LanguageModel;
+use Indoraptor\Localization\CountriesModel;
 
 use Raptor\Dashboard\DashboardController;
 
@@ -24,6 +27,270 @@ class LanguageController extends DashboardController
         $this->indolog('localization', LogLevel::NOTICE, 'Хэлний жагсаалтыг нээж үзэж байна', array('model' => LanguageModel::class));
     }
     
+    public function insert()
+    {
+        $context = array('model' => LanguageModel::class);
+        $is_submit = $this->getRequest()->getMethod() == 'POST';
+        
+        try {            
+            if (!$this->isUserCan('system_localization_insert')) {
+                throw new Exception($this->text('system-no-permission'));
+            }
+            
+            if ($is_submit) {
+                $payload = array(
+                    'copy' => $this->getPostParam('txt_copy'),
+                    'code' => $this->getPostParam('txt_short'),
+                    'full' => $this->getPostParam('txt_full')
+                );
+                
+                foreach ($payload as $row) {
+                    if (empty($row)) {
+                        throw new Exception($this->text('invalid-request'));
+                    }
+                }
+                $context['payload'] = $payload;
+                
+                
+                $languages = $this->indoSafe('/language?app=common', [], 'GET');
+                foreach ($languages as $key => $value) {
+                    if ($payload['code'] == $key && $payload['full'] == $value) {
+                        throw new Exception($this->text('lang-existing'));
+                   }
+                   if ($payload['code'] == $key) {
+                        throw new Exception($this->text('lang-code-existing'));
+                   }
+                   if ($payload['full'] == $value) {
+                        throw new Exception($this->text('lang-name-existing'));
+                   }
+                }
+                
+                $payload['app'] = 'common';
+
+                $id = $this->indopost('/record?model=' . LanguageModel::class, array('record' => array('code' => $payload['code'], 'full' => $payload['full'])));
+                $context['record'] = $id;
+                
+                $mother = $this->indoSafe('/record?model=' . LanguageModel::class, array('app' => 'common', 'code' => $payload['copy'], 'is_active' => 1));                
+                if (isset($mother['code'])) {
+                    $translated = $this->indoSafe('/language/copy/multimodel/content', array('from' => $mother['code'], 'to' => $payload['code']), 'POST');
+                    if (is_array($translated)) {
+                        $this->indolog(
+                                'localization',
+                                LogLevel::ALERT,
+                                __CLASS__ . ' объект нь ' . $mother['code'] . ' хэлнээс ' . $payload['code'] . ' хэлийг хуулбарлан үүсгэлээ. ',
+                                array('reason' => 'copy', 'translated' => $translated) + $context
+                        );
+                    }                
+                }
+                
+                $this->respondJSON(array(
+                    'status' => 'success',
+                    'message' => $this->text('record-insert-success'),
+                    'href' => $this->generateLink('languages')
+                ));
+                
+                $level = LogLevel::INFO;
+                $message = "Шинэ хэл [{$payload['full']}] үүсгэх үйлдлийг амжилттай гүйцэтгэлээ";
+            } else {
+                $code = preg_replace('/[^a-z]/', '', $this->getLanguageCode());
+                $vars = array(
+                    'countries' => $this->indoSafe('/record/rows?model=' . CountriesModel::class,
+                            array('condition' => array('WHERE' => "c.code='$code'")))
+                );
+                $template_path = dirname(__FILE__) . '/language-insert-modal.html';
+                if (!file_exists($template_path)) {
+                    throw new Exception("$template_path file not found!");
+                }
+                $this->twigTemplate($template_path, $vars)->render();
+                
+                $level = LogLevel::NOTICE;
+                $message = 'Шинэ хэл үүсгэх үйлдлийг эхлүүллээ';
+            }
+        } catch (Throwable $e) {
+            if ($is_submit) {
+                echo $this->respondJSON(array('message' => $e->getMessage()));
+            } else {
+                echo $this->errorNoPermissionModal($e->getMessage());
+            }
+            
+            $level = LogLevel::ERROR;
+            $message = 'Шинэ хэл үүсгэх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
+            $context['error'] = array('code' => $e->getCode(), 'message' => $e->getMessage());
+        } finally {
+            $this->indolog('localization', $level, $message, $context);
+        }
+    }
+    
+    public function view(int $id)
+    {
+        $context = array('id' => $id, 'model' => LanguageModel::class);
+        
+        try {            
+            if (!$this->isUserCan('system_localization_index')) {
+                throw new Exception($this->text('system-no-permission'));
+            }
+            
+            $record = $this->indo('/record?model=' . LanguageModel::class, array('id' => $id));
+            $context['record'] = $record;
+            
+            $template_path = dirname(__FILE__) . '/language-retrieve-modal.html';
+            if (!file_exists($template_path)) {
+                throw new Exception("$template_path file not found!");
+            }
+            $this->twigTemplate($template_path, array('record' => $record, 'accounts' => $this->getAccounts()))->render();
+
+            $level = LogLevel::NOTICE;
+            $message = "{$record['full']} хэлний мэдээллийг нээж үзэж байна";
+        } catch (Throwable $e) {
+            echo $this->errorNoPermissionModal($e->getMessage());
+            
+            $level = LogLevel::ERROR;
+            $message = 'Хэлний мэдээллийг нээж үзэх үед алдаа гарч зогслоо байна';
+            $context['error'] = array('code' => $e->getCode(), 'message' => $e->getMessage());
+        } finally {
+            $this->indolog('localization', $level, $message, $context);
+        }
+    }
+    
+    public function update(int $id)
+    {
+        $is_submit = $this->getRequest()->getMethod() == 'POST';
+        $context = array('id' => $id, 'model' => LanguageModel::class);
+        
+        try {            
+            if (!$this->isUserCan('system_localization_update')) {
+                throw new Exception($this->text('system-no-permission'));
+            }
+            
+            if ($is_submit) {
+                $record = array(
+                    'alias' => $this->getPostParam('org_alias'),
+                    'name' => $this->getPostParam('org_name'),
+                    'home_url' => $this->getPostParam('org_home_url'),
+                    'external' => $this->getPostParam('org_external')
+                );
+                $parent_id = $this->getPostParam('org_parent_id', FILTER_VALIDATE_INT);
+                if ($parent_id > 0) {
+                    $record['parent_id'] = $parent_id;
+                }
+                $context['record'] = $record;
+                $context['record']['id'] = $id;
+
+                if (empty($record['alias']) || empty($record['name'])) {
+                    throw new Exception($this->text('invalid-request'));
+                }
+                
+                $existing = $this->indoSafe('/record?model=' . OrganizationModel::class, array('id' => $id, 'is_active' => 1));
+                $old_logo_file = basename($existing['logo'] ?? '');
+                if (isset($_FILES['org_logo'])) {
+                    $file = new FileController($this->getRequest());
+                    $file->init("/organizations/$id");
+                    $file->allowExtensions((new File())->getAllowed(3));
+                    $logo = $file->upload('org_logo');
+                    if (isset($logo['name'])) {
+                        $record['logo'] = $file->getPathUrl($logo['name']);
+                    }
+                } else {
+                    $record['logo'] = '';
+                }
+                if (isset($record['logo'])) {
+                    if (!empty($old_logo_file)) {
+                        $this->tryDeleteFile(dirname($_SERVER['SCRIPT_FILENAME']) . "/public/organizations/$id/$old_logo_file");
+                    }
+                    $context['record']['logo'] = $record['logo'];
+                }
+                
+                $this->indoput('/record?model=' . OrganizationModel::class,
+                        array('record' => $record, 'condition' => ['WHERE' => "id=$id"]));
+                
+                $this->respondJSON(array(
+                    'status' => 'success',
+                    'type' => 'primary',
+                    'message' => $this->text('record-update-success'),
+                    'href' => $this->generateLink('languages')
+                ));
+                
+                $level = LogLevel::INFO;
+                $message = "{$record['full']} хэлний мэдээллийг шинэчлэх үйлдлийг амжилттай гүйцэтгэлээ";
+            } else {
+                $record = $this->indo('/record?model=' . LanguageModel::class, array('id' => $id));
+                
+                $template_path = dirname(__FILE__) . '/language-update-modal.html';
+                if (!file_exists($template_path)) {
+                    throw new Exception("$template_path file not found!");
+                }
+                $this->twigTemplate($template_path, array('record' => $record))->render();
+                
+                $level = LogLevel::NOTICE;
+                $context['record'] = $record;
+                $message = "{$record['full']} хэлний мэдээллийг шинэчлэхээр нээж байна";
+            }
+        } catch (Error $err) {
+            throw new Exception($err->getMessage(), $err->getCode());
+        } catch (Throwable $e) {
+            if ($is_submit) {
+                echo $this->respondJSON(array('message' => $e->getMessage()));
+            } else {
+                echo $this->errorNoPermissionModal($e->getMessage());
+            }
+            
+            $level = LogLevel::ERROR;
+            $context['error'] = array('code' => $e->getCode(), 'message' => $e->getMessage());
+            $message = 'Хэлний мэдээллийг өөрчлөх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо байна';
+        } finally {
+            //var_dump($e, $level, $message, $context);exit;
+            $this->indolog('localization', $level, $message, $context);
+        }
+    }
+    
+    public function delete()
+    {
+        $context = array('model' => OrganizationModel::class);
+        
+        try {
+            if (!$this->isUserCan('system_organization_delete')) {
+                throw new Exception('No permission for an action [delete]!');
+            }
+            
+            $payload = $this->getParsedBody();
+            if (empty($payload['id'])
+                    || !isset($payload['name'])
+                    || !filter_var($payload['id'], FILTER_VALIDATE_INT)
+            ) {
+                throw new Exception($this->text('invalid-request'));
+            }
+            $context['payload'] = $payload;
+            
+            $table = '';
+            if (!empty($payload['table'])) {
+                $table = "table={$payload['table']}&";
+            }
+            
+            $this->indodelete("/record?{$table}model=" . OrganizationModel::class, array('WHERE' => "id='{$payload['id']}'"));
+            
+            $this->respondJSON(array(
+                'status'  => 'success',
+                'title'   => $this->text('success'),
+                'message' => $this->text('record-successfully-deleted')
+            ));
+            
+            $level = LogLevel::ALERT;
+            $message = "{$payload['name']} байгууллагыг устгалаа";
+        } catch (Throwable $e) {
+            $this->respondJSON(array(
+                'status'  => 'error',
+                'title'   => $this->text('error'),
+                'message' => $e->getMessage()
+            ));
+            
+            $level = LogLevel::ERROR;
+            $message = 'Байгууллагыг устгах үйлдлийг гүйцэтгэх явцад алдаа гарч зогслоо';
+            $context['error'] = array('code' => $e->getCode(), 'message' => $e->getMessage());
+        } finally {
+            $this->indolog('organization', $level, $message, $context);
+        }
+    }
+    
     public function datatable()
     {
         $rows = array();
@@ -39,7 +306,7 @@ class LanguageController extends DashboardController
                 $row = array($record['code']);
                 
                 $row[] = htmlentities($record['full']);
-                $row[] = '<img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.1/images/flags/' . $record['code'] . '.png">';
+                $row[] = '<img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5/flags/' . $record['code'] . '.png">';
                 $row[] = htmlentities($record['app']);
                 $row[] = htmlentities($record['created_at']);
 
@@ -56,7 +323,7 @@ class LanguageController extends DashboardController
                 
                 $rows[] = $row;
             }
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             $this->errorLog($e);
         } finally {
             $this->respondJSON(array(

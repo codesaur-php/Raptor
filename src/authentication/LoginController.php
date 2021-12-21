@@ -3,6 +3,7 @@
 namespace Raptor\Authentication;
 
 use Exception;
+use Throwable;
 use DateTime;
 
 use Psr\Log\LogLevel;
@@ -37,7 +38,7 @@ class LoginController extends \Raptor\Controller
         
         try {
             $vars['organizations'] = $this->indo('/record/rows?model=' . OrganizationModel::class);
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             $this->errorLog($e);
         }
 
@@ -78,7 +79,7 @@ class LoginController extends \Raptor\Controller
             $level = LogLevel::INFO;
             $context['reason'] = 'login';
             $message = "Хэрэглэгч {$account['first_name']} {$account['last_name']} системд нэвтрэв.";
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             $this->errorLog($e);
             
             if (isset($_SESSION[$sess_jwt_key])) {
@@ -152,7 +153,7 @@ class LoginController extends \Raptor\Controller
             
             $level = LogLevel::ALERT;
             $message = "{$payload['username']} нэртэй {$payload['email']} хаягтай шинэ хэрэглэгч үүсгэх хүсэлт бүртгүүллээ";
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             $level = LogLevel::ERROR;
             $context['error'] = array('code' => $e->getCode(), 'message' => $e->getMessage());
             
@@ -206,7 +207,7 @@ class LoginController extends \Raptor\Controller
 
             $level = LogLevel::INFO;
             $message = "{$payload['email']} хаягтай хэрэглэгч  нууц үгээ шинээр тааруулах хүсэлт илгээснийг бүртгүүллээ";
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             $level = LogLevel::ERROR;
             $context['error'] = array('code' => $e->getCode(), 'message' => $e->getMessage());
             switch ($e->getCode()) {
@@ -249,7 +250,7 @@ class LoginController extends \Raptor\Controller
             
             $level = LogLevel::NOTICE;
             $message = 'Нууц үгээ шинээр тааруулж эхэллээ.';           
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             if ($e->getCode() == 404) {
                 $notice = 'Хуурамч/устгагдсан/хэрэглэгдсэн мэдээлэл ашиглан нууц үг тааруулахыг оролдов';
             } else {
@@ -301,7 +302,7 @@ class LoginController extends \Raptor\Controller
             $level = LogLevel::INFO;
             $message = 'Нууц үг шинээр тохируулав';
             $context['account'] = $account;
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             $vars['error'] = $e->getMessage();
             
             $level = LogLevel::ERROR;
@@ -340,7 +341,7 @@ class LoginController extends \Raptor\Controller
 
             $home = $this->generateLink('home');
             $location = strpos($referer, $home) !== false ? $referer : $home;
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             $this->errorLog($e);
             
             $location = $referer;
@@ -388,7 +389,7 @@ class LoginController extends \Raptor\Controller
         try {
             return $this->indo('/record/update?model=' . Accounts::class,
                     array('record' => array('code' => $code), 'condition' => array('WHERE' => "id=$id")));
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             $this->errorLog($e);
             
             return false;

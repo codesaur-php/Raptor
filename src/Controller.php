@@ -27,15 +27,15 @@ class Controller extends \codesaur\Http\Application\Controller
             $this->getAttribute('indo')->handle($request);
             $response = json_decode(ob_get_contents(), $assoc);
             ob_end_clean();
-        } catch (Throwable $throwable) {
+        } catch (Throwable $e) {
             ob_end_clean();
         }
 
-        if (isset($throwable)) {
-            if ($throwable instanceof Exception) {
-                throw $throwable;
+        if (isset($e)) {
+            if ($e instanceof Exception) {
+                throw $e;
             } else {
-                throw new Exception($throwable->getMessage(), $throwable->getCode());
+                throw new Exception($e->getMessage(), $e->getCode());
             }
         } elseif (isset($response['error']['code'])
                 && isset($response['error']['message'])
@@ -82,7 +82,7 @@ class Controller extends \codesaur\Http\Application\Controller
                 return $pattern;
             }
             return (string)$this->getRequest()->getUri()->withPath($pattern);
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             $this->errorLog($e);
 
             return $default;
@@ -199,7 +199,7 @@ class Controller extends \codesaur\Http\Application\Controller
             }
             
             $this->indo('/log', $payload);
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             $this->errorLog($e);
         }
     }

@@ -24,10 +24,10 @@ class JWTAuthMiddleware implements MiddlewareInterface
                     new InternalRequest('POST', '/auth/jwt', array('jwt' => $jwt)));
             $response = json_decode(ob_get_contents(), true);
             ob_end_clean();
-        } catch (Throwable $th) {
+        } catch (Throwable $e) {
             ob_end_clean();
             
-            $response = array('error' => array('code' => $th->getCode(), 'message' => $th->getMessage()));
+            $response = array('error' => array('code' => $e->getCode(), 'message' => $e->getMessage()));
         }
         
         if (isset($response['error']['code'])
@@ -54,7 +54,7 @@ class JWTAuthMiddleware implements MiddlewareInterface
             }
 
             $user = $this->retrieveIndoUser($request, $_SESSION[$sess_jwt_key]);
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             if ($e->getCode() >= 5000
                     && defined('CODESAUR_DEVELOPMENT')
                     && CODESAUR_DEVELOPMENT

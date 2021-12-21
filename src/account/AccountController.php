@@ -3,6 +3,7 @@
 namespace Raptor\Account;
 
 use Exception;
+use Throwable;
 use DateTime;
 
 use Psr\Log\LogLevel;
@@ -69,7 +70,7 @@ class AccountController extends DashboardController
             
             $level = LogLevel::NOTICE;
             $message = 'Хэрэглэгчдийн жагсаалтыг нээж үзэж байна';
-        } catch (Exception $e) {            
+        } catch (Throwable $e) {            
             $level = LogLevel::ERROR;
             $message = 'Хэрэглэгчдийн жагсаалтыг нээж үзэх үед алдаа гарч зогслоо';
             $context['error'] = array('code' => $e->getCode(), 'message' => $e->getMessage());
@@ -149,7 +150,7 @@ class AccountController extends DashboardController
                 $level = LogLevel::NOTICE;
                 $message = 'Хэрэглэгч үүсгэх үйлдлийг эхлүүллээ';
             }
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             $message = 'Хэрэглэгч үүсгэх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
             $context['error'] = array('code' => $e->getCode(), 'message' => $e->getMessage());
             
@@ -375,7 +376,7 @@ class AccountController extends DashboardController
                 $context['current_organizations'] = $vars['current_organizations'];
                 $message = "{$record['username']} хэрэглэгчийн мэдээллийг шинэчлэх үйлдлийг эхлүүллээ";
             }
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             if ($is_submit) {
                 echo $this->respondJSON(array('message' => $e->getMessage()));
             } else {
@@ -425,7 +426,7 @@ class AccountController extends DashboardController
             $level = LogLevel::NOTICE;
             $message = "{$record['username']} хэрэглэгчийн мэдээллийг нээж үзэж байна";
             $context += array('roles' => $user_roles, 'organizations' => $organizations);
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             $level = LogLevel::ERROR;
             $message = 'Хэрэглэгчийн мэдээллийг нээж үзэх үед алдаа гарч зогслоо байна';
             $context['error'] = array('code' => $e->getCode(), 'message' => $e->getMessage());
@@ -469,7 +470,7 @@ class AccountController extends DashboardController
             
             $level = LogLevel::ALERT;
             $message = "{$payload['name']} хэрэглэгчийг устгалаа";
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             $this->respondJSON(array(
                 'status'  => 'error',
                 'title'   => $this->text('error'),
@@ -526,7 +527,7 @@ class AccountController extends DashboardController
             $template->render();
             
             $level = LogLevel::NOTICE;
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             echo $this->errorNoPermissionModal($e->getMessage());
 
             $level = LogLevel::ERROR;
@@ -628,7 +629,7 @@ class AccountController extends DashboardController
             
             $level = LogLevel::ALERT;
             $message = "Шинэ бүртгүүлсэн {$record['username']} нэртэй [{$record['email']}] хаягтай хэрэглэгчийн хүсэлтийг зөвшөөрч системд нэмлээ";
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             $this->respondJSON(array(
                 'status'  => 'error',
                 'title'   => $this->text('error'),
@@ -671,7 +672,7 @@ class AccountController extends DashboardController
             
             $level = LogLevel::ALERT;
             $message = "{$payload['name']} хэрэглэгчээр бүртгүүлэх хүсэлтийг устгалаа";
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             $this->respondJSON(array(
                 'status'  => 'error',
                 'title'   => $this->text('error'),

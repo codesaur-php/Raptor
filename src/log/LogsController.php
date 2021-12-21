@@ -3,6 +3,7 @@
 namespace Raptor\Log;
 
 use Exception;
+use Throwable;
 
 use codesaur\Template\TwigTemplate;
 
@@ -27,7 +28,7 @@ class LogsController extends DashboardController
             
             $template->render($this->twigTemplate(dirname(__FILE__) . '/index-list-logs.html',
                     array('names' => $names, 'logs' => $logs, 'accounts' => $this->getAccounts())));
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             $template->alertNoPermission($e->getMessage());
         }
     }
@@ -62,7 +63,7 @@ class LogsController extends DashboardController
             ))->render();
 
             return true;
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             echo $this->errorNoPermissionModal($e->getMessage());
 
             return false;
@@ -73,7 +74,7 @@ class LogsController extends DashboardController
     {
         try {
             return $this->indoget("/log?table=$table&limit=$limit");
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             $this->errorLog($e);
             
             return array();

@@ -108,6 +108,6 @@ document.addEventListener('DOMContentLoaded', function() {
     
     document.getElementsByName('photo')[0].imageInput(null, "{{ 'select-image'|text }}", "{{ 'choose'|text }}", "{{ 'change'|text }}", "{{ 'remove'|text }}");
     
-    SubmitForm('.submit', 'form#account_insert');
+    FormSubmitHandler('.submit', 'form#account_insert');
 });
 </script>

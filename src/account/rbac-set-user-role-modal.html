@@ -32,7 +32,7 @@
 <script type="text/javascript">
     (function($) {
         $.fn.Select2Roles = function() {            
-            var formatSelection = function(state) {
+            let formatSelection = function(state) {
                 if (!state.id) {
                     return state.text;
                 }
@@ -46,7 +46,7 @@
                 }
             };
 
-            var formatMenu = function(state) {
+            let formatMenu = function(state) {
                 if (!state.id) {
                     return state.text;
                 }
@@ -74,5 +74,5 @@
     $('#roles').trigger('change');
     {% endif %}
         
-    SubmitForm('.submit-user-role', 'form#rbac_user_role');
+    FormSubmitHandler('.submit-user-role', 'form#rbac_user_role');
 </script>

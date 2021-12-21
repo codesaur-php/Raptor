@@ -66,5 +66,5 @@
 <script type="text/javascript">
 document.getElementsByName('org_logo')[0].imageInput("{{ record['logo']|e }}", "{{ 'select-image'|text }}", "{{ 'choose'|text }}", "{{ 'change'|text }}", "{{ 'remove'|text }}", 240);
 
-SubmitForm('.submit-organization', 'form#organization_update');
+FormSubmitHandler('.submit-organization', 'form#organization_update');
 </script>

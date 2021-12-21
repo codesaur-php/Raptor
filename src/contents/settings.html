@@ -21,13 +21,13 @@
             {% for code in localization.language|keys %}
             <div class="form-floating mt-2">
                 <input class="form-control" name="title[{{ code }}]" value="{{ record['content']['title'][code] }}" maxlength="70" autocomplete="off">
-                <label>{{ 'title'|text }} <img style="position:relative;top:-2px" src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.1/images/flags/{{ code }}.png"></label>
+                <label>{{ 'title'|text }} <img style="position:relative;top:-2px" src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5/flags/{{ code }}.png"></label>
             </div>
             {% endfor %}
             {% for code in localization.language|keys %}
             <div class="form-floating mt-{{ loop.first ? '4' : '2' }}">
                 <input class="form-control" name="description[{{ code }}]" value="{{ record['content']['description'][code] }}" maxlength="155" autocomplete="off">
-                <label>{{ 'description'|text }} <img style="position:relative;top:-2px" src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.1/images/flags/{{ code }}.png"></label>
+                <label>{{ 'description'|text }} <img style="position:relative;top:-2px" src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5/flags/{{ code }}.png"></label>
             </div>
             {% endfor %}
             <div class="form-floating mt-4">
@@ -45,23 +45,23 @@
             {% for code in localization.language|keys %}
             <div class="form-floating mt-{{ loop.first ? '4' : '2' }}">
                 <input class="form-control" name="contact[{{ code }}]" value="{{ record['content']['contact'][code] }}" maxlength="512" autocomplete="off">
-                <label>{{ 'contact'|text }} <img style="position:relative;top:-2px" src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.1/images/flags/{{ code }}.png"></label>
+                <label>{{ 'contact'|text }} <img style="position:relative;top:-2px" src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5/flags/{{ code }}.png"></label>
             </div>
             {% endfor %}
             {% for code in localization.language|keys %}
             <div class="form-floating mt-{{ loop.first ? '4' : '2' }}">
                 <input class="form-control" name="address[{{ code }}]" value="{{ record['content']['address'][code] }}" maxlength="512" autocomplete="off">
-                <label>{{ 'address'|text }} <img style="position:relative;top:-2px" src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.1/images/flags/{{ code }}.png"></label>
+                <label>{{ 'address'|text }} <img style="position:relative;top:-2px" src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5/flags/{{ code }}.png"></label>
             </div>
             {% endfor %}
             {% for code in localization.language|keys %}
             <div class="form-floating mt-{{ loop.first ? '4' : '2' }}">
                 <input class="form-control" name="copyright[{{ code }}]" value="{{ record['content']['copyright'][code] }}" maxlength="512" autocomplete="off">
-                <label>Copyright <img style="position:relative;top:-2px" src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.1/images/flags/{{ code }}.png"></label>
+                <label>Copyright <img style="position:relative;top:-2px" src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5/flags/{{ code }}.png"></label>
             </div>
             {% endfor %}
             {% if user_can %}
-            <button class="submit-settings btn btn-lg btn-primary shadow-sm mt-4"><i class="bi bi-save" style="margin-right:5px;font-size:1.1rem"></i> {{ 'save'|text }}</button>
+            <button class="submit-settings btn btn-lg btn-primary shadow-sm mt-4"><i class="bi bi-save"></i> {{ 'save'|text }}</button>
             {% endif %}
         </form>
     </div>
@@ -72,7 +72,7 @@
                 <div class="col">
                     {% for code in localization.language|keys %}
                     {% if not loop.first %}<hr>{% endif %}
-                    <label class="form-label">{{ 'logo'|text }} <img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.1/images/flags/{{ code }}.png"></label>
+                    <label class="form-label">{{ 'logo'|text }} <img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5/flags/{{ code }}.png"></label>
                     <input type="file" name="logo_{{ code }}">
                     {% endfor %}
                 </div>
@@ -88,7 +88,7 @@
                 </div>
             </div>
             {% if user_can %}
-            <button class="submit-settings btn btn-lg btn-primary shadow-sm mt-4"><i class="bi bi-save" style="margin-right:5px;font-size:1.1rem"></i> {{ 'save'|text }}</button>
+            <button class="submit-settings btn btn-lg btn-primary shadow-sm mt-4"><i class="bi bi-save"></i> {{ 'save'|text }}</button>
             {% endif %}
         </form>
     </div>
@@ -121,7 +121,7 @@
                 <label>Additional settings for social networks (must be valid JSON)</label>
             </div>
             {% if user_can %}
-            <button class="submit-settings btn btn-lg btn-primary shadow-sm mt-4"><i class="bi bi-save" style="margin-right:5px;font-size:1.1rem"></i> {{ 'save'|text }}</button>
+            <button class="submit-settings btn btn-lg btn-primary shadow-sm mt-4"><i class="bi bi-save"></i> {{ 'save'|text }}</button>
             {% endif %}
         </form>
     </div>
@@ -133,7 +133,7 @@
                 <label>Extra options (must be valid JSON)</label>
             </div>
             {% if user_can %}
-            <button class="submit-settings btn btn-lg btn-primary shadow-sm mt-4"><i class="bi bi-save" style="margin-right:5px;font-size:1.1rem"></i> {{ 'save'|text }}</button>
+            <button class="submit-settings btn btn-lg btn-primary shadow-sm mt-4"><i class="bi bi-save"></i> {{ 'save'|text }}</button>
             {% endif %}
         </form>
     </div>
@@ -218,7 +218,7 @@
                 </div>
             </div>
             {% if user_can %}
-            <button class="submit-settings btn btn-lg btn-primary shadow-sm mt-4"><i class="bi bi-save" style="margin-right:5px;font-size:1.1rem"></i> {{ 'save'|text }}</button>
+            <button class="submit-settings btn btn-lg btn-primary shadow-sm mt-4"><i class="bi bi-save"></i> {{ 'save'|text }}</button>
             {% endif %}
         </form>
     </div>
@@ -232,6 +232,6 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementsByName('shortcut_icon')[0].imageInput("{{ record['shortcut_icon']|e }}", "{{ 'select-image'|text }}", "{{ 'choose'|text }}", "{{ 'change'|text }}", "{{ 'remove'|text }}", 32);
     document.getElementsByName('apple_touch_icon')[0].imageInput("{{ record['apple_touch_icon']|e }}", "{{ 'select-image'|text }}", "{{ 'choose'|text }}", "{{ 'change'|text }}", "{{ 'remove'|text }}", 128);
     
-    SubmitForm('.submit-settings');
+    FormSubmitHandler('.submit-settings');
 });
 </script>

@@ -3,6 +3,7 @@
 namespace Raptor\Account;
 
 use Exception;
+use Throwable;
 
 use Psr\Log\LogLevel;
 
@@ -33,7 +34,7 @@ class RBACController extends DashboardController
                 throw new Exception("$template_path file not found!");
             }
             $this->twigTemplate($template_path, $values)->render();
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             echo $this->errorNoPermissionModal($e->getMessage());
         }
     }
@@ -139,7 +140,7 @@ class RBACController extends DashboardController
 
                 $this->indolog('rbac', LogLevel::NOTICE, "$id дугаартай  {$account['username']} хэрэглэгчийн дүрийг тохируулах үйлдлийг эхлүүллээ", $context);
             }
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             if ($is_submit) {
                 $this->respondJSON(array(
                     'status'  => 'error',

@@ -1,0 +1,208 @@
+<div class="modal-dialog modal-lg">
+    <div class="modal-content">
+        <div class="modal-header modal-header-solid">
+            <h6 class="modal-title text-uppercase text-success"><i class="bi bi-plus-circle"></i> {{ 'add-record'|text }}</h6>
+            <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="{{ 'close'|text|e }}"></button>
+        </div>
+        <div class="modal-body">
+            <div class="progress mb-4">
+                <div class="progress-bar progress-bar-striped progress-bar-animated" id="collectProgress" role="progressbar" style="width:33%" aria-valuenow="33" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+            <ul class="nav nav-tabs" id="langInsertTab" role="tablist">
+                <li class="nav-item">
+                    <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#generalPanel" role="tab" aria-controls="generalPanel" aria-selected="true">{{ 'general-info'|text }}</button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#settingsPanel" role="tab" aria-controls="settingsPanel" aria-selected="false">{{ 'translation-settings'|text }}</button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#confirmPanel" role="tab" aria-controls="confirmPanel" aria-selected="false">{{ 'confirm'|text }}</button>
+                </li>
+            </ul>
+            <div class="tab-content mt-2">
+                <div class="tab-pane fade show active" id="generalPanel" role="tabpanel">
+                    <h5 class="mt-4">{{ 'enter-language-details'|text }}</h5>
+                    <div class="mt-4">
+                        <label>{{ 'country'|text }}</label>
+                        <select class="form-control select2" id="countries">
+                            <option value=""></option>
+                            {% for country in countries %}
+                            <option data-speak="{{ country['speak'] }}" value="{{ country['id'] }}"> &nbsp;{{ country['content']['title'][localization.code]|e }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mt-4">
+                        <label>{{ 'code'|text }}*</label>
+                        <input class="form-control lang_short" autocomplete="off" maxlength="6" placeholder="" readonly value="" type="text">
+                    </div>
+                    <div class="mt-4">
+                        <label>{{ 'flag'|text }}</label>
+                        <p class="lang_flag"></p>
+                    </div>
+                    <div class="mt-4 mb-3">
+                        <label>{{ 'language'|text }}*</label>
+                        <input class="form-control lang_full" id="txt_full" autocomplete="off" maxlength="32" placeholder="" value="" type="text">
+                    </div>
+                </div>
+                <div class="tab-pane fade" id="settingsPanel" role="tabpanel">
+                    <h5 class="mt-4">{{ 'select-translation-settings'|text }}</h5>
+                    <div class="mt-4">
+                        <label>{{ 'copy-translations-from'|text }}</label>
+                        <select class="form-control" id="available_languages">
+                            <option value=""></option>
+                            {% for code,name in localization.language %}
+                            <option value="{{ code }}">{{ name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mt-4">
+                        <label>{{ 'code'|text }}</label>
+                        <input class="form-control copy_short" autocomplete="off" maxlength="6" placeholder="" readonly value="" type="text">
+                    </div>
+                    <div class="mt-4 mb-3">
+                        <label>{{ 'flag'|text }}</label>
+                        <p class="copy_flag"></p>
+                    </div>
+                </div>
+                <div class="tab-pane fade" id="confirmPanel" role="tabpanel">
+                    <h5 class="mt-4">{{ 'confirm-info'|text }}</h5>
+                    <form id="insert_form" action="{{ 'language-insert'|link }}" method="POST" enctype="multipart/form-data" role="form" novalidate="novalidate">
+                        <div class="mt-4">
+                            <label>{{ 'code'|text }}</label>
+                            <input class="form-control lang_short" readonly required autocomplete="off" maxlength="6" name="txt_short" placeholder="" value="" type="text">
+                        </div>
+                        <div class="mt-4">
+                            <label>{{ 'flag'|text }}</label>
+                            <p class="lang_flag"></p>
+                        </div>
+                        <div class="mt-4">
+                            <label>{{ 'name'|text }}</label>
+                            <input class="form-control lang_full" id="txt_full_confirm" required autocomplete="off" maxlength="32" name="txt_full" placeholder="" value="" type="text">
+                        </div>
+                        <div class="mt-4 mb-3">
+                            <label>{{ 'copy-translations-from'|text }}</label>
+                            <input class="form-control copy_short" readonly required autocomplete="off" maxlength="6" name="txt_copy" placeholder="" value="" type="text">
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer modal-footer-solid">
+            <button class="btn btn-info" id="back">
+                <i class="bi bi-arrow-left"></i> {{ 'back'|text }}
+            </button>
+            <button class="btn btn-primary" id="continue">
+                {{ 'continue'|text }} <i class="bi bi-arrow-right"></i>
+            </button>
+            <button class="btn btn-success" id="confirm">
+                <i class="bi bi-check"></i> {{ 'confirm'|text }}
+            </button>
+            <button class="btn btn-secondary" data-bs-dismiss="modal">
+                {{ 'close'|text }}
+            </button>
+        </div>
+    </div>
+</div>
+<script type="text/javascript">
+let btnBack = document.querySelector('.modal-footer #back');
+let btnContinue = document.querySelector('.modal-footer #continue');
+let btnConfirm = document.querySelector('.modal-footer #confirm');
+let headGeneral = document.querySelector('#langInsertTab button[data-bs-target="#generalPanel"]');
+let headSettings = document.querySelector('#langInsertTab button[data-bs-target="#settingsPanel"]');
+let headConfirm = document.querySelector('#langInsertTab button[data-bs-target="#confirmPanel"]');
+let progressBar = document.querySelector('#collectProgress');
+
+FormSubmitHandler(btnConfirm, 'form#insert_form');
+
+btnBack.addEventListener('click', function(e) {
+    e.preventDefault();
+    
+    let id = document.querySelector('.tab-content .active').id;
+    if (id === 'settingsPanel') {
+        headGeneral.click();
+    } else if (id === 'confirmPanel') {
+        headSettings.click();
+    }
+});
+
+btnContinue.addEventListener('click', function(e) {
+    e.preventDefault();
+    
+    let id = document.querySelector('.tab-content .active').id;
+    if (id === 'generalPanel') {
+        headSettings.click();
+    } else if (id === 'settingsPanel') {
+        headConfirm.click();
+    }
+});
+
+headGeneral.addEventListener('click', function() {
+    btnBack.style.display = 'none';
+    btnContinue.style.display = 'block';
+    btnConfirm.style.display = 'none';
+    progressBar.style.width = '33%';
+});
+
+headSettings.addEventListener('click', function() {
+    btnBack.style.display = 'block';
+    btnContinue.style.display = 'block';
+    btnConfirm.style.display = 'none';
+    progressBar.style.width = '66%';
+});
+
+headConfirm.addEventListener('click', function() {
+    progressBar.style.width = '99%';
+    btnBack.style.display = 'block';
+    btnContinue.style.display = 'none';
+    btnConfirm.style.display = 'block';
+});
+
+headGeneral.click();
+
+(function($) {
+    $.fn.Select2Country = function() {
+        let format = function(country) {
+            if (!country.id) {
+                return country.text;
+            }
+
+            let ID = country.element.value.toLowerCase();
+            return $('<span><img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5/flags/' + ID + '.png"> ' + country.text + '</span>');
+        };
+
+        if (jQuery().select2) {
+            this.select2({
+                width: '100%',
+                templateResult: format,
+                templateSelection: format,
+                dropdownParent: $('#dashboard-modal'),
+                escapeMarkup: function(m) { return m; },
+                placeholder: '<i class="bi bi-geo-alt"></i>&nbsp; {{ 'select-a-country'|text }}'
+            });
+        };
+
+        return this;
+    }; 
+} (jQuery));
+
+$('#countries').Select2Country();
+
+$('#countries').on('change', function() {
+    let ID = $(this).find('option:selected').attr('value').toLowerCase();
+    let Name = $(this).find('option:selected').attr('data-speak');
+
+    $('.lang_short').val(ID);
+    $('.lang_flag').html('<img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5/flags/' + ID + '.png">');
+    $('.lang_full').val(Name);
+});
+
+$('#txt_full').bind('input', function() {
+    $('#txt_full_confirm').val($(this).val());
+});
+
+$('#available_languages').on('change', function() {
+    let code = $(this).find('option:selected').val();
+    $('.copy_short').val(code);
+    $('.copy_flag').html('<img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5/flags/' + code + '.png">');
+});
+</script>

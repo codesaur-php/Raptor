@@ -131,7 +131,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     document.getElementsByName('photo')[0].imageInput("{{ record['photo']|e }}", "{{ 'select-image'|text }}", "{{ 'choose'|text }}", "{{ 'change'|text }}", "{{ 'remove'|text }}");
     
-    SubmitForm('.submit', 'form#account_update');
+    FormSubmitHandler('.submit', 'form#account_update');
     
     (function($) {
         $.fn.Select2Organizations = function() {
@@ -146,7 +146,7 @@ document.addEventListener('DOMContentLoaded', function() {
         };
         
         $.fn.Select2Roles = function() {            
-            var formatSelection = function(state) {
+            let formatSelection = function(state) {
                 if (!state.id) {
                     return state.text;
                 }
@@ -160,7 +160,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             };
 
-            var formatMenu = function(state) {
+            let formatMenu = function(state) {
                 if (!state.id) {
                     return state.text;
                 }

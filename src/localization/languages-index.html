@@ -4,12 +4,12 @@
     </p>
 </div>
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-4 mt-3">
-    <h3 class="text-danger" style="padding-right:10px"><i class="bi bi-flag-fill"></i>  {{ 'languages'|text }}</h3>
+    <h3 class="text-danger" style="padding-right:10px"><i class="bi bi-flag-fill"></i> {{ 'languages'|text }}</h3>
     <div class="btn-toolbar mb-2 mb-md-0">
         <div class="btn-group me-2">
             {% if user.can('system_localization_insert') %}
             <a class="btn btn-outline-danger text-uppercase shadow-sm" href="{{ 'language-insert'|link }}" data-bs-target="#dashboard-modal" data-bs-toggle="modal">
-                <i class="bi bi-plus-circle-dotted" style="margin-right:1px"></i> {{ 'new'|text }}
+                <i class="bi bi-plus-circle-dotted"></i> {{ 'new'|text }}
             </a>
             {% endif %}
         </div>
@@ -36,7 +36,7 @@
 <script defer src="https://cdn.datatables.net/1.11.3/js/dataTables.bootstrap5.min.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script type="text/javascript">
-var deleteAskHtml = {% if localization.code == 'mn' %}'<p class="text-danger mb-3">Та ({0}) хэлийг устгахдаа итгэлтэй байна уу?</p>'{% else %}'<p class="text-danger mb-3">Are you sure to delete the language ({0})?</p>'{% endif %};
+let deleteAskHtml = {% if localization.code == 'mn' %}'<p class="text-danger mb-3">Та ({0}) хэлийг устгахдаа итгэлтэй байна уу?</p>'{% else %}'<p class="text-danger mb-3">Are you sure to delete the language ({0})?</p>'{% endif %};
 document.addEventListener('DOMContentLoaded', function() {    
     let languagesTable = document.querySelector('table#languages');
     $(languagesTable).DataTable({
@@ -58,7 +58,7 @@ document.addEventListener('DOMContentLoaded', function() {
         let name = a.parentNode.parentNode.children[1].innerHTML;
         let question = deleteAskHtml.format(name.replace(/<\/?[^>]+(>|$)/g, ''));
 
-        var src = '';
+        let src = '';
         let flag = a.parentNode.parentNode.children[2].querySelector('img');
         if (flag) {
             src = flag.src;

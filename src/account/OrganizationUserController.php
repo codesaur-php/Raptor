@@ -3,6 +3,7 @@
 namespace Raptor\Account;
 
 use Exception;
+use Throwable;
 
 use Psr\Log\LogLevel;
 
@@ -33,7 +34,7 @@ class OrganizationUserController extends DashboardController
             
             $level = LogLevel::NOTICE;
             $message = 'Хэрэглэгч өөрийн байгууллагуудын жагсаалтыг нээж үзэж байна';
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             $level = LogLevel::ERROR;
             $message = $e->getMessage();
             
@@ -127,7 +128,7 @@ class OrganizationUserController extends DashboardController
                         $context
                 );
             }
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             if ($is_submit) {
                 $this->respondJSON(array(
                     'status'  => 'error',

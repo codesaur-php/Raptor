@@ -2,7 +2,7 @@
 
 namespace Raptor\Dashboard;
 
-use Exception;
+use Throwable;
 
 use Psr\Log\LogLevel;
 
@@ -36,7 +36,7 @@ class DashboardController extends \Raptor\Controller
             foreach ($rows as $rows) {
                 $accounts[$rows['id']] = $rows['username'] . ' » ' . $rows['first_name'] . ' ' . $rows['last_name'] . ' (' . $rows['email'] . ')';
             }
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             $this->errorLog($e);
         }
         return $accounts;
@@ -46,7 +46,7 @@ class DashboardController extends \Raptor\Controller
     {
         try {
             $menu = $this->indoget('/account/get/menu');            
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             if ($e->getCode() == 404 && $e->getMessage() == 'Menu not defined') {
                 $menu = $this->getDefaultMenu();
             } else {
@@ -126,7 +126,7 @@ class DashboardController extends \Raptor\Controller
             ));
             
             return $this->indoget('/account/get/menu');
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             $this->errorLog($e);
             
             return array();
@@ -140,7 +140,7 @@ class DashboardController extends \Raptor\Controller
             <div class="modal-content">
                 <div class="modal-body">
                     <div class="alert alert-danger shadow-sm fade mt-3 show" role="alert">
-                        <i class="bi bi-shield-fill-exclamation" style="margin-right:6px"></i> ' . $content
+                        <i class="bi bi-shield-fill-exclamation" style="margin-right:5px"></i> ' . $content
                 . '</div>
                 </div>
                 <div class="modal-footer modal-footer-solid">
@@ -158,7 +158,7 @@ class DashboardController extends \Raptor\Controller
                 
                 $this->indolog('file', LogLevel::ALERT, "$filePath файлыг устгалаа");
             }
-        } catch (Exception $ex) {
+        } catch (Throwable $ex) {
             $this->errorLog($ex);
         }
     }

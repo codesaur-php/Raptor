@@ -3,6 +3,7 @@
 namespace Raptor\Contents;
 
 use Exception;
+use Throwable;
 
 use Psr\Log\LogLevel;
 
@@ -94,7 +95,7 @@ class SettingsController extends DashboardController
 
                 $level = LogLevel::INFO;
                 $message = 'Системийн тохируулгыг амжилттай хадгаллаа';
-            } catch (Exception $e) {
+            } catch (Throwable $e) {
                 echo $this->respondJSON(array('message' => $e->getMessage()));                
 
                 $level = LogLevel::ERROR;
@@ -112,7 +113,7 @@ class SettingsController extends DashboardController
 
             try {
                 $record = $this->indo('/record?model=' . SettingsModel::class, array('alias' => $alias, 'is_active' => 1));
-            } catch (Exception $e) {
+            } catch (Throwable $e) {
                 $this->errorLog($e);
 
                 $record = array('alias' => $alias);
@@ -239,7 +240,7 @@ class SettingsController extends DashboardController
 
             $level = LogLevel::INFO;
             $message = 'Системийн тохируулгыг амжилттай хадгаллаа';
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             echo $this->respondJSON(array('message' => $e->getMessage()));                
 
             $level = LogLevel::ERROR;
@@ -288,7 +289,7 @@ class SettingsController extends DashboardController
 
             $level = LogLevel::INFO;
             $message = 'Системийн шууданчын тохируулгыг амжилттай хадгаллаа';
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             echo $this->respondJSON(array('message' => $e->getMessage()));
 
             $level = LogLevel::ERROR;

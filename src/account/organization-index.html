@@ -4,7 +4,7 @@
         <div class="btn-group me-2">
             {% if user.can('system_organization_insert') %}
             <a class="btn btn-outline-success text-uppercase shadow-sm" href="{{ 'organization-insert'|link }}" data-bs-target="#dashboard-modal" data-bs-toggle="modal">
-                <i class="bi bi-plus-circle-dotted" style="margin-right:1px"></i> {{ 'new'|text }}
+                <i class="bi bi-plus-circle-dotted"></i> {{ 'new'|text }}
             </a>
             {% endif %}
         </div>
@@ -31,7 +31,7 @@
 <script defer src="https://cdn.datatables.net/1.11.3/js/dataTables.bootstrap5.min.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script type="text/javascript">
-var deleteAskHtml = {% if localization.code == 'mn' %}'<p class="text-danger mb-3">Та ({0}) байгууллагыг устгахдаа итгэлтэй байна уу?</p><p>Хэрвээ тийм бол шалтгаан тайлбар бичнэ үү</p>'{% else %}'<p class="text-danger mb-3">Are you sure to delete this organization ({0})?</p><p>If so, please provide a reason</p>'{% endif %};
+let deleteAskHtml = {% if localization.code == 'mn' %}'<p class="text-danger mb-3">Та ({0}) байгууллагыг устгахдаа итгэлтэй байна уу?</p><p>Хэрвээ тийм бол шалтгаан тайлбар бичнэ үү</p>'{% else %}'<p class="text-danger mb-3">Are you sure to delete this organization ({0})?</p><p>If so, please provide a reason</p>'{% endif %};
 document.addEventListener('DOMContentLoaded', function() {    
     let organizationTable = document.querySelector('table#organization');
     $(organizationTable).DataTable({
@@ -53,7 +53,7 @@ document.addEventListener('DOMContentLoaded', function() {
         let name = a.parentNode.parentNode.children[2].innerHTML;
         let question = deleteAskHtml.format(name.replace(/<\/?[^>]+(>|$)/g, ''));
 
-        var src = '';
+        let src = '';
         let photo = a.parentNode.parentNode.children[1].querySelector('img');
         if (photo) {
             src = photo.src;
