@@ -19,7 +19,8 @@ class DashboardController extends \Raptor\Controller
     
     public function twigDashboard($title = null): DashboardTemplate
     {
-        $template = $this->setTemplateGlobal(new DashboardTemplate());
+        $dashboard = new DashboardTemplate();
+        $template = $this->setTemplateGlobal($dashboard);
         
         $template->title($title);
         $template->set('sidemenu', $this->getSideMenu());        

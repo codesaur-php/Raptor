@@ -61,7 +61,7 @@
             </div>
             {% endfor %}
             {% if user_can %}
-            <button class="submit-settings btn btn-lg btn-primary shadow-sm mt-4"><i class="bi bi-save"></i> {{ 'save'|text }}</button>
+            <button class="submit-settings btn btn-lg btn-primary shadow-sm mt-5"><i class="bi bi-save"></i> {{ 'save'|text }}</button>
             {% endif %}
         </form>
     </div>
@@ -88,7 +88,7 @@
                 </div>
             </div>
             {% if user_can %}
-            <button class="submit-settings btn btn-lg btn-primary shadow-sm mt-4"><i class="bi bi-save"></i> {{ 'save'|text }}</button>
+            <button class="submit-settings btn btn-lg btn-primary shadow-sm mt-5"><i class="bi bi-save"></i> {{ 'save'|text }}</button>
             {% endif %}
         </form>
     </div>
@@ -99,41 +99,40 @@
                 <input class="form-control" name="facebook" value="{{ record['facebook'] }}" maxlength="255" autocomplete="off">
                 <label><i class="bi bi-facebook"></i> Facebook</label>
             </div>
-            <div class="form-floating mt-2">
+            <div class="mt-2">
+                <label class="form-label text-muted small">Facebook widget</label>
                 <textarea class="form-control" name="facebook_widget" rows="5" style="height:120px">{{ record['facebook_widget'] }}</textarea>
-                <label>Facebook widget</label>
             </div>
+            <hr>
             <div class="form-floating mt-4">
                 <input class="form-control" name="twitter" value="{{ record['twitter'] }}" maxlength="255" autocomplete="off">
                 <label><i class="bi bi-twitter"></i> Twitter</label>
             </div>
-            <div class="form-floating mt-2">
+            <div class="mt-2">
+                <label class="form-label text-muted small">Twitter widget</label>
                 <textarea class="form-control" name="twitter_widget" rows="5" style="height:120px">{{ record['twitter_widget'] }}</textarea>
-                <label>Twitter widget</label>
             </div>
+            <hr>
             <div class="form-floating mt-4">
                 <input class="form-control" name="youtube" value="{{ record['youtube'] }}" maxlength="255" autocomplete="off">
                 <label><i class="bi bi-youtube"></i> Youtube</label>
             </div>
-            <hr>
-            <div class="form-floating mt-2">
+            <div class="mt-5">
+                <label class="form-label text-muted small">Additional settings for social networks (must be valid JSON)</label>
                 <textarea class="form-control" name="socials" rows="12" style="height:240px">{{ record['socials'] }}</textarea>
-                <label>Additional settings for social networks (must be valid JSON)</label>
             </div>
             {% if user_can %}
-            <button class="submit-settings btn btn-lg btn-primary shadow-sm mt-4"><i class="bi bi-save"></i> {{ 'save'|text }}</button>
+            <button class="submit-settings btn btn-lg btn-primary shadow-sm mt-5"><i class="bi bi-save"></i> {{ 'save'|text }}</button>
             {% endif %}
         </form>
     </div>
     <div class="tab-pane" id="tab-options" role="tabpanel">
         <form class="needs-validation" novalidate action="{{ 'settings'|link }}" method="POST" enctype="multipart/form-data">
             <input name="alias" readonly value="{{ record['alias']|e }}" type="hidden">
-            <div class="form-floating">
-                <textarea class="form-control" name="options" rows="25" style="height:500px">{{ record['options'] }}</textarea>
-                <label>Extra options (must be valid JSON)</label>
-            </div>
+            <label class="form-label text-muted small">Extra options (must be valid JSON)</label>
+            <textarea class="form-control" name="options" rows="25" style="height:500px">{{ record['options'] }}</textarea>
             {% if user_can %}
-            <button class="submit-settings btn btn-lg btn-primary shadow-sm mt-4"><i class="bi bi-save"></i> {{ 'save'|text }}</button>
+            <button class="submit-settings btn btn-lg btn-primary shadow-sm mt-5"><i class="bi bi-save"></i> {{ 'save'|text }}</button>
             {% endif %}
         </form>
     </div>
@@ -218,7 +217,7 @@
                 </div>
             </div>
             {% if user_can %}
-            <button class="submit-settings btn btn-lg btn-primary shadow-sm mt-4"><i class="bi bi-save"></i> {{ 'save'|text }}</button>
+            <button class="submit-settings btn btn-lg btn-primary shadow-sm mt-5"><i class="bi bi-save"></i> {{ 'save'|text }}</button>
             {% endif %}
         </form>
     </div>

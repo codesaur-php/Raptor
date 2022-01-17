@@ -5,55 +5,41 @@
             <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="{{ 'close'|text|e }}"></button>
         </div>
         <div class="modal-body">
-            <div style="height:500px;overflow-y:auto;overflow-x:hidden;">
-                <form class="needs-validation" novalidate id="language_update" action="{{ 'language-update'|link({id: record['id']}) }}" method="POST" enctype="multipart/form-data">
-                    <div class="row mb-3">
-                        <div class="col">
-                            <div class="form-floating">
-                                <select class="form-select" name="org_parent_id">
-                                    <option value="0"{{ record['parent_id'] is null or record['parent_id'] == 0 ? ' selected' : '' }}>- {{ localization.code == 'mn' ? 'Үндсэн байгууллага' : 'Main organization' }} -</option>
-                                    {% for org in parents %}
-                                    <option value="{{ org['id'] }}"{{ record['parent_id'] == org['id'] ? ' selected' : '' }}>{{ org['name']|e }}</option>
-                                    {% endfor %}
-                                </select>
-                                <label>{{ 'parent'|text }}</label>
-                            </div>
-                        </div>
-                        <div class="col">
-                            <div class="form-floating">
-                                <input class="form-control" required name="org_alias" value="{{ record['alias'] }}" maxlength="16" placeholder="RBAC" type="text" autocomplete="off">
-                                <label>RBAC</label>
-                                <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col">
-                            <div class="form-floating">
-                                <input class="form-control" required name="org_name" value="{{ record['name'] }}" maxlength="512" placeholder="{{ 'name'|text|e }}" type="text" autocomplete="off">
-                                <label>{{ 'name'|text }}</label>
-                                <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
-                            </div>
-                        </div>
-                        <div class="col">
-                            <div class="form-floating">
-                                <input class="form-control" name="org_home_url" value="{{ record['home_url'] }}" maxlength="512" placeholder="{{ 'website'|text|e }}" type="text" autocomplete="off">
-                                <label>{{ 'website'|text }}</label>
-                                <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">{{ 'logo'|text }}</label>
-                        <input type="file" name="org_logo">
-                    </div>
-                    <div class="form-floating mb-3">
-                        <input class="form-control" name="org_external" value="{{ record['external'] }}" maxlength="256" placeholder="External" type="text" autocomplete="off">
-                        <label>External</label>
+            <form class="needs-validation" novalidate id="language_update" action="{{ 'language-update'|link({id: record['id']}) }}" method="PUT">
+                <div class="row mb-3">
+                    <div class="col">
+                        <label class="form-label">{{ 'code'|text }}</label>
+                        <input class="form-control" name="code" required value="{{ record['code']|e }}" maxlength="6" placeholder="" type="text" autocomplete="off">
                         <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
                     </div>
-                </form>
-            </div>
+                    <div class="col">
+                        <label class="form-label">{{ 'name'|text }}</label>
+                        <input class="form-control" name="full" required  value="{{ record['full']|e }}" maxlength="128" placeholder="" type="text" autocomplete="off">
+                        <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
+                    </div>
+                    <div class="col">
+                        <label class="form-label">Application</label>
+                        <input class="form-control" name="app" required value="{{ record['app']|e }}" maxlength="64" placeholder="" type="text" autocomplete="off">
+                        <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col">
+                        <label class="form-label">{{ 'flag'|text }}</label>
+                        <span class="form-control"><img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5/flags/{{ record['code'] }}.png"></span>
+                    </div>
+                    <div class="col">
+                        <label class="form-label">is_default?</label>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" name="is_default" type="checkbox" role="switch"{{ record['is_default'] == 1 ? ' checked' : '' }}>
+                        </div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">{{ 'description'|text }}</label>
+                    <textarea class="form-control" name="description" rows="3">{{ record['description'] }}</textarea>
+                </div>
+            </form>
         </div>
         <div class="modal-footer modal-footer-solid">
         {% if user.can('system_localization_update') %}
@@ -64,7 +50,5 @@
     </div>
 </div>
 <script type="text/javascript">
-document.getElementsByName('org_logo')[0].imageInput("{{ record['logo']|e }}", "{{ 'select-image'|text }}", "{{ 'choose'|text }}", "{{ 'change'|text }}", "{{ 'remove'|text }}", 240);
-
 FormSubmitHandler('.submit-language', 'form#language_update');
 </script>

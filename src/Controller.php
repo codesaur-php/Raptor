@@ -114,7 +114,8 @@ class Controller extends \codesaur\Http\Application\Controller
     
     public function twigTemplate(string $template_path, array $vars = [])
     {
-        return $this->setTemplateGlobal(new TwigTemplate($template_path, $vars));
+        $template = new TwigTemplate($template_path, $vars);
+        return $this->setTemplateGlobal($template);
     }
     
     public function setTemplateGlobal(TwigTemplate &$template)

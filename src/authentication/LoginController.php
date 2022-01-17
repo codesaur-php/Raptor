@@ -47,7 +47,8 @@ class LoginController extends \Raptor\Controller
     
     public function twigTemplate(string $template_path, array $vars = [])
     {
-        return $this->setTemplateGlobal(new IndexTemplate($template_path, $vars));
+        $template = new IndexTemplate($template_path, $vars);
+        return $this->setTemplateGlobal($template);
     }
         
     public function entry()
@@ -67,7 +68,7 @@ class LoginController extends \Raptor\Controller
             $account = $this->indopost('/auth/entry', $payload);
             $_SESSION[$sess_jwt_key] =  $account['jwt'];
             $this->respondJSON(array('type' => 'success', 'message' => 'success', 'url' => $this->generateLink('home', [], true)));
-            
+
             if (empty($account['code'])) {
                 $this->postAccountLanguageCode($account['id'], $this->getLanguageCode());
             } elseif ($account['code'] != $this->getLanguageCode()

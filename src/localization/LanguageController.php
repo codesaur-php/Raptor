@@ -154,53 +154,41 @@ class LanguageController extends DashboardController
     
     public function update(int $id)
     {
-        $is_submit = $this->getRequest()->getMethod() == 'POST';
+        $is_submit = $this->getRequest()->getMethod() == 'PUT';
         $context = array('id' => $id, 'model' => LanguageModel::class);
         
-        try {            
+        try {
+            throw new Exception('Not Implemented');
+            
             if (!$this->isUserCan('system_localization_update')) {
                 throw new Exception($this->text('system-no-permission'));
             }
             
             if ($is_submit) {
                 $record = array(
-                    'alias' => $this->getPostParam('org_alias'),
-                    'name' => $this->getPostParam('org_name'),
-                    'home_url' => $this->getPostParam('org_home_url'),
-                    'external' => $this->getPostParam('org_external')
+                    'code' => $this->getPostParam('code'),
+                    'full' => $this->getPostParam('full'),
+                    'app' => $this->getPostParam('app'),
+                    'description' => $this->getPostParam('description')
                 );
-                $parent_id = $this->getPostParam('org_parent_id', FILTER_VALIDATE_INT);
-                if ($parent_id > 0) {
-                    $record['parent_id'] = $parent_id;
-                }
+                $is_default = $this->getPostParam('is_default');
+                $record['is_default'] = empty($is_default) || $is_default != 'on' ? 0 : 1;
                 $context['record'] = $record;
                 $context['record']['id'] = $id;
 
-                if (empty($record['alias']) || empty($record['name'])) {
+                if (empty($record['code']) || empty($record['full']) || empty($record['app'])) {
                     throw new Exception($this->text('invalid-request'));
                 }
-                
-                $existing = $this->indoSafe('/record?model=' . OrganizationModel::class, array('id' => $id, 'is_active' => 1));
-                $old_logo_file = basename($existing['logo'] ?? '');
-                if (isset($_FILES['org_logo'])) {
-                    $file = new FileController($this->getRequest());
-                    $file->init("/organizations/$id");
-                    $file->allowExtensions((new File())->getAllowed(3));
-                    $logo = $file->upload('org_logo');
-                    if (isset($logo['name'])) {
-                        $record['logo'] = $file->getPathUrl($logo['name']);
+
+                $existingDefault = $this->indoSafe('/record?model=' . LanguageModel::class, array('is_default' => 1));
+                if (isset($existingDefault['id']) && $record['is_default'] == 1) {
+                    if ($existingDefault['id'] != $id) {
+                        $this->indoput('/record?model=' . LanguageModel::class,
+                                array('record' => array('is_default' => 0), 'condition' => ['WHERE' => "id={$existingDefault['id']}"]));
                     }
-                } else {
-                    $record['logo'] = '';
-                }
-                if (isset($record['logo'])) {
-                    if (!empty($old_logo_file)) {
-                        $this->tryDeleteFile(dirname($_SERVER['SCRIPT_FILENAME']) . "/public/organizations/$id/$old_logo_file");
-                    }
-                    $context['record']['logo'] = $record['logo'];
                 }
                 
-                $this->indoput('/record?model=' . OrganizationModel::class,
+                $this->indoput('/record?model=' . LanguageModel::class,
                         array('record' => $record, 'condition' => ['WHERE' => "id=$id"]));
                 
                 $this->respondJSON(array(
@@ -238,17 +226,16 @@ class LanguageController extends DashboardController
             $context['error'] = array('code' => $e->getCode(), 'message' => $e->getMessage());
             $message = 'Хэлний мэдээллийг өөрчлөх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо байна';
         } finally {
-            //var_dump($e, $level, $message, $context);exit;
             $this->indolog('localization', $level, $message, $context);
         }
     }
     
     public function delete()
     {
-        $context = array('model' => OrganizationModel::class);
+        $context = array('model' => LanguageModel::class);
         
         try {
-            if (!$this->isUserCan('system_organization_delete')) {
+            if (!$this->isUserCan('system_localization_delete')) {
                 throw new Exception('No permission for an action [delete]!');
             }
             
@@ -266,7 +253,7 @@ class LanguageController extends DashboardController
                 $table = "table={$payload['table']}&";
             }
             
-            $this->indodelete("/record?{$table}model=" . OrganizationModel::class, array('WHERE' => "id='{$payload['id']}'"));
+            $this->indodelete("/record?{$table}model=" . LanguageModel::class, array('WHERE' => "id='{$payload['id']}'"));
             
             $this->respondJSON(array(
                 'status'  => 'success',
@@ -275,7 +262,7 @@ class LanguageController extends DashboardController
             ));
             
             $level = LogLevel::ALERT;
-            $message = "{$payload['name']} байгууллагыг устгалаа";
+            $message = "{$payload['name']} хэлний мэдээллийг устгалаа";
         } catch (Throwable $e) {
             $this->respondJSON(array(
                 'status'  => 'error',
@@ -284,10 +271,10 @@ class LanguageController extends DashboardController
             ));
             
             $level = LogLevel::ERROR;
-            $message = 'Байгууллагыг устгах үйлдлийг гүйцэтгэх явцад алдаа гарч зогслоо';
+            $message = 'Хэлний мэдээлэл устгах үйлдлийг гүйцэтгэх явцад алдаа гарч зогслоо';
             $context['error'] = array('code' => $e->getCode(), 'message' => $e->getMessage());
         } finally {
-            $this->indolog('organization', $level, $message, $context);
+            $this->indolog('localization', $level, $message, $context);
         }
     }
     
@@ -296,7 +283,7 @@ class LanguageController extends DashboardController
         $rows = array();
         
         try {
-            if (!$this->isUserCan('system_language_index')) {
+            if (!$this->isUserCan('system_localization_index')) {
                 throw new Exception($this->text('system-no-permission'));
             }
             
@@ -312,11 +299,11 @@ class LanguageController extends DashboardController
 
                 $action = '<a class="ajax-modal btn btn-sm btn-info shadow-sm" data-bs-target="#dashboard-modal" data-bs-toggle="modal" ' .
                         'href="' . $this->generateLink('language-view', array('id' => $id)) . '"><i class="bi bi-eye"></i></a>' . PHP_EOL;
-                if ($this->getUser()->can('system_language_update')) {
+                if ($this->getUser()->can('system_localization_update')) {
                     $action .= '<a class="ajax-modal btn btn-sm btn-primary shadow-sm" data-bs-target="#dashboard-modal" data-bs-toggle="modal" ' .
                             'href="' . $this->generateLink('language-update', array('id' => $id)) . '"><i class="bi bi-pencil-square"></i></a>' . PHP_EOL;
                 }
-                if ($this->getUser()->can('system_language_delete')) {
+                if ($this->getUser()->can('system_localization_delete')) {
                     $action .= '<a class="delete-language btn btn-sm btn-danger shadow-sm" href="' . $id . '"><i class="bi bi-trash"></i></a>';
                 }                
                 $row[] = $action;
