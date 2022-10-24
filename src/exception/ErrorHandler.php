@@ -45,6 +45,7 @@ class ErrorHandler implements ExceptionHandlerInterface
             'return' => 'Return to host',
             'message' => "<h3 style=\"text-align:center;color:white\">$message</h3>"
         );
+        
         if (defined('CODESAUR_DEVELOPMENT')
                 && CODESAUR_DEVELOPMENT
         ) {

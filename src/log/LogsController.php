@@ -40,8 +40,9 @@ class LogsController extends DashboardController
                 throw new Exception($this->text('system-no-permission'));
             }
             
-            $id = $this->getQueryParam('id');
-            $table = $this->getQueryParam('table');            
+            $params = $this->getQueryParams();
+            $id = $params['id'] ?? null;
+            $table = $params['table'] ?? null;            
             if ($id == null || !is_int((int)$id) || empty($table)) {
                 throw new Exception($this->text('invalid-request'));
             }

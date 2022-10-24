@@ -38,16 +38,12 @@ class LanguageController extends DashboardController
             }
             
             if ($is_submit) {
-                $payload = array(
-                    'copy' => $this->getPostParam('txt_copy'),
-                    'code' => $this->getPostParam('txt_short'),
-                    'full' => $this->getPostParam('txt_full')
-                );
-                
-                foreach ($payload as $row) {
-                    if (empty($row)) {
-                        throw new Exception($this->text('invalid-request'));
-                    }
+                $payload = $this->getParsedBody();
+                if (empty($payload['txt_copy'])
+                    || empty($payload['txt_short'])
+                    || empty($payload['txt_full'])
+                ) {
+                    throw new Exception($this->text('invalid-request'));
                 }
                 $context['payload'] = $payload;
                 
@@ -293,7 +289,7 @@ class LanguageController extends DashboardController
                 $row = array($record['code']);
                 
                 $row[] = htmlentities($record['full']);
-                $row[] = '<img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5/flags/' . $record['code'] . '.png">';
+                $row[] = '<img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.1/flags/' . $record['code'] . '.png">';
                 $row[] = htmlentities($record['app']);
                 $row[] = htmlentities($record['created_at']);
 
@@ -317,7 +313,7 @@ class LanguageController extends DashboardController
                 'data' => $rows,
                 'recordsTotal' => count($rows),
                 'recordsFiltered' => count($rows),
-                'draw' => (int)($this->getQueryParam('draw') ?? 0)
+                'draw' => (int)($this->getQueryParams()['draw'] ?? 0)
             ));
         }
     }

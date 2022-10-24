@@ -36,12 +36,13 @@ class AccountController extends DashboardController
             $code = preg_replace('/[^a-z]/', '', $this->getLanguageCode());
             $accounts = $this->indo('/record/rows?model=' . Accounts::class);
             $organizations = $this->indo('/record/rows?model=' . OrganizationModel::class);
-            $statuses = $this->indo('/lookup', array('table' => 'status', 'condition' => array('WHERE' => "c.code='$code' AND p.is_active=1")));
+            $statuses = $this->indo('/lookup', array(
+                'table' => 'status', 'condition' => array('WHERE' => "c.code='$code' AND p.is_active=1")));
             
             $org_users_query =
-                    'SELECT t1.account_id, t1.organization_id ' .
-                    'FROM organization_users as t1 JOIN organizations as t2 ON t1.organization_id=t2.id ' .
-                    'WHERE t1.is_active=1 AND t2.is_active=1';
+                'SELECT t1.account_id, t1.organization_id ' .
+                'FROM organization_users as t1 JOIN organizations as t2 ON t1.organization_id=t2.id ' .
+                'WHERE t1.is_active=1 AND t2.is_active=1';
             $org_users = $this->indo('/statement', array('query' => $org_users_query));
             array_walk($org_users, function($value) use (&$accounts) {
                 if (isset($accounts[$value['account_id']])) {
@@ -53,8 +54,8 @@ class AccountController extends DashboardController
             });
             
             $user_role_query =
-                    'SELECT t1.role_id, t1.user_id, t2.name, t2.alias ' . 
-                    'FROM rbac_user_role as t1 JOIN rbac_roles as t2 ON t1.role_id=t2.id WHERE t1.is_active=1';
+                'SELECT t1.role_id, t1.user_id, t2.name, t2.alias ' . 
+                'FROM rbac_user_role as t1 JOIN rbac_roles as t2 ON t1.role_id=t2.id WHERE t1.is_active=1';
             $user_role = $this->indo('/statement', array('query' => $user_role_query));
             array_walk($user_role, function($value) use (&$accounts) {
                 if (isset($accounts[$value['user_id']])) {
@@ -66,7 +67,7 @@ class AccountController extends DashboardController
             });
             
             $template->render($this->twigTemplate(dirname(__FILE__) . '/account-index.html',
-                    array('accounts' => $accounts, 'statuses' => $statuses, 'organizations' => $organizations)));
+                array('accounts' => $accounts, 'statuses' => $statuses, 'organizations' => $organizations)));
             
             $level = LogLevel::NOTICE;
             $message = 'Хэрэглэгчдийн жагсаалтыг нээж үзэж байна';
@@ -104,7 +105,9 @@ class AccountController extends DashboardController
                 $status = $this->getPostParam('status');
                 $record['status'] = empty($status) || $status != 'on' ? 0 : 1;
                 
-                if (empty($record['username']) || empty($record['email'])) {
+                if (empty($record['username'])
+                    || empty($record['email'])
+                ) {
                     throw new Exception($this->text('invalid-request'));
                 }
                 $context['record'] = $record;
@@ -166,7 +169,7 @@ class AccountController extends DashboardController
     
     public function update(int $id)
     {
-        $is_submit = $this->getRequest()->getMethod() == 'POST';
+        $is_submit = $this->getRequest()->getMethod() == 'PUT';
         $context = array('id' => $id, 'model' => Accounts::class);
         
         try {

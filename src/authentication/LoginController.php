@@ -23,7 +23,7 @@ class LoginController extends \Raptor\Controller
 {
     public function index()
     {
-        $forgot_id = $this->getQueryParam('forgot');
+        $forgot_id = $this->getQueryParams()['forgot'] ?? false;
         if ($forgot_id) {
             return $this->forgotPassword($forgot_id);
         }
@@ -270,16 +270,20 @@ class LoginController extends \Raptor\Controller
     
     public function setPassword()
     {
-        $use_id = $this->getPostParam('use_id');
+        $parsedBody = $this->getParsedBody();
+        $use_id = $parsedBody['use_id'];
         $vars = array('use_id' => $use_id);
         $context = array('reason' => 'reset-password') + $vars;
         
         try {
-            $account_id = $this->getPostParam('account', FILTER_VALIDATE_INT);
+            $account_id = filter_var($parsedBody['account'], FILTER_VALIDATE_INT);
+            if ($account_id === false) {
+                throw new Exception('Хэрэглэгчийн дугаар заагдаагүй байна.<br/>' . $this->text('invalid-request-data'));
+            }
             $vars += array('account' => $account_id);
 
-            $password_new = $this->getPostParam('password_new');
-            $password_retype = $this->getPostParam('password_retype');
+            $password_new = $parsedBody['password_new'];
+            $password_retype = $parsedBody['password_retype'];
             if (empty($use_id) || empty($account_id)
                     || !isset($password_new) || !isset($password_retype)
             ) {

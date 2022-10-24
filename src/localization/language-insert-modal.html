@@ -69,7 +69,7 @@
                     <form id="insert_form" action="{{ 'language-insert'|link }}" method="POST" enctype="multipart/form-data" role="form" novalidate="novalidate">
                         <div class="mt-4">
                             <label>{{ 'code'|text }}</label>
-                            <input class="form-control lang_short" readonly required autocomplete="off" maxlength="6" name="txt_short" placeholder="" value="" type="text">
+                            <input class="form-control lang_short" readonly required autocomplete="off" maxlength="6" name="short" placeholder="" value="" type="text">
                         </div>
                         <div class="mt-4">
                             <label>{{ 'flag'|text }}</label>
@@ -77,11 +77,11 @@
                         </div>
                         <div class="mt-4">
                             <label>{{ 'name'|text }}</label>
-                            <input class="form-control lang_full" id="txt_full_confirm" required autocomplete="off" maxlength="32" name="txt_full" placeholder="" value="" type="text">
+                            <input class="form-control lang_full" id="txt_full_confirm" required autocomplete="off" maxlength="32" name="full" placeholder="" value="" type="text">
                         </div>
                         <div class="mt-4 mb-3">
                             <label>{{ 'copy-translations-from'|text }}</label>
-                            <input class="form-control copy_short" readonly required autocomplete="off" maxlength="6" name="txt_copy" placeholder="" value="" type="text">
+                            <input class="form-control copy_short" readonly required autocomplete="off" maxlength="6" name="copy" placeholder="" value="" type="text">
                         </div>
                     </form>
                 </div>
@@ -167,7 +167,7 @@ headGeneral.click();
             }
 
             let ID = country.element.value.toLowerCase();
-            return $('<span><img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5/flags/' + ID + '.png"> ' + country.text + '</span>');
+            return $('<span><img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.1/flags/' + ID + '.png"> ' + country.text + '</span>');
         };
 
         if (jQuery().select2) {
@@ -192,7 +192,7 @@ $('#countries').on('change', function() {
     let Name = $(this).find('option:selected').attr('data-speak');
 
     $('.lang_short').val(ID);
-    $('.lang_flag').html('<img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5/flags/' + ID + '.png">');
+    $('.lang_flag').html('<img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.1/flags/' + ID + '.png">');
     $('.lang_full').val(Name);
 });
 
@@ -203,6 +203,6 @@ $('#txt_full').bind('input', function() {
 $('#available_languages').on('change', function() {
     let code = $(this).find('option:selected').val();
     $('.copy_short').val(code);
-    $('.copy_flag').html('<img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5/flags/' + code + '.png">');
+    $('.copy_flag').html('<img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.1/flags/' + code + '.png">');
 });
 </script>

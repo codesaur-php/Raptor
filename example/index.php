@@ -20,5 +20,5 @@ use Indoraptor\IndoApplication;
 $autoload = require_once '../vendor/autoload.php';
 
 (new Application())->handle(
-        ((new ServerRequest())->initFromGlobal())
-        ->withAttribute('indo', new IndoApplication(false)));
+    ((new ServerRequest())->initFromGlobal())
+    ->withAttribute('indo', new IndoApplication(false)));

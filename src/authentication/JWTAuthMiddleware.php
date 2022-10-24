@@ -65,7 +65,7 @@ class JWTAuthMiddleware implements MiddlewareInterface
             if (isset($_SESSION[$sess_jwt_key])
                     && session_status() == PHP_SESSION_ACTIVE
             ) {
-                //unset($_SESSION[$sess_jwt_key]);
+                unset($_SESSION[$sess_jwt_key]);
             }
  
             $uri_path = rawurldecode($request->getUri()->getPath());

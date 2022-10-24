@@ -30,7 +30,7 @@ class Controller extends \codesaur\Http\Application\Controller
         } catch (Throwable $e) {
             ob_end_clean();
         }
-
+        
         if (isset($e)) {
             if ($e instanceof Exception) {
                 throw $e;
@@ -38,7 +38,7 @@ class Controller extends \codesaur\Http\Application\Controller
                 throw new Exception($e->getMessage(), $e->getCode());
             }
         } elseif (isset($response['error']['code'])
-                && isset($response['error']['message'])
+            && isset($response['error']['message'])
         ) {
             throw new Exception($response['error']['message'], $response['error']['code']);
         }
