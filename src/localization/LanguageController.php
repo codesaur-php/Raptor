@@ -39,44 +39,43 @@ class LanguageController extends DashboardController
             
             if ($is_submit) {
                 $payload = $this->getParsedBody();
-                if (empty($payload['txt_copy'])
-                    || empty($payload['txt_short'])
-                    || empty($payload['txt_full'])
+                if (empty($payload['copy'])
+                    || empty($payload['short'])
+                    || empty($payload['full'])
                 ) {
-                    throw new Exception($this->text('invalid-request'));
+                    throw new Exception($this->text('invalid-values'));
                 }
                 $context['payload'] = $payload;
                 
+                $mother = $this->indoSafe('/record?model=' . LanguageModel::class, array('app' => 'common', 'code' => $payload['copy'], 'is_active' => 1));                
+                if (!isset($mother['code'])) {
+                    throw new Exception($this->text('invalid-request'));
+                }
                 
                 $languages = $this->indoSafe('/language?app=common', [], 'GET');
                 foreach ($languages as $key => $value) {
-                    if ($payload['code'] == $key && $payload['full'] == $value) {
+                    if ($payload['short'] == $key && $payload['full'] == $value) {
                         throw new Exception($this->text('lang-existing'));
                    }
-                   if ($payload['code'] == $key) {
+                   if ($payload['short'] == $key) {
                         throw new Exception($this->text('lang-code-existing'));
                    }
                    if ($payload['full'] == $value) {
                         throw new Exception($this->text('lang-name-existing'));
-                   }
+                   }    
                 }
-                
-                $payload['app'] = 'common';
 
-                $id = $this->indopost('/record?model=' . LanguageModel::class, array('record' => array('code' => $payload['code'], 'full' => $payload['full'])));
+                $id = $this->indopost('/record?model=' . LanguageModel::class, array('record' => array('code' => $payload['short'], 'full' => $payload['full'])));
                 $context['record'] = $id;
                 
-                $mother = $this->indoSafe('/record?model=' . LanguageModel::class, array('app' => 'common', 'code' => $payload['copy'], 'is_active' => 1));                
-                if (isset($mother['code'])) {
-                    $translated = $this->indoSafe('/language/copy/multimodel/content', array('from' => $mother['code'], 'to' => $payload['code']), 'POST');
-                    if (is_array($translated)) {
-                        $this->indolog(
-                                'localization',
-                                LogLevel::ALERT,
-                                __CLASS__ . ' объект нь ' . $mother['code'] . ' хэлнээс ' . $payload['code'] . ' хэлийг хуулбарлан үүсгэлээ. ',
-                                array('reason' => 'copy', 'translated' => $translated) + $context
-                        );
-                    }                
+                $translated = $this->indoSafe('/language/copy/multimodel/content', array('from' => $mother['code'], 'to' => $payload['short']), 'POST');
+                if (is_array($translated)) {
+                    $this->indolog(
+                            'localization',
+                            LogLevel::ALERT,
+                            __CLASS__ . ' объект нь ' . $mother['code'] . ' хэлнээс ' . $payload['short'] . ' хэлийг хуулбарлан үүсгэлээ. ',
+                            array('reason' => 'copy', 'translated' => $translated) + $context
+                    );
                 }
                 
                 $this->respondJSON(array(
@@ -154,33 +153,33 @@ class LanguageController extends DashboardController
         $context = array('id' => $id, 'model' => LanguageModel::class);
         
         try {
-            throw new Exception('Not Implemented');
-            
             if (!$this->isUserCan('system_localization_update')) {
                 throw new Exception($this->text('system-no-permission'));
             }
             
             if ($is_submit) {
+                $payload = $this->getParsedBody();
+                if (empty($payload['code'])
+                    || empty($payload['full'])
+                    || empty($payload['app'])
+                ) {
+                    throw new Exception($this->text('invalid-request'));
+                }
                 $record = array(
-                    'code' => $this->getPostParam('code'),
-                    'full' => $this->getPostParam('full'),
-                    'app' => $this->getPostParam('app'),
-                    'description' => $this->getPostParam('description')
+                    'code' => $payload['code'],
+                    'full' => $payload['full'],
+                    'app' => $payload['app'],
+                    'description' => $payload['description'] ?? null,
+                    'is_default' => ($payload['is_default'] ?? 'off') != 'on' ? 0 : 1
                 );
-                $is_default = $this->getPostParam('is_default');
-                $record['is_default'] = empty($is_default) || $is_default != 'on' ? 0 : 1;
                 $context['record'] = $record;
                 $context['record']['id'] = $id;
 
-                if (empty($record['code']) || empty($record['full']) || empty($record['app'])) {
-                    throw new Exception($this->text('invalid-request'));
-                }
-
-                $existingDefault = $this->indoSafe('/record?model=' . LanguageModel::class, array('is_default' => 1));
-                if (isset($existingDefault['id']) && $record['is_default'] == 1) {
-                    if ($existingDefault['id'] != $id) {
+                $defLanguage = $this->indoSafe('/record?model=' . LanguageModel::class, array('is_default' => 1));
+                if (isset($defLanguage['id']) && $record['is_default'] == 1) {
+                    if ($defLanguage['id'] != $id) {
                         $this->indoput('/record?model=' . LanguageModel::class,
-                                array('record' => array('is_default' => 0), 'condition' => ['WHERE' => "id={$existingDefault['id']}"]));
+                                array('record' => array('is_default' => 0), 'condition' => ['WHERE' => "id={$defLanguage['id']}"]));
                     }
                 }
                 
@@ -210,6 +209,9 @@ class LanguageController extends DashboardController
                 $message = "{$record['full']} хэлний мэдээллийг шинэчлэхээр нээж байна";
             }
         } catch (Error $err) {
+            $level = LogLevel::ERROR;
+            $message = $err->getMessage();
+            $context['error'] = array('code' => $err->getCode(), 'message' => $err->getMessage());
             throw new Exception($err->getMessage(), $err->getCode());
         } catch (Throwable $e) {
             if ($is_submit) {
@@ -247,6 +249,13 @@ class LanguageController extends DashboardController
             $table = '';
             if (!empty($payload['table'])) {
                 $table = "table={$payload['table']}&";
+            }
+            
+            $defLanguage = $this->indoSafe("/record?{$table}model=" . LanguageModel::class, array('is_default' => 1));
+            if (isset($defLanguage['id'])) {
+                if ($defLanguage['id'] == $payload['id']) {
+                    throw new Exception('Cannot remove default language!');
+                }
             }
             
             $this->indodelete("/record?{$table}model=" . LanguageModel::class, array('WHERE' => "id='{$payload['id']}'"));
