@@ -20,7 +20,7 @@ class RBACController extends DashboardController
             if (!$this->isUserCan('system_rbac')) {
                 throw new Exception($this->text('system-no-permission'));
             }
-            $values = array('role' => $this->getQueryParam('role'));
+            $values = array('role' => $this->getQueryParams()['role'] ?? '');
             $role_result = $this->indo('/statement', array(
                 'bind' => array(':role' => array('var' => $values['role'])),
                 'query' => "SELECT id,description FROM rbac_roles WHERE CONCAT_WS('_',alias,name)=:role AND is_active=1 ORDER By id desc LIMIT 1"));
