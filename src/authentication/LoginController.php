@@ -301,7 +301,7 @@ class LoginController extends \Raptor\Controller
             );
             $context['account_id'] = $account_id;
             
-            $account = $this->indopost('/account/password', $payload);
+            $account = $this->indoput('/account/password', $payload);
             $vars += array('title' => $this->text('success'), 'notice' => $this->text('set-new-password-success'));
 
             $level = LogLevel::INFO;
