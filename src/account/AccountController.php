@@ -572,7 +572,7 @@ class AccountController extends DashboardController
             
             $id = $this->getParsedBody()['id'] ?? null;            
             if (empty($id)
-                    || !filter_var($id, FILTER_VALIDATE_INT)
+                || !filter_var($id, FILTER_VALIDATE_INT)
             ) {
                 throw new Exception($this->text('invalid-request'));
             }
