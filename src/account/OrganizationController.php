@@ -11,7 +11,6 @@ use Indoraptor\Account\OrganizationModel;
 
 use Raptor\Dashboard\DashboardController;
 use Raptor\File\FileController;
-use Raptor\File\File;
 
 class OrganizationController extends DashboardController
 {
@@ -38,19 +37,22 @@ class OrganizationController extends DashboardController
             }
             
             if ($is_submit) {
-                $record = array(
-                    'alias' => $this->getPostParam('org_alias'),
-                    'name' => $this->getPostParam('org_name'),
-                    'home_url' => $this->getPostParam('org_home_url'),
-                    'external' => $this->getPostParam('org_external')                    
-                );
-                $parent_id = $this->getPostParam('org_parent_id', FILTER_VALIDATE_INT);
-                if ($parent_id > 0) {
-                    $record['parent_id'] = $parent_id;
+                $parsedBody = $this->getParsedBody();
+                if (empty($parsedBody['org_alias'])
+                    || empty($parsedBody['org_name'])
+                ) {
+                    throw new Exception($this->text('invalid-request'));
                 }
                 
-                if (empty($record['name']) || empty($record['alias'])) {
-                    throw new Exception($this->text('invalid-request'));
+                $record = array(
+                    'alias' => $parsedBody['org_alias'],
+                    'name' => $parsedBody['org_name'],
+                    'home_url' => $parsedBody['org_home_url'] ?? null,
+                    'external' => $parsedBody['org_external'] ?? null
+                );
+                $parent_id = filter_var($parsedBody['org_parent_id'] ?? 0, FILTER_VALIDATE_INT);
+                if ($parent_id !== false && $parent_id > 0) {
+                    $record['parent_id'] = $parent_id;
                 }
                 $context['record'] = $record;
                 
@@ -59,8 +61,8 @@ class OrganizationController extends DashboardController
                 
                 $file = new FileController($this->getRequest());
                 $file->init("/organizations/$id");
-                $file->allowExtensions((new File())->getAllowed(3));
-                $logo = $file->upload('org_logo');
+                $file->allowType(3);
+                $logo = $file->moveUploaded('org_logo');
                 if (isset($logo['name'])) {
                     $logo_path = $file->getPathUrl($logo['name']);
                     $payload = array(
@@ -128,7 +130,7 @@ class OrganizationController extends DashboardController
             $context['record'] = $record;
             
             if (!empty($record['parent_id'])) {
-                $record['parent_name'] = $this->indo('/record?model=' . OrganizationModel::class, array('id' => $record['parent_id']))['name'] ?? '';
+                $record['parent_name'] = $this->indoSafe('/record?model=' . OrganizationModel::class, array('id' => $record['parent_id']))['name'] ?? '- no parent because its deleted -';
             }
             
             $template_path = dirname(__FILE__) . '/organization-retrieve-modal.html';
@@ -152,7 +154,7 @@ class OrganizationController extends DashboardController
     
     public function update(int $id)
     {
-        $is_submit = $this->getRequest()->getMethod() == 'POST';
+        $is_submit = $this->getRequest()->getMethod() == 'PUT';
         $context = array('id' => $id, 'model' => OrganizationModel::class);
         
         try {            
@@ -161,40 +163,44 @@ class OrganizationController extends DashboardController
             }
             
             if ($is_submit) {
+                $payload = $this->getParsedBody();
+                if (empty($payload['org_alias'])
+                    || empty($payload['org_name'])
+                ) {
+                    throw new Exception($this->text('invalid-request'));
+                }
+                
                 $record = array(
-                    'alias' => $this->getPostParam('org_alias'),
-                    'name' => $this->getPostParam('org_name'),
-                    'home_url' => $this->getPostParam('org_home_url'),
-                    'external' => $this->getPostParam('org_external')
+                    'alias' => $payload['org_alias'],
+                    'name' => $payload['org_name'],
+                    'home_url' => $payload['org_home_url'] ?? null,
+                    'external' => $payload['org_external'] ?? null
                 );
-                $parent_id = $this->getPostParam('org_parent_id', FILTER_VALIDATE_INT);
-                if ($parent_id > 0) {
+                $parent_id = filter_var($payload['org_parent_id'] ?? 0, FILTER_VALIDATE_INT);
+                if ($parent_id !== false && $parent_id > 0) {
                     $record['parent_id'] = $parent_id;
                 }
                 $context['record'] = $record;
                 $context['record']['id'] = $id;
-
-                if (empty($record['alias']) || empty($record['name'])) {
-                    throw new Exception($this->text('invalid-request'));
-                }
                 
                 $existing = $this->indoSafe('/record?model=' . OrganizationModel::class, array('id' => $id, 'is_active' => 1));
                 $old_logo_file = basename($existing['logo'] ?? '');
-                if (isset($_FILES['org_logo'])) {
-                    $file = new FileController($this->getRequest());
-                    $file->init("/organizations/$id");
-                    $file->allowExtensions((new File())->getAllowed(3));
-                    $logo = $file->upload('org_logo');
-                    if (isset($logo['name'])) {
-                        $record['logo'] = $file->getPathUrl($logo['name']);
-                    }
-                } else {
-                    $record['logo'] = '';
+                $file = new FileController($this->getRequest());
+                $file->init("/organizations/$id");
+                $file->allowType(3);
+                $logo = $file->moveUploaded('org_logo');
+                if (isset($logo['name'])) {
+                    $record['logo'] = $file->getPathUrl($logo['name']);
                 }
-                if (isset($record['logo'])) {
-                    if (!empty($old_logo_file)) {
+                if (!empty($old_logo_file)) {
+                    if ($file->getLastError() == -1) {
+                        $this->tryDeleteFile(dirname($_SERVER['SCRIPT_FILENAME']) . "/public/organizations/$id/$old_logo_file");
+                        $record['logo'] = '';
+                    } else if (isset($logo['name']) && $logo['name'] != $old_logo_file) {
                         $this->tryDeleteFile(dirname($_SERVER['SCRIPT_FILENAME']) . "/public/organizations/$id/$old_logo_file");
                     }
+                }
+                if (isset($record['logo'])) {
                     $context['record']['logo'] = $record['logo'];
                 }
                 
@@ -249,8 +255,8 @@ class OrganizationController extends DashboardController
             
             $payload = $this->getParsedBody();
             if (empty($payload['id'])
-                    || !isset($payload['name'])
-                    || !filter_var($payload['id'], FILTER_VALIDATE_INT)
+                || !isset($payload['name'])
+                || !filter_var($payload['id'], FILTER_VALIDATE_INT)
             ) {
                 throw new Exception($this->text('invalid-request'));
             }
@@ -259,6 +265,10 @@ class OrganizationController extends DashboardController
             $table = '';
             if (!empty($payload['table'])) {
                 $table = "table={$payload['table']}&";
+            }
+            
+            if ($payload['id'] == 1) {
+                throw new Exception('Cannot remove first organization!');
             }
             
             $this->indodelete("/record?{$table}model=" . OrganizationModel::class, array('WHERE' => "id='{$payload['id']}'"));
@@ -315,7 +325,8 @@ class OrganizationController extends DashboardController
                 $row[] = htmlentities($record['name']);
                 
                 if ($this->getUser()->can('system_rbac')) {
-                    $row[] = '<a href="' . $rbac_link . $rbac_query . '">' . htmlentities($record['alias']) . '</a>';
+                    //$row[] = '<a href="' . $rbac_link . $rbac_query . '">' . htmlentities($record['alias']) . '</a>';
+                    $row[] = htmlentities($record['alias']);
                 } else {
                     $row[] = htmlentities($record['alias']);
                 }
@@ -323,10 +334,10 @@ class OrganizationController extends DashboardController
                 $row[] = htmlentities($statuses[$record['status']] ?? $record['status']);
 
                 $action = '<a class="ajax-modal btn btn-sm btn-info shadow-sm" data-bs-target="#dashboard-modal" data-bs-toggle="modal" ' .
-                        'href="' . $this->generateLink('organization-view', array('id' => $id)) . '"><i class="bi bi-eye"></i></a>' . PHP_EOL;
+                    'href="' . $this->generateLink('organization-view', array('id' => $id)) . '"><i class="bi bi-eye"></i></a>' . PHP_EOL;
                 if ($this->getUser()->can('system_organization_update')) {
                     $action .= '<a class="ajax-modal btn btn-sm btn-primary shadow-sm" data-bs-target="#dashboard-modal" data-bs-toggle="modal" ' .
-                            'href="' . $this->generateLink('organization-update', array('id' => $id)) . '"><i class="bi bi-pencil-square"></i></a>' . PHP_EOL;
+                        'href="' . $this->generateLink('organization-update', array('id' => $id)) . '"><i class="bi bi-pencil-square"></i></a>' . PHP_EOL;
                 }
                 if ($this->getUser()->can('system_organization_delete')) {
                     $action .= '<a class="delete-organization btn btn-sm btn-danger shadow-sm" href="' . $id . '"><i class="bi bi-trash"></i></a>';
@@ -343,7 +354,7 @@ class OrganizationController extends DashboardController
                 'data' => $rows,
                 'recordsTotal' => count($rows),
                 'recordsFiltered' => count($rows),
-                'draw' => (int)($this->getQueryParam('draw') ?? 0)
+                'draw' => (int)($this->getQueryParams()['draw'] ?? 0)
             ));
         }
     }

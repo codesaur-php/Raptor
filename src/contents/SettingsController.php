@@ -12,7 +12,6 @@ use Indoraptor\Mail\MailerModel;
 
 use Raptor\Dashboard\DashboardController;
 use Raptor\File\FileController;
-use Raptor\File\File;
 
 class SettingsController extends DashboardController
 {
@@ -27,7 +26,7 @@ class SettingsController extends DashboardController
                 
                 $record = array();
                 $content = array();
-                foreach ($_POST as $index => $value) {
+                foreach ($this->getParsedBody() as $index => $value) {
                     if (is_array($value)) {
                         foreach ($value as $key => $value) {
                             $content[$key][$index] = $value;
@@ -127,8 +126,10 @@ class SettingsController extends DashboardController
             }
             
             $template->render(
-                    $this->twigTemplate(dirname(__FILE__) . '/settings.html',
-                    array('record' => $record, 'mailer' => $mailer)));
+                $this->twigTemplate(dirname(__FILE__) . '/settings.html',
+                    array('record' => $record, 'mailer' => $mailer)
+                )
+            );
 
             $this->indolog('contents', LogLevel::NOTICE, 'Системийн тохируулгыг нээж үзэж байна', $context);
         }
@@ -143,7 +144,7 @@ class SettingsController extends DashboardController
                 throw new Exception($this->text('system-no-permission'));
             }
             
-            $alias = $this->getPostParam('alias');
+            $alias = $this->getParsedBody()['alias'] ?? null;
             if (empty($alias)) {
                 throw new Exception($this->text('invalid-request'));
             }
@@ -157,70 +158,78 @@ class SettingsController extends DashboardController
             
             $file = new FileController($this->getRequest());
             $file->init("/settings");
+            $file->allowType(3);
             
             $record = array('alias' => $alias);
             $content = array();
             foreach (array_keys($this->getLanguages()) as $code) {
                 $old_logo_file = basename($existing['content']['logo'][$code] ?? '');
-                if (isset($_FILES["logo_$code"])) {
-                    $file->allowExtensions((new File())->getAllowed(3));
-                    $logo = $file->upload("logo_$code");
-                    if (isset($logo['name'])) {
-                        $content[$code]['logo'] = $file->getPathUrl($logo['name']);
-                    }
-                } else {                    
-                    $content[$code]['logo'] = '';
-                }                
-                if (isset($content[$code]['logo'])) {
-                    if (!empty($old_logo_file)) {
+                $logo = $file->moveUploaded("logo_$code");
+                if (isset($logo['name'])) {
+                    $content[$code]['logo'] = $file->getPathUrl($logo['name']);
+                }
+                if (!empty($old_logo_file)) {
+                    if ($file->getLastError() == -1) {
+                        $this->tryDeleteFile(dirname($_SERVER['SCRIPT_FILENAME']) . "/public/settings/$old_logo_file");
+                        $content[$code]['logo'] = '';
+                    } else if (isset($logo['name']) && $logo['name'] != $old_logo_file) {
                         $this->tryDeleteFile(dirname($_SERVER['SCRIPT_FILENAME']) . "/public/settings/$old_logo_file");
                     }
+                }                
+                if (isset($content[$code]['logo'])) {
+                    $context['record']['logo'] = $content[$code]['logo'];
                 }
             }
 
-            if (isset($_FILES['favico'])) {
-                $file->allowExtensions(['ico']);
-                $ico = $file->upload('favico');
-                if (isset($ico['name'])) {
-                    $record['favico'] = $file->getPathUrl($ico['name']);
-                }
-            } else {
-                $record['favico'] = '';
-            }
-            if (isset($record['favico'])) {
-                if (!empty($old_favico_file)) {
+            $file->allowExtensions(['ico']);
+            $ico = $file->moveUploaded('favico');
+            if (isset($ico['name'])) {
+                $record['favico'] = $file->getPathUrl($ico['name']);
+            }                
+            if (!empty($old_favico_file)) {
+                if ($file->getLastError() == -1) {
+                    $this->tryDeleteFile(dirname($_SERVER['SCRIPT_FILENAME']) . "/public/settings/$old_favico_file");
+                    $record['favico'] = '';
+                } else if (isset($ico['name']) && $ico['name'] != $old_favico_file) {
                     $this->tryDeleteFile(dirname($_SERVER['SCRIPT_FILENAME']) . "/public/settings/$old_favico_file");
                 }
             }
+            if (isset($record['favico'])) {
+                $context['record']['favico'] = $record['favico'];
+            }
             
-            if (isset($_FILES['shortcut_icon'])) {
-                $file->allowExtensions((new File())->getAllowed(3));
-                $shortcut_icon = $file->upload('shortcut_icon');
-                if (isset($shortcut_icon['name'])) {
-                    $record['shortcut_icon'] = $file->getPathUrl($shortcut_icon['name']);
-                }
-            } else {
-                $record['shortcut_icon'] = '';
-            }            
-            if (isset($record['shortcut_icon'])) {
-                if (!empty($old_shortcut_icon_file)) {
+            $file->allowType(3);
+            $shortcut_icon = $file->moveUploaded('shortcut_icon');
+            if (isset($shortcut_icon['name'])) {
+                $record['shortcut_icon'] = $file->getPathUrl($shortcut_icon['name']);
+            }
+            if (!empty($old_shortcut_icon_file)) {
+                if ($file->getLastError() == -1) {
+                    $this->tryDeleteFile(dirname($_SERVER['SCRIPT_FILENAME']) . "/public/settings/$old_shortcut_icon_file");
+                    $record['shortcut_icon'] = '';
+                } else if (isset($shortcut_icon['name']) && $shortcut_icon['name'] != $old_shortcut_icon_file) {
                     $this->tryDeleteFile(dirname($_SERVER['SCRIPT_FILENAME']) . "/public/settings/$old_shortcut_icon_file");
                 }
             }
-            
-            if (isset($_FILES['apple_touch_icon'])) {
-                $file->allowExtensions((new File())->getAllowed(3));
-                $apple_touch_icon = $file->upload('apple_touch_icon');
-                if (isset($apple_touch_icon['name'])) {
-                    $record['apple_touch_icon'] = $file->getPathUrl($apple_touch_icon['name']);
-                }
-            } else {
-                $record['apple_touch_icon'] = '';
+            if (isset($record['shortcut_icon'])) {
+                $context['record']['shortcut_icon'] = $record['shortcut_icon'];
             }
-            if (isset($record['apple_touch_icon'])) {
-                if (!empty($old_apple_touch_icon_file)) {
+            
+            $file->allowType(3);
+            $apple_touch_icon = $file->moveUploaded('apple_touch_icon');
+            if (isset($apple_touch_icon['name'])) {
+                $record['apple_touch_icon'] = $file->getPathUrl($apple_touch_icon['name']);
+            }
+            if (!empty($old_apple_touch_icon_file)) {
+                if ($file->getLastError() == -1) {
+                    $this->tryDeleteFile(dirname($_SERVER['SCRIPT_FILENAME']) . "/public/settings/$old_apple_touch_icon_file");
+                    $record['apple_touch_icon'] = '';
+                } else if (isset($apple_touch_icon['name']) && $apple_touch_icon['name'] != $old_apple_touch_icon_file) {
                     $this->tryDeleteFile(dirname($_SERVER['SCRIPT_FILENAME']) . "/public/settings/$old_apple_touch_icon_file");
                 }
+            }
+            if (isset($record['apple_touch_icon'])) {
+                $context['record']['apple_touch_icon'] = $record['apple_touch_icon'];
             }
             
             if (isset($existing['id'])) {
@@ -260,7 +269,7 @@ class SettingsController extends DashboardController
             }
             
             $record = array();
-            foreach ($_POST as $index => $value) {
+            foreach ($this->getParsedBody() as $index => $value) {
                 $record[$index] = $value;
             }
             $record['is_smtp'] = isset($record['is_smtp']) && $record['is_smtp'] == 'on' ? 1 : 0;

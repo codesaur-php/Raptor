@@ -21,7 +21,7 @@ class JWTAuthMiddleware implements MiddlewareInterface
         try {
             ob_start();
             $request->getAttribute('indo')->handle(
-                    new InternalRequest('POST', '/auth/jwt', array('jwt' => $jwt)));
+                new InternalRequest('POST', '/auth/jwt', array('jwt' => $jwt)));
             $response = json_decode(ob_get_contents(), true);
             ob_end_clean();
         } catch (Throwable $e) {
@@ -31,13 +31,14 @@ class JWTAuthMiddleware implements MiddlewareInterface
         }
         
         if (isset($response['error']['code'])
-                && isset($response['error']['message'])
+            && isset($response['error']['message'])
         ) {
             throw new Exception($response['error']['message'], $response['error']['code']);
-        } elseif (empty($response['rbac'])
-                || !is_array($response['rbac'])
-                || empty($response['account']['id'])
-                || !isset($response['organizations'][0]['id'])
+        } elseif (
+            empty($response['rbac'])
+            || !is_array($response['rbac'])
+            || empty($response['account']['id'])
+            || !isset($response['organizations'][0]['id'])
         ) {
             throw new Exception('Invalid RBAC user information!');
         }
@@ -56,14 +57,13 @@ class JWTAuthMiddleware implements MiddlewareInterface
             $user = $this->retrieveIndoUser($request, $_SESSION[$sess_jwt_key]);
         } catch (Throwable $e) {
             if ($e->getCode() >= 5000
-                    && defined('CODESAUR_DEVELOPMENT')
-                    && CODESAUR_DEVELOPMENT
+                && defined('CODESAUR_DEVELOPMENT') && CODESAUR_DEVELOPMENT
             ) {
                 error_log($e->getMessage());
             }
             
             if (isset($_SESSION[$sess_jwt_key])
-                    && session_status() == PHP_SESSION_ACTIVE
+                && session_status() == PHP_SESSION_ACTIVE
             ) {
                 unset($_SESSION[$sess_jwt_key]);
             }

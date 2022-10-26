@@ -19,7 +19,6 @@ use Indoraptor\Account\ForgotModel;
 
 use Raptor\Dashboard\DashboardController;
 use Raptor\File\FileController;
-use Raptor\File\File;
 
 class AccountController extends DashboardController
 {
@@ -87,46 +86,59 @@ class AccountController extends DashboardController
         $context = array('model' => Accounts::class);
         $is_submit = $this->getRequest()->getMethod() == 'POST';
         
-        try {            
+        try {
             if (!$this->isUserCan('system_account_insert')) {
                 throw new Exception($this->text('system-no-permission'));
             }
             
             if ($is_submit) {
-                $record = array(
-                    'username' => $this->getPostParam('username'),
-                    'password' => password_hash($this->getPostParam('password'), PASSWORD_BCRYPT),
-                    'first_name' => $this->getPostParam('first_name'),
-                    'last_name' => $this->getPostParam('last_name'),
-                    'phone' => $this->getPostParam('phone'),
-                    'address' => $this->getPostParam('address'),
-                    'email' => $this->getPostParam('email', FILTER_VALIDATE_EMAIL)
-                );
-                $status = $this->getPostParam('status');
-                $record['status'] = empty($status) || $status != 'on' ? 0 : 1;
-                
-                if (empty($record['username'])
-                    || empty($record['email'])
+                $parsedBody = $this->getParsedBody();
+                if (empty($parsedBody['username']) || empty($parsedBody['email'])
+                    || filter_var($parsedBody['email'], FILTER_VALIDATE_EMAIL) === false
                 ) {
                     throw new Exception($this->text('invalid-request'));
                 }
+                
+                $record = array(
+                    'username' => $parsedBody['username'],
+                    'first_name' => $parsedBody['first_name'] ?? null,
+                    'last_name' => $parsedBody['last_name'] ?? null,
+                    'phone' => $parsedBody['phone'] ?? null,
+                    'address' => $parsedBody['address'] ?? null,
+                    'email' => filter_var($parsedBody['email'], FILTER_VALIDATE_EMAIL)
+                );
+                if (empty($parsedBody['password'])) {
+                    $bytes = random_bytes(10);
+                    $password = bin2hex($bytes);
+                } else {
+                    $password = $parsedBody['password'];
+                }
+                $record['password'] = password_hash($password , PASSWORD_BCRYPT);
+                
+                $status = $parsedBody['status'] ?? 'off';
+                $record['status'] = $status != 'on' ? 0 : 1;
                 $context['record'] = $record;
                 
                 $id = $this->indopost('/record?model=' . Accounts::class, array('record' => $record));
                 $context['id'] = $id;
                 
-                $organization = $this->getPostParam('organization', FILTER_VALIDATE_INT);
-                if (!empty($organization)) {
-                    $this->indopost('/record?model=' . OrganizationUserModel::class, array(
-                        'record' => array('organization_id' => $organization, 'account_id' => $id)
-                    ));
-                    $context['organization'] = $organization;
+                if (!empty($parsedBody['organization'] ?? null)) {
+                    $organization = filter_var('organization', FILTER_VALIDATE_INT);
+                    if ($organization !== false) {
+                        $org_exists = $this->indoSafe('/record?model=' . OrganizationModel::class, array('id' => $organization));
+                        if ($org_exists !== false) {
+                            $this->indopost('/record?model=' . OrganizationUserModel::class, array(
+                                'record' => array('organization_id' => $organization, 'account_id' => $id)
+                            ));
+                            $context['organization'] = $organization;                        
+                        }
+                    }
                 }
                 
                 $file = new FileController($this->getRequest());
                 $file->init("/accounts/$id");
-                $file->allowExtensions((new File())->getAllowed(3));
-                $photo = $file->upload('photo');
+                $file->allowType(3);
+                $photo = $file->moveUploaded('photo');
                 if (isset($photo['name'])) {
                     $photo_path = $file->getPathUrl($photo['name']);
                     $payload = array(
@@ -154,6 +166,7 @@ class AccountController extends DashboardController
                 $message = 'Хэрэглэгч үүсгэх үйлдлийг эхлүүллээ';
             }
         } catch (Throwable $e) {
+            $level = LogLevel::ERROR;
             $message = 'Хэрэглэгч үүсгэх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
             $context['error'] = array('code' => $e->getCode(), 'message' => $e->getMessage());
             
@@ -174,8 +187,8 @@ class AccountController extends DashboardController
         
         try {
             if (!$this->isUserAuthorized()
-                    || (!$this->getUser()->can('system_account_update')
-                    && $this->getUser()->getAccount()['id'] != $id)
+                || (!$this->getUser()->can('system_account_update')
+                && $this->getUser()->getAccount()['id'] != $id)
             ) {
                 throw new Exception($this->text('system-no-permission'));
             }
@@ -185,28 +198,30 @@ class AccountController extends DashboardController
             }
             
             if ($is_submit) {
+                $parsedBody = $this->getParsedBody();
+                if (empty($parsedBody['username']) || empty($parsedBody['email'])
+                    || filter_var($parsedBody['email'], FILTER_VALIDATE_EMAIL) === false
+                ) {
+                    throw new Exception($this->text('invalid-request'));
+                }
+
                 $record = array(
-                    'username' => $this->getPostParam('username'),
-                    'first_name' => $this->getPostParam('first_name'),
-                    'last_name' => $this->getPostParam('last_name'),
-                    'phone' => $this->getPostParam('phone'),
-                    'address' => $this->getPostParam('address'),
-                    'email' => $this->getPostParam('email', FILTER_VALIDATE_EMAIL)
+                    'username' => $parsedBody['username'],
+                    'first_name' => $parsedBody['first_name'] ?? null,
+                    'last_name' => $parsedBody['last_name'] ?? null,
+                    'phone' => $parsedBody['phone'] ?? null,
+                    'address' => $parsedBody['address'] ?? null,
+                    'email' => filter_var($parsedBody['email'], FILTER_VALIDATE_EMAIL)
                 );
-                $password = $this->getPostParam('password');
-                if (!empty($password)) {
-                    $record['password'] = password_hash($password, PASSWORD_BCRYPT);
+                if (!empty($parsedBody['password'])) {
+                    $record['password'] = password_hash($parsedBody['password'] , PASSWORD_BCRYPT);
                 }
                 if ($this->getUser()->is('system_coder')) {
-                    $status = $this->getPostParam('status');
-                    $record['status'] = empty($status) || $status != 'on' ? 0 : 1;
+                    $status = $parsedBody['status'] ?? 'off';
+                    $record['status'] = $status != 'on' ? 0 : 1;
                 }
                 $context['record'] = $record;
                 $context['record']['id'] = $id;
-
-                if (empty($record['username']) || empty($record['email'])) {
-                    throw new Exception($this->text('invalid-request'));
-                }
                 
                 $pattern = '/record?model=' . Accounts::class;
                 
@@ -221,21 +236,22 @@ class AccountController extends DashboardController
                 
                 $existing = $this->indoSafe($pattern, array('id' => $id));
                 $old_photo_file = basename($existing['photo'] ?? '');
-                if (isset($_FILES['photo'])) {
-                    $file = new FileController($this->getRequest());
-                    $file->init("/accounts/$id");
-                    $file->allowExtensions((new File())->getAllowed(3));
-                    $photo = $file->upload('photo');
-                    if (isset($photo['name'])) {
-                        $record['photo'] = $file->getPathUrl($photo['name']);
-                    }
-                } else {
-                    $record['photo'] = '';
+                $file = new FileController($this->getRequest());
+                $file->init("/accounts/$id");
+                $file->allowType(3);
+                $photo = $file->moveUploaded('photo');
+                if (isset($photo['name'])) {
+                    $record['photo'] = $file->getPathUrl($photo['name']);
                 }
-                if (isset($record['photo'])) {
-                    if (!empty($old_photo_file)) {
+                if (!empty($old_photo_file)) {
+                    if ($file->getLastError() == -1) {
+                        $this->tryDeleteFile(dirname($_SERVER['SCRIPT_FILENAME']) . "/public/accounts/$id/$old_photo_file");
+                        $record['photo'] = '';
+                    } else if (isset($photo['name']) && $photo['name'] != $old_photo_file) {
                         $this->tryDeleteFile(dirname($_SERVER['SCRIPT_FILENAME']) . "/public/accounts/$id/$old_photo_file");
                     }
+                }
+                if (isset($record['photo'])) {
                     $context['record']['photo'] = $record['photo'];
                 }
                 
@@ -249,7 +265,7 @@ class AccountController extends DashboardController
                 ));
                 
                 $organizations = array();
-                $post_organizations = $this->getPostParam('organizations', FILTER_VALIDATE_INT, FILTER_REQUIRE_ARRAY) ?? array();
+                $post_organizations = filter_var($parsedBody['organizations'] ?? array(), FILTER_VALIDATE_INT, FILTER_REQUIRE_ARRAY);
                 foreach ($post_organizations as $org_id) {
                     $organizations[$org_id] = true;
                 }
@@ -262,9 +278,9 @@ class AccountController extends DashboardController
                     } else {
                         $this->indodelete('/record?model=' . OrganizationUserModel::class, array('WHERE' => "id={$row['id']}"));
                         $this->indolog(
-                                'account',
-                                LogLevel::ALERT,
-                                "{$row['organization_id']} дугаартай байгууллагын хэрэглэгчийн бүртгэлээс $id дугаар бүхий хэрэглэгчийг хаслаа",
+                            'account',
+                            LogLevel::ALERT,
+                            "{$row['organization_id']} дугаартай байгууллагын хэрэглэгчийн бүртгэлээс $id дугаар бүхий хэрэглэгчийг хаслаа",
                                 array('reason' => 'organization-strip', 'account_id' => $id, 'organization_id' => $row['organization_id'])
                         );
                     }
@@ -272,17 +288,17 @@ class AccountController extends DashboardController
 
                 foreach (array_keys($organizations) as $org_id) {
                     $this->indopost('/record?model=' . OrganizationUserModel::class,
-                            array('record' => array('account_id' => $id, 'organization_id' => $org_id)));
+                        array('record' => array('account_id' => $id, 'organization_id' => $org_id)));
                     $this->indolog(
-                            'account',
-                            LogLevel::ALERT,
-                            "$id дугаартай хэрэглэгчийг $org_id дугаар бүхий байгууллагад нэмэх үйлдлийг амжилттай гүйцэтгэлээ",
-                            array('reason' => 'organization-set', 'account_id' => $id, 'organization_id' => $org_id)
+                        'account',
+                        LogLevel::ALERT,
+                        "$id дугаартай хэрэглэгчийг $org_id дугаар бүхий байгууллагад нэмэх үйлдлийг амжилттай гүйцэтгэлээ",
+                        array('reason' => 'organization-set', 'account_id' => $id, 'organization_id' => $org_id)
                     );
                 }
                 
                 if ($this->getUser()->can('system_rbac')) {
-                    $post_roles = $this->getPostParam('roles', FILTER_VALIDATE_INT, FILTER_REQUIRE_ARRAY) ?? array();
+                    $post_roles = filter_var($parsedBody['roles'] ?? array(), FILTER_VALIDATE_INT, FILTER_REQUIRE_ARRAY);
                     $roles = array();
                     foreach ($post_roles as $role) {
                         $roles[$role] = true;
@@ -296,22 +312,22 @@ class AccountController extends DashboardController
                         } else {
                             $this->indodelete('/record?model=' . UserRole::class, array('WHERE' => "id={$row['id']}"));
                             $this->indolog(
-                                    'rbac',
-                                    LogLevel::ALERT,
-                                    "$id дугаартай хэрэглэгчээс {$row['id']} дугаар бүхий дүрийг хаслаа",
-                                    array('reason' => 'role-strip', 'account_id' => $id, 'role_id' => $row['role_id'])
+                                'rbac',
+                                LogLevel::ALERT,
+                                "$id дугаартай хэрэглэгчээс {$row['id']} дугаар бүхий дүрийг хаслаа",
+                                array('reason' => 'role-strip', 'account_id' => $id, 'role_id' => $row['role_id'])
                             );
                         }
                     }
                     
                     foreach (array_keys($roles) as $role_id) {
                         $this->indopost('/record?model=' . UserRole::class,
-                                array('record' => array('user_id' => $id, 'role_id' => $role_id)));   
+                            array('record' => array('user_id' => $id, 'role_id' => $role_id)));   
                         $this->indolog(
-                                'rbac',
-                                LogLevel::ALERT,
-                                "$id дугаартай хэрэглэгч дээр $role_id дугаар бүхий дүр нэмэх үйлдлийг амжилттай гүйцэтгэлээ",
-                                array('reason' => 'role-set', 'account_id' => $id, 'role_id' => $role_id)
+                            'rbac',
+                            LogLevel::ALERT,
+                            "$id дугаартай хэрэглэгч дээр $role_id дугаар бүхий дүр нэмэх үйлдлийг амжилттай гүйцэтгэлээ",
+                            array('reason' => 'role-set', 'account_id' => $id, 'role_id' => $role_id)
                         );
                     }
                 }
@@ -326,9 +342,9 @@ class AccountController extends DashboardController
                 $vars = array('record' => $record, 'organizations' => $organizations);
              
                 $org_id_query =
-                        'SELECT ou.organization_id as id ' .
-                        'FROM organization_users as ou JOIN organizations as o ON ou.organization_id=o.id ' .
-                        "WHERE ou.account_id=$id AND ou.is_active=1 AND o.is_active=1";
+                    'SELECT ou.organization_id as id ' .
+                    'FROM organization_users as ou JOIN organizations as o ON ou.organization_id=o.id ' .
+                    "WHERE ou.account_id=$id AND ou.is_active=1 AND o.is_active=1";
                 $org_ids = $this->indo('/statement', array('query' => $org_id_query));
                 $ids = array();
                 foreach ($org_ids as $org) {
@@ -400,8 +416,8 @@ class AccountController extends DashboardController
         
         try {            
             if (!$this->isUserAuthorized()
-                    || (!$this->getUser()->can('system_account_index')
-                    && $this->getUser()->getAccount()['id'] != $id)
+                || (!$this->getUser()->can('system_account_index')
+                && $this->getUser()->getAccount()['id'] != $id)
             ) {
                 throw new Exception($this->text('system-no-permission'));
             }
@@ -411,15 +427,15 @@ class AccountController extends DashboardController
             $context['record'] = $record;
             
             $organizations_query =
-                    'SELECT t2.name ' .
-                    'FROM organization_users as t1 JOIN organizations as t2 ON t1.organization_id=t2.id ' .
-                    "WHERE t1.is_active=1 AND t2.is_active=1 AND t1.account_id=$id";
+                'SELECT t2.name ' .
+                'FROM organization_users as t1 JOIN organizations as t2 ON t1.organization_id=t2.id ' .
+                "WHERE t1.is_active=1 AND t2.is_active=1 AND t1.account_id=$id";
             $organizations = $this->indo('/statement', array('query' => $organizations_query));
 
             $user_role_query =
-                    'SELECT CONCAT(t2.alias, "_", t2.name) as name ' . 
-                    'FROM rbac_user_role as t1 JOIN rbac_roles as t2 ON t1.role_id=t2.id ' .
-                    "WHERE t1.is_active=1 AND t1.user_id=$id";
+                'SELECT CONCAT(t2.alias, "_", t2.name) as name ' . 
+                'FROM rbac_user_role as t1 JOIN rbac_roles as t2 ON t1.role_id=t2.id ' .
+                "WHERE t1.is_active=1 AND t1.user_id=$id";
             $user_roles = $this->indo('/statement', array('query' => $user_role_query));
             
             $template->render($this->twigTemplate(dirname(__FILE__) . '/account-view.html', array(
@@ -451,8 +467,8 @@ class AccountController extends DashboardController
             
             $payload = $this->getParsedBody();
             if (empty($payload['id'])
-                    || !isset($payload['name'])
-                    || !filter_var($payload['id'], FILTER_VALIDATE_INT)
+                || !isset($payload['name'])
+                || !filter_var($payload['id'], FILTER_VALIDATE_INT)
             ) {
                 throw new Exception($this->text('invalid-request'));
             }
@@ -461,6 +477,10 @@ class AccountController extends DashboardController
             $table = '';
             if (!empty($payload['table'])) {
                 $table = "table={$payload['table']}&";
+            }
+            
+            if ($payload['id'] == 1) {
+                throw new Exception('Cannot remove first acccount!');
             }
             
             $this->indodelete("/record?{$table}model=" . Accounts::class, array('WHERE' => "id='{$payload['id']}'"));
@@ -600,7 +620,7 @@ class AccountController extends DashboardController
             
             if (isset($organization_id)) {
                 $this->indopost('/record?model=' . OrganizationUserModel::class,
-                        array('record' => array('account_id' => $account_id, 'organization_id' => $organization_id)));
+                    array('record' => array('account_id' => $account_id, 'organization_id' => $organization_id)));
                 $context['organization'] = $organization_id;
             }
 
@@ -658,8 +678,8 @@ class AccountController extends DashboardController
             
             $payload = $this->getParsedBody();
             if (empty($payload['id'])
-                    || !isset($payload['name'])
-                    || !filter_var($payload['id'], FILTER_VALIDATE_INT)
+                || !isset($payload['name'])
+                || !filter_var($payload['id'], FILTER_VALIDATE_INT)
             ) {
                 throw new Exception($this->text('invalid-request'));
             }

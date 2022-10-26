@@ -6,6 +6,7 @@ use Exception;
 use Throwable;
 
 use Psr\Log\LogLevel;
+use Psr\Http\Message\UploadedFileInterface;
 
 use Indoraptor\Record\FileModel;
 use Indoraptor\Record\FilesModel;
@@ -14,7 +15,6 @@ use Raptor\Controller;
 
 class FileController extends Controller
 {
-    public $file;
     public $table;
     public $allow;
     public $local;
@@ -22,12 +22,12 @@ class FileController extends Controller
     public $overwrite;
     public $size_limit;
     
+    private $_error = UPLOAD_ERR_OK;
+    
     public function init(string $folder = 'files', int $allows = 0, $overwrite = false, $sizelimit = false)
     {
-        $this->file = new File();
-        
         $this->setFolder($folder);
-        $this->allowExtensions($this->file->getAllowed($allows));
+        $this->allowType($allows);
         
         $this->overwrite = $overwrite;
         $this->size_limit = $sizelimit;
@@ -67,28 +67,106 @@ class FileController extends Controller
         $this->size_limit = $size;
     }
 
+    public function allowType(int $type)
+    {
+        $this->allow = $this->getAllowedExtensions($type);
+    }
+
     public function allowExtensions(array $exts)
     {
         $this->allow = $exts;
-    }    
-        
-    public function checkInput($input)
-    {
-        return $this->file->isUpload($input);
     }
-
-    public function upload($input)
+    
+    public function getAllowedExtensions(int $type = 0): array
     {
-        if ($this->checkInput($input)) {
-            return $this->file->upload($input, "$this->local/", $this->allow, $this->overwrite, $this->size_limit);
+        switch ($type) {
+            case 1: return ['xls', 'xlsx', 'pdf', 'doc', 'docx', 'ppt', 'pptx', 'pps', 'ppsx', 'odt'];
+            case 2: return ['mp3', 'm4a', 'ogg', 'wav', 'mp4', 'm4v', 'mov', 'wmv', 'swf'];
+            case 3: return ['jpg', 'jpeg', 'jpe', 'png', 'gif'];
+            case 4: return ['ico', 'bmp', 'txt', 'xml', 'json'];
+            case 5: return ['zip', 'rar'];
+            default:
+                return array_merge(
+                    $this->getAllowedExtensions(1),
+                    $this->getAllowedExtensions(2),
+                    $this->getAllowedExtensions(3),
+                    $this->getAllowedExtensions(4),
+                    $this->getAllowedExtensions(5)
+                );
+        }
+    }
+    
+    private function uniqueFileName(string $uploadpath, string $name, string $ext)
+    {
+        $filename = $name . '.' . $ext;
+        if (file_exists($uploadpath . $filename)) {
+            $number = 1;
+            while (true) {
+                if (file_exists($uploadpath . $name . " ($number)." . $ext)) {
+                    $number++;
+                } else {
+                    break;
+                }
+            }
+            $filename = $name . " ($number)." . $ext;
         }
         
-        return false;
+        return $filename;
+    }
+
+    public function moveUploaded($input, $mode = 0755)
+    {
+        try {
+            $uploadedFile = $this->getRequest()->getUploadedFiles()[$input] ?? null;
+            if (!$uploadedFile instanceof UploadedFileInterface) {
+                throw new Exception('No file upload provided', -1);
+            }
+            if ($uploadedFile->getError() != UPLOAD_ERR_OK) {
+                throw new Exception('File upload error', $uploadedFile->getError());
+            }
+
+            $file_size = $uploadedFile->getSize();        
+            if ($this->sizelimit && $file_size > $this->sizelimit) {
+                throw new Exception('The uploaded file exceeds the MAX_FILE_SIZE directive that was specified in the HTML form', UPLOAD_ERR_FORM_SIZE);
+            }
+
+            $upload_path = "$this->local/";
+            $file_path = basename($uploadedFile->getClientFilename());
+            $file_name = pathinfo($file_path, PATHINFO_FILENAME);
+            $file_ext = strtolower(pathinfo($file_path, PATHINFO_EXTENSION));
+            if (!$this->overwrite) {
+                $file_path = $this->uniqueFileName($upload_path, $file_name, $file_ext);
+            }
+
+            if (!in_array($file_ext, $this->allow)) {
+                throw new Exception('The uploaded file type is not allowed', 9);
+            }
+
+            if (!file_exists($upload_path) || !is_dir($upload_path)) {
+                mkdir($upload_path, $mode, true);
+            }
+            
+            $uploadedFile->moveTo($upload_path . $file_path);            
+            $this->_error = UPLOAD_ERR_OK;
+            return array(
+                'dir' => $upload_path,
+                'name' => $file_path,
+                'ext' => $file_ext,
+                'size' => $file_size
+            );
+        } catch (Throwable $e) {
+            $this->errorLog($e);
+            
+            $this->_error = $e->getCode();
+            
+            // failed to move uploaded file!
+            return false;
+        }
     }
     
     public function post(string $input, $record_id, array $table_record = [], array $file_record = [])
     {
-        return $this->submit($this->upload($input), $record_id, $table_record, $file_record);
+        return $this->submit($this->moveUploaded($input), $record_id, $table_record, $file_record);
     }
     
     public function post_multi(string $input, $record_id, array $table_record = [], array $file_record = [])
@@ -97,7 +175,7 @@ class FileController extends Controller
         $result = array();
         foreach ($language_codes as $code) {
             $table_record['code'] = $code;
-            $result[] = $this->submit($this->upload(array($input => $code)), $record_id, $table_record, $file_record);
+            $result[] = $this->submit($this->moveUploaded(array($input => $code)), $record_id, $table_record, $file_record);
         }
         
         return $result;
@@ -106,9 +184,7 @@ class FileController extends Controller
     public function submit($upload, $record_id, array $table_record = [], array $file_record = [])
     {
         $language_codes = array_keys($this->getAttribute('localization')['language'] ?? array());
-        if (isset($upload['dir'])
-                && isset($upload['name'])
-                && !empty($this->table)) {
+        if (isset($upload['dir']) && isset($upload['name']) && !empty($this->table)) {
             if (isset($table_record['type'])) {
                 $existing = $this->getLast($record_id, $table_record['type'], $table_record['code'] ?? '');                
                 if ($existing) {
@@ -194,5 +270,10 @@ class FileController extends Controller
             
             return null;
         }
+    }
+    
+    public function getLastError(): int
+    {
+        return $this->_error;
     }
 }

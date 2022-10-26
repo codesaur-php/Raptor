@@ -28,7 +28,7 @@ class LocalizationMiddleware implements MiddlewareInterface
         }
         
         if (isset($response['error']['code'])
-                && isset($response['error']['message'])
+            && isset($response['error']['message'])
         ) {
             throw new Exception($response['error']['message'], $response['error']['code']);
         }
@@ -55,7 +55,8 @@ class LocalizationMiddleware implements MiddlewareInterface
         $language = $this->retrieveLanguage($request);
         $sess_lang_key = explode('\\', __NAMESPACE__)[0] . '\\language\\code';
         if (isset($_SESSION[$sess_lang_key])
-                && isset($language[$_SESSION[$sess_lang_key]])) {
+            && isset($language[$_SESSION[$sess_lang_key]])
+        ) {
             $code = $_SESSION[$sess_lang_key];
         } else {
             $code = key($language);
@@ -64,8 +65,8 @@ class LocalizationMiddleware implements MiddlewareInterface
         $text = array();
         try {
             $translations = $this->request(
-                    $request->getAttribute('indo'), 'POST', '/translation/retrieve',
-                    array('code' => $code, 'table' => ['dashboard', 'default', 'user']));
+                $request->getAttribute('indo'), 'POST', '/translation/retrieve',
+                array('code' => $code, 'table' => ['dashboard', 'default', 'user']));
             foreach ($translations as $translation) {
                 $text += $translation;
             }
@@ -78,6 +79,6 @@ class LocalizationMiddleware implements MiddlewareInterface
         }
         
         return $handler->handle($request->withAttribute('localization',
-                array('language' => $language, 'code' => $code, 'text' => $text)));
+            array('language' => $language, 'code' => $code, 'text' => $text)));
     }
 }

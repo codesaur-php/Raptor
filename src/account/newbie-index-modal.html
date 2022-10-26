@@ -135,7 +135,7 @@ document.querySelectorAll('#new_account_requests a.delete-request').forEach(func
                 return fetch(
                     '{{ 'account-request-delete'|link }}',
                     {
-                        method: 'POST',
+                        method: 'DELETE',
                         headers: {
                             'Content-Type': 'application/json'
                         },

@@ -6,7 +6,7 @@
         </div>
         <div class="modal-body">
             <div style="height:500px;overflow-y:auto;overflow-x:hidden;">
-                <form class="needs-validation" novalidate id="organization_update" action="{{ 'organization-update'|link({id: record['id']}) }}" method="POST" enctype="multipart/form-data">
+                <form class="needs-validation" novalidate id="organization_update" action="{{ 'organization-update'|link({id: record['id']}) }}" method="PUT" enctype="multipart/form-data">
                     <div class="row mb-3">
                         <div class="col">
                             <div class="form-floating">

@@ -72,7 +72,7 @@ class LoginController extends \Raptor\Controller
             if (empty($account['code'])) {
                 $this->postAccountLanguageCode($account['id'], $this->getLanguageCode());
             } elseif ($account['code'] != $this->getLanguageCode()
-                    && isset($this->getAttribute('localization')['language'][$account['code']])
+                && isset($this->getAttribute('localization')['language'][$account['code']])
             ) {
                 $_SESSION[explode('\\', __NAMESPACE__)[0] . '\\language\\code'] = $account['code'];
             }
@@ -393,7 +393,7 @@ class LoginController extends \Raptor\Controller
     {
         try {
             return $this->indo('/record/update?model=' . Accounts::class,
-                    array('record' => array('code' => $code), 'condition' => array('WHERE' => "id=$id")));
+                array('record' => array('code' => $code), 'condition' => array('WHERE' => "id=$id")));
         } catch (Throwable $e) {
             $this->errorLog($e);
             

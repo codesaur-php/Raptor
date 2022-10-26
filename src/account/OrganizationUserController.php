@@ -26,8 +26,8 @@ class OrganizationUserController extends DashboardController
             }
 
             $user_orgs_query =
-                    'SELECT t2.* FROM organization_users as t1 JOIN organizations as t2 ON t1.organization_id=t2.id ' .
-                    'WHERE t1.is_active=1 AND t2.is_active=1 AND t1.account_id=' . $this->getUser()->getAccount()['id'];
+                'SELECT t2.* FROM organization_users as t1 JOIN organizations as t2 ON t1.organization_id=t2.id ' .
+                'WHERE t1.is_active=1 AND t2.is_active=1 AND t1.account_id=' . $this->getUser()->getAccount()['id'];
             $organizations = $this->indo('/statement', array('query' => $user_orgs_query));
 
             $template->render($this->twigTemplate(dirname(__FILE__) . '/organization-user.html', array('organizations' => $organizations)));
@@ -56,9 +56,14 @@ class OrganizationUserController extends DashboardController
             
             if ($is_submit) {
                 $organizations = array();
-                $post_organizations = $this->getPostParam('organizations', FILTER_VALIDATE_INT, FILTER_REQUIRE_ARRAY) ?? array();
+                $post_organizations = filter_var($this->getParsedBody()['organizations'] ?? array(), FILTER_VALIDATE_INT, FILTER_REQUIRE_ARRAY);
                 foreach ($post_organizations as $id) {
                     $organizations[$id] = true;
+                }
+                if ($account_id == 1
+                    && (empty($organizations) || !array_key_exists(1, $organizations))
+                ) {
+                    throw new Exception('Default user must belong to an organization');
                 }
 
                 $user_orgs = $this->indo('/statement', array(
@@ -69,22 +74,22 @@ class OrganizationUserController extends DashboardController
                     } else {
                         $this->indodelete('/record?model=' . OrganizationUserModel::class, array('WHERE' => "id={$row['id']}"));
                         $this->indolog(
-                                'account',
-                                LogLevel::ALERT,
-                                "{$row['organization_id']} дугаартай байгууллагын хэрэглэгчийн бүртгэлээс $account_id дугаар бүхий хэрэглэгчийг хаслаа",
-                                array('reason' => 'organization-strip', 'account_id' => $account_id, 'organization_id' => $row['organization_id'])
+                            'account',
+                            LogLevel::ALERT,
+                            "{$row['organization_id']} дугаартай байгууллагын хэрэглэгчийн бүртгэлээс $account_id дугаар бүхий хэрэглэгчийг хаслаа",
+                            array('reason' => 'organization-strip', 'account_id' => $account_id, 'organization_id' => $row['organization_id'])
                         );
                     }
                 }
 
                 foreach (array_keys($organizations) as $id) {
                     $record_id = $this->indopost('/record?model=' . OrganizationUserModel::class,
-                            array('record' => array('account_id' => $account_id, 'organization_id' => $id)));
+                        array('record' => array('account_id' => $account_id, 'organization_id' => $id)));
                     $this->indolog(
-                            'account',
-                            LogLevel::ALERT,
-                            "$account_id дугаартай хэрэглэгчийг $id дугаар бүхий байгууллагад нэмэх үйлдлийг амжилттай гүйцэтгэлээ",
-                            array('reason' => 'organization-set', 'account_id' => $account_id, 'organization_id' => $id, 'record_id' => $record_id)
+                        'account',
+                        LogLevel::ALERT,
+                        "$account_id дугаартай хэрэглэгчийг $id дугаар бүхий байгууллагад нэмэх үйлдлийг амжилттай гүйцэтгэлээ",
+                        array('reason' => 'organization-set', 'account_id' => $account_id, 'organization_id' => $id, 'record_id' => $record_id)
                     );
                 }
 
@@ -96,9 +101,9 @@ class OrganizationUserController extends DashboardController
                 ));
             } else {
                 $query =
-                        'SELECT ou.organization_id as id ' .
-                        'FROM organization_users as ou JOIN organizations as o ON ou.organization_id=o.id ' .
-                        "WHERE ou.account_id=$account_id AND ou.is_active=1 AND o.is_active=1";
+                    'SELECT ou.organization_id as id ' .
+                    'FROM organization_users as ou JOIN organizations as o ON ou.organization_id=o.id ' .
+                    "WHERE ou.account_id=$account_id AND ou.is_active=1 AND o.is_active=1";
                 $response = $this->indo('/statement', array('query' => $query));
                 $ids = array();
                 foreach ($response as $org) {
@@ -122,10 +127,10 @@ class OrganizationUserController extends DashboardController
                 $context['account'] = $account;
                 $context['current_organizations'] = $current_organizations;
                 $this->indolog(
-                        'account',
-                        LogLevel::NOTICE,
-                        "$account_id дугаартай хэрэглэгчийн байгууллагын мэдээллийг өөрчлөх үйлдлийг эхлүүллээ",
-                        $context
+                    'account',
+                    LogLevel::NOTICE,
+                    "$account_id дугаартай хэрэглэгчийн байгууллагын мэдээллийг өөрчлөх үйлдлийг эхлүүллээ",
+                    $context
                 );
             }
         } catch (Throwable $e) {
@@ -141,10 +146,10 @@ class OrganizationUserController extends DashboardController
             
             $context['error'] = array('code' => $e->getCode(), 'message' => $e->getMessage());
             $this->indolog(
-                    'account',
-                    LogLevel::ERROR,
-                    "$account_id дугаартай хэрэглэгчийн байгууллагын мэдээллийг өөрчлөх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо",
-                    $context
+                'account',
+                LogLevel::ERROR,
+                "$account_id дугаартай хэрэглэгчийн байгууллагын мэдээллийг өөрчлөх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо",
+                $context
             );
         }
     }

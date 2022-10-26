@@ -27,7 +27,7 @@ class LogsController extends DashboardController
             }
             
             $template->render($this->twigTemplate(dirname(__FILE__) . '/index-list-logs.html',
-                    array('names' => $names, 'logs' => $logs, 'accounts' => $this->getAccounts())));
+                array('names' => $names, 'logs' => $logs, 'accounts' => $this->getAccounts())));
         } catch (Throwable $e) {
             $template->alertNoPermission($e->getMessage());
         }
@@ -60,7 +60,8 @@ class LogsController extends DashboardController
                     'table' => $table,
                     'id' => $id,
                     'accounts' => $this->getAccounts(),
-                    'data' => $logdata)
+                    'data' => $logdata
+                )
             ))->render();
 
             return true;

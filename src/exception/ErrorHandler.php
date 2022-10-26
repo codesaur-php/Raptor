@@ -16,7 +16,8 @@ class ErrorHandler implements ExceptionHandlerInterface
     {
         $errorTemplate = dirname(__FILE__) . '/error.html';
         if (!class_exists(FileTemplate::class)
-                || !file_exists($errorTemplate)) {
+            || !file_exists($errorTemplate)
+        ) {
             return (new Base())->exception($throwable);
         }
         $code = $throwable->getCode();
@@ -49,8 +50,9 @@ class ErrorHandler implements ExceptionHandlerInterface
         if (defined('CODESAUR_DEVELOPMENT')
                 && CODESAUR_DEVELOPMENT
         ) {
-            $vars['message'] .= '<br/><pre style="color:white;height:300px;overflow-y:auto;overflow-x:hidden;">'
-                    . json_encode($throwable->getTrace(), JSON_PRETTY_PRINT) . '</pre>';
+            $vars['message'] .=
+                '<br/><pre style="color:white;height:300px;overflow-y:auto;overflow-x:hidden;">'
+                . json_encode($throwable->getTrace(), JSON_PRETTY_PRINT) . '</pre>';
         }
         
         (new FileTemplate($errorTemplate, $vars))->render();

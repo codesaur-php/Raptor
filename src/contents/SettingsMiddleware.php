@@ -27,10 +27,10 @@ class SettingsMiddleware implements MiddlewareInterface
                 $alias = $user->getOrganization()['alias'];
             }            
             $request->getAttribute('indo')->handle(new InternalRequest(
-                    'INTERNAL', '/record?model=' . SettingsModel::class, array('alias' => $alias ?: 'system', 'is_active' => 1)));
+                'INTERNAL', '/record?model=' . SettingsModel::class, array('alias' => $alias ?: 'system', 'is_active' => 1)));
             $settings = json_decode(ob_get_contents(), true);            
             if (isset($settings['error']['code'])
-                    && isset($settings['error']['message'])
+                && isset($settings['error']['message'])
             ) {
                 throw new Exception($settings['error']['message'], $settings['error']['code']);
             }

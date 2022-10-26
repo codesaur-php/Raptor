@@ -53,10 +53,13 @@ class RBACController extends DashboardController
             $context['account'] = $account;
             
             if ($is_submit) {
-                $post_roles = $this->getPostParam('roles', FILTER_VALIDATE_INT, FILTER_REQUIRE_ARRAY) ?? array();
+                $post_roles = filter_var($this->getParsedBody()['roles'] ?? array(), FILTER_VALIDATE_INT, FILTER_REQUIRE_ARRAY);
                 $roles = array();
                 foreach ($post_roles as $role) {
                     $roles[$role] = true;
+                }
+                if ((empty($roles) || !array_key_exists(1, $roles)) && $id == 1) {
+                    throw new Exception('Default user must have a role');
                 }
 
                 $user_role = $this->indo('/statement', array(
@@ -67,22 +70,22 @@ class RBACController extends DashboardController
                     } else {
                         $this->indodelete('/record?model=' . UserRole::class, array('WHERE' => "id={$row['id']}"));
                         $this->indolog(
-                                'rbac',
-                                LogLevel::ALERT,
-                                "$id дугаартай {$account['username']} хэрэглэгчээс {$row['id']} дугаар бүхий дүрийг хаслаа",
-                                array('reason' => 'role-strip', 'account_id' => $id, 'role_id' => $row['role_id'])
+                            'rbac',
+                            LogLevel::ALERT,
+                            "$id дугаартай {$account['username']} хэрэглэгчээс {$row['id']} дугаар бүхий дүрийг хаслаа",
+                            array('reason' => 'role-strip', 'account_id' => $id, 'role_id' => $row['role_id'])
                         );
                     }
                 }
                 
                 foreach (array_keys($roles) as $role_id) {
                     $this->indopost('/record?model=' . UserRole::class,
-                            array('record' => array('user_id' => $id, 'role_id' => $role_id)));
+                        array('record' => array('user_id' => $id, 'role_id' => $role_id)));
                     $this->indolog(
-                            'rbac',
-                            LogLevel::ALERT,
-                            "$id дугаартай  {$account['username']} хэрэглэгч дээр $role_id дугаар бүхий дүр нэмэх үйлдлийг амжилттай гүйцэтгэлээ",
-                            array('reason' => 'role-set', 'account_id' => $id, 'role_id' => $role_id)
+                        'rbac',
+                        LogLevel::ALERT,
+                        "$id дугаартай  {$account['username']} хэрэглэгч дээр $role_id дугаар бүхий дүр нэмэх үйлдлийг амжилттай гүйцэтгэлээ",
+                        array('reason' => 'role-set', 'account_id' => $id, 'role_id' => $role_id)
                     );
                 }
 
@@ -124,8 +127,8 @@ class RBACController extends DashboardController
 
                 $current_role = array();
                 $current_role_query =
-                        'SELECT rur.role_id FROM rbac_user_role as rur INNER JOIN rbac_roles as rr ON rur.role_id=rr.id ' .
-                        "WHERE rur.user_id=$id AND rur.is_active=1 AND rr.is_active=1";
+                    'SELECT rur.role_id FROM rbac_user_role as rur INNER JOIN rbac_roles as rr ON rur.role_id=rr.id ' .
+                    "WHERE rur.user_id=$id AND rur.is_active=1 AND rr.is_active=1";
                 $current_roles = $this->indo('/statement', array('query' => $current_role_query));
                 foreach ($current_roles as $row) {
                     $current_role[] = $row['role_id'];

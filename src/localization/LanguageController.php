@@ -71,10 +71,10 @@ class LanguageController extends DashboardController
                 $translated = $this->indoSafe('/language/copy/multimodel/content', array('from' => $mother['code'], 'to' => $payload['short']), 'POST');
                 if (is_array($translated)) {
                     $this->indolog(
-                            'localization',
-                            LogLevel::ALERT,
-                            __CLASS__ . ' объект нь ' . $mother['code'] . ' хэлнээс ' . $payload['short'] . ' хэлийг хуулбарлан үүсгэлээ. ',
-                            array('reason' => 'copy', 'translated' => $translated) + $context
+                        'localization',
+                        LogLevel::ALERT,
+                        __CLASS__ . ' объект нь ' . $mother['code'] . ' хэлнээс ' . $payload['short'] . ' хэлийг хуулбарлан үүсгэлээ. ',
+                        array('reason' => 'copy', 'translated' => $translated) + $context
                     );
                 }
                 
@@ -90,7 +90,8 @@ class LanguageController extends DashboardController
                 $code = preg_replace('/[^a-z]/', '', $this->getLanguageCode());
                 $vars = array(
                     'countries' => $this->indoSafe('/record/rows?model=' . CountriesModel::class,
-                            array('condition' => array('WHERE' => "c.code='$code'")))
+                        array('condition' => array('WHERE' => "c.code='$code'"))
+                    )
                 );
                 $template_path = dirname(__FILE__) . '/language-insert-modal.html';
                 if (!file_exists($template_path)) {
@@ -179,12 +180,12 @@ class LanguageController extends DashboardController
                 if (isset($defLanguage['id']) && $record['is_default'] == 1) {
                     if ($defLanguage['id'] != $id) {
                         $this->indoput('/record?model=' . LanguageModel::class,
-                                array('record' => array('is_default' => 0), 'condition' => ['WHERE' => "id={$defLanguage['id']}"]));
+                            array('record' => array('is_default' => 0), 'condition' => ['WHERE' => "id={$defLanguage['id']}"]));
                     }
                 }
                 
                 $this->indoput('/record?model=' . LanguageModel::class,
-                        array('record' => $record, 'condition' => ['WHERE' => "id=$id"]));
+                    array('record' => $record, 'condition' => ['WHERE' => "id=$id"]));
                 
                 $this->respondJSON(array(
                     'status' => 'success',
@@ -239,8 +240,8 @@ class LanguageController extends DashboardController
             
             $payload = $this->getParsedBody();
             if (empty($payload['id'])
-                    || !isset($payload['name'])
-                    || !filter_var($payload['id'], FILTER_VALIDATE_INT)
+                || !isset($payload['name'])
+                || !filter_var($payload['id'], FILTER_VALIDATE_INT)
             ) {
                 throw new Exception($this->text('invalid-request'));
             }
@@ -303,10 +304,10 @@ class LanguageController extends DashboardController
                 $row[] = htmlentities($record['created_at']);
 
                 $action = '<a class="ajax-modal btn btn-sm btn-info shadow-sm" data-bs-target="#dashboard-modal" data-bs-toggle="modal" ' .
-                        'href="' . $this->generateLink('language-view', array('id' => $id)) . '"><i class="bi bi-eye"></i></a>' . PHP_EOL;
+                    'href="' . $this->generateLink('language-view', array('id' => $id)) . '"><i class="bi bi-eye"></i></a>' . PHP_EOL;
                 if ($this->getUser()->can('system_localization_update')) {
                     $action .= '<a class="ajax-modal btn btn-sm btn-primary shadow-sm" data-bs-target="#dashboard-modal" data-bs-toggle="modal" ' .
-                            'href="' . $this->generateLink('language-update', array('id' => $id)) . '"><i class="bi bi-pencil-square"></i></a>' . PHP_EOL;
+                        'href="' . $this->generateLink('language-update', array('id' => $id)) . '"><i class="bi bi-pencil-square"></i></a>' . PHP_EOL;
                 }
                 if ($this->getUser()->can('system_localization_delete')) {
                     $action .= '<a class="delete-language btn btn-sm btn-danger shadow-sm" href="' . $id . '"><i class="bi bi-trash"></i></a>';
