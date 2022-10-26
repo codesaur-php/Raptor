@@ -33,14 +33,10 @@ class LoginController extends \Raptor\Controller
         }
         
         $code = preg_replace('/[^a-z]/', '', $this->getLanguageCode());
-        $vars = $this->indo('/lookup', array('table' => 'templates', 'condition' =>
+        $vars = $this->indoSafe('/lookup', array('table' => 'templates', 'condition' =>
             array('WHERE' => "c.code='$code' AND (p.keyword='tos' OR p.keyword='pp') AND p.is_active=1")));
         
-        try {
-            $vars['organizations'] = $this->indo('/record/rows?model=' . OrganizationModel::class);
-        } catch (Throwable $e) {
-            $this->errorLog($e);
-        }
+        $vars['organizations'] = $this->indoSafe('/record/rows?model=' . OrganizationModel::class);
 
         $this->twigTemplate(dirname(__FILE__) . '/login.html', $vars)->render();
     }
