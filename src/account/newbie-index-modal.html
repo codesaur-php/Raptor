@@ -42,8 +42,6 @@
                             {% if user.can('system_account_delete') %}
                             <a class="delete-request btn btn-sm btn-danger shadow-sm" href="{{ row['id'] }}"><i class="bi bi-trash"></i> {{ 'delete'|text }}</a>
                             {% endif %}
-                        {% else %}
-                            {{ row['reserved'] }}
                         {% endif %}
                         </td>
                     </tr>

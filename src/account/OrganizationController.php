@@ -46,9 +46,7 @@ class OrganizationController extends DashboardController
                 
                 $record = array(
                     'alias' => $parsedBody['org_alias'],
-                    'name' => $parsedBody['org_name'],
-                    'home_url' => $parsedBody['org_home_url'] ?? null,
-                    'external' => $parsedBody['org_external'] ?? null
+                    'name' => $parsedBody['org_name']
                 );
                 $parent_id = filter_var($parsedBody['org_parent_id'] ?? 0, FILTER_VALIDATE_INT);
                 if ($parent_id !== false && $parent_id > 0) {
@@ -172,9 +170,7 @@ class OrganizationController extends DashboardController
                 
                 $record = array(
                     'alias' => $payload['org_alias'],
-                    'name' => $payload['org_name'],
-                    'home_url' => $payload['org_home_url'] ?? null,
-                    'external' => $payload['org_external'] ?? null
+                    'name' => $payload['org_name']
                 );
                 $parent_id = filter_var($payload['org_parent_id'] ?? 0, FILTER_VALIDATE_INT);
                 if ($parent_id !== false && $parent_id > 0) {

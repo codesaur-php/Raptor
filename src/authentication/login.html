@@ -129,15 +129,6 @@
                     <input class="form-control" type="password" placeholder="{{ 'retype-password'|text|e }}" name="codeRePassword" id="codeRePassword"  autocomplete="new-password-retype">
                     <label>{{ 'retype-password'|text }}</label>
                 </div>
-                <div class="mb-2">
-                    <label class="mt-2 mb-3">{{ 'organization'|text }}</label>
-                    <select class="form-control" id="organization">
-                        <option value=""></option>
-                        {% for org in organizations %}
-                        <option value="{{ org['name']|e }}">{{ org['name']|e }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
                 <hr>
                 <div class="text-center mb-2">
                 {% if languageCode == 'mn' %}
@@ -334,11 +325,6 @@
                     }
                     
                     let payload = { username, email, password, password_re };
-                    
-                    const organization = formSignUp.querySelector('#signup_form select#organization').value;
-                    if (!isBlank(organization)) {
-                        payload.organization = organization;
-                    }
                     
                     this.spinner('start', 'grow', true);                    
                     fetch(

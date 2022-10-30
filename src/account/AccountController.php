@@ -104,7 +104,6 @@ class AccountController extends DashboardController
                     'first_name' => $parsedBody['first_name'] ?? null,
                     'last_name' => $parsedBody['last_name'] ?? null,
                     'phone' => $parsedBody['phone'] ?? null,
-                    'address' => $parsedBody['address'] ?? null,
                     'email' => filter_var($parsedBody['email'], FILTER_VALIDATE_EMAIL)
                 );
                 if (empty($parsedBody['password'])) {
@@ -210,7 +209,6 @@ class AccountController extends DashboardController
                     'first_name' => $parsedBody['first_name'] ?? null,
                     'last_name' => $parsedBody['last_name'] ?? null,
                     'phone' => $parsedBody['phone'] ?? null,
-                    'address' => $parsedBody['address'] ?? null,
                     'email' => filter_var($parsedBody['email'], FILTER_VALIDATE_EMAIL)
                 );
                 if (!empty($parsedBody['password'])) {
@@ -570,7 +568,8 @@ class AccountController extends DashboardController
                 throw new Exception('No permission for an action [approval]!');
             }
             
-            $id = $this->getParsedBody()['id'] ?? null;            
+            $parsedBody = $this->getParsedBody();
+            $id = $parsedBody['id'] ?? null;
             if (empty($id)
                 || !filter_var($id, FILTER_VALIDATE_INT)
             ) {
@@ -590,18 +589,6 @@ class AccountController extends DashboardController
                 throw new Exception($this->text('account-exists') . "<br/>username/email => {$record['username']}/{$record['email']}");
             }
             
-            $organization_name = $record['address'] ?? null;
-            if (!empty($organization_name)) {
-                $organization = $this->indo('/statement', array(
-                    'query' => 'SELECT id FROM organizations WHERE name=:name AND is_active=1 LIMIT 1',
-                    'bind' => array(':name' => array('var' => $organization_name))
-                ));
-                if (!empty($organization)) {
-                    $organization_id = current($organization)['id'];
-                }
-            }
-            
-            $record['address'] = '';
             unset($record['id']);
             unset($record['is_active']);
             unset($record['created_at']);
@@ -616,14 +603,20 @@ class AccountController extends DashboardController
                 'condition' => array('WHERE' => "id=$id"),
                 'record' => array('is_active' => 0, 'status' => 2)
             );
-            $this->indoput('/record?table=newbie&model=' . Accounts::class, $payload);
+            $this->indoput('/record?table=newbie&model=' . Accounts::class, $payload);            
             
-            if (isset($organization_id)) {
-                $this->indopost('/record?model=' . OrganizationUserModel::class,
-                    array('record' => array('account_id' => $account_id, 'organization_id' => $organization_id)));
+            $organization_id = filter_var($parsedBody['organization_id'] ?? 0, FILTER_VALIDATE_INT);
+            if ($organization_id === false && $organization_id > 0) {
+                $organization_id = 1;
+            }            
+            $posted = $this->indoSafe(
+                '/record?model=' . OrganizationUserModel::class,
+                array('record' => array('account_id' => $account_id, 'organization_id' => $organization_id)),
+                'POST');
+            if (!empty($posted)) {
                 $context['organization'] = $organization_id;
             }
-
+            
             $code = preg_replace('/[^a-z]/', '', $this->getLanguageCode());
             $lookup = $this->indo('/lookup', array('table' => 'templates', 'condition' =>
                 array('WHERE' => "c.code='$code' AND p.keyword='approve-new-account' AND p.is_active=1")));

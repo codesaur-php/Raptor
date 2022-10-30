@@ -36,8 +36,6 @@ class LoginController extends \Raptor\Controller
         $vars = $this->indoSafe('/lookup', array('table' => 'templates', 'condition' =>
             array('WHERE' => "c.code='$code' AND (p.keyword='tos' OR p.keyword='pp') AND p.is_active=1")));
         
-        $vars['organizations'] = $this->indoSafe('/record/rows?model=' . OrganizationModel::class);
-
         $this->twigTemplate(dirname(__FILE__) . '/login.html', $vars)->render();
     }
     
