@@ -6,6 +6,7 @@ use Exception;
 use Throwable;
 
 use Psr\Log\LogLevel;
+use Psr\Http\Message\ServerRequestInterface;
 
 use Indoraptor\Record\SettingsModel;
 use Indoraptor\Mail\MailerModel;
@@ -15,6 +16,20 @@ use Raptor\File\FileController;
 
 class SettingsController extends DashboardController
 {
+    function __construct(ServerRequestInterface $request)
+    {
+        $meta = $request->getAttribute('meta', array());
+        $localization = $request->getAttribute('localization');
+        if (isset($localization['code'])
+            && isset($localization['text']['settings'])
+        ) {
+            $meta['content']['title'][$localization['code']] = $localization['text']['settings'];
+            $request = $request->withAttribute('meta', $meta);
+        }
+        
+        parent::__construct($request);
+    }
+    
     public function index()
     {
         $context = array('model' => SettingsModel::class);
@@ -77,7 +92,7 @@ class SettingsController extends DashboardController
                 
                 $pattern = '/record?model=' . SettingsModel::class;
                 
-                $existing = $this->indoSafe($pattern, array('p.alias' => $record['alias'], 'p.is_active' => 1));                
+                $existing = $this->indosafe($pattern, array('p.alias' => $record['alias'], 'p.is_active' => 1));                
                 if (isset($existing['id'])) {
                     $id = $existing['id'];
                     $this->indoput($pattern, array('record' => $record, 'content' => $content, 'condition' => array('WHERE' => "id=$id")));
@@ -103,9 +118,9 @@ class SettingsController extends DashboardController
                 $this->indolog('contents', $level, $message, $context);
             }
         } else {
-            $template = $this->twigDashboard($this->text('settings'));
             if (!$this->isUserCan('system_content_settings')) {
-                return $template->alertNoPermission();
+                $this->dashboardProhibited()->render();
+                return;
             }
 
             $alias = $this->getUser()->getOrganization()['alias'];
@@ -118,18 +133,14 @@ class SettingsController extends DashboardController
                 $record = array('alias' => $alias);
             }
             
-            $mailer_rows = $this->indoSafe('/record/rows?model=' . MailerModel::class);
+            $mailer_rows = $this->indosafe('/record/rows?model=' . MailerModel::class);
             if (empty($mailer_rows)) {
                 $mailer = array('is_smtp' => 1, 'smtp_auth' => 1);
             } else {
                 $mailer = end($mailer_rows);
             }
             
-            $template->render(
-                $this->twigTemplate(dirname(__FILE__) . '/settings.html',
-                    array('record' => $record, 'mailer' => $mailer)
-                )
-            );
+            $this->twigDashboard(dirname(__FILE__) . '/settings.html', array('record' => $record, 'mailer' => $mailer))->render();
 
             $this->indolog('contents', LogLevel::NOTICE, 'Системийн тохируулгыг нээж үзэж байна', $context);
         }
@@ -151,7 +162,7 @@ class SettingsController extends DashboardController
             
             $pattern = '/record?model=' . SettingsModel::class;
             
-            $existing = $this->indoSafe($pattern, array('p.alias' => $alias, 'p.is_active' => 1));
+            $existing = $this->indosafe($pattern, array('p.alias' => $alias, 'p.is_active' => 1));
             $old_favico_file = basename($existing['favico'] ?? '');
             $old_shortcut_icon_file = basename($existing['shortcut_icon'] ?? '');
             $old_apple_touch_icon_file = basename($existing['apple_touch_icon'] ?? '');
@@ -250,7 +261,7 @@ class SettingsController extends DashboardController
             $level = LogLevel::INFO;
             $message = 'Системийн тохируулгыг амжилттай хадгаллаа';
         } catch (Throwable $e) {
-            echo $this->respondJSON(array('message' => $e->getMessage()));                
+            $this->respondJSON(array('message' => $e->getMessage()));                
 
             $level = LogLevel::ERROR;
             $message = 'Системийн тохируулгыг хадгалах үед алдаа гарч зогслоо';
@@ -276,7 +287,7 @@ class SettingsController extends DashboardController
             $record['smtp_auth'] = isset($record['smtp_auth']) && $record['smtp_auth'] == 'on' ? 1 : 0;            
             $context['record'] = $record;
             
-            $mailer_rows = $this->indoSafe('/record/rows?model=' . MailerModel::class);
+            $mailer_rows = $this->indosafe('/record/rows?model=' . MailerModel::class);
             if (!empty($mailer_rows)) {
                 $existing = end($mailer_rows);
             }

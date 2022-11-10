@@ -13,7 +13,9 @@
                                 <select class="form-select" name="org_parent_id">
                                     <option value="0"{{ record['parent_id'] is null or record['parent_id'] == 0 ? ' selected' : '' }}>- {{ localization.code == 'mn' ? 'Үндсэн байгууллага' : 'Main organization' }} -</option>
                                     {% for org in parents %}
+                                    {% if org['id'] != record['id'] %}
                                     <option value="{{ org['id'] }}"{{ record['parent_id'] == org['id'] ? ' selected' : '' }}>{{ org['name']|e }}</option>
+                                    {% endif %}
                                     {% endfor %}
                                 </select>
                                 <label>{{ 'parent'|text }}</label>
@@ -21,7 +23,7 @@
                         </div>
                         <div class="col">
                             <div class="form-floating">
-                                <input class="form-control" required name="org_alias" value="{{ record['alias'] }}" maxlength="16" placeholder="RBAC" type="text" autocomplete="off">
+                                <input class="form-control" required name="org_alias" value="{{ record['alias'] }}" maxlength="64" placeholder="RBAC" type="text" autocomplete="off">
                                 <label>RBAC</label>
                                 <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
                             </div>

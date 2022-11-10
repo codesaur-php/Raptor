@@ -16,8 +16,11 @@ class Application extends \codesaur\Http\Application\Application
 
         $this->use(new Authentication\LoginRouter());
         $this->use(new Account\AccountRouter());
+        $this->use(new Organization\OrganizationRouter());
+        $this->use(new RBAC\RBACRouter());
         $this->use(new Localization\LocalizationRouter());
         $this->use(new Contents\ContentsRouter());
+        $this->use(new File\FileRouter());
         $this->use(new Log\LogsRouter());
         
         $this->GET('/', [Dashboard\DashboardController::class, 'index'])->name('home');

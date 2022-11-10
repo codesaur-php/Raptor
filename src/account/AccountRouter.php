@@ -17,18 +17,5 @@ class AccountRouter extends Router
         $this->GET('/accounts/requests/{table}/modal', [AccountController::class, 'requestsModal'])->name('accounts-requests-modal');
         $this->POST('/account/request/approve', [AccountController::class, 'requestApprove'])->name('account-request-approve');
         $this->DELETE('/account/request/delete', [AccountController::class, 'requestDelete'])->name('account-request-delete');
-        
-        $this->GET('/organization/user/list', [OrganizationUserController::class, 'index'])->name('organization-user');
-        $this->GET_POST('/organization/user/set/{uint:account_id}', [OrganizationUserController::class, 'set'])->name('organization-user-set');
-        
-        $this->GET('/organizations', [OrganizationController::class, 'index'])->name('organizations');
-        $this->GET('/organizations/datatable', [OrganizationController::class, 'datatable'])->name('organizations-datatable');
-        $this->GET_POST('/organizations/organization/insert', [OrganizationController::class, 'insert'])->name('organization-insert');
-        $this->GET_PUT('/organizations/organization/update/{uint:id}', [OrganizationController::class, 'update'])->name('organization-update');
-        $this->GET('/organizations/organization/view/{uint:id}', [OrganizationController::class, 'view'])->name('organization-view');
-        $this->DELETE('/organizations/organization/delete', [OrganizationController::class, 'delete'])->name('organization-delete');
-
-        $this->GET_POST('/rbac/user/role/{uint:id}', [RBACController::class, 'setUserRole'])->name('rbac-set-user-role');
-        $this->GET('/rbac/role/view', [RBACController::class, 'viewRole'])->name('rbac-role-view');
     }
 }

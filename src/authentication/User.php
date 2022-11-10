@@ -3,7 +3,7 @@
 namespace Raptor\Authentication;
 
 
-class User implements RBACUserInterface
+class User implements UserInterface
 {
     private $_jwt;
     private $_rbac;
@@ -57,14 +57,19 @@ class User implements RBACUserInterface
     {
         return $this->_account;
     }
-    
-    public function getOrganization(): array
+
+    public function getAlias()
     {
-        return $this->_organizations[0];
+        return $this->getOrganization()['alias'] ?? '';
     }
     
     public function getOrganizations(): array
     {
         return $this->_organizations;
+    }
+
+    public function getOrganization(): array
+    {
+        return $this->_organizations[0] ?? array();
     }
 }

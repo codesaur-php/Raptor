@@ -1,5 +1,7 @@
 /vendor/
 /nbproject/
 /example/public/
+/private/*
+!/private/.htaccess
 
 composer.lock

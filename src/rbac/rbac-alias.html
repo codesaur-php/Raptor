@@ -1,0 +1,95 @@
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-4 mt-3">
+    <h3 class="text-danger" style="padding-right:10px"><i class="bi bi-shield-fill-check"></i> RBAC / {{ alias ~ (title is empty ? '' : ' / ' ~ title)}}</h3>
+    <div class="mb-2 mb-md-0">
+        <button type="button" class="btn btn-info shadow-sm text-white" href="{{ 'rbac-insert-role'|link({'alias':alias}) }}?title={{ title|e }}" data-bs-target="#dashboard-modal" data-bs-toggle="modal">
+            <i class="bi bi-plus-circle"></i> Add Role
+        </button>
+        <button type="button" class="btn btn-success shadow-sm" href="{{ 'rbac-insert-permission'|link({'alias':alias}) }}?title={{ title|e }}" data-bs-target="#dashboard-modal" data-bs-toggle="modal">
+            <i class="bi bi-plus-circle"></i> Add Permission
+        </button>
+    </div>
+</div>
+<table id="rbac_{{ alias }}" class="table table-striped" style="width:100%">
+    <thead style="background-color:#ff9999">
+        <tr>
+            <th scope="col">Role</th>
+            {% for permission in permissions %}
+            <th scope="col" class="text-center">
+                <span style="cursor:pointer" data-toggle="tooltip" title="{{ permission['description']|e }}">
+                    {{ permission['name'] }}
+                </span>
+            </th>
+            {% endfor %}
+        </tr>
+    </thead>
+    <tbody>
+        {% for role in roles %}
+        <tr>
+            <th scope="row">
+                <span style="cursor:pointer" data-toggle="tooltip" data-placement="right" title="{{ role['description']|e }}">
+                    {{ role['name'] }}
+                </span>
+            </th>
+            {% for permission in permissions %}
+            <td class="text-center">
+                <input{% if role_permission[role['id']][permission['id']] is defined %} checked{% endif %} role_id="{{ role['id'] }}" permission_id="{{ permission['id'] }}" class="role_permission" type="checkbox">
+            </td>
+            {% endfor %}
+        </tr>
+        {% endfor %}
+    </tbody>
+    <tfoot></tfoot>
+</table>
+<link href="https://cdn.datatables.net/1.11.3/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+<script defer src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/jquery.blockUI/2.70/jquery.blockUI.min.js"></script>
+<script defer src="https://cdn.datatables.net/1.11.3/js/jquery.dataTables.min.js"></script>
+<script defer src="https://cdn.datatables.net/1.11.3/js/dataTables.bootstrap5.min.js"></script>
+<script type="text/javascript">
+    document.addEventListener('DOMContentLoaded', function() {
+        let rbacTable = document.querySelector('table#rbac_{{ alias }}');
+        $(rbacTable).DataTable({
+            scrollX: true,
+            order: [[ 0, 'asc' ]],
+            fixedColumns: { leftColumns: 1},
+            columnDefs: [{ targets: '_all', orderable: false }]
+            {% if localization.code == 'mn' %}, language: {url: 'https://cdn.datatables.net/plug-ins/1.11.3/i18n/mn.json'}{% endif %}
+        });
+        
+        
+        var setRolePermission = function() {
+            $.blockUI({message: '{{ 'loading'|text|e }}', baseZ: 2000});
+            
+            let formData = new FormData();
+            formData.append('role_id',this.getAttribute('role_id'));
+            formData.append('permission_id', this.getAttribute('permission_id'));
+            fetch(
+                    '{{ 'rbac-set-role-permission'|link({'alias':alias}) }}',
+                    {
+                        method: this.checked ? 'POST' : 'PUT',
+                        body: formData
+                    }
+            ).then(res => {
+                if (!res.ok) {
+                    throw new Error(res.statusText);
+                }
+                return res.json();
+            }).then(response => {
+                let type = response.type ? response.type : 'warning';
+                let title = response.title ? response.title : '{{ 'notice'|text|e }}';
+                NotifyTop(type, title, response.message ? response.message : '');
+                $.unblockUI();
+            })
+            .catch(error => {
+                NotifyTop('danger', '{{ 'error'|text }}', error.message);
+                $.unblockUI();
+                return;
+            });
+        };
+
+        var rolePermissionInputs = document.getElementsByClassName('role_permission');
+        for (var i = 0; i < rolePermissionInputs.length; i++) {
+            rolePermissionInputs[i].addEventListener('click', setRolePermission);
+        }
+    });
+</script>

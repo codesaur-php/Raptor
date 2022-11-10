@@ -1,11 +1,12 @@
 <?php
 
-namespace Raptor\Account;
+namespace Raptor\Organization;
 
 use Exception;
 use Throwable;
 
 use Psr\Log\LogLevel;
+use Psr\Http\Message\ServerRequestInterface;
 
 use codesaur\RBAC\Accounts;
 
@@ -16,10 +17,22 @@ use Raptor\Dashboard\DashboardController;
 
 class OrganizationUserController extends DashboardController
 {
+    function __construct(ServerRequestInterface $request)
+    {
+        $meta = $request->getAttribute('meta', array());
+        $localization = $request->getAttribute('localization');
+        if (isset($localization['code'])
+            && isset($localization['text']['organization'])
+        ) {
+            $meta['content']['title'][$localization['code']] = $localization['text']['organization'];
+            $request = $request->withAttribute('meta', $meta);
+        }
+        
+        parent::__construct($request);
+    }
+    
     public function index()
     {
-        $template = $this->twigDashboard($this->text('organizations'));
-        
         try {
             if (!$this->isUserAuthorized()) {
                 throw new Exception($this->text('system-no-permission'));
@@ -30,7 +43,7 @@ class OrganizationUserController extends DashboardController
                 'WHERE t1.is_active=1 AND t2.is_active=1 AND t1.account_id=' . $this->getUser()->getAccount()['id'];
             $organizations = $this->indo('/statement', array('query' => $user_orgs_query));
 
-            $template->render($this->twigTemplate(dirname(__FILE__) . '/organization-user.html', array('organizations' => $organizations)));
+            $this->twigDashboard(dirname(__FILE__) . '/organization-user.html', array('organizations' => $organizations))->render();
             
             $level = LogLevel::NOTICE;
             $message = 'Хэрэглэгч өөрийн байгууллагуудын жагсаалтыг нээж үзэж байна';
@@ -38,7 +51,7 @@ class OrganizationUserController extends DashboardController
             $level = LogLevel::ERROR;
             $message = $e->getMessage();
             
-            $template->alertNoPermission($message);
+            $this->dashboardProhibited($message)->render();
         } finally {
             $this->indolog('account', $level, $message);
         }        
@@ -141,7 +154,7 @@ class OrganizationUserController extends DashboardController
                     'message' => $e->getMessage()
                 ));
             } else {
-                echo $this->errorNoPermissionModal($e->getMessage());
+                $this->modalProhibited($e->getMessage())->render();
             }
             
             $context['error'] = array('code' => $e->getCode(), 'message' => $e->getMessage());

@@ -8,7 +8,6 @@
             <table class="table table-hover" id="forgot_requests">
                 <thead>
                     <tr>
-                        <th scope="col">#</th>
                         <th scope="col">{{ 'email'|text }}</th>
                         <th scope="col">{{ 'account'|text }}</th>
                         <th scope="col">{{ 'language'|text }}</th>
@@ -19,8 +18,7 @@
                 <tbody>
                 {% for row in rows %}
                     <tr>
-                        <th scope="row">{{ row['use_id'] }}</th>
-                        <td>{{ row['email'] }}</td>
+                        <th scope="row">{{ row['email'] }}</th>
                         <td>{{ row['first_name'] }} {{ row['last_name'] }} [{{ row['username'] }}: {{ row['account'] }}]</td>
                         <td><img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.1/flags/{{ row['code'] }}.png"></td>
                         <td>
@@ -48,7 +46,7 @@
 </div>
 <script type="text/javascript">
     $('table#forgot_requests').DataTable({
-        pageLength: 10, responsive: true, order: [[ 5, 'desc' ]],
+        pageLength: 10, responsive: true, order: [[ 4, 'desc' ]],
         lengthMenu: [[5, 10, 20, 50, -1], [5, 10, 20, 50, "{{ 'all'|text|e }}"]]
         {% if localization.code == 'mn' %}, language: {url: 'https://cdn.datatables.net/plug-ins/1.11.3/i18n/mn.json'}{% endif %}
     });

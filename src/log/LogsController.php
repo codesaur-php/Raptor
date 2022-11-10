@@ -5,16 +5,30 @@ namespace Raptor\Log;
 use Exception;
 use Throwable;
 
+use Psr\Http\Message\ServerRequestInterface;
+
 use codesaur\Template\TwigTemplate;
 
 use Raptor\Dashboard\DashboardController;
 
 class LogsController extends DashboardController
 {
+    function __construct(ServerRequestInterface $request)
+    {
+        $meta = $request->getAttribute('meta', array());
+        $localization = $request->getAttribute('localization');
+        if (isset($localization['code'])
+            && isset($localization['text']['access-log'])
+        ) {
+            $meta['content']['title'][$localization['code']] = $localization['text']['access-log'];
+            $request = $request->withAttribute('meta', $meta);
+        }
+        
+        parent::__construct($request);
+    }
+    
     public function index()
     {
-        $template = $this->twigDashboard($this->text('access-log'));
-        
         try {
             if (!$this->isUserCan('system_logger')) {
                 throw new Exception($this->text('system-no-permission'));
@@ -26,10 +40,10 @@ class LogsController extends DashboardController
                 $logs[$name] = $this->getLogsFrom($name);
             }
             
-            $template->render($this->twigTemplate(dirname(__FILE__) . '/index-list-logs.html',
-                array('names' => $names, 'logs' => $logs, 'accounts' => $this->getAccounts())));
+            $this->twigDashboard(dirname(__FILE__) . '/index-list-logs.html',
+                array('names' => $names, 'logs' => $logs, 'accounts' => $this->getAccounts()))->render();
         } catch (Throwable $e) {
-            $template->alertNoPermission($e->getMessage());
+            $this->dashboardProhibited($e->getMessage())->render();
         }
     }
     
@@ -66,7 +80,7 @@ class LogsController extends DashboardController
 
             return true;
         } catch (Throwable $e) {
-            echo $this->errorNoPermissionModal($e->getMessage());
+            $this->modalProhibited($e->getMessage())->render();
 
             return false;
         }

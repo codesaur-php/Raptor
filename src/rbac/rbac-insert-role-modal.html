@@ -1,0 +1,35 @@
+<div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+    <div class="modal-content">
+        <div class="modal-header modal-header-solid">
+            <h6 class="modal-title text-uppercase text-info">Add Role</h6>
+            <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="{{ 'close'|text|e }}"></button>
+        </div>
+        <div class="modal-body">
+            <form class="needs-validation" novalidate autocomplete="off" id="rbac_role_insert" role="form" action="{{ 'rbac-insert-role'|link({'alias':alias}) }}?title={{ title|e }}" method="POST" enctype="multipart/form-data">
+                <div style="height:200px;overflow-y:auto;overflow-x:hidden;">
+                    <div class="form-group row">
+                        <label class="col-3 col-form-label text-right">{{ 'name'|text }}</label>
+                        <div class="col-9">
+                            <input required autocomplete="off" maxlength="128" name="name" placeholder="" value="" type="text" class="form-control">
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label class="col-3 col-form-label text-right">{{ 'description'|text }}</label>
+                        <div class="col-9">
+                            <textarea class="form-control" name="description"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer modal-footer-solid">
+            <button class="submit-new-role btn btn-info shadow-sm text-light" type="submit">
+                <i class="bi bi-check"></i> <strong>{{ 'submit'|text }}</strong>
+            </button>
+            <button class="btn btn-secondary shadow-sm" data-bs-dismiss="modal">{{ 'back'|text }}</button>
+        </div>
+    </div>
+</div>
+<script type="text/javascript">
+FormSubmitHandler('.submit-new-role', 'form#rbac_role_insert');
+</script>

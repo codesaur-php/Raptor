@@ -8,7 +8,6 @@
             <table class="table table-hover" id="new_account_requests">
                 <thead>
                     <tr>
-                        <th class="text-primary" scope="col">#</th>
                         <th class="text-primary" scope="col">{{ 'username'|text }}</th>
                         <th class="text-primary" scope="col">{{ 'email'|text }}</th>
                         <th class="text-primary" scope="col">{{ 'language'|text }}</th>
@@ -20,8 +19,7 @@
                 <tbody>
                 {% for row in rows %}    
                     <tr>
-                        <th scope="row">{{ row['id'] }}</th>
-                        <td><strong>{{ row['username'] }}</strong></th>
+                        <th scope="row"><strong>{{ row['username'] }}</strong></th>
                         <td>{{ row['email'] }}</td>
                         <td><img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.1/flags/{{ row['code'] }}.png"></td>
                         <td>{{ row['created_at'] }}</td>
@@ -58,7 +56,7 @@
 let approveAskHtml = {% if localization.code == 'mn' %}'<p class="text-primary">Та ({0}) хэрэглэгчийн бүртгүүлэх хүсэлтийг зөвшөөрөхдөө итгэлтэй байна уу?</p>'{% else %}'<p class="text-primary">Are you sure to accept this account request ({0})?</p>'{% endif %};
 let deleteRequestAskHtml = {% if localization.code == 'mn' %}'<p class="text-danger">Та ({0}) хэрэглэгчийн бүртгүүлэх хүсэлтийг устгахдаа итгэлтэй байна уу?</p>'{% else %}'<p class="text-danger">Are you sure to delete this account request ({0})?</p>'{% endif %};
 $('table#new_account_requests').DataTable({
-    pageLength: 10, responsive: true, order: [[ 4, 'desc' ]],
+    pageLength: 10, responsive: true, order: [[ 3, 'desc' ]],
     lengthMenu: [[5, 10, 20, 50, -1], [5, 10, 20, 50, "{{ 'all'|text|e }}"]]
     {% if localization.code == 'mn' %}, language: {url: 'https://cdn.datatables.net/plug-ins/1.11.3/i18n/mn.json'}{% endif %}
 });

@@ -15,8 +15,8 @@
         }
     ],
     "require": {
-        "codesaur/indoraptor": ">=3.6.9",
-        "codesaur/template": ">=1.2.2",
+        "codesaur/indoraptor": ">=3.7.2",
+        "codesaur/template": ">=1.2.3",
         "codesaur/globals": ">=1.2.3"
     },
     "autoload": {
@@ -27,6 +27,8 @@
             "Raptor\\Dashboard\\": "src/dashboard/",
             "Raptor\\File\\": "src/file/",
             "Raptor\\Account\\": "src/account/",
+            "Raptor\\Organization\\": "src/organization/",
+            "Raptor\\RBAC\\": "src/rbac/",
             "Raptor\\Localization\\": "src/localization/",
             "Raptor\\Contents\\": "src/contents/",
             "Raptor\\Log\\": "src/log/"

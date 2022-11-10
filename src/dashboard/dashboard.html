@@ -5,7 +5,7 @@
 <html lang="{{ languageCode }}">
     <head>
         <meta charset="{{ meta['charset'] ?? 'utf-8' }}">
-        <title>{{ meta['content']['title'][languageCode] is not empty ? meta['content']['title'][languageCode] : 'dashboard'|text }}</title>
+        <title>{{ (meta['content']['title'][languageCode] ?? 'dashboard'|text)|e }}</title>
         <meta name="robots" content="{{ meta['robots']|default('index,follow')|e }}">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         {% if meta['author'] is defined %}<meta name="author" content="{{ meta['author'] }}">{% endif %}
@@ -119,7 +119,8 @@
                             {% if user.getOrganizations()|length > 1 %}
                             <li class="nav-item">
                                 <a class="nav-link{{ request_path == 'organization-user'|link ? ' active' : '' }}" href="{{ 'organization-user'|link }}">
-                                    <i class="bi bi-bank" style="position:relative;left:7px;margin-right:15px"></i> {{ 'organization'|text }}
+                                    <i class="bi bi-bank side-menu-icon"
+                                    {% if user.getAccount()['photo'] is not empty %} style="position:relative;left:7px;margin-right:15px"{% endif %}}></i> {{ 'organization'|text }}
                                 </a>
                             </li>
                             {% endif %}

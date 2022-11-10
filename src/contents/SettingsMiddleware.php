@@ -13,22 +13,27 @@ use Psr\Http\Server\RequestHandlerInterface;
 use Indoraptor\InternalRequest;
 use Indoraptor\Record\SettingsModel;
 
-use Raptor\Authentication\RBACUserInterface;
+use Raptor\Authentication\UserInterface;
 
 class SettingsMiddleware implements MiddlewareInterface
 {   
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
         try {
-            ob_start();            
+            ob_start();
             $alias = getenv('CODESAUR_ORGANIZATION_ALIAS', true);
             $user = $request->getAttribute('user');
-            if ($user instanceof RBACUserInterface) {
+            if ($user instanceof UserInterface) {
                 $alias = $user->getOrganization()['alias'];
-            }            
-            $request->getAttribute('indo')->handle(new InternalRequest(
-                'INTERNAL', '/record?model=' . SettingsModel::class, array('alias' => $alias ?: 'system', 'is_active' => 1)));
-            $settings = json_decode(ob_get_contents(), true);            
+            }
+            $localization = $request->getAttribute('localization');
+            $payload = array('alias' => $alias ?: 'system', 'is_active' => 1);
+            if (!empty($localization['code'])) {
+               $payload['code'] = 'mn';
+           }
+            $request->getAttribute('indo')->handle(
+                new InternalRequest('INTERNAL', '/record?model=' . SettingsModel::class, $payload));
+            $settings = json_decode(ob_get_contents(), true);
             if (isset($settings['error']['code'])
                 && isset($settings['error']['message'])
             ) {

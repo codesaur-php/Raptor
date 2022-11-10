@@ -7,6 +7,7 @@ use Exception;
 use Throwable;
 
 use Psr\Log\LogLevel;
+use Psr\Http\Message\ServerRequestInterface;
 
 use Indoraptor\Localization\LanguageModel;
 use Indoraptor\Localization\CountriesModel;
@@ -15,14 +16,28 @@ use Raptor\Dashboard\DashboardController;
 
 class LanguageController extends DashboardController
 {
+    function __construct(ServerRequestInterface $request)
+    {
+        $meta = $request->getAttribute('meta', array());
+        $localization = $request->getAttribute('localization');
+        if (isset($localization['code'])
+            && isset($localization['text']['languages'])
+        ) {
+            $meta['content']['title'][$localization['code']] = $localization['text']['languages'];
+            $request = $request->withAttribute('meta', $meta);
+        }
+        
+        parent::__construct($request);
+    }
+    
     public function index()
     {
-        $template = $this->twigDashboard($this->text('languages'));
         if (!$this->isUserCan('system_localization_index')) {
-            return $template->alertNoPermission();
+            $this->dashboardProhibited()->render();
+            return;
         }
 
-        $template->render($this->twigTemplate(dirname(__FILE__) . '/languages-index.html'));
+        $this->twigDashboard(dirname(__FILE__) . '/languages-index.html')->render();
         
         $this->indolog('localization', LogLevel::NOTICE, 'Хэлний жагсаалтыг нээж үзэж байна', array('model' => LanguageModel::class));
     }
@@ -47,12 +62,12 @@ class LanguageController extends DashboardController
                 }
                 $context['payload'] = $payload;
                 
-                $mother = $this->indoSafe('/record?model=' . LanguageModel::class, array('app' => 'common', 'code' => $payload['copy'], 'is_active' => 1));                
+                $mother = $this->indosafe('/record?model=' . LanguageModel::class, array('code' => $payload['copy'], 'is_active' => 1));
                 if (!isset($mother['code'])) {
                     throw new Exception($this->text('invalid-request'));
                 }
                 
-                $languages = $this->indoSafe('/language?app=common', [], 'GET');
+                $languages = $this->indosafe('/language?app=common', [], 'GET');
                 foreach ($languages as $key => $value) {
                     if ($payload['short'] == $key && $payload['full'] == $value) {
                         throw new Exception($this->text('lang-existing'));
@@ -68,7 +83,7 @@ class LanguageController extends DashboardController
                 $id = $this->indopost('/record?model=' . LanguageModel::class, array('record' => array('code' => $payload['short'], 'full' => $payload['full'])));
                 $context['record'] = $id;
                 
-                $translated = $this->indoSafe('/language/copy/multimodel/content', array('from' => $mother['code'], 'to' => $payload['short']), 'POST');
+                $translated = $this->indosafe('/language/copy/multimodel/content', array('from' => $mother['code'], 'to' => $payload['short']), 'POST');
                 if (is_array($translated)) {
                     $this->indolog(
                         'localization',
@@ -89,7 +104,7 @@ class LanguageController extends DashboardController
             } else {
                 $code = preg_replace('/[^a-z]/', '', $this->getLanguageCode());
                 $vars = array(
-                    'countries' => $this->indoSafe('/record/rows?model=' . CountriesModel::class,
+                    'countries' => $this->indosafe('/record/rows?model=' . CountriesModel::class,
                         array('condition' => array('WHERE' => "c.code='$code'"))
                     )
                 );
@@ -104,9 +119,9 @@ class LanguageController extends DashboardController
             }
         } catch (Throwable $e) {
             if ($is_submit) {
-                echo $this->respondJSON(array('message' => $e->getMessage()));
+                $this->respondJSON(array('message' => $e->getMessage()));
             } else {
-                echo $this->errorNoPermissionModal($e->getMessage());
+                $this->modalProhibited($e->getMessage())->render();
             }
             
             $level = LogLevel::ERROR;
@@ -138,7 +153,7 @@ class LanguageController extends DashboardController
             $level = LogLevel::NOTICE;
             $message = "{$record['full']} хэлний мэдээллийг нээж үзэж байна";
         } catch (Throwable $e) {
-            echo $this->errorNoPermissionModal($e->getMessage());
+            $this->modalProhibited($e->getMessage())->render();
             
             $level = LogLevel::ERROR;
             $message = 'Хэлний мэдээллийг нээж үзэх үед алдаа гарч зогслоо байна';
@@ -162,21 +177,19 @@ class LanguageController extends DashboardController
                 $payload = $this->getParsedBody();
                 if (empty($payload['code'])
                     || empty($payload['full'])
-                    || empty($payload['app'])
                 ) {
                     throw new Exception($this->text('invalid-request'));
                 }
                 $record = array(
                     'code' => $payload['code'],
                     'full' => $payload['full'],
-                    'app' => $payload['app'],
                     'description' => $payload['description'] ?? null,
                     'is_default' => ($payload['is_default'] ?? 'off') != 'on' ? 0 : 1
                 );
                 $context['record'] = $record;
                 $context['record']['id'] = $id;
 
-                $defLanguage = $this->indoSafe('/record?model=' . LanguageModel::class, array('is_default' => 1));
+                $defLanguage = $this->indosafe('/record?model=' . LanguageModel::class, array('is_default' => 1));
                 if (isset($defLanguage['id']) && $record['is_default'] == 1) {
                     if ($defLanguage['id'] != $id) {
                         $this->indoput('/record?model=' . LanguageModel::class,
@@ -216,9 +229,9 @@ class LanguageController extends DashboardController
             throw new Exception($err->getMessage(), $err->getCode());
         } catch (Throwable $e) {
             if ($is_submit) {
-                echo $this->respondJSON(array('message' => $e->getMessage()));
+                $this->respondJSON(array('message' => $e->getMessage()));
             } else {
-                echo $this->errorNoPermissionModal($e->getMessage());
+                $this->modalProhibited($e->getMessage())->render();
             }
             
             $level = LogLevel::ERROR;
@@ -252,7 +265,7 @@ class LanguageController extends DashboardController
                 $table = "table={$payload['table']}&";
             }
             
-            $defLanguage = $this->indoSafe("/record?{$table}model=" . LanguageModel::class, array('is_default' => 1));
+            $defLanguage = $this->indosafe("/record?{$table}model=" . LanguageModel::class, array('is_default' => 1));
             if (isset($defLanguage['id'])) {
                 if ($defLanguage['id'] == $payload['id']) {
                     throw new Exception('Cannot remove default language!');
@@ -300,7 +313,6 @@ class LanguageController extends DashboardController
                 
                 $row[] = htmlentities($record['full']);
                 $row[] = '<img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.1/flags/' . $record['code'] . '.png">';
-                $row[] = htmlentities($record['app']);
                 $row[] = htmlentities($record['created_at']);
 
                 $action = '<a class="ajax-modal btn btn-sm btn-info shadow-sm" data-bs-target="#dashboard-modal" data-bs-toggle="modal" ' .

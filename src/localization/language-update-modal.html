@@ -17,11 +17,6 @@
                         <input class="form-control" name="full" required  value="{{ record['full']|e }}" maxlength="128" placeholder="" type="text" autocomplete="off">
                         <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
                     </div>
-                    <div class="col">
-                        <label class="form-label">Application</label>
-                        <input class="form-control" name="app" required value="{{ record['app']|e }}" maxlength="64" placeholder="" type="text" autocomplete="off">
-                        <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
-                    </div>
                 </div>
                 <div class="row mb-3">
                     <div class="col">

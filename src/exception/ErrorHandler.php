@@ -25,14 +25,16 @@ class ErrorHandler implements ExceptionHandlerInterface
         $title = $throwable instanceof Exception ? 'Exception' : 'Error';
         
         if ($code !== 0) {
-            $status = "STATUS_$code";
-            $reasonPhrase = ReasonPrhase::class;
-            if (defined("$reasonPhrase::$status")
-                    && !headers_sent()
-            ) {
-                http_response_code($code);
-            }
-            $title .= " $code";
+            $title .= " $code";            
+            if (class_exists(ReasonPrhase::class)) {
+                $status = "STATUS_$code";
+                $reasonPhrase = ReasonPrhase::class;
+                if (defined("$reasonPhrase::$status")
+                        && !headers_sent()
+                ) {
+                    http_response_code($code);
+                }
+            }            
         }
         
         error_log("$title: $message");

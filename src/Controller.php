@@ -6,15 +6,15 @@ use Throwable;
 use Exception;
 
 use Twig\TwigFilter;
+use Psr\Log\LogLevel;
 
 use codesaur\Globals\Server;
 use codesaur\Router\RouterInterface;
 use codesaur\Template\TwigTemplate;
-use codesaur\Template\IndexTemplate;
 
 use Indoraptor\InternalRequest;
 
-use Raptor\Authentication\RBACUserInterface;
+use Raptor\Authentication\UserInterface;
 
 class Controller extends \codesaur\Http\Application\Controller
 {
@@ -51,14 +51,14 @@ class Controller extends \codesaur\Http\Application\Controller
         return $this->getAttribute('router');
     }
     
-    final public function getUser(): ?RBACUserInterface
+    final public function getUser(): ?UserInterface
     {
         return $this->getAttribute('user');
     }
     
     final public function isUserAuthorized(): bool
     {
-        return $this->getUser() instanceof RBACUserInterface;
+        return $this->getUser() instanceof UserInterface;
     }
     
     final public function isUserCan(string $permission): bool
@@ -112,32 +112,24 @@ class Controller extends \codesaur\Http\Application\Controller
         return '{' . $key . '}';
     }
     
-    public function twigTemplate(string $template_path, array $vars = [])
+    public function twigTemplate(string $template, array $vars = [])
     {
-        $template = new TwigTemplate($template_path, $vars);
-        return $this->setTemplateGlobal($template);
-    }
-    
-    public function setTemplateGlobal(TwigTemplate &$template)
-    {
-        $template->set('user', $this->getUser());
-        $template->set('localization', $this->getAttribute('localization'));
-        $template->set('request_path', rtrim($_SERVER['REQUEST_URI'], '/'));
-        $template->set('request_uri', (string)$this->getRequest()->getUri());
-        $template->addFilter(new TwigFilter('text', function ($key): string
+        $twig = new TwigTemplate($template, $vars);            
+        $twig->set('user', $this->getUser());
+        $twig->set('localization', $this->getAttribute('localization'));
+        $twig->set('request_path', rtrim($_SERVER['REQUEST_URI'], '/'));
+        $twig->set('request_uri', (string)$this->getRequest()->getUri());
+        $twig->addFilter(new TwigFilter('text', function ($key): string
         {
             return $this->text($key);
         }));
-        $template->addFilter(new TwigFilter('link', function ($routeName, $params = [], $is_absolute = false): string
+        $twig->addFilter(new TwigFilter('link',
+            function ($routeName, $params = [], $is_absolute = false): string
         {
             return $this->generateLink($routeName, $params, $is_absolute);
         }));
         
-        if ($template instanceof IndexTemplate) {
-            $template->set('meta', $this->getAttribute('meta'));
-        }
-        
-        return $template;
+        return $twig;
     }
     
     public function respondJSON(array $res)
@@ -205,7 +197,7 @@ class Controller extends \codesaur\Http\Application\Controller
         }
     }
     
-    final public function indoSafe(string $pattern, array $payload = array(), string $method = 'INTERNAL', bool $assoc = true)
+    final public function indosafe(string $pattern, array $payload = array(), string $method = 'INTERNAL', bool $assoc = true)
     {
         try {
             return $this->indo($pattern, $payload, $method, $assoc);
@@ -213,6 +205,19 @@ class Controller extends \codesaur\Http\Application\Controller
             $this->errorLog($e);
             
             return false;
+        }
+    }
+    
+    public function tryDeleteFile(string $filePath)
+    {
+        try {
+            if (file_exists($filePath)) {
+                unlink($filePath);
+                
+                $this->indolog('file', LogLevel::ALERT, "$filePath файлыг устгалаа");
+            }
+        } catch (Throwable $ex) {
+            $this->errorLog($ex);
         }
     }
     
