@@ -64,7 +64,7 @@ $('table#new_account_requests').DataTable({
 document.querySelectorAll('#new_account_requests a.approve-request').forEach(function(a) {
     a.addEventListener('click', function(e) {
         e.preventDefault();
-        let name = (a.parentNode.parentNode.children[1].innerHTML + ' => ' + a.parentNode.parentNode.children[2].innerHTML).replace(/<\/?[^>]+(>|$)/g, '');
+        let name = (a.parentNode.parentNode.children[0].innerHTML + ' => ' + a.parentNode.parentNode.children[1].innerHTML).replace(/<\/?[^>]+(>|$)/g, '');
         Swal.fire({
             html: '<i class="bi bi-person-plus text-info mb-2" style="font-size:3rem"></i>' + approveAskHtml.format(name),
             showCancelButton: true,
@@ -113,7 +113,7 @@ document.querySelectorAll('#new_account_requests a.approve-request').forEach(fun
 document.querySelectorAll('#new_account_requests a.delete-request').forEach(function(a) {
     a.addEventListener('click', function(e) {
         e.preventDefault();
-        let name = (a.parentNode.parentNode.children[1].innerHTML + ' => ' + a.parentNode.parentNode.children[2].innerHTML).replace(/<\/?[^>]+(>|$)/g, '');
+        let name = (a.parentNode.parentNode.children[0].innerHTML + ' => ' + a.parentNode.parentNode.children[1].innerHTML).replace(/<\/?[^>]+(>|$)/g, '');
         Swal.fire({
             html: '<i class="bi bi-person-x-fill text-danger mb-2" style="font-size:3rem"></i>' + deleteRequestAskHtml.format(name),
             showCancelButton: true,

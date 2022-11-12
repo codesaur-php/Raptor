@@ -35,27 +35,13 @@ class AccountController extends DashboardController
         }
         
         parent::__construct($request);
-        
-        $this->_log = array(
-            'message' => '',
-            'level' => LogLevel::NOTICE,
-            'context' => array(
-                'model' => Accounts::class,
-                'payload' => $request->getParsedBody()
-            )
-        );
-    }
-    
-    function __destruct()
-    {
-        if (!empty($this->_log['message'])) {
-            $this->indolog('account', $this->_log['level'], $this->_log['message'], $this->_log['context']);
-        }
     }
     
     public function index()
     {
         try {
+            $context = array();                
+                
             if (!$this->isUserCan('system_account_index')) {
                 throw new Exception($this->text('system-no-permission'));
             }
@@ -93,27 +79,32 @@ class AccountController extends DashboardController
                 }
             });
             
-            $this->_log['message'] = 'Хэрэглэгчдийн жагсаалтыг нээж үзэж байна';
-            
             $this->twigDashboard(dirname(__FILE__) . '/account-index.html',
                 array('accounts' => $accounts, 'statuses' => $statuses, 'organizations' => $organizations))->render();
+            
+            $level = LogLevel::NOTICE;
+            $message = 'Хэрэглэгчдийн жагсаалтыг нээж үзэж байна';
         } catch (Throwable $e) {
-            $this->dashboardProhibited("{$this->_log['message']}. {$e->getMessage()}")->render();
-
-            $this->_log['level'] = LogLevel::ERROR;
-            $this->_log['message'] = 'Хэрэглэгчдийн жагсаалтыг нээж үзэх үед алдаа гарлаа';
-            $this->_log['context']['error'] = array('code' => $e->getCode(), 'message' => $e->getMessage());
+            $level = LogLevel::ERROR;
+            $message = 'Хэрэглэгчдийн жагсаалтыг нээж үзэх үед алдаа гарлаа';
+            $context += array('error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]);
+            
+            $this->dashboardProhibited("$message.<br/><br/>{$e->getMessage()}")->render();
+        } finally {
+            $this->indolog('account', $level, $message, $context + array('model' => Accounts::class));
         }
     }
     
     public function insert()
     {
         try {
+            $context = array();
+            
             if (!$this->isUserCan('system_account_insert')) {
                 throw new Exception($this->text('system-no-permission'));
             }
             
-            if ($this->getRequest()->getMethod() == 'POST') {
+            if ($this->getRequest()->getMethod() == 'POST') {                
                 $parsedBody = $this->getParsedBody();
                 if (empty($parsedBody['username']) || empty($parsedBody['email'])
                     || filter_var($parsedBody['email'], FILTER_VALIDATE_EMAIL) === false
@@ -148,7 +139,7 @@ class AccountController extends DashboardController
                             $this->indopost('/record?model=' . OrganizationUserModel::class, array(
                                 'record' => array('organization_id' => $organization, 'account_id' => $id)
                             ));
-                            $this->_log['context']['organization'] = $organization;                        
+                            $context += array('organization' => $organization);
                         }
                     }
                 }
@@ -164,7 +155,7 @@ class AccountController extends DashboardController
                         'condition' => array('WHERE' => "id=$id")
                     );
                     $this->indoput('/record?model=' . Accounts::class, $payload);                    
-                    $this->_log['context']['photo'] = $photo_path;
+                    $context += array('photo' => $photo_path);
                 }
                 
                 $this->respondJSON(array(
@@ -173,14 +164,15 @@ class AccountController extends DashboardController
                     'href' => $this->generateLink('accounts')
                 ));
                 
-                $this->_log['level'] = LogLevel::INFO;
-                $this->_log['message'] = 'Хэрэглэгч үүсгэх үйлдлийг амжилттай гүйцэтгэлээ';
-                $this->_log['context'] += array('id' => $id, 'record' => $record);
+                $level = LogLevel::INFO;
+                $context += array('id' => $id, 'record' => $record);
+                $message = 'Хэрэглэгч үүсгэх үйлдлийг амжилттай гүйцэтгэлээ';
             } else {
                 $organizations = $this->indo('/record/rows?model=' . OrganizationModel::class);
                 $this->twigDashboard(dirname(__FILE__) . '/account-insert.html', array('organizations' => $organizations))->render();
                 
-                $this->_log['message'] = 'Хэрэглэгч үүсгэх үйлдлийг эхлүүллээ';
+                $level = LogLevel::NOTICE;
+                $message = 'Хэрэглэгч үүсгэх үйлдлийг эхлүүллээ';
             }
         } catch (Throwable $e) {
             if ($this->getRequest()->getMethod() == 'POST') {
@@ -189,15 +181,19 @@ class AccountController extends DashboardController
                 $this->dashboardProhibited($e->getMessage())->render();
             }
             
-            $this->_log['level'] = LogLevel::ERROR;
-            $this->_log['message'] = 'Хэрэглэгч үүсгэх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
-            $this->_log['context']['error'] = array('code' => $e->getCode(), 'message' => $e->getMessage());
+            $level = LogLevel::ERROR;
+            $message = 'Хэрэглэгч үүсгэх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
+            $context += array('error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]);
+        } finally {
+            $this->indolog('account', $level, $message, $context + array('model' => Accounts::class));
         }
     }
     
     public function update(int $id)
     {
         try {
+            $context = array();
+            
             if (!$this->isUserAuthorized()
                 || (!$this->getUser()->can('system_account_update')
                     && $this->getUser()->getAccount()['id'] != $id)
@@ -231,8 +227,7 @@ class AccountController extends DashboardController
                     $status = $parsedBody['status'] ?? 'off';
                     $record['status'] = $status != 'on' ? 0 : 1;
                 }
-                $this->_log['context']['record'] = $record;
-                $this->_log['context']['record']['id'] = $id;
+                $context = array('record' => $record + ['id' => $id]);
                 
                 $pattern = '/record?model=' . Accounts::class;
                 
@@ -263,7 +258,7 @@ class AccountController extends DashboardController
                     }
                 }
                 if (isset($record['photo'])) {
-                    $this->_log['context']['record']['photo'] = $record['photo'];
+                    $context['photo'] = $record['photo'];
                 }
                 
                 $this->indoput($pattern, array('record' => $record, 'condition' => ['WHERE' => "id=$id"]));
@@ -294,7 +289,7 @@ class AccountController extends DashboardController
                             'account',
                             LogLevel::ALERT,
                             "{$row['organization_id']} дугаартай байгууллагын хэрэглэгчийн бүртгэлээс $id дугаар бүхий хэрэглэгчийг хаслаа",
-                                array('reason' => 'organization-strip', 'account_id' => $id, 'organization_id' => $row['organization_id'])
+                            array('reason' => 'organization-strip', 'account_id' => $id, 'organization_id' => $row['organization_id'])
                         );
                     }
                 }
@@ -347,8 +342,8 @@ class AccountController extends DashboardController
                     }
                 }
                 
-                $this->_log['level'] = LogLevel::INFO;
-                $this->_log['message'] = "{$record['username']} хэрэглэгчийн мэдээллийг шинэчлэх үйлдлийг амжилттай гүйцэтгэлээ";
+                $level = LogLevel::INFO;
+                $message = "{$record['username']} хэрэглэгчийн мэдээллийг шинэчлэх үйлдлийг амжилттай гүйцэтгэлээ";
             } else {
                 $record = $this->indo('/record?model=' . Accounts::class, array('id' => $id));
                 $organizations = $this->indo('/record/rows?model=' . OrganizationModel::class);
@@ -403,12 +398,13 @@ class AccountController extends DashboardController
                 
                 $this->twigDashboard(dirname(__FILE__) . '/account-update.html', $vars)->render();
                 
-                $this->_log['context'] += array(
+                $level = LogLevel::NOTICE;
+                $context += array(
                     'record' => $record,
                     'current_role' => $vars['current_role'],
                     'current_organizations' => $vars['current_organizations']
                 );
-                $this->_log['message'] = "{$record['username']} хэрэглэгчийн мэдээллийг шинэчлэх үйлдлийг эхлүүллээ";
+                $message = "{$record['username']} хэрэглэгчийн мэдээллийг шинэчлэх үйлдлийг эхлүүллээ";
             }
         } catch (Throwable $e) {
             if ($this->getRequest()->getMethod() == 'PUT') {
@@ -417,15 +413,17 @@ class AccountController extends DashboardController
                 $this->dashboardProhibited($e->getMessage())->render();
             }
             
-            $this->_log['level'] = LogLevel::ERROR;
-            $this->_log['message'] = 'Хэрэглэгчийн мэдээллийг шинэчлэх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
-            $this->_log['context']['error'] = array('code' => $e->getCode(), 'message' => $e->getMessage());
+            $level = LogLevel::ERROR;
+            $message = 'Хэрэглэгчийн мэдээллийг шинэчлэх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
+            $context = array('error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]);
+        } finally {
+            $this->indolog('account', $level, $message, $context + array('model' => Accounts::class));
         }
     }
     
     public function view(int $id)
     {
-        try {            
+        try {
             if (!$this->isUserAuthorized()
                 || (!$this->getUser()->can('system_account_index')
                 && $this->getUser()->getAccount()['id'] != $id)
@@ -451,14 +449,17 @@ class AccountController extends DashboardController
                 'record' => $record, 'roles' => $user_roles, 'organizations' => $organizations, 'accounts' => $this->getAccounts()
             ))->render();
 
-            $this->_log['message'] = "{$record['username']} хэрэглэгчийн мэдээллийг нээж үзэж байна";
-            $this->_log['context'] = array('record' => $record, 'roles' => $user_roles, 'organizations' => $organizations);
+            $level = LogLevel::NOTICE;
+            $message = "{$record['username']} хэрэглэгчийн мэдээллийг нээж үзэж байна";
+            $context = array('record' => $record, 'roles' => $user_roles, 'organizations' => $organizations);
         } catch (Throwable $e) {
             $this->dashboardProhibited($e->getMessage())->render();
 
-            $this->_log['level'] = LogLevel::ERROR;
-            $this->_log['message'] = 'Хэрэглэгчийн мэдээллийг нээж үзэх үед алдаа гарч зогслоо байна';
-            $this->_log['context']['error'] = array('code' => $e->getCode(), 'message' => $e->getMessage());
+            $level = LogLevel::ERROR;
+            $message = 'Хэрэглэгчийн мэдээллийг нээж үзэх үед алдаа гарч зогслоо байна';
+            $context = array('error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]);
+        } finally {
+            $this->indolog('account', $level, $message, $context + array('model' => Accounts::class));
         }
     }
     
@@ -496,8 +497,9 @@ class AccountController extends DashboardController
                 'message' => $this->text('record-successfully-deleted')
             ));
             
-            $this->_log['level'] = LogLevel::ALERT;
-            $this->_log['message'] = "{$payload['name']} хэрэглэгчийг устгалаа";
+            $level = LogLevel::ALERT;
+            $context = array('payload' => $payload);
+            $message = "{$payload['name']} хэрэглэгчийг устгалаа";
         } catch (Throwable $e) {
             $this->respondJSON(array(
                 'status'  => 'error',
@@ -505,9 +507,11 @@ class AccountController extends DashboardController
                 'message' => $e->getMessage()
             ));
             
-            $this->_log['level'] = LogLevel::ERROR;
-            $this->_log['message'] = 'Хэрэглэгчийг устгах үйлдлийг гүйцэтгэх явцад алдаа гарч зогслоо';
-            $this->_log['context']['error'] = array('code' => $e->getCode(), 'message' => $e->getMessage());
+            $level = LogLevel::ERROR;
+            $message = 'Хэрэглэгчийг устгах үйлдлийг гүйцэтгэх явцад алдаа гарч зогслоо';
+            $context = array('error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]);
+        } finally {
+            $this->indolog('account', $level, $message, $context + array('model' => Accounts::class));
         }
     }
     
@@ -529,10 +533,10 @@ class AccountController extends DashboardController
 
             if ($table == 'forgot') {
                 $modelName = ForgotModel::class;
-                $this->_log['message'] = 'Нууц үгээ сэргээх хүсэлтүүдийн жагсаалтыг нээж үзэж байна';
+                $message = 'Нууц үгээ сэргээх хүсэлтүүдийн жагсаалтыг нээж үзэж байна';
             } else {
                 $modelName = Accounts::class;
-                $this->_log['message'] = 'Шинэ хэрэглэгчээр бүртгүүлэх хүсэлтүүдийн жагсаалтыг нээж үзэж байна';
+                $message = 'Шинэ хэрэглэгчээр бүртгүүлэх хүсэлтүүдийн жагсаалтыг нээж үзэж байна';
             }
             $vars = array(
                 'rows' => $this->indo("/record/rows?table=$table&model=$modelName", array('WHERE' => 'is_active!=999'))
@@ -548,20 +552,23 @@ class AccountController extends DashboardController
             }));
             $template->render();
             
-            $this->_log['context'] += array('model' => $modelName, 'table' => $table);
+            $level = LogLevel::NOTICE;
+            $context = array('model' => $modelName, 'table' => $table);
         } catch (Throwable $e) {
             $this->modalProhibited($e->getMessage())->render();
 
-            $this->_log['level'] = LogLevel::ERROR;
-            $this->_log['message'] = 'Хэрэглэгчдийн мэдээллийн хүснэгт нээж үзэх хүсэлт алдаатай байна';
-            $this->_log['context']['error'] = array('code' => $e->getCode(), 'message' => $e->getMessage());
+            $level = LogLevel::ERROR;
+            $message = "Хэрэглэгчдийн мэдээллийн хүснэгт [$table] нээж үзэх хүсэлт алдаатай байна";
+            $context = array('error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]);
+        } finally {
+            $this->indolog('account', $level, $message, $context + array('model' => Accounts::class));
         }
     }
     
     public function requestApprove()
     {
         try {
-            $this->_log['context'] += array('reason' => 'account-request-approve');
+            $context = array('reason' => 'account-request-approve');
             
             if (!$this->isUserCan('system_account_insert')) {
                 throw new Exception('No permission for an action [approval]!');
@@ -574,7 +581,7 @@ class AccountController extends DashboardController
             ) {
                 throw new Exception($this->text('invalid-request'));
             }
-            $this->_log['context']['id'] = $id;
+            $context += array('payload' => $parsedBody, 'id' => $id);
             
             $record = $this->indo('/record?table=newbie&model=' . Accounts::class, array('id' => $id));
             $existing = $this->indo('/statement', array(
@@ -595,8 +602,7 @@ class AccountController extends DashboardController
             unset($record['updated_at']);
             unset($record['updated_by']);
             $account_id = $this->indopost('/record?model=' . Accounts::class, array('record' => $record));
-            $this->_log['context']['account'] = $record;
-            $this->_log['context']['account']['id'] = $account_id;
+            $context += array('account' => $record + ['id' => $account_id]);
 
             $payload = array(
                 'condition' => array('WHERE' => "id=$id"),
@@ -613,7 +619,7 @@ class AccountController extends DashboardController
                 array('record' => array('account_id' => $account_id, 'organization_id' => $organization_id)),
                 'POST');
             if (!empty($posted)) {
-                $this->_log['context']['organization'] = $organization_id;
+                $context += array('organization' => $organization_id);
             }
             
             $code = preg_replace('/[^a-z]/', '', $this->getLanguageCode());
@@ -642,8 +648,8 @@ class AccountController extends DashboardController
                 'message' => $this->text('record-insert-success')
             ));
             
-            $this->_log['level'] = LogLevel::ALERT;
-            $this->_log['message'] = "Шинэ бүртгүүлсэн {$record['username']} нэртэй [{$record['email']}] хаягтай хэрэглэгчийн хүсэлтийг зөвшөөрч системд нэмлээ";
+            $level = LogLevel::ALERT;
+            $message = "Шинэ бүртгүүлсэн {$record['username']} нэртэй [{$record['email']}] хаягтай хэрэглэгчийн хүсэлтийг зөвшөөрч системд нэмлээ";
         } catch (Throwable $e) {
             $this->respondJSON(array(
                 'status'  => 'error',
@@ -651,16 +657,18 @@ class AccountController extends DashboardController
                 'message' => $e->getMessage()
             ));
 
-            $this->_log['level'] = LogLevel::ERROR;
-            $this->_log['message'] = 'Хэрэглэгчээр бүртгүүлэх хүсэлтийг зөвшөөрч системд нэмэх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
-            $this->_log['context']['error'] = array('code' => $e->getCode(), 'message' => $e->getMessage());
+            $level = LogLevel::ERROR;
+            $message = 'Хэрэглэгчээр бүртгүүлэх хүсэлтийг зөвшөөрч системд нэмэх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
+            $context += array('error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]);
+        } finally {
+            $this->indolog('account', $level, $message, $context + array('model' => Accounts::class));
         }
     }
     
     public function requestDelete()
     {        
         try {
-            $this->_log['context'] += array('reason' => 'account-request-delete', 'table' => 'newbie');
+            $context = array('reason' => 'account-request-delete', 'table' => 'newbie');
             
             if (!$this->isUserCan('system_account_delete')) {
                 throw new Exception('No permission for an action [delete]!');
@@ -673,6 +681,7 @@ class AccountController extends DashboardController
             ) {
                 throw new Exception($this->text('invalid-request'));
             }
+            $context += array('payload' => $payload);
             
             $this->indodelete("/record?table=newbie&model=" . Accounts::class, array('WHERE' => "id='{$payload['id']}'"));
             
@@ -682,8 +691,8 @@ class AccountController extends DashboardController
                 'message' => $this->text('record-successfully-deleted')
             ));
             
-            $this->_log['level'] = LogLevel::ALERT;
-            $this->_log['message'] = "{$payload['name']} хэрэглэгчээр бүртгүүлэх хүсэлтийг устгалаа";
+            $level = LogLevel::ALERT;
+            $message = "{$payload['name']} хэрэглэгчээр бүртгүүлэх хүсэлтийг устгалаа";
         } catch (Throwable $e) {
             $this->respondJSON(array(
                 'status'  => 'error',
@@ -691,9 +700,11 @@ class AccountController extends DashboardController
                 'message' => $e->getMessage()
             ));
             
-            $this->_log['level'] = LogLevel::ERROR;
-            $this->_log['message'] = 'Хэрэглэгчээр бүртгүүлэх хүсэлтийг устгах үйлдлийг гүйцэтгэх явцад алдаа гарч зогслоо';
-            $this->_log['context']['error'] = array('code' => $e->getCode(), 'message' => $e->getMessage());
+            $level = LogLevel::ERROR;
+            $message = 'Хэрэглэгчээр бүртгүүлэх хүсэлтийг устгах үйлдлийг гүйцэтгэх явцад алдаа гарч зогслоо';
+            $context += array('error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]);
+        } finally {
+            $this->indolog('account', $level, $message, $context + array('model' => Accounts::class));
         }
     }
 }
