@@ -33,7 +33,7 @@ class LoginController extends \Raptor\Controller
     function __destruct()
     {
         if (!empty($this->_log['message'])) {
-            $this->indolog('account', $this->_log['level'], $this->_log['message'], $this->_log['context'], $this->_log['created_by'] ?? null);
+            $this->indolog('dashboard', $this->_log['level'], $this->_log['message'], $this->_log['context'], $this->_log['created_by'] ?? null);
         }
     }
     
@@ -72,7 +72,7 @@ class LoginController extends \Raptor\Controller
             }
 
             $account = $this->indopost('/auth/entry', $payload);
-            $_SESSION[$sess_jwt_key] =  $account['jwt'];
+            $_SESSION[$sess_jwt_key] = $account['jwt'];
             $this->respondJSON(array('type' => 'success', 'message' => 'success', 'url' => $this->generateLink('home', [], true)));
 
             if (empty($account['code'])) {
@@ -95,6 +95,7 @@ class LoginController extends \Raptor\Controller
             $this->errorLog($e);
             
             $this->_log['level'] = LogLevel::ERROR;
+            $this->_log['message'] = $e->getMessage();
             $this->_log['context']['reason'] = 'attempt';
             $this->_log['context']['error'] = array('code' => $e->getCode(), 'message' => $e->getMessage());
         }
@@ -104,12 +105,11 @@ class LoginController extends \Raptor\Controller
     {
         $sess_jwt_key = __NAMESPACE__ . '\\indo\\jwt';
         if (isset($_SESSION[$sess_jwt_key])) {
-            $account = $this->getUser()->getAccount();
-            $message = "Хэрэглэгч {$account['first_name']} {$account['last_name']} системээс гарлаа.";
-            $context = array('reason' => 'logout', 'jwt' => $_SESSION[$sess_jwt_key]);
-            $this->indolog('dashboard', LogLevel::NOTICE, $message, $context);
-
             unset($_SESSION[$sess_jwt_key]);
+
+            $account = $this->getUser()->getAccount();
+            $this->_log['message'] = "Хэрэглэгч {$account['first_name']} {$account['last_name']} системээс гарлаа.";
+            $this->_log['context'] = array('reason' => 'logout', 'jwt' => $_SESSION[$sess_jwt_key]);
         }
         
         $this->redirectTo('home');
@@ -364,13 +364,12 @@ class LoginController extends \Raptor\Controller
             
             $jwt_result = $this->indopost('/auth/organization', $payload);
             $_SESSION[__NAMESPACE__ . '\\indo\\jwt'] = $jwt_result['jwt'];
-            $message = "Хэрэглэгч {$this->getUser()->getAccount()['first_name']} {$this->getUser()->getAccount()['last_name']} нэвтэрсэн байгууллага сонгов.";
-            $context = array('reason' => 'login-to-organization', 'enter' => $id, 'leave' => $current_org_id, 'jwt' => $jwt_result['jwt']);
-
-            $this->indolog('dashboard', LogLevel::NOTICE, $message, $context);
 
             $home = $this->generateLink('home');
             $location = strpos($referer, $home) !== false ? $referer : $home;
+
+            $this->_log['message'] = "Хэрэглэгч {$this->getUser()->getAccount()['first_name']} {$this->getUser()->getAccount()['last_name']} нэвтэрсэн байгууллага сонгов.";
+            $this->_log['context'] = array('reason' => 'login-to-organization', 'enter' => $id, 'leave' => $current_org_id, 'jwt' => $jwt_result['jwt']);
         } catch (Throwable $e) {
             $this->errorLog($e);
             
@@ -383,6 +382,7 @@ class LoginController extends \Raptor\Controller
     
     public function language(string $code)
     {
+        $from = $this->getLanguageCode();
         $script_path = $this->getRequest()->getServerParams()['SCRIPT_TARGET_PATH'] ?? null;
         if (!isset($script_path)) {
             $script_path = dirname($this->getRequest()->getServerParams()['SCRIPT_NAME']);
@@ -398,12 +398,15 @@ class LoginController extends \Raptor\Controller
             $_SESSION[explode('\\', __NAMESPACE__)[0] . '\\language\\code'] = $code;            
             if ($this->isUserAuthorized()) {
                 try {
-                    $account_id = $this->getUser()->getAccount()['id'];
+                    $account = $this->getUser()->getAccount();
                     $payload = array(
                         'record' => array('code' => $code),
-                        'condition' => array('WHERE' => "id=$account_id")
+                        'condition' => array('WHERE' => "id={$account['id']}")
                     );
                     $this->indoput('/record?model=' . Accounts::class, $payload);
+                    
+                    $this->_log['message'] = "Хэрэглэгч {$account['first_name']} {$account['last_name']} системд ажиллах хэлийг $from-с $code болгон өөрчиллөө.";
+                    $this->_log['context'] = array('reason' => 'change-language', 'code' => $code, 'from' => $from);
                 } catch (Exception $e) {
                     $this->errorLog($e);
                 }
