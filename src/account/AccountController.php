@@ -561,7 +561,7 @@ class AccountController extends DashboardController
             $message = "Хэрэглэгчдийн мэдээллийн хүснэгт [$table] нээж үзэх хүсэлт алдаатай байна";
             $context = array('error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]);
         } finally {
-            $this->indolog('account', $level, $message, $context + array('model' => Accounts::class));
+            $this->indolog('account', $level, $message, $context);
         }
     }
     
