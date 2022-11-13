@@ -40,7 +40,7 @@ class AccountController extends DashboardController
     public function index()
     {
         try {
-            $context = array();                
+            $context = array();
                 
             if (!$this->isUserCan('system_account_index')) {
                 throw new Exception($this->text('system-no-permission'));
