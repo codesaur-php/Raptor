@@ -66,18 +66,25 @@ class Controller extends \codesaur\Http\Application\Controller
         return $this->isUserAuthorized() && $this->getUser()->can($permission);
     }
     
+    final function getScriptPath(): string
+    {
+        $script_link = dirname($this->getRequest()->getServerParams()['SCRIPT_NAME']);
+        if ($script_link == '\\' || $script_link == '/' || $script_link == '.') {
+            $script_link = '';
+        }
+        return $script_link;
+    }
+    
+    final function getTargetPath(): string
+    {
+        return $this->getRequest()->getServerParams()['SCRIPT_TARGET_PATH'] ?? $this->getScriptPath();
+    }
+    
     final public function generateLink(string $routeName, array $params = [], $is_absolute = false, $default = 'javascript:;'): string
     {
         try {
-            $route_path = $this->getRouter()->generate($routeName, $params);            
-            $script_path = $this->getRequest()->getServerParams()['SCRIPT_TARGET_PATH'] ?? null;
-            if (!isset($script_path)) {
-                $script_path = dirname($this->getRequest()->getServerParams()['SCRIPT_NAME']);
-                if ($script_path == '\\' || $script_path == '/') {
-                    $script_path = '';
-                }
-            }
-            $pattern = $script_path . $route_path;
+            $route_path = $this->getRouter()->generate($routeName, $params);
+            $pattern = $this->getTargetPath() . $route_path;
             if (!$is_absolute) {
                 return $pattern;
             }

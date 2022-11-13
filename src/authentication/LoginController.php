@@ -375,14 +375,8 @@ class LoginController extends \Raptor\Controller
     public function language(string $code)
     {
         $from = $this->getLanguageCode();
-        $script_path = $this->getRequest()->getServerParams()['SCRIPT_TARGET_PATH'] ?? null;
-        if (!isset($script_path)) {
-            $script_path = dirname($this->getRequest()->getServerParams()['SCRIPT_NAME']);
-            if ($script_path == '\\' || $script_path == '/') {
-                $script_path = '';
-            }
-        }
-        $home = (string)$this->getRequest()->getUri()->withPath($script_path);
+        $target_path = $this->getTargetPath();
+        $home = (string)$this->getRequest()->getUri()->withPath($target_path);
         $referer = $this->getRequest()->getServerParams()['HTTP_REFERER'];
         $location = strpos($referer, $home) !== false ? $referer : $home;        
         $language = $this->getAttribute('localization')['language'];

@@ -6,10 +6,7 @@ class PrivateFileController extends FileController
 {
     public function setFolder(string $folder, bool $relative = true)
     {
-        $script_path = dirname($this->getRequest()->getServerParams()['SCRIPT_NAME']);
-        if (in_array($script_path, array('.', '/',  '\\'))) {
-            $script_path = '';
-        }
+        $script_path = $this->getScriptPath();
         $public_folder = "$script_path/private/file?name={$folder}";
         
         $this->local = dirname($_SERVER['SCRIPT_FILENAME']) . '/../private' . $folder;
