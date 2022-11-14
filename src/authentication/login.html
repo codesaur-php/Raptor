@@ -305,6 +305,14 @@
                     });
                 });
                 
+                const validateEmail = (email) => {
+                    return String(email)
+                        .toLowerCase()
+                        .match(
+                            /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+                        );
+                };
+                
                 btnSignupSubmit.addEventListener('click', function(e) {
                     e.preventDefault();
                     
@@ -316,6 +324,8 @@
                         return showMessage(formSignUp, 'danger', "{{ 'error-username-empty'|text|e }}");
                     } else if (isBlank(email)) {
                         return showMessage(formSignUp, 'danger', "{{ 'enter-email-empty'|text|e }}");
+                    } else if (!validateEmail()) {
+                        return showMessage(formSignUp, 'danger', "{{ 'enter-valid-email'|text|e }}");
                     } else if (isBlank(password)) {
                         return showMessage(formSignUp, 'danger', "{{ 'error-password-empty'|text|e }}");
                     } else if (isBlank(password_re)) {
