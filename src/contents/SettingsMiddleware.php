@@ -29,7 +29,7 @@ class SettingsMiddleware implements MiddlewareInterface
             $localization = $request->getAttribute('localization');
             $payload = array('alias' => $alias ?: 'system', 'is_active' => 1);
             if (!empty($localization['code'])) {
-               $payload['code'] = 'mn';
+               $payload['code'] = $localization['code'];
            }
             $request->getAttribute('indo')->handle(
                 new InternalRequest('INTERNAL', '/record?model=' . SettingsModel::class, $payload));

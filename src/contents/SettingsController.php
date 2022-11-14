@@ -52,7 +52,7 @@ class SettingsController extends DashboardController
                 }
                 $context['record'] = $record;
                 $context['content'] = $content;
-            
+                
                 if (empty($record['alias'])) {
                     throw new Exception($this->text('invalid-request'));
                 }
@@ -99,6 +99,9 @@ class SettingsController extends DashboardController
                     $notify = 'primary';
                     $notice = $this->text('record-update-success');
                 } else {
+                    if (empty($content)) {
+                        $content[$this->getLanguageCode()]['title'] = '';
+                    }
                     $id = $this->indopost($pattern, array('record' => $record, 'content' => $content));
                     $notify = 'success';
                     $notice = $this->text('record-insert-success');
@@ -272,7 +275,7 @@ class SettingsController extends DashboardController
     
     public function mailer()
     {
-        $context = array('model' => SettingsModel::class, 'reason' => 'mailer');
+        $context = array('model' => MailerModel::class, 'reason' => 'mailer');
         
         try {
             if (!$this->isUserCan('system_content_settings')) {
