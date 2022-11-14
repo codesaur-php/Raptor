@@ -239,9 +239,9 @@
                     const username = formLogin.querySelector('#username').value;
                     const password = formLogin.querySelector('#password').value;                    
                     if (isBlank(username)) {
-                        return showMessage(formLogin, 'danger', "{{ 'error-username-empty'|text|e }}");
+                        return showMessage(formLogin, 'warning', "{{ 'error-username-empty'|text|e }}");
                     } else if (isBlank(password)) {
-                        return showMessage(formLogin, 'danger', "{{ 'error-password-empty'|text|e }}");
+                        return showMessage(formLogin, 'warning', "{{ 'error-password-empty'|text|e }}");
                     }
                     
                     this.spinner('start', 'grow', true);
@@ -281,9 +281,9 @@
                     
                     const email = formForgot.querySelector('#codeForgetEmail').value;
                     if (isBlank(email)) {
-                        return showMessage(formForgot, 'danger', "{{ 'enter-email-empty'|text|e }}");
+                        return showMessage(formForgot, 'warning', "{{ 'enter-email-empty'|text|e }}");
                     } else if (!validateEmail(email)) {
-                        return showMessage(formForgot, 'danger', "{{ 'enter-valid-email'|text|e }}");
+                        return showMessage(formForgot, 'warning', "{{ 'enter-valid-email'|text|e }}");
                     }
                     
                     this.spinner('start', 'grow', true);
@@ -323,17 +323,17 @@
                     const password = formSignUp.querySelector('#codePassword').value;
                     const password_re = formSignUp.querySelector('#codeRePassword').value;
                     if (isBlank(username)) {
-                        return showMessage(formSignUp, 'danger', "{{ 'error-username-empty'|text|e }}");
+                        return showMessage(formSignUp, 'warning', "{{ 'error-username-empty'|text|e }}");
                     } else if (isBlank(email)) {
-                        return showMessage(formSignUp, 'danger', "{{ 'enter-email-empty'|text|e }}");
+                        return showMessage(formSignUp, 'warning', "{{ 'enter-email-empty'|text|e }}");
                     } else if (!validateEmail(email)) {
-                        return showMessage(formSignUp, 'danger', "{{ 'enter-valid-email'|text|e }}");
+                        return showMessage(formSignUp, 'warning', "{{ 'enter-valid-email'|text|e }}");
                     } else if (isBlank(password)) {
-                        return showMessage(formSignUp, 'danger', "{{ 'error-password-empty'|text|e }}");
+                        return showMessage(formSignUp, 'warning', "{{ 'error-password-empty'|text|e }}");
                     } else if (isBlank(password_re)) {
-                        return showMessage(formSignUp, 'danger', "{{ 'password-must-confirm'|text|e }}");
+                        return showMessage(formSignUp, 'warning', "{{ 'password-must-confirm'|text|e }}");
                     } else if (password !== password_re) {
-                        return showMessage(formSignUp, 'danger', "{{ 'password-must-match'|text|e }}");
+                        return showMessage(formSignUp, 'warning', "{{ 'password-must-match'|text|e }}");
                     }
                     
                     let payload = { username, email, password, password_re };
