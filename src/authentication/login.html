@@ -263,7 +263,7 @@
                         }
                         return res.json();
                     }).then(response => {
-                        if (response.type !== 'success'
+                        if (response.status !== 'success'
                                 || isBlank(response.url)
                         ) {
                             throw new Error(response.message ?? "{{ 'something-went-wrong'|text|e }}");
@@ -303,7 +303,7 @@
                         }
                         return res.json();
                     }).then(response => {
-                        if (response.type !== 'success') {
+                        if (response.status !== 'success') {
                             throw new Error(response.message ?? "{{ 'something-went-wrong'|text|e }}");
                         }
                         
@@ -355,7 +355,7 @@
                         }
                         return res.json();
                     }).then(response => {
-                        if (response.type !== 'success') {
+                        if (response.status !== 'success') {
                             throw new Error(response.message ?? "{{ 'something-went-wrong'|text|e }}");
                         }
                         

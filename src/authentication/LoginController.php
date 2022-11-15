@@ -56,7 +56,15 @@ class LoginController extends \Raptor\Controller
 
             $account = $this->indopost('/auth/entry', $payload);
             $_SESSION[$sess_jwt_key] = $account['jwt'];
-            $this->respondJSON(array('type' => 'success', 'message' => 'success', 'url' => $this->generateLink('home', [], true)));
+
+            $level = LogLevel::INFO;
+            $message = "Хэрэглэгч {$account['first_name']} {$account['last_name']} системд нэвтрэв.";
+            $this->respondJSON(array(
+                'status' => 'success',
+                'message' => $message,
+                'url' => $this->generateLink('home', [], true)
+                )
+            );
 
             if (empty($account['code'])) {
                 $this->postAccountLanguageCode($account['id'], $this->getLanguageCode());
@@ -65,14 +73,11 @@ class LoginController extends \Raptor\Controller
             ) {
                 $_SESSION[explode('\\', __NAMESPACE__)[0] . '\\language\\code'] = $account['code'];
             }
-            
-            $level = LogLevel::INFO;
-            $message = "Хэрэглэгч {$account['first_name']} {$account['last_name']} системд нэвтрэв.";
         } catch (Throwable $e) {
             if (isset($_SESSION[$sess_jwt_key])) {
                 unset($_SESSION[$sess_jwt_key]);
             }
-            $this->respondJSON(array('type' => 'danger', 'message' => $e->getMessage()));
+            $this->respondJSON(array('message' => $e->getMessage()));
 
             $this->errorLog($e);
             
@@ -148,7 +153,7 @@ class LoginController extends \Raptor\Controller
                 'message' => $template->output(),
                 'subject' => $content['title'][$payload['code']]
             ));
-            $this->respondJSON(array('type' => 'success', 'message' => $this->text('to-complete-registration-check-email')));
+            $this->respondJSON(array('status' => 'success', 'message' => $this->text('to-complete-registration-check-email')));
             
             $level = LogLevel::ALERT;
             $message = "{$payload['username']} нэртэй {$payload['email']} хаягтай шинэ хэрэглэгч үүсгэх хүсэлт бүртгүүллээ";
@@ -160,7 +165,7 @@ class LoginController extends \Raptor\Controller
                 case AccountErrorCode::INSERT_NEWBIE_FAILURE: $message = "Шинээр {$payload['username']} нэртэй [{$payload['email']}] хаягтай хэрэглэгч үүсгэх хүсэлт ирүүлснийг мэдээлллийн санд бүртгэн хадгалах үйлдэл гүйцэтгэх явцад алдаа гарч зогслоо"; break;
                 default: $message = 'Шинэ хэрэглэгч үүсгэх хүсэлт бүртгүүлэх үед алдаа гарч зогслоо. <p>' . $e->getMessage() . '</p>'; break;
             }            
-            $this->respondJSON(array('type' => 'danger', 'message' => $message));
+            $this->respondJSON(array('message' => $message));
             
             $level = LogLevel::ERROR;
             $context += array('error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]);
@@ -201,7 +206,7 @@ class LoginController extends \Raptor\Controller
                 'message' => $template->output(),
                 'subject' => $content['title'][$payload['code']]                
             ));
-            $this->respondJSON(array('type' => 'success', 'message' => $this->text('reset-email-sent')));
+            $this->respondJSON(array('status' => 'success', 'message' => $this->text('reset-email-sent')));
 
             $level = LogLevel::INFO;
             $message = "{$payload['email']} хаягтай хэрэглэгч  нууц үгээ шинээр тааруулах хүсэлт илгээснийг бүртгүүллээ";
@@ -212,7 +217,7 @@ class LoginController extends \Raptor\Controller
                 case AccountErrorCode::INSERT_FORGOT_FAILURE: $message = "Хэрэглэгч [{$payload['email']}] нууц үг шинэчлэх хүсэлт илгээснийг мэдээлллийн санд бүртгэн хадгалах үйлдэл гүйцэтгэх явцад алдаа гарч зогслоо."; break;
                 default: $message = 'Хэрэглэгч нууц үгээ шинэчлэх хүсэлт илгээх үед алдаа гарч зогслоо. <p>' . $e->getMessage() . '</p>'; break;
             }            
-            $this->respondJSON(array('type' => 'danger', 'message' => $message));
+            $this->respondJSON(array('message' => $message));
 
             $level = LogLevel::ERROR;
             $context += array('error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]);
