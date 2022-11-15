@@ -318,7 +318,9 @@ class AccountController extends DashboardController
                         if (isset($roles[(int)$row['role_id']])) {
                             unset($roles[(int)$row['role_id']]);
                         } else if ($row['role_id'] == 1 && $id === 1) {
-                            // can't delete root account's code role!
+                            // can't delete root account's coder role!
+                        } else if ($row['role_id'] == 1 && !$this->getUser()->is('system_coder')) {
+                            // only coder can strip another coder role
                         } else {
                             $this->indodelete('/record?model=' . UserRole::class, array('WHERE' => "id={$row['id']}"));
                             $this->indolog(
@@ -331,6 +333,10 @@ class AccountController extends DashboardController
                     }
                     
                     foreach (array_keys($roles) as $role_id) {
+                        if ($role_id == 1 && !$this->getUser()->is('system_coder')) {
+                            // only coder can add another coder role
+                            continue;
+                        }
                         $this->indopost('/record?model=' . UserRole::class,
                             array('record' => array('user_id' => $id, 'role_id' => $role_id)));   
                         $this->indolog(
