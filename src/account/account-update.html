@@ -122,7 +122,7 @@ function warnStatus(checked) {
     });
 }
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     Dashboard.activateLink("{{ 'accounts'|link }}");
     
     document.getElementsByName('photo')[0].imageInput("{{ record['photo']|e }}", "{{ 'select-image'|text }}", "{{ 'choose'|text }}", "{{ 'change'|text }}", "{{ 'remove'|text }}");

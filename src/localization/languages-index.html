@@ -36,7 +36,7 @@
 <script defer src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script type="text/javascript">
 let deleteAskHtml = {% if localization.code == 'mn' %}'<p class="text-danger mb-3">Та ({0}) хэлийг устгахдаа итгэлтэй байна уу?</p>'{% else %}'<p class="text-danger mb-3">Are you sure to delete the language ({0})?</p>'{% endif %};
-document.addEventListener('DOMContentLoaded', function() {    
+document.addEventListener('DOMContentLoaded', function () {    
     let languagesTable = document.querySelector('table#languages');
     $(languagesTable).DataTable({
         ajax: {method: 'GET', url: "{{ 'languages-datatable'|link }}"},
