@@ -146,7 +146,7 @@ class LoginController extends \Raptor\Controller
             $template->set('email', $payload['email']);
             $template->set('username', $payload['username']);
             $template->source($content['full'][$payload['code']]);
-            $this->indo('/send/stmp/email', array(
+            $this->indo('/send/smtp/email', array(
                 'name' => $payload['username'],
                 'to' => $payload['email'],
                 'code' => $payload['code'],
@@ -199,7 +199,7 @@ class LoginController extends \Raptor\Controller
             $template->set('link', "{$payload['login']}?forgot={$forgot['use_id']}");
             $template->source($content['full'][$payload['code']]);
             $receiver = $forgot['first_name'] . ' ' . $forgot['last_name'];
-            $this->indo('/send/stmp/email', array(
+            $this->indo('/send/smtp/email', array(
                 'name' => $receiver,
                 'to' => $payload['email'],
                 'code' => $payload['code'],

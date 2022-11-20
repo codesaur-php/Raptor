@@ -639,7 +639,7 @@ class AccountController extends DashboardController
                 $template->set('email', $record['email']);
                 $template->set('login', $this->generateLink('login', [], true));
                 $template->set('username', $record['username']);
-                $this->indosafe('/send/stmp/email', array(
+                $this->indosafe('/send/smtp/email', array(
                     'name' => $record['username'],
                     'to' => $record['email'],
                     'code' => $record['code'],
