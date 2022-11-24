@@ -306,7 +306,13 @@ class LoginController extends \Raptor\Controller
                 dirname(__FILE__) . '/login-reset-password.html', 
                 $vars + array('meta' => $this->getAttribute('meta')))->render();
             
-            $this->indolog('dashboard', $level, $message, $context, $forgot['account'] ?? null);
+            $context += array('server_request' => [
+                'code' => $this->getLanguageCode(),
+                'method' => $this->getRequest()->getMethod(),
+                'remote_addr' => (new Server())->getRemoteAddr()]
+            );
+            
+            $this->indolog('dashboard', $level, $message, $context, $forgot['account'] ?? null);            
         }
     }
     

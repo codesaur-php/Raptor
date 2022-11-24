@@ -189,12 +189,14 @@ class Controller extends \codesaur\Http\Application\Controller
     final public function indolog(string $table, string $level, $message, array $context = [], $created_by = null)
     {
         try {
-            $context['server_request'] = array(
-                'code' => $this->getLanguageCode(),
-                'method' => $this->getRequest()->getMethod(),
-                'uri' => (string)$this->getRequest()->getUri(),
-                'remote_addr' => (new Server())->getRemoteAddr()
-            );
+            if (!isset($context['server_request'])) {
+                $context['server_request'] = array(
+                    'code' => $this->getLanguageCode(),
+                    'method' => $this->getRequest()->getMethod(),
+                    'uri' => (string)$this->getRequest()->getUri(),
+                    'remote_addr' => (new Server())->getRemoteAddr()
+                );
+            }
 
             $payload = array(
                 'table' => $table,
