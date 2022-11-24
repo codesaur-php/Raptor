@@ -46,7 +46,7 @@ class RBACController extends DashboardController
             }
             
             $payload = array('bind' => array(':alias' => array('var' => $alias)));            
-            $payload['query'] = "SELECT id,name,description FROM rbac_roles WHERE alias=:alias AND is_active=1 AND (alias!='system' AND name!='coder')";
+            $payload['query'] = "SELECT id,name,description FROM rbac_roles WHERE alias=:alias AND is_active=1 AND !(name='coder' AND alias='system')";
             $roles = $this->indo('/statement', $payload);
             
             $payload['query'] = 'SELECT id,name,description FROM rbac_permissions WHERE alias=:alias AND is_active=1 ORDER By module';            
