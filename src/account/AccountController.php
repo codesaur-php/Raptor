@@ -44,7 +44,7 @@ class AccountController extends DashboardController
             $context = array();
                 
             if (!$this->isUserCan('system_account_index')) {
-                throw new Exception($this->text('system-no-permission'));
+                throw new Exception($this->text('system-no-permission'), 401);
             }
             
             $code = preg_replace('/[^a-z]/', '', $this->getLanguageCode());
@@ -90,7 +90,7 @@ class AccountController extends DashboardController
             $message = 'Хэрэглэгчдийн жагсаалтыг нээж үзэх үед алдаа гарлаа';
             $context += array('error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]);
             
-            $this->dashboardProhibited("$message.<br/><br/>{$e->getMessage()}")->render();
+            $this->dashboardProhibited("$message.<br/><br/>{$e->getMessage()}", $e->getCode())->render();
         } finally {
             $this->indolog('account', $level, $message, $context + array('model' => Accounts::class));
         }
@@ -102,7 +102,7 @@ class AccountController extends DashboardController
             $context = array();
             
             if (!$this->isUserCan('system_account_insert')) {
-                throw new Exception($this->text('system-no-permission'));
+                throw new Exception($this->text('system-no-permission'), 401);
             }
             
             if ($this->getRequest()->getMethod() == 'POST') {                
@@ -110,7 +110,7 @@ class AccountController extends DashboardController
                 if (empty($parsedBody['username']) || empty($parsedBody['email'])
                     || filter_var($parsedBody['email'], FILTER_VALIDATE_EMAIL) === false
                 ) {
-                    throw new Exception($this->text('invalid-request'));
+                    throw new Exception($this->text('invalid-request'), 400);
                 }
                 
                 $record = array(
@@ -177,9 +177,9 @@ class AccountController extends DashboardController
             }
         } catch (Throwable $e) {
             if ($this->getRequest()->getMethod() == 'POST') {
-                $this->respondJSON(array('message' => $e->getMessage()));
+                $this->respondJSON(array('message' => $e->getMessage()), $e->getCode());
             } else {
-                $this->dashboardProhibited($e->getMessage())->render();
+                $this->dashboardProhibited($e->getMessage(), $e->getCode())->render();
             }
             
             $level = LogLevel::ERROR;
@@ -199,11 +199,11 @@ class AccountController extends DashboardController
                 || (!$this->getUser()->can('system_account_update')
                     && $this->getUser()->getAccount()['id'] != $id)
             ) {
-                throw new Exception($this->text('system-no-permission'));
+                throw new Exception($this->text('system-no-permission'), 401);
             }
             
             if ($id == 1 && $this->getUser()->getAccount()['id'] != $id) {
-                throw new Exception('No one but root can edit this account!');
+                throw new Exception('No one but root can edit this account!', 403);
             }
             
             if ($this->getRequest()->getMethod() == 'PUT') {
@@ -211,7 +211,7 @@ class AccountController extends DashboardController
                 if (empty($parsedBody['username']) || empty($parsedBody['email'])
                     || filter_var($parsedBody['email'], FILTER_VALIDATE_EMAIL) === false
                 ) { 
-                    throw new Exception($this->text('invalid-request'));
+                    throw new Exception($this->text('invalid-request'), 400);
                 }
 
                 $record = array(
@@ -234,11 +234,11 @@ class AccountController extends DashboardController
                 
                 $existing_username = $this->indosafe($pattern, array('username' => $record['username']));
                 if ($existing_username && $existing_username['id'] != $id) {
-                    throw new Exception($this->text('account-exists') . " username => [{$record['username']}]");
+                    throw new Exception($this->text('account-exists') . " username => [{$record['username']}]", 403);
                 }
                 $existing_email = $this->indosafe($pattern, array('email' => $record['email']));
                 if ($existing_email && $existing_email['id'] != $id) {
-                    throw new Exception($this->text('account-exists') . " email => [{$record['email']}]");
+                    throw new Exception($this->text('account-exists') . " email => [{$record['email']}]", 403);
                 }
                 
                 $existing = $this->indosafe($pattern, array('id' => $id));
@@ -415,9 +415,9 @@ class AccountController extends DashboardController
             }
         } catch (Throwable $e) {
             if ($this->getRequest()->getMethod() == 'PUT') {
-                $this->respondJSON(array('message' => $e->getMessage()));
+                $this->respondJSON(array('message' => $e->getMessage()), $e->getCode());
             } else {
-                $this->dashboardProhibited($e->getMessage())->render();
+                $this->dashboardProhibited($e->getMessage(), $e->getCode())->render();
             }
             
             $level = LogLevel::ERROR;
@@ -435,7 +435,7 @@ class AccountController extends DashboardController
                 || (!$this->getUser()->can('system_account_index')
                 && $this->getUser()->getAccount()['id'] != $id)
             ) {
-                throw new Exception($this->text('system-no-permission'));
+                throw new Exception($this->text('system-no-permission'), 401);
             }
             
             $record = $this->indo('/record?model=' . Accounts::class, array('id' => $id));
@@ -460,7 +460,7 @@ class AccountController extends DashboardController
             $message = "{$record['username']} хэрэглэгчийн мэдээллийг нээж үзэж байна";
             $context = array('record' => $record, 'roles' => $user_roles, 'organizations' => $organizations);
         } catch (Throwable $e) {
-            $this->dashboardProhibited($e->getMessage())->render();
+            $this->dashboardProhibited($e->getMessage(), $e->getCode())->render();
 
             $level = LogLevel::ERROR;
             $message = 'Хэрэглэгчийн мэдээллийг нээж үзэх үед алдаа гарч зогслоо байна';
@@ -474,7 +474,7 @@ class AccountController extends DashboardController
     {
         try {
             if (!$this->isUserCan('system_account_delete')) {
-                throw new Exception('No permission for an action [delete]!');
+                throw new Exception('No permission for an action [delete]!', 401);
             }
             
             $payload = $this->getParsedBody();
@@ -482,7 +482,7 @@ class AccountController extends DashboardController
                 || !isset($payload['name'])
                 || !filter_var($payload['id'], FILTER_VALIDATE_INT)
             ) {
-                throw new Exception($this->text('invalid-request'));
+                throw new Exception($this->text('invalid-request'), 400);
             }
             
             $table = '';
@@ -491,9 +491,9 @@ class AccountController extends DashboardController
             }
             
             if ($this->getUser()->getAccount()['id'] == $payload['id']) {
-                throw new Exception('Cannot suicide myself :(');
+                throw new Exception('Cannot suicide myself :(', 403);
             } else if ($payload['id'] == 1) {
-                throw new Exception('Cannot remove first acccount!');
+                throw new Exception('Cannot remove first acccount!', 403);
             }
             
             $this->indodelete("/record?{$table}model=" . Accounts::class, array('WHERE' => "id='{$payload['id']}'"));
@@ -512,7 +512,7 @@ class AccountController extends DashboardController
                 'status'  => 'error',
                 'title'   => $this->text('error'),
                 'message' => $e->getMessage()
-            ));
+            ), $e->getCode());
             
             $level = LogLevel::ERROR;
             $message = 'Хэрэглэгчийг устгах үйлдлийг гүйцэтгэх явцад алдаа гарч зогслоо';
@@ -526,16 +526,16 @@ class AccountController extends DashboardController
     {
         try {
             if (!$this->isUserCan('system_account_index')) {
-                throw new Exception($this->text('system-no-permission'));
+                throw new Exception($this->text('system-no-permission'), 401);
             }
 
             if (!in_array($table, array('forgot', 'newbie'))) {
-                throw new Exception($this->text('invalid-request'));
+                throw new Exception($this->text('invalid-request'), 400);
             }
             
             $modal = dirname(__FILE__) . "/$table-index-modal.html";
             if (!file_exists($modal)) {
-                throw new Exception("$modal file not found!");
+                throw new Exception("$modal file not found!", 500);
             }
 
             if ($table == 'forgot') {
@@ -562,7 +562,7 @@ class AccountController extends DashboardController
             $level = LogLevel::NOTICE;
             $context = array('model' => $modelName, 'table' => $table);
         } catch (Throwable $e) {
-            $this->modalProhibited($e->getMessage())->render();
+            $this->modalProhibited($e->getMessage(), $e->getCode())->render();
 
             $level = LogLevel::ERROR;
             $message = "Хэрэглэгчдийн мэдээллийн хүснэгт [$table] нээж үзэх хүсэлт алдаатай байна";
@@ -578,7 +578,7 @@ class AccountController extends DashboardController
             $context = array('reason' => 'account-request-approve');
             
             if (!$this->isUserCan('system_account_insert')) {
-                throw new Exception('No permission for an action [approval]!');
+                throw new Exception('No permission for an action [approval]!', 401);
             }
             
             $parsedBody = $this->getParsedBody();
@@ -586,7 +586,7 @@ class AccountController extends DashboardController
             if (empty($id)
                 || !filter_var($id, FILTER_VALIDATE_INT)
             ) {
-                throw new Exception($this->text('invalid-request'));
+                throw new Exception($this->text('invalid-request'), 400);
             }
             $context += array('payload' => $parsedBody, 'id' => $id);
             
@@ -599,7 +599,7 @@ class AccountController extends DashboardController
                 )
             ));
             if (!empty($existing)) {
-                throw new Exception($this->text('account-exists') . "<br/>username/email => {$record['username']}/{$record['email']}");
+                throw new Exception($this->text('account-exists') . "<br/>username/email => {$record['username']}/{$record['email']}", 403);
             }
             
             unset($record['id']);
@@ -664,7 +664,7 @@ class AccountController extends DashboardController
                 'status'  => 'error',
                 'title'   => $this->text('error'),
                 'message' => $e->getMessage()
-            ));
+            ), $e->getCode());
 
             $level = LogLevel::ERROR;
             $message = 'Хэрэглэгчээр бүртгүүлэх хүсэлтийг зөвшөөрч системд нэмэх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
@@ -680,7 +680,7 @@ class AccountController extends DashboardController
             $context = array('reason' => 'account-request-delete', 'table' => 'newbie');
             
             if (!$this->isUserCan('system_account_delete')) {
-                throw new Exception('No permission for an action [delete]!');
+                throw new Exception('No permission for an action [delete]!', 401);
             }
             
             $payload = $this->getParsedBody();
@@ -688,7 +688,7 @@ class AccountController extends DashboardController
                 || !isset($payload['name'])
                 || !filter_var($payload['id'], FILTER_VALIDATE_INT)
             ) {
-                throw new Exception($this->text('invalid-request'));
+                throw new Exception($this->text('invalid-request'), 400);
             }
             $context += array('payload' => $payload);
             
@@ -707,7 +707,7 @@ class AccountController extends DashboardController
                 'status'  => 'error',
                 'title'   => $this->text('error'),
                 'message' => $e->getMessage()
-            ));
+            ), $e->getCode());
             
             $level = LogLevel::ERROR;
             $message = 'Хэрэглэгчээр бүртгүүлэх хүсэлтийг устгах үйлдлийг гүйцэтгэх явцад алдаа гарч зогслоо';

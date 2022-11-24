@@ -51,7 +51,7 @@ class LoginController extends \Raptor\Controller
             }
 
             if ($this->isUserAuthorized() || empty($payload)) {
-                throw new Exception($this->text('invalid-request'));
+                throw new Exception($this->text('invalid-request'), StatusCodeInterface::STATUS_BAD_REQUEST);
             }
 
             $account = $this->indopost('/auth/entry', $payload);
@@ -119,7 +119,7 @@ class LoginController extends \Raptor\Controller
                 $passwordRe = '';
             }            
             if (empty($password) || $password != $passwordRe) {
-                throw new Exception($this->text('invalid-request'));
+                throw new Exception($this->text('invalid-request'), StatusCodeInterface::STATUS_BAD_REQUEST);
             } else {
                 unset($payload['password_re']);
             }
@@ -130,7 +130,7 @@ class LoginController extends \Raptor\Controller
             $lookup = $this->indo('/lookup', array('table' => 'templates', 'condition' =>
                 array('WHERE' => "c.code='{$payload['code']}' AND p.keyword='request-new-account' AND p.is_active=1")));
             if (empty($lookup['request-new-account'])) {
-                throw new Exception($this->text('email-template-not-set'));
+                throw new Exception($this->text('email-template-not-set'), StatusCodeInterface::STATUS_INTERNAL_SERVER_ERROR);
             }
             $content = $lookup['request-new-account'];
             
@@ -177,11 +177,11 @@ class LoginController extends \Raptor\Controller
             $level = LogLevel::ALERT;
             $message = "{$payload['username']} нэртэй {$payload['email']} хаягтай шинэ хэрэглэгч үүсгэх хүсэлт бүртгүүллээ";
         } catch (Throwable $e) {
-            $message = '<span class="text-secondary">Шинэ хэрэглэгч үүсгэх хүсэлт бүртгүүлэх үед алдаа гарч зогслоо.</span><br/>' . $e->getMessage();
-           $this->respondJSON(array('message' => $message), $e->getCode());
+            $message = $e->getMessage();
+           $this->respondJSON(array('message' => '<span class="text-secondary">Шинэ хэрэглэгч үүсгэх хүсэлт бүртгүүлэх үед алдаа гарч зогслоо.</span><br/>' . $message), $e->getCode());
             
             $level = LogLevel::ERROR;
-            $context += array('error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]);
+            $context += array('error' => ['code' => $e->getCode(), 'message' => $message]);
         } finally {
             $this->indolog('dashboard', $level ?? LogLevel::NOTICE, $message ?? 'request-new-account', $context);
         }
@@ -250,11 +250,11 @@ class LoginController extends \Raptor\Controller
             $level = LogLevel::INFO;
             $message = "{$payload['email']} хаягтай хэрэглэгч  нууц үгээ шинээр тааруулах хүсэлт илгээснийг бүртгүүллээ";
         } catch (Throwable $e) {
-            $message = '<span class="text-secondary">Хэрэглэгч нууц үгээ шинэчлэх хүсэлт илгээх үед алдаа гарч зогслоо.</span><br/>' . $e->getMessage();
-            $this->respondJSON(array('message' => $message), $e->getCode());
+            $message = $e->getMessage();
+            $this->respondJSON(array('message' => '<span class="text-secondary">Хэрэглэгч нууц үгээ шинэчлэх хүсэлт илгээх үед алдаа гарч зогслоо.</span><br/>' . $message), $e->getCode());
 
             $level = LogLevel::ERROR;
-            $context += array('error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]);
+            $context += array('error' => ['code' => $e->getCode(), 'message' => $message]);
         } finally {
             $this->indolog('dashboard', $level ?? LogLevel::NOTICE, $message ?? 'login-forgot', $context);
         }
@@ -284,12 +284,12 @@ class LoginController extends \Raptor\Controller
             if ($diff->y > 0 || $diff->m > 0 || $diff->d > 0
                 || $diff->h > 0 || $diff->i > (int)CODESAUR_PASSWORD_RESET_MINUTES
             ) {
-                throw new Exception('Хугацаа дууссан код ашиглан нууц үг шинээр тааруулахыг хүсэв');
+                throw new Exception('Хугацаа дууссан код ашиглан нууц үг шинээр тааруулахыг хүсэв', StatusCodeInterface::STATUS_FORBIDDEN);
             }
             $vars += array('use_id' => $use_id, 'account' => $forgot['account']);
             
             $level = LogLevel::ALERT;
-            $message = 'Нууц үгээ шинээр тааруулж эхэллээ.';           
+            $message = 'Нууц үгээ шинээр тааруулж эхэллээ.';
         } catch (Throwable $e) {
             if ($e->getCode() == 404) {
                 $notice = 'Хуурамч/устгагдсан/хэрэглэгдсэн мэдээлэл ашиглан нууц үг тааруулахыг оролдов';
@@ -332,7 +332,7 @@ class LoginController extends \Raptor\Controller
             }            
             $account_id = filter_var($parsedBody['account'], FILTER_VALIDATE_INT);
             if ($account_id === false) {
-                throw new Exception('Хэрэглэгчийн дугаар заагдаагүй байна.<br/>' . $this->text('invalid-request-data'));
+                throw new Exception('Хэрэглэгчийн дугаар заагдаагүй байна.<br/>' . $this->text('invalid-request-data'), StatusCodeInterface::STATUS_BAD_REQUEST);
             }
             $vars += array('account' => $account_id);
 
@@ -344,7 +344,7 @@ class LoginController extends \Raptor\Controller
             $context += array('account_id' => $account_id);
             
             if (empty($password_new) || $password_new != $password_retype) {
-                throw new Exception('Шинэ нууц үгээ буруу бичсэн.<br/>' . $this->text('password-must-match'));
+                throw new Exception('Шинэ нууц үгээ буруу бичсэн.<br/>' . $this->text('password-must-match'), StatusCodeInterface::STATUS_BAD_REQUEST);
             }
             
             $record = $this->indosafe('/record?model=' . ForgotModel::class, array(

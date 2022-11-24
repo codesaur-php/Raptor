@@ -4,8 +4,11 @@ namespace Raptor\Dashboard;
 
 use Throwable;
 
+use Fig\Http\Message\StatusCodeInterface;
+
 use codesaur\RBAC\Accounts;
 use codesaur\Template\TwigTemplate;
+use codesaur\Http\Message\ReasonPrhase;
 
 class DashboardController extends \Raptor\Controller
 {    
@@ -23,15 +26,35 @@ class DashboardController extends \Raptor\Controller
         return $dashboard;
     }
     
-    public function dashboardProhibited($alert = null): TwigTemplate
+    public function dashboardProhibited($alert = null, ?int $code = null): TwigTemplate
     {
+        if (!empty($code) && !headers_sent()) {
+            if ($code != StatusCodeInterface::STATUS_OK) {
+                $status_code = "STATUS_$code";
+                $reasonPhraseClass = ReasonPrhase::class;
+                if (defined("$reasonPhraseClass::$status_code")) {
+                    http_response_code($code);
+                }
+            }
+        }
+        
         return $this->twigDashboard(
             dirname(__FILE__) . '/alert-no-permission.html',
             array('alert' => $alert ?? $this->text('system-no-permission')));
     }
     
-    public function modalProhibited($alert = null): TwigTemplate
+    public function modalProhibited($alert = null, ?int $code = null): TwigTemplate
     {
+        if (!empty($code) && !headers_sent()) {
+            if ($code != StatusCodeInterface::STATUS_OK) {
+                $status_code = "STATUS_$code";
+                $reasonPhraseClass = ReasonPrhase::class;
+                if (defined("$reasonPhraseClass::$status_code")) {
+                    http_response_code($code);
+                }
+            }
+        }
+        
         return new TwigTemplate(
             dirname(__FILE__) . '/modal-no-permission.html',
             array('alert' => $alert ?? $this->text('system-no-permission'), 'close' => $this->text('close')));

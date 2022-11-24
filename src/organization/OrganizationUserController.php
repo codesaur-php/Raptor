@@ -35,7 +35,7 @@ class OrganizationUserController extends DashboardController
     {
         try {
             if (!$this->isUserAuthorized()) {
-                throw new Exception($this->text('system-no-permission'));
+                throw new Exception($this->text('system-no-permission'), 401);
             }
 
             $user_orgs_query =
@@ -51,7 +51,7 @@ class OrganizationUserController extends DashboardController
             $level = LogLevel::ERROR;
             $message = $e->getMessage();
             
-            $this->dashboardProhibited($message)->render();
+            $this->dashboardProhibited($message, $e->getCode())->render();
         } finally {
             $this->indolog('account', $level, $message);
         }        
@@ -64,7 +64,7 @@ class OrganizationUserController extends DashboardController
         
         try {
             if (!$this->isUserCan('system_account_organization_set')) {
-                throw new Exception($this->text('system-no-permission'));
+                throw new Exception($this->text('system-no-permission'), 401);
             }
             
             if ($is_submit) {
@@ -76,7 +76,7 @@ class OrganizationUserController extends DashboardController
                 if ($account_id == 1
                     && (empty($organizations) || !array_key_exists(1, $organizations))
                 ) {
-                    throw new Exception('Default user must belong to an organization');
+                    throw new Exception('Default user must belong to an organization', 503);
                 }
 
                 $user_orgs = $this->indo('/statement', array(
@@ -133,7 +133,7 @@ class OrganizationUserController extends DashboardController
                 
                 $template_path = dirname(__FILE__) . '/organization-user-set-modal.html';
                 if (!file_exists($template_path)) {
-                    throw new Exception("$template_path file not found!");
+                    throw new Exception("$template_path file not found!", 500);
                 }
                 $this->twigTemplate($template_path, $vars)->render();
 
@@ -152,9 +152,9 @@ class OrganizationUserController extends DashboardController
                     'status'  => 'error',
                     'title'   => $this->text('error'),
                     'message' => $e->getMessage()
-                ));
+                ), $e->getCode());
             } else {
-                $this->modalProhibited($e->getMessage())->render();
+                $this->modalProhibited($e->getMessage(), $e->getCode())->render();
             }
             
             $context['error'] = array('code' => $e->getCode(), 'message' => $e->getMessage());

@@ -42,7 +42,7 @@ class RBACController extends DashboardController
             $context = array('alias' => $alias);
             
             if (!$this->isUserCan('system_rbac')) {
-                throw new Exception($this->text('system-no-permission'));
+                throw new Exception($this->text('system-no-permission'), 401);
             }
             
             $payload = array('bind' => array(':alias' => array('var' => $alias)));            
@@ -71,7 +71,7 @@ class RBACController extends DashboardController
             $message = "RBAC [$alias] жагсаалтыг нээж үзэж байна";
         } catch (Throwable $e) {
             $message = 'RBAC жагсаалтыг нээх үед алдаа гарлаа. ' . $e->getMessage();
-            $this->dashboardProhibited($e->getMessage())->render();
+            $this->dashboardProhibited($e->getMessage(), $e->getCode())->render();
         } finally {
             $this->indolog('rbac', $level, $message, $context);
         }
@@ -86,7 +86,7 @@ class RBACController extends DashboardController
         try {
             $context['payload'] = $payload = $this->getParsedBody();
             if (!$this->isUserCan('system_rbac')) {
-                throw new Exception($this->text('system-no-permission'));
+                throw new Exception($this->text('system-no-permission'), 401);
             }
 
             if ($is_submit) {
@@ -111,9 +111,9 @@ class RBACController extends DashboardController
                     'status' => 'error',
                     'title' => $this->text('error'),
                     'message' => $e->getMessage()
-                ));
+                ), $e->getCode());
             } else {
-                $this->modalProhibited($e->getMessage())->render();
+                $this->modalProhibited($e->getMessage(), $e->getCode())->render();
             }
             
             $context['error'] = array('code' => $e->getCode(), 'message' => $e->getMessage());
@@ -125,24 +125,24 @@ class RBACController extends DashboardController
     {
         try {
             if (!$this->isUserCan('system_rbac')) {
-                throw new Exception($this->text('system-no-permission'));
+                throw new Exception($this->text('system-no-permission'), 401);
             }
             $values = array('role' => $this->getQueryParams()['role'] ?? '');
             $role_result = $this->indo('/statement', array(
                 'bind' => array(':role' => array('var' => $values['role'])),
                 'query' => "SELECT id,description FROM rbac_roles WHERE CONCAT_WS('_',alias,name)=:role AND is_active=1 ORDER By id desc LIMIT 1"));
             if (empty($role_result)) {
-                throw new Exception($this->text('record-not-found'));
+                throw new Exception($this->text('record-not-found'), 404);
             }
             $values += current($role_result);
             
             $template_path = dirname(__FILE__) . '/rbac-view-role-modal.html';
             if (!file_exists($template_path)) {
-                throw new Exception("$template_path file not found!");
+                throw new Exception("$template_path file not found!", 500);
             }
             $this->twigDashboard($template_path, $values)->render();
         } catch (Throwable $e) {
-            $this->modalProhibited($e->getMessage())->render();
+            $this->modalProhibited($e->getMessage(), $e->getCode())->render();
         }
     }
     
@@ -155,7 +155,7 @@ class RBACController extends DashboardController
         try {
             $context['payload'] = $payload = $this->getParsedBody();
             if (!$this->isUserCan('system_rbac')) {
-                throw new Exception($this->text('system-no-permission'));
+                throw new Exception($this->text('system-no-permission'), 401);
             }
 
             if ($is_submit) {
@@ -180,9 +180,9 @@ class RBACController extends DashboardController
                     'status' => 'error',
                     'title' => $this->text('error'),
                     'message' => $e->getMessage()
-                ));
+                ), $e->getCode());
             } else {
-                $this->modalProhibited($e->getMessage())->render();
+                $this->modalProhibited($e->getMessage(), $e->getCode())->render();
             }
             
             $context['error'] = array('code' => $e->getCode(), 'message' => $e->getMessage());
@@ -195,7 +195,7 @@ class RBACController extends DashboardController
         // TODO: please write action log!
         try {
             if (!$this->isUserCan('system_rbac')) {
-                throw new Exception($this->text('system-no-permission'));
+                throw new Exception($this->text('system-no-permission'), 401);
             }
             
             $payload = $this->getParsedBody();        
@@ -203,7 +203,7 @@ class RBACController extends DashboardController
                 || empty($payload['role_id'])
                 || empty($payload['permission_id'])
             ) {
-                throw new Exception($this->text('invalid-request'));
+                throw new Exception($this->text('invalid-request'), 400);
             }
             $payload['alias'] = $alias;
             
@@ -229,13 +229,13 @@ class RBACController extends DashboardController
                     return $this->respondJSON(array('type' => 'primary', 'message' => $this->text('record-successfully-deleted')));
                 }
             }
-            throw new Exception($this->text('invalid-values'));
+            throw new Exception($this->text('invalid-values'), 400);
         } catch (Throwable $e) {
             $this->respondJSON(array(
                 'type' => 'error',
                 'title' => $this->text('error'),
                 'message' => $e->getMessage()
-            ));
+            ), $e->getCode());
         }
     }
     
@@ -246,7 +246,7 @@ class RBACController extends DashboardController
 
         try {
             if (!$this->isUserCan('system_rbac')) {
-                throw new Exception($this->text('system-no-permission'));
+                throw new Exception($this->text('system-no-permission'), 401);
             }
             
             $account = $this->indo('/record?model=' . Accounts::class, array('id' => $id));
@@ -259,7 +259,7 @@ class RBACController extends DashboardController
                     $roles[$role] = true;
                 }
                 if ((empty($roles) || !array_key_exists(1, $roles)) && $id == 1) {
-                    throw new Exception('Default user must have a role');
+                    throw new Exception('Default user must have a role', 403);
                 }
 
                 $user_role = $this->indo('/statement', array(
@@ -345,7 +345,7 @@ class RBACController extends DashboardController
                 
                 $template_path = dirname(__FILE__) . '/rbac-set-user-role-modal.html';
                 if (!file_exists($template_path)) {
-                    throw new Exception("$template_path file not found!");
+                    throw new Exception("$template_path file not found!", 500);
                 }
                 $this->twigTemplate($template_path, $vars)->render();
 
@@ -357,9 +357,9 @@ class RBACController extends DashboardController
                     'status'  => 'error',
                     'title'   => $this->text('error'),
                     'message' => $e->getMessage()
-                ));
+                ), $e->getCode());
             } else {
-                $this->modalProhibited($e->getMessage())->render();
+                $this->modalProhibited($e->getMessage(), $e->getCode())->render();
             }
             
             $context['error'] = array('code' => $e->getCode(), 'message' => $e->getMessage());

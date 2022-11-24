@@ -33,7 +33,7 @@ class LanguageController extends DashboardController
     public function index()
     {
         if (!$this->isUserCan('system_localization_index')) {
-            $this->dashboardProhibited()->render();
+            $this->dashboardProhibited(null, 401)->render();
             return;
         }
 
@@ -49,7 +49,7 @@ class LanguageController extends DashboardController
         
         try {            
             if (!$this->isUserCan('system_localization_insert')) {
-                throw new Exception($this->text('system-no-permission'));
+                throw new Exception($this->text('system-no-permission'), 401);
             }
             
             if ($is_submit) {
@@ -58,25 +58,25 @@ class LanguageController extends DashboardController
                     || empty($payload['short'])
                     || empty($payload['full'])
                 ) {
-                    throw new Exception($this->text('invalid-values'));
+                    throw new Exception($this->text('invalid-values'), 400);
                 }
                 $context['payload'] = $payload;
                 
                 $mother = $this->indosafe('/record?model=' . LanguageModel::class, array('code' => $payload['copy'], 'is_active' => 1));
                 if (!isset($mother['code'])) {
-                    throw new Exception($this->text('invalid-request'));
+                    throw new Exception($this->text('invalid-request'), 400);
                 }
                 
                 $languages = $this->indosafe('/language?app=common', [], 'GET');
                 foreach ($languages as $key => $value) {
                     if ($payload['short'] == $key && $payload['full'] == $value) {
-                        throw new Exception($this->text('lang-existing'));
+                        throw new Exception($this->text('lang-existing'), 403);
                    }
                    if ($payload['short'] == $key) {
-                        throw new Exception($this->text('lang-code-existing'));
+                        throw new Exception($this->text('lang-code-existing'), 403);
                    }
                    if ($payload['full'] == $value) {
-                        throw new Exception($this->text('lang-name-existing'));
+                        throw new Exception($this->text('lang-name-existing'), 403);
                    }    
                 }
 
@@ -110,7 +110,7 @@ class LanguageController extends DashboardController
                 );
                 $template_path = dirname(__FILE__) . '/language-insert-modal.html';
                 if (!file_exists($template_path)) {
-                    throw new Exception("$template_path file not found!");
+                    throw new Exception("$template_path file not found!", 500);
                 }
                 $this->twigTemplate($template_path, $vars)->render();
                 
@@ -119,9 +119,9 @@ class LanguageController extends DashboardController
             }
         } catch (Throwable $e) {
             if ($is_submit) {
-                $this->respondJSON(array('message' => $e->getMessage()));
+                $this->respondJSON(array('message' => $e->getMessage()), $e->getCode());
             } else {
-                $this->modalProhibited($e->getMessage())->render();
+                $this->modalProhibited($e->getMessage(), $e->getCode())->render();
             }
             
             $level = LogLevel::ERROR;
@@ -138,7 +138,7 @@ class LanguageController extends DashboardController
         
         try {            
             if (!$this->isUserCan('system_localization_index')) {
-                throw new Exception($this->text('system-no-permission'));
+                throw new Exception($this->text('system-no-permission'), 401);
             }
             
             $record = $this->indo('/record?model=' . LanguageModel::class, array('id' => $id));
@@ -146,14 +146,14 @@ class LanguageController extends DashboardController
             
             $template_path = dirname(__FILE__) . '/language-retrieve-modal.html';
             if (!file_exists($template_path)) {
-                throw new Exception("$template_path file not found!");
+                throw new Exception("$template_path file not found!", 500);
             }
             $this->twigTemplate($template_path, array('record' => $record, 'accounts' => $this->getAccounts()))->render();
 
             $level = LogLevel::NOTICE;
             $message = "{$record['full']} хэлний мэдээллийг нээж үзэж байна";
         } catch (Throwable $e) {
-            $this->modalProhibited($e->getMessage())->render();
+            $this->modalProhibited($e->getMessage(), $e->getCode())->render();
             
             $level = LogLevel::ERROR;
             $message = 'Хэлний мэдээллийг нээж үзэх үед алдаа гарч зогслоо байна';
@@ -170,7 +170,7 @@ class LanguageController extends DashboardController
         
         try {
             if (!$this->isUserCan('system_localization_update')) {
-                throw new Exception($this->text('system-no-permission'));
+                throw new Exception($this->text('system-no-permission'), 401);
             }
             
             if ($is_submit) {
@@ -178,7 +178,7 @@ class LanguageController extends DashboardController
                 if (empty($payload['code'])
                     || empty($payload['full'])
                 ) {
-                    throw new Exception($this->text('invalid-request'));
+                    throw new Exception($this->text('invalid-request'), 400);
                 }
                 $record = array(
                     'code' => $payload['code'],
@@ -214,7 +214,7 @@ class LanguageController extends DashboardController
                 
                 $template_path = dirname(__FILE__) . '/language-update-modal.html';
                 if (!file_exists($template_path)) {
-                    throw new Exception("$template_path file not found!");
+                    throw new Exception("$template_path file not found!", 500);
                 }
                 $this->twigTemplate($template_path, array('record' => $record))->render();
                 
@@ -229,9 +229,9 @@ class LanguageController extends DashboardController
             throw new Exception($err->getMessage(), $err->getCode());
         } catch (Throwable $e) {
             if ($is_submit) {
-                $this->respondJSON(array('message' => $e->getMessage()));
+                $this->respondJSON(array('message' => $e->getMessage()), $e->getCode());
             } else {
-                $this->modalProhibited($e->getMessage())->render();
+                $this->modalProhibited($e->getMessage(), $e->getCode())->render();
             }
             
             $level = LogLevel::ERROR;
@@ -248,7 +248,7 @@ class LanguageController extends DashboardController
         
         try {
             if (!$this->isUserCan('system_localization_delete')) {
-                throw new Exception('No permission for an action [delete]!');
+                throw new Exception('No permission for an action [delete]!', 401);
             }
             
             $payload = $this->getParsedBody();
@@ -256,7 +256,7 @@ class LanguageController extends DashboardController
                 || !isset($payload['name'])
                 || !filter_var($payload['id'], FILTER_VALIDATE_INT)
             ) {
-                throw new Exception($this->text('invalid-request'));
+                throw new Exception($this->text('invalid-request'), 400);
             }
             $context['payload'] = $payload;
             
@@ -268,7 +268,7 @@ class LanguageController extends DashboardController
             $defLanguage = $this->indosafe("/record?{$table}model=" . LanguageModel::class, array('is_default' => 1));
             if (isset($defLanguage['id'])) {
                 if ($defLanguage['id'] == $payload['id']) {
-                    throw new Exception('Cannot remove default language!');
+                    throw new Exception('Cannot remove default language!', 403);
                 }
             }
             
@@ -287,7 +287,7 @@ class LanguageController extends DashboardController
                 'status'  => 'error',
                 'title'   => $this->text('error'),
                 'message' => $e->getMessage()
-            ));
+            ), $e->getCode());
             
             $level = LogLevel::ERROR;
             $message = 'Хэлний мэдээлэл устгах үйлдлийг гүйцэтгэх явцад алдаа гарч зогслоо';
@@ -303,7 +303,7 @@ class LanguageController extends DashboardController
         
         try {
             if (!$this->isUserCan('system_localization_index')) {
-                throw new Exception($this->text('system-no-permission'));
+                throw new Exception($this->text('system-no-permission'), 401);
             }
             
             $languages = $this->indo('/record/rows?model=' . LanguageModel::class);

@@ -36,7 +36,7 @@ class SettingsController extends DashboardController
         if ($this->getRequest()->getMethod() == 'POST') {
             try {
                 if (!$this->isUserCan('system_content_settings')) {
-                    throw new Exception($this->text('system-no-permission'));
+                    throw new Exception($this->text('system-no-permission'), 401);
                 }
                 
                 $record = array();
@@ -54,39 +54,39 @@ class SettingsController extends DashboardController
                 $context['content'] = $content;
                 
                 if (empty($record['alias'])) {
-                    throw new Exception($this->text('invalid-request'));
+                    throw new Exception($this->text('invalid-request'), 400);
                 }
                 
                 if (!empty($record['socials'])) {
                     if (json_decode($record['socials']) === null) {
-                        throw new Exception('Additional settings for social networks must be valid JSON!');
+                        throw new Exception('Additional settings for social networks must be valid JSON!', 400);
                     }
                 }
                 
                 if (!empty($record['options'])) {
                     if (json_decode($record['options']) === null) {
-                        throw new Exception('Extra options must be valid JSON!');
+                        throw new Exception('Extra options must be valid JSON!', 400);
                     }
                 }
                 
                 if (!empty($record['facebook'])) {
                     $fbUrlCheck = '/^(https?:\/\/)?(www\.)?facebook.com\/[a-zA-Z0-9(\.\?)?]/';
                     if (preg_match($fbUrlCheck, $record['facebook']) != 1) {
-                        throw new Exception('Facebook URL is is not valid!');
+                        throw new Exception('Facebook URL is is not valid!', 400);
                     }
                 }
                 
                 if (!empty($record['twitter'])) {
                     $twUrlCheck = '/^(https?:\/\/)?(www\.)?twitter.com\/[a-zA-Z0-9(\.\?)?]/';
                     if (preg_match($twUrlCheck, $record['twitter']) != 1) {
-                        throw new Exception('Twitter URL is is not valid!');
+                        throw new Exception('Twitter URL is is not valid!', 400);
                     }
                 }
                 
                 if (!empty($record['youtube'])) {
                     $twUrlCheck = '/^(https?:\/\/)?(www\.)?youtube.com\/[a-zA-Z0-9(\.\?)?]/';
                     if (preg_match($twUrlCheck, $record['youtube']) != 1) {
-                        throw new Exception('YouTube URL is is not valid!');
+                        throw new Exception('YouTube URL is is not valid!', 400);
                     }
                 }
                 
@@ -113,7 +113,7 @@ class SettingsController extends DashboardController
                 $level = LogLevel::INFO;
                 $message = 'Системийн тохируулгыг амжилттай хадгаллаа';
             } catch (Throwable $e) {
-                echo $this->respondJSON(array('message' => $e->getMessage()));                
+                echo $this->respondJSON(array('message' => $e->getMessage()), $e->getCode());                
 
                 $level = LogLevel::ERROR;
                 $message = 'Системийн тохируулгыг хадгалах үед алдаа гарч зогслоо';
@@ -122,7 +122,7 @@ class SettingsController extends DashboardController
             }
         } else {
             if (!$this->isUserCan('system_content_settings')) {
-                $this->dashboardProhibited()->render();
+                $this->dashboardProhibited(null, 401)->render();
                 return;
             }
 
@@ -155,12 +155,12 @@ class SettingsController extends DashboardController
         
         try {
             if (!$this->isUserCan('system_content_settings')) {
-                throw new Exception($this->text('system-no-permission'));
+                throw new Exception($this->text('system-no-permission'), 401);
             }
             
             $alias = $this->getParsedBody()['alias'] ?? null;
             if (empty($alias)) {
-                throw new Exception($this->text('invalid-request'));
+                throw new Exception($this->text('invalid-request'), 400);
             }
             
             $pattern = '/record?model=' . SettingsModel::class;
@@ -264,7 +264,7 @@ class SettingsController extends DashboardController
             $level = LogLevel::INFO;
             $message = 'Системийн тохируулгыг амжилттай хадгаллаа';
         } catch (Throwable $e) {
-            $this->respondJSON(array('message' => $e->getMessage()));                
+            $this->respondJSON(array('message' => $e->getMessage()), $e->getCode());                
 
             $level = LogLevel::ERROR;
             $message = 'Системийн тохируулгыг хадгалах үед алдаа гарч зогслоо';
@@ -279,7 +279,7 @@ class SettingsController extends DashboardController
         
         try {
             if (!$this->isUserCan('system_content_settings')) {
-                throw new Exception($this->text('system-no-permission'));
+                throw new Exception($this->text('system-no-permission'), 401);
             }
             
             $record = array();
@@ -313,7 +313,7 @@ class SettingsController extends DashboardController
             $level = LogLevel::INFO;
             $message = 'Системийн шууданчын тохируулгыг амжилттай хадгаллаа';
         } catch (Throwable $e) {
-            echo $this->respondJSON(array('message' => $e->getMessage()));
+            $this->respondJSON(array('message' => $e->getMessage()), $e->getCode(), $e->getCode());
 
             $level = LogLevel::ERROR;
             $message = 'Системийн шууданчын тохируулгыг хадгалах үед алдаа гарч зогслоо';
