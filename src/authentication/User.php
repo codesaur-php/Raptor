@@ -2,7 +2,6 @@
 
 namespace Raptor\Authentication;
 
-
 class User implements UserInterface
 {
     private $_jwt;
@@ -71,5 +70,10 @@ class User implements UserInterface
     public function getOrganization(): array
     {
         return $this->_organizations[0] ?? array();
+    }
+        
+    public function getRBAC()
+    {
+        return $this->_rbac;
     }
 }

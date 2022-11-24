@@ -7,8 +7,6 @@ use Throwable;
 use codesaur\RBAC\Accounts;
 use codesaur\Template\TwigTemplate;
 
-use Indoraptor\Account\MenuModel;
-
 class DashboardController extends \Raptor\Controller
 {    
     public function index()
@@ -20,7 +18,7 @@ class DashboardController extends \Raptor\Controller
     {
         $dashboard = $this->twigTemplate(dirname(__FILE__) . '/dashboard.html');
         $dashboard->set('meta', $this->getAttribute('meta'));
-        $dashboard->set('sidemenu', $this->getSideMenu());
+        $dashboard->set('sidemenu', $this->getAccountMenu());
         $dashboard->set('content', $this->twigTemplate($template, $vars));
         return $dashboard;
     }
@@ -51,20 +49,16 @@ class DashboardController extends \Raptor\Controller
         return $accounts;
     }
     
-    function getSideMenu()
+    public function getAccountMenu()
     {
-        try {
-            $menu = $this->indoget('/account/get/menu');            
-        } catch (Throwable $e) {
-            if ($e->getCode() == 404
-                && $e->getMessage() == 'Menu not defined'
-            ) {
-                $menu = $this->getDefaultMenu();
-            } else {
-                $menu = array();
-            }
+        $has_menu_table = $this->indosafe('/statement', array(
+            'query' => "select exists(select 1 from raptor_account_menu)"));
+        if (empty($has_menu_table) || reset($has_menu_table[0]) == '0') {
+            $this->createDefaultMenu();
         }
-        
+
+        $menu = $this->indosafe('/record/rows?model=' . MenuModel::class,
+            array('ORDER BY' => 'p.position', 'WHERE' => 'p.is_active=1'));
         $sidemenu = array();
         foreach ($menu as $row) {
             $title = $row['content']['title'][$this->getLanguageCode()];
@@ -104,7 +98,7 @@ class DashboardController extends \Raptor\Controller
         return $sidemenu;
     }
     
-    function getDefaultMenu()
+    function createDefaultMenu()
     {
         try {
             $pattern = '/record?model=' . MenuModel::class;
@@ -121,8 +115,8 @@ class DashboardController extends \Raptor\Controller
                 'record' => array('parent_id' => $contents_id, 'position' => '280', 'alias' => 'system', 'permission' => 'system_localization_index', 'icon' => 'bi bi-flag-fill', 'href' => $this->generateLink('languages'))
             ));
             $this->indopost($pattern, array(
-                'content' => array('mn' => array('title' => 'Орчуулга'), 'en' => array('title' => 'Translations')),
-                'record' => array('parent_id' => $contents_id, 'position' => '285', 'alias' => 'system', 'permission' => 'system_localization_index', 'icon' => 'bi bi-translate', 'href' => $this->generateLink('translations'))
+                'content' => array('mn' => array('title' => 'Текстүүд'), 'en' => array('title' => 'Texts')),
+                'record' => array('parent_id' => $contents_id, 'position' => '285', 'alias' => 'system', 'permission' => 'system_localization_index', 'icon' => 'bi bi-translate', 'href' => $this->generateLink('texts'))
             ));
             $this->indopost($pattern, array(
                 'content' => array('mn' => array('title' => 'Баримт бичиг загвар'), 'en' => array('title' => 'Document templates')),
@@ -146,12 +140,8 @@ class DashboardController extends \Raptor\Controller
                 'content' => array('mn' => array('title' => 'Хандалтын протокол'), 'en' => array('title' => 'Access logs')),
                 'record' => array('parent_id' => $system_id, 'position' => '340', 'alias' => 'system', 'permission' => 'system_logger', 'icon' => 'bi bi-list-stars', 'href' => $this->generateLink('logs'))
             ));
-            
-            return $this->indoget('/account/get/menu');
         } catch (Throwable $e) {
             $this->errorLog($e);
-            
-            return array();
         }
     }
 }

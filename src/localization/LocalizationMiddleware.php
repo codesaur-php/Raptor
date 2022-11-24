@@ -65,7 +65,7 @@ class LocalizationMiddleware implements MiddlewareInterface
         $text = array();
         try {
             $translations = $this->request(
-                $request->getAttribute('indo'), 'POST', '/translation/retrieve',
+                $request->getAttribute('indo'), 'POST', '/text/retrieve',
                 array('code' => $code, 'table' => ['dashboard', 'default', 'user']));
             foreach ($translations as $translation) {
                 $text += $translation;

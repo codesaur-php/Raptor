@@ -34,7 +34,7 @@ class ErrorHandler implements ExceptionHandlerInterface
                 ) {
                     http_response_code($code);
                 }
-            }            
+            }
         }
         
         error_log("$title: $message");

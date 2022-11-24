@@ -14,10 +14,11 @@ use codesaur\RBAC\Accounts;
 use codesaur\RBAC\UserRole;
 use codesaur\Template\MemoryTemplate;
 
-use Indoraptor\Account\OrganizationModel;
-use Indoraptor\Account\OrganizationUserModel;
-use Indoraptor\Account\ForgotModel;
+use Indoraptor\Auth\OrganizationModel;
+use Indoraptor\Auth\OrganizationUserModel;
 
+use Raptor\Authentication\ForgotModel;
+use Raptor\Authentication\AccountRequestsModel;
 use Raptor\File\PrivateFileController;
 use Raptor\Dashboard\DashboardController;
 
@@ -54,7 +55,7 @@ class AccountController extends DashboardController
             
             $org_users_query =
                 'SELECT t1.account_id, t1.organization_id ' .
-                'FROM organization_users as t1 JOIN organizations as t2 ON t1.organization_id=t2.id ' .
+                'FROM indo_organization_users as t1 JOIN indo_organizations as t2 ON t1.organization_id=t2.id ' .
                 'WHERE t1.is_active=1 AND t2.is_active=1';
             $org_users = $this->indo('/statement', array('query' => $org_users_query));
             array_walk($org_users, function($value) use (&$accounts) {
@@ -251,10 +252,10 @@ class AccountController extends DashboardController
                 }
                 if (!empty($old_photo_file)) {
                     if ($file->getLastError() == -1) {
-                        $this->tryDeleteFile(dirname($_SERVER['SCRIPT_FILENAME']) . "/public/accounts/$id/$old_photo_file");
+                        $this->tryDeleteFile(dirname($_SERVER['SCRIPT_FILENAME']) . "/../private/accounts/$id/$old_photo_file");
                         $record['photo'] = '';
                     } else if (isset($photo['name']) && $photo['name'] != $old_photo_file) {
-                        $this->tryDeleteFile(dirname($_SERVER['SCRIPT_FILENAME']) . "/public/accounts/$id/$old_photo_file");
+                        $this->tryDeleteFile(dirname($_SERVER['SCRIPT_FILENAME']) . "/../private/accounts/$id/$old_photo_file");
                     }
                 }
                 if (isset($record['photo'])) {
@@ -277,7 +278,7 @@ class AccountController extends DashboardController
                 }
 
                 $org_user = $this->indo('/statement', array(
-                    'query' => "SELECT id,organization_id FROM organization_users WHERE account_id=$id AND is_active=1"));
+                    'query' => "SELECT id,organization_id FROM indo_organization_users WHERE account_id=$id AND is_active=1"));
                 foreach ($org_user as $row) {
                     if (isset($organizations[(int)$row['organization_id']])) {
                         unset($organizations[(int)$row['organization_id']]);
@@ -357,7 +358,7 @@ class AccountController extends DashboardController
              
                 $org_id_query =
                     'SELECT ou.organization_id as id ' .
-                    'FROM organization_users as ou JOIN organizations as o ON ou.organization_id=o.id ' .
+                    'FROM indo_organization_users as ou JOIN indo_organizations as o ON ou.organization_id=o.id ' .
                     "WHERE ou.account_id=$id AND ou.is_active=1 AND o.is_active=1";
                 $org_ids = $this->indo('/statement', array('query' => $org_id_query));
                 $ids = array();
@@ -368,7 +369,7 @@ class AccountController extends DashboardController
                 
                 $rbacs = array('common' => 'Common');            
                 $alias_names = $this->indo('/statement', array(
-                    'query' => "SELECT alias,name FROM organizations WHERE alias!='common' AND is_active=1 ORDER By id desc"));
+                    'query' => "SELECT alias,name FROM indo_organizations WHERE alias!='common' AND is_active=1 ORDER By id desc"));
                 foreach ($alias_names as $row) {
                     if (isset($rbacs[$row['alias']])) {
                         $rbacs[$row['alias']] .= ", {$row['name']}";
@@ -441,7 +442,7 @@ class AccountController extends DashboardController
             
             $organizations_query =
                 'SELECT t2.name ' .
-                'FROM organization_users as t1 JOIN organizations as t2 ON t1.organization_id=t2.id ' .
+                'FROM indo_organization_users as t1 JOIN indo_organizations as t2 ON t1.organization_id=t2.id ' .
                 "WHERE t1.is_active=1 AND t2.is_active=1 AND t1.account_id=$id";
             $organizations = $this->indo('/statement', array('query' => $organizations_query));
 
@@ -541,11 +542,11 @@ class AccountController extends DashboardController
                 $modelName = ForgotModel::class;
                 $message = 'Нууц үгээ сэргээх хүсэлтүүдийн жагсаалтыг нээж үзэж байна';
             } else {
-                $modelName = Accounts::class;
+                $modelName = AccountRequestsModel::class;
                 $message = 'Шинэ хэрэглэгчээр бүртгүүлэх хүсэлтүүдийн жагсаалтыг нээж үзэж байна';
             }
             $vars = array(
-                'rows' => $this->indo("/record/rows?table=$table&model=$modelName", array('WHERE' => 'is_active!=999'))
+                'rows' => $this->indo("/record/rows?model=$modelName", array('WHERE' => 'is_active!=999'))
             );        
 
             $template = $this->twigTemplate($modal, $vars);
@@ -589,7 +590,7 @@ class AccountController extends DashboardController
             }
             $context += array('payload' => $parsedBody, 'id' => $id);
             
-            $record = $this->indo('/record?table=newbie&model=' . Accounts::class, array('id' => $id));
+            $record = $this->indo('/record?model=' . AccountRequestsModel::class, array('id' => $id));
             $existing = $this->indo('/statement', array(
                 'query' => 'SELECT id FROM rbac_accounts WHERE username=:username OR email=:email',
                 'bind' => array(
@@ -602,19 +603,21 @@ class AccountController extends DashboardController
             }
             
             unset($record['id']);
+            unset($record['status']);
             unset($record['is_active']);
             unset($record['created_at']);
             unset($record['created_by']);
             unset($record['updated_at']);
             unset($record['updated_by']);
+            unset($record['rbac_account_id']);
             $account_id = $this->indopost('/record?model=' . Accounts::class, array('record' => $record));
             $context += array('account' => $record + ['id' => $account_id]);
 
             $payload = array(
                 'condition' => array('WHERE' => "id=$id"),
-                'record' => array('is_active' => 0, 'status' => 2)
+                'record' => array('is_active' => 0, 'status' => 2, 'rbac_account_id' => $account_id)
             );
-            $this->indoput('/record?table=newbie&model=' . Accounts::class, $payload);            
+            $this->indoput('/record?model=' . AccountRequestsModel::class, $payload);            
             
             $organization_id = filter_var($parsedBody['organization_id'] ?? 0, FILTER_VALIDATE_INT);
             if ($organization_id === false && $organization_id > 0) {
@@ -689,7 +692,7 @@ class AccountController extends DashboardController
             }
             $context += array('payload' => $payload);
             
-            $this->indodelete("/record?table=newbie&model=" . Accounts::class, array('WHERE' => "id='{$payload['id']}'"));
+            $this->indodelete("/record?model=" . AccountRequestsModel::class, array('WHERE' => "id='{$payload['id']}'"));
             
             $this->respondJSON(array(
                 'status'  => 'success',

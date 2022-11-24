@@ -12,4 +12,5 @@ interface UserInterface
     public function getAlias();
     public function getOrganization();
     public function getOrganizations();
+    public function getRBAC();
 }

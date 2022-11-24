@@ -4,7 +4,7 @@
 <html lang="{{ languageCode }}">
     <head>
         <meta charset="{{ meta['charset'] ?? 'utf-8' }}">
-        <title>{{ (meta['content']['title'][languageCode] ?? 'login'|text)|e }}</title>
+        <title>{{ (meta['content']['title'][languageCode] is not empty ? meta['content']['title'][languageCode] : 'login'|text)|e }}</title>
         <meta name="robots" content="index,follow">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         {% if meta['author'] is defined %}<meta name="author" content="{{ meta['author'] }}">{% endif %}
@@ -96,7 +96,7 @@
                 </div>
             </form>
                     
-            <form class="d-none" id="forgot_form" action="{{ 'login-request-password'|link }}" method="POST">
+            <form class="d-none" id="forgot_form" action="{{ 'login-forgot'|link }}" method="POST">
                 <h3 class="text-center mb-4">{{ 'forgotten-password-reset'|text }}</h3>
                 <span>{{ 'enter-email-below'|text }}</span>
                 <div class="form-floating mt-2">
@@ -258,17 +258,13 @@
                             })
                         }
                     ).then(res => {
-                        if (!res.ok) {
-                            throw new Error(res.statusText);
-                        }
                         return res.json();
                     }).then(response => {
-                        if (response.status !== 'success'
-                                || isBlank(response.url)
-                        ) {
+                        if (response.status !== 'success') {
                             throw new Error(response.message ?? "{{ 'something-went-wrong'|text|e }}");
                         }
-                        window.location.href = response.url;
+                        showMessage(formLogin, 'success', response.message);
+                        window.location.href = "{{ 'home'|link }}";
                     })
                     .catch(error => {
                         this.spinner('stop');
@@ -298,9 +294,6 @@
                         }
                     ).then(res => {
                         this.spinner('stop');
-                        if (!res.ok) {
-                            throw new Error(res.statusText);
-                        }
                         return res.json();
                     }).then(response => {
                         if (response.status !== 'success') {
@@ -350,9 +343,6 @@
                         }
                     ).then(res => {
                         this.spinner('stop');
-                        if (!res.ok) {
-                            throw new Error(res.statusText);
-                        }
                         return res.json();
                     }).then(response => {
                         if (response.status !== 'success') {
@@ -400,11 +390,11 @@
                     </div>
                     <div class="modal-footer modal-footer-solid">
                          <button class="btn btn-primary shadow-sm" data-bs-dismiss="modal">{{ 'close'|text }}</button>
-                    </div>            
+                    </div>
                 </div>
             </div>
-        </div>                    
-        {% if meta['socials']['google']['analytics']['id'] is defined %}
+        </div>
+         {% if meta['socials']['google']['analytics']['id'] is defined %}
         <script type="text/javascript">
             (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
             (i[r].q=i[r].q||[]).push(arguments);},i[r].l=1*new Date();a=s.createElement(o),

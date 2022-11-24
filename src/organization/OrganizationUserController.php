@@ -10,8 +10,8 @@ use Psr\Http\Message\ServerRequestInterface;
 
 use codesaur\RBAC\Accounts;
 
-use Indoraptor\Account\OrganizationModel;
-use Indoraptor\Account\OrganizationUserModel;
+use Indoraptor\Auth\OrganizationModel;
+use Indoraptor\Auth\OrganizationUserModel;
 
 use Raptor\Dashboard\DashboardController;
 
@@ -39,7 +39,7 @@ class OrganizationUserController extends DashboardController
             }
 
             $user_orgs_query =
-                'SELECT t2.* FROM organization_users as t1 JOIN organizations as t2 ON t1.organization_id=t2.id ' .
+                'SELECT t2.* FROM indo_organization_users as t1 JOIN indo_organizations as t2 ON t1.organization_id=t2.id ' .
                 'WHERE t1.is_active=1 AND t2.is_active=1 AND t1.account_id=' . $this->getUser()->getAccount()['id'];
             $organizations = $this->indo('/statement', array('query' => $user_orgs_query));
 
@@ -80,7 +80,7 @@ class OrganizationUserController extends DashboardController
                 }
 
                 $user_orgs = $this->indo('/statement', array(
-                    'query' => "SELECT id,organization_id FROM organization_users WHERE account_id=$account_id AND is_active=1"));
+                    'query' => "SELECT id,organization_id FROM indo_organization_users WHERE account_id=$account_id AND is_active=1"));
                 foreach ($user_orgs as $row) {
                     if (isset($organizations[(int)$row['organization_id']])) {
                         unset($organizations[(int)$row['organization_id']]);
@@ -115,7 +115,7 @@ class OrganizationUserController extends DashboardController
             } else {
                 $query =
                     'SELECT ou.organization_id as id ' .
-                    'FROM organization_users as ou JOIN organizations as o ON ou.organization_id=o.id ' .
+                    'FROM indo_organization_users as ou JOIN indo_organizations as o ON ou.organization_id=o.id ' .
                     "WHERE ou.account_id=$account_id AND ou.is_active=1 AND o.is_active=1";
                 $response = $this->indo('/statement', array('query' => $query));
                 $ids = array();

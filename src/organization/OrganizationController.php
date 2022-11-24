@@ -8,7 +8,7 @@ use Throwable;
 use Psr\Log\LogLevel;
 use Psr\Http\Message\ServerRequestInterface;
 
-use Indoraptor\Account\OrganizationModel;
+use Indoraptor\Auth\OrganizationModel;
 
 use Raptor\Dashboard\DashboardController;
 use Raptor\File\FileController;

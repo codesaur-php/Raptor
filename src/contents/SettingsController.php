@@ -9,7 +9,7 @@ use Psr\Log\LogLevel;
 use Psr\Http\Message\ServerRequestInterface;
 
 use Indoraptor\Record\SettingsModel;
-use Indoraptor\Mail\MailerModel;
+use Indoraptor\Mailer\MailerModel;
 
 use Raptor\Dashboard\DashboardController;
 use Raptor\File\FileController;

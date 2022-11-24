@@ -83,13 +83,13 @@ class LanguageController extends DashboardController
                 $id = $this->indopost('/record?model=' . LanguageModel::class, array('record' => array('code' => $payload['short'], 'full' => $payload['full'])));
                 $context['record'] = $id;
                 
-                $translated = $this->indosafe('/language/copy/multimodel/content', array('from' => $mother['code'], 'to' => $payload['short']), 'POST');
-                if (is_array($translated)) {
+                $copied = $this->indosafe('/language/copy/multimodel/content', array('from' => $mother['code'], 'to' => $payload['short']), 'POST');
+                if (is_array($copied)) {
                     $this->indolog(
                         'localization',
                         LogLevel::ALERT,
                         __CLASS__ . ' объект нь ' . $mother['code'] . ' хэлнээс ' . $payload['short'] . ' хэлийг хуулбарлан үүсгэлээ. ',
-                        array('reason' => 'copy', 'translated' => $translated) + $context
+                        array('reason' => 'copy', 'copied' => $copied) + $context
                     );
                 }
                 

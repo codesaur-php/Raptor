@@ -46,14 +46,14 @@ class RBACController extends DashboardController
             }
             
             $payload = array('bind' => array(':alias' => array('var' => $alias)));            
-            $payload['query'] = 'SELECT id,name,description FROM rbac_roles WHERE alias=:alias AND is_active=1';
+            $payload['query'] = "SELECT id,name,description FROM rbac_roles WHERE alias=:alias AND is_active=1 AND (alias!='system' AND name!='coder')";
             $roles = $this->indo('/statement', $payload);
             
             $payload['query'] = 'SELECT id,name,description FROM rbac_permissions WHERE alias=:alias AND is_active=1 ORDER By module';            
             $permissions = $this->indo('/statement', $payload);            
             
             $role_permission = array();
-            $payload['query'] = 'SELECT role_id,permission_id FROM rbac_role_perm WHERE alias=:alias AND is_active=1';
+            $payload['query'] = 'SELECT role_id,permission_id FROM rbac_role_permission WHERE alias=:alias AND is_active=1';
             $rp = $this->indo('/statement', $payload);
             foreach ($rp ?? array() as $row) {
                 $role_permission[$row['role_id']][$row['permission_id']] = true;
@@ -208,7 +208,7 @@ class RBACController extends DashboardController
             $payload['alias'] = $alias;
             
             $result = $this->indo('/statement', array(
-                'query' => 'SELECT id FROM rbac_role_perm WHERE alias=:alias AND role_id=:role AND permission_id=:permission AND is_active=1',
+                'query' => 'SELECT id FROM rbac_role_permission WHERE alias=:alias AND role_id=:role AND permission_id=:permission AND is_active=1',
                 'bind' => array(
                     ':alias' => array('var' => $payload['alias']),
                     ':role' => array('var' => $payload['role_id']),
@@ -307,7 +307,7 @@ class RBACController extends DashboardController
                 $vars = array('account' => $this->indo('/record?model=' . Accounts::class, array('id' => $id)));
 
                 $rbacs = array('common' => 'Common');            
-                $organizations_query = "SELECT alias,name FROM organizations WHERE alias!='common' AND is_active=1 ORDER By id desc";
+                $organizations_query = "SELECT alias,name FROM indo_organizations WHERE alias!='common' AND is_active=1 ORDER By id desc";
                 $organizations_result = $this->indo('/statement', array('query' => $organizations_query));
                 foreach ($organizations_result as $row) {
                     if (isset($rbacs[$row['alias']])) {

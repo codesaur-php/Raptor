@@ -5,7 +5,7 @@
 <html lang="{{ languageCode }}">
     <head>
         <meta charset="{{ meta['charset'] ?? 'utf-8' }}">
-        <title>{{ (meta['content']['title'][languageCode] ?? 'dashboard'|text)|e }}</title>
+        <title>{{ (meta['content']['title'][languageCode] is not empty ? meta['content']['title'][languageCode] : 'dashboard'|text)|e }}</title>
         <meta name="robots" content="{{ meta['robots']|default('index,follow')|e }}">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         {% if meta['author'] is defined %}<meta name="author" content="{{ meta['author'] }}">{% endif %}

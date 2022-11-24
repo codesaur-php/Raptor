@@ -13,7 +13,7 @@
                     <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#generalPanel" role="tab" aria-controls="generalPanel" aria-selected="true">{{ 'general-info'|text }}</button>
                 </li>
                 <li class="nav-item">
-                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#settingsPanel" role="tab" aria-controls="settingsPanel" aria-selected="false">{{ 'translation-settings'|text }}</button>
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#settingsPanel" role="tab" aria-controls="settingsPanel" aria-selected="false">{{ 'text-settings'|text }}</button>
                 </li>
                 <li class="nav-item">
                     <button class="nav-link" data-bs-toggle="tab" data-bs-target="#confirmPanel" role="tab" aria-controls="confirmPanel" aria-selected="false">{{ 'confirm'|text }}</button>
@@ -45,9 +45,9 @@
                     </div>
                 </div>
                 <div class="tab-pane fade" id="settingsPanel" role="tabpanel">
-                    <h5 class="mt-4">{{ 'select-translation-settings'|text }}</h5>
+                    <h5 class="mt-4">{{ 'select-text-settings'|text }}</h5>
                     <div class="mt-4">
-                        <label>{{ 'copy-translations-from'|text }}</label>
+                        <label>{{ 'copy-text-from'|text }}</label>
                         <select class="form-control" id="available_languages">
                             <option value=""></option>
                             {% for code,name in localization.language %}
@@ -80,7 +80,7 @@
                             <input class="form-control lang_full" id="txt_full_confirm" required autocomplete="off" maxlength="32" name="full" placeholder="" value="" type="text">
                         </div>
                         <div class="mt-4 mb-3">
-                            <label>{{ 'copy-translations-from'|text }}</label>
+                            <label>{{ 'copy-text-from'|text }}</label>
                             <input class="form-control copy_short" readonly required autocomplete="off" maxlength="6" name="copy" placeholder="" value="" type="text">
                         </div>
                     </form>

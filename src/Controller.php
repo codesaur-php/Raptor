@@ -7,10 +7,12 @@ use Exception;
 
 use Twig\TwigFilter;
 use Psr\Log\LogLevel;
+use Fig\Http\Message\StatusCodeInterface;
 
 use codesaur\Globals\Server;
 use codesaur\Router\RouterInterface;
 use codesaur\Template\TwigTemplate;
+use codesaur\Http\Message\ReasonPrhase;
 
 use Indoraptor\InternalRequest;
 
@@ -113,7 +115,7 @@ class Controller extends \codesaur\Http\Application\Controller
         }
 
         if ($this->isDevelopment()) {
-            error_log("UNTRANSLATED: $key");
+            error_log("TEXT NOT FOUND: $key");
         }
 
         return '{' . $key . '}';
@@ -139,9 +141,18 @@ class Controller extends \codesaur\Http\Application\Controller
         return $twig;
     }
     
-    public function respondJSON(array $res)
+    public function respondJSON(array $res, ?int $code = null)
     {
         if (!headers_sent()) {
+            if (!empty($code)) {
+                if ($code != StatusCodeInterface::STATUS_OK) {
+                    $status_code = "STATUS_$code";
+                    $reasonPhraseClass = ReasonPrhase::class;
+                    if (defined("$reasonPhraseClass::$status_code")) {
+                        http_response_code($code);
+                    }
+                }
+            }
             header('Content-Type: application/json');
         }
         
