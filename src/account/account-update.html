@@ -72,11 +72,13 @@
         <div class="tab-pane" id="tab-options" role="tabpanel">
             <div class="mb-3">
                 <label class="form-label">{{ 'organization'|text }}</label>
+                {% if user.can('system_account_organization_set') %}
                 <select class="form-control" multiple name="organizations[]" id="organizations" aria-describedby="organzationHelpBlock">
                     {% for organization in organizations %}
                         <option value="{{ organization['id'] }}">{{ organization['name'] }}</option>
                     {% endfor %}
                 </select>
+                {% endif %}
                 <div class="form-text" id="organzationHelpBlock">хэрэглэгчийн харъяалагдах байгууллагыг сонгон тохируулна уу</div>
             </div>
             <hr>

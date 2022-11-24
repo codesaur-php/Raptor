@@ -56,9 +56,11 @@
                 <br/><a class="badge bg-success fw-normal text-decoration-none mt-1" href="mailto:{{ account['email']|e }}"><i class="bi bi-envelope"></i> {{ account['email'] }}</a>
             </td>
             <td>
+            {% if user.can('system_account_organization_set') %}    
                 <a href="{{ 'organization-user-set'|link({'account_id': account['id']}) }}"
                    class="btn btn-dark btn-sm shadow-sm" data-bs-target="#dashboard-modal" data-bs-toggle="modal"><i class="bi bi-bank"></i>
                 </a>
+            {% endif %}
             {% for org in account['organizations'] %}
                 <a class="badge bg-{{ organizations[org]['alias'] == 'system' ? 'primary' : 'warning' }} fw-normal text-decoration-none" href="{{ 'organization-view'|link({'id': organizations[org]['id']}) }}" data-bs-target="#dashboard-modal" data-bs-toggle="modal">
                     {{ organizations[org]['name'] }}
@@ -66,8 +68,10 @@
             {% endfor %}
             </td>
             <td>
+            {% if user.can('system_rbac') %}    
                 <a class="btn btn-danger btn-sm shadow-sm" href="{{ 'rbac-set-user-role'|link({'id': account['id']}) }}" data-bs-target="#dashboard-modal" data-bs-toggle="modal"><i class="bi bi-shield-fill-check"></i>
                 </a>
+            {% endif %}
             {% for role in account['roles'] %}
                 <a class="badge bg-{{ role == 'system_coder' ? 'primary' : 'warning' }} text-decoration-none shadow-sm" href="{{ 'rbac-role-view'|link }}?role={{ role }}" data-bs-target="#dashboard-modal" data-bs-toggle="modal">
                     {{ role }}
