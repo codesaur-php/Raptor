@@ -178,7 +178,7 @@ class LoginController extends \Raptor\Controller
             $message = "{$payload['username']} нэртэй {$payload['email']} хаягтай шинэ хэрэглэгч үүсгэх хүсэлт бүртгүүллээ";
         } catch (Throwable $e) {
             $message = $e->getMessage();
-           $this->respondJSON(array('message' => '<span class="text-secondary">Шинэ хэрэглэгч үүсгэх хүсэлт бүртгүүлэх үед алдаа гарч зогслоо.</span><br/>' . $message), $e->getCode());
+            $this->respondJSON(array('message' => '<span class="text-secondary">Шинэ хэрэглэгч үүсгэх хүсэлт бүртгүүлэх үед алдаа гарч зогслоо.</span><br/>' . $message), $e->getCode());
             
             $level = LogLevel::ERROR;
             $context += array('error' => ['code' => $e->getCode(), 'message' => $message]);
