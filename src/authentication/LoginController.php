@@ -365,7 +365,7 @@ class LoginController extends \Raptor\Controller
                 'record' => ['password' => password_hash($password_new, PASSWORD_BCRYPT)],
                 'condition' => ['WHERE' => "id={$account['id']}"]));
             if (!$result) {
-                 throw new Exception("Can't reset account [{$account['username']}] password", StatusCodeInterface::STATUS_INTERNAL_SERVER_ERROR);
+                throw new Exception("Can't reset account [{$account['username']}] password", StatusCodeInterface::STATUS_INTERNAL_SERVER_ERROR);
             }
             $this->indo('/record/delete?model=' . ForgotModel::class, array('WHERE' => "id={$record['id']}"));
             
