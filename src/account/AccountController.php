@@ -276,34 +276,36 @@ class AccountController extends DashboardController
                 foreach ($post_organizations as $org_id) {
                     $organizations[$org_id] = true;
                 }
+                
+                if ($this->isUserCan('system_account_organization_set') && !empty($organizations)) {
+                    $org_user = $this->indo('/statement', array(
+                        'query' => "SELECT id,organization_id FROM indo_organization_users WHERE account_id=$id AND is_active=1"));
+                    foreach ($org_user as $row) {
+                        if (isset($organizations[(int)$row['organization_id']])) {
+                            unset($organizations[(int)$row['organization_id']]);
+                        } else if ($row['organization_id'] == 1 && $id == 1) {
+                            // can't strip root account from system organization!
+                        } else {
+                            $this->indodelete('/record?model=' . OrganizationUserModel::class, array('WHERE' => "id={$row['id']}"));
+                            $this->indolog(
+                                'account',
+                                LogLevel::ALERT,
+                                "{$row['organization_id']} дугаартай байгууллагын хэрэглэгчийн бүртгэлээс $id дугаар бүхий хэрэглэгчийг хаслаа",
+                                array('reason' => 'organization-strip', 'account_id' => $id, 'organization_id' => $row['organization_id'])
+                            );
+                        }
+                    }
 
-                $org_user = $this->indo('/statement', array(
-                    'query' => "SELECT id,organization_id FROM indo_organization_users WHERE account_id=$id AND is_active=1"));
-                foreach ($org_user as $row) {
-                    if (isset($organizations[(int)$row['organization_id']])) {
-                        unset($organizations[(int)$row['organization_id']]);
-                    } else if ($row['organization_id'] == 1 && $id == 1) {
-                        // can't strip root account from system organization!
-                    } else {
-                        $this->indodelete('/record?model=' . OrganizationUserModel::class, array('WHERE' => "id={$row['id']}"));
+                    foreach (array_keys($organizations) as $org_id) {
+                        $this->indopost('/record?model=' . OrganizationUserModel::class,
+                            array('record' => array('account_id' => $id, 'organization_id' => $org_id)));
                         $this->indolog(
                             'account',
                             LogLevel::ALERT,
-                            "{$row['organization_id']} дугаартай байгууллагын хэрэглэгчийн бүртгэлээс $id дугаар бүхий хэрэглэгчийг хаслаа",
-                            array('reason' => 'organization-strip', 'account_id' => $id, 'organization_id' => $row['organization_id'])
+                            "$id дугаартай хэрэглэгчийг $org_id дугаар бүхий байгууллагад нэмэх үйлдлийг амжилттай гүйцэтгэлээ",
+                            array('reason' => 'organization-set', 'account_id' => $id, 'organization_id' => $org_id)
                         );
                     }
-                }
-
-                foreach (array_keys($organizations) as $org_id) {
-                    $this->indopost('/record?model=' . OrganizationUserModel::class,
-                        array('record' => array('account_id' => $id, 'organization_id' => $org_id)));
-                    $this->indolog(
-                        'account',
-                        LogLevel::ALERT,
-                        "$id дугаартай хэрэглэгчийг $org_id дугаар бүхий байгууллагад нэмэх үйлдлийг амжилттай гүйцэтгэлээ",
-                        array('reason' => 'organization-set', 'account_id' => $id, 'organization_id' => $org_id)
-                    );
                 }
                 
                 if ($this->isUserCan('system_rbac')) {
