@@ -336,8 +336,10 @@ class AccountController extends DashboardController
                     }
                     
                     foreach (array_keys($roles) as $role_id) {
-                        if ($role_id == 1 && !$this->getUser()->is('system_coder')) {
-                            // only coder can add another coder role
+                        if ($role_id == 1 && (
+                            !$this->getUser()->is('system_coder') || $this->getUser()->getAccount()['id'] != 1)
+                        ) {
+                            // only root coder can add another coder role
                             continue;
                         }
                         $this->indopost('/record?model=' . UserRole::class,
