@@ -272,7 +272,7 @@ class AccountController extends DashboardController
                     'status' => 'success',
                     'type' => 'primary',
                     'message' => $this->text('record-update-success'),
-                    'href' => $this->generateLink('accounts')
+                    'href' => $id == $this->getUser()->getAccount()['id'] ? $this->generateLink('home') : $this->generateLink('accounts')
                 ));
                 
                 $organizations = array();
