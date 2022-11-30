@@ -25,12 +25,10 @@
                 <input class="form-control" required name="username" value="{{ record['username']|e }}" maxlength="128" placeholder="" type="text" autocomplete="off">
                 <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
             </div>
-            {% if user.is('system_coder') %}
             <div class="mb-3">
                 <label class="form-label">{{ 'password'|text }}</label>
                 <input class="form-control" name="password" value="" maxlength="256" placeholder="" type="password" autocomplete="off">
             </div>
-            {% endif %}
             <div class="mb-3">
                 <label class="form-label">{{ 'firstname'|text }}</label>
                 <input class="form-control" required name="first_name" value="{{ record['first_name']|e }}" maxlength="128" autocomplete="off">
@@ -54,7 +52,6 @@
                     <div class="invalid-feedback">{{ 'enter-valid-email'|text }}</div>
                 </div>
             </div>
-            {% if user.is('system_coder') %}
             <div class="mb-3">
                 <label class="form-label">{{ 'status'|text }}</label>
                 <div class="form-check form-switch">
@@ -62,7 +59,6 @@
                 </div>
                 <div class="form-text" id="activeHelpBlock">{{ 'active-account-can-login'|text }}</div>
             </div>
-            {% endif %}
         </div>
         <div class="tab-pane" id="tab-picture" role="tabpanel">
             <div class="mb-3">

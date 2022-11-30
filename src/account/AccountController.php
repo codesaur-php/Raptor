@@ -224,10 +224,14 @@ class AccountController extends DashboardController
                 if (!empty($parsedBody['password'])) {
                     $record['password'] = password_hash($parsedBody['password'] , PASSWORD_BCRYPT);
                 }
-                if ($this->getUser()->is('system_coder')) {
-                    $status = $parsedBody['status'] ?? 'off';
-                    $record['status'] = $status != 'on' ? 0 : 1;
+                
+                $status = $parsedBody['status'] ?? 'off';
+                $record['status'] = $status != 'on' ? 0 : 1;
+                if ($id == 1 && $record['status'] == 0) {
+                    // u can't deactivate root account!
+                    unset($record['status']);
                 }
+                
                 $context = array('record' => $record + ['id' => $id]);
                 
                 $pattern = '/record?model=' . Accounts::class;
