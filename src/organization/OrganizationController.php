@@ -339,8 +339,6 @@ class OrganizationController extends DashboardController
                 } else {
                     $row[] = htmlentities($record['alias']);
                 }
-                
-                $row[] = htmlentities($statuses[$record['status']] ?? $record['status']);
 
                 $action = '<a class="ajax-modal btn btn-sm btn-info shadow-sm" data-bs-target="#dashboard-modal" data-bs-toggle="modal" ' .
                     'href="' . $this->generateLink('organization-view', array('id' => $id)) . '"><i class="bi bi-eye"></i></a>' . PHP_EOL;
