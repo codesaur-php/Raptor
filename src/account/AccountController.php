@@ -50,7 +50,7 @@ class AccountController extends DashboardController
             $code = preg_replace('/[^a-z]/', '', $this->getLanguageCode());
             $accounts = $this->indo('/record/rows?model=' . Accounts::class);
             $organizations = $this->indo('/record/rows?model=' . OrganizationModel::class);
-            $statuses = $this->indo('/lookup', array(
+            $statuses = $this->indosafe('/lookup', array(
                 'table' => 'status', 'condition' => array('WHERE' => "c.code='$code' AND p.is_active=1")));
             
             $org_users_query =

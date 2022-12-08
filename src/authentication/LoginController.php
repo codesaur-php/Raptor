@@ -127,7 +127,7 @@ class LoginController extends \Raptor\Controller
             $payload['password'] = password_hash($password, PASSWORD_BCRYPT);
             $payload['code'] = preg_replace('/[^a-z]/', '', $this->getLanguageCode());
             
-            $lookup = $this->indo('/lookup', array('table' => 'templates', 'condition' =>
+            $lookup = $this->indosafe('/lookup', array('table' => 'templates', 'condition' =>
                 array('WHERE' => "c.code='{$payload['code']}' AND p.keyword='request-new-account' AND p.is_active=1")));
             if (empty($lookup['request-new-account'])) {
                 throw new Exception($this->text('email-template-not-set'), StatusCodeInterface::STATUS_INTERNAL_SERVER_ERROR);
@@ -200,12 +200,12 @@ class LoginController extends \Raptor\Controller
             }
             $payload['code'] = $this->getLanguageCode();
             
-            $lookup = $this->indo('/lookup', array('table' => 'templates', 'condition' =>
+            $lookup = $this->indosafe('/lookup', array('table' => 'templates', 'condition' =>
                 array('WHERE' => "c.code='{$payload['code']}' AND p.keyword='forgotten-password-reset' AND p.is_active=1")));
             if (empty($lookup['forgotten-password-reset'])) {
                 throw new Exception($this->text('email-template-not-set'), StatusCodeInterface::STATUS_NOT_FOUND);
             }
-            $content = $lookup['forgotten-password-reset'];            
+            $content = $lookup['forgotten-password-reset'];
             
             $account = $this->indosafe('/record?model=' . Accounts::class, array('email' => $payload['email']));            
             if (empty($account)) {

@@ -317,7 +317,6 @@ class OrganizationController extends DashboardController
             }
             
             $code = preg_replace('/[^a-z]/', '', $this->getLanguageCode());
-            $statuses = $this->indo('/lookup', array('table' => 'status', 'condition' => array('WHERE' => "c.code='$code' AND p.is_active=1")));
             $organizations = $this->indo('/record/rows?model=' . OrganizationModel::class);
             $rbac_link = $this->generateLink('rbac-alias');
             foreach ($organizations as $record) {
