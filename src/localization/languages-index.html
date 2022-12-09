@@ -75,7 +75,7 @@ document.addEventListener('DOMContentLoaded', function () {
             showLoaderOnConfirm: true,
             allowOutsideClick: () => !Swal.isLoading(),
             backdrop: true,
-            preConfirm: (reason) => {
+            preConfirm: () => {
                 return fetch(
                     '{{ 'language-delete'|link }}',
                     {
@@ -86,9 +86,6 @@ document.addEventListener('DOMContentLoaded', function () {
                         body: JSON.stringify({id: a.getAttribute('href'), name})
                     }
                 ).then(res => {
-                    if (!res.ok) {
-                        throw new Error(res.statusText);
-                    }
                     return res.json();
                 }).then(response => {
                     if (response.status !== 'success') {

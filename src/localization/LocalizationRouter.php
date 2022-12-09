@@ -16,10 +16,10 @@ class LocalizationRouter extends Router
         $this->DELETE('/language', [LanguageController::class, 'delete'])->name('language-delete');
         
         $this->GET('/texts', [TextController::class, 'index'])->name('texts');
-        $this->GET('/texts/datatable/{table}', [TextController::class, 'datatable'])->name('texts-datatable');
-        $this->GET_POST('/texts/{table}', [TextController::class, 'insert'])->name('texts-insert');
-        $this->GET_PUT('/texts/{table}/{uint:id}', [TextController::class, 'update'])->name('texts-update');
-        $this->GET('/texts/view/{table}/{uint:id}', [TextController::class, 'view'])->name('texts-view');
-        $this->DELETE('/texts/{table}', [TextController::class, 'delete'])->name('texts-delete');
+        $this->GET('/texts/datatable/{table}', [TextController::class, 'datatable'])->name('text-datatable');
+        $this->GET_POST('/text/{table}', [TextController::class, 'insert'])->name('text-insert');
+        $this->GET_PUT('/text/{table}/{uint:id}', [TextController::class, 'update'])->name('text-update');
+        $this->GET('/text/view/{table}/{uint:id}', [TextController::class, 'view'])->name('text-view');
+        $this->DELETE('/text/delete', [TextController::class, 'delete'])->name('text-delete');
     }
 }

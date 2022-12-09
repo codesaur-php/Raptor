@@ -21,13 +21,13 @@
             {% for code in localization.language|keys %}
             <div class="form-floating mt-2">
                 <input class="form-control" name="title[{{ code }}]" value="{{ record['content']['title'][code] }}" maxlength="70" autocomplete="off">
-                <label>{{ 'title'|text }} <img style="position:relative;top:-2px" src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.1/flags/{{ code }}.png"></label>
+                <label>{{ 'title'|text }} <img style="position:relative;top:-2px" src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.3/flags/{{ code }}.png"></label>
             </div>
             {% endfor %}
             {% for code in localization.language|keys %}
             <div class="form-floating mt-{{ loop.first ? '4' : '2' }}">
                 <input class="form-control" name="description[{{ code }}]" value="{{ record['content']['description'][code] }}" maxlength="155" autocomplete="off">
-                <label>{{ 'description'|text }} <img style="position:relative;top:-2px" src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.1/flags/{{ code }}.png"></label>
+                <label>{{ 'description'|text }} <img style="position:relative;top:-2px" src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.3/flags/{{ code }}.png"></label>
             </div>
             {% endfor %}
             <div class="form-floating mt-4">
@@ -45,19 +45,19 @@
             {% for code in localization.language|keys %}
             <div class="form-floating mt-{{ loop.first ? '4' : '2' }}">
                 <input class="form-control" name="contact[{{ code }}]" value="{{ record['content']['contact'][code] }}" maxlength="512" autocomplete="off">
-                <label>{{ 'contact'|text }} <img style="position:relative;top:-2px" src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.1/flags/{{ code }}.png"></label>
+                <label>{{ 'contact'|text }} <img style="position:relative;top:-2px" src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.3/flags/{{ code }}.png"></label>
             </div>
             {% endfor %}
             {% for code in localization.language|keys %}
             <div class="form-floating mt-{{ loop.first ? '4' : '2' }}">
                 <input class="form-control" name="address[{{ code }}]" value="{{ record['content']['address'][code] }}" maxlength="512" autocomplete="off">
-                <label>{{ 'address'|text }} <img style="position:relative;top:-2px" src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.1/flags/{{ code }}.png"></label>
+                <label>{{ 'address'|text }} <img style="position:relative;top:-2px" src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.3/flags/{{ code }}.png"></label>
             </div>
             {% endfor %}
             {% for code in localization.language|keys %}
             <div class="form-floating mt-{{ loop.first ? '4' : '2' }}">
                 <input class="form-control" name="copyright[{{ code }}]" value="{{ record['content']['copyright'][code] }}" maxlength="512" autocomplete="off">
-                <label>Copyright <img style="position:relative;top:-2px" src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.1/flags/{{ code }}.png"></label>
+                <label>Copyright <img style="position:relative;top:-2px" src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.3/flags/{{ code }}.png"></label>
             </div>
             {% endfor %}
             {% if user_can %}
@@ -72,7 +72,7 @@
                 <div class="col">
                     {% for code in localization.language|keys %}
                     {% if not loop.first %}<hr>{% endif %}
-                    <label class="form-label">{{ 'logo'|text }} <img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.1/flags/{{ code }}.png"></label>
+                    <label class="form-label">{{ 'logo'|text }} <img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.3/flags/{{ code }}.png"></label>
                     <input type="file" name="logo_{{ code }}">
                     {% endfor %}
                 </div>

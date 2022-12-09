@@ -10,7 +10,6 @@ use Psr\Log\LogLevel;
 use Psr\Http\Message\ServerRequestInterface;
 
 use Indoraptor\Localization\TextModel;
-use Indoraptor\Localization\CountriesModel;
 
 use Raptor\Dashboard\DashboardController;
 
@@ -45,7 +44,7 @@ class TextController extends DashboardController
             'dark' => 7
         );
         $names = $this->indoget('/text');
-        $table = array('user', 'dashboard', 'default');
+        $table = array('user', 'default', 'dashboard');
         foreach ($names as $key => $name) {
             if (in_array($name, $table)) {
                 unset($names[$key]);
@@ -66,11 +65,11 @@ class TextController extends DashboardController
         $this->indolog('localization', LogLevel::NOTICE, 'Системийн текст жагсаалтыг нээж үзэж байна', array('model' => TextModel::class, 'tables' => $tables));
     }
     
-    public function datatable($table)
+    public function datatable(string $table)
     {
-        $rows = array();
-        
         try {
+            $rows = array();
+            
             if (!$this->isUserCan('system_localization_index')) {
                 throw new Exception($this->text('system-no-permission'), 401);
             }
@@ -89,13 +88,13 @@ class TextController extends DashboardController
                 }
                 $row[] = array(htmlentities($types[$record['type']]['title'][$current_code] ?? $record['type']));
                 $action = '<a class="ajax-modal btn btn-sm btn-info shadow-sm" data-bs-target="#dashboard-modal" data-bs-toggle="modal" ' .
-                    'href="' . $this->generateLink('texts-view', array('table' => $table, 'id' => $id)) . '"><i class="bi bi-eye"></i></a>' . PHP_EOL;
+                    'href="' . $this->generateLink('text-view', array('table' => $table, 'id' => $id)) . '"><i class="bi bi-eye"></i></a>' . PHP_EOL;
                 if ($this->getUser()->can('system_localization_update')) {
                     $action .= '<a class="ajax-modal btn btn-sm btn-primary shadow-sm" data-bs-target="#dashboard-modal" data-bs-toggle="modal" ' .
-                        'href="' . $this->generateLink('texts-update', array('table' => $table, 'id' => $id)) . '"><i class="bi bi-pencil-square"></i></a>' . PHP_EOL;
+                        'href="' . $this->generateLink('text-update', array('table' => $table, 'id' => $id)) . '"><i class="bi bi-pencil-square"></i></a>' . PHP_EOL;
                 }
                 if ($this->getUser()->can('system_localization_delete')) {
-                    $action .= '<a class="delete-texts btn btn-sm btn-danger shadow-sm" href="' . $table . ':' . $id . '"><i class="bi bi-trash"></i></a>';
+                    $action .= '<a class="delete-text btn btn-sm btn-danger shadow-sm" href="' . $table . ':' . $id . '"><i class="bi bi-trash"></i></a>';
                 }                
                 $row[] = $action;
                 
@@ -113,33 +112,55 @@ class TextController extends DashboardController
         }
     }
     
-    public function insert($table)
-    {
-        $context = array('model' => LanguageModel::class);
-        $is_submit = $this->getRequest()->getMethod() == 'POST';
-        
+    public function insert(string $table)
+    {        
         try {            
+            $is_submit = $this->getRequest()->getMethod() == 'POST';
+            $context = array('model' => TextModel::class, 'table' => $table);
+            
             if (!$this->isUserCan('system_localization_insert')) {
                 throw new Exception($this->text('system-no-permission'), 401);
             }
             
             if ($is_submit) {
+                $record = array();
+                $content = array();
                 $payload = $this->getParsedBody();
-                if (empty($payload['keyword'])) {
-                    throw new Exception($this->text('invalid-values'), 400);
+                foreach ($payload as $index => $value) {
+                    if (is_array($value)) {
+                        foreach ($value as $key => $value) {
+                            $content[$key][$index] = $value;
+                        }
+                    } else {
+                        $record[$index] = $value;
+                    }
                 }
                 $context['payload'] = $payload;
                 
+                if (empty($record['keyword'])) {
+                    throw new Exception($this->text('invalid-values'), 400);
+                }
+                
+                $found = $this->getByGlobalKeyword($record["keyword"]);
+                if (!empty($found['record'])) {
+                    throw new Exception(
+                        $this->text('keyword-existing') . ' -> ID = ' .
+                        $found['record']['id'] . ', Table = ' . $found['table']);
+                }
+                $this->indopost(
+                    "/record?table=$table&model=" . TextModel::class,
+                    array('record' => $record, 'content' => $content));
+        
                 $this->respondJSON(array(
                     'status' => 'success',
-                    'message' => $this->text('record-insert-success'),
-                    'href' => $this->generateLink('texts')
+                    'href' => $this->generateLink('texts'),
+                    'message' => $this->text('record-insert-success')
                 ));
                 
                 $level = LogLevel::INFO;
                 $message = "$table хүснэгт дээр шинэ текст [{$payload['keyword']}] үүсгэх үйлдлийг амжилттай гүйцэтгэлээ";
             } else {
-                $template_path = dirname(__FILE__) . '/texts-insert-modal.html';
+                $template_path = dirname(__FILE__) . '/text-insert-modal.html';
                 if (!file_exists($template_path)) {
                     throw new Exception("$template_path file not found!", 500);
                 }
@@ -164,100 +185,131 @@ class TextController extends DashboardController
         }
     }
     
-    public function view(int $id)
+    function getByGlobalKeyword(string $keyword)
     {
-        $context = array('id' => $id, 'model' => LanguageModel::class);
-        
+        $texts = $this->indoget('/text');
+        foreach ($texts as $text) {
+            $found = $this->indosafe(
+                "/record?table=$text&model=" . TextModel::class,
+                array('keyword' => $keyword, 'is_active' => 1));
+            if ($found) {
+                return array('table' => $text, 'record' => $found);
+            }
+        }
+        return false;
+    }
+    
+    public function view(string $table, int $id)
+    {        
         try {            
+            $context = array('id' => $id, 'model' => TextModel::class, 'table' => $table);
+            
             if (!$this->isUserCan('system_localization_index')) {
                 throw new Exception($this->text('system-no-permission'), 401);
             }
             
-            $record = $this->indo('/record?model=' . LanguageModel::class, array('id' => $id));
+            $record = $this->indo("/record?table=$table&model=" . TextModel::class, array('p.id' => $id));
             $context['record'] = $record;
             
-            $template_path = dirname(__FILE__) . '/language-retrieve-modal.html';
+            $template_path = dirname(__FILE__) . '/text-retrieve-modal.html';
             if (!file_exists($template_path)) {
                 throw new Exception("$template_path file not found!", 500);
             }
-            $this->twigTemplate($template_path, array('record' => $record, 'accounts' => $this->getAccounts()))->render();
+            $this->twigTemplate($template_path, array(
+                'record' => $record, 'accounts' => $this->getAccounts(),
+                'table' => $table, 'language' => $this->getAttribute('localization')['language'] ?? array(),
+                'record_type' => $this->indosafe('/lookup', array('table' => 'record_type',
+                    'condition' => array('WHERE' => "c.code='{$this->getLanguageCode()}' AND p.is_active=1")))
+                    [$record['type']]['title'][$this->getLanguageCode()] ?? $record['type']
+                )
+            )->render();
 
             $level = LogLevel::NOTICE;
-            $message = "{$record['full']} хэлний мэдээллийг нээж үзэж байна";
+            $message = "$table хүснэгтээс [{$record['keyword']}] текст мэдээллийг нээж үзэж байна";
         } catch (Throwable $e) {
             $this->modalProhibited($e->getMessage(), $e->getCode())->render();
             
             $level = LogLevel::ERROR;
-            $message = 'Хэлний мэдээллийг нээж үзэх үед алдаа гарч зогслоо байна';
+            $message = "$table хүснэгтээс текст мэдээллийг нээж үзэх үед алдаа гарч зогслоо байна";
             $context['error'] = array('code' => $e->getCode(), 'message' => $e->getMessage());
         } finally {
             $this->indolog('localization', $level, $message, $context);
         }
     }
     
-    public function update(int $id)
+    public function update(string $table, int $id)
     {
-        $is_submit = $this->getRequest()->getMethod() == 'PUT';
-        $context = array('id' => $id, 'model' => LanguageModel::class);
-        
         try {
+            $is_submit = $this->getRequest()->getMethod() == 'PUT';
+            $context = array('id' => $id, 'model' => TextModel::class, 'table' => $table);
+
             if (!$this->isUserCan('system_localization_update')) {
                 throw new Exception($this->text('system-no-permission'), 401);
             }
             
             if ($is_submit) {
+                $record = array();
+                $content = array();
                 $payload = $this->getParsedBody();
-                if (empty($payload['code'])
-                    || empty($payload['full'])
-                ) {
-                    throw new Exception($this->text('invalid-request'), 400);
-                }
-                $record = array(
-                    'code' => $payload['code'],
-                    'full' => $payload['full'],
-                    'description' => $payload['description'] ?? null,
-                    'is_default' => ($payload['is_default'] ?? 'off') != 'on' ? 0 : 1
-                );
-                $context['record'] = $record;
-                $context['record']['id'] = $id;
-
-                $defLanguage = $this->indosafe('/record?model=' . LanguageModel::class, array('is_default' => 1));
-                if (isset($defLanguage['id']) && $record['is_default'] == 1) {
-                    if ($defLanguage['id'] != $id) {
-                        $this->indoput('/record?model=' . LanguageModel::class,
-                            array('record' => array('is_default' => 0), 'condition' => ['WHERE' => "id={$defLanguage['id']}"]));
+                foreach ($payload as $index => $value) {
+                    if (is_array($value)) {
+                        foreach ($value as $key => $value) {
+                            $content[$key][$index] = $value;
+                        }
+                    } else {
+                        $record[$index] = $value;
                     }
                 }
+                $context['payload'] = array('id' => $id) + $payload;
                 
-                $this->indoput('/record?model=' . LanguageModel::class,
-                    array('record' => $record, 'condition' => ['WHERE' => "id=$id"]));
+                if (empty($record['keyword'])) {
+                    throw new Exception($this->text('invalid-request'), 400);
+                }
+
+                $found = $this->getByGlobalKeyword($record["keyword"]);
+                if (!empty($found['record'])
+                    && (
+                        $found['record']['id'] != $id
+                        || $found['table'] != $table
+                    )
+                ) {
+                    throw new Exception(
+                        $this->text('keyword-existing') . ' -> ID = ' .
+                        $found['record']['id'] . ', Table = ' . $found['table']);
+                }
+                
+                $this->indoput("/record?table=$table&model=" . TextModel::class,
+                    array('record' => $record, 'content' => $content, 'condition' => ['WHERE' => "p.id=$id"]));
                 
                 $this->respondJSON(array(
-                    'status' => 'success',
                     'type' => 'primary',
-                    'message' => $this->text('record-update-success'),
-                    'href' => $this->generateLink('languages')
+                    'status' => 'success',
+                    'href' => $this->generateLink('texts'),
+                    'message' => $this->text('record-update-success')
                 ));
                 
                 $level = LogLevel::INFO;
-                $message = "{$record['full']} хэлний мэдээллийг шинэчлэх үйлдлийг амжилттай гүйцэтгэлээ";
+                $message = "$table хүснэгтийн [{$record['keyword']}] текст мэдээллийг шинэчлэх үйлдлийг амжилттай гүйцэтгэлээ";
             } else {
-                $record = $this->indo('/record?model=' . LanguageModel::class, array('id' => $id));
+                $record = $this->indo("/record?table=$table&model=" . TextModel::class, array('p.id' => $id));
                 
-                $template_path = dirname(__FILE__) . '/language-update-modal.html';
+                $template_path = dirname(__FILE__) . '/text-update-modal.html';
                 if (!file_exists($template_path)) {
                     throw new Exception("$template_path file not found!", 500);
                 }
-                $this->twigTemplate($template_path, array('record' => $record))->render();
+                $this->twigTemplate($template_path, array(
+                    'record' => $record, 'table' => $table,
+                    'language' => $this->getAttribute('localization')['language'] ?? array()))->render();
                 
                 $level = LogLevel::NOTICE;
                 $context['record'] = $record;
-                $message = "{$record['full']} хэлний мэдээллийг шинэчлэхээр нээж байна";
+                $message = "$table хүснэгтээс [{$record['keyword']}] текст мэдээллийг шинэчлэхээр нээж байна";
             }
         } catch (Error $err) {
             $level = LogLevel::ERROR;
             $message = $err->getMessage();
             $context['error'] = array('code' => $err->getCode(), 'message' => $err->getMessage());
+            
             throw new Exception($err->getMessage(), $err->getCode());
         } catch (Throwable $e) {
             if ($is_submit) {
@@ -268,43 +320,33 @@ class TextController extends DashboardController
             
             $level = LogLevel::ERROR;
             $context['error'] = array('code' => $e->getCode(), 'message' => $e->getMessage());
-            $message = 'Хэлний мэдээллийг өөрчлөх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо байна';
+            $message = "$table хүснэгтээс текст мэдээллийг өөрчлөх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо байна";
         } finally {
             $this->indolog('localization', $level, $message, $context);
         }
     }
     
     public function delete()
-    {
-        $context = array('model' => LanguageModel::class);
-        
+    {        
         try {
+            $context = array('model' => TextModel::class);
+            
             if (!$this->isUserCan('system_localization_delete')) {
                 throw new Exception('No permission for an action [delete]!', 401);
             }
             
             $payload = $this->getParsedBody();
-            if (empty($payload['id'])
-                || !isset($payload['name'])
+            if (empty($payload['table'])
+                || empty($payload['id'])
                 || !filter_var($payload['id'], FILTER_VALIDATE_INT)
             ) {
                 throw new Exception($this->text('invalid-request'), 400);
             }
             $context['payload'] = $payload;
             
-            $table = '';
-            if (!empty($payload['table'])) {
-                $table = "table={$payload['table']}&";
-            }
-            
-            $defLanguage = $this->indosafe("/record?{$table}model=" . LanguageModel::class, array('is_default' => 1));
-            if (isset($defLanguage['id'])) {
-                if ($defLanguage['id'] == $payload['id']) {
-                    throw new Exception('Cannot remove default language!', 403);
-                }
-            }
-            
-            $this->indodelete("/record?{$table}model=" . LanguageModel::class, array('WHERE' => "id='{$payload['id']}'"));
+            $table = $payload['table'];
+            $id = filter_var($payload['id'], FILTER_VALIDATE_INT);
+            $this->indodelete("/record?table=$table&model=" . TextModel::class, array('WHERE' => "id=$id"));
             
             $this->respondJSON(array(
                 'status'  => 'success',
@@ -313,7 +355,7 @@ class TextController extends DashboardController
             ));
             
             $level = LogLevel::ALERT;
-            $message = "{$payload['name']} хэлний мэдээллийг устгалаа";
+            $message = "$table хүснэгтээс [" . ($payload['name'] ?? $id) . '] текст мэдээллийг устгалаа';
         } catch (Throwable $e) {
             $this->respondJSON(array(
                 'status'  => 'error',
@@ -322,7 +364,7 @@ class TextController extends DashboardController
             ), $e->getCode());
             
             $level = LogLevel::ERROR;
-            $message = 'Хэлний мэдээлэл устгах үйлдлийг гүйцэтгэх явцад алдаа гарч зогслоо';
+            $message = 'Текст мэдээлэл устгах үйлдлийг гүйцэтгэх явцад алдаа гарч зогслоо';
             $context['error'] = array('code' => $e->getCode(), 'message' => $e->getMessage());
         } finally {
             $this->indolog('localization', $level, $message, $context);

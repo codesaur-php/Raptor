@@ -150,10 +150,10 @@ class SettingsController extends DashboardController
     }
     
     public function files()
-    {
-        $context = array('model' => SettingsModel::class);
-        
+    {        
         try {
+            $context = array('model' => SettingsModel::class);
+            
             if (!$this->isUserCan('system_content_settings')) {
                 throw new Exception($this->text('system-no-permission'), 401);
             }
@@ -274,10 +274,10 @@ class SettingsController extends DashboardController
     }
     
     public function mailer()
-    {
-        $context = array('model' => MailerModel::class, 'reason' => 'mailer');
-        
+    {        
         try {
+            $context = array('model' => MailerModel::class, 'reason' => 'mailer');
+            
             if (!$this->isUserCan('system_content_settings')) {
                 throw new Exception($this->text('system-no-permission'), 401);
             }

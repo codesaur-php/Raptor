@@ -21,7 +21,7 @@
                     <tr>
                         <th scope="row"><strong>{{ row['username'] }}</strong></th>
                         <td>{{ row['email'] }}</td>
-                        <td><img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.1/flags/{{ row['code'] }}.png"></td>
+                        <td><img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.3/flags/{{ row['code'] }}.png"></td>
                         <td>{{ row['created_at'] }}</td>
                         <td>
                         {% if row['status'] == 2 %}
@@ -89,9 +89,6 @@ document.querySelectorAll('#new_account_requests a.approve-request').forEach(fun
                         body: JSON.stringify({id: a.getAttribute('href')})
                     }
                 ).then(res => {
-                    if (!res.ok) {
-                        throw new Error(res.statusText);
-                    }
                     return res.json();
                 }).then(response => {
                     if (response.status !== 'success') {
@@ -138,9 +135,6 @@ document.querySelectorAll('#new_account_requests a.delete-request').forEach(func
                         body: JSON.stringify({id: a.getAttribute('href'), name})
                     }
                 ).then(res => {
-                    if (!res.ok) {
-                        throw new Error(res.statusText);
-                    }
                     return res.json();
                 }).then(response => {
                     if (response.status !== 'success') {

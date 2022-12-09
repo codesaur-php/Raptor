@@ -338,7 +338,7 @@ class LoginController extends \Raptor\Controller
             }            
             $account_id = filter_var($parsedBody['account'], FILTER_VALIDATE_INT);
             if ($account_id === false) {
-                throw new Exception('Хэрэглэгчийн дугаар заагдаагүй байна.<br/>' . $this->text('invalid-request-data'), StatusCodeInterface::STATUS_BAD_REQUEST);
+                throw new Exception('<span class="text-secondary">Хэрэглэгчийн дугаар заагдаагүй байна.</span><br/>' . $this->text('invalid-request-data'), StatusCodeInterface::STATUS_BAD_REQUEST);
             }
             $vars += array('account' => $account_id);
 
@@ -350,7 +350,7 @@ class LoginController extends \Raptor\Controller
             $context += array('account_id' => $account_id);
             
             if (empty($password_new) || $password_new != $password_retype) {
-                throw new Exception('Шинэ нууц үгээ буруу бичсэн.<br/>' . $this->text('password-must-match'), StatusCodeInterface::STATUS_BAD_REQUEST);
+                throw new Exception('<span class="text-secondary">Шинэ нууц үгээ буруу бичсэн.</span><br/>' . $this->text('password-must-match'), StatusCodeInterface::STATUS_BAD_REQUEST);
             }
             
             $record = $this->indosafe('/record?model=' . ForgotModel::class, array(

@@ -78,12 +78,12 @@ class RBACController extends DashboardController
     }
     
     public function insertRole(string $alias)
-    {
-        $title = $this->getQueryParams()['title'] ?? '';
-        $context = array('reason' => 'rbac-insert-role');
-        $is_submit = $this->getRequest()->getMethod() == 'POST';
-        
+    {        
         try {
+            $title = $this->getQueryParams()['title'] ?? '';
+            $context = array('reason' => 'rbac-insert-role');
+            $is_submit = $this->getRequest()->getMethod() == 'POST';
+            
             $context['payload'] = $payload = $this->getParsedBody();
             if (!$this->isUserCan('system_rbac')) {
                 throw new Exception($this->text('system-no-permission'), 401);
@@ -147,12 +147,12 @@ class RBACController extends DashboardController
     }
     
     public function insertPermission(string $alias)
-    {
-        $title = $this->getQueryParams()['title'] ?? '';
-        $context = array('reason' => 'rbac-insert-permission');
-        $is_submit = $this->getRequest()->getMethod() == 'POST';
-        
+    {        
         try {
+            $title = $this->getQueryParams()['title'] ?? '';
+            $context = array('reason' => 'rbac-insert-permission');
+            $is_submit = $this->getRequest()->getMethod() == 'POST';
+            
             $context['payload'] = $payload = $this->getParsedBody();
             if (!$this->isUserCan('system_rbac')) {
                 throw new Exception($this->text('system-no-permission'), 401);
@@ -241,10 +241,10 @@ class RBACController extends DashboardController
     
     public function setUserRole(int $id)
     {
-        $is_submit = $this->getRequest()->getMethod() == 'POST';
-        $context = array('reason' => 'rbac-set-user-role', 'id' => $id);
-
         try {
+            $is_submit = $this->getRequest()->getMethod() == 'POST';
+            $context = array('reason' => 'rbac-set-user-role', 'id' => $id);
+            
             if (!$this->isUserCan('system_rbac')) {
                 throw new Exception($this->text('system-no-permission'), 401);
             }

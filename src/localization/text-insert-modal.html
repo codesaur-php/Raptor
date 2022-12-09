@@ -1,11 +1,12 @@
 <div class="modal-dialog modal-lg">
     <div class="modal-content">
         <div class="modal-header modal-header-solid">
-            <h6 class="modal-title text-uppercase text-success"><i class="bi bi-plus-circle"></i> {{ 'add-record'|text }}</h6>
+            <h6 class="modal-title text-uppercase text-success"><i class="bi bi-plus-circle"></i> {{ 'add-record'|text }} ({{ table }})</h6>
             <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="{{ 'close'|text|e }}"></button>
         </div>
         <div class="modal-body">
-            <form class="needs-validation" novalidate id="text_insert" action="{{ 'texts-insert'|link({'table':table}) }}" method="POST" enctype="multipart/form-data">
+            <form class="needs-validation" novalidate id="text_insert" action="{{ 'text-insert'|link({'table':table}) }}" method="POST" enctype="multipart/form-data">
+                <input name="type" required value="1" hidden>
                 <div class="row mb-3">
                     <label class="col-3 col-form-label text-end">{{ 'keyword'|text }}</label>
                     <div class="col-9">
@@ -15,9 +16,10 @@
                 </div>
                 {% for code,lang in language %}
                 <div class="row mb-3">
-                    <label class="col-3 col-form-label text-end">{{ 'title'|text }} ({{ lang }} <img style="position:relative;top:-1px" src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.1/flags/{{ code }}.png">)</label>
+                    <label class="col-3 col-form-label text-end">{{ 'title'|text }} ({{ lang }} <img style="position:relative;top:-1px" src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.3/flags/{{ code }}.png">)</label>
                     <div class="col-9">
-                        <textarea class="form-control" name="title[{{ code }}]" maxlength="255"></textarea>
+                        <textarea class="form-control" name="text[{{ code }}]" required maxlength="255"></textarea>
+                        <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
                     </div>
                 </div>
                 {% endfor %}

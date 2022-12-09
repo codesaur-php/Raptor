@@ -1,61 +1,16 @@
-<style>
-.bd-bordered-div {
-    position: relative;
-    padding: 1rem;
-    margin: 1rem -.75rem 0;
-    border-width: 1px 0 0;
-    border: solid #dee2e6;
-}
-.bd-bordered-div::after {
-    display: block;
-    clear: both;
-    content: "";
-}
-@media (min-width: 576px) {
-    .bd-bordered-div {
-        padding: 1.5rem;
-        margin-right: 0;
-        margin-left: 0;
-        border-width: 1px;
-        border-top-left-radius: .25rem;
-        border-top-right-radius: .25rem;
-    }
-}
-.bd-bordered-div-success {
-    border: solid #14A44D;
-}
-.bd-bordered-div-primary {
-    border: solid #3B71CA;
-}
-.bd-bordered-div-danger {
-    border: solid #DC4C64;
-}
-.bd-bordered-div-success {
-    border: solid #14A44D;
-}
-.bd-bordered-div-warning {
-    border: solid #E4A11B;
-}
-.bd-bordered-div-info {
-    border: solid #54B4D3;
-}
-.bd-bordered-div-dark {
-    border: solid #332D2D;
-}
-</style>
 <div class="bd-callout bd-callout-secondary alert alert-dismissible fade show shadow-sm" style="top:-6px">
     <p><i class="bi bi-flag pr-2" style="padding-right:8px;"></i> {{ 'text-note'|text }}
     <button class="btn-close" type="button" style="font-size:0.7rem" data-bs-dismiss="alert" aria-label="{{ 'close'|text|e }}"></button>
     </p>
 </div>
 {% for table,color in tables %}
-<div class="bd-bordered-div bd-bordered-div-{{ color }}">
+<div class="bd-bordered bd-bordered-{{ color }} mb-4">
     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-3">
         <h5 class="text-{{ color }}" style="padding-right:10px"><i class="bi bi-translate"></i> {{ table|capitalize }}</h5>
         <div class="btn-toolbar mb-2 mb-md-0">
             <div class="btn-group me-2">
                 {% if user.can('system_localization_insert') %}
-                <a class="btn btn-outline-{{ color }} text-uppercase shadow-sm" href="{{ 'texts-insert'|link({'table':table}) }}" data-bs-target="#dashboard-modal" data-bs-toggle="modal">
+                <a class="btn btn-outline-{{ color }} text-uppercase shadow-sm" href="{{ 'text-insert'|link({'table':table}) }}" data-bs-target="#dashboard-modal" data-bs-toggle="modal">
                     <i class="bi bi-plus-circle-dotted"></i> {{ 'new'|text }}
                 </a>
                 {% endif %}
@@ -85,39 +40,35 @@
 <script defer src="https://cdn.datatables.net/1.12.1/js/dataTables.bootstrap5.min.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script type="text/javascript">
-let deleteAskHtml = {% if localization.code == 'mn' %}'<p class="text-danger mb-3">Та ({0}) хэлийг устгахдаа итгэлтэй байна уу?</p>'{% else %}'<p class="text-danger mb-3">Are you sure to delete the language ({0})?</p>'{% endif %};
+let deleteAskHtml = {% if localization.code == 'mn' %}'<p class="text-danger mb-3">Та [{0}] текст бичлэгийг устгахдаа итгэлтэй байна уу?</p>'{% else %}'<p class="text-danger mb-3">Are you sure to delete the text with keyword [{0}]?</p>'{% endif %};
 document.addEventListener('DOMContentLoaded', function () {
-    {% for table,color in tables %}
+{% for table,color in tables %}
     let {{ table }}Table = document.querySelector('table#text_{{ table }}');
+    
     $({{ table }}Table).DataTable({
-        ajax: {method: 'GET', url: "{{ 'texts-datatable'|link({'table':table}) }}"},
+        ajax: {method: 'GET', url: "{{ 'text-datatable'|link({'table':table}) }}"},
         lengthMenu: [[5, 10, 30, -1], [5, 10, 30, "{{ 'all'|text|e }}"]],
         responsive: true, bStateSave: true, pagingType: 'full_numbers', pageLength: 10, order: [[0, 'asc']]
         {% if localization.code == 'mn' %}, language: {url: 'https://cdn.datatables.net/plug-ins/1.11.3/i18n/mn.json'}{% endif %}
     });
-    {% endfor %}
-    languagesTable.onChildClick('.ajax-modal, .delete-language', function(a, e) {
-        if (a.classList.contains('ajax-modal')) {
-            return AjaxModal.ajaxContent(a);
-        } else if (!a.classList.contains('delete-language')) {
-            return;
-        }
-        
+    
+    {{ table }}Table.onChildClick('.ajax-modal', function(a, e) {
         e.preventDefault();
         
-        let name = a.parentNode.parentNode.children[1].innerHTML;
+        return AjaxModal.ajaxContent(a);
+    });
+    
+    {{ table }}Table.onChildClick('.delete-text', function(a, e) {
+        e.preventDefault();
+        
+        let table_id = a.getAttribute('href');
+        let splits = table_id.split(':');
+        let table = splits[0];
+        let id = splits[1];
+        let name = a.parentNode.parentNode.children[0].innerHTML;
         let question = deleteAskHtml.format(name.replace(/<\/?[^>]+(>|$)/g, ''));
 
-        let src = '';
-        let flag = a.parentNode.parentNode.children[2].querySelector('img');
-        if (flag) {
-            src = flag.src;
-        } else {
-            question = '<i class="bi bi-flag text-danger mb-4" style="font-size:3rem"></i><p>' + question + '<p/>';
-        }
         Swal.fire({
-            imageUrl: src,
-            imageHeight: 11,
             html: question,
             showCancelButton: true,
             cancelButtonText: '{{ 'cancel'|text|e }}',
@@ -126,20 +77,17 @@ document.addEventListener('DOMContentLoaded', function () {
             showLoaderOnConfirm: true,
             allowOutsideClick: () => !Swal.isLoading(),
             backdrop: true,
-            preConfirm: (reason) => {
+            preConfirm: () => {
                 return fetch(
-                    '{{ 'language-delete'|link }}',
+                    '{{ 'text-delete'|link }}',
                     {
                         method: 'DELETE',
                         headers: {
                             'Content-Type': 'application/json'
                         },
-                        body: JSON.stringify({id: a.getAttribute('href'), name})
+                        body: JSON.stringify({ table, id, name })
                     }
                 ).then(res => {
-                    if (!res.ok) {
-                        throw new Error(res.statusText);
-                    }
                     return res.json();
                 }).then(response => {
                     if (response.status !== 'success') {
@@ -161,5 +109,6 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
     });
+{% endfor %}
 });
 </script>

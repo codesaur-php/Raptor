@@ -58,11 +58,11 @@ class OrganizationUserController extends DashboardController
     }
     
     public function set(int $account_id)
-    {
-        $is_submit = $this->getRequest()->getMethod() == 'POST';
-        $context = array('reason' => 'organization-user-set', 'account_id' => $account_id);
-        
+    {        
         try {
+            $is_submit = $this->getRequest()->getMethod() == 'POST';
+            $context = array('reason' => 'organization-user-set', 'account_id' => $account_id);
+            
             if (!$this->isUserCan('system_account_organization_set')) {
                 throw new Exception($this->text('system-no-permission'), 401);
             }

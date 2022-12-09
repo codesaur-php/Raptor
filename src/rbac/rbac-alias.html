@@ -70,9 +70,6 @@
                         body: formData
                     }
             ).then(res => {
-                if (!res.ok) {
-                    throw new Error(res.statusText);
-                }
                 return res.json();
             }).then(response => {
                 let type = response.type ? response.type : 'warning';

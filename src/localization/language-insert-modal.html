@@ -167,7 +167,7 @@ headGeneral.click();
             }
 
             let ID = country.element.value.toLowerCase();
-            return $('<span><img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.1/flags/' + ID + '.png"> ' + country.text + '</span>');
+            return $('<span><img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.3/flags/' + ID + '.png"> ' + country.text + '</span>');
         };
 
         if (jQuery().select2) {
@@ -192,7 +192,7 @@ $('#countries').on('change', function() {
     let Name = $(this).find('option:selected').attr('data-speak');
 
     $('.lang_short').val(ID);
-    $('.lang_flag').html('<img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.1/flags/' + ID + '.png">');
+    $('.lang_flag').html('<img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.3/flags/' + ID + '.png">');
     $('.lang_full').val(Name);
 });
 
@@ -203,6 +203,6 @@ $('#txt_full').bind('input', function() {
 $('#available_languages').on('change', function() {
     let code = $(this).find('option:selected').val();
     $('.copy_short').val(code);
-    $('.copy_flag').html('<img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.1/flags/' + code + '.png">');
+    $('.copy_flag').html('<img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.3/flags/' + code + '.png">');
 });
 </script>

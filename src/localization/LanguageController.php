@@ -43,11 +43,11 @@ class LanguageController extends DashboardController
     }
     
     public function insert()
-    {
-        $context = array('model' => LanguageModel::class);
-        $is_submit = $this->getRequest()->getMethod() == 'POST';
-        
+    {        
         try {            
+            $context = array('model' => LanguageModel::class);
+            $is_submit = $this->getRequest()->getMethod() == 'POST';
+            
             if (!$this->isUserCan('system_localization_insert')) {
                 throw new Exception($this->text('system-no-permission'), 401);
             }
@@ -133,10 +133,10 @@ class LanguageController extends DashboardController
     }
     
     public function view(int $id)
-    {
-        $context = array('id' => $id, 'model' => LanguageModel::class);
-        
+    {        
         try {            
+            $context = array('id' => $id, 'model' => LanguageModel::class);
+            
             if (!$this->isUserCan('system_localization_index')) {
                 throw new Exception($this->text('system-no-permission'), 401);
             }
@@ -164,11 +164,11 @@ class LanguageController extends DashboardController
     }
     
     public function update(int $id)
-    {
-        $is_submit = $this->getRequest()->getMethod() == 'PUT';
-        $context = array('id' => $id, 'model' => LanguageModel::class);
-        
+    {        
         try {
+            $is_submit = $this->getRequest()->getMethod() == 'PUT';
+            $context = array('id' => $id, 'model' => LanguageModel::class);
+            
             if (!$this->isUserCan('system_localization_update')) {
                 throw new Exception($this->text('system-no-permission'), 401);
             }
@@ -243,10 +243,10 @@ class LanguageController extends DashboardController
     }
     
     public function delete()
-    {
-        $context = array('model' => LanguageModel::class);
-        
+    {        
         try {
+            $context = array('model' => LanguageModel::class);
+            
             if (!$this->isUserCan('system_localization_delete')) {
                 throw new Exception('No permission for an action [delete]!', 401);
             }
@@ -265,14 +265,16 @@ class LanguageController extends DashboardController
                 $table = "table={$payload['table']}&";
             }
             
+            $id = filter_var($payload['id'], FILTER_VALIDATE_INT);
+            
             $defLanguage = $this->indosafe("/record?{$table}model=" . LanguageModel::class, array('is_default' => 1));
             if (isset($defLanguage['id'])) {
-                if ($defLanguage['id'] == $payload['id']) {
+                if ($defLanguage['id'] == $id) {
                     throw new Exception('Cannot remove default language!', 403);
                 }
             }
             
-            $this->indodelete("/record?{$table}model=" . LanguageModel::class, array('WHERE' => "id='{$payload['id']}'"));
+            $this->indodelete("/record?{$table}model=" . LanguageModel::class, array('WHERE' => "id=$id"));
             
             $this->respondJSON(array(
                 'status'  => 'success',
@@ -298,10 +300,10 @@ class LanguageController extends DashboardController
     }
     
     public function datatable()
-    {
-        $rows = array();
-        
+    {        
         try {
+            $rows = array();
+            
             if (!$this->isUserCan('system_localization_index')) {
                 throw new Exception($this->text('system-no-permission'), 401);
             }
@@ -312,7 +314,7 @@ class LanguageController extends DashboardController
                 $row = array($record['code']);
                 
                 $row[] = htmlentities($record['full']);
-                $row[] = '<img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.1/flags/' . $record['code'] . '.png">';
+                $row[] = '<img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.3/flags/' . $record['code'] . '.png">';
                 $row[] = htmlentities($record['created_at']);
 
                 $action = '<a class="ajax-modal btn btn-sm btn-info shadow-sm" data-bs-target="#dashboard-modal" data-bs-toggle="modal" ' .

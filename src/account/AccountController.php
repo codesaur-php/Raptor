@@ -486,6 +486,7 @@ class AccountController extends DashboardController
             }
             
             $payload = $this->getParsedBody();
+            $context = array('payload' => $payload);
             if (empty($payload['id'])
                 || !isset($payload['name'])
                 || !filter_var($payload['id'], FILTER_VALIDATE_INT)
@@ -498,13 +499,15 @@ class AccountController extends DashboardController
                 $table = "table={$payload['table']}&";
             }
             
-            if ($this->getUser()->getAccount()['id'] == $payload['id']) {
+            $id = filter_var($payload['id'], FILTER_VALIDATE_INT);
+            
+            if ($this->getUser()->getAccount()['id'] == $id) {
                 throw new Exception('Cannot suicide myself :(', 403);
-            } else if ($payload['id'] == 1) {
+            } else if ($id == 1) {
                 throw new Exception('Cannot remove first acccount!', 403);
             }
             
-            $this->indodelete("/record?{$table}model=" . Accounts::class, array('WHERE' => "id='{$payload['id']}'"));
+            $this->indodelete("/record?{$table}model=" . Accounts::class, array('WHERE' => "id=$id"));
             
             $this->respondJSON(array(
                 'status'  => 'success',
@@ -513,7 +516,6 @@ class AccountController extends DashboardController
             ));
             
             $level = LogLevel::ALERT;
-            $context = array('payload' => $payload);
             $message = "{$payload['name']} хэрэглэгчийг устгалаа";
         } catch (Throwable $e) {
             $this->respondJSON(array(
@@ -607,7 +609,7 @@ class AccountController extends DashboardController
                 )
             ));
             if (!empty($existing)) {
-                throw new Exception($this->text('account-exists') . "<br/>username/email => {$record['username']}/{$record['email']}", 403);
+                throw new Exception($this->text('account-exists') . ": username/email => {$record['username']}/{$record['email']}", 403);
             }
             
             unset($record['id']);

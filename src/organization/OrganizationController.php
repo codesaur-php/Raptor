@@ -42,11 +42,11 @@ class OrganizationController extends DashboardController
     }
     
     public function insert()
-    {
-        $context = array('model' => OrganizationModel::class);
-        $is_submit = $this->getRequest()->getMethod() == 'POST';
-        
+    {        
         try {            
+            $context = array('model' => OrganizationModel::class);
+            $is_submit = $this->getRequest()->getMethod() == 'POST';
+            
             if (!$this->isUserCan('system_organization_insert')) {
                 throw new Exception($this->text('system-no-permission'), 401);
             }
@@ -125,10 +125,10 @@ class OrganizationController extends DashboardController
     }
     
     public function view(int $id)
-    {
-        $context = array('id' => $id, 'model' => OrganizationModel::class);
-        
+    {        
         try {            
+            $context = array('id' => $id, 'model' => OrganizationModel::class);
+            
             if (!$this->isUserCan('system_organization_index')) {
                 throw new Exception($this->text('system-no-permission'), 401);
             }
@@ -160,11 +160,11 @@ class OrganizationController extends DashboardController
     }
     
     public function update(int $id)
-    {
-        $is_submit = $this->getRequest()->getMethod() == 'PUT';
-        $context = array('id' => $id, 'model' => OrganizationModel::class);
-        
+    {        
         try {            
+            $is_submit = $this->getRequest()->getMethod() == 'PUT';
+            $context = array('id' => $id, 'model' => OrganizationModel::class);
+            
             if (!$this->isUserCan('system_organization_update')) {
                 throw new Exception($this->text('system-no-permission'), 401);
             }
@@ -254,10 +254,10 @@ class OrganizationController extends DashboardController
     }
     
     public function delete()
-    {
-        $context = array('model' => OrganizationModel::class);
-        
+    {        
         try {
+            $context = array('model' => OrganizationModel::class);
+            
             if (!$this->isUserCan('system_organization_delete')) {
                 throw new Exception('No permission for an action [delete]!', 401);
             }
@@ -275,14 +275,16 @@ class OrganizationController extends DashboardController
             if (!empty($payload['table'])) {
                 $table = "table={$payload['table']}&";
             }
+            
+            $id = filter_var($payload['id'], FILTER_VALIDATE_INT);
 
-            if ($this->getUser()->getOrganization()['id'] == $payload['id']) {
+            if ($this->getUser()->getOrganization()['id'] == $id) {
                 throw new Exception('Cannot remove currently active organization!', 403);
-            } else if ($payload['id'] == 1) {
+            } else if ($id == 1) {
                 throw new Exception('Cannot remove first organization!', 403);
             }
             
-            $this->indodelete("/record?{$table}model=" . OrganizationModel::class, array('WHERE' => "id='{$payload['id']}'"));
+            $this->indodelete("/record?{$table}model=" . OrganizationModel::class, array('WHERE' => "id=$id"));
             
             $this->respondJSON(array(
                 'status'  => 'success',
@@ -308,15 +310,14 @@ class OrganizationController extends DashboardController
     }
     
     public function datatable()
-    {
-        $rows = array();
-        
+    {        
         try {
+            $rows = array();
+            
             if (!$this->isUserCan('system_organization_index')) {
                 throw new Exception($this->text('system-no-permission'), 401);
             }
             
-            $code = preg_replace('/[^a-z]/', '', $this->getLanguageCode());
             $organizations = $this->indo('/record/rows?model=' . OrganizationModel::class);
             $rbac_link = $this->generateLink('rbac-alias');
             foreach ($organizations as $record) {
