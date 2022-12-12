@@ -68,7 +68,7 @@ class LanguageController extends DashboardController
                 }
                 
                 $languages = $this->indosafe('/language?app=common', [], 'GET');
-                foreach ($languages as $key => $value) {
+                foreach ($languages ?: array() as $key => $value) {
                     if ($payload['short'] == $key && $payload['full'] == $value) {
                         throw new Exception($this->text('lang-existing'), 403);
                    }

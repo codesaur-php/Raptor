@@ -145,6 +145,10 @@ class DashboardController extends \Raptor\Controller
                 'content' => array('mn' => array('title' => 'Баримт бичиг загвар'), 'en' => array('title' => 'Document templates')),
                 'record' => array('parent_id' => $contents_id, 'position' => '290', 'alias' => 'system', 'permission' => 'system_templates_index', 'icon' => 'bi bi-layout-wtf', 'href' => $this->generateLink('document-templates'))
             ));
+            $this->indopost($pattern, array(
+                'content' => array('mn' => array('title' => 'Дэлхийн улсууд'), 'en' => array('title' => 'World countries')),
+                'record' => array('parent_id' => $contents_id, 'position' => '295', 'alias' => 'system', 'permission' => 'system_localization_index', 'icon' => 'bi bi-flag', 'href' => $this->generateLink('countries'))
+            ));
             
             $system_id = $this->indopost($pattern, array('content' => array('mn' => array('title' => 'Систем'), 'en' => array('title' => 'System')), 'record' => array('position' => '300')));
             $this->indopost($pattern, array(

@@ -21,5 +21,12 @@ class LocalizationRouter extends Router
         $this->GET_PUT('/text/{table}/{uint:id}', [TextController::class, 'update'])->name('text-update');
         $this->GET('/text/view/{table}/{uint:id}', [TextController::class, 'view'])->name('text-view');
         $this->DELETE('/text/delete', [TextController::class, 'delete'])->name('text-delete');
+
+        $this->GET('/countries', [CountriesController::class, 'index'])->name('countries');
+        $this->GET('/countries/datatable', [CountriesController::class, 'datatable'])->name('countries-datatable');
+        $this->GET_POST('/country', [CountriesController::class, 'insert'])->name('country-insert');
+        $this->GET_PUT('/country/{id}', [CountriesController::class, 'update'])->name('country-update');
+        $this->GET('/country/view/{id}', [CountriesController::class, 'view'])->name('country-view');
+        $this->DELETE('/country', [CountriesController::class, 'delete'])->name('country-delete');
     }
 }

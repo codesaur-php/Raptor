@@ -1,31 +1,31 @@
 <div class="modal-dialog modal-lg">
     <div class="modal-content">
         <div class="modal-header modal-header-solid">
-            <h6 class="modal-title text-uppercase text-info"><i class="bi bi-eye"></i> {{ 'view-record'|text }} ({{ table ~ ':' ~ record['id'] }})</h6>
+            <h6 class="modal-title text-uppercase text-info"><i class="bi bi-eye"></i> {{ 'view-record'|text }}</h6>
             <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="{{ 'close'|text|e }}"></button>
         </div>
         <div class="modal-body">
             <div class="row mb-2">
-                <label class="col-3 col-form-label text-end">{{ 'keyword'|text }}</label>
+                <label class="col-3 col-form-label text-end">ID</label>
                 <div class="col-9">
-                    <input class="form-control" name="keyword" readonly value="{{ record['keyword']|e }}" maxlength="128" placeholder="" type="text" autocomplete="off">
+                    <input class="form-control" name="id" readonly value="{{ record['id']|e }}" maxlength="19" placeholder="" type="text" autocomplete="off">
+                </div>
+            </div>                
+            <div class="row mb-2">
+                <label class="col-3 col-form-label text-end">{{ 'flag'|text }}</label>
+                <div class="col-9">
+                    <div class="form-control"><img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.3/flags/{{ record['id']|lower }}.png"></div>
                 </div>
             </div>
+            <hr>
             {% for code,lang in language %}
             <div class="row mb-2">
-                <label class="col-3 col-form-label text-end">{{ 'title'|text }} ({{ lang }} <img style="position:relative;top:-1px" src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.3/flags/{{ code }}.png">)</label>
+                <label class="col-3 col-form-label text-end">{{ 'name'|text }} ({{ lang }} <img style="position:relative;top:-1px" src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.3/flags/{{ code }}.png">)</label>
                 <div class="col-9">
-                    <textarea class="form-control" disabled name="text[{{ code }}]" required maxlength="255">{{ record['content']['text'][code] }}</textarea>
+                    <input class="form-control" name="title[{{ code }}]" readonly value="{{ record['content']['title'][code]|e }}" maxlength="255" placeholder="" type="text" autocomplete="off">                        
                 </div>
             </div>
             {% endfor %}
-            <hr>
-            <div class="row mb-2">
-                <label class="col-3 col-form-label text-end">{{ 'type'|text }}</label>
-                <div class="col-9">
-                    <input class="form-control" readonly value="{{ record_type|e }}" type="text">
-                </div>
-            </div>
             <hr>
             <div class="row mb-2">
                 <label class="col-3 col-form-label text-end">{{ 'date-created'|text }}</label>

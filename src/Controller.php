@@ -141,7 +141,7 @@ class Controller extends \codesaur\Http\Application\Controller
         return $twig;
     }
     
-    public function respondJSON(array $res, ?int $code = null)
+    public function respondJSON(array $res, $code = null)
     {
         if (!headers_sent()) {
             if (!empty($code)) {

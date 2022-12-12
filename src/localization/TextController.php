@@ -38,10 +38,9 @@ class TextController extends DashboardController
             'success' => 1,
             'primary' => 2,
             'danger' => 3,
-            'success' => 4,
-            'warning' => 5,
-            'info' => 6,
-            'dark' => 7
+            'warning' => 4,
+            'info' => 5,
+            'dark' => 6
         );
         $names = $this->indoget('/text');
         $table = array('user', 'default', 'dashboard');

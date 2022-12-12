@@ -1,0 +1,50 @@
+<div class="modal-dialog modal-lg">
+    <div class="modal-content">
+        <div class="modal-header modal-header-solid">
+            <h6 class="modal-title text-uppercase text-primary"><i class="bi bi-plus-circle"></i> {{ 'edit-record'|text }}</h6>
+            <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="{{ 'close'|text|e }}"></button>
+        </div>
+        <div class="modal-body">
+            <form class="needs-validation" novalidate id="country_update" action="{{ 'country-update'|link({'id':record['id']}) }}" method="PUT" enctype="multipart/form-data">
+                <div class="row mb-2">
+                    <label class="col-3 col-form-label text-end">ID</label>
+                    <div class="col-9">
+                        <input class="form-control" name="id" readonly value="{{ record['id']|e }}" maxlength="19" placeholder="" type="text" autocomplete="off">
+                    </div>
+                </div>                
+                <div class="row mb-2">
+                    <label class="col-3 col-form-label text-end">{{ 'flag'|text }}</label>
+                    <div class="col-9">
+                        <div class="form-control"><img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.3/flags/{{ record['id']|lower }}.png"></div>
+                    </div>
+                </div>
+                {% for code,lang in language %}
+                <div class="row mb-2">
+                    <label class="col-3 col-form-label text-end">{{ 'name'|text }} ({{ lang }} <img style="position:relative;top:-1px" src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.3/flags/{{ code }}.png">)</label>
+                    <div class="col-9">
+                        <input class="form-control" name="title[{{ code }}]" required value="{{ record['content']['title'][code]|e }}" maxlength="255" placeholder="" type="text" autocomplete="off">                        
+                        <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
+                    </div>
+                </div>
+                {% endfor %}
+                <div class="row mb-2">
+                    <label class="col-3 col-form-label text-end">{{ 'language'|text }}</label>
+                    <div class="col-9">
+                        <input class="form-control" name="speak" required value="{{ record['speak']|e }}" maxlength="64" placeholder="" type="text" autocomplete="off">
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer modal-footer-solid">
+            <button class="btn btn-primary update-country-submit">
+                <i class="bi bi-check"></i> {{ 'save'|text }}
+            </button>
+            <button class="btn btn-secondary" data-bs-dismiss="modal">
+                {{ 'cancel'|text }}
+            </button>
+        </div>
+    </div>
+</div>
+<script type="text/javascript">
+    FormSubmitHandler('.update-country-submit', 'form#country_update');
+</script>
