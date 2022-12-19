@@ -16,28 +16,36 @@ use Raptor\Authentication\User;
 
 class JWTAuthMiddleware implements MiddlewareInterface
 {
-    public function retrieveIndoUser(ServerRequestInterface $request, $jwt): User
+    function request($indo, string $method, string $pattern, $payload = array())
     {
         try {
             ob_start();
-            $request->getAttribute('indo')->handle(
-                new InternalRequest('POST', '/auth/jwt', array('jwt' => $jwt)));
+            $indo->handle(new InternalRequest($method, $pattern, $payload));
             $response = json_decode(ob_get_contents(), true);
             ob_end_clean();
-        } catch (Throwable $e) {
+        } catch (Throwable $th) {
             ob_end_clean();
             
-            $response = array('error' => array('code' => $e->getCode(), 'message' => $e->getMessage()));
+            $response = array('error' => array('code' => $th->getCode(), 'message' => $th->getMessage()));
         }
         
         if (isset($response['error']['code'])
             && isset($response['error']['message'])
         ) {
             throw new Exception($response['error']['message'], $response['error']['code']);
-        } elseif (
+        }
+        
+        return $response;
+    }
+    
+    public function retrieveIndoUser(ServerRequestInterface $request, $jwt): User
+    {
+        $response = $this->request(
+            $request->getAttribute('indo'), 'POST', '/auth/jwt', array('jwt' => $jwt));
+        if (
             empty($response['rbac'])
             || !is_array($response['rbac'])
-            || empty($response['account']['id'])
+            || !isset($response['account']['id'])
             || !isset($response['organizations'][0]['id'])
         ) {
             throw new Exception('Invalid RBAC user information!');

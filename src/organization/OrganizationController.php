@@ -41,6 +41,63 @@ class OrganizationController extends DashboardController
         $this->indolog('organization', LogLevel::NOTICE, 'Байгууллагуудын жагсаалтыг нээж үзэж байна', array('model' => OrganizationModel::class));
     }
     
+    public function datatable()
+    {        
+        try {
+            $rows = array();
+            
+            if (!$this->isUserCan('system_organization_index')) {
+                throw new Exception($this->text('system-no-permission'), 401);
+            }
+            
+            $organizations = $this->indo('/records?model=' . OrganizationModel::class);
+            $rbac_link = $this->generateLink('rbac-alias');
+            foreach ($organizations as $record) {
+                $id = $record['id'];
+                
+                $row = array($id);
+                
+                if (empty($record['logo'])) {
+                    $row[] = ' <i class="bi bi-building text-secondary" style="font-size:1.5rem"></i>';
+                } else {
+                    $row[] = '<img class="img-fluid img-thumbnail" src="' . $record['logo'] . '"  style="max-width:150px;max-height:60px">';
+                }
+                
+                $row[] = htmlentities($record['name']);
+                
+                if ($this->getUser()->can('system_rbac')) {
+                    $rbac_query = 'alias=' . urlencode($record['alias']) . '&title=' . urlencode($record['name']);
+                    $row[] = '<a href="' . $rbac_link . '?' . $rbac_query . '">' . htmlentities($record['alias']) . '</a>';
+                } else {
+                    $row[] = htmlentities($record['alias']);
+                }
+
+                $action = '<a class="ajax-modal btn btn-sm btn-info shadow-sm" data-bs-target="#dashboard-modal" data-bs-toggle="modal" ' .
+                    'href="' . $this->generateLink('organization-view', array('id' => $id)) . '"><i class="bi bi-eye"></i></a>' . PHP_EOL;
+                if ($this->getUser()->can('system_organization_update')) {
+                    $action .= '<a class="ajax-modal btn btn-sm btn-primary shadow-sm" data-bs-target="#dashboard-modal" data-bs-toggle="modal" ' .
+                        'href="' . $this->generateLink('organization-update', array('id' => $id)) . '"><i class="bi bi-pencil-square"></i></a>' . PHP_EOL;
+                }
+                if ($this->getUser()->can('system_organization_delete')) {
+                    $action .= '<a class="delete-organization btn btn-sm btn-danger shadow-sm" href="' . $id . '"><i class="bi bi-trash"></i></a>';
+                }
+                
+                $row[] = $action;
+
+                $rows[] = $row;
+            }
+        } catch (Throwable $e) {
+            $this->errorLog($e);
+        } finally {
+            $this->respondJSON(array(
+                'data' => $rows,
+                'recordsTotal' => count($rows),
+                'recordsFiltered' => count($rows),
+                'draw' => (int)($this->getQueryParams()['draw'] ?? 0)
+            ));
+        }
+    }
+    
     public function insert()
     {        
         try {            
@@ -69,7 +126,7 @@ class OrganizationController extends DashboardController
                 }
                 $context['record'] = $record;
                 
-                $id = $this->indopost('/record?model=' . OrganizationModel::class, array('record' => $record));
+                $id = $this->indopost('/record?model=' . OrganizationModel::class, $record);
                 $context['id'] = $id;
                 
                 $file = new FileController($this->getRequest());
@@ -121,7 +178,7 @@ class OrganizationController extends DashboardController
     
     function getParents()
     {
-        return $this->indosafe('/record/rows?model=' . OrganizationModel::class, array('WHERE' => 'parent_id=0 OR parent_id is null')) ?: array();
+        return $this->indosafe('/records?model=' . OrganizationModel::class, array('WHERE' => 'parent_id=0 OR parent_id is null')) ?: array();
     }
     
     public function view(int $id)
@@ -152,7 +209,7 @@ class OrganizationController extends DashboardController
             $this->modalProhibited($e->getMessage(), $e->getCode())->render();
             
             $level = LogLevel::ERROR;
-            $message = 'Байгууллагын мэдээллийг нээж үзэх үед алдаа гарч зогслоо байна';
+            $message = 'Байгууллагын мэдээллийг нээж үзэх үед алдаа гарч зогслоо';
             $context['error'] = array('code' => $e->getCode(), 'message' => $e->getMessage());
         } finally {
             $this->indolog('organization', $level, $message, $context);
@@ -271,11 +328,6 @@ class OrganizationController extends DashboardController
             }
             $context['payload'] = $payload;
             
-            $table = '';
-            if (!empty($payload['table'])) {
-                $table = "table={$payload['table']}&";
-            }
-            
             $id = filter_var($payload['id'], FILTER_VALIDATE_INT);
 
             if ($this->getUser()->getOrganization()['id'] == $id) {
@@ -284,7 +336,7 @@ class OrganizationController extends DashboardController
                 throw new Exception('Cannot remove first organization!', 403);
             }
             
-            $this->indodelete("/record?{$table}model=" . OrganizationModel::class, array('WHERE' => "id=$id"));
+            $this->indodelete('/record?model=' . OrganizationModel::class, array('WHERE' => "id=$id"));
             
             $this->respondJSON(array(
                 'status'  => 'success',
@@ -306,63 +358,6 @@ class OrganizationController extends DashboardController
             $context['error'] = array('code' => $e->getCode(), 'message' => $e->getMessage());
         } finally {
             $this->indolog('organization', $level, $message, $context);
-        }
-    }
-    
-    public function datatable()
-    {        
-        try {
-            $rows = array();
-            
-            if (!$this->isUserCan('system_organization_index')) {
-                throw new Exception($this->text('system-no-permission'), 401);
-            }
-            
-            $organizations = $this->indo('/record/rows?model=' . OrganizationModel::class);
-            $rbac_link = $this->generateLink('rbac-alias');
-            foreach ($organizations as $record) {
-                $id = $record['id'];
-                
-                $row = array($id);
-                
-                if (empty($record['logo'])) {
-                    $row[] = ' <i class="bi bi-building text-secondary" style="font-size:1.5rem"></i>';
-                } else {
-                    $row[] = '<img class="img-fluid img-thumbnail" src="' . $record['logo'] . '"  style="max-width:150px;max-height:60px">';
-                }                
-                
-                $row[] = htmlentities($record['name']);
-                
-                if ($this->getUser()->can('system_rbac')) {
-                    $rbac_query = 'alias=' . urlencode($record['alias']) . '&title=' . urlencode($record['name']);
-                    $row[] = '<a href="' . $rbac_link . '?' . $rbac_query . '">' . htmlentities($record['alias']) . '</a>';
-                } else {
-                    $row[] = htmlentities($record['alias']);
-                }
-
-                $action = '<a class="ajax-modal btn btn-sm btn-info shadow-sm" data-bs-target="#dashboard-modal" data-bs-toggle="modal" ' .
-                    'href="' . $this->generateLink('organization-view', array('id' => $id)) . '"><i class="bi bi-eye"></i></a>' . PHP_EOL;
-                if ($this->getUser()->can('system_organization_update')) {
-                    $action .= '<a class="ajax-modal btn btn-sm btn-primary shadow-sm" data-bs-target="#dashboard-modal" data-bs-toggle="modal" ' .
-                        'href="' . $this->generateLink('organization-update', array('id' => $id)) . '"><i class="bi bi-pencil-square"></i></a>' . PHP_EOL;
-                }
-                if ($this->getUser()->can('system_organization_delete')) {
-                    $action .= '<a class="delete-organization btn btn-sm btn-danger shadow-sm" href="' . $id . '"><i class="bi bi-trash"></i></a>';
-                }
-                
-                $row[] = $action;
-
-                $rows[] = $row;
-            }
-        } catch (Throwable $e) {
-            $this->errorLog($e);
-        } finally {
-            $this->respondJSON(array(
-                'data' => $rows,
-                'recordsTotal' => count($rows),
-                'recordsFiltered' => count($rows),
-                'draw' => (int)($this->getQueryParams()['draw'] ?? 0)
-            ));
         }
     }
 }

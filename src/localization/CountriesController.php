@@ -41,6 +41,49 @@ class CountriesController extends DashboardController
         $this->indolog('localization', LogLevel::NOTICE, 'Дэлхийн улсуудын жагсаалтыг нээж үзэж байна', array('model' => CountriesModel::class));
     }
     
+    public function datatable()
+    {        
+        try {
+            $rows = array();
+            
+            if (!$this->isUserCan('system_localization_index')) {
+                throw new Exception($this->text('system-no-permission'), 401);
+            }
+            
+            $code = $this->getLanguageCode();
+            $languages = $this->indo('/records?model=' . CountriesModel::class);
+            foreach ($languages as $record) {
+                $row = array($record['id']);
+                
+                $row[] = htmlentities($record['content']['title'][$code]);
+                $row[] = '<img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.3/flags/' . strtolower($record['id']) . '.png">';
+                $row[] = htmlentities($record['speak']);
+                
+                $action = '<a class="ajax-modal btn btn-sm btn-info shadow-sm" data-bs-target="#dashboard-modal" data-bs-toggle="modal" ' .
+                    'href="' . $this->generateLink('country-view', array('id' => $record['id'])) . '"><i class="bi bi-eye"></i></a>' . PHP_EOL;
+                if ($this->getUser()->can('system_localization_update')) {
+                    $action .= '<a class="ajax-modal btn btn-sm btn-primary shadow-sm" data-bs-target="#dashboard-modal" data-bs-toggle="modal" ' .
+                        'href="' . $this->generateLink('country-update', array('id' => $record['id'])) . '"><i class="bi bi-pencil-square"></i></a>' . PHP_EOL;
+                }
+                if ($this->getUser()->can('system_localization_delete')) {
+                    $action .= '<a class="delete-country btn btn-sm btn-danger shadow-sm" href="' . $record['id'] . '"><i class="bi bi-trash"></i></a>';
+                }                
+                $row[] = $action;
+                
+                $rows[] = $row;
+            }
+        } catch (Throwable $e) {
+            $this->errorLog($e);
+        } finally {
+            $this->respondJSON(array(
+                'data' => $rows,
+                'recordsTotal' => count($rows),
+                'recordsFiltered' => count($rows),
+                'draw' => (int)($this->getQueryParams()['draw'] ?? 0)
+            ));
+        }
+    }
+    
     public function insert()
     {        
         try {            
@@ -71,7 +114,7 @@ class CountriesController extends DashboardController
                 }
                 
                 $this->indopost(
-                    "/record?model=" . CountriesModel::class,
+                    '/record?model=' . CountriesModel::class,
                     array('record' => $record, 'content' => $content));
         
                 $this->respondJSON(array(
@@ -134,7 +177,7 @@ class CountriesController extends DashboardController
             $this->modalProhibited($e->getMessage(), $e->getCode())->render();
             
             $level = LogLevel::ERROR;
-            $message = "[$id] улсын мэдээллийг нээж үзэх үед алдаа гарч зогслоо байна";
+            $message = "[$id] улсын мэдээллийг нээж үзэх үед алдаа гарч зогслоо";
             $context['error'] = array('code' => $e->getCode(), 'message' => $e->getMessage());
         } finally {
             $this->indolog('localization', $level, $message, $context);
@@ -169,7 +212,7 @@ class CountriesController extends DashboardController
                     throw new Exception($this->text('invalid-request'), 400);
                 }
                 
-                $id = preg_replace('/[^a-z^A-Z]/', '', $payload['id']);
+                $id = preg_replace('/[^A-Za-z]/', '', $payload['id']);
                 $this->indoput('/record?model=' . CountriesModel::class,
                     array('record' => $record, 'content' => $content, 'condition' => ['WHERE' => "p.id='$id'"]));
                 
@@ -210,7 +253,7 @@ class CountriesController extends DashboardController
             
             $level = LogLevel::ERROR;
             $context['error'] = array('code' => $e->getCode(), 'message' => $e->getMessage());
-            $message = "[$id] улсын мэдээллийг өөрчлөх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо байна";
+            $message = "[$id] улсын мэдээллийг өөрчлөх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо";
         } finally {
             $this->indolog('localization', $level, $message, $context);
         }
@@ -231,8 +274,8 @@ class CountriesController extends DashboardController
             }
             $context['payload'] = $payload;
             
-            $id = preg_replace('/[^a-z^A-Z]/', '', $payload['id']);
-            $this->indodelete("/record?model=" . CountriesModel::class, array('WHERE' => "id='$id'"));
+            $id = preg_replace('/[^A-Za-z]/', '', $payload['id']);
+            $this->indodelete('/record?model=' . CountriesModel::class, array('WHERE' => "id='$id'"));
             
             $this->respondJSON(array(
                 'status'  => 'success',
@@ -254,49 +297,6 @@ class CountriesController extends DashboardController
             $context['error'] = array('code' => $e->getCode(), 'message' => $e->getMessage());
         } finally {
             $this->indolog('localization', $level, $message, $context);
-        }
-    }
-    
-    public function datatable()
-    {        
-        try {
-            $rows = array();
-            
-            if (!$this->isUserCan('system_localization_index')) {
-                throw new Exception($this->text('system-no-permission'), 401);
-            }
-            
-            $code = $this->getLanguageCode();
-            $languages = $this->indo('/record/rows?model=' . CountriesModel::class);
-            foreach ($languages as $record) {
-                $row = array($record['id']);
-                
-                $row[] = htmlentities($record['content']['title'][$code]);
-                $row[] = '<img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.3/flags/' . strtolower($record['id']) . '.png">';
-                $row[] = htmlentities($record['speak']);
-                
-                $action = '<a class="ajax-modal btn btn-sm btn-info shadow-sm" data-bs-target="#dashboard-modal" data-bs-toggle="modal" ' .
-                    'href="' . $this->generateLink('country-view', array('id' => $record['id'])) . '"><i class="bi bi-eye"></i></a>' . PHP_EOL;
-                if ($this->getUser()->can('system_localization_update')) {
-                    $action .= '<a class="ajax-modal btn btn-sm btn-primary shadow-sm" data-bs-target="#dashboard-modal" data-bs-toggle="modal" ' .
-                        'href="' . $this->generateLink('country-update', array('id' => $record['id'])) . '"><i class="bi bi-pencil-square"></i></a>' . PHP_EOL;
-                }
-                if ($this->getUser()->can('system_localization_delete')) {
-                    $action .= '<a class="delete-country btn btn-sm btn-danger shadow-sm" href="' . $record['id'] . '"><i class="bi bi-trash"></i></a>';
-                }                
-                $row[] = $action;
-                
-                $rows[] = $row;
-            }
-        } catch (Throwable $e) {
-            $this->errorLog($e);
-        } finally {
-            $this->respondJSON(array(
-                'data' => $rows,
-                'recordsTotal' => count($rows),
-                'recordsFiltered' => count($rows),
-                'draw' => (int)($this->getQueryParams()['draw'] ?? 0)
-            ));
         }
     }
 }

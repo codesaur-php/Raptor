@@ -11,7 +11,7 @@ use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 
 use Indoraptor\InternalRequest;
-use Indoraptor\Record\SettingsModel;
+use Indoraptor\Contents\SettingsModel;
 
 use Raptor\Authentication\UserInterface;
 

@@ -8,8 +8,8 @@ use Throwable;
 use Psr\Log\LogLevel;
 use Psr\Http\Message\ServerRequestInterface;
 
-use Indoraptor\Record\SettingsModel;
 use Indoraptor\Mailer\MailerModel;
+use Indoraptor\Contents\SettingsModel;
 
 use Raptor\Dashboard\DashboardController;
 use Raptor\File\FileController;
@@ -41,7 +41,8 @@ class SettingsController extends DashboardController
                 
                 $record = array();
                 $content = array();
-                foreach ($this->getParsedBody() as $index => $value) {
+                $payload = $this->getParsedBody();
+                foreach ($payload as $index => $value) {
                     if (is_array($value)) {
                         foreach ($value as $key => $value) {
                             $content[$key][$index] = $value;
@@ -50,8 +51,7 @@ class SettingsController extends DashboardController
                         $record[$index] = $value;
                     }
                 }
-                $context['record'] = $record;
-                $context['content'] = $content;
+                $context['payload'] = $payload;
                 
                 if (empty($record['alias'])) {
                     throw new Exception($this->text('invalid-request'), 400);
@@ -90,19 +90,17 @@ class SettingsController extends DashboardController
                     }
                 }
                 
-                $pattern = '/record?model=' . SettingsModel::class;
-                
-                $existing = $this->indosafe($pattern, array('p.alias' => $record['alias'], 'p.is_active' => 1));                
+                $existing = $this->indosafe('/record?model=' . SettingsModel::class, array('p.alias' => $record['alias'], 'p.is_active' => 1));                
                 if (isset($existing['id'])) {
                     $id = $existing['id'];
-                    $this->indoput($pattern, array('record' => $record, 'content' => $content, 'condition' => array('WHERE' => "id=$id")));
+                    $this->indoput('/record?model=' . SettingsModel::class, array('record' => $record, 'content' => $content, 'condition' => array('WHERE' => "id=$id")));
                     $notify = 'primary';
                     $notice = $this->text('record-update-success');
                 } else {
                     if (empty($content)) {
                         $content[$this->getLanguageCode()]['title'] = '';
                     }
-                    $id = $this->indopost($pattern, array('record' => $record, 'content' => $content));
+                    $id = $this->indopost('/record?model=' . SettingsModel::class, array('record' => $record, 'content' => $content));
                     $notify = 'success';
                     $notice = $this->text('record-insert-success');
                 }
@@ -136,7 +134,7 @@ class SettingsController extends DashboardController
                 $record = array('alias' => $alias);
             }
             
-            $mailer_rows = $this->indosafe('/record/rows?model=' . MailerModel::class);
+            $mailer_rows = $this->indosafe('/records?model=' . MailerModel::class);
             if (empty($mailer_rows)) {
                 $mailer = array('is_smtp' => 1, 'smtp_auth' => 1);
             } else {
@@ -145,7 +143,7 @@ class SettingsController extends DashboardController
             
             $this->twigDashboard(dirname(__FILE__) . '/settings.html', array('record' => $record, 'mailer' => $mailer))->render();
 
-            $this->indolog('contents', LogLevel::NOTICE, 'Системийн тохируулгыг нээж үзэж байна', $context);
+            $this->indolog('content', LogLevel::NOTICE, 'Системийн тохируулгыг нээж үзэж байна', $context);
         }
     }
     
@@ -163,15 +161,13 @@ class SettingsController extends DashboardController
                 throw new Exception($this->text('invalid-request'), 400);
             }
             
-            $pattern = '/record?model=' . SettingsModel::class;
-            
-            $existing = $this->indosafe($pattern, array('p.alias' => $alias, 'p.is_active' => 1));
+            $existing = $this->indosafe('/record?model=' . SettingsModel::class, array('p.alias' => $alias, 'p.is_active' => 1));
             $old_favico_file = basename($existing['favico'] ?? '');
             $old_shortcut_icon_file = basename($existing['shortcut_icon'] ?? '');
             $old_apple_touch_icon_file = basename($existing['apple_touch_icon'] ?? '');
             
             $file = new FileController($this->getRequest());
-            $file->init("/settings");
+            $file->init('/settings');
             $file->allowType(3);
             
             $record = array('alias' => $alias);
@@ -248,11 +244,11 @@ class SettingsController extends DashboardController
             
             if (isset($existing['id'])) {
                 $id = $existing['id'];
-                $this->indoput($pattern, array('record' => $record, 'content' => $content, 'condition' => array('WHERE' => "id=$id")));
+                $this->indoput('/record?model=' . SettingsModel::class, array('record' => $record, 'content' => $content, 'condition' => array('WHERE' => "id=$id")));
                 $notify = 'primary';
                 $notice = $this->text('record-update-success');
             } else {
-                $id = $this->indopost($pattern, array('record' => $record, 'content' => $content));
+                $id = $this->indopost('/record?model=' . SettingsModel::class, array('record' => $record, 'content' => $content));
                 $notify = 'success';
                 $notice = $this->text('record-insert-success');
             }
@@ -269,7 +265,7 @@ class SettingsController extends DashboardController
             $level = LogLevel::ERROR;
             $message = 'Системийн тохируулгыг хадгалах үед алдаа гарч зогслоо';
         } finally {
-            $this->indolog('contents', $level, $message, $context);
+            $this->indolog('content', $level, $message, $context);
         }
     }
     
@@ -290,19 +286,18 @@ class SettingsController extends DashboardController
             $record['smtp_auth'] = isset($record['smtp_auth']) && $record['smtp_auth'] == 'on' ? 1 : 0;            
             $context['record'] = $record;
             
-            $mailer_rows = $this->indosafe('/record/rows?model=' . MailerModel::class);
+            $mailer_rows = $this->indosafe('/records?model=' . MailerModel::class);
             if (!empty($mailer_rows)) {
                 $existing = end($mailer_rows);
             }
             
-            $pattern = '/record?model=' . MailerModel::class;
             if (isset($existing['id'])) {
                 $id = $existing['id'];
-                $this->indoput($pattern, array('record' => $record, 'condition' => array('WHERE' => "id=$id")));
+                $this->indoput('/record?model=' . MailerModel::class, array('record' => $record, 'condition' => array('WHERE' => "id=$id")));
                 $notify = 'primary';
                 $notice = $this->text('record-update-success');
             } else {
-                $id = $this->indopost($pattern, array('record' => $record));
+                $id = $this->indopost('/record?model=' . MailerModel::class, $record);
                 $notify = 'success';
                 $notice = $this->text('record-insert-success');
             }
@@ -318,7 +313,7 @@ class SettingsController extends DashboardController
             $level = LogLevel::ERROR;
             $message = 'Системийн шууданчын тохируулгыг хадгалах үед алдаа гарч зогслоо';
         } finally {
-            $this->indolog('contents', $level, $message, $context);
+            $this->indolog('content', $level, $message, $context);
         }
     }
 }

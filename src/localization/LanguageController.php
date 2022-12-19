@@ -42,6 +42,49 @@ class LanguageController extends DashboardController
         $this->indolog('localization', LogLevel::NOTICE, 'Хэлний жагсаалтыг нээж үзэж байна', array('model' => LanguageModel::class));
     }
     
+    public function datatable()
+    {        
+        try {
+            $rows = array();
+            
+            if (!$this->isUserCan('system_localization_index')) {
+                throw new Exception($this->text('system-no-permission'), 401);
+            }
+            
+            $languages = $this->indo('/records?model=' . LanguageModel::class);
+            foreach ($languages as $record) {
+                $id = $record['id'];
+                $row = array($record['code']);
+                
+                $row[] = htmlentities($record['full']);
+                $row[] = '<img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.3/flags/' . $record['code'] . '.png">';
+                $row[] = htmlentities($record['created_at']);
+
+                $action = '<a class="ajax-modal btn btn-sm btn-info shadow-sm" data-bs-target="#dashboard-modal" data-bs-toggle="modal" ' .
+                    'href="' . $this->generateLink('language-view', array('id' => $id)) . '"><i class="bi bi-eye"></i></a>' . PHP_EOL;
+                if ($this->getUser()->can('system_localization_update')) {
+                    $action .= '<a class="ajax-modal btn btn-sm btn-primary shadow-sm" data-bs-target="#dashboard-modal" data-bs-toggle="modal" ' .
+                        'href="' . $this->generateLink('language-update', array('id' => $id)) . '"><i class="bi bi-pencil-square"></i></a>' . PHP_EOL;
+                }
+                if ($this->getUser()->can('system_localization_delete')) {
+                    $action .= '<a class="delete-language btn btn-sm btn-danger shadow-sm" href="' . $id . '"><i class="bi bi-trash"></i></a>';
+                }                
+                $row[] = $action;
+                
+                $rows[] = $row;
+            }
+        } catch (Throwable $e) {
+            $this->errorLog($e);
+        } finally {
+            $this->respondJSON(array(
+                'data' => $rows,
+                'recordsTotal' => count($rows),
+                'recordsFiltered' => count($rows),
+                'draw' => (int)($this->getQueryParams()['draw'] ?? 0)
+            ));
+        }
+    }
+    
     public function insert()
     {        
         try {            
@@ -67,8 +110,8 @@ class LanguageController extends DashboardController
                     throw new Exception($this->text('invalid-request'), 400);
                 }
                 
-                $languages = $this->indosafe('/language?app=common', [], 'GET');
-                foreach ($languages ?: array() as $key => $value) {
+                $languages = $this->indosafe('/language', [], 'GET');
+                foreach ($languages as $key => $value) {
                     if ($payload['short'] == $key && $payload['full'] == $value) {
                         throw new Exception($this->text('lang-existing'), 403);
                    }
@@ -80,11 +123,11 @@ class LanguageController extends DashboardController
                    }    
                 }
 
-                $id = $this->indopost('/record?model=' . LanguageModel::class, array('record' => array('code' => $payload['short'], 'full' => $payload['full'])));
+                $id = $this->indopost('/record?model=' . LanguageModel::class, array('code' => $payload['short'], 'full' => $payload['full']));
                 $context['record'] = $id;
                 
                 $copied = $this->indosafe('/language/copy/multimodel/content', array('from' => $mother['code'], 'to' => $payload['short']), 'POST');
-                if (is_array($copied)) {
+                if (!empty($copied)) {
                     $this->indolog(
                         'localization',
                         LogLevel::ALERT,
@@ -104,7 +147,8 @@ class LanguageController extends DashboardController
             } else {
                 $code = preg_replace('/[^a-z]/', '', $this->getLanguageCode());
                 $vars = array(
-                    'countries' => $this->indosafe('/record/rows?model=' . CountriesModel::class,
+                    'countries' => $this->indosafe(
+                        '/records?model=' . CountriesModel::class,
                         array('condition' => array('WHERE' => "c.code='$code'"))
                     )
                 );
@@ -156,7 +200,7 @@ class LanguageController extends DashboardController
             $this->modalProhibited($e->getMessage(), $e->getCode())->render();
             
             $level = LogLevel::ERROR;
-            $message = 'Хэлний мэдээллийг нээж үзэх үед алдаа гарч зогслоо байна';
+            $message = 'Хэлний мэдээллийг нээж үзэх үед алдаа гарч зогслоо';
             $context['error'] = array('code' => $e->getCode(), 'message' => $e->getMessage());
         } finally {
             $this->indolog('localization', $level, $message, $context);
@@ -236,7 +280,7 @@ class LanguageController extends DashboardController
             
             $level = LogLevel::ERROR;
             $context['error'] = array('code' => $e->getCode(), 'message' => $e->getMessage());
-            $message = 'Хэлний мэдээллийг өөрчлөх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо байна';
+            $message = 'Хэлний мэдээллийг өөрчлөх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
         } finally {
             $this->indolog('localization', $level, $message, $context);
         }
@@ -260,21 +304,15 @@ class LanguageController extends DashboardController
             }
             $context['payload'] = $payload;
             
-            $table = '';
-            if (!empty($payload['table'])) {
-                $table = "table={$payload['table']}&";
-            }
-            
-            $id = filter_var($payload['id'], FILTER_VALIDATE_INT);
-            
-            $defLanguage = $this->indosafe("/record?{$table}model=" . LanguageModel::class, array('is_default' => 1));
+            $id = filter_var($payload['id'], FILTER_VALIDATE_INT);            
+            $defLanguage = $this->indosafe("/record?model=" . LanguageModel::class, array('is_default' => 1));
             if (isset($defLanguage['id'])) {
                 if ($defLanguage['id'] == $id) {
                     throw new Exception('Cannot remove default language!', 403);
                 }
             }
             
-            $this->indodelete("/record?{$table}model=" . LanguageModel::class, array('WHERE' => "id=$id"));
+            $this->indodelete("/record?model=" . LanguageModel::class, array('WHERE' => "id=$id"));
             
             $this->respondJSON(array(
                 'status'  => 'success',
@@ -296,49 +334,6 @@ class LanguageController extends DashboardController
             $context['error'] = array('code' => $e->getCode(), 'message' => $e->getMessage());
         } finally {
             $this->indolog('localization', $level, $message, $context);
-        }
-    }
-    
-    public function datatable()
-    {        
-        try {
-            $rows = array();
-            
-            if (!$this->isUserCan('system_localization_index')) {
-                throw new Exception($this->text('system-no-permission'), 401);
-            }
-            
-            $languages = $this->indo('/record/rows?model=' . LanguageModel::class);
-            foreach ($languages as $record) {
-                $id = $record['id'];
-                $row = array($record['code']);
-                
-                $row[] = htmlentities($record['full']);
-                $row[] = '<img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.3/flags/' . $record['code'] . '.png">';
-                $row[] = htmlentities($record['created_at']);
-
-                $action = '<a class="ajax-modal btn btn-sm btn-info shadow-sm" data-bs-target="#dashboard-modal" data-bs-toggle="modal" ' .
-                    'href="' . $this->generateLink('language-view', array('id' => $id)) . '"><i class="bi bi-eye"></i></a>' . PHP_EOL;
-                if ($this->getUser()->can('system_localization_update')) {
-                    $action .= '<a class="ajax-modal btn btn-sm btn-primary shadow-sm" data-bs-target="#dashboard-modal" data-bs-toggle="modal" ' .
-                        'href="' . $this->generateLink('language-update', array('id' => $id)) . '"><i class="bi bi-pencil-square"></i></a>' . PHP_EOL;
-                }
-                if ($this->getUser()->can('system_localization_delete')) {
-                    $action .= '<a class="delete-language btn btn-sm btn-danger shadow-sm" href="' . $id . '"><i class="bi bi-trash"></i></a>';
-                }                
-                $row[] = $action;
-                
-                $rows[] = $row;
-            }
-        } catch (Throwable $e) {
-            $this->errorLog($e);
-        } finally {
-            $this->respondJSON(array(
-                'data' => $rows,
-                'recordsTotal' => count($rows),
-                'recordsFiltered' => count($rows),
-                'draw' => (int)($this->getQueryParams()['draw'] ?? 0)
-            ));
         }
     }
 }

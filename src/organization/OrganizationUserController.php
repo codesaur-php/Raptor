@@ -96,8 +96,9 @@ class OrganizationUserController extends DashboardController
                 }
 
                 foreach (array_keys($organizations) as $id) {
-                    $record_id = $this->indopost('/record?model=' . OrganizationUserModel::class,
-                        array('record' => array('account_id' => $account_id, 'organization_id' => $id)));
+                    $record_id = $this->indopost(
+                        '/record?model=' . OrganizationUserModel::class,
+                        array('account_id' => $account_id, 'organization_id' => $id));
                     $this->indolog(
                         'account',
                         LogLevel::ALERT,
@@ -128,7 +129,7 @@ class OrganizationUserController extends DashboardController
                 $vars = array(
                     'account' => $account,
                     'current_organizations' => $current_organizations,
-                    'organizations' => $this->indo('/record/rows?model=' . OrganizationModel::class),
+                    'organizations' => $this->indo('/records?model=' . OrganizationModel::class),
                 );
                 
                 $template_path = dirname(__FILE__) . '/organization-user-set-modal.html';

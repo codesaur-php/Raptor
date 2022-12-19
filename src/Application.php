@@ -7,7 +7,7 @@ class Application extends \codesaur\Http\Application\Application
     function __construct()
     {
         parent::__construct();
-
+        
         $this->use(new Exception\ErrorHandler());
         $this->use(new Authentication\SessionMiddleware());
         $this->use(new Authentication\JWTAuthMiddleware());

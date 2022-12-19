@@ -26,7 +26,7 @@ class DashboardController extends \Raptor\Controller
         return $dashboard;
     }
     
-    public function dashboardProhibited($alert = null, ?int $code = null): TwigTemplate
+    public function dashboardProhibited($alert = null, $code = null): TwigTemplate
     {
         if (!empty($code) && !headers_sent()) {
             if ($code != StatusCodeInterface::STATUS_OK) {
@@ -43,7 +43,7 @@ class DashboardController extends \Raptor\Controller
             array('alert' => $alert ?? $this->text('system-no-permission')));
     }
     
-    public function modalProhibited($alert = null, ?int $code = null): TwigTemplate
+    public function modalProhibited($alert = null, $code = null): TwigTemplate
     {
         if (!empty($code) && !headers_sent()) {
             if ($code != StatusCodeInterface::STATUS_OK) {
@@ -63,7 +63,7 @@ class DashboardController extends \Raptor\Controller
     public function getAccounts(): array
     {
         $accounts = array();
-        $rows = $this->indosafe('/record/rows?model=' . Accounts::class);
+        $rows = $this->indosafe('/records?model=' . Accounts::class);
         if (!empty($rows)) {
             foreach ($rows as $rows) {
                 $accounts[$rows['id']] = $rows['username'] . ' » ' . $rows['first_name'] . ' ' . $rows['last_name'] . ' (' . $rows['email'] . ')';
@@ -80,7 +80,7 @@ class DashboardController extends \Raptor\Controller
             $this->createDefaultMenu();
         }
 
-        $menu = $this->indosafe('/record/rows?model=' . MenuModel::class,
+        $menu = $this->indosafe('/records?model=' . MenuModel::class,
             array('ORDER BY' => 'p.position', 'WHERE' => 'p.is_active=1'));
         $sidemenu = array();
         foreach ($menu as $row) {
@@ -142,8 +142,8 @@ class DashboardController extends \Raptor\Controller
                 'record' => array('parent_id' => $contents_id, 'position' => '285', 'alias' => 'system', 'permission' => 'system_localization_index', 'icon' => 'bi bi-translate', 'href' => $this->generateLink('texts'))
             ));
             $this->indopost($pattern, array(
-                'content' => array('mn' => array('title' => 'Баримт бичиг загвар'), 'en' => array('title' => 'Document templates')),
-                'record' => array('parent_id' => $contents_id, 'position' => '290', 'alias' => 'system', 'permission' => 'system_templates_index', 'icon' => 'bi bi-layout-wtf', 'href' => $this->generateLink('document-templates'))
+                'content' => array('mn' => array('title' => 'Лавлах хүснэгтүүд'), 'en' => array('title' => 'Reference Tables')),
+                'record' => array('parent_id' => $contents_id, 'position' => '290', 'alias' => 'system', 'permission' => 'system_templates_index', 'icon' => 'bi bi-layout-wtf', 'href' => $this->generateLink('references'))
             ));
             $this->indopost($pattern, array(
                 'content' => array('mn' => array('title' => 'Дэлхийн улсууд'), 'en' => array('title' => 'World countries')),

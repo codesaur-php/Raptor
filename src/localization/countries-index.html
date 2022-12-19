@@ -3,7 +3,7 @@
     <div class="btn-toolbar mb-2 mb-md-0">
         <div class="btn-group me-2">
             {% if user.can('system_localization_insert') %}
-            <a class="btn btn-outline-primary text-uppercase shadow-sm" href="{{ 'country-insert'|link }}" data-bs-target="#dashboard-modal" data-bs-toggle="modal">
+            <a class="btn btn-outline-success text-uppercase shadow-sm" href="{{ 'country-insert'|link }}" data-bs-target="#dashboard-modal" data-bs-toggle="modal">
                 <i class="bi bi-plus-circle-dotted"></i> {{ 'new'|text }}
             </a>
             {% endif %}

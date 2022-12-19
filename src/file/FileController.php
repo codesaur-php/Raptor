@@ -8,8 +8,7 @@ use Throwable;
 use Psr\Log\LogLevel;
 use Psr\Http\Message\UploadedFileInterface;
 
-use Indoraptor\Record\FileModel;
-use Indoraptor\Record\FilesModel;
+use Indoraptor\File\FileModel;
 
 use Raptor\Controller;
 
@@ -186,7 +185,7 @@ class FileController extends Controller
                 $existing = $this->getLast($record_id, $table_record['type'], $table_record['code'] ?? '');                
                 if ($existing) {
                     try {
-                        $this->indodelete("/record?table=$this->table&model=" . FilesModel::class, array('WHERE' => "id={$existing['files_id']}"));
+                        $this->indodelete("/files/$this->table", array('WHERE' => "id={$existing['files_id']}"));
                         $text = "Мэдээллийн $this->table хүснэгтийн $record_id-р бичлэгийн {$existing['type']} төрлийн ({$existing['code']}') хэл дээрх файлыг бүртгэлээс хаслаа.";
                         $this->indolog('file', LogLevel::INFO, $text, array('reason' => 'strip-file', 'table' => $this->table, 'record' => $record_id, 'type' => $existing['type']));
                         if ($existing['protection'] == 1) {
@@ -212,7 +211,7 @@ class FileController extends Controller
                 
                 $table_record['file'] = $file_id;
                 $table_record['record'] = $record_id;
-                $this->indopost("/record?table=$this->table&model=" . FilesModel::class, array('record' => $table_record));
+                $this->indopost("/files/$this->table", $table_record);
                 $text = "Мэдээллийн $this->table хүснэгтийн $record_id-р бичлэгт зориулж $file_id дугаартай файлыг байршууллаа.";
                 $this->log($text, array('table' => $this->table, 'reason' => 'insert-file', 'record' => $record_id, 'file' => $file_record['record']['file'], 'path' => $file_record['record']['path']), 'file');
                 return $file_record;
@@ -260,7 +259,7 @@ class FileController extends Controller
                 $condition['WHERE'] .= " AND code='$code'";
             }
 
-            $rows = $this->indo("/record/rows?table=$this->table&model=" . FilesModel::class, $condition);
+            $rows = $this->indo("/files/records/$this->table", $condition);
             return $this->getRecord(current($rows));
         } catch (Throwable $e) {
             $this->errorLog($e);

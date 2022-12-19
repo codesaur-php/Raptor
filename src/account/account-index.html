@@ -79,7 +79,7 @@
             {% endfor %}
             </td>
             <td>
-                <span class="badge bg-{{ account['status'] ? 'light' : 'secondary' }} text-{{ account['status'] ? 'success' : 'light' }}">{{ statuses[account['status']]['title'][localization.code] ?? account['status'] }}</span>
+                <span class="badge bg-{{ account['status'] ? 'light' : 'secondary' }} text-{{ account['status'] ? 'success' : 'light' }}">{{ status[account['status']] ?? account['status'] }}</span>
             </td>
             <td>
                 {% if account['id'] == user.getAccount()['id'] or user.can('system_account_index') %}

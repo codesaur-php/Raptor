@@ -23,7 +23,7 @@
             <div class="row mb-2">
                 <label class="col-3 col-form-label text-end">{{ 'type'|text }}</label>
                 <div class="col-9">
-                    <input class="form-control" readonly value="{{ record_type|e }}" type="text">
+                    <input class="form-control" readonly value="{{ (record_type[record['type']] ?? record['type'])|e }}" type="text">
                 </div>
             </div>
             <hr>

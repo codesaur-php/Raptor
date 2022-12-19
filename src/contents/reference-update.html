@@ -1,0 +1,124 @@
+<div class="card shadow border-primary mt-2 mb-4">
+    <div class="card-header bg-light">
+        <div class="d-flex justify-content-between flex-wrap flex-md-nowrap">
+            <h6 class="text-primary text-uppercase pt-2"><i class="bi bi-pencil-square"></i> {{ 'edit-record'|text }} ({{ table }}:{{ record['id'] }})</h6>
+            <div class="button-group">
+                <button class="submit-update btn btn-primary shadow-sm text-uppercase">
+                    <i class="bi bi-check-lg"></i> {{ 'save'|text }}
+                </button>
+                <button class="btn btn-secondary shadow-sm text-uppercase" onclick="window.history.go(-1);return false;">
+                    <i class="bi bi-arrow-left-circle"></i> {{ 'back'|text }}
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="card-body">
+        <form class="needs-validation" id="reference_update" action="{{ 'reference-update'|link({'table': table, 'id': record['id']}) }}" method="PUT" enctype="multipart/form-data" novalidate>
+            <div class="form-group row mt-3">
+                <div class="col-lg-4">
+                    <label class="form-label">{{ 'keyword'|text }}</label>
+                    <input class="form-control" name="keyword" value="{{ record['keyword']|e }}" maxlength="128" placeholder="" required type="text" autocomplete="off">
+                    <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
+                </div>
+                <div class="col-lg-4">
+                    <label class="form-label">{{ 'type'|text }}</label>
+                    <select class="form-control" name="category" required>
+                        {% for value,name in category %}
+                        <option value="{{ value }}"{{ value==record['category'] ? ' selected' : '' }}>{{ name|e }}</option>
+                        {% endfor %}
+                    </select>
+                    <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
+                </div>
+                <div class="col-lg-4">
+                    <label class="form-label">{{ 'status'|text }}</label>
+                    <div class="form-control">
+                    {% for value,name in status %}
+                        <div class="form-check form-check-inline">
+                          <input class="form-check-input"{{ value==record['is_active'] ? ' checked' : '' }} required type="radio" name="is_active" id="status_{{ value }}" value="{{ value }}">
+                          <label class="form-check-label" for="status_{{ value }}">{{ name }}</label>
+                        </div>
+                    {% endfor %}
+                    </div>
+                </div>
+            </div>
+            <ul class="nav nav-tabs nav-tabs-content mt-4">
+                {% for code,title in language %}
+                <li class="nav-item">
+                    <a class="nav-link{% if loop.first %} active show{% endif %}" data-bs-toggle="tab" href="#tab-{{ code }}">{{ 'content'|text }} <img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.3/flags/{{ code }}.png"></a>
+                </li>
+                {% endfor %}
+                <li class="nav-item">
+                    <a class="nav-link" data-bs-toggle="tab" href="#tab-history">{{ 'history'|text }}</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-bs-toggle="tab" href="#tab-version">{{ 'version'|text }}</a>
+                </li>
+            </ul>
+            <div class="tab-content">
+                {% for code,title in language %}
+                <div class="tab-pane{% if loop.first %} active show{% endif %}" id="tab-{{ code }}">
+                    <div class="form-group">
+                        <label class="form-label">{{ 'title'|text }} ({{ code }})</label>
+                        <input class="form-control" name="title[{{ code }}]" required value="{{ record['content']['title'][code]|e }}" maxlength="255" placeholder="" type="text" autocomplete="off">
+                        <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
+                    </div>
+                    <hr>
+                    <div class="form-group">
+                        <label class="form-label">{{ 'short'|text }} ({{ code }})</label>
+                        <textarea class="form-control" name="short[{{ code }}]">{{ record['content']['short'][code] }}</textarea>
+                    </div>
+                    <hr>
+                    <div class="form-group">
+                        <label class="form-label">{{ 'full'|text }} ({{ code }})</label>
+                        <textarea class="form-control" name="full[{{ code }}]" required rows="10">{{ record['content']['full'][code] }}</textarea>
+                        <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
+                    </div>
+                </div>
+                {% endfor %}                
+                <div class="tab-pane" id="tab-history">
+                    <div class="row mb-3">
+                        <label class="col-3 col-form-label text-end">{{ 'date-created'|text }}</label>
+                        <div class="col-9">
+                            <input class="form-control" readonly value="{{ record['created_at']|e }}" type="text">
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <label class="col-3 col-form-label text-end">{{ 'created-by'|text }}</label>
+                        <div class="col-9">
+                            <input class="form-control" readonly value="{{ (accounts[record['created_by']] ?? record['created_by'])|e }}" type="text">
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <label class="col-3 col-form-label text-end">{{ 'date-modified'|text }}</label>
+                        <div class="col-9">
+                            <input class="form-control" readonly value="{{ record['updated_at']|e }}" type="text">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <label class="col-3 col-form-label text-end">{{ 'updated-by'|text }}</label>
+                        <div class="col-9">
+                            <input class="form-control" readonly value="{{ (accounts[record['updated_by']] ?? record['updated_by'])|e }}" type="text">
+                        </div>
+                    </div>
+                </div>
+                <div class="tab-pane" id="tab-version">
+                </div>
+            </div>
+        </form>
+    </div>
+    <div class="card-footer">
+        <div class="row pt-1 pb-1">
+            <div class="col-6 d-grid">
+                <button class="submit-update btn btn-lg btn-primary shadow-sm" type="submit"><i class="bi bi-check2"></i> {{ 'save'|text }}</button>
+            </div>
+            <div class="col-6 d-grid">
+                <button class="btn btn-lg btn-block btn-secondary shadow-sm" onclick="window.history.go(-1);return false;"><i class="bi bi-arrow-left"></i> {{ 'back'|text }}</button>
+            </div>
+        </div>
+    </div>
+</div>
+<script type="text/javascript">
+document.addEventListener('DOMContentLoaded', function () { 
+    FormSubmitHandler('.submit-update', 'form#reference_update');
+});
+</script>

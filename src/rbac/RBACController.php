@@ -50,7 +50,36 @@ class RBACController extends DashboardController
             $roles = $this->indo('/statement', $payload);
             
             $payload['query'] = 'SELECT id,name,description FROM rbac_permissions WHERE alias=:alias AND is_active=1 ORDER By module';            
-            $permissions = $this->indo('/statement', $payload);            
+            $permissions = $this->indo('/statement', $payload);
+            
+            if ($alias == 'system'
+                && empty($permissions)
+            ) {
+                $nowdate = date('Y-m-d H:i:s');
+                $query =
+                    "INSERT INTO rbac_permissions(created_at,alias,module,name,description) "
+                    . "VALUES('$nowdate','system','log','logger',''),"
+                    . "('$nowdate','system','account','rbac',''),"
+                    . "('$nowdate','system','account','account_index',''),"
+                    . "('$nowdate','system','account','account_insert',''),"
+                    . "('$nowdate','system','account','account_update',''),"
+                    . "('$nowdate','system','account','account_delete',''),"
+                    . "('$nowdate','system','organization','organization_index',''),"
+                    . "('$nowdate','system','organization','organization_insert',''),"
+                    . "('$nowdate','system','organization','organization_update',''),"
+                    . "('$nowdate','system','organization','organization_delete',''),"
+                    . "('$nowdate','system','content','content_settings',''),"
+                    . "('$nowdate','system','content','content_index',''),"
+                    . "('$nowdate','system','content','content_insert',''),"
+                    . "('$nowdate','system','content','content_update',''),"
+                    . "('$nowdate','system','content','content_delete',''),"
+                    . "('$nowdate','system','localization','localization_index',''),"
+                    . "('$nowdate','system','localization','localization_insert',''),"
+                    . "('$nowdate','system','localization','localization_update',''),"
+                    . "('$nowdate','system','localization','localization_delete','')";
+                $this->indo('/statement', array('query' => $query));
+                $permissions = $this->indo('/statement', $payload);
+            }
             
             $role_permission = array();
             $payload['query'] = 'SELECT role_id,permission_id FROM rbac_role_permission WHERE alias=:alias AND is_active=1';
@@ -90,7 +119,7 @@ class RBACController extends DashboardController
             }
 
             if ($is_submit) {
-                $id = $this->indopost('/record?model=' . Roles::class, array('record' => $payload + array('alias' => $alias)));
+                $id = $this->indopost('/record?model=' . Roles::class, $payload + array('alias' => $alias));
                 $context['id'] = $id;
                 
                 $this->respondJSON(array(
@@ -159,7 +188,7 @@ class RBACController extends DashboardController
             }
 
             if ($is_submit) {
-                $id = $this->indopost('/record?model=' . Permissions::class, array('record' => $payload + array('alias' => $alias)));
+                $id = $this->indopost('/record?model=' . Permissions::class, $payload + array('alias' => $alias));
                 $context['id'] = $id;
                 
                 $this->respondJSON(array(
@@ -217,7 +246,7 @@ class RBACController extends DashboardController
             ));
             if ($this->getRequest()->getMethod() == 'POST') {
                 if (empty($result)) {
-                    $response = $this->indopost('/record?model=' . RolePermission::class, array('record' => $payload));
+                    $response = $this->indopost('/record?model=' . RolePermission::class, $payload);
                     return $this->respondJSON(array('type' => 'success', 'title' => $this->text('success'), 'message' => $this->text('record-insert-success')));
                 }
             } else {
@@ -289,8 +318,9 @@ class RBACController extends DashboardController
                         // only root coder can add another coder role
                         continue;
                     }
-                    $this->indopost('/record?model=' . UserRole::class,
-                        array('record' => array('user_id' => $id, 'role_id' => $role_id)));
+                    $this->indopost(
+                        '/record?model=' . UserRole::class,
+                        array('user_id' => $id, 'role_id' => $role_id));
                     $this->indolog(
                         'rbac',
                         LogLevel::ALERT,

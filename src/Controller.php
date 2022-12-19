@@ -121,6 +121,16 @@ class Controller extends \codesaur\Http\Application\Controller
         return '{' . $key . '}';
     }
     
+    final public function getStatusValues()
+    {
+        if ($this->getLanguageCode() == 'mn') {
+            return array(1 => 'Идэвхтэй', 0 => 'Идэвхгүй');
+        }
+        else {
+            return array(1 => 'Active', 0 => 'Inactive');
+        }
+    }
+    
     public function twigTemplate(string $template, array $vars = [])
     {
         $twig = new TwigTemplate($template, $vars);            
@@ -224,7 +234,7 @@ class Controller extends \codesaur\Http\Application\Controller
         } catch (Exception $e) {
             $this->errorLog($e);
             
-            return false;
+            return array();
         }
     }
     
