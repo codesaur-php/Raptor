@@ -125,11 +125,11 @@ class OrganizationUserController extends DashboardController
                 }
                 $current_organizations = implode(',', $ids);
 
-                $account = $this->indo('/record?model=' . Accounts::class, array('id' => $account_id));
+                $account = $this->indoget('/record?model=' . Accounts::class, array('id' => $account_id));
                 $vars = array(
                     'account' => $account,
                     'current_organizations' => $current_organizations,
-                    'organizations' => $this->indo('/records?model=' . OrganizationModel::class),
+                    'organizations' => $this->indoget('/records?model=' . OrganizationModel::class),
                 );
                 
                 $template_path = dirname(__FILE__) . '/organization-user-set-modal.html';

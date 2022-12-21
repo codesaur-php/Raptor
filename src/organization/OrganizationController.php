@@ -50,7 +50,7 @@ class OrganizationController extends DashboardController
                 throw new Exception($this->text('system-no-permission'), 401);
             }
             
-            $organizations = $this->indo('/records?model=' . OrganizationModel::class);
+            $organizations = $this->indoget('/records?model=' . OrganizationModel::class);
             $rbac_link = $this->generateLink('rbac-alias');
             foreach ($organizations as $record) {
                 $id = $record['id'];
@@ -190,7 +190,7 @@ class OrganizationController extends DashboardController
                 throw new Exception($this->text('system-no-permission'), 401);
             }
             
-            $record = $this->indo('/record?model=' . OrganizationModel::class, array('id' => $id));
+            $record = $this->indoget('/record?model=' . OrganizationModel::class, array('id' => $id));
             $context['record'] = $record;
             
             if (!empty($record['parent_id'])) {
@@ -283,7 +283,7 @@ class OrganizationController extends DashboardController
                 $level = LogLevel::INFO;
                 $message = "{$record['name']} байгууллагын мэдээллийг шинэчлэх үйлдлийг амжилттай гүйцэтгэлээ";
             } else {
-                $record = $this->indo('/record?model=' . OrganizationModel::class, array('id' => $id));
+                $record = $this->indoget('/record?model=' . OrganizationModel::class, array('id' => $id));
                 
                 $template_path = dirname(__FILE__) . '/organization-update-modal.html';
                 if (!file_exists($template_path)) {

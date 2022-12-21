@@ -73,7 +73,7 @@ class TextController extends DashboardController
                 throw new Exception($this->text('system-no-permission'), 401);
             }
             
-            $texts = $this->indo("/text/records/$table");
+            $texts = $this->indoget("/text/records/$table");
             $language = $this->getAttribute('localization')['language'] ?? array();
             foreach ($texts as $record) {
                 $id = $record['id'];
@@ -188,7 +188,7 @@ class TextController extends DashboardController
             if (!$this->isUserCan('system_localization_index')) {
                 throw new Exception($this->text('system-no-permission'), 401);
             }
-            $record = $this->indo("/text/$table", array('p.id' => $id));
+            $record = $this->indoget("/text/$table", array('p.id' => $id));
             $context['record'] = $record;
             
             $template_path = dirname(__FILE__) . '/text-retrieve-modal.html';
@@ -268,7 +268,7 @@ class TextController extends DashboardController
                 $level = LogLevel::INFO;
                 $message = "$table хүснэгтийн [{$record['keyword']}] текст мэдээллийг шинэчлэх үйлдлийг амжилттай гүйцэтгэлээ";
             } else {
-                $record = $this->indo("/text/$table", array('p.id' => $id));
+                $record = $this->indoget("/text/$table", array('p.id' => $id));
                 
                 $template_path = dirname(__FILE__) . '/text-update-modal.html';
                 if (!file_exists($template_path)) {

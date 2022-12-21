@@ -278,7 +278,7 @@ class RBACController extends DashboardController
                 throw new Exception($this->text('system-no-permission'), 401);
             }
             
-            $account = $this->indo('/record?model=' . Accounts::class, array('id' => $id));
+            $account = $this->indoget('/record?model=' . Accounts::class, array('id' => $id));
             $context['account'] = $account;
             
             if ($is_submit) {
@@ -336,7 +336,7 @@ class RBACController extends DashboardController
                     'href'    => $this->generateLink('accounts')
                 ));
             } else {
-                $vars = array('account' => $this->indo('/record?model=' . Accounts::class, array('id' => $id)));
+                $vars = array('account' => $this->indoget('/record?model=' . Accounts::class, array('id' => $id)));
 
                 $rbacs = array('common' => 'Common');            
                 $organizations_query = "SELECT alias,name FROM indo_organizations WHERE alias!='common' AND is_active=1 ORDER By id desc";

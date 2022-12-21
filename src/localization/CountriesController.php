@@ -51,7 +51,7 @@ class CountriesController extends DashboardController
             }
             
             $code = $this->getLanguageCode();
-            $languages = $this->indo('/records?model=' . CountriesModel::class);
+            $languages = $this->indoget('/records?model=' . CountriesModel::class);
             foreach ($languages as $record) {
                 $row = array($record['id']);
                 
@@ -160,7 +160,7 @@ class CountriesController extends DashboardController
                 throw new Exception($this->text('system-no-permission'), 401);
             }
             
-            $record = $this->indo('/record?model=' . CountriesModel::class, array('p.id' => $id));
+            $record = $this->indoget('/record?model=' . CountriesModel::class, array('p.id' => $id));
             $context['record'] = $record;
             
             $template_path = dirname(__FILE__) . '/country-retrieve-modal.html';
@@ -226,7 +226,7 @@ class CountriesController extends DashboardController
                 $level = LogLevel::INFO;
                 $message = "{$record['id']} улсын мэдээллийг шинэчлэх үйлдлийг амжилттай гүйцэтгэлээ";
             } else {
-                $record = $this->indo('/record?model=' . CountriesModel::class, array('p.id' => $id));
+                $record = $this->indoget('/record?model=' . CountriesModel::class, array('p.id' => $id));
                 
                 $template_path = dirname(__FILE__) . '/country-update-modal.html';
                 if (!file_exists($template_path)) {

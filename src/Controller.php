@@ -19,35 +19,7 @@ use Indoraptor\InternalRequest;
 use Raptor\Authentication\UserInterface;
 
 class Controller extends \codesaur\Http\Application\Controller
-{
-    public function indo(string $pattern, array $payload = array(), string $method = 'INTERNAL', bool $assoc = true)
-    {
-        try {
-            ob_start();
-            $jwt = $this->isUserAuthorized() ? $this->getUser()->getToken() : null;
-            $request = new InternalRequest($method, $pattern, $payload, $jwt);
-            $this->getAttribute('indo')->handle($request);
-            $response = json_decode(ob_get_contents(), $assoc);
-            ob_end_clean();
-        } catch (Throwable $e) {
-            ob_end_clean();
-        }
-        
-        if (isset($e)) {
-            if ($e instanceof Exception) {
-                throw $e;
-            } else {
-                throw new Exception($e->getMessage(), $e->getCode());
-            }
-        } elseif (isset($response['error']['code'])
-            && isset($response['error']['message'])
-        ) {
-            throw new Exception($response['error']['message'], $response['error']['code']);
-        }
-        
-        return $response;
-    }
-    
+{    
     final public function getRouter(): ?RouterInterface
     {
         return $this->getAttribute('router');
@@ -174,6 +146,34 @@ class Controller extends \codesaur\Http\Application\Controller
         $link = $this->generateLink($routeName, $params);
         header("Location: $link", false, 302);
         exit;
+    }
+    
+    public function indo(string $pattern, array $payload = array(), string $method = 'INTERNAL', bool $assoc = true)
+    {
+        try {
+            ob_start();
+            $jwt = $this->isUserAuthorized() ? $this->getUser()->getToken() : null;
+            $request = new InternalRequest($method, $pattern, $payload, $jwt);
+            $this->getAttribute('indo')->handle($request);
+            $response = json_decode(ob_get_contents(), $assoc);
+            ob_end_clean();
+        } catch (Throwable $e) {
+            ob_end_clean();
+        }
+        
+        if (isset($e)) {
+            if ($e instanceof Exception) {
+                throw $e;
+            } else {
+                throw new Exception($e->getMessage(), $e->getCode());
+            }
+        } elseif (isset($response['error']['code'])
+            && isset($response['error']['message'])
+        ) {
+            throw new Exception($response['error']['message'], $response['error']['code']);
+        }
+        
+        return $response;
     }
     
     final public function indoget(string $pattern, $payload = [], bool $assoc = true)

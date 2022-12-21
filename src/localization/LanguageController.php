@@ -51,7 +51,7 @@ class LanguageController extends DashboardController
                 throw new Exception($this->text('system-no-permission'), 401);
             }
             
-            $languages = $this->indo('/records?model=' . LanguageModel::class);
+            $languages = $this->indoget('/records?model=' . LanguageModel::class);
             foreach ($languages as $record) {
                 $id = $record['id'];
                 $row = array($record['code']);
@@ -185,7 +185,7 @@ class LanguageController extends DashboardController
                 throw new Exception($this->text('system-no-permission'), 401);
             }
             
-            $record = $this->indo('/record?model=' . LanguageModel::class, array('id' => $id));
+            $record = $this->indoget('/record?model=' . LanguageModel::class, array('id' => $id));
             $context['record'] = $record;
             
             $template_path = dirname(__FILE__) . '/language-retrieve-modal.html';
@@ -254,7 +254,7 @@ class LanguageController extends DashboardController
                 $level = LogLevel::INFO;
                 $message = "{$record['full']} хэлний мэдээллийг шинэчлэх үйлдлийг амжилттай гүйцэтгэлээ";
             } else {
-                $record = $this->indo('/record?model=' . LanguageModel::class, array('id' => $id));
+                $record = $this->indoget('/record?model=' . LanguageModel::class, array('id' => $id));
                 
                 $template_path = dirname(__FILE__) . '/language-update-modal.html';
                 if (!file_exists($template_path)) {

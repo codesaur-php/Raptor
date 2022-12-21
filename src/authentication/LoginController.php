@@ -418,7 +418,7 @@ class LoginController extends \Raptor\Controller
         try {
             $account_id = $this->getUser()->getAccount()['id'];
             $payload = array('account_id' => $account_id, 'organization_id' => $id);
-            $this->indo('/record?model=' . OrganizationUserModel::class, $payload + array('is_active' => 1));
+            $this->indoget('/record?model=' . OrganizationUserModel::class, $payload + array('is_active' => 1));
             
             $jwt_result = $this->indopost('/auth/organization', $payload);
             $_SESSION[__NAMESPACE__ . '\\indo\\jwt'] = $jwt_result['jwt'];

@@ -47,8 +47,8 @@ class AccountController extends DashboardController
                 throw new Exception($this->text('system-no-permission'), 401);
             }
             
-            $accounts = $this->indo('/records?model=' . Accounts::class);
-            $organizations = $this->indo('/records?model=' . OrganizationModel::class);
+            $accounts = $this->indoget('/records?model=' . Accounts::class);
+            $organizations = $this->indoget('/records?model=' . OrganizationModel::class);
             
             $org_users_query =
                 'SELECT t1.account_id, t1.organization_id ' .
@@ -168,7 +168,7 @@ class AccountController extends DashboardController
                 $context += array('id' => $id, 'record' => $record);
                 $message = 'Хэрэглэгч үүсгэх үйлдлийг амжилттай гүйцэтгэлээ';
             } else {
-                $organizations = $this->indo('/records?model=' . OrganizationModel::class);
+                $organizations = $this->indoget('/records?model=' . OrganizationModel::class);
                 $this->twigDashboard(dirname(__FILE__) . '/account-insert.html', array('organizations' => $organizations))->render();
                 
                 $level = LogLevel::NOTICE;
@@ -236,11 +236,11 @@ class AccountController extends DashboardController
                 $pattern = '/record?model=' . Accounts::class;
                 
                 $existing_username = $this->indosafe($pattern, array('username' => $record['username']));
-                if (empty($existing_username) || $existing_username['id'] != $id) {
+                if (!empty($existing_username) && $existing_username['id'] != $id) {
                     throw new Exception($this->text('account-exists') . " username => [{$record['username']}]", 403);
                 }
                 $existing_email = $this->indosafe($pattern, array('email' => $record['email']));
-                if (empty($existing_email) || $existing_email['id'] != $id) {
+                if (!empty($existing_email) && $existing_email['id'] != $id) {
                     throw new Exception($this->text('account-exists') . " email => [{$record['email']}]", 403);
                 }
                 
@@ -369,8 +369,8 @@ class AccountController extends DashboardController
                 $level = LogLevel::INFO;
                 $message = "{$record['username']} хэрэглэгчийн мэдээллийг шинэчлэх үйлдлийг амжилттай гүйцэтгэлээ";
             } else {
-                $record = $this->indo('/record?model=' . Accounts::class, array('id' => $id));
-                $organizations = $this->indo('/records?model=' . OrganizationModel::class);
+                $record = $this->indoget('/record?model=' . Accounts::class, array('id' => $id));
+                $organizations = $this->indoget('/records?model=' . OrganizationModel::class);
                 $vars = array('record' => $record, 'organizations' => $organizations);
              
                 $org_id_query =
@@ -456,7 +456,7 @@ class AccountController extends DashboardController
                 throw new Exception($this->text('system-no-permission'), 401);
             }
             
-            $record = $this->indo('/record?model=' . Accounts::class, array('id' => $id));
+            $record = $this->indoget('/record?model=' . Accounts::class, array('id' => $id));
             
             $organizations_query =
                 'SELECT t2.name ' .
@@ -561,7 +561,7 @@ class AccountController extends DashboardController
                 $message = 'Шинэ хэрэглэгчээр бүртгүүлэх хүсэлтүүдийн жагсаалтыг нээж үзэж байна';
             }
             $vars = array(
-                'rows' => $this->indo("/records?model=$modelName", array('WHERE' => 'is_active!=999'))
+                'rows' => $this->indoget("/records?model=$modelName", array('WHERE' => 'is_active!=999'))
             );        
 
             $template = $this->twigTemplate($modal, $vars);
@@ -605,7 +605,7 @@ class AccountController extends DashboardController
             }
             $context += array('payload' => $parsedBody, 'id' => $id);
             
-            $record = $this->indo('/record?model=' . AccountRequestsModel::class, array('id' => $id));
+            $record = $this->indoget('/record?model=' . AccountRequestsModel::class, array('id' => $id));
             $existing = $this->indo('/statement', array(
                 'query' => 'SELECT id FROM rbac_accounts WHERE username=:username OR email=:email',
                 'bind' => array(

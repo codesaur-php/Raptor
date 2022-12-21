@@ -127,7 +127,7 @@ class SettingsController extends DashboardController
             $alias = $this->getUser()->getOrganization()['alias'];
 
             try {
-                $record = $this->indo('/record?model=' . SettingsModel::class, array('alias' => $alias, 'is_active' => 1));
+                $record = $this->indoget('/record?model=' . SettingsModel::class, array('alias' => $alias, 'is_active' => 1));
             } catch (Throwable $e) {
                 $this->errorLog($e);
 

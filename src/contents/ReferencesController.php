@@ -77,7 +77,7 @@ class ReferencesController extends DashboardController
             }
             
             $language = $this->getAttribute('localization')['language'] ?? array();
-            $records = $this->indo("/reference/records/$table");
+            $records = $this->indoget("/reference/records/$table");
             foreach ($records as $record) {
                 $id = $record['id'];
                 $row = array($id);
@@ -223,7 +223,7 @@ class ReferencesController extends DashboardController
                 throw new Exception($this->text('system-no-permission'), 401);
             }
             
-            $records = $this->indo("/reference/records/$table", array('WHERE' => "p.id=$id"));
+            $records = $this->indoget("/reference/records/$table", array('WHERE' => "p.id=$id"));
             $record = reset($records);
             $context['record'] = $record;
             if (empty($record)) {
@@ -295,7 +295,7 @@ class ReferencesController extends DashboardController
                 $level = LogLevel::INFO;
                 $message = "$table хүснэгтийн $id дугаартай [{$record['keyword']}] түлхүүртэй лавлах мэдээллийг шинэчлэх үйлдлийг амжилттай гүйцэтгэлээ";
             } else {
-                $records = $this->indo("/reference/records/$table", array('WHERE' => "p.id=$id"));
+                $records = $this->indoget("/reference/records/$table", array('WHERE' => "p.id=$id"));
                 $record = reset($records);
                 if (empty($record)) {
                     throw new Exception($this->text('invalid-request'), 400);
