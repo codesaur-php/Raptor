@@ -11,28 +11,17 @@
     </div>
     <div class="card-body">
         <div class="form-group row mt-3">
-            <div class="col-lg-4">
+            <div class="col-lg-6">
                 <label class="form-label">{{ 'keyword'|text }}</label>
                 <input class="form-control" name="keyword" value="{{ record['keyword']|e }}" maxlength="128" placeholder="" readonly type="text" autocomplete="off">
             </div>
-            <div class="col-lg-4">
+            <div class="col-lg-6">
                 <label class="form-label">{{ 'type'|text }}</label>
                 <select class="form-control" name="category" disabled>
                     {% for value,name in category %}
                     <option value="{{ value }}"{{ value == record['category'] ? ' selected' : '' }}>{{ name|e }}</option>
                     {% endfor %}
                 </select>
-            </div>
-            <div class="col-lg-4">
-                <label class="form-label">{{ 'status'|text }}</label>
-                <div class="form-control">
-                {% for value,name in status %}
-                    <div class="form-check form-check-inline">
-                      <input class="form-check-input"{{ value == record['is_active'] ? ' checked' : '' }} disabled type="radio" name="is_active" id="status_{{ value }}" value="{{ value }}">
-                      <label class="form-check-label" for="status_{{ value }}">{{ name }}</label>
-                    </div>
-                {% endfor %}
-                </div>
             </div>
         </div>
         <ul class="nav nav-tabs nav-tabs-content mt-4">

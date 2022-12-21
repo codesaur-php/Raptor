@@ -15,12 +15,12 @@
     <div class="card-body">
         <form class="needs-validation" id="reference_update" action="{{ 'reference-update'|link({'table': table, 'id': record['id']}) }}" method="PUT" enctype="multipart/form-data" novalidate>
             <div class="form-group row mt-3">
-                <div class="col-lg-4">
+                <div class="col-lg-6">
                     <label class="form-label">{{ 'keyword'|text }}</label>
                     <input class="form-control" name="keyword" value="{{ record['keyword']|e }}" maxlength="128" placeholder="" required type="text" autocomplete="off">
                     <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
                 </div>
-                <div class="col-lg-4">
+                <div class="col-lg-6">
                     <label class="form-label">{{ 'type'|text }}</label>
                     <select class="form-control" name="category" required>
                         {% for value,name in category %}
@@ -28,17 +28,6 @@
                         {% endfor %}
                     </select>
                     <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
-                </div>
-                <div class="col-lg-4">
-                    <label class="form-label">{{ 'status'|text }}</label>
-                    <div class="form-control">
-                    {% for value,name in status %}
-                        <div class="form-check form-check-inline">
-                          <input class="form-check-input"{{ value==record['is_active'] ? ' checked' : '' }} required type="radio" name="is_active" id="status_{{ value }}" value="{{ value }}">
-                          <label class="form-check-label" for="status_{{ value }}">{{ name }}</label>
-                        </div>
-                    {% endfor %}
-                    </div>
                 </div>
             </div>
             <ul class="nav nav-tabs nav-tabs-content mt-4">

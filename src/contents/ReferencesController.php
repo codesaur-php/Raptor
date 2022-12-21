@@ -76,9 +76,8 @@ class ReferencesController extends DashboardController
                 throw new Exception($this->text('system-no-permission'), 401);
             }
             
-            $status = $this->getStatusValues();
             $language = $this->getAttribute('localization')['language'] ?? array();
-            $records = $this->indo("/reference/records/$table", array('WHERE' => 'is_active<>999'));
+            $records = $this->indo("/reference/records/$table");
             foreach ($records as $record) {
                 $id = $record['id'];
                 $row = array($id);
@@ -88,7 +87,6 @@ class ReferencesController extends DashboardController
                     $row[] = htmlentities($record['content']['title'][$code]);
                 }
                 $row[] = htmlentities($record['category']);
-                $row[] = htmlentities($status[$record['is_active']] ?? $record['is_active']);
                 
                 $action = '';
                 if ($this->getUser()->can('system_content_index')) {
@@ -195,7 +193,6 @@ class ReferencesController extends DashboardController
                 }
                 $this->twigDashboard($template_path, array(
                     'table' => $table,
-                    'status' => $this->getStatusValues(),
                     'category' => $this->getCategoryValues(),
                     'language' => $this->getAttribute('localization')['language'] ?? array()))->render();
                 
@@ -240,7 +237,6 @@ class ReferencesController extends DashboardController
             $this->twigDashboard($template_path, array(
                 'table' => $table,
                 'record' => $record,
-                'status' => $this->getStatusValues(),
                 'category' => $this->getCategoryValues(),
                 'language' => $this->getAttribute('localization')['language'] ?? array(),
                 'accounts' => $this->getAccounts()))->render();
@@ -313,7 +309,6 @@ class ReferencesController extends DashboardController
                 $this->twigDashboard($template_path, array(
                     'table' => $table,
                     'record' => $record,
-                    'status' => $this->getStatusValues(),
                     'category' => $this->getCategoryValues(),
                     'language' => $this->getAttribute('localization')['language'] ?? array(),
                     'accounts' => $this->getAccounts()))->render();
