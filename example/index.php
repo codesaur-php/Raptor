@@ -10,7 +10,7 @@ namespace Raptor\Example;
 define('CODESAUR_DEVELOPMENT', true);
 
 ini_set('display_errors', 'On');
-error_reporting(E_ALL & ~E_STRICT & ~E_NOTICE);
+error_reporting(\E_ALL);
 
 use codesaur\Http\Message\ServerRequest;
 

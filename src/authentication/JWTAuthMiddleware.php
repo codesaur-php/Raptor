@@ -2,53 +2,54 @@
 
 namespace Raptor\Authentication;
 
-use Throwable;
-use Exception;
-
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 
 use Indoraptor\InternalRequest;
+use Indoraptor\IndoApplication;
 
 use Raptor\Authentication\User;
 
 class JWTAuthMiddleware implements MiddlewareInterface
 {
-    function request($indo, string $method, string $pattern, $payload = array())
+    protected function request(?IndoApplication $indo, string $method, string $pattern, array $payload = [])
     {
         try {
-            ob_start();
-            $indo->handle(new InternalRequest($method, $pattern, $payload));
-            $response = json_decode(ob_get_contents(), true);
-            ob_end_clean();
-        } catch (Throwable $th) {
-            ob_end_clean();
+            if (ob_start()) {
+                $indo?->handle(new InternalRequest($method, $pattern, $payload));
+                $response = json_decode(ob_get_contents(), true)
+                    ?? throw new \Exception(__CLASS__ . ': Error decoding Indoraptor response!');
+                ob_end_clean();
+            }
+        } catch (\Throwable $th) {
+            if (ob_get_level()) {
+                ob_end_clean();
+            }
             
-            $response = array('error' => array('code' => $th->getCode(), 'message' => $th->getMessage()));
+            $response = ['error' => ['code' => $th->getCode(), 'message' => $th->getMessage()]];
         }
         
         if (isset($response['error']['code'])
             && isset($response['error']['message'])
         ) {
-            throw new Exception($response['error']['message'], $response['error']['code']);
+            throw new \Exception($response['error']['message'], $response['error']['code']);
         }
         
         return $response;
     }
     
-    public function retrieveIndoUser(ServerRequestInterface $request, $jwt): User
+    public function retrieveIndoUser(ServerRequestInterface $request, string $jwt): User
     {
         $response = $this->request(
-            $request->getAttribute('indo'), 'POST', '/auth/jwt', array('jwt' => $jwt));
+            $request->getAttribute('indo'), 'POST', '/auth/jwt', ['jwt' => $jwt]);
         if (
-            empty($response['rbac'])
-            || !is_array($response['rbac'])
+            !is_array($response['rbac'] ?? null)
             || !isset($response['account']['id'])
             || !isset($response['organizations'][0]['id'])
         ) {
-            throw new Exception('Invalid RBAC user information!');
+            throw new \Exception('Invalid RBAC user information!');
         }
         
         return new User($jwt, $response['rbac'], $response['account'], $response['organizations']);
@@ -59,19 +60,18 @@ class JWTAuthMiddleware implements MiddlewareInterface
         $sess_jwt_key = __NAMESPACE__ . '\\indo\\jwt';
         try {
             if (empty($_SESSION[$sess_jwt_key])) {
-                throw new Exception('There is no JWT!');
+                throw new \Exception('There is no JWT!');
             }
-
             $user = $this->retrieveIndoUser($request, $_SESSION[$sess_jwt_key]);
-        } catch (Throwable $e) {
-            if ($e->getCode() >= 5000
+        } catch (\Throwable $th) {
+            if ($th->getCode() >= 5000
                 && defined('CODESAUR_DEVELOPMENT') && CODESAUR_DEVELOPMENT
             ) {
-                error_log($e->getMessage());
+                error_log($th->getMessage());
             }
             
             if (isset($_SESSION[$sess_jwt_key])
-                && session_status() == PHP_SESSION_ACTIVE
+                && session_status() == \PHP_SESSION_ACTIVE
             ) {
                 unset($_SESSION[$sess_jwt_key]);
             }
@@ -92,7 +92,7 @@ class JWTAuthMiddleware implements MiddlewareInterface
             }
             $parts = explode('/', $uri_path);
             if ($parts[1] != 'login') {
-                $loginUri = (string)$request->getUri()->withPath("$script_path/login");
+                $loginUri = (string) $request->getUri()->withPath("$script_path/login");
                 header("Location: $loginUri", false, 302);
                 exit;
             }

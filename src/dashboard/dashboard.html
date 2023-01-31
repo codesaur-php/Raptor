@@ -70,7 +70,7 @@
                 </button>
                 <div class="dropdown-menu bg-dark dropdown-menu-lg-end" aria-labelledby="dropdownLanguage">
                     {% for lang, country in localization.language %}
-                    <a class="dropdown-item{{ lang == languageCode ? ' active' : '' }}" href="{{ 'language'|link({'language': lang}) }}">
+                    <a class="dropdown-item{{ lang == languageCode ? ' active' : '' }}" href="{{ 'language'|link({'code': lang}) }}">
                         <img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.3/flags/{{ lang }}.png"> {{ country }}
                     </a>
                     {% endfor %}

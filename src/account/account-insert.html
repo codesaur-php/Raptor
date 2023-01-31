@@ -69,7 +69,7 @@
                 <select class="form-control" name="organization">
                     <option value="0"></option>
                     {% for org in organizations %}
-                    <option value="{{ org['id'] }}">{{ org['name']|e }}</option>
+                    <option value="{{ org['id'] }}"{{ loop.first ? ' selected' : '' }}>{{ org['name']|e }}</option>
                     {% endfor %}
                 </select>
             </div>

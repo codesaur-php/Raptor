@@ -2,9 +2,6 @@
 
 namespace Raptor\Organization;
 
-use Exception;
-use Throwable;
-
 use Psr\Log\LogLevel;
 use Psr\Http\Message\ServerRequestInterface;
 
@@ -17,9 +14,9 @@ use Raptor\Dashboard\DashboardController;
 
 class OrganizationUserController extends DashboardController
 {
-    function __construct(ServerRequestInterface $request)
+    public function __construct(ServerRequestInterface $request)
     {
-        $meta = $request->getAttribute('meta', array());
+        $meta = $request->getAttribute('meta', []);
         $localization = $request->getAttribute('localization');
         if (isset($localization['code'])
             && isset($localization['text']['organization'])
@@ -35,62 +32,62 @@ class OrganizationUserController extends DashboardController
     {
         try {
             if (!$this->isUserAuthorized()) {
-                throw new Exception($this->text('system-no-permission'), 401);
+                throw new \Exception($this->text('system-no-permission'), 401);
             }
 
             $user_orgs_query =
                 'SELECT t2.* FROM indo_organization_users as t1 JOIN indo_organizations as t2 ON t1.organization_id=t2.id ' .
                 'WHERE t1.is_active=1 AND t2.is_active=1 AND t1.account_id=' . $this->getUser()->getAccount()['id'];
-            $organizations = $this->indo('/statement', array('query' => $user_orgs_query));
+            $organizations = $this->indo('/statement', ['query' => $user_orgs_query]);
 
-            $this->twigDashboard(dirname(__FILE__) . '/organization-user.html', array('organizations' => $organizations))->render();
+            $this->twigDashboard(dirname(__FILE__) . '/organization-user.html', ['organizations' => $organizations])->render();
             
             $level = LogLevel::NOTICE;
             $message = 'Хэрэглэгч өөрийн байгууллагуудын жагсаалтыг нээж үзэж байна';
-        } catch (Throwable $e) {
+        } catch (\Throwable $th) {
             $level = LogLevel::ERROR;
-            $message = $e->getMessage();
+            $message = $th->getMessage();
             
-            $this->dashboardProhibited($message, $e->getCode())->render();
+            $this->dashboardProhibited($message, $th->getCode())->render();
         } finally {
             $this->indolog('account', $level, $message);
         }        
     }
     
     public function set(int $account_id)
-    {        
+    {
         try {
             $is_submit = $this->getRequest()->getMethod() == 'POST';
-            $context = array('reason' => 'organization-user-set', 'account_id' => $account_id);
+            $context = ['reason' => 'organization-user-set', 'account_id' => $account_id];
             
             if (!$this->isUserCan('system_account_organization_set')) {
-                throw new Exception($this->text('system-no-permission'), 401);
+                throw new \Exception($this->text('system-no-permission'), 401);
             }
             
             if ($is_submit) {
-                $organizations = array();
-                $post_organizations = filter_var($this->getParsedBody()['organizations'] ?? array(), FILTER_VALIDATE_INT, FILTER_REQUIRE_ARRAY);
+                $organizations = [];
+                $post_organizations = filter_var($this->getParsedBody()['organizations'] ?? [], \FILTER_VALIDATE_INT, \FILTER_REQUIRE_ARRAY);
                 foreach ($post_organizations as $id) {
                     $organizations[$id] = true;
                 }
                 if ($account_id == 1
                     && (empty($organizations) || !array_key_exists(1, $organizations))
                 ) {
-                    throw new Exception('Default user must belong to an organization', 503);
+                    throw new \Exception('Default user must belong to an organization', 503);
                 }
 
-                $user_orgs = $this->indo('/statement', array(
-                    'query' => "SELECT id,organization_id FROM indo_organization_users WHERE account_id=$account_id AND is_active=1"));
+                $user_orgs = $this->indo('/statement',
+                    ['query' => "SELECT id,organization_id FROM indo_organization_users WHERE account_id=$account_id AND is_active=1"]);
                 foreach ($user_orgs as $row) {
-                    if (isset($organizations[(int)$row['organization_id']])) {
-                        unset($organizations[(int)$row['organization_id']]);
+                    if (isset($organizations[(int) $row['organization_id']])) {
+                        unset($organizations[(int) $row['organization_id']]);
                     } else {
-                        $this->indodelete('/record?model=' . OrganizationUserModel::class, array('WHERE' => "id={$row['id']}"));
+                        $this->indodelete('/record?model=' . OrganizationUserModel::class, ['WHERE' => "id={$row['id']}"]);
                         $this->indolog(
                             'account',
                             LogLevel::ALERT,
                             "{$row['organization_id']} дугаартай байгууллагын хэрэглэгчийн бүртгэлээс $account_id дугаар бүхий хэрэглэгчийг хаслаа",
-                            array('reason' => 'organization-strip', 'account_id' => $account_id, 'organization_id' => $row['organization_id'])
+                            ['reason' => 'organization-strip', 'account_id' => $account_id, 'organization_id' => $row['organization_id']]
                         );
                     }
                 }
@@ -98,43 +95,43 @@ class OrganizationUserController extends DashboardController
                 foreach (array_keys($organizations) as $id) {
                     $record_id = $this->indopost(
                         '/record?model=' . OrganizationUserModel::class,
-                        array('account_id' => $account_id, 'organization_id' => $id));
+                        ['account_id' => $account_id, 'organization_id' => $id]);
                     $this->indolog(
                         'account',
                         LogLevel::ALERT,
                         "$account_id дугаартай хэрэглэгчийг $id дугаар бүхий байгууллагад нэмэх үйлдлийг амжилттай гүйцэтгэлээ",
-                        array('reason' => 'organization-set', 'account_id' => $account_id, 'organization_id' => $id, 'record_id' => $record_id)
+                        ['reason' => 'organization-set', 'account_id' => $account_id, 'organization_id' => $id, 'record_id' => $record_id]
                     );
                 }
 
-                return $this->respondJSON(array(
+                return $this->respondJSON([
                     'status'  => 'success',
                     'title'   => $this->text('success'),
                     'message' => $this->text('record-update-success'),
                     'href'    => $this->generateLink('accounts')
-                ));
+                ]);
             } else {
                 $query =
                     'SELECT ou.organization_id as id ' .
                     'FROM indo_organization_users as ou JOIN indo_organizations as o ON ou.organization_id=o.id ' .
                     "WHERE ou.account_id=$account_id AND ou.is_active=1 AND o.is_active=1";
-                $response = $this->indo('/statement', array('query' => $query));
-                $ids = array();
+                $response = $this->indo('/statement', ['query' => $query]);
+                $ids = [];
                 foreach ($response as $org) {
                     $ids[] = $org['id'];
                 }
                 $current_organizations = implode(',', $ids);
 
-                $account = $this->indoget('/record?model=' . Accounts::class, array('id' => $account_id));
-                $vars = array(
+                $account = $this->indoget('/record?model=' . Accounts::class, ['id' => $account_id]);
+                $vars = [
                     'account' => $account,
                     'current_organizations' => $current_organizations,
                     'organizations' => $this->indoget('/records?model=' . OrganizationModel::class),
-                );
+                ];
                 
                 $template_path = dirname(__FILE__) . '/organization-user-set-modal.html';
                 if (!file_exists($template_path)) {
-                    throw new Exception("$template_path file not found!", 500);
+                    throw new \Exception("$template_path file not found!", 500);
                 }
                 $this->twigTemplate($template_path, $vars)->render();
 
@@ -147,18 +144,18 @@ class OrganizationUserController extends DashboardController
                     $context
                 );
             }
-        } catch (Throwable $e) {
+        } catch (\Throwable $th) {
             if ($is_submit) {
-                $this->respondJSON(array(
+                $this->respondJSON([
                     'status'  => 'error',
                     'title'   => $this->text('error'),
-                    'message' => $e->getMessage()
-                ), $e->getCode());
+                    'message' => $th->getMessage()
+                ], $th->getCode());
             } else {
-                $this->modalProhibited($e->getMessage(), $e->getCode())->render();
+                $this->modalProhibited($th->getMessage(), $th->getCode())->render();
             }
             
-            $context['error'] = array('code' => $e->getCode(), 'message' => $e->getMessage());
+            $context['error'] = ['code' => $th->getCode(), 'message' => $th->getMessage()];
             $this->indolog(
                 'account',
                 LogLevel::ERROR,

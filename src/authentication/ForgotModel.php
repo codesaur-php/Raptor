@@ -2,18 +2,16 @@
 
 namespace Raptor\Authentication;
 
-use PDO;
-
 use codesaur\DataObject\Model;
 use codesaur\DataObject\Column;
 
 class ForgotModel extends Model
 {
-    function __construct(PDO $pdo)
+    public function __construct(\PDO $pdo)
     {
-        parent::__construct($pdo);
+        $this->setInstance($pdo);
         
-        $this->setColumns(array(
+        $this->setColumns([
            (new Column('id', 'bigint', 8))->auto()->primary()->unique()->notNull(),
             new Column('account', 'bigint', 8),
             new Column('use_id', 'varchar', 255),
@@ -26,15 +24,13 @@ class ForgotModel extends Model
             new Column('status', 'tinyint', 1, 1),
             new Column('is_active', 'tinyint', 1, 1),
             new Column('created_at', 'datetime')
-        ));
+        ]);
         
         $this->setTable('raptor_forgot', $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
     }
     
-    function __initial()
+    protected function __initial()
     {
-        parent::__initial();
-        
         $this->setForeignKeyChecks(false);
         $this->exec("ALTER TABLE {$this->getName()} ADD CONSTRAINT {$this->getName()}_fk_account FOREIGN KEY (account) REFERENCES rbac_accounts(id) ON DELETE SET NULL ON UPDATE CASCADE");
         $this->setForeignKeyChecks(true);

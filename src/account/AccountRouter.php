@@ -6,7 +6,7 @@ use codesaur\Router\Router;
 
 class AccountRouter extends Router
 {
-    function __construct()
+    public function __construct()
     {
         $this->GET('/accounts', [AccountController::class, 'index'])->name('accounts');
         $this->GET_POST('/account/insert', [AccountController::class, 'insert'])->name('account-insert');

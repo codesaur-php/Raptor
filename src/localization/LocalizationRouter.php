@@ -6,7 +6,7 @@ use codesaur\Router\Router;
 
 class LocalizationRouter extends Router
 {
-    function __construct()
+    public function __construct()
     {
         $this->GET('/languages', [LanguageController::class, 'index'])->name('languages');
         $this->GET('/languages/datatable', [LanguageController::class, 'datatable'])->name('languages-datatable');

@@ -6,7 +6,7 @@ use codesaur\Router\Router;
 
 class OrganizationRouter extends Router
 {
-    function __construct()
+    public function __construct()
     {
         $this->GET('/organization/user/list', [OrganizationUserController::class, 'index'])->name('organization-user');
         $this->GET_POST('/organization/user/set/{uint:account_id}', [OrganizationUserController::class, 'set'])->name('organization-user-set');

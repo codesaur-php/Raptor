@@ -13,13 +13,13 @@ class SessionMiddleware implements MiddlewareInterface
     {
         session_name('raptor');
         
-        if (session_status() != PHP_SESSION_ACTIVE) {
+        if (session_status() != \PHP_SESSION_ACTIVE) {
             $lifetime = time() + 30 * 24 * 60 * 60;
             session_set_cookie_params($lifetime);
             session_start();
         }
         
-        if (session_status() == PHP_SESSION_ACTIVE) {
+        if (session_status() == \PHP_SESSION_ACTIVE) {
             $uri_path = rawurldecode($request->getUri()->getPath());
             $script_path = $request->getServerParams()['SCRIPT_TARGET_PATH'] ?? null;
             if (!isset($script_path)) {

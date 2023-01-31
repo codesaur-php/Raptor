@@ -4,12 +4,12 @@ namespace Raptor\Authentication;
 
 class User implements UserInterface
 {
-    private $_jwt;
-    private $_rbac;
-    private $_account;
-    private $_organizations;
+    private readonly string $_jwt;
+    private readonly array $_rbac;
+    private readonly array $_account;
+    private readonly array $_organizations;
     
-    function __construct(string $token, array $rbac, array $account, array $organizations)
+    public function __construct(string $token, array $rbac, array $account, array $organizations)
     {
         $this->_jwt = $token;
         $this->_rbac = $rbac;
@@ -19,7 +19,7 @@ class User implements UserInterface
         putenv("CODESAUR_ACCOUNT_ID={$this->_account['id']}");
     }
 
-    public function is($role): bool
+    public function is(string $role): bool
     {
         if (isset($this->_rbac['system_coder'])) {
             return true;
@@ -28,7 +28,7 @@ class User implements UserInterface
         return isset($this->_rbac[$role]);
     }
 
-    public function can($permission, $role = null): bool
+    public function can(string $permission, ?string $role = null): bool
     {
         if (isset($this->_rbac['system_coder'])) {
             return true;
@@ -47,7 +47,7 @@ class User implements UserInterface
         return false;
     }
     
-    public function getToken()
+    public function getToken(): string
     {
         return $this->_jwt;
     }
@@ -57,7 +57,7 @@ class User implements UserInterface
         return $this->_account;
     }
 
-    public function getAlias()
+    public function getAlias(): string
     {
         return $this->getOrganization()['alias'] ?? '';
     }
@@ -69,10 +69,10 @@ class User implements UserInterface
 
     public function getOrganization(): array
     {
-        return $this->_organizations[0] ?? array();
+        return $this->_organizations[0] ?? [];
     }
         
-    public function getRBAC()
+    public function getRBAC(): array
     {
         return $this->_rbac;
     }

@@ -10,7 +10,7 @@ class PrivateFileController extends FileController
         $public_folder = "$script_path/private/file?name={$folder}";
         
         $this->local = dirname($_SERVER['SCRIPT_FILENAME']) . '/../private' . $folder;
-        $this->public = $relative ? $public_folder : (string)$this->getRequest()->getUri()->withPath($public_folder);        
+        $this->public = $relative ? $public_folder : (string) $this->getRequest()->getUri()->withPath($public_folder);        
     }
     
     public function getPathUrl(string $fileName) : string
@@ -40,11 +40,11 @@ class PrivateFileController extends FileController
         readfile($filePath);
     }
     
-    function respondError(int $code)
+    private function respondError(int $code): int|bool
     {
         if (!headers_sent()) {
             http_response_code($code);
-        }        
+        }
         return http_response_code();
     }
 }

@@ -2,9 +2,6 @@
 
 namespace Raptor\File;
 
-use Exception;
-use Throwable;
-
 use Psr\Log\LogLevel;
 use Psr\Http\Message\UploadedFileInterface;
 
@@ -14,17 +11,26 @@ use Raptor\Controller;
 
 class FileController extends Controller
 {
-    public $table;
-    public $allow;
-    public $local;
-    public $public;
-    public $overwrite;
-    public $size_limit;
+    public string $table;
     
-    private $_error = UPLOAD_ERR_OK;
+    public array $allowed;
     
-    public function init(string $folder = 'files', int $allows = 0, $overwrite = false, $sizelimit = false)
-    {
+    public string $local;
+    
+    public string $public;
+    
+    public bool $overwrite;
+    
+    public int|false $size_limit;
+    
+    private int $_error = \UPLOAD_ERR_OK;
+    
+    public function init(
+        string $folder = 'files',
+        int $allows = 0,
+        bool $overwrite = false,
+        int|false $sizelimit = false
+    ) {
         $this->setFolder($folder);
         $this->allowType($allows);
         
@@ -32,9 +38,12 @@ class FileController extends Controller
         $this->size_limit = $sizelimit;
     }
 
-    public function setTable(string $name)
+    public function setTable(string $name): FileController
     {
-        $this->table = preg_replace('/[^A-Za-z0-9_-]/', '', $name);
+        $table = preg_replace('/[^A-Za-z0-9_-]/', '', $name);
+        if (empty($table)) {
+            throw new \Exception(__CLASS__ . ": Table name can't empty", 1103);
+        }
         
         return $this;
     }
@@ -45,7 +54,7 @@ class FileController extends Controller
         $public_folder = "$script_path/public{$folder}";
 
         $this->local = dirname($_SERVER['SCRIPT_FILENAME']) . '/public' . $folder;
-        $this->public = $relative ? $public_folder : (string)$this->getRequest()->getUri()->withPath($public_folder);
+        $this->public = $relative ? $public_folder : (string) $this->getRequest()->getUri()->withPath($public_folder);
     }
     
     public function getPath(string $fileName): string
@@ -65,12 +74,12 @@ class FileController extends Controller
 
     public function allowType(int $type)
     {
-        $this->allow = $this->getAllowedExtensions($type);
+        $this->allowed = $this->getAllowedExtensions($type);
     }
 
     public function allowExtensions(array $exts)
     {
-        $this->allow = $exts;
+        $this->allowed = $exts;
     }
     
     public function getAllowedExtensions(int $type = 0): array
@@ -92,7 +101,7 @@ class FileController extends Controller
         }
     }
     
-    private function uniqueFileName(string $uploadpath, string $name, string $ext)
+    private function uniqueFileName(string $uploadpath, string $name, string $ext): string
     {
         $filename = $name . '.' . $ext;
         if (file_exists($uploadpath . $filename)) {
@@ -110,32 +119,32 @@ class FileController extends Controller
         return $filename;
     }
 
-    public function moveUploaded($input, $mode = 0755)
+    public function moveUploaded(string $input, int $mode = 0755): array|false
     {
         try {
             $uploadedFile = $this->getRequest()->getUploadedFiles()[$input] ?? null;
             if (!$uploadedFile instanceof UploadedFileInterface) {
-                throw new Exception('No file upload provided', -1);
+                throw new \Exception('No file upload provided', -1);
             }
-            if ($uploadedFile->getError() != UPLOAD_ERR_OK) {
-                throw new Exception('File upload error', $uploadedFile->getError());
+            if ($uploadedFile->getError() != \UPLOAD_ERR_OK) {
+                throw new \Exception('File upload error', $uploadedFile->getError());
             }
 
             $file_size = $uploadedFile->getSize();        
-            if ($this->sizelimit && $file_size > $this->sizelimit) {
-                throw new Exception('The uploaded file exceeds the MAX_FILE_SIZE directive that was specified in the HTML form', UPLOAD_ERR_FORM_SIZE);
+            if ($this->size_limit && $file_size > $this->size_limit) {
+                throw new \Exception('The uploaded file exceeds the MAX_FILE_SIZE directive that was specified in the HTML form', \UPLOAD_ERR_FORM_SIZE);
             }
 
             $upload_path = "$this->local/";
             $file_path = basename($uploadedFile->getClientFilename());
-            $file_name = pathinfo($file_path, PATHINFO_FILENAME);
-            $file_ext = strtolower(pathinfo($file_path, PATHINFO_EXTENSION));
+            $file_name = pathinfo($file_path, \PATHINFO_FILENAME);
+            $file_ext = strtolower(pathinfo($file_path, \PATHINFO_EXTENSION));
             if (!$this->overwrite) {
                 $file_path = $this->uniqueFileName($upload_path, $file_name, $file_ext);
             }
 
-            if (!in_array($file_ext, $this->allow)) {
-                throw new Exception('The uploaded file type is not allowed', 9);
+            if (!in_array($file_ext, $this->allowed)) {
+                throw new \Exception('The uploaded file type is not allowed', 9);
             }
 
             if (!file_exists($upload_path) || !is_dir($upload_path)) {
@@ -143,126 +152,130 @@ class FileController extends Controller
             }
             
             $uploadedFile->moveTo($upload_path . $file_path);            
-            $this->_error = UPLOAD_ERR_OK;
-            return array(
+            $this->_error = \UPLOAD_ERR_OK;
+            return [
                 'dir' => $upload_path,
                 'name' => $file_path,
                 'ext' => $file_ext,
                 'size' => $file_size
-            );
-        } catch (Throwable $e) {
-            $this->errorLog($e);
+            ];
+        } catch (\Throwable $th) {
+            $this->errorLog($th);
             
-            $this->_error = $e->getCode();
+            $this->_error = $th->getCode();
             
             // failed to move uploaded file!
             return false;
         }
     }
     
-    public function post(string $input, $record_id, array $table_record = [], array $file_record = [])
+    public function post(string $input, int $record_id, array $table_record = [], array $file_record = []): array|false
     {
         return $this->submit($this->moveUploaded($input), $record_id, $table_record, $file_record);
     }
     
-    public function post_multi(string $input, $record_id, array $table_record = [], array $file_record = [])
+    public function post_multi(string $input, int $record_id, array $table_record = [], array $file_record = []): array
     {
-        $language_codes = array_keys($this->getAttribute('localization')['language'] ?? array());
-        $result = array();
+        $result = [];
+        $language_codes = array_keys($this->getAttribute('localization')['language'] ?? []);
         foreach ($language_codes as $code) {
             $table_record['code'] = $code;
-            $result[] = $this->submit($this->moveUploaded(array($input => $code)), $record_id, $table_record, $file_record);
+            $result[] = $this->submit($this->moveUploaded([$input => $code]), $record_id, $table_record, $file_record);
         }
         
         return $result;
     }
     
-    public function submit($upload, $record_id, array $table_record = [], array $file_record = [])
+    public function submit(array|false $upload, int $record_id, array $table_record = [], array $file_record = []): array|false
     {
-        $language_codes = array_keys($this->getAttribute('localization')['language'] ?? array());
-        if (isset($upload['dir']) && isset($upload['name']) && !empty($this->table)) {
-            if (isset($table_record['type'])) {
-                $existing = $this->getLast($record_id, $table_record['type'], $table_record['code'] ?? '');                
-                if ($existing) {
-                    try {
-                        $this->indodelete("/files/$this->table", array('WHERE' => "id={$existing['files_id']}"));
-                        $text = "Мэдээллийн $this->table хүснэгтийн $record_id-р бичлэгийн {$existing['type']} төрлийн ({$existing['code']}') хэл дээрх файлыг бүртгэлээс хаслаа.";
-                        $this->indolog('file', LogLevel::INFO, $text, array('reason' => 'strip-file', 'table' => $this->table, 'record' => $record_id, 'type' => $existing['type']));
-                        if ($existing['protection'] == 1) {
-                            $this->indodelete('/record?model=' . FileModel::class, array('WHERE' => "id={$existing['id']}"));
-                            $text = "Мэдээллийн file хүснэгтийн {$existing['id']}-р бичлэг дээрх файлыг устгалаа.";
-                            $this->indolog('file', LogLevel::INFO, $text, array('reason' => 'delete-file', 'record' => $existing));
-                        }
-                    } catch (Throwable $e) {
-                        $this->errorLog($e);
-                    }
-                }
-            }
-            
-            try {
-                if (!isset($file_record['content'])) {
-                    foreach ($language_codes as $code) {
-                        $file_record['content'][$code] = array('title' => '');
-                    }
-                }                
-                $file_record['record']['file'] = $upload['dir'] . $upload['name'];
-                $file_record['record']['path'] = $this->getPathUrl($upload['name']);
-                $file_id = $this->indopost('/record?model=' . FileModel::class, $file_record);
-                
-                $table_record['file'] = $file_id;
-                $table_record['record'] = $record_id;
-                $this->indopost("/files/$this->table", $table_record);
-                $text = "Мэдээллийн $this->table хүснэгтийн $record_id-р бичлэгт зориулж $file_id дугаартай файлыг байршууллаа.";
-                $this->log($text, array('table' => $this->table, 'reason' => 'insert-file', 'record' => $record_id, 'file' => $file_record['record']['file'], 'path' => $file_record['record']['path']), 'file');
-                return $file_record;
-            } catch (Throwable $e) {
-                $this->errorLog($e);
-            }
+        if (empty($this->table)
+            || !isset($upload['dir'])
+            || empty($upload['name'])
+        ) {
+            return false;
         }
         
-        return false;
+        $language_codes = array_keys($this->getAttribute('localization')['language'] ?? []);
+        if (isset($table_record['type'])) {
+            $existing = $this->getLast($record_id, $table_record['type'], $table_record['code'] ?? '');
+            if ($existing) {
+                try {
+                    $this->indodelete("/files/$this->table", ['WHERE' => "id={$existing['files_id']}"]);
+                    $text = "Мэдээллийн $this->table хүснэгтийн $record_id-р бичлэгийн {$existing['type']} төрлийн ({$existing['code']}') хэл дээрх файлыг бүртгэлээс хаслаа.";
+                    $this->indolog('file', LogLevel::INFO, $text, ['reason' => 'strip-file', 'table' => $this->table, 'record' => $record_id, 'type' => $existing['type']]);
+                    if ($existing['protection'] == 1) {
+                        $this->indodelete('/record?model=' . FileModel::class, ['WHERE' => "id={$existing['id']}"]);
+                        $text = "Мэдээллийн file хүснэгтийн {$existing['id']}-р бичлэг дээрх файлыг устгалаа.";
+                        $this->indolog('file', LogLevel::ALERT, $text, ['reason' => 'delete-file', 'record' => $existing]);
+                    }
+                } catch (\Throwable $th) {
+                    $this->errorLog($th);
+                }
+            }
+        }
+
+        try {
+            if (!isset($file_record['content'])) {
+                foreach ($language_codes as $code) {
+                    $file_record['content'][$code] = ['title' => ''];
+                }
+            }                
+            $file_record['record']['file'] = $upload['dir'] . $upload['name'];
+            $file_record['record']['path'] = $this->getPathUrl($upload['name']);
+            $file_id = $this->indopost('/record?model=' . FileModel::class, $file_record);
+
+            $table_record['file'] = $file_id;
+            $table_record['record'] = $record_id;
+            $this->indopost("/files/$this->table", $table_record);
+            $text = "Мэдээллийн $this->table хүснэгтийн $record_id-р бичлэгт зориулж $file_id дугаартай файлыг байршууллаа.";
+            $this->indolog('file', LogLevel::INFO, $text, ['table' => $this->table, 'reason' => 'insert-file', 'record' => $record_id, 'file' => $file_record['record']['file'], 'path' => $file_record['record']['path']]);
+            return $file_record;
+        } catch (\Throwable $th) {
+            $this->errorLog($th);
+            return false;
+        }        
     }
     
-    public function getRecord($record, $code = null)
+    public function getRecord(array $record, ?string $code = null): array|null
     {
         try {
             if (empty($record['file'])) {
-                throw new Exception('Please provide valid file record info');
+                throw new \Exception('Please provide valid file record info');
             }
-            $result = $this->indo('/record?model=' . FileModel::class, array('p.id' => $record['file'], 'c.code' => $code));
+            $result = $this->indo('/record?model=' . FileModel::class, ['p.id' => $record['file'], 'c.code' => $code]);
             $result['files_id'] = $record['id'];
             $result['record'] = $record['record'];
             $result['type'] = $record['type'] ?? null;
             $result['code'] = $record['code'] ?? null;
             $result['rank'] = $record['rank'] ?? null;
             return $result;
-        } catch (Throwable $e) {
-            $this->errorLog($e);
+        } catch (\Throwable $th) {
+            $this->errorLog($th);
             
             return null;
         }
     }
     
-    public function getLast(int $record, int $type, string $code = '')
+    public function getLast(int $record, int $type, string $code = ''): array|null
     {
         try {
             if ($this->isEmpty($this->table)) {
-                throw new Exception('File table name not set');
+                throw new \Exception('File table name not set');
             }
             
-            $condition = array(
+            $condition = [
                 'WHERE' => "record=$record AND type=$type",
                 'ORDER BY' => 'id desc',
                 'LIMIT' => '1'
-            );
+            ];
             if (!empty($code)) {
                 $condition['WHERE'] .= " AND code='$code'";
             }
 
             $rows = $this->indo("/files/records/$this->table", $condition);
             return $this->getRecord(current($rows));
-        } catch (Throwable $e) {
-            $this->errorLog($e);
+        } catch (\Throwable $th) {
+            $this->errorLog($th);
             
             return null;
         }

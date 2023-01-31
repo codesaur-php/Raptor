@@ -2,18 +2,16 @@
 
 namespace Raptor\Authentication;
 
-use PDO;
-
 use codesaur\DataObject\Model;
 use codesaur\DataObject\Column;
 
 class AccountRequestsModel extends Model
 {
-    function __construct(PDO $pdo)
+    public function __construct(\PDO $pdo)
     {
-        parent::__construct($pdo);
+        $this->setInstance($pdo);
         
-        $this->setColumns(array(
+        $this->setColumns([
            (new Column('id', 'bigint', 8))->auto()->primary()->unique()->notNull(),
             new Column('rbac_account_id', 'bigint', 8),
             new Column('username', 'varchar', 143),
@@ -26,21 +24,20 @@ class AccountRequestsModel extends Model
             new Column('created_by', 'bigint', 8),
             new Column('updated_at', 'datetime'),
             new Column('updated_by', 'bigint', 8)
-        ));
+        ]);
         
         $this->setTable('raptor_accounts_requests', $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
     }
 
-    function __initial()
+    protected function __initial()
     {
-        parent::__initial();
+        $this->setForeignKeyChecks(false);
         
         $table = $this->getName();        
-        
-        $this->setForeignKeyChecks(false);
         $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_created_by FOREIGN KEY (created_by) REFERENCES rbac_accounts(id) ON DELETE SET NULL ON UPDATE CASCADE");
         $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_updated_by FOREIGN KEY (updated_by) REFERENCES rbac_accounts(id) ON DELETE SET NULL ON UPDATE CASCADE");
         $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_rbac_account_id FOREIGN KEY (rbac_account_id) REFERENCES rbac_accounts(id) ON DELETE CASCADE ON UPDATE CASCADE");
+
         $this->setForeignKeyChecks(true);
     }
 }

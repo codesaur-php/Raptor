@@ -4,13 +4,13 @@ namespace Raptor\Authentication;
 
 interface UserInterface
 {
-    public function is($role): bool;
-    public function can($permission, $role = null): bool;
+    public function is(string $role): bool;
+    public function can(string $permission, ?string $role = null): bool;
 
-    public function getToken();
-    public function getAccount();
-    public function getAlias();
-    public function getOrganization();
-    public function getOrganizations();
-    public function getRBAC();
+    public function getToken(): string;
+    public function getAccount(): array;
+    public function getAlias(): string;
+    public function getOrganization(): array;
+    public function getOrganizations(): array;
+    public function getRBAC(): array;
 }

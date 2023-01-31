@@ -1,22 +1,19 @@
 {
     "name": "codesaur/raptor",
-    "description": "An elegant object-oriented application development framework for PHP 7.2 or newer",
+    "description": "An elegant object-oriented application for PHP 8.2.1 or newer",
     "keywords": [
-        "velociraptor", "indoraptor", "utahraptor", "raptor", "application", "http application", "server request handler", "psr-3", "psr-7", "psr-15",
-        "mongol", "mongolia", "mongolian", "монгол", "codesaur", "narankhuu", "coden", "кодзавр", "наранхүү", "коден",
-        "ololt", "ололт", "мөнхийн", "мөнхийн-ололт", "мөнхийн ололт", "munkhiin ololt"
+        "velociraptor", "indoraptor", "raptor", "application", "http application", "router", "server request handler", "psr-3", "psr-7", "psr-15", "mongol", "mongolia", "mongolian", "монгол", "codesaur", "кодзавр", "narankhuu", "наранхүү", "ololt", "ололт", "мөнхийн ололт", "munkhiin ololt"
     ],
-    "homepage": "https://ololt.mn/codesaur",
+    "homepage": "https://github.com/codesaur-php",
     "authors": [
         {
             "name": "Narankhuu",
-            "email": "codesaur@gmail.com",
-            "homepage": "https://ololt.mn/narankhuu"
+            "email": "codesaur@gmail.com"
         }
     ],
     "require": {
-        "codesaur/template": ">=1.2.3",
-        "codesaur/indoraptor": ">=4.0.0"
+        "codesaur/template": ">=1.4.3",
+        "codesaur/indoraptor": ">=4.2.3"
     },
     "autoload": {
         "psr-4": {

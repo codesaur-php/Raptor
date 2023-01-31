@@ -4,7 +4,7 @@ namespace Raptor;
 
 class Application extends \codesaur\Http\Application\Application
 {
-    function __construct()
+    public function __construct()
     {
         parent::__construct();
         
@@ -23,6 +23,6 @@ class Application extends \codesaur\Http\Application\Application
         $this->use(new File\FileRouter());
         $this->use(new Log\LogsRouter());
         
-        $this->GET('/', [Dashboard\DashboardController::class, 'index'])->name('home');
+        $this->GET('/', [Dashboard\DashboardController::class, 'home'])->name('home');
     }
 }

@@ -6,7 +6,7 @@ use codesaur\Router\Router;
 
 class ContentsRouter extends Router
 {
-    function __construct()
+    public function __construct()
     {
         $this->GET('/references', [ReferencesController::class, 'index'])->name('references');
         $this->GET('/reference/datatable/{table}', [ReferencesController::class, 'datatable'])->name('reference-datatable');

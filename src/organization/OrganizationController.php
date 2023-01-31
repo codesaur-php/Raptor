@@ -2,9 +2,6 @@
 
 namespace Raptor\Organization;
 
-use Exception;
-use Throwable;
-
 use Psr\Log\LogLevel;
 use Psr\Http\Message\ServerRequestInterface;
 
@@ -15,9 +12,9 @@ use Raptor\File\FileController;
 
 class OrganizationController extends DashboardController
 {
-    function __construct(ServerRequestInterface $request)
+    public function __construct(ServerRequestInterface $request)
     {
-        $meta = $request->getAttribute('meta', array());
+        $meta = $request->getAttribute('meta', []);
         $localization = $request->getAttribute('localization');
         if (isset($localization['code'])
             && isset($localization['text']['organizations'])
@@ -38,16 +35,16 @@ class OrganizationController extends DashboardController
         
         $this->twigDashboard(dirname(__FILE__) . '/organization-index.html')->render();        
         
-        $this->indolog('organization', LogLevel::NOTICE, 'Байгууллагуудын жагсаалтыг нээж үзэж байна', array('model' => OrganizationModel::class));
+        $this->indolog('organization', LogLevel::NOTICE, 'Байгууллагуудын жагсаалтыг нээж үзэж байна', ['model' => OrganizationModel::class]);
     }
     
     public function datatable()
-    {        
+    {
         try {
-            $rows = array();
+            $rows = [];
             
             if (!$this->isUserCan('system_organization_index')) {
-                throw new Exception($this->text('system-no-permission'), 401);
+                throw new \Exception($this->text('system-no-permission'), 401);
             }
             
             $organizations = $this->indoget('/records?model=' . OrganizationModel::class);
@@ -55,7 +52,7 @@ class OrganizationController extends DashboardController
             foreach ($organizations as $record) {
                 $id = $record['id'];
                 
-                $row = array($id);
+                $row = [$id];
                 
                 if (empty($record['logo'])) {
                     $row[] = ' <i class="bi bi-building text-secondary" style="font-size:1.5rem"></i>';
@@ -73,10 +70,10 @@ class OrganizationController extends DashboardController
                 }
 
                 $action = '<a class="ajax-modal btn btn-sm btn-info shadow-sm" data-bs-target="#dashboard-modal" data-bs-toggle="modal" ' .
-                    'href="' . $this->generateLink('organization-view', array('id' => $id)) . '"><i class="bi bi-eye"></i></a>' . PHP_EOL;
+                    'href="' . $this->generateLink('organization-view', ['id' => $id]) . '"><i class="bi bi-eye"></i></a>' . \PHP_EOL;
                 if ($this->getUser()->can('system_organization_update')) {
                     $action .= '<a class="ajax-modal btn btn-sm btn-primary shadow-sm" data-bs-target="#dashboard-modal" data-bs-toggle="modal" ' .
-                        'href="' . $this->generateLink('organization-update', array('id' => $id)) . '"><i class="bi bi-pencil-square"></i></a>' . PHP_EOL;
+                        'href="' . $this->generateLink('organization-update', ['id' => $id]) . '"><i class="bi bi-pencil-square"></i></a>' . \PHP_EOL;
                 }
                 if ($this->getUser()->can('system_organization_delete')) {
                     $action .= '<a class="delete-organization btn btn-sm btn-danger shadow-sm" href="' . $id . '"><i class="bi bi-trash"></i></a>';
@@ -86,26 +83,27 @@ class OrganizationController extends DashboardController
 
                 $rows[] = $row;
             }
-        } catch (Throwable $e) {
-            $this->errorLog($e);
+        } catch (\Throwable $th) {
+            $this->errorLog($th);
         } finally {
-            $this->respondJSON(array(
+            $count = count($rows);
+            $this->respondJSON([
                 'data' => $rows,
-                'recordsTotal' => count($rows),
-                'recordsFiltered' => count($rows),
-                'draw' => (int)($this->getQueryParams()['draw'] ?? 0)
-            ));
+                'recordsTotal' => $count,
+                'recordsFiltered' => $count,
+                'draw' => (int) ($this->getQueryParams()['draw'] ?? 0)
+            ]);
         }
     }
     
     public function insert()
-    {        
-        try {            
-            $context = array('model' => OrganizationModel::class);
+    {
+        try {
+            $context = ['model' => OrganizationModel::class];
             $is_submit = $this->getRequest()->getMethod() == 'POST';
             
             if (!$this->isUserCan('system_organization_insert')) {
-                throw new Exception($this->text('system-no-permission'), 401);
+                throw new \Exception($this->text('system-no-permission'), 401);
             }
             
             if ($is_submit) {
@@ -113,14 +111,14 @@ class OrganizationController extends DashboardController
                 if (empty($parsedBody['org_alias'])
                     || empty($parsedBody['org_name'])
                 ) {
-                    throw new Exception($this->text('invalid-request'), 400);
+                    throw new \Exception($this->text('invalid-request'), 400);
                 }
                 
-                $record = array(
+                $record = [
                     'name' => $parsedBody['org_name'],
                     'alias' => preg_replace('/[^A-Za-z0-9_-]/', '', $parsedBody['org_alias'])
-                );
-                $parent_id = filter_var($parsedBody['org_parent_id'] ?? 0, FILTER_VALIDATE_INT);
+                ];
+                $parent_id = filter_var($parsedBody['org_parent_id'] ?? 0, \FILTER_VALIDATE_INT);
                 if ($parent_id !== false && $parent_id > 0) {
                     $record['parent_id'] = $parent_id;
                 }
@@ -135,95 +133,95 @@ class OrganizationController extends DashboardController
                 $logo = $file->moveUploaded('org_logo');
                 if (isset($logo['name'])) {
                     $logo_path = $file->getPathUrl($logo['name']);
-                    $payload = array(
-                        'record' => array('logo' => $logo_path),
-                        'condition' => array('WHERE' => "id=$id")
-                    );
+                    $payload = [
+                        'record' => ['logo' => $logo_path],
+                        'condition' => ['WHERE' => "id=$id"]
+                    ];
                     $context['logo'] = $logo_path;
                     $this->indoput('/record?model=' . OrganizationModel::class, $payload);
                 }
                 
-                $this->respondJSON(array(
+                $this->respondJSON([
                     'status' => 'success',
                     'message' => $this->text('record-insert-success'),
                     'href' => $this->generateLink('organizations')
-                ));
+                ]);
                 
                 $level = LogLevel::INFO;
                 $message = "Байгууллага [{$record['name']}] үүсгэх үйлдлийг амжилттай гүйцэтгэлээ";
             } else {
                 $template_path = dirname(__FILE__) . '/organization-insert-modal.html';
                 if (!file_exists($template_path)) {
-                    throw new Exception("$template_path file not found!", 500);
+                    throw new \Exception("$template_path file not found!", 500);
                 }
-                $this->twigTemplate($template_path, array('parents' => $this->getParents()))->render();
+                $this->twigTemplate($template_path, ['parents' => $this->getParents()])->render();
                 
                 $level = LogLevel::NOTICE;
                 $message = 'Байгууллага үүсгэх үйлдлийг эхлүүллээ';
             }
-        } catch (Throwable $e) {
+        } catch (\Throwable $th) {
             if ($is_submit) {
-                $this->respondJSON(array('message' => $e->getMessage()), $e->getCode());
+                $this->respondJSON(['message' => $th->getMessage()], $th->getCode());
             } else {
-                $this->modalProhibited($e->getMessage(), $e->getCode())->render();
+                $this->modalProhibited($th->getMessage(), $th->getCode())->render();
             }
             
             $level = LogLevel::ERROR;
             $message = 'Байгууллага үүсгэх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
-            $context['error'] = array('code' => $e->getCode(), 'message' => $e->getMessage());
+            $context['error'] = ['code' => $th->getCode(), 'message' => $th->getMessage()];
         } finally {
             $this->indolog('organization', $level, $message, $context);
         }
     }
     
-    function getParents()
+    private function getParents(): array
     {
-        return $this->indosafe('/records?model=' . OrganizationModel::class, array('WHERE' => 'parent_id=0 OR parent_id is null')) ?: array();
+        return $this->indosafe('/records?model=' . OrganizationModel::class, ['WHERE' => 'parent_id=0 OR parent_id is null']);
     }
     
     public function view(int $id)
-    {        
-        try {            
-            $context = array('id' => $id, 'model' => OrganizationModel::class);
+    {
+        try {
+            $context = ['id' => $id, 'model' => OrganizationModel::class];
             
             if (!$this->isUserCan('system_organization_index')) {
-                throw new Exception($this->text('system-no-permission'), 401);
+                throw new \Exception($this->text('system-no-permission'), 401);
             }
             
-            $record = $this->indoget('/record?model=' . OrganizationModel::class, array('id' => $id));
+            $record = $this->indoget('/record?model=' . OrganizationModel::class, ['id' => $id]);
             $context['record'] = $record;
             
             if (!empty($record['parent_id'])) {
-                $record['parent_name'] = $this->indosafe('/record?model=' . OrganizationModel::class, array('id' => $record['parent_id']))['name'] ?? '- no parent because its deleted -';
+                $record['parent_name'] = $this->indosafe('/record?model=' . OrganizationModel::class, ['id' => $record['parent_id']])['name'] ?? '- no parent because its deleted -';
             }
             
             $template_path = dirname(__FILE__) . '/organization-retrieve-modal.html';
             if (!file_exists($template_path)) {
-                throw new Exception("$template_path file not found!", 500);
+                throw new \Exception("$template_path file not found!", 500);
             }
-            $this->twigTemplate($template_path, array('record' => $record, 'accounts' => $this->getAccounts()))->render();
+            $this->twigTemplate($template_path, ['record' => $record, 'accounts' => $this->getAccounts()])->render();
 
             $level = LogLevel::NOTICE;
             $message = "{$record['name']} байгууллагын мэдээллийг нээж үзэж байна";
-        } catch (Throwable $e) {
-            $this->modalProhibited($e->getMessage(), $e->getCode())->render();
+        } catch (\Throwable $th) {
+            $this->modalProhibited($th->getMessage(), $th->getCode())->render();
             
             $level = LogLevel::ERROR;
             $message = 'Байгууллагын мэдээллийг нээж үзэх үед алдаа гарч зогслоо';
-            $context['error'] = array('code' => $e->getCode(), 'message' => $e->getMessage());
+            $context['error'] = ['code' => $th->getCode(), 'message' => $th->getMessage()];
         } finally {
             $this->indolog('organization', $level, $message, $context);
         }
     }
     
     public function update(int $id)
-    {        
-        try {            
+    {
+        try {
             $is_submit = $this->getRequest()->getMethod() == 'PUT';
-            $context = array('id' => $id, 'model' => OrganizationModel::class);
+            $context = ['id' => $id, 'model' => OrganizationModel::class];
             
             if (!$this->isUserCan('system_organization_update')) {
-                throw new Exception($this->text('system-no-permission'), 401);
+                throw new \Exception($this->text('system-no-permission'), 401);
             }
             
             if ($is_submit) {
@@ -231,16 +229,16 @@ class OrganizationController extends DashboardController
                 if (empty($payload['org_alias'])
                     || empty($payload['org_name'])
                 ) {
-                    throw new Exception($this->text('invalid-request'), 400);
+                    throw new \Exception($this->text('invalid-request'), 400);
                 }
                 
-                $record = array(
+                $record = [
                     'name' => $payload['org_name'],
                     'alias' => preg_replace('/[^A-Za-z0-9_-]/', '', $payload['org_alias'])
-                );
+                ];
                 
                 if (isset($payload['org_parent_id'])) {
-                    $parent_id = filter_var($payload['org_parent_id'], FILTER_VALIDATE_INT);
+                    $parent_id = filter_var($payload['org_parent_id'], \FILTER_VALIDATE_INT);
                     if ($parent_id !== false && $parent_id >= 0) {
                         $record['parent_id'] = $parent_id;
                     }
@@ -249,7 +247,7 @@ class OrganizationController extends DashboardController
                 $context['record'] = $record;
                 $context['record']['id'] = $id;
                 
-                $existing = $this->indosafe('/record?model=' . OrganizationModel::class, array('id' => $id, 'is_active' => 1));
+                $existing = $this->indosafe('/record?model=' . OrganizationModel::class, ['id' => $id, 'is_active' => 1]);
                 $old_logo_file = basename($existing['logo'] ?? '');
                 $file = new FileController($this->getRequest());
                 $file->init("/organizations/$id");
@@ -262,7 +260,7 @@ class OrganizationController extends DashboardController
                     if ($file->getLastError() == -1) {
                         $this->tryDeleteFile(dirname($_SERVER['SCRIPT_FILENAME']) . "/public/organizations/$id/$old_logo_file");
                         $record['logo'] = '';
-                    } else if (isset($logo['name']) && $logo['name'] != $old_logo_file) {
+                    } elseif (isset($logo['name']) && $logo['name'] != $old_logo_file) {
                         $this->tryDeleteFile(dirname($_SERVER['SCRIPT_FILENAME']) . "/public/organizations/$id/$old_logo_file");
                     }
                 }
@@ -271,39 +269,39 @@ class OrganizationController extends DashboardController
                 }
                 
                 $this->indoput('/record?model=' . OrganizationModel::class,
-                        array('record' => $record, 'condition' => ['WHERE' => "id=$id"]));
+                        ['record' => $record, 'condition' => ['WHERE' => "id=$id"]]);
                 
-                $this->respondJSON(array(
+                $this->respondJSON([
                     'status' => 'success',
                     'type' => 'primary',
                     'message' => $this->text('record-update-success'),
                     'href' => $this->generateLink('organizations')
-                ));
+                ]);
                 
                 $level = LogLevel::INFO;
                 $message = "{$record['name']} байгууллагын мэдээллийг шинэчлэх үйлдлийг амжилттай гүйцэтгэлээ";
             } else {
-                $record = $this->indoget('/record?model=' . OrganizationModel::class, array('id' => $id));
+                $record = $this->indoget('/record?model=' . OrganizationModel::class, ['id' => $id]);
                 
                 $template_path = dirname(__FILE__) . '/organization-update-modal.html';
                 if (!file_exists($template_path)) {
-                    throw new Exception("$template_path file not found!", 500);
+                    throw new \Exception("$template_path file not found!", 500);
                 }
-                $this->twigTemplate($template_path, array('record' => $record, 'parents' => $this->getParents()))->render();
+                $this->twigTemplate($template_path, ['record' => $record, 'parents' => $this->getParents()])->render();
                 
                 $level = LogLevel::NOTICE;
                 $context['record'] = $record;
                 $message = "{$record['name']} байгууллагын мэдээллийг шинэчлэхээр нээж байна";
             }
-        } catch (Throwable $e) {
+        } catch (\Throwable $th) {
             if ($is_submit) {
-                $this->respondJSON(array('message' => $e->getMessage()), $e->getCode());
+                $this->respondJSON(['message' => $th->getMessage()], $th->getCode());
             } else {
-                $this->modalProhibited($e->getMessage(), $e->getCode())->render();
+                $this->modalProhibited($th->getMessage(), $th->getCode())->render();
             }
             
             $level = LogLevel::ERROR;
-            $context['error'] = array('code' => $e->getCode(), 'message' => $e->getMessage());
+            $context['error'] = ['code' => $th->getCode(), 'message' => $th->getMessage()];
             $message = 'Байгууллагын мэдээллийг өөрчлөх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо байна';
         } finally {
             $this->indolog('organization', $level, $message, $context);
@@ -311,51 +309,51 @@ class OrganizationController extends DashboardController
     }
     
     public function delete()
-    {        
+    {
         try {
-            $context = array('model' => OrganizationModel::class);
+            $context = ['model' => OrganizationModel::class];
             
             if (!$this->isUserCan('system_organization_delete')) {
-                throw new Exception('No permission for an action [delete]!', 401);
+                throw new \Exception('No permission for an action [delete]!', 401);
             }
             
             $payload = $this->getParsedBody();
             if (empty($payload['id'])
                 || !isset($payload['name'])
-                || !filter_var($payload['id'], FILTER_VALIDATE_INT)
+                || !filter_var($payload['id'], \FILTER_VALIDATE_INT)
             ) {
-                throw new Exception($this->text('invalid-request'), 400);
+                throw new \Exception($this->text('invalid-request'), 400);
             }
             $context['payload'] = $payload;
             
-            $id = filter_var($payload['id'], FILTER_VALIDATE_INT);
+            $id = filter_var($payload['id'], \FILTER_VALIDATE_INT);
 
             if ($this->getUser()->getOrganization()['id'] == $id) {
-                throw new Exception('Cannot remove currently active organization!', 403);
-            } else if ($id == 1) {
-                throw new Exception('Cannot remove first organization!', 403);
+                throw new \Exception('Cannot remove currently active organization!', 403);
+            } elseif ($id == 1) {
+                throw new \Exception('Cannot remove first organization!', 403);
             }
             
-            $this->indodelete('/record?model=' . OrganizationModel::class, array('WHERE' => "id=$id"));
+            $this->indodelete('/record?model=' . OrganizationModel::class, ['WHERE' => "id=$id"]);
             
-            $this->respondJSON(array(
+            $this->respondJSON([
                 'status'  => 'success',
                 'title'   => $this->text('success'),
                 'message' => $this->text('record-successfully-deleted')
-            ));
+            ]);
             
             $level = LogLevel::ALERT;
             $message = "{$payload['name']} байгууллагыг устгалаа";
-        } catch (Throwable $e) {
-            $this->respondJSON(array(
+        } catch (\Throwable $th) {
+            $this->respondJSON([
                 'status'  => 'error',
                 'title'   => $this->text('error'),
-                'message' => $e->getMessage()
-            ), $e->getCode());
+                'message' => $th->getMessage()
+            ], $th->getCode());
             
             $level = LogLevel::ERROR;
             $message = 'Байгууллагыг устгах үйлдлийг гүйцэтгэх явцад алдаа гарч зогслоо';
-            $context['error'] = array('code' => $e->getCode(), 'message' => $e->getMessage());
+            $context['error'] = ['code' => $th->getCode(), 'message' => $th->getMessage()];
         } finally {
             $this->indolog('organization', $level, $message, $context);
         }

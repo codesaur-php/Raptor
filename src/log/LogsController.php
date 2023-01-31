@@ -2,9 +2,6 @@
 
 namespace Raptor\Log;
 
-use Exception;
-use Throwable;
-
 use Psr\Http\Message\ServerRequestInterface;
 
 use codesaur\Template\TwigTemplate;
@@ -13,9 +10,9 @@ use Raptor\Dashboard\DashboardController;
 
 class LogsController extends DashboardController
 {
-    function __construct(ServerRequestInterface $request)
+    public function __construct(ServerRequestInterface $request)
     {
-        $meta = $request->getAttribute('meta', array());
+        $meta = $request->getAttribute('meta', []);
         $localization = $request->getAttribute('localization');
         if (isset($localization['code'])
             && isset($localization['text']['access-log'])
@@ -31,19 +28,19 @@ class LogsController extends DashboardController
     {
         try {
             if (!$this->isUserCan('system_logger')) {
-                throw new Exception($this->text('system-no-permission'), 401);
+                throw new \Exception($this->text('system-no-permission'), 401);
             }
         
             $names = $this->indoget('/log/get/names');
-            $logs = array();
+            $logs = [];
             foreach ($names as $name) {
                 $logs[$name] = $this->getLogsFrom($name);
             }
             
             $this->twigDashboard(dirname(__FILE__) . '/index-list-logs.html',
-                array('names' => $names, 'logs' => $logs, 'accounts' => $this->getAccounts()))->render();
-        } catch (Throwable $e) {
-            $this->dashboardProhibited($e->getMessage(), $e->getCode())->render();
+                ['names' => $names, 'logs' => $logs, 'accounts' => $this->getAccounts()])->render();
+        } catch (\Throwable $th) {
+            $this->dashboardProhibited($th->getMessage(), $th->getCode())->render();
         }
     }
     
@@ -51,49 +48,51 @@ class LogsController extends DashboardController
     {
         try {
             if (!$this->isUserCan('system_logger')) {
-                throw new Exception($this->text('system-no-permission'), 401);
+                throw new \Exception($this->text('system-no-permission'), 401);
             }
             
             $params = $this->getQueryParams();
             $id = $params['id'] ?? null;
             $table = $params['table'] ?? null;            
-            if ($id == null || !is_int((int)$id) || empty($table)) {
-                throw new Exception($this->text('invalid-request'), 400);
+            if ($id == null || !is_numeric($id) || empty($table)) {
+                throw new \Exception($this->text('invalid-request'), 400);
+            } else {
+                $id = (int) $id;
             }
             
             $logdata = $this->indoget("/log?table=$table&id=$id");
             $template_path = dirname(__FILE__) . '/retrieve-log-modal.html';
             if (!file_exists($template_path)) {
-                throw new Exception("$template_path file not found!", 500);
+                throw new \Exception("$template_path file not found!", 500);
             }
             (new TwigTemplate(
                 $template_path,
-                array(
+                [
                     'detailed' => $this->text('detailed'),
                     'close' => $this->text('close'),
                     'table' => $table,
                     'id' => $id,
                     'accounts' => $this->getAccounts(),
                     'data' => $logdata
-                )
+                ]
             ))->render();
 
             return true;
-        } catch (Throwable $e) {
-            $this->modalProhibited($e->getMessage(), $e->getCode())->render();
+        } catch (\Throwable $th) {
+            $this->modalProhibited($th->getMessage(), $th->getCode())->render();
 
             return false;
         }
     }
     
-    function getLogsFrom(string $table, int $limit = 100)
+    private function getLogsFrom(string $table, int $limit = 100): array
     {
         try {
             return $this->indoget("/log?table=$table&limit=$limit");
-        } catch (Throwable $e) {
-            $this->errorLog($e);
+        } catch (\Throwable $th) {
+            $this->errorLog($th);
             
-            return array();
+            return [];
         }
     }
 }
