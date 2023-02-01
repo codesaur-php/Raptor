@@ -37,7 +37,7 @@ class LogsController extends DashboardController
                 $logs[$name] = $this->getLogsFrom($name);
             }
             
-            $this->twigDashboard(dirname(__FILE__) . '/index-list-logs.html',
+            $this->twigDashboard(\dirname(__FILE__) . '/index-list-logs.html',
                 ['names' => $names, 'logs' => $logs, 'accounts' => $this->getAccounts()])->render();
         } catch (\Throwable $th) {
             $this->dashboardProhibited($th->getMessage(), $th->getCode())->render();
@@ -53,16 +53,16 @@ class LogsController extends DashboardController
             
             $params = $this->getQueryParams();
             $id = $params['id'] ?? null;
-            $table = $params['table'] ?? null;            
-            if ($id == null || !is_numeric($id) || empty($table)) {
+            $table = $params['table'] ?? null;
+            if ($id == null || !\is_numeric($id) || empty($table)) {
                 throw new \Exception($this->text('invalid-request'), 400);
             } else {
                 $id = (int) $id;
             }
             
             $logdata = $this->indoget("/log?table=$table&id=$id");
-            $template_path = dirname(__FILE__) . '/retrieve-log-modal.html';
-            if (!file_exists($template_path)) {
+            $template_path = \dirname(__FILE__) . '/retrieve-log-modal.html';
+            if (!\file_exists($template_path)) {
                 throw new \Exception("$template_path file not found!", 500);
             }
             (new TwigTemplate(

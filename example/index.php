@@ -7,10 +7,10 @@ namespace Raptor\Example;
  * This is an example script!
  */
 
-define('CODESAUR_DEVELOPMENT', true);
+\define('CODESAUR_DEVELOPMENT', true);
 
-ini_set('display_errors', 'On');
-error_reporting(\E_ALL);
+\ini_set('display_errors', 'On');
+\error_reporting(\E_ALL);
 
 use codesaur\Http\Message\ServerRequest;
 

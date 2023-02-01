@@ -42,17 +42,17 @@ class RBACController extends DashboardController
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
             
-            $payload = ['bind' => [':alias' => ['var' => $alias]]];            
+            $payload = ['bind' => [':alias' => ['var' => $alias]]];
             $payload['query'] = "SELECT id,name,description FROM rbac_roles WHERE alias=:alias AND is_active=1 AND !(name='coder' AND alias='system')";
             $roles = $this->indo('/statement', $payload);
             
-            $payload['query'] = 'SELECT id,name,description FROM rbac_permissions WHERE alias=:alias AND is_active=1 ORDER By module';            
+            $payload['query'] = 'SELECT id,name,description FROM rbac_permissions WHERE alias=:alias AND is_active=1 ORDER By module';
             $permissions = $this->indo('/statement', $payload);
             
             if ($alias == 'system'
                 && empty($permissions)
             ) {
-                $nowdate = date('Y-m-d H:i:s');
+                $nowdate = \date('Y-m-d H:i:s');
                 $query =
                     "INSERT INTO rbac_permissions(created_at,alias,module,name,description) "
                     . "VALUES('$nowdate','system','log','logger',''),"
@@ -85,7 +85,7 @@ class RBACController extends DashboardController
                 $role_permission[$row['role_id']][$row['permission_id']] = true;
             }
             $this->twigDashboard(
-                dirname(__FILE__) . '/rbac-alias.html',
+                \dirname(__FILE__) . '/rbac-alias.html',
                 [
                     'alias' => $alias, 
                     'title' => $title, 
@@ -127,7 +127,7 @@ class RBACController extends DashboardController
                 
                 $this->indolog('rbac', LogLevel::INFO, 'RBAC дүр шинээр нэмэх үйлдлийг амжилттай гүйцэтгэлээ', $context);
             } else {
-                $this->twigTemplate(dirname(__FILE__) . '/rbac-insert-role-modal.html', ['alias' => $alias, 'title' => $title])->render();
+                $this->twigTemplate(\dirname(__FILE__) . '/rbac-insert-role-modal.html', ['alias' => $alias, 'title' => $title])->render();
                 
                 $this->indolog('rbac', LogLevel::NOTICE, 'RBAC дүр шинээр нэмэх үйлдлийг амжилттай эхлүүллээ', $context);
             }
@@ -161,10 +161,10 @@ class RBACController extends DashboardController
             if (empty($role_result)) {
                 throw new \Exception($this->text('record-not-found'), 404);
             }
-            $values += current($role_result);
+            $values += \current($role_result);
             
-            $template_path = dirname(__FILE__) . '/rbac-view-role-modal.html';
-            if (!file_exists($template_path)) {
+            $template_path = \dirname(__FILE__) . '/rbac-view-role-modal.html';
+            if (!\file_exists($template_path)) {
                 throw new \Exception("$template_path file not found!", 500);
             }
             $this->twigDashboard($template_path, $values)->render();
@@ -192,12 +192,12 @@ class RBACController extends DashboardController
                 $this->respondJSON([
                     'status' => 'success',
                     'message' => $this->text('record-insert-success'),
-                    'href' => $this->generateLink('rbac-alias') . '?alias=' . urlencode($alias) . '&title=' . urlencode($title)
+                    'href' => $this->generateLink('rbac-alias') . '?alias=' . \urlencode($alias) . '&title=' . \urlencode($title)
                 ]);
                 
                 $this->indolog('rbac', LogLevel::INFO, 'RBAC зөвшөөрөл шинээр нэмэх үйлдлийг амжилттай гүйцэтгэлээ', $context);
             } else {
-                $this->twigTemplate(dirname(__FILE__) . '/rbac-insert-permission-modal.html', ['alias' => $alias, 'title' => $title])->render();
+                $this->twigTemplate(\dirname(__FILE__) . '/rbac-insert-permission-modal.html', ['alias' => $alias, 'title' => $title])->render();
                 
                 $this->indolog('rbac', LogLevel::NOTICE, 'RBAC зөвшөөрөл шинээр нэмэх үйлдлийг амжилттай эхлүүллээ', $context);
             }
@@ -225,7 +225,7 @@ class RBACController extends DashboardController
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
             
-            $payload = $this->getParsedBody();        
+            $payload = $this->getParsedBody();
             if (empty($alias)
                 || empty($payload['role_id'])
                 || empty($payload['permission_id'])
@@ -248,9 +248,9 @@ class RBACController extends DashboardController
                     return $this->respondJSON(['type' => 'success', 'title' => $this->text('success'), 'message' => $this->text('record-insert-success')]);
                 }
             } else {
-                $id = reset($result)['id'] ?? null;
+                $id = \reset($result)['id'] ?? null;
                 if (!empty($id)
-                    && filter_var($id, \FILTER_VALIDATE_INT) !== false
+                    && \filter_var($id, \FILTER_VALIDATE_INT) !== false
                 ) {
                     $response = $this->indodelete('/record?model=' . RolePermission::class, ['WHERE' => "id=$id"]);
                     return $this->respondJSON(['type' => 'primary', 'message' => $this->text('record-successfully-deleted')]);
@@ -280,12 +280,12 @@ class RBACController extends DashboardController
             $context['account'] = $account;
             
             if ($is_submit) {
-                $post_roles = filter_var($this->getParsedBody()['roles'] ?? [], \FILTER_VALIDATE_INT, \FILTER_REQUIRE_ARRAY);
+                $post_roles = \filter_var($this->getParsedBody()['roles'] ?? [], \FILTER_VALIDATE_INT, \FILTER_REQUIRE_ARRAY);
                 $roles = [];
                 foreach ($post_roles as $role) {
                     $roles[$role] = true;
                 }
-                if ((empty($roles) || !array_key_exists(1, $roles)) && $id == 1) {
+                if ((empty($roles) || !\array_key_exists(1, $roles)) && $id == 1) {
                     throw new \Exception('Default user must have a role', 403);
                 }
 
@@ -310,7 +310,7 @@ class RBACController extends DashboardController
                     }
                 }
                 
-                foreach (array_keys($roles) as $role_id) {
+                foreach (\array_keys($roles) as $role_id) {
                     if ($role_id == 1 && (
                         !$this->getUser()->is('system_coder') || $this->getUser()->getAccount()['id'] != 1)
                     ) {
@@ -350,10 +350,10 @@ class RBACController extends DashboardController
                 }
                 $vars['rbacs'] = $rbacs;
 
-                $roles = array_map(function() { return []; }, array_flip(array_keys($rbacs)));
+                $roles = \array_map(function() { return []; }, \array_flip(\array_keys($rbacs)));
                 $roles_query = 'SELECT id,alias,name,description FROM rbac_roles WHERE is_active=1';
                 $roles_result = $this->indo('/statement', ['query' => $roles_query]);
-                array_walk($roles_result, function($value) use (&$roles) {
+                \array_walk($roles_result, function($value) use (&$roles) {
                     if (!isset($roles[$value['alias']])) {
                         $roles[$value['alias']] = [];
                     }
@@ -373,10 +373,10 @@ class RBACController extends DashboardController
                 foreach ($current_roles as $row) {
                     $current_role[] = $row['role_id'];
                 }
-                $vars['current_role'] = implode(',', $current_role);
+                $vars['current_role'] = \implode(',', $current_role);
                 
-                $template_path = dirname(__FILE__) . '/rbac-set-user-role-modal.html';
-                if (!file_exists($template_path)) {
+                $template_path = \dirname(__FILE__) . '/rbac-set-user-role-modal.html';
+                if (!\file_exists($template_path)) {
                     throw new \Exception("$template_path file not found!", 500);
                 }
                 $this->twigTemplate($template_path, $vars)->render();

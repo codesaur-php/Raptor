@@ -33,7 +33,7 @@ class OrganizationController extends DashboardController
             return;
         }
         
-        $this->twigDashboard(dirname(__FILE__) . '/organization-index.html')->render();        
+        $this->twigDashboard(\dirname(__FILE__) . '/organization-index.html')->render();
         
         $this->indolog('organization', LogLevel::NOTICE, 'Байгууллагуудын жагсаалтыг нээж үзэж байна', ['model' => OrganizationModel::class]);
     }
@@ -60,13 +60,13 @@ class OrganizationController extends DashboardController
                     $row[] = '<img class="img-fluid img-thumbnail" src="' . $record['logo'] . '"  style="max-width:150px;max-height:60px">';
                 }
                 
-                $row[] = htmlentities($record['name']);
+                $row[] = \htmlentities($record['name']);
                 
                 if ($this->getUser()->can('system_rbac')) {
-                    $rbac_query = 'alias=' . urlencode($record['alias']) . '&title=' . urlencode($record['name']);
-                    $row[] = '<a href="' . $rbac_link . '?' . $rbac_query . '">' . htmlentities($record['alias']) . '</a>';
+                    $rbac_query = 'alias=' . \urlencode($record['alias']) . '&title=' . \urlencode($record['name']);
+                    $row[] = '<a href="' . $rbac_link . '?' . $rbac_query . '">' . \htmlentities($record['alias']) . '</a>';
                 } else {
-                    $row[] = htmlentities($record['alias']);
+                    $row[] = \htmlentities($record['alias']);
                 }
 
                 $action = '<a class="ajax-modal btn btn-sm btn-info shadow-sm" data-bs-target="#dashboard-modal" data-bs-toggle="modal" ' .
@@ -86,7 +86,7 @@ class OrganizationController extends DashboardController
         } catch (\Throwable $th) {
             $this->errorLog($th);
         } finally {
-            $count = count($rows);
+            $count = \count($rows);
             $this->respondJSON([
                 'data' => $rows,
                 'recordsTotal' => $count,
@@ -116,9 +116,9 @@ class OrganizationController extends DashboardController
                 
                 $record = [
                     'name' => $parsedBody['org_name'],
-                    'alias' => preg_replace('/[^A-Za-z0-9_-]/', '', $parsedBody['org_alias'])
+                    'alias' => \preg_replace('/[^A-Za-z0-9_-]/', '', $parsedBody['org_alias'])
                 ];
-                $parent_id = filter_var($parsedBody['org_parent_id'] ?? 0, \FILTER_VALIDATE_INT);
+                $parent_id = \filter_var($parsedBody['org_parent_id'] ?? 0, \FILTER_VALIDATE_INT);
                 if ($parent_id !== false && $parent_id > 0) {
                     $record['parent_id'] = $parent_id;
                 }
@@ -150,8 +150,8 @@ class OrganizationController extends DashboardController
                 $level = LogLevel::INFO;
                 $message = "Байгууллага [{$record['name']}] үүсгэх үйлдлийг амжилттай гүйцэтгэлээ";
             } else {
-                $template_path = dirname(__FILE__) . '/organization-insert-modal.html';
-                if (!file_exists($template_path)) {
+                $template_path = \dirname(__FILE__) . '/organization-insert-modal.html';
+                if (!\file_exists($template_path)) {
                     throw new \Exception("$template_path file not found!", 500);
                 }
                 $this->twigTemplate($template_path, ['parents' => $this->getParents()])->render();
@@ -195,8 +195,8 @@ class OrganizationController extends DashboardController
                 $record['parent_name'] = $this->indosafe('/record?model=' . OrganizationModel::class, ['id' => $record['parent_id']])['name'] ?? '- no parent because its deleted -';
             }
             
-            $template_path = dirname(__FILE__) . '/organization-retrieve-modal.html';
-            if (!file_exists($template_path)) {
+            $template_path = \dirname(__FILE__) . '/organization-retrieve-modal.html';
+            if (!\file_exists($template_path)) {
                 throw new \Exception("$template_path file not found!", 500);
             }
             $this->twigTemplate($template_path, ['record' => $record, 'accounts' => $this->getAccounts()])->render();
@@ -234,11 +234,11 @@ class OrganizationController extends DashboardController
                 
                 $record = [
                     'name' => $payload['org_name'],
-                    'alias' => preg_replace('/[^A-Za-z0-9_-]/', '', $payload['org_alias'])
+                    'alias' => \preg_replace('/[^A-Za-z0-9_-]/', '', $payload['org_alias'])
                 ];
                 
                 if (isset($payload['org_parent_id'])) {
-                    $parent_id = filter_var($payload['org_parent_id'], \FILTER_VALIDATE_INT);
+                    $parent_id = \filter_var($payload['org_parent_id'], \FILTER_VALIDATE_INT);
                     if ($parent_id !== false && $parent_id >= 0) {
                         $record['parent_id'] = $parent_id;
                     }
@@ -248,7 +248,7 @@ class OrganizationController extends DashboardController
                 $context['record']['id'] = $id;
                 
                 $existing = $this->indosafe('/record?model=' . OrganizationModel::class, ['id' => $id, 'is_active' => 1]);
-                $old_logo_file = basename($existing['logo'] ?? '');
+                $old_logo_file = \basename($existing['logo'] ?? '');
                 $file = new FileController($this->getRequest());
                 $file->init("/organizations/$id");
                 $file->allowType(3);
@@ -258,10 +258,10 @@ class OrganizationController extends DashboardController
                 }
                 if (!empty($old_logo_file)) {
                     if ($file->getLastError() == -1) {
-                        $this->tryDeleteFile(dirname($_SERVER['SCRIPT_FILENAME']) . "/public/organizations/$id/$old_logo_file");
+                        $this->tryDeleteFile(\dirname($_SERVER['SCRIPT_FILENAME']) . "/public/organizations/$id/$old_logo_file");
                         $record['logo'] = '';
                     } elseif (isset($logo['name']) && $logo['name'] != $old_logo_file) {
-                        $this->tryDeleteFile(dirname($_SERVER['SCRIPT_FILENAME']) . "/public/organizations/$id/$old_logo_file");
+                        $this->tryDeleteFile(\dirname($_SERVER['SCRIPT_FILENAME']) . "/public/organizations/$id/$old_logo_file");
                     }
                 }
                 if (isset($record['logo'])) {
@@ -283,8 +283,8 @@ class OrganizationController extends DashboardController
             } else {
                 $record = $this->indoget('/record?model=' . OrganizationModel::class, ['id' => $id]);
                 
-                $template_path = dirname(__FILE__) . '/organization-update-modal.html';
-                if (!file_exists($template_path)) {
+                $template_path = \dirname(__FILE__) . '/organization-update-modal.html';
+                if (!\file_exists($template_path)) {
                     throw new \Exception("$template_path file not found!", 500);
                 }
                 $this->twigTemplate($template_path, ['record' => $record, 'parents' => $this->getParents()])->render();
@@ -320,13 +320,13 @@ class OrganizationController extends DashboardController
             $payload = $this->getParsedBody();
             if (empty($payload['id'])
                 || !isset($payload['name'])
-                || !filter_var($payload['id'], \FILTER_VALIDATE_INT)
+                || !\filter_var($payload['id'], \FILTER_VALIDATE_INT)
             ) {
                 throw new \Exception($this->text('invalid-request'), 400);
             }
             $context['payload'] = $payload;
             
-            $id = filter_var($payload['id'], \FILTER_VALIDATE_INT);
+            $id = \filter_var($payload['id'], \FILTER_VALIDATE_INT);
 
             if ($this->getUser()->getOrganization()['id'] == $id) {
                 throw new \Exception('Cannot remove currently active organization!', 403);

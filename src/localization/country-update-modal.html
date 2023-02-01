@@ -11,7 +11,7 @@
                     <div class="col-9">
                         <input class="form-control" name="id" readonly value="{{ record['id']|e }}" maxlength="19" placeholder="" type="text" autocomplete="off">
                     </div>
-                </div>                
+                </div>
                 <div class="row mb-2">
                     <label class="col-3 col-form-label text-end">{{ 'flag'|text }}</label>
                     <div class="col-9">
@@ -22,7 +22,7 @@
                 <div class="row mb-2">
                     <label class="col-3 col-form-label text-end">{{ 'name'|text }} ({{ lang }} <img style="position:relative;top:-1px" src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.3/flags/{{ code }}.png">)</label>
                     <div class="col-9">
-                        <input class="form-control" name="title[{{ code }}]" required value="{{ record['content']['title'][code]|e }}" maxlength="255" placeholder="" type="text" autocomplete="off">                        
+                        <input class="form-control" name="title[{{ code }}]" required value="{{ record['content']['title'][code]|e }}" maxlength="255" placeholder="" type="text" autocomplete="off">
                         <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
                     </div>
                 </div>

@@ -15,15 +15,15 @@ class LocalizationMiddleware implements MiddlewareInterface
     private function request(?IndoApplication $indo, string $method, string $pattern, $payload = [])
     {
         try {
-            if (ob_start()) {
+            if (\ob_start()) {
                 $indo?->handle(new InternalRequest($method, $pattern, $payload));
-                $response = json_decode(ob_get_contents(), true)
+                $response = \json_decode(\ob_get_contents(), true)
                     ?? throw new \Exception(__CLASS__ . ': Error decoding Indoraptor response!');
-                ob_end_clean();
+                \ob_end_clean();
             }
         } catch (\Throwable $th) {
-            if (ob_get_level()) {
-                ob_end_clean();
+            if (\ob_get_level()) {
+                \ob_end_clean();
             }
             
             $response = ['error' => ['code' => $th->getCode(), 'message' => $th->getMessage()]];
@@ -46,7 +46,7 @@ class LocalizationMiddleware implements MiddlewareInterface
             if (defined('CODESAUR_DEVELOPMENT')
                     && CODESAUR_DEVELOPMENT
             ) {
-                error_log($th->getMessage());
+                \error_log($th->getMessage());
             }
             return ['en' => 'English'];
         }
@@ -55,30 +55,30 @@ class LocalizationMiddleware implements MiddlewareInterface
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
         $language = $this->retrieveLanguage($request);
-        $sess_lang_key = explode('\\', __NAMESPACE__)[0] . '\\language\\code';
+        $sess_lang_key = \explode('\\', __NAMESPACE__)[0] . '\\language\\code';
         if (isset($_SESSION[$sess_lang_key])
             && isset($language[$_SESSION[$sess_lang_key]])
         ) {
             $code = $_SESSION[$sess_lang_key];
         } else {
-            $code = key($language);
+            $code = \key($language);
         }
         
         $text = [];
-        try {            
+        try {
             $this->tryCreateDashboardTexts($request->getAttribute('indo'));
             
             $translations = $this->request(
                 $request->getAttribute('indo'), 'POST', '/text/retrieve',
                 ['code' => $code, 'table' => ['dashboard', 'default', 'user']]);
-            foreach ($translations as $translation) {   
+            foreach ($translations as $translation) {
                 $text += $translation;
             }
         } catch (\Throwable $th) {
             if (defined('CODESAUR_DEVELOPMENT')
                     && CODESAUR_DEVELOPMENT
             ) {
-                error_log($th->getMessage());
+                \error_log($th->getMessage());
             }
         }
         return $handler->handle($request->withAttribute('localization',

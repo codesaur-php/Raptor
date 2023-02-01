@@ -60,7 +60,7 @@
                 <img class="img-fluid" src="{{ meta['content']['logo'][languageCode] }}">
             </div>
             {% endif %}
-            <form id="login_form" action="{{ 'entry'|link }}" method="POST">                
+            <form id="login_form" action="{{ 'entry'|link }}" method="POST">
                 <div class="form-floating mb-3">
                     <input class="form-control" autofocus required type="text" name="username" id="username" autocomplete="on" placeholder="{{ 'user'|text|e }}">
                     <label>{{ 'user'|text }}</label>
@@ -364,7 +364,7 @@
                     <div class="modal-header modal-header-solid">
                         <h5 class="modal-title text-primary text-uppercase">{{ tos['title'][languageCode] }}</h5>
                         <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="{{ 'close'|text|e }}"></button>
-                    </div>            
+                    </div>
                     <div class="modal-body">
                         <div style="height:400px;overflow-y:auto;overflow-x:hidden;">
                             {{ tos['full'][languageCode] }}
@@ -372,17 +372,17 @@
                     </div>
                     <div class="modal-footer modal-footer-solid">
                          <button class="btn btn-primary shadow-sm" data-bs-dismiss="modal">{{ 'close'|text }}</button>
-                    </div>            
+                    </div>
                 </div>
             </div>
         </div>
         <div class="modal fade" id="pp" role="dialog" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-lg" role="document">
-                <div class="modal-content">            
+                <div class="modal-content">
                     <div class="modal-header modal-header-solid">
                         <h5 class="modal-title text-primary text-uppercase">{{ pp['title'][languageCode] }}</h5>
                         <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="{{ 'close'|text|e }}"></button>
-                    </div>            
+                    </div>
                     <div class="modal-body">
                         <div style="height:400px;overflow-y:auto;overflow-x:hidden;">
                         {{ pp['full'][languageCode] }}

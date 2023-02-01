@@ -68,7 +68,7 @@
         };
     } (jQuery));
     
-    $('#roles').Select2Roles();    
+    $('#roles').Select2Roles();
     {% if current_role is defined and current_role is not empty %}
     $('#roles').val([{{ current_role }}]);
     $('#roles').trigger('change');

@@ -52,7 +52,7 @@ class AccountController extends DashboardController
                 'FROM indo_organization_users as t1 JOIN indo_organizations as t2 ON t1.organization_id=t2.id ' .
                 'WHERE t1.is_active=1 AND t2.is_active=1';
             $org_users = $this->indo('/statement', ['query' => $org_users_query]);
-            array_walk($org_users, function($value) use (&$accounts) {
+            \array_walk($org_users, function($value) use (&$accounts) {
                 if (isset($accounts[$value['account_id']])) {
                     if (!isset($accounts[$value['account_id']]['organizations'])) {
                         $accounts[$value['account_id']]['organizations'] = [];
@@ -65,7 +65,7 @@ class AccountController extends DashboardController
                 'SELECT t1.role_id, t1.user_id, t2.name, t2.alias ' . 
                 'FROM rbac_user_role as t1 JOIN rbac_roles as t2 ON t1.role_id=t2.id WHERE t1.is_active=1';
             $user_role = $this->indo('/statement', ['query' => $user_role_query]);
-            array_walk($user_role, function($value) use (&$accounts) {
+            \array_walk($user_role, function($value) use (&$accounts) {
                 if (isset($accounts[$value['user_id']])) {
                     if (!isset($accounts[$value['user_id']]['roles'])) {
                         $accounts[$value['user_id']]['roles'] = [];
@@ -74,7 +74,7 @@ class AccountController extends DashboardController
                 }
             });
             
-            $this->twigDashboard(dirname(__FILE__) . '/account-index.html',
+            $this->twigDashboard(\dirname(__FILE__) . '/account-index.html',
                 ['accounts' => $accounts, 'status' => $this->getStatusValues(), 'organizations' => $organizations])->render();
             
             $level = LogLevel::NOTICE;
@@ -102,7 +102,7 @@ class AccountController extends DashboardController
             if ($this->getRequest()->getMethod() == 'POST') {
                 $parsedBody = $this->getParsedBody();
                 if (empty($parsedBody['username']) || empty($parsedBody['email'])
-                    || filter_var($parsedBody['email'], \FILTER_VALIDATE_EMAIL) === false
+                    || \filter_var($parsedBody['email'], \FILTER_VALIDATE_EMAIL) === false
                 ) {
                     throw new \Exception($this->text('invalid-request'), 400);
                 }
@@ -112,24 +112,24 @@ class AccountController extends DashboardController
                     'first_name' => $parsedBody['first_name'] ?? null,
                     'last_name' => $parsedBody['last_name'] ?? null,
                     'phone' => $parsedBody['phone'] ?? null,
-                    'email' => filter_var($parsedBody['email'], \FILTER_VALIDATE_EMAIL)
+                    'email' => \filter_var($parsedBody['email'], \FILTER_VALIDATE_EMAIL)
                 ];
                 if (empty($parsedBody['password'])) {
-                    $bytes = random_bytes(10);
-                    $password = bin2hex($bytes);
+                    $bytes = \random_bytes(10);
+                    $password = \bin2hex($bytes);
                 } else {
                     $password = $parsedBody['password'];
                 }
-                $record['password'] = password_hash($password, \PASSWORD_BCRYPT);
+                $record['password'] = \password_hash($password, \PASSWORD_BCRYPT);
                 
                 $pattern = '/record?model=' . Accounts::class;
                 
                 $status = $parsedBody['status'] ?? 'off';
-                $record['status'] = $status != 'on' ? 0 : 1;                
+                $record['status'] = $status != 'on' ? 0 : 1;
                 $id = $this->indopost($pattern, $record);
                 
                 if (!empty($parsedBody['organization'] ?? null)) {
-                    $organization = filter_var($parsedBody['organization'], \FILTER_VALIDATE_INT);
+                    $organization = \filter_var($parsedBody['organization'], \FILTER_VALIDATE_INT);
                     if ($organization !== false) {
                         $org_exists = $this->indosafe('/record?model=' . OrganizationModel::class, ['id' => $organization]);
                         if (!empty($org_exists)) {
@@ -152,7 +152,7 @@ class AccountController extends DashboardController
                         'record' => ['photo' => $photo_path],
                         'condition' => ['WHERE' => "id=$id"]
                     ];
-                    $this->indoput($pattern, $payload);                    
+                    $this->indoput($pattern, $payload);
                     $context += ['photo' => $photo_path];
                 }
                 
@@ -167,7 +167,7 @@ class AccountController extends DashboardController
                 $message = 'Хэрэглэгч үүсгэх үйлдлийг амжилттай гүйцэтгэлээ';
             } else {
                 $organizations = $this->indoget('/records?model=' . OrganizationModel::class);
-                $this->twigDashboard(dirname(__FILE__) . '/account-insert.html', ['organizations' => $organizations])->render();
+                $this->twigDashboard(\dirname(__FILE__) . '/account-insert.html', ['organizations' => $organizations])->render();
                 
                 $level = LogLevel::NOTICE;
                 $message = 'Хэрэглэгч үүсгэх үйлдлийг эхлүүллээ';
@@ -206,8 +206,8 @@ class AccountController extends DashboardController
             if ($this->getRequest()->getMethod() == 'PUT') {
                 $parsedBody = $this->getParsedBody();
                 if (empty($parsedBody['username']) || empty($parsedBody['email'])
-                    || filter_var($parsedBody['email'], \FILTER_VALIDATE_EMAIL) === false
-                ) { 
+                    || \filter_var($parsedBody['email'], \FILTER_VALIDATE_EMAIL) === false
+                ) {
                     throw new \Exception($this->text('invalid-request'), 400);
                 }
 
@@ -216,10 +216,10 @@ class AccountController extends DashboardController
                     'first_name' => $parsedBody['first_name'] ?? null,
                     'last_name' => $parsedBody['last_name'] ?? null,
                     'phone' => $parsedBody['phone'] ?? null,
-                    'email' => filter_var($parsedBody['email'], \FILTER_VALIDATE_EMAIL)
+                    'email' => \filter_var($parsedBody['email'], \FILTER_VALIDATE_EMAIL)
                 ];
                 if (!empty($parsedBody['password'])) {
-                    $record['password'] = password_hash($parsedBody['password'], \PASSWORD_BCRYPT);
+                    $record['password'] = \password_hash($parsedBody['password'], \PASSWORD_BCRYPT);
                 }
                 
                 $status = $parsedBody['status'] ?? 'off';
@@ -243,7 +243,7 @@ class AccountController extends DashboardController
                 }
                 
                 $existing = $this->indosafe($pattern, ['id' => $id]);
-                $old_photo_file = basename($existing['photo'] ?? '');
+                $old_photo_file = \basename($existing['photo'] ?? '');
                 $file = new PrivateFileController($this->getRequest());
                 $file->init("/accounts/$id");
                 $file->allowType(3);
@@ -253,10 +253,10 @@ class AccountController extends DashboardController
                 }
                 if (!empty($old_photo_file)) {
                     if ($file->getLastError() == -1) {
-                        $this->tryDeleteFile(dirname($_SERVER['SCRIPT_FILENAME']) . "/../private/accounts/$id/$old_photo_file");
+                        $this->tryDeleteFile(\dirname($_SERVER['SCRIPT_FILENAME']) . "/../private/accounts/$id/$old_photo_file");
                         $record['photo'] = '';
                     } elseif (isset($photo['name']) && $photo['name'] != $old_photo_file) {
-                        $this->tryDeleteFile(dirname($_SERVER['SCRIPT_FILENAME']) . "/../private/accounts/$id/$old_photo_file");
+                        $this->tryDeleteFile(\dirname($_SERVER['SCRIPT_FILENAME']) . "/../private/accounts/$id/$old_photo_file");
                     }
                 }
                 if (isset($record['photo'])) {
@@ -273,7 +273,7 @@ class AccountController extends DashboardController
                 ]);
                 
                 $organizations = [];
-                $post_organizations = filter_var($parsedBody['organizations'] ?? [], \FILTER_VALIDATE_INT, \FILTER_REQUIRE_ARRAY);
+                $post_organizations = \filter_var($parsedBody['organizations'] ?? [], \FILTER_VALIDATE_INT, \FILTER_REQUIRE_ARRAY);
                 foreach ($post_organizations as $org_id) {
                     $organizations[$org_id] = true;
                 }
@@ -301,7 +301,7 @@ class AccountController extends DashboardController
                         }
                     }
 
-                    foreach (array_keys($organizations) as $org_id) {
+                    foreach (\array_keys($organizations) as $org_id) {
                         $this->indopost(
                             '/record?model=' . OrganizationUserModel::class,
                             ['account_id' => $id, 'organization_id' => $org_id]
@@ -316,7 +316,7 @@ class AccountController extends DashboardController
                 }
                 
                 if ($this->isUserCan('system_rbac')) {
-                    $post_roles = filter_var($parsedBody['roles'] ?? [], \FILTER_VALIDATE_INT, \FILTER_REQUIRE_ARRAY);
+                    $post_roles = \filter_var($parsedBody['roles'] ?? [], \FILTER_VALIDATE_INT, \FILTER_REQUIRE_ARRAY);
                     $roles = [];
                     foreach ($post_roles as $role) {
                         $roles[$role] = true;
@@ -344,7 +344,7 @@ class AccountController extends DashboardController
                         }
                     }
                     
-                    foreach (array_keys($roles) as $role_id) {
+                    foreach (\array_keys($roles) as $role_id) {
                         if ($role_id == 1 && (
                             !$this->getUser()->is('system_coder') || $this->getUser()->getAccount()['id'] != 1)
                         ) {
@@ -380,7 +380,7 @@ class AccountController extends DashboardController
                 foreach ($org_ids as $org) {
                     $ids[] = $org['id'];
                 }
-                $vars['current_organizations'] = implode(',', $ids);
+                $vars['current_organizations'] = \implode(',', $ids);
                 
                 $rbacs = ['common' => 'Common'];
                 $alias_names = $this->indo('/statement', [
@@ -395,11 +395,11 @@ class AccountController extends DashboardController
                 }
                 $vars['rbacs'] = $rbacs;
 
-                $roles = array_map(function() { return []; }, array_flip(array_keys($rbacs)));
+                $roles = \array_map(function() { return []; }, \array_flip(\array_keys($rbacs)));
                 $rbac_roles = $this->indo('/statement', [
                     'query' => 'SELECT id,alias,name,description FROM rbac_roles WHERE is_active=1'
                 ]);
-                array_walk($rbac_roles, function($value) use (&$roles) {
+                \array_walk($rbac_roles, function($value) use (&$roles) {
                     if (!isset($roles[$value['alias']])) {
                         $roles[$value['alias']] = [];
                     }
@@ -419,9 +419,9 @@ class AccountController extends DashboardController
                 foreach ($current_roles as $row) {
                     $current_role[] = $row['role_id'];
                 }
-                $vars['current_role'] = implode(',', $current_role);
+                $vars['current_role'] = \implode(',', $current_role);
                 
-                $this->twigDashboard(dirname(__FILE__) . '/account-update.html', $vars)->render();
+                $this->twigDashboard(\dirname(__FILE__) . '/account-update.html', $vars)->render();
                 
                 $level = LogLevel::NOTICE;
                 $context += [
@@ -470,7 +470,7 @@ class AccountController extends DashboardController
                 "WHERE t1.is_active=1 AND t1.user_id=$id";
             $user_roles = $this->indo('/statement', ['query' => $user_role_query]);
             
-            $this->twigDashboard(dirname(__FILE__) . '/account-view.html', [
+            $this->twigDashboard(\dirname(__FILE__) . '/account-view.html', [
                 'record' => $record, 'roles' => $user_roles, 'organizations' => $organizations, 'accounts' => $this->getAccounts()
             ])->render();
 
@@ -499,12 +499,12 @@ class AccountController extends DashboardController
             $context = ['payload' => $payload];
             if (empty($payload['id'])
                 || !isset($payload['name'])
-                || !filter_var($payload['id'], \FILTER_VALIDATE_INT)
+                || !\filter_var($payload['id'], \FILTER_VALIDATE_INT)
             ) {
                 throw new \Exception($this->text('invalid-request'), 400);
             }
             
-            $id = filter_var($payload['id'], \FILTER_VALIDATE_INT);
+            $id = \filter_var($payload['id'], \FILTER_VALIDATE_INT);
             
             if ($this->getUser()->getAccount()['id'] == $id) {
                 throw new \Exception('Cannot suicide myself :(', 403);
@@ -544,12 +544,12 @@ class AccountController extends DashboardController
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
 
-            if (!in_array($table, ['forgot', 'newbie'])) {
+            if (!\in_array($table, ['forgot', 'newbie'])) {
                 throw new \Exception($this->text('invalid-request'), 400);
             }
             
-            $modal = dirname(__FILE__) . "/$table-index-modal.html";
-            if (!file_exists($modal)) {
+            $modal = \dirname(__FILE__) . "/$table-index-modal.html";
+            if (!\file_exists($modal)) {
                 throw new \Exception("$modal file not found!", 500);
             }
 
@@ -599,7 +599,7 @@ class AccountController extends DashboardController
             $parsedBody = $this->getParsedBody();
             $id = $parsedBody['id'] ?? null;
             if (empty($id)
-                || !filter_var($id, \FILTER_VALIDATE_INT)
+                || !\filter_var($id, \FILTER_VALIDATE_INT)
             ) {
                 throw new \Exception($this->text('invalid-request'), 400);
             }
@@ -632,9 +632,9 @@ class AccountController extends DashboardController
                 'condition' => ['WHERE' => "id=$id"],
                 'record' => ['is_active' => 0, 'status' => 2, 'rbac_account_id' => $account_id]
             ];
-            $this->indoput('/record?model=' . AccountRequestsModel::class, $payload);            
+            $this->indoput('/record?model=' . AccountRequestsModel::class, $payload);
             
-            $organization_id = filter_var($parsedBody['organization_id'] ?? 0, \FILTER_VALIDATE_INT);
+            $organization_id = \filter_var($parsedBody['organization_id'] ?? 0, \FILTER_VALIDATE_INT);
             if (!$organization_id) {
                 $organization_id = 1;
             }
@@ -646,7 +646,7 @@ class AccountController extends DashboardController
                 $context += ['organization' => $organization_id];
             }
             
-            $code = preg_replace('/[^a-z]/', '', $this->getLanguageCode());
+            $code = \preg_replace('/[^a-z]/', '', $this->getLanguageCode());
             $reference = $this->indosafe('/reference/templates',
                 ['WHERE' => "c.code='$code' AND p.keyword='approve-new-account' AND p.is_active=1"]
             );
@@ -702,7 +702,7 @@ class AccountController extends DashboardController
             $payload = $this->getParsedBody();
             if (empty($payload['id'])
                 || !isset($payload['name'])
-                || !filter_var($payload['id'], \FILTER_VALIDATE_INT)
+                || !\filter_var($payload['id'], \FILTER_VALIDATE_INT)
             ) {
                 throw new \Exception($this->text('invalid-request'), 400);
             }

@@ -36,29 +36,29 @@ class ReferencesController extends DashboardController
         $reference_likes = $this->indosafe('/statement', ['query' => "SHOW TABLES LIKE 'reference_%'"]);
         $names = [];
         foreach ($reference_likes as $name) {
-            $names[] = reset($name);
+            $names[] = \reset($name);
         }
         $references = [];
         foreach ($names as $name) {
-            if (in_array($name . '_content', $names)) {
-                $references[] = substr($name, strlen('reference_'));
+            if (\in_array($name . '_content', $names)) {
+                $references[] = \substr($name, \strlen('reference_'));
             }
         }
-        $initials = get_class_methods(ReferenceInitial::class);
+        $initials = \get_class_methods(ReferenceInitial::class);
         foreach ($initials as $value) {
-            $initial = substr($value, strlen('reference_'));
-            if (!in_array($initial, $references)) {
+            $initial = \substr($value, \strlen('reference_'));
+            if (!\in_array($initial, $references)) {
                 $references[] = $initial;
             }
         }
         $tables = ['templates'];
         foreach ($references as $reference) {
-            if (!in_array($reference, $tables)) {
+            if (!\in_array($reference, $tables)) {
                 $tables[] = $reference;
             }
         }
         
-        $this->twigDashboard(dirname(__FILE__) . '/references-index.html', [
+        $this->twigDashboard(\dirname(__FILE__) . '/references-index.html', [
             'tables' => $tables, 'language' => $this->getAttribute('localization')['language'] ?? []
         ])->render();
         
@@ -80,11 +80,11 @@ class ReferencesController extends DashboardController
                 $id = $record['id'];
                 $row = [$id];
                 
-                $row[] = htmlentities($record['keyword']);
-                foreach (array_keys($language) as $code) {
-                    $row[] = htmlentities($record['content']['title'][$code]);
+                $row[] = \htmlentities($record['keyword']);
+                foreach (\array_keys($language) as $code) {
+                    $row[] = \htmlentities($record['content']['title'][$code]);
                 }
-                $row[] = htmlentities($record['category']);
+                $row[] = \htmlentities($record['category']);
                 
                 $action = '';
                 if ($this->getUser()->can('system_content_index')) {
@@ -111,7 +111,7 @@ class ReferencesController extends DashboardController
         } catch (\Throwable $th) {
             $this->errorLog($th);
         } finally {
-            $count = count($rows);
+            $count = \count($rows);
             $this->respondJSON([
                 'data' => $rows,
                 'recordsTotal' => $count,
@@ -157,7 +157,7 @@ class ReferencesController extends DashboardController
                 $content = [];
                 $payload = $this->getParsedBody();
                 foreach ($payload as $index => $value) {
-                    if (is_array($value)) {
+                    if (\is_array($value)) {
                         foreach ($value as $key => $value) {
                             $content[$key][$index] = $value;
                         }
@@ -186,8 +186,8 @@ class ReferencesController extends DashboardController
                 $level = LogLevel::INFO;
                 $message = "Шинээр [{$payload['keyword']}] түлхүүртэй лавлах мэдээллийг [$table] хүснэгт дээр үүсгэх үйлдлийг амжилттай гүйцэтгэлээ";
             } else {
-                $template_path = dirname(__FILE__) . '/reference-insert.html';
-                if (!file_exists($template_path)) {
+                $template_path = \dirname(__FILE__) . '/reference-insert.html';
+                if (!\file_exists($template_path)) {
                     throw new \Exception("$template_path file not found!", 500);
                 }
                 $this->twigDashboard($template_path, [
@@ -224,14 +224,14 @@ class ReferencesController extends DashboardController
             }
             
             $records = $this->indoget("/reference/records/$table", ['WHERE' => "p.id=$id"]);
-            $record = reset($records);
+            $record = \reset($records);
             $context['record'] = $record;
             if (empty($record)) {
                 throw new \Exception($this->text('invalid-request'), 400);
             }
             
-            $template_path = dirname(__FILE__) . '/reference-view.html';
-            if (!file_exists($template_path)) {
+            $template_path = \dirname(__FILE__) . '/reference-view.html';
+            if (!\file_exists($template_path)) {
                 throw new \Exception("$template_path file not found!", 500);
             }
             $this->twigDashboard($template_path, [
@@ -270,7 +270,7 @@ class ReferencesController extends DashboardController
                 $content = [];
                 $payload = $this->getParsedBody();
                 foreach ($payload as $index => $value) {
-                    if (is_array($value)) {
+                    if (\is_array($value)) {
                         foreach ($value as $key => $value) {
                             $content[$key][$index] = $value;
                         }
@@ -298,14 +298,14 @@ class ReferencesController extends DashboardController
                 $message = "$table хүснэгтийн $id дугаартай [{$record['keyword']}] түлхүүртэй лавлах мэдээллийг шинэчлэх үйлдлийг амжилттай гүйцэтгэлээ";
             } else {
                 $records = $this->indoget("/reference/records/$table", ['WHERE' => "p.id=$id"]);
-                $record = reset($records);
+                $record = \reset($records);
                 if (empty($record)) {
                     throw new \Exception($this->text('invalid-request'), 400);
                 }
                 $context['record'] = $record;
                 
-                $template_path = dirname(__FILE__) . '/reference-update.html';
-                if (!file_exists($template_path)) {
+                $template_path = \dirname(__FILE__) . '/reference-update.html';
+                if (!\file_exists($template_path)) {
                     throw new \Exception("$template_path file not found!", 500);
                 }
                 $this->twigDashboard($template_path, [
@@ -347,13 +347,13 @@ class ReferencesController extends DashboardController
             if (empty($payload['id'])
                 || !isset($payload['name'])
                 || empty($payload['table'])
-                || !filter_var($payload['id'], \FILTER_VALIDATE_INT)
+                || !\filter_var($payload['id'], \FILTER_VALIDATE_INT)
             ) {
                 throw new \Exception($this->text('invalid-request'), 400);
             }
             
             $table = $payload['table'];
-            $id = filter_var($payload['id'], \FILTER_VALIDATE_INT);
+            $id = \filter_var($payload['id'], \FILTER_VALIDATE_INT);
             $this->indodelete("/reference/$table", ['WHERE' => "id=$id"]);
             
             $this->respondJSON([

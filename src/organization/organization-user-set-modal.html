@@ -40,7 +40,7 @@
         };
     } (jQuery));
     
-    $('#organizations').Select2Organizations();    
+    $('#organizations').Select2Organizations();
     {% if current_organizations is defined and current_organizations is not empty %}
     $('#organizations').val([{{ current_organizations }}]);
     $('#organizations').trigger('change');

@@ -90,13 +90,13 @@ function onDeleteClick(a, e) {
 
 document.addEventListener('DOMContentLoaded', function () {
 {% for table in tables %}
-    let {{ table }}Table = document.querySelector('table#content_{{ table }}');    
+    let {{ table }}Table = document.querySelector('table#content_{{ table }}');
     $({{ table }}Table).DataTable({
         ajax: {method: 'GET', url: "{{ 'reference-datatable'|link({'table':table}) }}"},
         lengthMenu: [[5, 10, 30, -1], [5, 10, 30, "{{ 'all'|text|e }}"]],
         responsive: true, bStateSave: true, pagingType: 'full_numbers', pageLength: 10, order: [[0, 'asc']]
         {% if localization.code == 'mn' %}, language: {url: 'https://cdn.datatables.net/plug-ins/1.11.3/i18n/mn.json'}{% endif %}
-    });    
+    });
     {{ table }}Table.onChildClick('.delete-reference', onDeleteClick);
     
 {% endfor %}

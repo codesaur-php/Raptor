@@ -12,12 +12,12 @@ class DashboardController extends \Raptor\Controller
 {
     public function home()
     {
-        $this->twigDashboard(dirname(__FILE__) . '/home.html')->render();
+        $this->twigDashboard(\dirname(__FILE__) . '/home.html')->render();
     }
     
     public function twigDashboard(string $template, array $vars = []): TwigTemplate
     {
-        $dashboard = $this->twigTemplate(dirname(__FILE__) . '/dashboard.html');
+        $dashboard = $this->twigTemplate(\dirname(__FILE__) . '/dashboard.html');
         $dashboard->set('meta', $this->getAttribute('meta'));
         $dashboard->set('sidemenu', $this->getAccountMenu());
         $dashboard->set('content', $this->twigTemplate($template, $vars));
@@ -26,35 +26,35 @@ class DashboardController extends \Raptor\Controller
     
     public function dashboardProhibited(?string $alert = null, ?int $code = null): TwigTemplate
     {
-        if (!empty($code) && !headers_sent()) {
+        if (!empty($code) && !\headers_sent()) {
             if ($code != StatusCodeInterface::STATUS_OK) {
                 $status_code = "STATUS_$code";
                 $reasonPhraseClass = ReasonPrhase::class;
-                if (defined("$reasonPhraseClass::$status_code")) {
-                    http_response_code($code);
+                if (\defined("$reasonPhraseClass::$status_code")) {
+                    \http_response_code($code);
                 }
             }
         }
         
         return $this->twigDashboard(
-            dirname(__FILE__) . '/alert-no-permission.html',
+            \dirname(__FILE__) . '/alert-no-permission.html',
             ['alert' => $alert ?? $this->text('system-no-permission')]);
     }
     
     public function modalProhibited(?string $alert = null, ?int $code = null): TwigTemplate
     {
-        if (!empty($code) && !headers_sent()) {
+        if (!empty($code) && !\headers_sent()) {
             if ($code != StatusCodeInterface::STATUS_OK) {
                 $status_code = "STATUS_$code";
                 $reasonPhraseClass = ReasonPrhase::class;
-                if (defined("$reasonPhraseClass::$status_code")) {
-                    http_response_code($code);
+                if (\defined("$reasonPhraseClass::$status_code")) {
+                    \http_response_code($code);
                 }
             }
         }
         
         return new TwigTemplate(
-            dirname(__FILE__) . '/modal-no-permission.html',
+            \dirname(__FILE__) . '/modal-no-permission.html',
             ['alert' => $alert ?? $this->text('system-no-permission'), 'close' => $this->text('close')]);
     }
     
@@ -75,7 +75,7 @@ class DashboardController extends \Raptor\Controller
         $has_menu_table = $this->indosafe('/statement', [
             'query' => "select exists(select 1 from raptor_account_menu)"
         ]);
-        if (empty($has_menu_table) || reset($has_menu_table[0]) == '0') {
+        if (empty($has_menu_table) || \reset($has_menu_table[0]) == '0') {
             $this->createDefaultMenu();
         }
 

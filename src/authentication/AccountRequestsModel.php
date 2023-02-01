@@ -33,7 +33,7 @@ class AccountRequestsModel extends Model
     {
         $this->setForeignKeyChecks(false);
         
-        $table = $this->getName();        
+        $table = $this->getName();
         $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_created_by FOREIGN KEY (created_by) REFERENCES rbac_accounts(id) ON DELETE SET NULL ON UPDATE CASCADE");
         $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_updated_by FOREIGN KEY (updated_by) REFERENCES rbac_accounts(id) ON DELETE SET NULL ON UPDATE CASCADE");
         $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_rbac_account_id FOREIGN KEY (rbac_account_id) REFERENCES rbac_accounts(id) ON DELETE CASCADE ON UPDATE CASCADE");

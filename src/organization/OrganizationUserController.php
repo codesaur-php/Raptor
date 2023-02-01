@@ -40,7 +40,7 @@ class OrganizationUserController extends DashboardController
                 'WHERE t1.is_active=1 AND t2.is_active=1 AND t1.account_id=' . $this->getUser()->getAccount()['id'];
             $organizations = $this->indo('/statement', ['query' => $user_orgs_query]);
 
-            $this->twigDashboard(dirname(__FILE__) . '/organization-user.html', ['organizations' => $organizations])->render();
+            $this->twigDashboard(\dirname(__FILE__) . '/organization-user.html', ['organizations' => $organizations])->render();
             
             $level = LogLevel::NOTICE;
             $message = 'Хэрэглэгч өөрийн байгууллагуудын жагсаалтыг нээж үзэж байна';
@@ -66,12 +66,12 @@ class OrganizationUserController extends DashboardController
             
             if ($is_submit) {
                 $organizations = [];
-                $post_organizations = filter_var($this->getParsedBody()['organizations'] ?? [], \FILTER_VALIDATE_INT, \FILTER_REQUIRE_ARRAY);
+                $post_organizations = \filter_var($this->getParsedBody()['organizations'] ?? [], \FILTER_VALIDATE_INT, \FILTER_REQUIRE_ARRAY);
                 foreach ($post_organizations as $id) {
                     $organizations[$id] = true;
                 }
                 if ($account_id == 1
-                    && (empty($organizations) || !array_key_exists(1, $organizations))
+                    && (empty($organizations) || !\array_key_exists(1, $organizations))
                 ) {
                     throw new \Exception('Default user must belong to an organization', 503);
                 }
@@ -92,7 +92,7 @@ class OrganizationUserController extends DashboardController
                     }
                 }
 
-                foreach (array_keys($organizations) as $id) {
+                foreach (\array_keys($organizations) as $id) {
                     $record_id = $this->indopost(
                         '/record?model=' . OrganizationUserModel::class,
                         ['account_id' => $account_id, 'organization_id' => $id]);
@@ -120,7 +120,7 @@ class OrganizationUserController extends DashboardController
                 foreach ($response as $org) {
                     $ids[] = $org['id'];
                 }
-                $current_organizations = implode(',', $ids);
+                $current_organizations = \implode(',', $ids);
 
                 $account = $this->indoget('/record?model=' . Accounts::class, ['id' => $account_id]);
                 $vars = [
@@ -129,8 +129,8 @@ class OrganizationUserController extends DashboardController
                     'organizations' => $this->indoget('/records?model=' . OrganizationModel::class),
                 ];
                 
-                $template_path = dirname(__FILE__) . '/organization-user-set-modal.html';
-                if (!file_exists($template_path)) {
+                $template_path = \dirname(__FILE__) . '/organization-user-set-modal.html';
+                if (!\file_exists($template_path)) {
                     throw new \Exception("$template_path file not found!", 500);
                 }
                 $this->twigTemplate($template_path, $vars)->render();

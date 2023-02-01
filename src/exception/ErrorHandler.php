@@ -11,9 +11,9 @@ class ErrorHandler implements ExceptionHandlerInterface
 {
     public function exception(\Throwable $throwable)
     {
-        $errorTemplate = dirname(__FILE__) . '/error.html';
-        if (!class_exists(FileTemplate::class)
-            || !file_exists($errorTemplate)
+        $errorTemplate = \dirname(__FILE__) . '/error.html';
+        if (!\class_exists(FileTemplate::class)
+            || !\file_exists($errorTemplate)
         ) {
             return (new Base())->exception($throwable);
         }
@@ -21,20 +21,20 @@ class ErrorHandler implements ExceptionHandlerInterface
         $message = $throwable->getMessage();
         $title = $throwable instanceof \Exception ? 'Exception' : 'Error';
         
-        if ($code !== 0) {
-            $title .= " $code";            
-            if (class_exists(ReasonPrhase::class)) {
+        if ($code != 0) {
+            $title .= " $code";
+            if (\class_exists(ReasonPrhase::class)) {
                 $status = "STATUS_$code";
                 $reasonPhrase = ReasonPrhase::class;
-                if (defined("$reasonPhrase::$status")
-                        && !headers_sent()
+                if (\defined("$reasonPhrase::$status")
+                        && !\headers_sent()
                 ) {
-                    http_response_code($code);
+                    \http_response_code($code);
                 }
             }
         }
         
-        error_log("$title: $message");
+        \error_log("$title: $message");
         
         $host = ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
                 || $_SERVER['SERVER_PORT'] == 443) ? 'https://' : 'http://';
@@ -46,14 +46,15 @@ class ErrorHandler implements ExceptionHandlerInterface
             'message' => "<h3 style=\"text-align:center;color:white\">$message</h3>"
         ];
         
-        if (defined('CODESAUR_DEVELOPMENT')
+        if (\defined('CODESAUR_DEVELOPMENT')
                 && CODESAUR_DEVELOPMENT
         ) {
             $vars['message'] .=
                 '<br/><pre style="color:white;height:300px;overflow-y:auto;overflow-x:hidden;">'
-                . json_encode($throwable->getTrace(), \JSON_PRETTY_PRINT) . '</pre>';
+                . \json_encode($throwable->getTrace(), \JSON_PRETTY_PRINT) . '</pre>';
         }
         
         (new FileTemplate($errorTemplate, $vars))->render();
     }
 }
+

@@ -33,7 +33,7 @@ class LanguageController extends DashboardController
             return;
         }
 
-        $this->twigDashboard(dirname(__FILE__) . '/languages-index.html')->render();
+        $this->twigDashboard(\dirname(__FILE__) . '/languages-index.html')->render();
         
         $this->indolog('localization', LogLevel::NOTICE, 'Хэлний жагсаалтыг нээж үзэж байна', ['model' => LanguageModel::class]);
     }
@@ -52,9 +52,9 @@ class LanguageController extends DashboardController
                 $id = $record['id'];
                 $row = [$record['code']];
                 
-                $row[] = htmlentities($record['full']);
+                $row[] = \htmlentities($record['full']);
                 $row[] = '<img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.3/flags/' . $record['code'] . '.png">';
-                $row[] = htmlentities($record['created_at']);
+                $row[] = \htmlentities($record['created_at']);
 
                 $action = '<a class="ajax-modal btn btn-sm btn-info shadow-sm" data-bs-target="#dashboard-modal" data-bs-toggle="modal" ' .
                     'href="' . $this->generateLink('language-view', ['id' => $id]) . '"><i class="bi bi-eye"></i></a>' . \PHP_EOL;
@@ -72,7 +72,7 @@ class LanguageController extends DashboardController
         } catch (\Throwable $th) {
             $this->errorLog($th);
         } finally {
-            $count = count($rows);
+            $count = \count($rows);
             $this->respondJSON([
                 'data' => $rows,
                 'recordsTotal' => $count,
@@ -142,15 +142,15 @@ class LanguageController extends DashboardController
                 $level = LogLevel::INFO;
                 $message = "Шинэ хэл [{$payload['full']}] үүсгэх үйлдлийг амжилттай гүйцэтгэлээ";
             } else {
-                $code = preg_replace('/[^a-z]/', '', $this->getLanguageCode());
+                $code = \preg_replace('/[^a-z]/', '', $this->getLanguageCode());
                 $vars = [
                     'countries' => $this->indosafe(
                         '/records?model=' . CountriesModel::class,
                         ['condition' => ['WHERE' => "c.code='$code'"]]
                     )
                 ];
-                $template_path = dirname(__FILE__) . '/language-insert-modal.html';
-                if (!file_exists($template_path)) {
+                $template_path = \dirname(__FILE__) . '/language-insert-modal.html';
+                if (!\file_exists($template_path)) {
                     throw new \Exception("$template_path file not found!", 500);
                 }
                 $this->twigTemplate($template_path, $vars)->render();
@@ -185,8 +185,8 @@ class LanguageController extends DashboardController
             $record = $this->indoget('/record?model=' . LanguageModel::class, ['id' => $id]);
             $context['record'] = $record;
             
-            $template_path = dirname(__FILE__) . '/language-retrieve-modal.html';
-            if (!file_exists($template_path)) {
+            $template_path = \dirname(__FILE__) . '/language-retrieve-modal.html';
+            if (!\file_exists($template_path)) {
                 throw new \Exception("$template_path file not found!", 500);
             }
             $this->twigTemplate($template_path, ['record' => $record, 'accounts' => $this->getAccounts()])->render();
@@ -255,8 +255,8 @@ class LanguageController extends DashboardController
             } else {
                 $record = $this->indoget('/record?model=' . LanguageModel::class, ['id' => $id]);
                 
-                $template_path = dirname(__FILE__) . '/language-update-modal.html';
-                if (!file_exists($template_path)) {
+                $template_path = \dirname(__FILE__) . '/language-update-modal.html';
+                if (!\file_exists($template_path)) {
                     throw new \Exception("$template_path file not found!", 500);
                 }
                 $this->twigTemplate($template_path, ['record' => $record])->render();
@@ -297,13 +297,13 @@ class LanguageController extends DashboardController
             $payload = $this->getParsedBody();
             if (empty($payload['id'])
                 || !isset($payload['name'])
-                || !filter_var($payload['id'], \FILTER_VALIDATE_INT)
+                || !\filter_var($payload['id'], \FILTER_VALIDATE_INT)
             ) {
                 throw new \Exception($this->text('invalid-request'), 400);
             }
             $context['payload'] = $payload;
             
-            $id = filter_var($payload['id'], \FILTER_VALIDATE_INT);            
+            $id = \filter_var($payload['id'], \FILTER_VALIDATE_INT);
             $defLanguage = $this->indosafe("/record?model=" . LanguageModel::class, ['is_default' => 1]);
             if (isset($defLanguage['id'])) {
                 if ($defLanguage['id'] == $id) {

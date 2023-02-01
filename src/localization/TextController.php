@@ -43,18 +43,18 @@ class TextController extends DashboardController
         $names = $this->indoget('/text/table/names');
         $table = ['user', 'default', 'dashboard'];
         foreach ($names as $name) {
-            if (in_array($name, $table)) {
+            if (\in_array($name, $table)) {
                 $table[] = $name;
             }
         }
-        $tables = array_flip($table);
+        $tables = \array_flip($table);
         foreach ($tables as &$index) {
-            $index = array_rand($colors);
-            if (count($colors) > 1) {
+            $index = \array_rand($colors);
+            if (\count($colors) > 1) {
                 unset($colors[$index]);
             }
         }
-        $this->twigDashboard(dirname(__FILE__) . '/texts-index.html', [
+        $this->twigDashboard(\dirname(__FILE__) . '/texts-index.html', [
             'tables' => $tables, 'localization' => $this->getAttribute('localization')
         ])->render();
         
@@ -75,11 +75,11 @@ class TextController extends DashboardController
             foreach ($texts as $record) {
                 $id = $record['id'];
                 
-                $row = [htmlentities($record['keyword'])];
-                foreach (array_keys($language) as $code) {
-                    $row[] = htmlentities($record['content']['text'][$code]);
+                $row = [\htmlentities($record['keyword'])];
+                foreach (\array_keys($language) as $code) {
+                    $row[] = \htmlentities($record['content']['text'][$code]);
                 }
-                $row[] = [htmlentities(self::RECORD_TYPE[$record['type']] ?? $record['type'])];
+                $row[] = [\htmlentities(self::RECORD_TYPE[$record['type']] ?? $record['type'])];
                 $action = '<a class="ajax-modal btn btn-sm btn-info shadow-sm" data-bs-target="#dashboard-modal" data-bs-toggle="modal" ' .
                     'href="' . $this->generateLink('text-view', ['table' => $table, 'id' => $id]) . '"><i class="bi bi-eye"></i></a>' . \PHP_EOL;
                 if ($this->getUser()->can('system_localization_update')) {
@@ -96,7 +96,7 @@ class TextController extends DashboardController
         } catch (\Throwable $th) {
             $this->errorLog($th);
         } finally {
-            $count = count($rows);
+            $count = \count($rows);
             $this->respondJSON([
                 'data' => $rows,
                 'recordsTotal' => $count,
@@ -121,7 +121,7 @@ class TextController extends DashboardController
                 $content = [];
                 $payload = $this->getParsedBody();
                 foreach ($payload as $index => $value) {
-                    if (is_array($value)) {
+                    if (\is_array($value)) {
                         foreach ($value as $key => $value) {
                             $content[$key][$index] = $value;
                         }
@@ -153,8 +153,8 @@ class TextController extends DashboardController
                 $level = LogLevel::INFO;
                 $message = "$table хүснэгт дээр шинэ текст [{$payload['keyword']}] үүсгэх үйлдлийг амжилттай гүйцэтгэлээ";
             } else {
-                $template_path = dirname(__FILE__) . '/text-insert-modal.html';
-                if (!file_exists($template_path)) {
+                $template_path = \dirname(__FILE__) . '/text-insert-modal.html';
+                if (!\file_exists($template_path)) {
                     throw new \Exception("$template_path file not found!", 500);
                 }
                 $this->twigTemplate($template_path, [
@@ -191,8 +191,8 @@ class TextController extends DashboardController
             $record = $this->indoget("/text/$table", ['p.id' => $id]);
             $context['record'] = $record;
             
-            $template_path = dirname(__FILE__) . '/text-retrieve-modal.html';
-            if (!file_exists($template_path)) {
+            $template_path = \dirname(__FILE__) . '/text-retrieve-modal.html';
+            if (!\file_exists($template_path)) {
                 throw new \Exception("$template_path file not found!", 500);
             }
             $this->twigTemplate($template_path, [
@@ -229,7 +229,7 @@ class TextController extends DashboardController
                 $content = [];
                 $payload = $this->getParsedBody();
                 foreach ($payload as $index => $value) {
-                    if (is_array($value)) {
+                    if (\is_array($value)) {
                         foreach ($value as $key => $value) {
                             $content[$key][$index] = $value;
                         }
@@ -271,8 +271,8 @@ class TextController extends DashboardController
             } else {
                 $record = $this->indoget("/text/$table", ['p.id' => $id]);
                 
-                $template_path = dirname(__FILE__) . '/text-update-modal.html';
-                if (!file_exists($template_path)) {
+                $template_path = \dirname(__FILE__) . '/text-update-modal.html';
+                if (!\file_exists($template_path)) {
                     throw new \Exception("$template_path file not found!", 500);
                 }
                 $this->twigTemplate($template_path, [
@@ -317,14 +317,14 @@ class TextController extends DashboardController
             $payload = $this->getParsedBody();
             if (empty($payload['table'])
                 || empty($payload['id'])
-                || !filter_var($payload['id'], \FILTER_VALIDATE_INT)
+                || !\filter_var($payload['id'], \FILTER_VALIDATE_INT)
             ) {
                 throw new \Exception($this->text('invalid-request'), 400);
             }
             $context['payload'] = $payload;
             
             $table = $payload['table'];
-            $id = filter_var($payload['id'], \FILTER_VALIDATE_INT);
+            $id = \filter_var($payload['id'], \FILTER_VALIDATE_INT);
             $this->indodelete("/text/$table", ['WHERE' => "id=$id"]);
             
             $this->respondJSON([

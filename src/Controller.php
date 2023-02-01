@@ -16,7 +16,7 @@ use Indoraptor\InternalRequest;
 use Raptor\Authentication\UserInterface;
 
 class Controller extends \codesaur\Http\Application\Controller
-{    
+{
     public final function getRouter(): ?RouterInterface
     {
         return $this->getAttribute('router');
@@ -39,7 +39,7 @@ class Controller extends \codesaur\Http\Application\Controller
     
     protected final function getScriptPath(): string
     {
-        $script_link = dirname($this->getRequest()->getServerParams()['SCRIPT_NAME']);
+        $script_link = \dirname($this->getRequest()->getServerParams()['SCRIPT_NAME']);
         if ($script_link == '\\' || $script_link == '/' || $script_link == '.') {
             $script_link = '';
         }
@@ -84,7 +84,7 @@ class Controller extends \codesaur\Http\Application\Controller
         }
 
         if ($this->isDevelopment()) {
-            error_log("TEXT NOT FOUND: $key");
+            \error_log("TEXT NOT FOUND: $key");
         }
 
         return '{' . $key . '}';
@@ -102,7 +102,7 @@ class Controller extends \codesaur\Http\Application\Controller
     
     public function twigTemplate(string $template, array $vars = []): TwigTemplate
     {
-        $twig = new TwigTemplate($template, $vars);            
+        $twig = new TwigTemplate($template, $vars);
         $twig->set('user', $this->getUser());
         $twig->set('localization', $this->getAttribute('localization'));
         $twig->set('request_path', rtrim($_SERVER['REQUEST_URI'], '/'));
@@ -121,43 +121,43 @@ class Controller extends \codesaur\Http\Application\Controller
     
     public function respondJSON(array $response, ?int $code = null): void
     {
-        if (!headers_sent()) {
+        if (!\headers_sent()) {
             if (!empty($code)) {
                 if ($code != StatusCodeInterface::STATUS_OK) {
                     $status_code = "STATUS_$code";
                     $reasonPhraseClass = ReasonPrhase::class;
-                    if (defined("$reasonPhraseClass::$status_code")) {
-                        http_response_code($code);
+                    if (\defined("$reasonPhraseClass::$status_code")) {
+                        \http_response_code($code);
                     }
                 }
             }
-            header('Content-Type: application/json');
+            \header('Content-Type: application/json');
         }
         
-        echo json_encode($response) ?: '{}';
+        echo \json_encode($response) ?: '{}';
     }
     
     public function redirectTo(string $routeName, array $params = [])
     {
         $link = $this->generateLink($routeName, $params);
-        header("Location: $link", false, 302);
+        \header("Location: $link", false, 302);
         exit;
     }
     
     public function indo(string $pattern, array $payload = [], string $method = 'INTERNAL')
     {
         try {
-            if (ob_start()) {
+            if (\ob_start()) {
                 $jwt = $this->isUserAuthorized() ? $this->getUser()->getToken() : null;
                 $request = new InternalRequest($method, $pattern, $payload, $jwt);
                 $this->getAttribute('indo')->handle($request);
-                $response = json_decode(ob_get_contents(), true)
+                $response = \json_decode(\ob_get_contents(), true)
                     ?? throw new \Exception(__CLASS__ . ': Error decoding Indoraptor response!');
-                ob_end_clean();
+                \ob_end_clean();
             }
         } catch (\Throwable $throwable) {
-            if (ob_get_level()) {
-                ob_end_clean();
+            if (\ob_get_level()) {
+                \ob_end_clean();
             }
         }
         
@@ -196,7 +196,7 @@ class Controller extends \codesaur\Http\Application\Controller
         return $this->indo($pattern, $payload, 'DELETE');
     }
     
-    public final function indolog(string $table, string $level, $message, array $context = [], $created_by = null)
+    public final function indolog(string $table, string $level, string $message, array $context = [], ?int $created_by = null)
     {
         try {
             if (!isset($context['server_request'])) {
@@ -212,7 +212,8 @@ class Controller extends \codesaur\Http\Application\Controller
                 'table' => $table,
                 'level' => $level,
                 'message' => $message,
-                'context' => json_encode($context)
+                'context' => \json_encode($context)
+                            ?: throw new \Exception(__CLASS__ . ': Error encoding log context')
             ];
             
             if (isset($created_by)) {
@@ -241,8 +242,8 @@ class Controller extends \codesaur\Http\Application\Controller
     protected function tryDeleteFile(string $filePath)
     {
         try {
-            if (file_exists($filePath)) {
-                unlink($filePath);
+            if (\file_exists($filePath)) {
+                \unlink($filePath);
                 
                 return $this->indolog('file', LogLevel::ALERT, "$filePath файлыг устгалаа");
             }
@@ -259,6 +260,6 @@ class Controller extends \codesaur\Http\Application\Controller
             return;
         }
         
-        error_log($th->getMessage());
+        \error_log($th->getMessage());
     }
 }

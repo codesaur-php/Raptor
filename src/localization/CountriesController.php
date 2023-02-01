@@ -32,7 +32,7 @@ class CountriesController extends DashboardController
             return;
         }
 
-        $this->twigDashboard(dirname(__FILE__) . '/countries-index.html')->render();
+        $this->twigDashboard(\dirname(__FILE__) . '/countries-index.html')->render();
         
         $this->indolog('localization', LogLevel::NOTICE, 'Дэлхийн улсуудын жагсаалтыг нээж үзэж байна', ['model' => CountriesModel::class]);
     }
@@ -51,9 +51,9 @@ class CountriesController extends DashboardController
             foreach ($languages as $record) {
                 $row = [$record['id']];
                 
-                $row[] = htmlentities($record['content']['title'][$code]);
-                $row[] = '<img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.3/flags/' . strtolower($record['id']) . '.png">';
-                $row[] = htmlentities($record['speak']);
+                $row[] = \htmlentities($record['content']['title'][$code]);
+                $row[] = '<img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.3/flags/' . \strtolower($record['id']) . '.png">';
+                $row[] = \htmlentities($record['speak']);
                 
                 $action = '<a class="ajax-modal btn btn-sm btn-info shadow-sm" data-bs-target="#dashboard-modal" data-bs-toggle="modal" ' .
                     'href="' . $this->generateLink('country-view', ['id' => $record['id']]) . '"><i class="bi bi-eye"></i></a>' . \PHP_EOL;
@@ -71,7 +71,7 @@ class CountriesController extends DashboardController
         } catch (\Throwable $th) {
             $this->errorLog($th);
         } finally {
-            $count = count($rows);
+            $count = \count($rows);
             $this->respondJSON([
                 'data' => $rows,
                 'recordsTotal' => $count,
@@ -96,7 +96,7 @@ class CountriesController extends DashboardController
                 $content = [];
                 $payload = $this->getParsedBody();
                 foreach ($payload as $index => $value) {
-                    if (is_array($value)) {
+                    if (\is_array($value)) {
                         foreach ($value as $key => $value) {
                             $content[$key][$index] = $value;
                         }
@@ -123,8 +123,8 @@ class CountriesController extends DashboardController
                 $level = LogLevel::INFO;
                 $message = "Шинэ улсын мэдээлэл [{$payload['id']}] үүсгэх үйлдлийг амжилттай гүйцэтгэлээ";
             } else {
-                $template_path = dirname(__FILE__) . '/country-insert-modal.html';
-                if (!file_exists($template_path)) {
+                $template_path = \dirname(__FILE__) . '/country-insert-modal.html';
+                if (!\file_exists($template_path)) {
                     throw new \Exception("$template_path file not found!", 500);
                 }
                 $this->twigTemplate($template_path, [
@@ -161,8 +161,8 @@ class CountriesController extends DashboardController
             $record = $this->indoget('/record?model=' . CountriesModel::class, ['p.id' => $id]);
             $context['record'] = $record;
             
-            $template_path = dirname(__FILE__) . '/country-retrieve-modal.html';
-            if (!file_exists($template_path)) {
+            $template_path = \dirname(__FILE__) . '/country-retrieve-modal.html';
+            if (!\file_exists($template_path)) {
                 throw new \Exception("$template_path file not found!", 500);
             }
             $this->twigTemplate($template_path, [
@@ -198,7 +198,7 @@ class CountriesController extends DashboardController
                 $content = [];
                 $payload = $this->getParsedBody();
                 foreach ($payload as $index => $value) {
-                    if (is_array($value)) {
+                    if (\is_array($value)) {
                         foreach ($value as $key => $value) {
                             $content[$key][$index] = $value;
                         }
@@ -211,7 +211,7 @@ class CountriesController extends DashboardController
                     throw new \Exception($this->text('invalid-request'), 400);
                 }
                 
-                $id = preg_replace('/[^A-Za-z0-9_-]/', '', $payload['id']);
+                $id = \preg_replace('/[^A-Za-z0-9_-]/', '', $payload['id']);
                 $this->indoput('/record?model=' . CountriesModel::class,
                     ['record' => $record, 'content' => $content, 'condition' => ['WHERE' => "p.id='$id'"]]);
                 
@@ -227,8 +227,8 @@ class CountriesController extends DashboardController
             } else {
                 $record = $this->indoget('/record?model=' . CountriesModel::class, ['p.id' => $id]);
                 
-                $template_path = dirname(__FILE__) . '/country-update-modal.html';
-                if (!file_exists($template_path)) {
+                $template_path = \dirname(__FILE__) . '/country-update-modal.html';
+                if (!\file_exists($template_path)) {
                     throw new \Exception("$template_path file not found!", 500);
                 }
                 $this->twigTemplate($template_path, [
@@ -275,7 +275,7 @@ class CountriesController extends DashboardController
             }
             $context['payload'] = $payload;
             
-            $id = preg_replace('/[^A-Za-z0-9_-]/', '', $payload['id']);
+            $id = \preg_replace('/[^A-Za-z0-9_-]/', '', $payload['id']);
             $this->indodelete('/record?model=' . CountriesModel::class, ['WHERE' => "id='$id'"]);
             
             $this->respondJSON([

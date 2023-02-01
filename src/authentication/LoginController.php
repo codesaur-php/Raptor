@@ -11,7 +11,7 @@ use codesaur\Template\MemoryTemplate;
 
 use Indoraptor\Auth\OrganizationUserModel;
 
-define('CODESAUR_PASSWORD_RESET_MINUTES', $_ENV['CODESAUR_PASSWORD_RESET_MINUTES'] ?? 10);
+\define('CODESAUR_PASSWORD_RESET_MINUTES', $_ENV['CODESAUR_PASSWORD_RESET_MINUTES'] ?? 10);
 
 class LoginController extends \Raptor\Controller
 {
@@ -26,12 +26,12 @@ class LoginController extends \Raptor\Controller
             return $this->redirectTo('home');
         }
         
-        $code = preg_replace('/[^a-z]/', '', $this->getLanguageCode());
+        $code = \preg_replace('/[^a-z]/', '', $this->getLanguageCode());
         $vars = ['meta' => $this->getAttribute('meta')];
         $vars += $this->indosafe('/reference/templates', 
             ['WHERE' => "c.code='$code' AND (p.keyword='tos' OR p.keyword='pp') AND p.is_active=1"]);
         
-        $this->twigTemplate(dirname(__FILE__) . '/login.html', $vars)->render();
+        $this->twigTemplate(\dirname(__FILE__) . '/login.html', $vars)->render();
     }
     
     public function entry()
@@ -41,7 +41,7 @@ class LoginController extends \Raptor\Controller
             $sess_jwt_key = __NAMESPACE__ . '\\indo\\jwt';
             $payload = $this->getParsedBody();
             
-            $context += ['payload' => $payload];            
+            $context += ['payload' => $payload];
             if (isset($context['payload']['password'])) {
                 unset($context['payload']['password']);
             }
@@ -124,8 +124,8 @@ class LoginController extends \Raptor\Controller
                 unset($payload['password_re']);
             }
 
-            $payload['password'] = password_hash($password, \PASSWORD_BCRYPT);
-            $payload['code'] = preg_replace('/[^a-z]/', '', $this->getLanguageCode());
+            $payload['password'] = \password_hash($password, \PASSWORD_BCRYPT);
+            $payload['code'] = \preg_replace('/[^a-z]/', '', $this->getLanguageCode());
             
             $reference = $this->indosafe('/reference/templates', 
                 ['WHERE' => "c.code='{$payload['code']}' AND p.keyword='request-new-account' AND p.is_active=1"]);
@@ -136,7 +136,7 @@ class LoginController extends \Raptor\Controller
             
             if (empty($payload['email']) || empty($payload['username'])) {
                 throw new \Exception('Invalid payload', StatusCodeInterface::STATUS_BAD_REQUEST);
-            } elseif (filter_var($payload['email'], \FILTER_VALIDATE_EMAIL) === false) {
+            } elseif (\filter_var($payload['email'], \FILTER_VALIDATE_EMAIL) === false) {
                 throw new \Exception('Please provide valid email address.', StatusCodeInterface::STATUS_BAD_REQUEST);
             }
             
@@ -194,7 +194,7 @@ class LoginController extends \Raptor\Controller
             
             $payload = $this->getParsedBody();
             if (empty($payload['email'])
-                || filter_var($payload['email'], \FILTER_VALIDATE_EMAIL) === false
+                || \filter_var($payload['email'], \FILTER_VALIDATE_EMAIL) === false
             ) {
                 throw new \Exception('Please provide valid email address', StatusCodeInterface::STATUS_BAD_REQUEST);
             }
@@ -225,7 +225,7 @@ class LoginController extends \Raptor\Controller
                 'last_name'   => $account['last_name'],
                 'first_name'  => $account['first_name'],
                 'remote_addr' => (new Server())->getRemoteAddr()
-            ];            
+            ];
             $id = $this->indosafe('/record/insert?model=' . ForgotModel::class, $record);
             if (empty($id)) {
                 throw new \Exception("Хэрэглэгч [{$payload['email']}] нууц үг шинэчлэх хүсэлт илгээснийг мэдээлллийн санд бүртгэн хадгалах үйлдэл гүйцэтгэх явцад алдаа гарч зогслоо.", StatusCodeInterface::STATUS_INTERNAL_SERVER_ERROR);
@@ -244,7 +244,7 @@ class LoginController extends \Raptor\Controller
                 'to' => $payload['email'],
                 'code' => $payload['code'],
                 'message' => $template->output(),
-                'subject' => $content['title'][$payload['code']]                
+                'subject' => $content['title'][$payload['code']]
             ]);
             $this->respondJSON(['status' => 'success', 'message' => $this->text('reset-email-sent')]);
 
@@ -274,9 +274,9 @@ class LoginController extends \Raptor\Controller
             $code = $forgot['code'];
             if ($code != $this->getLanguageCode()) {
                 if (isset($this->getAttribute('localization')['language'][$code])) {
-                    $_SESSION[explode('\\', __NAMESPACE__)[0] . '\\language\\code'] = $code;
+                    $_SESSION[\explode('\\', __NAMESPACE__)[0] . '\\language\\code'] = $code;
                     $link = $this->generateLink('login') . "?forgot=$use_id";
-                    header("Location: $link", false, 302);
+                    \header("Location: $link", false, 302);
                     exit;
                 }
             }
@@ -307,7 +307,7 @@ class LoginController extends \Raptor\Controller
             $context += ['error' => ['code' => $th->getCode(), 'message' => $th->getMessage()]];
         } finally {
             $this->twigTemplate(
-                dirname(__FILE__) . '/login-reset-password.html', 
+                \dirname(__FILE__) . '/login-reset-password.html', 
                 $vars + ['meta' => $this->getAttribute('meta')])->render();
             
             $context += ['server_request' => [
@@ -327,12 +327,12 @@ class LoginController extends \Raptor\Controller
             $parsedBody = $this->getParsedBody();
             $use_id = $parsedBody['use_id'];
             $vars = ['use_id' => $use_id];
-            $context += ['payload' => $parsedBody] + $vars;            
+            $context += ['payload' => $parsedBody] + $vars;
             if (isset($parsedBody['password_new'])) {
                 $password_new = $parsedBody['password_new'];
                 unset($context['payload']['password_new']);
             } else {
-                $password_new =  null;
+                $password_new = null;
             }
             if (isset($parsedBody['password_retype'])) {
                 $password_retype = $parsedBody['password_retype'];
@@ -340,7 +340,7 @@ class LoginController extends \Raptor\Controller
             } else {
                 $password_retype = null;
             }
-            $account_id = filter_var($parsedBody['account'], \FILTER_VALIDATE_INT);
+            $account_id = \filter_var($parsedBody['account'], \FILTER_VALIDATE_INT);
             if ($account_id === false) {
                 throw new \Exception('<span class="text-secondary">Хэрэглэгчийн дугаар заагдаагүй байна.</span><br/>' . $this->text('invalid-request-data'), StatusCodeInterface::STATUS_BAD_REQUEST);
             }
@@ -373,7 +373,7 @@ class LoginController extends \Raptor\Controller
             }
 
             $result = $this->indo('/record/update?model=' . Accounts::class, [
-                'record' => ['password' => password_hash($password_new, \PASSWORD_BCRYPT)],
+                'record' => ['password' => \password_hash($password_new, \PASSWORD_BCRYPT)],
                 'condition' => ['WHERE' => "id={$account['id']}"]
             ]);
             if (!$result) {
@@ -397,7 +397,7 @@ class LoginController extends \Raptor\Controller
             $context += ['error' => ['code' => $th->getCode(), 'message' => $th->getMessage()]];
         } finally {
             $this->twigTemplate(
-                dirname(__FILE__) . '/login-reset-password.html', 
+                \dirname(__FILE__) . '/login-reset-password.html', 
                 $vars + ['meta' => $this->getAttribute('meta')])->render();
             
             $this->indolog('dashboard', $level ?? LogLevel::NOTICE, $message ?? 'reset-password', $context, $account['id'] ?? null);
@@ -424,7 +424,7 @@ class LoginController extends \Raptor\Controller
             $jwt_result = $this->indopost('/auth/organization', $payload);
             $_SESSION[__NAMESPACE__ . '\\indo\\jwt'] = $jwt_result['jwt'];
             $home = $this->generateLink('home');
-            $location = str_contains($referer, $home) ? $referer : $home;
+            $location = \str_contains($referer, $home) ? $referer : $home;
             
             $account = $this->getUser()->getAccount();
             $message = "Хэрэглэгч {$account['first_name']} {$account['last_name']} нэвтэрсэн байгууллага сонгов.";
@@ -435,7 +435,7 @@ class LoginController extends \Raptor\Controller
             
             $location = $referer;
         } finally {
-            header("Location: $location", false, 302);
+            \header("Location: $location", false, 302);
             
             exit;
         }
@@ -447,10 +447,10 @@ class LoginController extends \Raptor\Controller
         $target_path = $this->getTargetPath();
         $home = (string) $this->getRequest()->getUri()->withPath($target_path);
         $referer = $this->getRequest()->getServerParams()['HTTP_REFERER'];
-        $location = str_contains($referer, $home) ? $referer : $home;
+        $location = \str_contains($referer, $home) ? $referer : $home;
         $language = $this->getAttribute('localization')['language'];
         if (isset($language[$code]) && $code != $from) {
-            $_SESSION[explode('\\', __NAMESPACE__)[0] . '\\language\\code'] = $code;
+            $_SESSION[\explode('\\', __NAMESPACE__)[0] . '\\language\\code'] = $code;
             if ($this->isUserAuthorized()) {
                 try {
                     $account = $this->getUser()->getAccount();
@@ -469,7 +469,7 @@ class LoginController extends \Raptor\Controller
             }
         }
         
-        header("Location: $location", false, 302);
+        \header("Location: $location", false, 302);
         exit;
     }
 }
