@@ -565,7 +565,7 @@ class AccountController extends DashboardController
             ];
             
             $template = $this->twigTemplate($modal, $vars);
-            $template->addFunction(new TwigFunction('isExpired', function ($date, $minutes = 5): bool
+            $template->addFunction(new TwigFunction('isExpired', function (string $date, int $minutes = 5): bool
             {
                 $now_date = new \DateTime();
                 $then = new \DateTime($date);
