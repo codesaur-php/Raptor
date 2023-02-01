@@ -182,7 +182,7 @@ class SettingsController extends DashboardController
                     } elseif (isset($logo['name']) && $logo['name'] != $old_logo_file) {
                         $this->tryDeleteFile(dirname($_SERVER['SCRIPT_FILENAME']) . "/public/settings/$old_logo_file");
                     }
-                }                
+                }
                 if (isset($content[$code]['logo'])) {
                     $context['record']['logo'] = $content[$code]['logo'];
                 }
@@ -192,7 +192,7 @@ class SettingsController extends DashboardController
             $ico = $file->moveUploaded('favico');
             if (isset($ico['name'])) {
                 $record['favico'] = $file->getPathUrl($ico['name']);
-            }                
+            }
             if (!empty($old_favico_file)) {
                 if ($file->getLastError() == -1) {
                     $this->tryDeleteFile(dirname($_SERVER['SCRIPT_FILENAME']) . "/public/settings/$old_favico_file");

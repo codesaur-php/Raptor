@@ -51,7 +51,7 @@ class OrganizationUserController extends DashboardController
             $this->dashboardProhibited($message, $th->getCode())->render();
         } finally {
             $this->indolog('account', $level, $message);
-        }        
+        }
     }
     
     public function set(int $account_id)

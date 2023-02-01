@@ -88,7 +88,7 @@ class TextController extends DashboardController
                 }
                 if ($this->getUser()->can('system_localization_delete')) {
                     $action .= '<a class="delete-text btn btn-sm btn-danger shadow-sm" href="' . "$table:$id" . '"><i class="bi bi-trash"></i></a>';
-                }                
+                }
                 $row[] = $action;
                 
                 $rows[] = $row;

@@ -219,7 +219,7 @@ class FileController extends Controller
                 foreach ($language_codes as $code) {
                     $file_record['content'][$code] = ['title' => ''];
                 }
-            }                
+            }
             $file_record['record']['file'] = $upload['dir'] . $upload['name'];
             $file_record['record']['path'] = $this->getPathUrl($upload['name']);
             $file_id = $this->indopost('/record?model=' . FileModel::class, $file_record);
@@ -233,7 +233,7 @@ class FileController extends Controller
         } catch (\Throwable $th) {
             $this->errorLog($th);
             return false;
-        }        
+        }
     }
     
     public function getRecord(array $record, ?string $code = null): array|null

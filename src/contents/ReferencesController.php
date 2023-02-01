@@ -50,7 +50,7 @@ class ReferencesController extends DashboardController
             if (!in_array($initial, $references)) {
                 $references[] = $initial;
             }
-        }       
+        }
         $tables = ['templates'];
         foreach ($references as $reference) {
             if (!in_array($reference, $tables)) {
@@ -103,7 +103,7 @@ class ReferencesController extends DashboardController
                     $action .=
                         '<a class="delete-reference btn btn-sm btn-danger shadow-sm" href="' .
                         "$table:$id" . '"><i class="bi bi-trash"></i></a>';
-                }                
+                }
                 $row[] = $action;
                 
                 $rows[] = $row;

@@ -64,7 +64,7 @@ class LanguageController extends DashboardController
                 }
                 if ($this->getUser()->can('system_localization_delete')) {
                     $action .= '<a class="delete-language btn btn-sm btn-danger shadow-sm" href="' . $id . '"><i class="bi bi-trash"></i></a>';
-                }                
+                }
                 $row[] = $action;
                 
                 $rows[] = $row;
@@ -117,8 +117,8 @@ class LanguageController extends DashboardController
                    }
                    if ($payload['full'] == $value) {
                         throw new \Exception($this->text('lang-name-existing'), 403);
-                   }    
-                }
+                   }
+               }
 
                 $id = $this->indopost('/record?model=' . LanguageModel::class, ['code' => $payload['short'], 'full' => $payload['full']]);
                 $context['record'] = $id;

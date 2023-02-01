@@ -117,7 +117,7 @@ class LoginController extends \Raptor\Controller
                 unset($context['payload']['password_re']);
             } else {
                 $passwordRe = '';
-            }            
+            }
             if (empty($password) || $password != $passwordRe) {
                 throw new \Exception($this->text('invalid-request'), StatusCodeInterface::STATUS_BAD_REQUEST);
             } else {
@@ -339,7 +339,7 @@ class LoginController extends \Raptor\Controller
                 unset($context['payload']['password_retype']);
             } else {
                 $password_retype = null;
-            }            
+            }
             $account_id = filter_var($parsedBody['account'], \FILTER_VALIDATE_INT);
             if ($account_id === false) {
                 throw new \Exception('<span class="text-secondary">Хэрэглэгчийн дугаар заагдаагүй байна.</span><br/>' . $this->text('invalid-request-data'), StatusCodeInterface::STATUS_BAD_REQUEST);
