@@ -105,7 +105,7 @@ class Controller extends \codesaur\Http\Application\Controller
         $twig = new TwigTemplate($template, $vars);
         $twig->set('user', $this->getUser());
         $twig->set('localization', $this->getAttribute('localization'));
-        $twig->set('request_path', rtrim($_SERVER['REQUEST_URI'], '/'));
+        $twig->set('request_path', \rtrim($_SERVER['REQUEST_URI'], '/'));
         $twig->set('request_uri', (string) $this->getRequest()->getUri());
         $twig->addFilter(new TwigFilter('text', function (string $key): string
         {

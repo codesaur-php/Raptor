@@ -75,14 +75,14 @@ class SettingsController extends DashboardController
                 
                 if (!empty($record['twitter'])) {
                     $twUrlCheck = '/^(https?:\/\/)?(www\.)?twitter.com\/[a-zA-Z0-9(\.\?)?]/';
-                    if (preg_match($twUrlCheck, $record['twitter']) != 1) {
+                    if (\preg_match($twUrlCheck, $record['twitter']) != 1) {
                         throw new \Exception('Twitter URL is is not valid!', 400);
                     }
                 }
                 
                 if (!empty($record['youtube'])) {
                     $twUrlCheck = '/^(https?:\/\/)?(www\.)?youtube.com\/[a-zA-Z0-9(\.\?)?]/';
-                    if (preg_match($twUrlCheck, $record['youtube']) != 1) {
+                    if (\preg_match($twUrlCheck, $record['youtube']) != 1) {
                         throw new \Exception('YouTube URL is is not valid!', 400);
                     }
                 }

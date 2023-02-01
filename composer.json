@@ -13,7 +13,7 @@
     ],
     "require": {
         "codesaur/template": ">=1.4.4",
-        "codesaur/indoraptor": ">=4.2.5"
+        "codesaur/indoraptor": ">=4.2.6"
     },
     "autoload": {
         "psr-4": {

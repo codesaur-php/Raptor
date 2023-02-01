@@ -43,7 +43,7 @@ class LocalizationMiddleware implements MiddlewareInterface
         try {
             return $this->request($request->getAttribute('indo'), 'GET', '/language');
         } catch (\Throwable $th) {
-            if (defined('CODESAUR_DEVELOPMENT')
+            if (\defined('CODESAUR_DEVELOPMENT')
                     && CODESAUR_DEVELOPMENT
             ) {
                 \error_log($th->getMessage());
@@ -75,7 +75,7 @@ class LocalizationMiddleware implements MiddlewareInterface
                 $text += $translation;
             }
         } catch (\Throwable $th) {
-            if (defined('CODESAUR_DEVELOPMENT')
+            if (\defined('CODESAUR_DEVELOPMENT')
                     && CODESAUR_DEVELOPMENT
             ) {
                 \error_log($th->getMessage());

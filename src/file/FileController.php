@@ -147,7 +147,7 @@ class FileController extends Controller
                 throw new \Exception('The uploaded file type is not allowed', 9);
             }
 
-            if (!\file_exists($upload_path) || !is_dir($upload_path)) {
+            if (!\file_exists($upload_path) || !\is_dir($upload_path)) {
                 \mkdir($upload_path, $mode, true);
             }
             
