@@ -65,7 +65,7 @@ class LoginController extends \Raptor\Controller
             } elseif ($account['code'] != $this->getLanguageCode()
                 && isset($this->getAttribute('localization')['language'][$account['code']])
             ) {
-                $_SESSION[explode('\\', __NAMESPACE__)[0] . '\\language\\code'] = $account['code'];
+                $_SESSION[\explode('\\', __NAMESPACE__)[0] . '\\language\\code'] = $account['code'];
             }
         } catch (\Throwable $th) {
             if (isset($_SESSION[$sess_jwt_key])) {
