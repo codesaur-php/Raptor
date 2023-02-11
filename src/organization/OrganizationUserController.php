@@ -44,11 +44,11 @@ class OrganizationUserController extends DashboardController
             
             $level = LogLevel::NOTICE;
             $message = 'Хэрэглэгч өөрийн байгууллагуудын жагсаалтыг нээж үзэж байна';
-        } catch (\Throwable $th) {
+        } catch (\Throwable $e) {
             $level = LogLevel::ERROR;
-            $message = $th->getMessage();
+            $message = $e->getMessage();
             
-            $this->dashboardProhibited($message, $th->getCode())->render();
+            $this->dashboardProhibited($message, $e->getCode())->render();
         } finally {
             $this->indolog('account', $level, $message);
         }
@@ -144,18 +144,18 @@ class OrganizationUserController extends DashboardController
                     $context
                 );
             }
-        } catch (\Throwable $th) {
+        } catch (\Throwable $e) {
             if ($is_submit) {
                 $this->respondJSON([
                     'status'  => 'error',
                     'title'   => $this->text('error'),
-                    'message' => $th->getMessage()
-                ], $th->getCode());
+                    'message' => $e->getMessage()
+                ], $e->getCode());
             } else {
-                $this->modalProhibited($th->getMessage(), $th->getCode())->render();
+                $this->modalProhibited($e->getMessage(), $e->getCode())->render();
             }
             
-            $context['error'] = ['code' => $th->getCode(), 'message' => $th->getMessage()];
+            $context['error'] = ['code' => $e->getCode(), 'message' => $e->getMessage()];
             $this->indolog(
                 'account',
                 LogLevel::ERROR,

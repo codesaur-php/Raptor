@@ -16,7 +16,7 @@ class User implements UserInterface
         $this->_account = $account;
         $this->_organizations = $organizations;
         
-        putenv("CODESAUR_ACCOUNT_ID={$this->_account['id']}");
+        \putenv("CODESAUR_ACCOUNT_ID={$this->_account['id']}");
     }
 
     public function is(string $role): bool

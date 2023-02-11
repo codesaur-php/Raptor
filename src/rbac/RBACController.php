@@ -95,9 +95,9 @@ class RBACController extends DashboardController
                 ]
             )->render();
             $message = "RBAC [$alias] жагсаалтыг нээж үзэж байна";
-        } catch (\Throwable $th) {
-            $message = 'RBAC жагсаалтыг нээх үед алдаа гарлаа. ' . $th->getMessage();
-            $this->dashboardProhibited($th->getMessage(), $th->getCode())->render();
+        } catch (\Throwable $e) {
+            $message = 'RBAC жагсаалтыг нээх үед алдаа гарлаа. ' . $e->getMessage();
+            $this->dashboardProhibited($e->getMessage(), $e->getCode())->render();
         } finally {
             $this->indolog('rbac', $level, $message, $context);
         }
@@ -122,7 +122,7 @@ class RBACController extends DashboardController
                 $this->respondJSON([
                     'status' => 'success',
                     'message' => $this->text('record-insert-success'),
-                    'href' => $this->generateLink('rbac-alias') . '?alias=' . urlencode($alias) . '&title=' . urlencode($this->getQueryParams()['title'] ?? '')
+                    'href' => $this->generateLink('rbac-alias') . '?alias=' . \urlencode($alias) . '&title=' . \urlencode($this->getQueryParams()['title'] ?? '')
                 ]);
                 
                 $this->indolog('rbac', LogLevel::INFO, 'RBAC дүр шинээр нэмэх үйлдлийг амжилттай гүйцэтгэлээ', $context);
@@ -131,7 +131,7 @@ class RBACController extends DashboardController
                 
                 $this->indolog('rbac', LogLevel::NOTICE, 'RBAC дүр шинээр нэмэх үйлдлийг амжилттай эхлүүллээ', $context);
             }
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             if ($is_submit) {
                 $this->respondJSON([
                     'status' => 'error',
@@ -168,8 +168,8 @@ class RBACController extends DashboardController
                 throw new \Exception("$template_path file not found!", 500);
             }
             $this->twigDashboard($template_path, $values)->render();
-        } catch (\Throwable $th) {
-            $this->modalProhibited($th->getMessage(), $th->getCode())->render();
+        } catch (\Throwable $e) {
+            $this->modalProhibited($e->getMessage(), $e->getCode())->render();
         }
     }
     
@@ -201,7 +201,7 @@ class RBACController extends DashboardController
                 
                 $this->indolog('rbac', LogLevel::NOTICE, 'RBAC зөвшөөрөл шинээр нэмэх үйлдлийг амжилттай эхлүүллээ', $context);
             }
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             if ($is_submit) {
                 $this->respondJSON([
                     'status' => 'error',
@@ -257,12 +257,12 @@ class RBACController extends DashboardController
                 }
             }
             throw new \Exception($this->text('invalid-values'), 400);
-        } catch (\Throwable $th) {
+        } catch (\Throwable $e) {
             $this->respondJSON([
                 'type' => 'error',
                 'title' => $this->text('error'),
-                'message' => $th->getMessage()
-            ], $th->getCode());
+                'message' => $e->getMessage()
+            ], $e->getCode());
         }
     }
     
@@ -383,18 +383,18 @@ class RBACController extends DashboardController
 
                 $this->indolog('rbac', LogLevel::NOTICE, "$id дугаартай  {$account['username']} хэрэглэгчийн дүрийг тохируулах үйлдлийг эхлүүллээ", $context);
             }
-        } catch (\Throwable $th) {
+        } catch (\Throwable $e) {
             if ($is_submit) {
                 $this->respondJSON([
                     'status'  => 'error',
                     'title'   => $this->text('error'),
-                    'message' => $th->getMessage()
-                ], $th->getCode());
+                    'message' => $e->getMessage()
+                ], $e->getCode());
             } else {
-                $this->modalProhibited($th->getMessage(), $th->getCode())->render();
+                $this->modalProhibited($e->getMessage(), $e->getCode())->render();
             }
             
-            $context['error'] = ['code' => $th->getCode(), 'message' => $th->getMessage()];
+            $context['error'] = ['code' => $e->getCode(), 'message' => $e->getMessage()];
             $this->indolog('rbac', LogLevel::ERROR, "$id дугаартай хэрэглэгчийн дүрийг тохируулах үйлдлийг гүйцэтгэх явцад алдаа гарч зогслоо", $context);
         }
     }

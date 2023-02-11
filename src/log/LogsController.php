@@ -39,8 +39,8 @@ class LogsController extends DashboardController
             
             $this->twigDashboard(\dirname(__FILE__) . '/index-list-logs.html',
                 ['names' => $names, 'logs' => $logs, 'accounts' => $this->getAccounts()])->render();
-        } catch (\Throwable $th) {
-            $this->dashboardProhibited($th->getMessage(), $th->getCode())->render();
+        } catch (\Throwable $e) {
+            $this->dashboardProhibited($e->getMessage(), $e->getCode())->render();
         }
     }
     
@@ -78,8 +78,8 @@ class LogsController extends DashboardController
             ))->render();
 
             return true;
-        } catch (\Throwable $th) {
-            $this->modalProhibited($th->getMessage(), $th->getCode())->render();
+        } catch (\Throwable $e) {
+            $this->modalProhibited($e->getMessage(), $e->getCode())->render();
 
             return false;
         }

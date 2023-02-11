@@ -11,9 +11,9 @@
     </div>
 </div>
 <ul class="nav nav-tabs mb-4" role="tablist">
-    <li class="nav-item"><a class="nav-link active show" data-bs-toggle="tab" href="#tab-personal">{{ 'personal-info'|text }}</a></li>
-    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-picture">{{ 'image'|text }}</a></li>
-    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-options">{{ 'options'|text }}</a></li>
+    <li class="nav-item"><a class="nav-link active show" data-bs-toggle="tab" href="#tab-personal">{{ 'personal-info'|text }} <i class="bi bi-postcard"></i></a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-picture">{{ 'image'|text }} <i class="bi bi-camera"></i></a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-options">{{ 'options'|text }} <i class="bi bi-gear"></i></a></li>
 </ul>
 <form class="needs-validation" novalidate id="account_update" action="{{ 'account-update'|link({'id': record['id']}) }}" method="PUT" enctype="multipart/form-data">
     <div class="tab-content mb-4">
@@ -50,12 +50,12 @@
                     <div class="invalid-feedback">{{ 'enter-valid-email'|text }}</div>
                 </div>
             </div>
-            <div class="mb-3">
+            <div class="mb-3 bg-light rounded-3">
                 <label class="form-label">{{ 'status'|text }}</label>
                 <div class="form-check form-switch">
-                  <input class="form-check-input" name="status" type="checkbox" role="switch" {{ record['status'] == 1 ? 'checked ' : '' }}aria-describedby="activeHelpBlock" onclick="warnStatus(this.checked);">
+                    <input class="form-check-input" name="status" type="checkbox" role="switch" {{ record['status'] == 1 ? 'checked ' : '' }}aria-describedby="activeHelpBlock" onclick="warnStatus(this.checked);">
+                    <div class="form-text" id="activeHelpBlock">{{ 'active-account-can-login'|text }}</div>
                 </div>
-                <div class="form-text" id="activeHelpBlock">{{ 'active-account-can-login'|text }}</div>
             </div>
         </div>
         <div class="tab-pane" id="tab-picture" role="tabpanel">
@@ -64,7 +64,7 @@
             </div>
         </div>
         <div class="tab-pane" id="tab-options" role="tabpanel">
-            <div class="mb-3">
+            <div class="mb-3 bg-light rounded-3">
                 <label class="form-label">{{ 'organization'|text }}</label>
                 {% if user.can('system_account_organization_set') %}
                 <select class="form-control" multiple name="organizations[]" id="organizations" aria-describedby="organzationHelpBlock">
@@ -75,8 +75,7 @@
                 {% endif %}
                 <div class="form-text" id="organzationHelpBlock">хэрэглэгчийн харъяалагдах байгууллагыг сонгон тохируулна уу</div>
             </div>
-            <hr>
-            <div class="mb-3">
+            <div class="mb-3 bg-light rounded-3">
                 <label>{{ 'role2'|text }}</label>
                 {% if user.can('system_rbac') %}
                 <select class="form-control" multiple name="roles[]" id="roles" aria-describedby="roleHelpBlock">
@@ -178,8 +177,6 @@ document.addEventListener('DOMContentLoaded', function () {
     $('#organizations').val([{{ current_organizations }}]);
     $('#organizations').trigger('change');
     {% endif %}
-        
-
     
     $('#roles').Select2Roles();
     {% if current_role is defined and current_role is not empty %}

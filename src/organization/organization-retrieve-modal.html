@@ -34,15 +34,13 @@
                         <input class="form-control" readonly value="{{ record['alias']|e }}" type="text">
                     </div>
                 </div>
-                <hr>
-                <div class="row mb-2">
+                <div class="row mb-2 bg-light rounded-3">
                     <label class="col-3 col-form-label text-end">{{ 'parent'|text }}</label>
                     <div class="col-9">
                         <input class="form-control" readonly value="{{ record['parent_name']|e }}" type="text">
                     </div>
-                </div>
-                <hr>
-                <div class="row mb-2">
+                </div>                    
+                <div class="row mb-2 mt-4">
                     <label class="col-3 col-form-label text-end">{{ 'date-created'|text }}</label>
                     <div class="col-9">
                         <input class="form-control" readonly value="{{ record['created_at']|e }}" type="text">

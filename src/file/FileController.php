@@ -159,10 +159,12 @@ class FileController extends Controller
                 'ext' => $file_ext,
                 'size' => $file_size
             ];
-        } catch (\Throwable $th) {
-            $this->errorLog($th);
+        } catch (\Throwable $e) {
+            $this->errorLog($e);
             
-            $this->_error = $th->getCode();
+            if (\is_numeric($e->getCode())) {
+                $this->_error = (int) $e->getCode();
+            }
             
             // failed to move uploaded file!
             return false;
@@ -177,7 +179,7 @@ class FileController extends Controller
     public function post_multi(string $input, int $record_id, array $table_record = [], array $file_record = []): array
     {
         $result = [];
-        $language_codes = \array_keys($this->getAttribute('localization')['language'] ?? []);
+        $language_codes = \array_keys($this->getLanguages());
         foreach ($language_codes as $code) {
             $table_record['code'] = $code;
             $result[] = $this->submit($this->moveUploaded([$input => $code]), $record_id, $table_record, $file_record);
@@ -195,7 +197,7 @@ class FileController extends Controller
             return false;
         }
         
-        $language_codes = \array_keys($this->getAttribute('localization')['language'] ?? []);
+        $language_codes = \array_keys($this->getLanguages());
         if (isset($table_record['type'])) {
             $existing = $this->getLast($record_id, $table_record['type'], $table_record['code'] ?? '');
             if ($existing) {
@@ -208,8 +210,8 @@ class FileController extends Controller
                         $text = "Мэдээллийн file хүснэгтийн {$existing['id']}-р бичлэг дээрх файлыг устгалаа.";
                         $this->indolog('file', LogLevel::ALERT, $text, ['reason' => 'delete-file', 'record' => $existing]);
                     }
-                } catch (\Throwable $th) {
-                    $this->errorLog($th);
+                } catch (\Throwable $e) {
+                    $this->errorLog($e);
                 }
             }
         }
@@ -230,8 +232,8 @@ class FileController extends Controller
             $text = "Мэдээллийн $this->table хүснэгтийн $record_id-р бичлэгт зориулж $file_id дугаартай файлыг байршууллаа.";
             $this->indolog('file', LogLevel::INFO, $text, ['table' => $this->table, 'reason' => 'insert-file', 'record' => $record_id, 'file' => $file_record['record']['file'], 'path' => $file_record['record']['path']]);
             return $file_record;
-        } catch (\Throwable $th) {
-            $this->errorLog($th);
+        } catch (\Throwable $e) {
+            $this->errorLog($e);
             return false;
         }
     }
@@ -274,8 +276,8 @@ class FileController extends Controller
 
             $rows = $this->indo("/files/records/$this->table", $condition);
             return $this->getRecord(\current($rows));
-        } catch (\Throwable $th) {
-            $this->errorLog($th);
+        } catch (\Throwable $e) {
+            $this->errorLog($e);
             
             return null;
         }

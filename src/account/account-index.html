@@ -1,3 +1,8 @@
+{% if localization.code == 'mn' %}
+{% set status = { 0: 'Идэвхгүй', 1: 'Идэвхтэй' } %}
+{% else %}
+{% set status = { 0: 'Inactive', 1: 'Active' } %}
+{% endif %}
 <div class="bd-callout bd-callout-primary bg-light alert alert-dismissible fade show shadow-sm">
     <p><i class="bi bi-person-lines-fill" style="padding-right:8px;"></i> {{ 'accounts-note'|text }}
     <button class="btn-close" type="button" style="font-size:0.7rem" data-bs-dismiss="alert" aria-label="{{ 'close'|text|e }}"></button>

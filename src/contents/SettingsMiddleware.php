@@ -17,6 +17,7 @@ class SettingsMiddleware implements MiddlewareInterface
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
         try {
+            $level = \ob_get_level();
             if (\ob_start()) {
                 $alias = \getenv('CODESAUR_ORGANIZATION_ALIAS', true);
                 $user = $request->getAttribute('user');
@@ -47,15 +48,17 @@ class SettingsMiddleware implements MiddlewareInterface
                 }
                 \ob_end_clean();
             }
-        } catch (\Throwable $th) {
-            if (\ob_get_level()) {
+        } catch (\Throwable $e) {
+            if (isset($level)
+                && \ob_get_level() > $level
+            ) {
                 \ob_end_clean();
             }
             
             if (\defined('CODESAUR_DEVELOPMENT')
                     && CODESAUR_DEVELOPMENT
             ) {
-                \error_log($th->getMessage());
+                \error_log($e->getMessage());
             }
         }
         

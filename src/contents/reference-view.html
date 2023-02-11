@@ -17,42 +17,39 @@
             </div>
             <div class="col-lg-6">
                 <label class="form-label">{{ 'type'|text }}</label>
-                <select class="form-control" name="category" disabled>
-                    {% for value,name in category %}
-                    <option value="{{ value }}"{{ value == record['category'] ? ' selected' : '' }}>{{ name|e }}</option>
-                    {% endfor %}
-                </select>
+                <input class="form-control" name="category" readonly type="text" value="{{ record['category']|e }}" maxlength="32">
             </div>
         </div>
         <ul class="nav nav-tabs nav-tabs-content mt-4">
-            {% for code,title in language %}
+            {% for code,title in localization.language %}
             <li class="nav-item">
                 <a class="nav-link{% if loop.first %} active show{% endif %}" data-bs-toggle="tab" href="#tab-{{ code }}">{{ 'content'|text }} <img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.3/flags/{{ code }}.png"></a>
             </li>
             {% endfor %}
             <li class="nav-item">
-                <a class="nav-link" data-bs-toggle="tab" href="#tab-history">{{ 'history'|text }}</a>
+                <a class="nav-link" data-bs-toggle="tab" href="#tab-history">{{ 'history'|text }} <i class="bi bi-clock-history"></i></a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" data-bs-toggle="tab" href="#tab-version">{{ 'version'|text }}</a>
+                <a class="nav-link" data-bs-toggle="tab" href="#tab-version">{{ 'version'|text }} <i class="bi bi-sort-numeric-down"></i></a>
             </li>
         </ul>
         <div class="tab-content">
-            {% for code,title in language %}
+            {% for code,title in localization.language %}
             <div class="tab-pane{% if loop.first %} active show{% endif %}" id="tab-{{ code }}">
-                <div class="form-group">
+                <div class="form-group bg-light rounded-3">
                     <label class="form-label">{{ 'title'|text }} ({{ code }})</label>
-                    <input class="form-control" name="title[{{ code }}]" readonly value="{{ record['content']['title'][code]|e }}" maxlength="255" placeholder="" type="text" autocomplete="off">
+                    <div id="TitleContentHelp" class="form-text">{{ 'title-note'|text }} [{{ title }}]</div>
+                    <input class="form-control" name="title[{{ code }}]" readonly value="{{ record['content']['title'][code]|e }}" maxlength="255" placeholder="" type="text" autocomplete="off" aria-describedby="TitleContentHelp">
                 </div>
-                <hr>
-                <div class="form-group">
+                <div class="form-group bg-light mt-4 rounded-3">
                     <label class="form-label">{{ 'short'|text }} ({{ code }})</label>
-                    <textarea class="form-control" name="short[{{ code }}]" readonly>{{ record['content']['short'][code] }}</textarea>
+                    <div id="ShortContentHelp" class="form-text">{{ 'short-note'|text }} [{{ title }}]</div>
+                    <textarea class="form-control" name="short[{{ code }}]" readonly aria-describedby="ShortContentHelp">{{ record['content']['short'][code] }}</textarea>
                 </div>
-                <hr>
-                <div class="form-group">
+                <div class="form-group bg-light mt-4 rounded-3">
                     <label class="form-label">{{ 'full'|text }} ({{ code }})</label>
-                    <textarea class="form-control" name="full[{{ code }}]" readonly rows="10">{{ record['content']['full'][code] }}</textarea>
+                    <div id="FullContentHelp" class="form-text">{{ 'full-note'|text }} [{{ title }}]</div>
+                    <textarea class="form-control" name="full[{{ code }}]" readonly rows="10" aria-describedby="FullContentHelp">{{ record['content']['full'][code] }}</textarea>
                 </div>
             </div>
             {% endfor %}
@@ -83,6 +80,14 @@
                 </div>
             </div>
             <div class="tab-pane" id="tab-version">
+                <div class="alert alert-warning shadow-sm fade mt-4 show" role="alert">
+                    <i class="bi bi-exclamation-triangle" style="margin-right:5px"></i>
+                    {% if localization.code == 'mn' %}
+                    Уучлаарай, энэ үйлдэл одоохондоо ажиллагаанд ороогүй байна
+                    {% else %}
+                    Sorry, this feature isn’t available right now
+                    {% endif %}
+                </div>
             </div>
         </div>
     </div>

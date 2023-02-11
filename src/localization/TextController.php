@@ -54,9 +54,7 @@ class TextController extends DashboardController
                 unset($colors[$index]);
             }
         }
-        $this->twigDashboard(\dirname(__FILE__) . '/texts-index.html', [
-            'tables' => $tables, 'localization' => $this->getAttribute('localization')
-        ])->render();
+        $this->twigDashboard(\dirname(__FILE__) . '/texts-index.html', ['tables' => $tables])->render();
         
         $this->indolog('localization', LogLevel::NOTICE, 'Системийн текст жагсаалтыг нээж үзэж байна', ['model' => TextModel::class, 'tables' => $tables]);
     }
@@ -71,30 +69,35 @@ class TextController extends DashboardController
             }
             
             $texts = $this->indoget("/text/records/$table");
-            $language = $this->getAttribute('localization')['language'] ?? [];
+            $language_codes = \array_keys($this->getLanguages());
             foreach ($texts as $record) {
                 $id = $record['id'];
                 
                 $row = [\htmlentities($record['keyword'])];
-                foreach (\array_keys($language) as $code) {
-                    $row[] = \htmlentities($record['content']['text'][$code]);
+                foreach ($language_codes as $code) {
+                    $row[] = \htmlentities($record['content']['text'][$code] ?? '');
                 }
                 $row[] = [\htmlentities(self::RECORD_TYPE[$record['type']] ?? $record['type'])];
-                $action = '<a class="ajax-modal btn btn-sm btn-info shadow-sm" data-bs-target="#dashboard-modal" data-bs-toggle="modal" ' .
-                    'href="' . $this->generateLink('text-view', ['table' => $table, 'id' => $id]) . '"><i class="bi bi-eye"></i></a>' . \PHP_EOL;
+                
+                $action =
+                    '<a class="ajax-modal btn btn-sm btn-info shadow-sm" data-bs-target="#dashboard-modal" data-bs-toggle="modal" ' .
+                    'href="' . $this->generateLink('text-view', ['table' => $table, 'id' => $id]) . '"><i class="bi bi-eye"></i></a>';
+                
                 if ($this->getUser()->can('system_localization_update')) {
-                    $action .= '<a class="ajax-modal btn btn-sm btn-primary shadow-sm" data-bs-target="#dashboard-modal" data-bs-toggle="modal" ' .
-                        'href="' . $this->generateLink('text-update', ['table' => $table, 'id' => $id]) . '"><i class="bi bi-pencil-square"></i></a>' . \PHP_EOL;
+                    $action .=
+                        ' <a class="ajax-modal btn btn-sm btn-primary shadow-sm" data-bs-target="#dashboard-modal" data-bs-toggle="modal" ' .
+                        'href="' . $this->generateLink('text-update', ['table' => $table, 'id' => $id]) . '"><i class="bi bi-pencil-square"></i></a>';
                 }
                 if ($this->getUser()->can('system_localization_delete')) {
-                    $action .= '<a class="delete-text btn btn-sm btn-danger shadow-sm" href="' . "$table:$id" . '"><i class="bi bi-trash"></i></a>';
+                    $action .= ' <a class="delete-text btn btn-sm btn-danger shadow-sm" href="' . "$table:$id" . '"><i class="bi bi-trash"></i></a>';
                 }
+                
                 $row[] = $action;
                 
                 $rows[] = $row;
             }
-        } catch (\Throwable $th) {
-            $this->errorLog($th);
+        } catch (\Throwable $e) {
+            $this->errorLog($e);
         } finally {
             $count = \count($rows);
             $this->respondJSON([
@@ -157,24 +160,21 @@ class TextController extends DashboardController
                 if (!\file_exists($template_path)) {
                     throw new \Exception("$template_path file not found!", 500);
                 }
-                $this->twigTemplate($template_path, [
-                    'table' => $table,
-                    'language' => $this->getAttribute('localization')['language'] ?? []
-                ])->render();
+                $this->twigTemplate($template_path, ['table' => $table])->render();
                 
                 $level = LogLevel::NOTICE   ;
                 $message = "$table хүснэгт дээр шинэ текст үүсгэх үйлдлийг эхлүүллээ";
             }
-        } catch (\Throwable $th) {
+        } catch (\Throwable $e) {
             if ($is_submit) {
-                $this->respondJSON(['message' => $th->getMessage()], $th->getCode());
+                $this->respondJSON(['message' => $e->getMessage()], $e->getCode());
             } else {
-                $this->modalProhibited($th->getMessage(), $th->getCode())->render();
+                $this->modalProhibited($e->getMessage(), $e->getCode())->render();
             }
             
             $level = LogLevel::ERROR;
             $message = "$table хүснэгт дээр шинэ текст үүсгэх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо";
-            $context['error'] = ['code' => $th->getCode(), 'message' => $th->getMessage()];
+            $context['error'] = ['code' => $e->getCode(), 'message' => $e->getMessage()];
         } finally {
             $this->indolog('localization', $level, $message, $context);
         }
@@ -196,19 +196,20 @@ class TextController extends DashboardController
                 throw new \Exception("$template_path file not found!", 500);
             }
             $this->twigTemplate($template_path, [
+                'table' => $table,
+                'record' => $record,
                 'record_type' => self::RECORD_TYPE,
-                'record' => $record, 'accounts' => $this->getAccounts(),
-                'table' => $table, 'language' => $this->getAttribute('localization')['language'] ?? []
+                'accounts' => $this->getAccounts()
             ])->render();
 
             $level = LogLevel::NOTICE;
             $message = "$table хүснэгтээс [{$record['keyword']}] текст мэдээллийг нээж үзэж байна";
-        } catch (\Throwable $th) {
-            $this->modalProhibited($th->getMessage(), $th->getCode())->render();
+        } catch (\Throwable $e) {
+            $this->modalProhibited($e->getMessage(), $e->getCode())->render();
             
             $level = LogLevel::ERROR;
             $message = "$table хүснэгтээс текст мэдээллийг нээж үзэх үед алдаа гарч зогслоо";
-            $context['error'] = ['code' => $th->getCode(), 'message' => $th->getMessage()];
+            $context['error'] = ['code' => $e->getCode(), 'message' => $e->getMessage()];
         } finally {
             $this->indolog('localization', $level, $message, $context);
         }
@@ -275,30 +276,21 @@ class TextController extends DashboardController
                 if (!\file_exists($template_path)) {
                     throw new \Exception("$template_path file not found!", 500);
                 }
-                $this->twigTemplate($template_path, [
-                    'record' => $record, 'table' => $table,
-                    'language' => $this->getAttribute('localization')['language'] ?? []
-                ])->render();
+                $this->twigTemplate($template_path, ['record' => $record, 'table' => $table])->render();
                 
                 $level = LogLevel::NOTICE;
                 $context['record'] = $record;
                 $message = "$table хүснэгтээс [{$record['keyword']}] текст мэдээллийг шинэчлэхээр нээж байна";
             }
-        } catch (\Error $err) {
-            $level = LogLevel::ERROR;
-            $message = $err->getMessage();
-            $context['error'] = ['code' => $err->getCode(), 'message' => $err->getMessage()];
-            
-            throw new \Exception($err->getMessage(), $err->getCode());
-        } catch (\Throwable $th) {
+        } catch (\Throwable $e) {
             if ($is_submit) {
-                $this->respondJSON(['message' => $th->getMessage()], $th->getCode());
+                $this->respondJSON(['message' => $e->getMessage()], $e->getCode());
             } else {
-                $this->modalProhibited($th->getMessage(), $th->getCode())->render();
+                $this->modalProhibited($e->getMessage(), $e->getCode())->render();
             }
             
             $level = LogLevel::ERROR;
-            $context['error'] = ['code' => $th->getCode(), 'message' => $th->getMessage()];
+            $context['error'] = ['code' => $e->getCode(), 'message' => $e->getMessage()];
             $message = "$table хүснэгтээс текст мэдээллийг өөрчлөх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо";
         } finally {
             $this->indolog('localization', $level, $message, $context);
@@ -335,16 +327,16 @@ class TextController extends DashboardController
             
             $level = LogLevel::ALERT;
             $message = "$table хүснэгтээс [" . ($payload['name'] ?? $id) . '] текст мэдээллийг устгалаа';
-        } catch (\Throwable $th) {
+        } catch (\Throwable $e) {
             $this->respondJSON([
                 'status'  => 'error',
                 'title'   => $this->text('error'),
-                'message' => $th->getMessage()
-            ], $th->getCode());
+                'message' => $e->getMessage()
+            ], $e->getCode());
             
             $level = LogLevel::ERROR;
             $message = 'Текст мэдээлэл устгах үйлдлийг гүйцэтгэх явцад алдаа гарч зогслоо';
-            $context['error'] = ['code' => $th->getCode(), 'message' => $th->getMessage()];
+            $context['error'] = ['code' => $e->getCode(), 'message' => $e->getMessage()];
         } finally {
             $this->indolog('localization', $level, $message, $context);
         }

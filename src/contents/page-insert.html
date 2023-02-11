@@ -1,0 +1,223 @@
+{% set categories = {
+  'general': { 'mn': 'Ерөнхий' },
+  'special': { 'mn': 'Тусгай' }
+} %}
+{% set types = {
+  'menu': { 'mn': 'Үндсэн цэс' },
+  'top-menu': { 'mn': 'Толгойн цэс' },
+  'footer-menu': { 'mn': 'Хөлийн цэс' },
+  'dropdown-menu': { 'mn': 'Унжих цэс' },
+  'mega-menu': { 'mn': 'Мега цэс' }
+} %}
+<div class="card shadow border-success mt-2 mb-4">
+    <div class="card-header bg-light">
+        <div class="d-flex justify-content-between flex-wrap flex-md-nowrap">
+            <h6 class="text-success text-uppercase pt-2"><i class="bi bi-book"></i> {{ 'add-record'|text }} (pages)</h6>
+            <div class="button-group">
+                <button class="submit-insert btn btn-success shadow-sm text-uppercase">
+                    <i class="bi bi-check-lg"></i> {{ 'save'|text }}
+                </button>
+                <button class="btn btn-secondary shadow-sm text-uppercase" onclick="window.history.go(-1); return false;">
+                    <i class="bi bi-arrow-left-circle"></i> {{ 'back'|text }}
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="card-body">
+        <form class="needs-validation" id="page_insert" action="{{ 'page-insert'|link }}" method="POST" enctype="multipart/form-data" novalidate>
+            <div class="row mt-3">
+                <div class="col-12">
+                    <div class="form-floating">
+                        <select class="form-select" name="parent_id">
+                            <option value="0" selected>- {{ localization.code == 'mn' ? 'Үндсэн меню' : 'Main menu' }} -</option>
+                        {% for id,info in infos %}
+                            <option value="{{ id }}">{{ (info['parent_titles'] ?? '')|e }}{{ info['title']|e }}</option>
+                        {% endfor %}
+                        </select>
+                        <label>{{ 'parent'|text }}</label>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group row mt-3">
+                <div class="col-3">
+                    <label class="form-label">{{ 'date'|text }}</label>
+                    <input class="form-control" name="published_at" value="" placeholder="" type="datetime-local" autocomplete="off">
+                </div>
+                <div class="col-3">
+                    <label class="form-label">{{ 'category'|text }}</label>
+                    <div class="input-group mb-3">
+                        <input class="form-control" name="category" type="text" value="{{ categories|keys|first }}" maxlength="32">
+                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"></button>
+                        <ul class="dropdown-menu dropdown-menu-end" id="category_list">
+                        {% for value,name in categories %}
+                            <li class="dropdown-item" value="{{ value }}">{{ name[localization.code] ?? value|capitalize }}</li>
+                        {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+                <div class="col-3">
+                    <label class="form-label">{{ 'type'|text }}</label>
+                    <div class="input-group mb-3">
+                        <input class="form-control" name="type" type="text" value="{{ types|keys|first }}" maxlength="32">
+                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"></button>
+                        <ul class="dropdown-menu dropdown-menu-end" id="type_list">
+                        {% for value,name in types %}
+                            <li class="dropdown-item" value="{{ value }}">{{ name[localization.code] ?? name['en'] }}</li>
+                        {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+                <div class="col-3">
+                    <label class="form-label">{{ 'position'|text }}</label>
+                    <input class="form-control" name="position" value="100" placeholder="" type="number" autocomplete="off">
+                    <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
+                </div>
+            </div>
+            <ul class="nav nav-tabs nav-tabs-content mt-4">
+            {% for code,title in localization.language %}
+                <li class="nav-item">
+                    <a class="nav-link{% if loop.first %} active show{% endif %}" data-bs-toggle="tab" href="#tab-{{ code }}">{{ 'content'|text }} <img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.3/flags/{{ code }}.png"></a>
+                </li>
+            {% endfor %}
+                <li class="nav-item">
+                    <a class="nav-link" data-bs-toggle="tab" href="#tab-photo">{{ 'photo'|text }} <i class="bi bi-file-image"></i></a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-bs-toggle="tab" href="#tab-files">{{ 'files'|text }} <i class="bi bi-paperclip"></i></a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-bs-toggle="tab" href="#tab-meta">{{ 'meta'|text }} <i class="bi bi-share"></i></a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-bs-toggle="tab" href="#tab-comment">{{ 'comment'|text }} <i class="bi bi-chat-left-text"></i></a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-bs-toggle="tab" href="#tab-link">{{ 'link'|text }} <i class="bi bi-link-45deg"></i></a>
+                </li>
+            </ul>
+            <div class="tab-content">
+            {% for code,title in localization.language %}
+                <div class="tab-pane{% if loop.first %} active show{% endif %}" id="tab-{{ code }}">
+                    <div class="form-group bg-light rounded-3">
+                        <label class="form-label">{{ 'title'|text }} ({{ code }})</label>
+                        <div id="TitleContentHelp" class="form-text">{{ 'title-note'|text }} [{{ title }}]</div>
+                        <input class="form-control" name="title[{{ code }}]" required value="" maxlength="255" placeholder="" type="text" autocomplete="off" aria-describedby="TitleContentHelp">
+                        <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
+                    </div>
+                    <div class="form-group bg-light mt-4 rounded-3">
+                        <label class="form-label">{{ 'short'|text }} ({{ code }})</label>
+                        <div id="ShortContentHelp" class="form-text">{{ 'short-note'|text }} [{{ title }}]</div>
+                        <textarea class="form-control" name="short[{{ code }}]" aria-describedby="ShortContentHelp"></textarea>
+                    </div>
+                    <div class="form-group bg-light mt-4 rounded-3">
+                        <label class="form-label">{{ 'full'|text }} ({{ code }})</label>
+                        <div id="FullContentHelp" class="form-text">{{ 'full-note'|text }} [{{ title }}]</div>
+                        <textarea class="form-control" id="full_{{ code }}" name="full[{{ code }}]" rows="10" aria-describedby="FullContentHelp"></textarea>
+                    </div>
+                    <div class="mb-3 bg-light mt-4 rounded-3">
+                        <label class="form-label">{{ 'visible'|text }}</label>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" name="is_visible[{{ code }}]" checked type="checkbox" role="switch" aria-describedby="IsVisibleHelp">
+                            <div id="IsVisibleHelp" class="form-text">{{ localization.code == 'mn' ? 'бичлэг сайт дээр харагдах эсэх' : 'visiblity of content' }}</div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+                <div class="tab-pane" id="tab-photo">
+                    <div class="alert alert-danger shadow-sm fade mt-4 show" role="alert">
+                        <i class="bi bi-exclamation-triangle" style="margin-right:5px"></i>
+                    {% if localization.code == 'mn' %}
+                        Уучлаарай, энэ үйлдэл одоохондоо ажиллагаанд ороогүй байна
+                    {% else %}
+                        Sorry, this feature isn’t available right now
+                    {% endif %}
+                    </div>
+                </div>
+                <div class="tab-pane" id="tab-files">
+                    <div class="alert alert-warning shadow-sm fade mt-4 show" role="alert">
+                        <i class="bi bi-exclamation-triangle" style="margin-right:5px"></i>
+                    {% if localization.code == 'mn' %}
+                        Уучлаарай, энэ үйлдэл одоохондоо ажиллагаанд ороогүй байна
+                    {% else %}
+                        Sorry, this feature isn’t available right now
+                    {% endif %}
+                    </div>
+                </div>
+                <div class="tab-pane" id="tab-meta">
+                    <div class="alert alert-secondary shadow-sm fade mt-4 show" role="alert">
+                        <i class="bi bi-exclamation-triangle" style="margin-right:5px"></i>
+                    {% if localization.code == 'mn' %}
+                        Уучлаарай, энэ үйлдэл одоохондоо ажиллагаанд ороогүй байна
+                    {% else %}
+                        Sorry, this feature isn’t available right now
+                    {% endif %}
+                    </div>
+                </div>
+                <div class="tab-pane" id="tab-comment">
+                    <div class="alert alert-primary shadow-sm fade mt-4 show" role="alert">
+                        <i class="bi bi-exclamation-triangle" style="margin-right:5px"></i>
+                    {% if localization.code == 'mn' %}
+                        Уучлаарай, энэ үйлдэл одоохондоо ажиллагаанд ороогүй байна
+                    {% else %}
+                        Sorry, this feature isn’t available right now
+                    {% endif %}
+                    </div>
+                </div>
+                <div class="tab-pane" id="tab-link">
+                    <div class="alert alert-dark shadow-sm fade mt-4 show" role="alert">
+                        <i class="bi bi-exclamation-triangle" style="margin-right:5px"></i>
+                    {% if localization.code == 'mn' %}
+                        Уучлаарай, энэ үйлдэл одоохондоо ажиллагаанд ороогүй байна
+                    {% else %}
+                        Sorry, this feature isn’t available right now
+                    {% endif %}
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+    <div class="card-footer">
+        <div class="row pt-1 pb-1">
+            <div class="col-6 d-grid">
+                <button class="submit-insert btn btn-lg btn-success shadow-sm" type="submit"><i class="bi bi-check2"></i> {{ 'save'|text }}</button>
+            </div>
+            <div class="col-6 d-grid">
+                <button class="btn btn-lg btn-block btn-secondary shadow-sm" onclick="window.history.go(-1); return false;"><i class="bi bi-arrow-left"></i> {{ 'back'|text }}</button>
+            </div>
+        </div>
+    </div>
+</div>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sceditor@latest/minified/themes/default.min.css">
+<script defer src="https://cdn.jsdelivr.net/combine/npm/sceditor@latest/minified/sceditor.min.js,npm/sceditor@latest/minified/formats/xhtml.min.js,npm/sceditor@latest/minified/icons/monocons.min.js"></script>
+<script type="text/javascript">
+document.addEventListener('DOMContentLoaded', function () {
+    {% for code,title in localization.language %}
+    let full_{{ code }} = document.getElementById('full_{{ code }}');
+    sceditor.create(full_{{ code }}, {
+        format: 'xhtml',
+        emoticonsEnabled: false,
+        toolbarExclude: 'emoticon',
+        icons: 'monocons',
+        width: '100%',
+        height: '360px',
+        style: 'https://cdn.jsdelivr.net/npm/sceditor@latest/minified/themes/content/default.min.css'
+    });
+    {% endfor %}
+    
+    const category = document.querySelector('input[name="category"]');    
+    document.getElementById('category_list').addEventListener('click', function (e) {
+        if (e.target && e.target.nodeName === 'LI') {
+            category.value = e.target.getAttribute('value');
+        }
+    });
+    
+    const type = document.querySelector('input[name="type"]');
+    document.getElementById('type_list').addEventListener('click', function (e) {
+        if (e.target && e.target.nodeName === 'LI') {
+            type.value = e.target.getAttribute('value');
+        }
+    });
+    
+    FormSubmitHandler('.submit-insert', 'form#page_insert');
+});
+</script>

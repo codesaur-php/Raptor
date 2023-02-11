@@ -34,7 +34,7 @@ class Controller extends \codesaur\Http\Application\Controller
     
     public final function isUserCan(string $permission): bool
     {
-        return $this->isUserAuthorized() && $this->getUser()->can($permission);
+        return $this->getUser()?->can($permission) ?? false;
     }
     
     protected final function getScriptPath(): string
@@ -60,8 +60,8 @@ class Controller extends \codesaur\Http\Application\Controller
                 return $pattern;
             }
             return (string) $this->getRequest()->getUri()->withPath($pattern);
-        } catch (\Throwable $th) {
-            $this->errorLog($th);
+        } catch (\Throwable $e) {
+            $this->errorLog($e);
 
             return $default;
         }
@@ -69,12 +69,12 @@ class Controller extends \codesaur\Http\Application\Controller
 
     public final function getLanguageCode(): string
     {
-        return $this->getAttribute('localization')['code'] ?? 'en';
+        return $this->getAttribute('localization')['code'] ?? '';
     }
     
     public final function getLanguages(): array
     {
-        return $this->getAttribute('localization')['language'] ?? ['en' => 'English'];
+        return $this->getAttribute('localization')['language'] ?? [];
     }
 
     public final function text($key): string
@@ -88,16 +88,6 @@ class Controller extends \codesaur\Http\Application\Controller
         }
 
         return '{' . $key . '}';
-    }
-    
-    public final function getStatusValues()
-    {
-        if ($this->getLanguageCode() == 'mn') {
-            return [1 => 'Идэвхтэй', 0 => 'Идэвхгүй'];
-        }
-        else {
-            return [1 => 'Active', 0 => 'Inactive'];
-        }
     }
     
     public function twigTemplate(string $template, array $vars = []): TwigTemplate
@@ -119,10 +109,12 @@ class Controller extends \codesaur\Http\Application\Controller
         return $twig;
     }
     
-    public function respondJSON(array $response, ?int $code = null): void
+    public function respondJSON(array $response, int|string $code = 0): void
     {
         if (!\headers_sent()) {
-            if (!empty($code)) {
+            if (!empty($code)
+                && \is_int($code)
+            ) {
                 if ($code != StatusCodeInterface::STATUS_OK) {
                     $status_code = "STATUS_$code";
                     $reasonPhraseClass = ReasonPrhase::class;
@@ -147,6 +139,7 @@ class Controller extends \codesaur\Http\Application\Controller
     public function indo(string $pattern, array $payload = [], string $method = 'INTERNAL')
     {
         try {
+            $level = \ob_get_level();
             if (\ob_start()) {
                 $jwt = $this->isUserAuthorized() ? $this->getUser()->getToken() : null;
                 $request = new InternalRequest($method, $pattern, $payload, $jwt);
@@ -155,22 +148,21 @@ class Controller extends \codesaur\Http\Application\Controller
                     ?? throw new \Exception(__CLASS__ . ': Error decoding Indoraptor response!');
                 \ob_end_clean();
             }
-        } catch (\Throwable $throwable) {
-            if (\ob_get_level()) {
+        } catch (\Throwable $e) { 
+            if (isset($level)
+                && \ob_get_level() > $level
+            ) {
                 \ob_end_clean();
             }
+            
+            $response = ['error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]];
         }
         
-        if (isset($throwable)) {
-            if ($throwable instanceof \Exception) {
-                throw $throwable;
-            } else {
-                throw new \Exception($throwable->getMessage(), $throwable->getCode());
-            }
-        } elseif (isset($response['error']['code'])
+        if (isset($response['error']['code'])
             && isset($response['error']['message'])
         ) {
-            throw new \Exception($response['error']['message'], $response['error']['code']);
+            $error_code = $response['error']['code'];
+            throw new \Exception($response['error']['message'], \is_int($error_code) ? $error_code : 0);
         }
         
         return $response;
@@ -213,7 +205,7 @@ class Controller extends \codesaur\Http\Application\Controller
                 'level' => $level,
                 'message' => $message,
                 'context' => \json_encode($context)
-                            ?: throw new \Exception(__CLASS__ . ': Error encoding log context')
+                ?: throw new \Exception(__CLASS__ . ': Error encoding log context')
             ];
             
             if (isset($created_by)) {
@@ -221,8 +213,8 @@ class Controller extends \codesaur\Http\Application\Controller
             }
             
             return $this->indo('/log', $payload);
-        } catch (\Throwable $th) {
-            $this->errorLog($th);
+        } catch (\Throwable $e) {
+            $this->errorLog($e);
             
             return [];
         }
@@ -232,7 +224,7 @@ class Controller extends \codesaur\Http\Application\Controller
     {
         try {
             return $this->indo($pattern, $payload, $method);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->errorLog($e);
             
             return [];
@@ -247,19 +239,19 @@ class Controller extends \codesaur\Http\Application\Controller
                 
                 return $this->indolog('file', LogLevel::ALERT, "$filePath файлыг устгалаа");
             }
-        } catch (\Exception $ex) {
-            $this->errorLog($ex);
+        } catch (\Throwable $e) {
+            $this->errorLog($e);
             
             return [];
         }
     }
     
-    protected final function errorLog(\Throwable $th)
+    protected final function errorLog(\Throwable $e)
     {
         if (!$this->isDevelopment()) {
             return;
         }
         
-        \error_log($th->getMessage());
+        \error_log($e->getMessage());
     }
 }

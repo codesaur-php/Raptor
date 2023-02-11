@@ -17,8 +17,7 @@
                     <div class="form-control"><img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.3/flags/{{ record['id']|lower }}.png"></div>
                 </div>
             </div>
-            <hr>
-            {% for code,lang in language %}
+            {% for code,lang in localization.language %}
             <div class="row mb-2">
                 <label class="col-3 col-form-label text-end">{{ 'name'|text }} ({{ lang }} <img style="position:relative;top:-1px" src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.3/flags/{{ code }}.png">)</label>
                 <div class="col-9">

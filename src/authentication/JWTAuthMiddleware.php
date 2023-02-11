@@ -17,25 +17,29 @@ class JWTAuthMiddleware implements MiddlewareInterface
     protected function request(?IndoApplication $indo, string $method, string $pattern, array $payload = [])
     {
         try {
+            $level = \ob_get_level();
             if (\ob_start()) {
                 $indo?->handle(new InternalRequest($method, $pattern, $payload));
                 $response = \json_decode(\ob_get_contents(), true)
                     ?? throw new \Exception(__CLASS__ . ': Error decoding Indoraptor response!');
                 \ob_end_clean();
             }
-        } catch (\Throwable $th) {
-            if (\ob_get_level()) {
+        } catch (\Throwable $e) {
+            if (isset($level)
+                && \ob_get_level() > $level
+            ) {
                 \ob_end_clean();
             }
             
-            $response = ['error' => ['code' => $th->getCode(), 'message' => $th->getMessage()]];
+            $response = ['error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]];
         }
         
         if (isset($response['error']['code'])
             && isset($response['error']['message'])
         ) {
-            throw new \Exception($response['error']['message'], $response['error']['code']);
-        }
+            $error_code = $response['error']['code'];
+            throw new \Exception($response['error']['message'], \is_int($error_code) ? $error_code : 0);
+       }
         
         return $response;
     }
@@ -63,11 +67,11 @@ class JWTAuthMiddleware implements MiddlewareInterface
                 throw new \Exception('There is no JWT!');
             }
             $user = $this->retrieveIndoUser($request, $_SESSION[$sess_jwt_key]);
-        } catch (\Throwable $th) {
-            if ($th->getCode() >= 5000
+        } catch (\Throwable $e) {
+            if ($e->getCode() >= 5000
                 && \defined('CODESAUR_DEVELOPMENT') && CODESAUR_DEVELOPMENT
             ) {
-                \error_log($th->getMessage());
+                \error_log($e->getMessage());
             }
             
             if (isset($_SESSION[$sess_jwt_key])

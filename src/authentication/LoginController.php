@@ -63,21 +63,21 @@ class LoginController extends \Raptor\Controller
                     'condition' => ['WHERE' => "id={$account['id']}"]
                 ]);
             } elseif ($account['code'] != $this->getLanguageCode()
-                && isset($this->getAttribute('localization')['language'][$account['code']])
+                && isset($this->getLanguages()[$account['code']])
             ) {
                 $_SESSION[\explode('\\', __NAMESPACE__)[0] . '\\language\\code'] = $account['code'];
             }
-        } catch (\Throwable $th) {
+        } catch (\Throwable $e) {
             if (isset($_SESSION[$sess_jwt_key])) {
                 unset($_SESSION[$sess_jwt_key]);
             }
-            $this->respondJSON(['message' => $th->getMessage()], $th->getCode());
+            $this->respondJSON(['message' => $e->getMessage()], $e->getCode());
 
-            $this->errorLog($th);
+            $this->errorLog($e);
             
             $level = LogLevel::ERROR;
-            $message = $th->getMessage();
-            $context += ['reason' => 'attempt', 'error' => ['code' => $th->getCode(), 'message' => $th->getMessage()]];
+            $message = $e->getMessage();
+            $context += ['reason' => 'attempt', 'error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]];
         } finally {
             $this->indolog('dashboard', $level, $message, $context, $account['id'] ?? null);
         }
@@ -176,12 +176,12 @@ class LoginController extends \Raptor\Controller
             
             $level = LogLevel::ALERT;
             $message = "{$payload['username']} нэртэй {$payload['email']} хаягтай шинэ хэрэглэгч үүсгэх хүсэлт бүртгүүллээ";
-        } catch (\Throwable $th) {
-            $message = $th->getMessage();
-            $this->respondJSON(['message' => '<span class="text-secondary">Шинэ хэрэглэгч үүсгэх хүсэлт бүртгүүлэх үед алдаа гарч зогслоо.</span><br/>' . $message], $th->getCode());
+        } catch (\Throwable $e) {
+            $message = $e->getMessage();
+            $this->respondJSON(['message' => '<span class="text-secondary">Шинэ хэрэглэгч үүсгэх хүсэлт бүртгүүлэх үед алдаа гарч зогслоо.</span><br/>' . $message], $e->getCode());
             
             $level = LogLevel::ERROR;
-            $context += ['error' => ['code' => $th->getCode(), 'message' => $message]];
+            $context += ['error' => ['code' => $e->getCode(), 'message' => $message]];
         } finally {
             $this->indolog('dashboard', $level ?? LogLevel::NOTICE, $message ?? 'request-new-account', $context);
         }
@@ -217,7 +217,7 @@ class LoginController extends \Raptor\Controller
             
             $record = [
                 'status'      => 1,
-                'use_id'      => uniqid('use'),
+                'use_id'      => \uniqid('use'),
                 'account'     => $account['id'],
                 'email'       => $account['email'],
                 'code'        => $payload['code'],
@@ -250,12 +250,12 @@ class LoginController extends \Raptor\Controller
 
             $level = LogLevel::INFO;
             $message = "{$payload['email']} хаягтай хэрэглэгч  нууц үгээ шинээр тааруулах хүсэлт илгээснийг бүртгүүллээ";
-        } catch (\Throwable $th) {
-            $message = $th->getMessage();
-            $this->respondJSON(['message' => '<span class="text-secondary">Хэрэглэгч нууц үгээ шинэчлэх хүсэлт илгээх үед алдаа гарч зогслоо.</span><br/>' . $message], $th->getCode());
+        } catch (\Throwable $e) {
+            $message = $e->getMessage();
+            $this->respondJSON(['message' => '<span class="text-secondary">Хэрэглэгч нууц үгээ шинэчлэх хүсэлт илгээх үед алдаа гарч зогслоо.</span><br/>' . $message], $e->getCode());
 
             $level = LogLevel::ERROR;
-            $context += ['error' => ['code' => $th->getCode(), 'message' => $message]];
+            $context += ['error' => ['code' => $e->getCode(), 'message' => $message]];
         } finally {
             $this->indolog('dashboard', $level ?? LogLevel::NOTICE, $message ?? 'login-forgot', $context);
         }
@@ -273,7 +273,7 @@ class LoginController extends \Raptor\Controller
             );
             $code = $forgot['code'];
             if ($code != $this->getLanguageCode()) {
-                if (isset($this->getAttribute('localization')['language'][$code])) {
+                if (isset($this->getLanguages()[$code])) {
                     $_SESSION[\explode('\\', __NAMESPACE__)[0] . '\\language\\code'] = $code;
                     $link = $this->generateLink('login') . "?forgot=$use_id";
                     \header("Location: $link", false, 302);
@@ -294,17 +294,17 @@ class LoginController extends \Raptor\Controller
             
             $level = LogLevel::ALERT;
             $message = 'Нууц үгээ шинээр тааруулж эхэллээ.';
-        } catch (\Throwable $th) {
-            if ($th->getCode() == 404) {
+        } catch (\Throwable $e) {
+            if ($e->getCode() == 404) {
                 $notice = 'Хуурамч/устгагдсан/хэрэглэгдсэн мэдээлэл ашиглан нууц үг тааруулахыг оролдов';
             } else {
-                $notice = $th->getMessage();
+                $notice = $e->getMessage();
             }
             $vars += ['title' => $this->text('error'), 'notice' => $notice];
 
             $level = LogLevel::ERROR;
             $message = "Нууц үгээ шинээр тааруулж эхлэх үед алдаа гарч зогслоо. $notice";
-            $context += ['error' => ['code' => $th->getCode(), 'message' => $th->getMessage()]];
+            $context += ['error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]];
         } finally {
             $this->twigTemplate(
                 \dirname(__FILE__) . '/login-reset-password.html', 
@@ -389,12 +389,12 @@ class LoginController extends \Raptor\Controller
             $level = LogLevel::INFO;
             $message = 'Нууц үг шинээр тохируулав';
             $context += ['account' => $account];
-        } catch (\Throwable $th) {
-            $vars['error'] = $th->getMessage();
+        } catch (\Throwable $e) {
+            $vars['error'] = $e->getMessage();
             
             $level = LogLevel::ERROR;
             $message = 'Шинээр нууц үг тааруулах үед алдаа гарлаа';
-            $context += ['error' => ['code' => $th->getCode(), 'message' => $th->getMessage()]];
+            $context += ['error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]];
         } finally {
             $this->twigTemplate(
                 \dirname(__FILE__) . '/login-reset-password.html', 
@@ -430,8 +430,8 @@ class LoginController extends \Raptor\Controller
             $message = "Хэрэглэгч {$account['first_name']} {$account['last_name']} нэвтэрсэн байгууллага сонгов.";
             $context = ['reason' => 'login-to-organization', 'enter' => $id, 'leave' => $current_org_id, 'jwt' => $jwt_result['jwt']];
             $this->indolog('dashboard', LogLevel::NOTICE, $message, $context);
-        } catch (\Throwable $th) {
-            $this->errorLog($th);
+        } catch (\Throwable $e) {
+            $this->errorLog($e);
             
             $location = $referer;
         } finally {
@@ -448,7 +448,7 @@ class LoginController extends \Raptor\Controller
         $home = (string) $this->getRequest()->getUri()->withPath($target_path);
         $referer = $this->getRequest()->getServerParams()['HTTP_REFERER'];
         $location = \str_contains($referer, $home) ? $referer : $home;
-        $language = $this->getAttribute('localization')['language'];
+        $language = $this->getLanguages();
         if (isset($language[$code]) && $code != $from) {
             $_SESSION[\explode('\\', __NAMESPACE__)[0] . '\\language\\code'] = $code;
             if ($this->isUserAuthorized()) {
@@ -463,7 +463,7 @@ class LoginController extends \Raptor\Controller
                     $message = "Хэрэглэгч {$account['first_name']} {$account['last_name']} системд ажиллах хэлийг $from-с $code болгон өөрчиллөө";
                     $context = ['reason' => 'change-language', 'code' => $code, 'from' => $from];
                     $this->indolog('dashboard', LogLevel::NOTICE, $message, $context);
-                } catch (\Exception $e) {
+                } catch (\Throwable $e) {
                     $this->errorLog($e);
                 }
             }

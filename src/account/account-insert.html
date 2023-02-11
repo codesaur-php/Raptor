@@ -10,9 +10,9 @@
     </div>
 </div>
 <ul class="nav nav-tabs mb-4" role="tablist">
-    <li class="nav-item"><a class="nav-link active show" data-bs-toggle="tab" href="#tab-personal">{{ 'personal-info'|text }}</a></li>
-    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-picture">{{ 'image'|text }}</a></li>
-    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-organization">{{ 'organization'|text }}</a></li>
+    <li class="nav-item"><a class="nav-link active show" data-bs-toggle="tab" href="#tab-personal">{{ 'personal-info'|text }} <i class="bi bi-postcard"></i></a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-picture">{{ 'image'|text }} <i class="bi bi-camera"></i></a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-organization">{{ 'organization'|text }} <i class="bi bi-building"></i></a></li>
 </ul>
 <form class="needs-validation" novalidate id="account_insert" action="{{ 'account-insert'|link }}" method="POST" enctype="multipart/form-data">
     <div class="tab-content mb-4">
@@ -50,12 +50,12 @@
                     <div class="invalid-feedback">{{ 'enter-valid-email'|text }}</div>
                 </div>
             </div>
-            <div class="mb-3">
+            <div class="mb-3 bg-light rounded-3">
                 <label class="form-label">{{ 'status'|text }}</label>
                 <div class="form-check form-switch">
                   <input class="form-check-input" name="status" checked type="checkbox" role="switch" aria-describedby="activeHelpBlock" onclick="warnStatus(this.checked);">
+                  <div id="activeHelpBlock" class="form-text">{{ 'active-account-can-login'|text }}</div>
                 </div>
-                <div id="activeHelpBlock" class="form-text">{{ 'active-account-can-login'|text }}</div>
             </div>
         </div>
         <div class="tab-pane" id="tab-picture" role="tabpanel">

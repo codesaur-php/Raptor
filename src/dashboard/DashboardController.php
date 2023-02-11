@@ -24,24 +24,25 @@ class DashboardController extends \Raptor\Controller
         return $dashboard;
     }
     
-    public function dashboardProhibited(?string $alert = null, ?int $code = null): TwigTemplate
+    public function dashboardProhibited(?string $alert = null, int|string $code = 0): TwigTemplate
     {
-        if (!empty($code) && !\headers_sent()) {
-            if ($code != StatusCodeInterface::STATUS_OK) {
-                $status_code = "STATUS_$code";
-                $reasonPhraseClass = ReasonPrhase::class;
-                if (\defined("$reasonPhraseClass::$status_code")) {
-                    \http_response_code($code);
-                }
-            }
-        }
+        $this->headerResponseCode($code);
         
         return $this->twigDashboard(
             \dirname(__FILE__) . '/alert-no-permission.html',
             ['alert' => $alert ?? $this->text('system-no-permission')]);
     }
     
-    public function modalProhibited(?string $alert = null, ?int $code = null): TwigTemplate
+    public function modalProhibited(?string $alert = null, int|string $code = 0): TwigTemplate
+    {
+        $this->headerResponseCode($code);
+        
+        return new TwigTemplate(
+            \dirname(__FILE__) . '/modal-no-permission.html',
+            ['alert' => $alert ?? $this->text('system-no-permission'), 'close' => $this->text('close')]);
+    }
+    
+    private function headerResponseCode(int|string $code)
     {
         if (!empty($code) && !\headers_sent()) {
             if ($code != StatusCodeInterface::STATUS_OK) {
@@ -52,10 +53,6 @@ class DashboardController extends \Raptor\Controller
                 }
             }
         }
-        
-        return new TwigTemplate(
-            \dirname(__FILE__) . '/modal-no-permission.html',
-            ['alert' => $alert ?? $this->text('system-no-permission'), 'close' => $this->text('close')]);
     }
     
     public function getAccounts(): array
@@ -133,6 +130,10 @@ class DashboardController extends \Raptor\Controller
 
             $contents_id = $this->indopost($pattern, ['content' => ['mn' => ['title' => 'Агуулгууд'], 'en' => ['title' => 'Contents']], 'record' => ['position' => '200']]);
             $this->indopost($pattern, [
+                'content' => ['mn' => ['title' => 'Хуудсууд'], 'en' => ['title' => 'Pages']],
+                'record' => ['parent_id' => $contents_id, 'position' => '260', 'alias' => 'system', 'permission' => 'system_content_index', 'icon' => 'bi bi-book-half', 'href' => $this->generateLink('pages')]
+            ]);
+            $this->indopost($pattern, [
                 'content' => ['mn' => ['title' => 'Хэл'], 'en' => ['title' => 'Languages']],
                 'record' => ['parent_id' => $contents_id, 'position' => '280', 'alias' => 'system', 'permission' => 'system_localization_index', 'icon' => 'bi bi-flag-fill', 'href' => $this->generateLink('languages')]
             ]);
@@ -166,8 +167,8 @@ class DashboardController extends \Raptor\Controller
                 'content' => ['mn' => ['title' => 'Хандалтын протокол'], 'en' => ['title' => 'Access logs']],
                 'record' => ['parent_id' => $system_id, 'position' => '340', 'alias' => 'system', 'permission' => 'system_logger', 'icon' => 'bi bi-list-stars', 'href' => $this->generateLink('logs')]
             ]);
-        } catch (\Throwable $th) {
-            $this->errorLog($th);
+        } catch (\Throwable $e) {
+            $this->errorLog($e);
         }
     }
 }

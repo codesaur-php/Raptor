@@ -90,7 +90,7 @@ class SettingsController extends DashboardController
                 $existing = $this->indosafe('/record?model=' . SettingsModel::class, ['p.alias' => $record['alias'], 'p.is_active' => 1]);
                 if (isset($existing['id'])) {
                     $id = $existing['id'];
-                    $this->indoput('/record?model=' . SettingsModel::class, ['record' => $record, 'content' => $content, 'condition' => ['WHERE' => "id=$id"]]);
+                    $this->indoput('/record?model=' . SettingsModel::class, ['record' => $record, 'content' => $content, 'condition' => ['WHERE' => "p.id=$id"]]);
                     $notify = 'primary';
                     $notice = $this->text('record-update-success');
                 } else {
@@ -107,8 +107,8 @@ class SettingsController extends DashboardController
 
                 $level = LogLevel::INFO;
                 $message = 'Системийн тохируулгыг амжилттай хадгаллаа';
-            } catch (\Throwable $th) {
-                echo $this->respondJSON(['message' => $th->getMessage()], $th->getCode());
+            } catch (\Throwable $e) {
+                echo $this->respondJSON(['message' => $e->getMessage()], $e->getCode());
                 
                 $level = LogLevel::ERROR;
                 $message = 'Системийн тохируулгыг хадгалах үед алдаа гарч зогслоо';
@@ -124,9 +124,9 @@ class SettingsController extends DashboardController
             $alias = $this->getUser()->getOrganization()['alias'];
 
             try {
-                $record = $this->indoget('/record?model=' . SettingsModel::class, ['alias' => $alias, 'is_active' => 1]);
-            } catch (\Throwable $th) {
-                $this->errorLog($th);
+                $record = $this->indoget('/record?model=' . SettingsModel::class, ['p.alias' => $alias, 'p.is_active' => 1]);
+            } catch (\Throwable $e) {
+                $this->errorLog($e);
 
                 $record = ['alias' => $alias];
             }
@@ -241,7 +241,7 @@ class SettingsController extends DashboardController
             
             if (isset($existing['id'])) {
                 $id = $existing['id'];
-                $this->indoput('/record?model=' . SettingsModel::class, ['record' => $record, 'content' => $content, 'condition' => ['WHERE' => "id=$id"]]);
+                $this->indoput('/record?model=' . SettingsModel::class, ['record' => $record, 'content' => $content, 'condition' => ['WHERE' => "p.id=$id"]]);
                 $notify = 'primary';
                 $notice = $this->text('record-update-success');
             } else {
@@ -256,8 +256,8 @@ class SettingsController extends DashboardController
 
             $level = LogLevel::INFO;
             $message = 'Системийн тохируулгыг амжилттай хадгаллаа';
-        } catch (\Throwable $th) {
-            $this->respondJSON(['message' => $th->getMessage()], $th->getCode());
+        } catch (\Throwable $e) {
+            $this->respondJSON(['message' => $e->getMessage()], $e->getCode());
             
             $level = LogLevel::ERROR;
             $message = 'Системийн тохируулгыг хадгалах үед алдаа гарч зогслоо';
@@ -304,8 +304,8 @@ class SettingsController extends DashboardController
 
             $level = LogLevel::INFO;
             $message = 'Системийн шууданчын тохируулгыг амжилттай хадгаллаа';
-        } catch (\Throwable $th) {
-            $this->respondJSON(['message' => $th->getMessage()], $th->getCode(), $th->getCode());
+        } catch (\Throwable $e) {
+            $this->respondJSON(['message' => $e->getMessage()], $e->getCode(), $e->getCode());
 
             $level = LogLevel::ERROR;
             $message = 'Системийн шууданчын тохируулгыг хадгалах үед алдаа гарч зогслоо';

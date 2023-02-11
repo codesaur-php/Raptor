@@ -14,7 +14,7 @@
                         <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
                     </div>
                 </div>
-                {% for code,lang in language %}
+                {% for code,lang in localization.language %}
                 <div class="row mb-3">
                     <label class="col-3 col-form-label text-end">{{ 'title'|text }} ({{ lang }} <img style="position:relative;top:-1px" src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.3/flags/{{ code }}.png">)</label>
                     <div class="col-9">

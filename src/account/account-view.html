@@ -16,7 +16,6 @@
         <input class="form-control" disabled value="{{ record['username']|e }}" type="text">
     </div>
 </div>
-<hr>
 <div class="row mb-2">
     <label class="col-3 col-form-label text-end text-end">{{ 'firstname'|text }}</label>
     <div class="col-9">
@@ -52,16 +51,6 @@
     </div>
 </div>
 <div class="row mb-2">
-    <label class="col-3 col-form-label text-end text-end">{{ 'status'|text }}</label>
-    <div class="col-9">
-        <div class="form-check form-switch">
-            <input class="form-check-input" type="checkbox" role="switch" disabled {{ record['status'] == 1 ? 'checked ' : '' }}aria-describedby="activeHelpBlock">
-        </div>
-        <div class="form-text" id="activeHelpBlock">{{ 'active-account-can-login'|text }}</div>
-    </div>
-</div>
-<hr>
-<div class="row mb-2">
     <label class="col-3 col-form-label text-end text-end">{{ 'organization'|text }}</label>
     <div class="col-9">
         <input class="form-control" disabled value="{% for org in organizations %}{{ org['name'] ~ (not loop.last ? ', ' : '')}}{% endfor %}" type="text">
@@ -73,7 +62,15 @@
         <input class="form-control" disabled value="{% for role in roles %}{{ role['name'] ~ (not loop.last ? ', ' : '')}}{% endfor %}" type="text">
     </div>
 </div>
-<hr>
+<div class="row mb-4 mt-3 bg-light rounded-3">
+    <label class="col-3 col-form-label text-end text-end">{{ 'status'|text }}</label>
+    <div class="col-9">
+        <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" role="switch" disabled {{ record['status'] == 1 ? 'checked ' : '' }}aria-describedby="activeHelpBlock">
+            <div class="form-text" id="activeHelpBlock">{{ 'active-account-can-login'|text }}</div>
+        </div>
+    </div>
+</div>
 <div class="row mb-2">
     <label class="col-3 col-form-label text-end text-end">{{ 'date-created'|text }}</label>
     <div class="col-9">

@@ -13,9 +13,9 @@ class PrivateFileController extends FileController
         $this->public = $relative ? $public_folder : (string) $this->getRequest()->getUri()->withPath($public_folder);
     }
     
-    public function getPathUrl(string $fileName) : string
+    public function getPathUrl(string $fileName): string
     {
-        return $this->public . urlencode("/$fileName");
+        return $this->public . \urlencode("/$fileName");
     }
     
     public function read()
@@ -42,7 +42,7 @@ class PrivateFileController extends FileController
     
     private function respondError(int $code): int|bool
     {
-        if (!headers_sent()) {
+        if (!\headers_sent()) {
             \http_response_code($code);
         }
         return \http_response_code();

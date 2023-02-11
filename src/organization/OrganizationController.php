@@ -69,22 +69,26 @@ class OrganizationController extends DashboardController
                     $row[] = \htmlentities($record['alias']);
                 }
 
-                $action = '<a class="ajax-modal btn btn-sm btn-info shadow-sm" data-bs-target="#dashboard-modal" data-bs-toggle="modal" ' .
-                    'href="' . $this->generateLink('organization-view', ['id' => $id]) . '"><i class="bi bi-eye"></i></a>' . \PHP_EOL;
+                $action =
+                    '<a class="ajax-modal btn btn-sm btn-info shadow-sm" data-bs-target="#dashboard-modal" data-bs-toggle="modal" ' .
+                    'href="' . $this->generateLink('organization-view', ['id' => $id]) . '"><i class="bi bi-eye"></i></a>';
+                
                 if ($this->getUser()->can('system_organization_update')) {
-                    $action .= '<a class="ajax-modal btn btn-sm btn-primary shadow-sm" data-bs-target="#dashboard-modal" data-bs-toggle="modal" ' .
-                        'href="' . $this->generateLink('organization-update', ['id' => $id]) . '"><i class="bi bi-pencil-square"></i></a>' . \PHP_EOL;
+                    $action .=
+                        ' <a class="ajax-modal btn btn-sm btn-primary shadow-sm" data-bs-target="#dashboard-modal" data-bs-toggle="modal" ' .
+                        'href="' . $this->generateLink('organization-update', ['id' => $id]) . '"><i class="bi bi-pencil-square"></i></a>';
                 }
+                
                 if ($this->getUser()->can('system_organization_delete')) {
-                    $action .= '<a class="delete-organization btn btn-sm btn-danger shadow-sm" href="' . $id . '"><i class="bi bi-trash"></i></a>';
+                    $action .= ' <a class="delete-organization btn btn-sm btn-danger shadow-sm" href="' . $id . '"><i class="bi bi-trash"></i></a>';
                 }
                 
                 $row[] = $action;
 
                 $rows[] = $row;
             }
-        } catch (\Throwable $th) {
-            $this->errorLog($th);
+        } catch (\Throwable $e) {
+            $this->errorLog($e);
         } finally {
             $count = \count($rows);
             $this->respondJSON([
@@ -159,16 +163,16 @@ class OrganizationController extends DashboardController
                 $level = LogLevel::NOTICE;
                 $message = 'Байгууллага үүсгэх үйлдлийг эхлүүллээ';
             }
-        } catch (\Throwable $th) {
+        } catch (\Throwable $e) {
             if ($is_submit) {
-                $this->respondJSON(['message' => $th->getMessage()], $th->getCode());
+                $this->respondJSON(['message' => $e->getMessage()], $e->getCode());
             } else {
-                $this->modalProhibited($th->getMessage(), $th->getCode())->render();
+                $this->modalProhibited($e->getMessage(), $e->getCode())->render();
             }
             
             $level = LogLevel::ERROR;
             $message = 'Байгууллага үүсгэх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
-            $context['error'] = ['code' => $th->getCode(), 'message' => $th->getMessage()];
+            $context['error'] = ['code' => $e->getCode(), 'message' => $e->getMessage()];
         } finally {
             $this->indolog('organization', $level, $message, $context);
         }
@@ -203,12 +207,12 @@ class OrganizationController extends DashboardController
 
             $level = LogLevel::NOTICE;
             $message = "{$record['name']} байгууллагын мэдээллийг нээж үзэж байна";
-        } catch (\Throwable $th) {
-            $this->modalProhibited($th->getMessage(), $th->getCode())->render();
+        } catch (\Throwable $e) {
+            $this->modalProhibited($e->getMessage(), $e->getCode())->render();
             
             $level = LogLevel::ERROR;
             $message = 'Байгууллагын мэдээллийг нээж үзэх үед алдаа гарч зогслоо';
-            $context['error'] = ['code' => $th->getCode(), 'message' => $th->getMessage()];
+            $context['error'] = ['code' => $e->getCode(), 'message' => $e->getMessage()];
         } finally {
             $this->indolog('organization', $level, $message, $context);
         }
@@ -268,8 +272,10 @@ class OrganizationController extends DashboardController
                     $context['record']['logo'] = $record['logo'];
                 }
                 
-                $this->indoput('/record?model=' . OrganizationModel::class,
-                        ['record' => $record, 'condition' => ['WHERE' => "id=$id"]]);
+                $this->indoput(
+                    '/record?model=' . OrganizationModel::class,
+                    ['record' => $record, 'condition' => ['WHERE' => "id=$id"]]
+                );
                 
                 $this->respondJSON([
                     'status' => 'success',
@@ -293,15 +299,15 @@ class OrganizationController extends DashboardController
                 $context['record'] = $record;
                 $message = "{$record['name']} байгууллагын мэдээллийг шинэчлэхээр нээж байна";
             }
-        } catch (\Throwable $th) {
+        } catch (\Throwable $e) {
             if ($is_submit) {
-                $this->respondJSON(['message' => $th->getMessage()], $th->getCode());
+                $this->respondJSON(['message' => $e->getMessage()], $e->getCode());
             } else {
-                $this->modalProhibited($th->getMessage(), $th->getCode())->render();
+                $this->modalProhibited($e->getMessage(), $e->getCode())->render();
             }
             
             $level = LogLevel::ERROR;
-            $context['error'] = ['code' => $th->getCode(), 'message' => $th->getMessage()];
+            $context['error'] = ['code' => $e->getCode(), 'message' => $e->getMessage()];
             $message = 'Байгууллагын мэдээллийг өөрчлөх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо байна';
         } finally {
             $this->indolog('organization', $level, $message, $context);
@@ -344,16 +350,16 @@ class OrganizationController extends DashboardController
             
             $level = LogLevel::ALERT;
             $message = "{$payload['name']} байгууллагыг устгалаа";
-        } catch (\Throwable $th) {
+        } catch (\Throwable $e) {
             $this->respondJSON([
                 'status'  => 'error',
                 'title'   => $this->text('error'),
-                'message' => $th->getMessage()
-            ], $th->getCode());
+                'message' => $e->getMessage()
+            ], $e->getCode());
             
             $level = LogLevel::ERROR;
             $message = 'Байгууллагыг устгах үйлдлийг гүйцэтгэх явцад алдаа гарч зогслоо';
-            $context['error'] = ['code' => $th->getCode(), 'message' => $th->getMessage()];
+            $context['error'] = ['code' => $e->getCode(), 'message' => $e->getMessage()];
         } finally {
             $this->indolog('organization', $level, $message, $context);
         }

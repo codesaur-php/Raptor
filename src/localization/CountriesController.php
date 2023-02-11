@@ -51,25 +51,30 @@ class CountriesController extends DashboardController
             foreach ($languages as $record) {
                 $row = [$record['id']];
                 
-                $row[] = \htmlentities($record['content']['title'][$code]);
+                $row[] = \htmlentities($record['content']['title'][$code] ?? '');
                 $row[] = '<img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.3/flags/' . \strtolower($record['id']) . '.png">';
                 $row[] = \htmlentities($record['speak']);
                 
-                $action = '<a class="ajax-modal btn btn-sm btn-info shadow-sm" data-bs-target="#dashboard-modal" data-bs-toggle="modal" ' .
-                    'href="' . $this->generateLink('country-view', ['id' => $record['id']]) . '"><i class="bi bi-eye"></i></a>' . \PHP_EOL;
+                $action =
+                    '<a class="ajax-modal btn btn-sm btn-info shadow-sm" data-bs-target="#dashboard-modal" data-bs-toggle="modal" ' .
+                    'href="' . $this->generateLink('country-view', ['id' => $record['id']]) . '"><i class="bi bi-eye"></i></a>';
+                
                 if ($this->getUser()->can('system_localization_update')) {
-                    $action .= '<a class="ajax-modal btn btn-sm btn-primary shadow-sm" data-bs-target="#dashboard-modal" data-bs-toggle="modal" ' .
-                        'href="' . $this->generateLink('country-update', ['id' => $record['id']]) . '"><i class="bi bi-pencil-square"></i></a>' . \PHP_EOL;
+                    $action .=
+                        ' <a class="ajax-modal btn btn-sm btn-primary shadow-sm" data-bs-target="#dashboard-modal" data-bs-toggle="modal" ' .
+                        'href="' . $this->generateLink('country-update', ['id' => $record['id']]) . '"><i class="bi bi-pencil-square"></i></a>';
                 }
+                
                 if ($this->getUser()->can('system_localization_delete')) {
-                    $action .= '<a class="delete-country btn btn-sm btn-danger shadow-sm" href="' . $record['id'] . '"><i class="bi bi-trash"></i></a>';
+                    $action .= ' <a class="delete-country btn btn-sm btn-danger shadow-sm" href="' . $record['id'] . '"><i class="bi bi-trash"></i></a>';
                 }
+                
                 $row[] = $action;
                 
                 $rows[] = $row;
             }
-        } catch (\Throwable $th) {
-            $this->errorLog($th);
+        } catch (\Throwable $e) {
+            $this->errorLog($e);
         } finally {
             $count = \count($rows);
             $this->respondJSON([
@@ -127,23 +132,21 @@ class CountriesController extends DashboardController
                 if (!\file_exists($template_path)) {
                     throw new \Exception("$template_path file not found!", 500);
                 }
-                $this->twigTemplate($template_path, [
-                    'language' => $this->getAttribute('localization')['language'] ?? []
-                ])->render();
+                $this->twigTemplate($template_path)->render();
                 
                 $level = LogLevel::NOTICE;
                 $message = 'Улсын мэдээлэл үүсгэх үйлдлийг эхлүүллээ';
             }
-        } catch (\Throwable $th) {
+        } catch (\Throwable $e) {
             if ($is_submit) {
-                $this->respondJSON(['message' => $th->getMessage()], $th->getCode());
+                $this->respondJSON(['message' => $e->getMessage()], $e->getCode());
             } else {
-                $this->modalProhibited($th->getMessage(), $th->getCode())->render();
+                $this->modalProhibited($e->getMessage(), $e->getCode())->render();
             }
             
             $level = LogLevel::ERROR;
             $message = 'Улсын мэдээлэл үүсгэх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
-            $context['error'] = ['code' => $th->getCode(), 'message' => $th->getMessage()];
+            $context['error'] = ['code' => $e->getCode(), 'message' => $e->getMessage()];
         } finally {
             $this->indolog('localization', $level, $message, $context);
         }
@@ -165,19 +168,17 @@ class CountriesController extends DashboardController
             if (!\file_exists($template_path)) {
                 throw new \Exception("$template_path file not found!", 500);
             }
-            $this->twigTemplate($template_path, [
-                'record' => $record, 'accounts' => $this->getAccounts(),
-                'language' => $this->getAttribute('localization')['language'] ?? []
-            ])->render();
+            $this->twigTemplate($template_path,
+                ['record' => $record, 'accounts' => $this->getAccounts()])->render();
 
             $level = LogLevel::NOTICE;
             $message = "{$record['content']['title'][$this->getLanguageCode()]} улсын мэдээллийг нээж үзэж байна";
-        } catch (\Throwable $th) {
-            $this->modalProhibited($th->getMessage(), $th->getCode())->render();
+        } catch (\Throwable $e) {
+            $this->modalProhibited($e->getMessage(), $e->getCode())->render();
             
             $level = LogLevel::ERROR;
             $message = "[$id] улсын мэдээллийг нээж үзэх үед алдаа гарч зогслоо";
-            $context['error'] = ['code' => $th->getCode(), 'message' => $th->getMessage()];
+            $context['error'] = ['code' => $e->getCode(), 'message' => $e->getMessage()];
         } finally {
             $this->indolog('localization', $level, $message, $context);
         }
@@ -231,29 +232,21 @@ class CountriesController extends DashboardController
                 if (!\file_exists($template_path)) {
                     throw new \Exception("$template_path file not found!", 500);
                 }
-                $this->twigTemplate($template_path, [
-                    'record' => $record,
-                    'language' => $this->getAttribute('localization')['language'] ?? []
-                ])->render();
+                $this->twigTemplate($template_path, ['record' => $record])->render();
                 
                 $level = LogLevel::NOTICE;
                 $context['record'] = $record;
                 $message = "{$record['content']['title'][$this->getLanguageCode()]} улсын мэдээллийг шинэчлэхээр нээж байна";
             }
-        } catch (\Error $err) {
-            $level = LogLevel::ERROR;
-            $message = $err->getMessage();
-            $context['error'] = ['code' => $err->getCode(), 'message' => $err->getMessage()];
-            throw new \Exception($err->getMessage(), $err->getCode());
-        } catch (\Throwable $th) {
+        } catch (\Throwable $e) {
             if ($is_submit) {
-                $this->respondJSON(['message' => $th->getMessage()], $th->getCode());
+                $this->respondJSON(['message' => $e->getMessage()], $e->getCode());
             } else {
-                $this->modalProhibited($th->getMessage(), $th->getCode())->render();
+                $this->modalProhibited($e->getMessage(), $e->getCode())->render();
             }
             
             $level = LogLevel::ERROR;
-            $context['error'] = ['code' => $th->getCode(), 'message' => $th->getMessage()];
+            $context['error'] = ['code' => $e->getCode(), 'message' => $e->getMessage()];
             $message = "[$id] улсын мэдээллийг өөрчлөх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо";
         } finally {
             $this->indolog('localization', $level, $message, $context);
@@ -286,16 +279,16 @@ class CountriesController extends DashboardController
             
             $level = LogLevel::ALERT;
             $message = "{$payload['name']} улсын мэдээллийг устгалаа";
-        } catch (\Throwable $th) {
+        } catch (\Throwable $e) {
             $this->respondJSON([
                 'status'  => 'error',
                 'title'   => $this->text('error'),
-                'message' => $th->getMessage()
-            ], $th->getCode());
+                'message' => $e->getMessage()
+            ], $e->getCode());
             
             $level = LogLevel::ERROR;
             $message = 'Улсын мэдээлэл устгах үйлдлийг гүйцэтгэх явцад алдаа гарч зогслоо';
-            $context['error'] = ['code' => $th->getCode(), 'message' => $th->getMessage()];
+            $context['error'] = ['code' => $e->getCode(), 'message' => $e->getMessage()];
         } finally {
             $this->indolog('localization', $level, $message, $context);
         }

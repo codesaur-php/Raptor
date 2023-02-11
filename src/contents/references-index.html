@@ -15,7 +15,7 @@
             <tr>
                 <th scope="col">{{ 'id'|text }}</th>
                 <th scope="col">{{ 'keyword'|text }}</th>
-                {% for lang in language %}
+                {% for lang in localization.language %}
                 <th scope="col">{{ 'title'|text }} ({{ lang }})</th>
                 {% endfor %}
                 <th scope="col">{{ 'category'|text }}</span></th>

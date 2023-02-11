@@ -58,9 +58,7 @@ class ReferencesController extends DashboardController
             }
         }
         
-        $this->twigDashboard(\dirname(__FILE__) . '/references-index.html', [
-            'tables' => $tables, 'language' => $this->getAttribute('localization')['language'] ?? []
-        ])->render();
+        $this->twigDashboard(\dirname(__FILE__) . '/references-index.html', ['tables' => $tables])->render();
         
         $this->indolog('content', LogLevel::NOTICE, 'Лавлах хүснэгтүүдийн жагсаалтыг нээж үзэж байна',['model' => ReferenceModel::class]);
     }
@@ -74,42 +72,42 @@ class ReferencesController extends DashboardController
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
             
-            $language = $this->getAttribute('localization')['language'] ?? [];
+            $language_codes = \array_keys($this->getLanguages());
             $records = $this->indoget("/reference/records/$table");
             foreach ($records as $record) {
                 $id = $record['id'];
                 $row = [$id];
                 
                 $row[] = \htmlentities($record['keyword']);
-                foreach (\array_keys($language) as $code) {
-                    $row[] = \htmlentities($record['content']['title'][$code]);
+                foreach ($language_codes as $code) {
+                    $row[] = \htmlentities($record['content']['title'][$code] ?? '');
                 }
                 $row[] = \htmlentities($record['category']);
                 
-                $action = '';
-                if ($this->getUser()->can('system_content_index')) {
-                    $action .=
-                        '<a class="btn btn-sm btn-info shadow-sm" href="' .
-                        $this->generateLink('reference-view', ['table' => $table, 'id' => $id]) .
-                        '"><i class="bi bi-eye"></i></a>' . \PHP_EOL;
-                }
+                $action =
+                    '<a class="btn btn-sm btn-info shadow-sm" href="' .
+                    $this->generateLink('reference-view', ['table' => $table, 'id' => $id]) .
+                    '"><i class="bi bi-eye"></i></a>';
+                
                 if ($this->getUser()->can('system_content_update')) {
                     $action .=
-                        '<a class="btn btn-sm btn-primary shadow-sm" href="' .
+                        ' <a class="btn btn-sm btn-primary shadow-sm" href="' .
                         $this->generateLink('reference-update', ['table' => $table, 'id' => $id]) .
-                        '"><i class="bi bi-pencil-square"></i></a>' . \PHP_EOL;
+                        '"><i class="bi bi-pencil-square"></i></a>';
                 }
+                
                 if ($this->getUser()->can('system_content_delete')) {
                     $action .=
-                        '<a class="delete-reference btn btn-sm btn-danger shadow-sm" href="' .
+                        ' <a class="delete-reference btn btn-sm btn-danger shadow-sm" href="' .
                         "$table:$id" . '"><i class="bi bi-trash"></i></a>';
                 }
+                
                 $row[] = $action;
                 
                 $rows[] = $row;
             }
-        } catch (\Throwable $th) {
-            $this->errorLog($th);
+        } catch (\Throwable $e) {
+            $this->errorLog($e);
         } finally {
             $count = \count($rows);
             $this->respondJSON([
@@ -118,27 +116,6 @@ class ReferencesController extends DashboardController
                 'recordsFiltered' => $count,
                 'draw' => (int) ($this->getQueryParams()['draw'] ?? 0)
             ]);
-        }
-    }
-    
-    public function getCategoryValues(): array
-    {
-        if ($this->getLanguageCode() == 'mn') {
-            return [
-                'general' => 'Ерөнхий',
-                'system' => 'Систем',
-                'manual' => 'Заавар',
-                'notification' => 'Сонордуулга',
-                'email' => 'Цахим захиа'
-            ];
-        } else {
-            return [
-                'general' => 'General',
-                'system' => 'System',
-                'manual' => 'Manual',
-                'notification' => 'Notification',
-                'email' => 'Email'
-            ];
         }
     }
     
@@ -190,11 +167,7 @@ class ReferencesController extends DashboardController
                 if (!\file_exists($template_path)) {
                     throw new \Exception("$template_path file not found!", 500);
                 }
-                $this->twigDashboard($template_path, [
-                    'table' => $table,
-                    'category' => $this->getCategoryValues(),
-                    'language' => $this->getAttribute('localization')['language'] ?? []
-                ])->render();
+                $this->twigDashboard($template_path, ['table' => $table])->render();
                 
                 $level = LogLevel::NOTICE;
                 $message = "Шинэ лавлах мэдээллийг [$table] хүснэгт дээр үйлдлийг эхлүүллээ";
@@ -237,19 +210,17 @@ class ReferencesController extends DashboardController
             $this->twigDashboard($template_path, [
                 'table' => $table,
                 'record' => $record,
-                'category' => $this->getCategoryValues(),
-                'language' => $this->getAttribute('localization')['language'] ?? [],
                 'accounts' => $this->getAccounts()
             ])->render();
 
             $level = LogLevel::NOTICE;
             $message = "$table хүснэгтийн $id дугаартай [{$record['keyword']}] түлхүүртэй лавлах мэдээллийг нээж үзэж байна";
-        } catch (\Throwable $th) {
-            $this->dashboardProhibited($th->getMessage(), $th->getCode())->render();
+        } catch (\Throwable $e) {
+            $this->dashboardProhibited($e->getMessage(), $e->getCode())->render();
             
             $level = LogLevel::ERROR;
             $message = "$table хүснэгтээс $id дугаартай лавлах мэдээллийг нээж үзэх үед алдаа гарч зогслоо байна";
-            $context['error'] = ['code' => $th->getCode(), 'message' => $th->getMessage()];
+            $context['error'] = ['code' => $e->getCode(), 'message' => $e->getMessage()];
         } finally {
             $this->indolog('content', $level, $message, $context);
         }
@@ -284,7 +255,7 @@ class ReferencesController extends DashboardController
                 }
                 
                 $this->indoput("/reference/$table", [
-                    'record' => $record, 'content' => $content, 'condition' => ['WHERE' => "id=$id"]
+                    'record' => $record, 'content' => $content, 'condition' => ['WHERE' => "p.id=$id"]
                 ]);
                 
                 $this->respondJSON([
@@ -311,22 +282,20 @@ class ReferencesController extends DashboardController
                 $this->twigDashboard($template_path, [
                     'table' => $table,
                     'record' => $record,
-                    'category' => $this->getCategoryValues(),
-                    'language' => $this->getAttribute('localization')['language'] ?? [],
                     'accounts' => $this->getAccounts()
                 ])->render();
                 
                 $level = LogLevel::NOTICE;
                 $message = "$table хүснэгтийн $id дугаартай [{$record['keyword']}] түлхүүртэй лавлах мэдээллийг шинэчлэхээр нээж байна";
             }
-        } catch (\Throwable $th) {
+        } catch (\Throwable $e) {
             if ($is_submit) {
-                $this->respondJSON(['message' => $th->getMessage()], $th->getCode());
+                $this->respondJSON(['message' => $e->getMessage()], $e->getCode());
             } else {
-                $this->dashboardProhibited($th->getMessage(), $th->getCode())->render();
+                $this->dashboardProhibited($e->getMessage(), $e->getCode())->render();
             }
             $level = LogLevel::ERROR;
-            $context['error'] = ['code' => $th->getCode(), 'message' => $th->getMessage()];
+            $context['error'] = ['code' => $e->getCode(), 'message' => $e->getMessage()];
             $message = "$table хүснэгтийн $id дугаартай лавлах мэдээллийг өөрчлөх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо";
         } finally {
             $this->indolog('content', $level, $message, $context);
@@ -364,16 +333,16 @@ class ReferencesController extends DashboardController
             
             $level = LogLevel::ALERT;
             $message = "$table хүснэгтээс $id дугаартай [{$payload['name']}] түлхүүртэй лавлах мэдээллийг устгалаа";
-        } catch (\Throwable $th) {
+        } catch (\Throwable $e) {
             $this->respondJSON([
                 'status'  => 'error',
                 'title'   => $this->text('error'),
-                'message' => $th->getMessage()
-            ], $th->getCode());
+                'message' => $e->getMessage()
+            ], $e->getCode());
             
             $level = LogLevel::ERROR;
             $message = 'Лавлах мэдээлэл устгах үйлдлийг гүйцэтгэх явцад алдаа гарч зогслоо';
-            $context['error'] = ['code' => $th->getCode(), 'message' => $th->getMessage()];
+            $context['error'] = ['code' => $e->getCode(), 'message' => $e->getMessage()];
         } finally {
             $this->indolog('content', $level, $message, $context);
         }
