@@ -1,13 +1,13 @@
 {% set categories = {
   'general': { 'mn': 'Ерөнхий' },
-  'special': { 'mn': 'Тусгай' }
+  'video': { 'mn': 'Видео' },
+  'announcement': { 'mn': 'Зар мэдээлэл' }
 } %}
 {% set types = {
-  'menu': { 'mn': 'Үндсэн цэс' },
-  'top-menu': { 'mn': 'Толгойн цэс' },
-  'footer-menu': { 'mn': 'Хөлийн цэс' },
-  'dropdown-menu': { 'mn': 'Унжих цэс' },
-  'mega-menu': { 'mn': 'Мега цэс' }
+  'common': { 'mn': 'Нийтлэг' },
+  'featured': { 'mn': 'Онцлох' },
+  'hot': { 'mn': 'Халуун' },
+  'fun': { 'mn': 'Хөгжилтэй' }
 } %}
 <div class="card shadow border-primary mt-2 mb-4">
     <div class="card-header bg-light">
@@ -24,26 +24,13 @@
         </div>
     </div>
     <div class="card-body">
-        <form class="needs-validation" id="page_update" action="{{ 'page-update'|link({id: record['id']}) }}" method="PUT" enctype="multipart/form-data" novalidate>
-            <div class="row mt-3">
-                <div class="col-12">
-                    <div class="form-floating">
-                        <select class="form-select" name="parent_id">
-                            <option value="0">- {{ localization.code == 'mn' ? 'Үндсэн меню' : 'Main menu' }} -</option>
-                        {% for id,info in infos %}
-                            <option value="{{ id }}"{{ id == record['parent_id'] ? ' selected' : '' }}>{{ (info['parent_titles'] ?? '')|e }}{{ info['title']|e }}</option>
-                        {% endfor %}
-                        </select>
-                        <label>{{ 'parent'|text }}</label>
-                    </div>
-                </div>
-            </div>
+        <form class="needs-validation" id="news_update" action="{{ 'news-update'|link({id: record['id']}) }}" method="PUT" enctype="multipart/form-data" novalidate>
             <div class="form-group row mt-3">
-                <div class="col-3">
+                <div class="col-4">
                     <label class="form-label">{{ 'date'|text }}</label>
                     <input class="form-control" name="publish_date" value="{{ record['publish_date'] }}" placeholder="" type="datetime-local" autocomplete="off">
                 </div>
-                <div class="col-3">
+                <div class="col-4">
                     <label class="form-label">{{ 'category'|text }}</label>
                     <div class="input-group mb-3">
                         <input class="form-control" name="category" type="text" value="{{ record['category']|e }}" maxlength="32">
@@ -55,7 +42,7 @@
                         </ul>
                     </div>
                 </div>
-                <div class="col-3">
+                <div class="col-4">
                     <label class="form-label">{{ 'type'|text }}</label>
                     <div class="input-group mb-3">
                         <input class="form-control" name="type" type="text" value="{{ record['type']|e }}" maxlength="32">
@@ -66,11 +53,6 @@
                         {% endfor %}
                         </ul>
                     </div>
-                </div>
-                <div class="col-3">
-                    <label class="form-label">{{ 'position'|text }}</label>
-                    <input class="form-control" name="position" value="{{ record['position'] }}" placeholder="" type="number" autocomplete="off">
-                    <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
                 </div>
             </div>
             <ul class="nav nav-tabs nav-tabs-content mt-4">
@@ -260,6 +242,6 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
     
-    FormSubmitHandler('.submit-update', 'form#page_update');
+    FormSubmitHandler('.submit-update', 'form#news_update');
 });
 </script>

@@ -1,20 +1,20 @@
 {% set categories = {
   'general': { 'mn': 'Ерөнхий' },
-  'special': { 'mn': 'Тусгай' }
+  'video': { 'mn': 'Видео' },
+  'announcement': { 'mn': 'Зар мэдээлэл' }
 } %}
 {% set types = {
-  'menu': { 'mn': 'Үндсэн цэс' },
-  'top-menu': { 'mn': 'Толгойн цэс' },
-  'footer-menu': { 'mn': 'Хөлийн цэс' },
-  'dropdown-menu': { 'mn': 'Унжих цэс' },
-  'mega-menu': { 'mn': 'Мега цэс' }
+  'common': { 'mn': 'Нийтлэг' },
+  'featured': { 'mn': 'Онцлох' },
+  'hot': { 'mn': 'Халуун' },
+  'fun': { 'mn': 'Хөгжилтэй' }
 } %}
-<div class="card shadow border-primary mt-2 mb-4">
+<div class="card shadow border-success mt-2 mb-4">
     <div class="card-header bg-light">
         <div class="d-flex justify-content-between flex-wrap flex-md-nowrap">
-            <h6 class="text-primary text-uppercase pt-2"><i class="bi bi-pencil-square"></i> {{ record['content']['title'][localization.code] }}</h6>
+            <h6 class="text-success text-uppercase pt-2"><i class="bi bi-newspaper"></i> {{ 'add-record'|text }} (news)</h6>
             <div class="button-group">
-                <button class="submit-update btn btn-primary shadow-sm text-uppercase">
+                <button class="submit-insert btn btn-success shadow-sm text-uppercase">
                     <i class="bi bi-check-lg"></i> {{ 'save'|text }}
                 </button>
                 <button class="btn btn-secondary shadow-sm text-uppercase" onclick="window.history.go(-1); return false;">
@@ -24,41 +24,28 @@
         </div>
     </div>
     <div class="card-body">
-        <form class="needs-validation" id="page_update" action="{{ 'page-update'|link({id: record['id']}) }}" method="PUT" enctype="multipart/form-data" novalidate>
-            <div class="row mt-3">
-                <div class="col-12">
-                    <div class="form-floating">
-                        <select class="form-select" name="parent_id">
-                            <option value="0">- {{ localization.code == 'mn' ? 'Үндсэн меню' : 'Main menu' }} -</option>
-                        {% for id,info in infos %}
-                            <option value="{{ id }}"{{ id == record['parent_id'] ? ' selected' : '' }}>{{ (info['parent_titles'] ?? '')|e }}{{ info['title']|e }}</option>
-                        {% endfor %}
-                        </select>
-                        <label>{{ 'parent'|text }}</label>
-                    </div>
-                </div>
-            </div>
+        <form class="needs-validation" id="news_insert" action="{{ 'news-insert'|link }}" method="POST" enctype="multipart/form-data" novalidate>
             <div class="form-group row mt-3">
-                <div class="col-3">
+                <div class="col-4">
                     <label class="form-label">{{ 'date'|text }}</label>
-                    <input class="form-control" name="publish_date" value="{{ record['publish_date'] }}" placeholder="" type="datetime-local" autocomplete="off">
+                    <input class="form-control" name="publish_date" value="" placeholder="" type="datetime-local" autocomplete="off">
                 </div>
-                <div class="col-3">
+                <div class="col-4">
                     <label class="form-label">{{ 'category'|text }}</label>
                     <div class="input-group mb-3">
-                        <input class="form-control" name="category" type="text" value="{{ record['category']|e }}" maxlength="32">
+                        <input class="form-control" name="category" type="text" value="{{ categories|keys|first }}" maxlength="32">
                         <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"></button>
                         <ul class="dropdown-menu dropdown-menu-end" id="category_list">
                         {% for value,name in categories %}
-                            <li class="dropdown-item" value="{{ value }}">{{ name[localization.code] ?? name['en'] }}</li>
+                            <li class="dropdown-item" value="{{ value }}">{{ name[localization.code] ?? value|capitalize }}</li>
                         {% endfor %}
                         </ul>
                     </div>
                 </div>
-                <div class="col-3">
+                <div class="col-4">
                     <label class="form-label">{{ 'type'|text }}</label>
                     <div class="input-group mb-3">
-                        <input class="form-control" name="type" type="text" value="{{ record['type']|e }}" maxlength="32">
+                        <input class="form-control" name="type" type="text" value="{{ types|keys|first }}" maxlength="32">
                         <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"></button>
                         <ul class="dropdown-menu dropdown-menu-end" id="type_list">
                         {% for value,name in types %}
@@ -66,11 +53,6 @@
                         {% endfor %}
                         </ul>
                     </div>
-                </div>
-                <div class="col-3">
-                    <label class="form-label">{{ 'position'|text }}</label>
-                    <input class="form-control" name="position" value="{{ record['position'] }}" placeholder="" type="number" autocomplete="off">
-                    <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
                 </div>
             </div>
             <ul class="nav nav-tabs nav-tabs-content mt-4">
@@ -94,12 +76,6 @@
                 <li class="nav-item">
                     <a class="nav-link" data-bs-toggle="tab" href="#tab-link">{{ 'link'|text }} <i class="bi bi-link-45deg"></i></a>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link" data-bs-toggle="tab" href="#tab-history">{{ 'history'|text }} <i class="bi bi-clock-history"></i></a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" data-bs-toggle="tab" href="#tab-version">{{ 'version'|text }} <i class="bi bi-sort-numeric-down"></i></a>
-                </li>
             </ul>
             <div class="tab-content">
             {% for code,title in localization.language %}
@@ -107,23 +83,23 @@
                     <div class="form-group bg-light rounded-3">
                         <label class="form-label">{{ 'title'|text }} ({{ code }})</label>
                         <div id="TitleContentHelp" class="form-text">{{ 'title-note'|text }} [{{ title }}]</div>
-                        <input class="form-control" name="title[{{ code }}]" required value="{{ record['content']['title'][code]|e }}" maxlength="255" placeholder="" type="text" autocomplete="off" aria-describedby="TitleContentHelp">
+                        <input class="form-control" name="title[{{ code }}]" required value="" maxlength="255" placeholder="" type="text" autocomplete="off" aria-describedby="TitleContentHelp">
                         <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
                     </div>
                     <div class="form-group bg-light mt-4 rounded-3">
                         <label class="form-label">{{ 'short'|text }} ({{ code }})</label>
                         <div id="ShortContentHelp" class="form-text">{{ 'short-note'|text }} [{{ title }}]</div>
-                        <textarea class="form-control" name="short[{{ code }}]" aria-describedby="ShortContentHelp">{{ record['content']['short'][code] }}</textarea>
+                        <textarea class="form-control" name="short[{{ code }}]" aria-describedby="ShortContentHelp"></textarea>
                     </div>
                     <div class="form-group bg-light mt-4 rounded-3">
                         <label class="form-label">{{ 'full'|text }} ({{ code }})</label>
                         <div id="FullContentHelp" class="form-text">{{ 'full-note'|text }} [{{ title }}]</div>
-                        <textarea class="form-control" id="full_{{ code }}" name="full[{{ code }}]" rows="10" aria-describedby="FullContentHelp">{{ record['content']['full'][code] }}</textarea>
+                        <textarea class="form-control" id="full_{{ code }}" name="full[{{ code }}]" rows="10" aria-describedby="FullContentHelp"></textarea>
                     </div>
                     <div class="mb-3 bg-light mt-4 rounded-3">
                         <label class="form-label">{{ 'visible'|text }}</label>
                         <div class="form-check form-switch">
-                            <input class="form-check-input" name="is_visible[{{ code }}]" {{ record['content']['is_visible'][code] == '1' ? 'checked ' : '' }}type="checkbox" role="switch" aria-describedby="IsVisibleHelp">
+                            <input class="form-check-input" name="is_visible[{{ code }}]" checked type="checkbox" role="switch" aria-describedby="IsVisibleHelp">
                             <div id="IsVisibleHelp" class="form-text">{{ localization.code == 'mn' ? 'бичлэг сайт дээр харагдах эсэх' : 'visiblity of content' }}</div>
                         </div>
                     </div>
@@ -170,43 +146,7 @@
                     </div>
                 </div>
                 <div class="tab-pane" id="tab-link">
-                    <div class="alert alert-warning shadow-sm fade mt-4 show" role="alert">
-                        <i class="bi bi-exclamation-triangle" style="margin-right:5px"></i>
-                    {% if localization.code == 'mn' %}
-                        Уучлаарай, энэ үйлдэл одоохондоо ажиллагаанд ороогүй байна
-                    {% else %}
-                        Sorry, this feature isn’t available right now
-                    {% endif %}
-                    </div>
-                </div>
-                <div class="tab-pane" id="tab-history">
-                    <div class="row mb-3">
-                        <label class="col-3 col-form-label text-end">{{ 'date-created'|text }}</label>
-                        <div class="col-9">
-                            <input class="form-control" readonly value="{{ record['created_at']|e }}" type="text">
-                        </div>
-                    </div>
-                    <div class="row mb-3">
-                        <label class="col-3 col-form-label text-end">{{ 'created-by'|text }}</label>
-                        <div class="col-9">
-                            <input class="form-control" readonly value="{{ (accounts[record['created_by']] ?? record['created_by'])|e }}" type="text">
-                        </div>
-                    </div>
-                    <div class="row mb-3">
-                        <label class="col-3 col-form-label text-end">{{ 'date-modified'|text }}</label>
-                        <div class="col-9">
-                            <input class="form-control" readonly value="{{ record['updated_at']|e }}" type="text">
-                        </div>
-                    </div>
-                    <div class="row">
-                        <label class="col-3 col-form-label text-end">{{ 'updated-by'|text }}</label>
-                        <div class="col-9">
-                            <input class="form-control" readonly value="{{ (accounts[record['updated_by']] ?? record['updated_by'])|e }}" type="text">
-                        </div>
-                    </div>
-                </div>
-                <div class="tab-pane" id="tab-version">
-                    <div class="alert alert-info shadow-sm fade mt-4 show" role="alert">
+                    <div class="alert alert-dark shadow-sm fade mt-4 show" role="alert">
                         <i class="bi bi-exclamation-triangle" style="margin-right:5px"></i>
                     {% if localization.code == 'mn' %}
                         Уучлаарай, энэ үйлдэл одоохондоо ажиллагаанд ороогүй байна
@@ -221,7 +161,7 @@
     <div class="card-footer">
         <div class="row pt-1 pb-1">
             <div class="col-6 d-grid">
-                <button class="submit-update btn btn-lg btn-primary shadow-sm" type="submit"><i class="bi bi-check2"></i> {{ 'save'|text }}</button>
+                <button class="submit-insert btn btn-lg btn-success shadow-sm" type="submit"><i class="bi bi-check2"></i> {{ 'save'|text }}</button>
             </div>
             <div class="col-6 d-grid">
                 <button class="btn btn-lg btn-block btn-secondary shadow-sm" onclick="window.history.go(-1); return false;"><i class="bi bi-arrow-left"></i> {{ 'back'|text }}</button>
@@ -234,7 +174,7 @@
 <script type="text/javascript">
 document.addEventListener('DOMContentLoaded', function () {
     {% for code,title in localization.language %}
-    var full_{{ code }} = document.getElementById('full_{{ code }}');
+    let full_{{ code }} = document.getElementById('full_{{ code }}');
     sceditor.create(full_{{ code }}, {
         format: 'xhtml',
         emoticonsEnabled: false,
@@ -260,6 +200,6 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
     
-    FormSubmitHandler('.submit-update', 'form#page_update');
+    FormSubmitHandler('.submit-insert', 'form#news_insert');
 });
 </script>

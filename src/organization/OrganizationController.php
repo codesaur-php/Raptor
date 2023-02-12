@@ -308,7 +308,7 @@ class OrganizationController extends DashboardController
             
             $level = LogLevel::ERROR;
             $context['error'] = ['code' => $e->getCode(), 'message' => $e->getMessage()];
-            $message = 'Байгууллагын мэдээллийг өөрчлөх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо байна';
+            $message = 'Байгууллагын мэдээллийг өөрчлөх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
         } finally {
             $this->indolog('organization', $level, $message, $context);
         }

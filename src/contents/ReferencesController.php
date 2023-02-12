@@ -219,7 +219,7 @@ class ReferencesController extends DashboardController
             $this->dashboardProhibited($e->getMessage(), $e->getCode())->render();
             
             $level = LogLevel::ERROR;
-            $message = "$table хүснэгтээс $id дугаартай лавлах мэдээллийг нээж үзэх үед алдаа гарч зогслоо байна";
+            $message = "$table хүснэгтээс $id дугаартай лавлах мэдээллийг нээж үзэх үед алдаа гарч зогслоо";
             $context['error'] = ['code' => $e->getCode(), 'message' => $e->getMessage()];
         } finally {
             $this->indolog('content', $level, $message, $context);

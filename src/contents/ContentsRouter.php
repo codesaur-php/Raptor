@@ -25,5 +25,12 @@ class ContentsRouter extends Router
         $this->GET_PUT('/page/{uint:id}', [PagesController::class, 'update'])->name('page-update');
         $this->GET('/page/view/{uint:id}', [PagesController::class, 'view'])->name('page-view');
         $this->DELETE('/page', [PagesController::class, 'delete'])->name('page-delete');
+
+        $this->GET('/news', [NewsController::class, 'index'])->name('news');
+        $this->GET('/news/datatable', [NewsController::class, 'datatable'])->name('news-datatable');
+        $this->GET_POST('/news/insert', [NewsController::class, 'insert'])->name('news-insert');
+        $this->GET_PUT('/news/{uint:id}', [NewsController::class, 'update'])->name('news-update');
+        $this->GET('/news/view/{uint:id}', [NewsController::class, 'view'])->name('news-view');
+        $this->DELETE('/news', [NewsController::class, 'delete'])->name('news-delete');
     }
 }

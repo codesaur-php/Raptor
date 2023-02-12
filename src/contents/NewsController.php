@@ -5,20 +5,20 @@ namespace Raptor\Contents;
 use Psr\Log\LogLevel;
 use Psr\Http\Message\ServerRequestInterface;
 
-use Indoraptor\Contents\PagesModel;
+use Indoraptor\Contents\NewsModel;
 
 use Raptor\Dashboard\DashboardController;
 
-class PagesController extends DashboardController
+class NewsController extends DashboardController
 {
     function __construct(ServerRequestInterface $request)
     {
         $meta = $request->getAttribute('meta', []);
         $localization = $request->getAttribute('localization');
         if (isset($localization['code'])
-            && isset($localization['text']['pages'])
+            && isset($localization['text']['news'])
         ) {
-            $meta['content']['title'][$localization['code']] = $localization['text']['pages'];
+            $meta['content']['title'][$localization['code']] = $localization['text']['news'];
             $request = $request->withAttribute('meta', $meta);
         }
         
@@ -32,9 +32,9 @@ class PagesController extends DashboardController
             return;
         }
 
-        $this->twigDashboard(\dirname(__FILE__) . '/pages-index.html')->render();
+        $this->twigDashboard(\dirname(__FILE__) . '/news-index.html')->render();
         
-        $this->indolog('content', LogLevel::NOTICE, 'Хуудас жагсаалтыг нээж үзэж байна', ['model' => PagesModel::class]);
+        $this->indolog('content', LogLevel::NOTICE, 'Мэдээний жагсаалтыг нээж үзэж байна', ['model' => NewsModel::class]);
     }
     
     public function datatable()
@@ -46,26 +46,19 @@ class PagesController extends DashboardController
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
             
-            $infos = $this->getPagesInfos();
             $code = $this->getLanguageCode();
             $language_codes = \array_keys($this->getLanguages());
-            $pages = $this->indoget('/records?model=' . PagesModel::class);
+            $pages = $this->indoget('/records?model=' . NewsModel::class);
             foreach ($pages as $record) {
                 $id = $record['id'];
-                $row = [$id, '<img src="https://via.placeholder.com/50?text=no+photo">'];
+                $row = [$record['publish_date'], '<img src="https://via.placeholder.com/70?text=no+photo">'];
                 
-                $title = '';
-                if (isset($infos[$id]['parent_titles'])) {
-                    $title .= '<span class="text-muted"><small>' . \htmlentities($infos[$id]['parent_titles']) . '</small></span> ';
-                }
-                $caption = \htmlentities($record['content']['title'][$code]);
-                $title .= '<span class="text-primary">' . $caption . '</span>';
+                $title = \htmlentities($record['content']['title'][$code]);
                 $row[] = $title;
                 
                 $row[] =
-                    '<span class="badge bg-dark">' . \htmlentities($record['category']) . '</span> ' .
-                    '<span class="badge bg-warning text-dark">' . \htmlentities($record['type']) . '</span>';
-                $row[] = $record['position'];
+                    '<span class="badge bg-primary">' . \htmlentities($record['category']) . '</span> ' .
+                    '<span class="badge bg-danger">' . \htmlentities($record['type']) . '</span>';
                 
                 $visiblity = '';
                 foreach ($language_codes as $flag) {
@@ -77,18 +70,18 @@ class PagesController extends DashboardController
 
                 $action =
                     '<a class="btn btn-sm btn-info shadow-sm" href="' .
-                    $this->generateLink('page-view', ['id' => $id]) . '"><i class="bi bi-eye"></i></a>';
+                    $this->generateLink('news-view', ['id' => $id]) . '"><i class="bi bi-eye"></i></a>';
                 
                 if ($this->getUser()->can('system_content_update')) {
                     $action .=
                         ' <a class="btn btn-sm btn-primary shadow-sm" href="'
-                        . $this->generateLink('page-update', ['id' => $id]) . '"><i class="bi bi-pencil-square"></i></a>';
+                        . $this->generateLink('news-update', ['id' => $id]) . '"><i class="bi bi-pencil-square"></i></a>';
                 }
                 
                 if ($this->getUser()->can('system_content_delete')) {
                     $action .= 
-                        ' <a class="delete-page btn btn-sm btn-danger shadow-sm" href="' . $id .
-                        '" data-title="' . $caption . '"><i class="bi bi-trash"></i></a>';
+                        ' <a class="delete-news btn btn-sm btn-danger shadow-sm" href="' . $id .
+                        '" data-title="' . $title . '"><i class="bi bi-trash"></i></a>';
                 }
                 
                 $row[] = $action;
@@ -111,7 +104,7 @@ class PagesController extends DashboardController
     public function insert()
     {
         try {
-            $context = ['model' => PagesModel::class];
+            $context = ['model' => NewsModel::class];
             $is_submit = $this->getRequest()->getMethod() == 'POST';
             
             if (!$this->isUserCan('system_content_insert')) {
@@ -142,29 +135,26 @@ class PagesController extends DashboardController
                     $visible['is_visible'] = ($visible['is_visible'] ?? 'off' ) == 'on' ? 1 : 0;
                 }
                 
-                $this->indopost('/record?model=' . PagesModel::class, ['record' => $record, 'content' => $content]);
+                $this->indopost('/record?model=' . NewsModel::class, ['record' => $record, 'content' => $content]);
 
                 $this->respondJSON([
                     'status' => 'success',
                     'message' => $this->text('record-insert-success'),
-                    'href' => $this->generateLink('pages')
+                    'href' => $this->generateLink('news')
                 ]);
                 
                 $level = LogLevel::INFO;
-                $message = "Шинэ хуудас [{$content[$this->getLanguageCode()]['title']}] үүсгэх үйлдлийг амжилттай гүйцэтгэлээ";
+                $message = "Шинэ мэдээ [{$content[$this->getLanguageCode()]['title']}] үүсгэх үйлдлийг амжилттай гүйцэтгэлээ";
             } else {
-                $template_path = \dirname(__FILE__) . '/page-insert.html';
+                $template_path = \dirname(__FILE__) . '/news-insert.html';
                 if (!\file_exists($template_path)) {
                     throw new \Exception("$template_path file not found!", 500);
                 }
                 
-                $vars = [
-                    'infos'=> $this->getPagesInfos()
-                ];
-                $this->twigDashboard($template_path, $vars)->render();
+                $this->twigDashboard($template_path)->render();
                 
                 $level = LogLevel::NOTICE;
-                $message = 'Шинэ хуудас үүсгэх үйлдлийг эхлүүллээ';
+                $message = 'Шинэ мэдээ үүсгэх үйлдлийг эхлүүллээ';
             }
         } catch (\Throwable $e) {
             if ($is_submit) {
@@ -174,7 +164,7 @@ class PagesController extends DashboardController
             }
             
             $level = LogLevel::ERROR;
-            $message = 'Шинэ хуудас үүсгэх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
+            $message = 'Шинэ мэдээ үүсгэх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
             $context['error'] = ['code' => $e->getCode(), 'message' => $e->getMessage()];
         } finally {
             $this->indolog('content', $level, $message, $context);
@@ -184,32 +174,31 @@ class PagesController extends DashboardController
     public function view(int $id)
     {
         try {
-            $context = ['id' => $id, 'model' => PagesModel::class];
+            $context = ['id' => $id, 'model' => NewsModel::class];
             
             if (!$this->isUserCan('system_content_index')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
             
-            $record = $this->indoget('/record?model=' . PagesModel::class, ['p.id' => $id]);
+            $record = $this->indoget('/record?model=' . NewsModel::class, ['p.id' => $id]);
             $context['record'] = $record;
             
-            $template_path = \dirname(__FILE__) . '/page-view.html';
+            $template_path = \dirname(__FILE__) . '/news-view.html';
             if (!\file_exists($template_path)) {
                 throw new \Exception("$template_path file not found!", 500);
             }
             $this->twigDashboard($template_path, [
                 'record' => $record,
-                'accounts' => $this->getAccounts(),
-                'infos' => $this->getPagesInfos("(p.id=$id OR p.id={$record['parent_id']})")
+                'accounts' => $this->getAccounts()
             ])->render();
 
             $level = LogLevel::NOTICE;
-            $message = "{$record['content']['title'][$this->getLanguageCode()]} - хуудасны мэдээллийг нээж үзэж байна";
+            $message = "{$record['content']['title'][$this->getLanguageCode()]} - мэдээллийг нээж үзэж байна";
         } catch (\Throwable $e ){
             $this->dashboardProhibited($e->getMessage(), $e->getCode())->render();
             
             $level = LogLevel::ERROR;
-            $message = 'Хуудасны мэдээллийг нээж үзэх үед алдаа гарч зогслоо';
+            $message = 'Мэдээллийг нээж үзэх үед алдаа гарч зогслоо';
             $context['error'] = ['code' => $e->getCode(), 'message' => $e->getMessage()];
         } finally {
             $this->indolog('content', $level, $message, $context);
@@ -220,7 +209,7 @@ class PagesController extends DashboardController
     {
         try {
             $is_submit = $this->getRequest()->getMethod() == 'PUT';
-            $context = ['id' => $id, 'model' => PagesModel::class];
+            $context = ['id' => $id, 'model' => NewsModel::class];
             
             if (!$this->isUserCan('system_content_update')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
@@ -250,7 +239,7 @@ class PagesController extends DashboardController
                     $visible['is_visible'] = ($visible['is_visible'] ?? 'off' ) == 'on' ? 1 : 0;
                 }
                 
-                $this->indoput('/record?model=' . PagesModel::class,
+                $this->indoput('/record?model=' . NewsModel::class,
                     ['record' => $record, 'content' => $content, 'condition' => ['WHERE' => "p.id=$id"]]
                 );
                 
@@ -258,28 +247,27 @@ class PagesController extends DashboardController
                     'status' => 'success',
                     'type' => 'primary',
                     'message' => $this->text('record-update-success'),
-                    'href' => $this->generateLink('pages')
+                    'href' => $this->generateLink('news')
                 ]);
                 
                 $level = LogLevel::INFO;
-                $message = "{$content[$this->getLanguageCode()]['title']} - хуудасны мэдээллийг шинэчлэх үйлдлийг амжилттай гүйцэтгэлээ";
+                $message = "{$content[$this->getLanguageCode()]['title']} - мэдээллийг шинэчлэх үйлдлийг амжилттай гүйцэтгэлээ";
             } else {
-                $record = $this->indoget('/record?model=' . PagesModel::class, ['p.id' => $id]);
+                $record = $this->indoget('/record?model=' . NewsModel::class, ['p.id' => $id]);
                 
-                $template_path = \dirname(__FILE__) . '/page-update.html';
+                $template_path = \dirname(__FILE__) . '/news-update.html';
                 if (!\file_exists($template_path)) {
                     throw new \Exception("$template_path file not found!", 500);
                 }
                 
                 $vars = [
-                    'record' => $record,
-                    'infos' => $this->getPagesInfos("p.id!=$id AND p.parent_id!=$id")
+                    'record' => $record
                 ];
                 $this->twigDashboard($template_path, $vars)->render();
                 
                 $level = LogLevel::NOTICE;
                 $context['record'] = $record;
-                $message = "{$record['content']['title'][$this->getLanguageCode()]} - хуудасны мэдээллийг шинэчлэхээр нээж байна";
+                $message = "{$record['content']['title'][$this->getLanguageCode()]} - мэдээллийг шинэчлэхээр нээж байна";
             }
         } catch (\Throwable $e) {
             if ($is_submit) {
@@ -290,7 +278,7 @@ class PagesController extends DashboardController
             
             $level = LogLevel::ERROR;
             $context['error'] = ['code' => $e->getCode(), 'message' => $e->getMessage()];
-            $message = 'Хуудсыг засах үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
+            $message = 'Мэдээллийг засах үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
         } finally {
             $this->indolog('content', $level, $message, $context);
         }
@@ -299,7 +287,7 @@ class PagesController extends DashboardController
     public function delete()
     {
         try {
-            $context = ['model' => PagesModel::class];
+            $context = ['model' => NewsModel::class];
             
             if (!$this->isUserCan('system_content_delete')) {
                 throw new \Exception('No permission for an action [delete]!', 401);
@@ -316,7 +304,7 @@ class PagesController extends DashboardController
             
             $id = \filter_var($payload['id'], \FILTER_VALIDATE_INT);
             
-            $this->indodelete("/record?model=" . PagesModel::class, ['WHERE' => "id=$id"]);
+            $this->indodelete("/record?model=" . NewsModel::class, ['WHERE' => "id=$id"]);
             
             $this->respondJSON([
                 'status'  => 'success',
@@ -339,57 +327,5 @@ class PagesController extends DashboardController
         } finally {
             $this->indolog('content', $level, $message, $context);
         }
-    }
-    
-    private function getPagesInfos(string $condition = ''): array
-    {
-        $code = \preg_replace('/[^a-z]/', '', $this->getLanguageCode());
-        $pages_query = 
-            'SELECT p.id, c.title, p.parent_id ' .
-            'FROM pages as p JOIN pages_content as c ON p.id=c.parent_id ' .
-            "WHERE p.is_active=1 AND c.code='$code'";
-        $pages = $this->indo('/statement', ['query' => $pages_query]);
-        if (!empty($condition)) {
-            $pages_query .= " AND $condition";
-            $pages_specified = $this->indo('/statement', ['query' => $pages_query]);
-        }
-        foreach ($pages as $page) {
-            $id = $page['id'];
-            $ancestry = $this->findAncestry($id, $pages);
-            if (\array_key_exists($id, $ancestry)) {
-                unset($ancestry[$id]);
-                
-                \error_log(__CLASS__ . ": Page $id misconfigured with parenting path!");
-            }
-            if (empty($ancestry)) {
-                continue;
-            }
-            
-            $path = '';
-            $ancestry_keys = \array_flip($ancestry);
-            for ($i = \count($ancestry_keys); $i > 0; $i--) {
-                $path .= "{$pages[$ancestry_keys[$i]]['title']} » ";
-            }
-            $pages[$id]['parent_titles'] = $path;
-            if (isset($pages_specified[$id])) {
-                $pages_specified[$id]['parent_titles'] = $path;
-            }
-        }
-        
-        return $pages_specified ?? $pages;
-    }
-    
-    private function findAncestry(int $id, array $pages, array &$ancestry = []): array
-    {
-        $parent = $pages[$id]['parent_id'];
-        if (empty($parent)
-            || !isset($pages[$parent])
-            || \array_key_exists($parent, $ancestry)
-        ) {
-            return $ancestry;
-        }
-        
-        $ancestry[$parent] = \count($ancestry) + 1;
-        return $this->findAncestry($parent, $pages, $ancestry);
     }
 }

@@ -10,37 +10,18 @@
         </div>
     </div>
     <div class="card-body">
-        <div class="row mt-3">
-            <div class="col-12">
-                <div class="form-floating">
-                    <select class="form-select" name="parent_id" disabled>
-                    {% if infos[record['parent_id']] is not null %}    
-                        <option value="{{ id }}" selected>{{ (infos[record['parent_id']]['parent_titles'] ?? '')|e }}{{ infos[record['parent_id']]['title']|e }}</option>
-                    {% else %}
-                        <option value="0">- {{ localization.code == 'mn' ? 'Үндсэн меню' : 'Main menu' }} -</option>
-                    {% endif %}
-                    </select>
-                    <label>{{ 'parent'|text }}</label>
-                </div>
-            </div>
-        </div>
         <div class="form-group row mt-3">
-            <div class="col-3">
+            <div class="col-4">
                 <label class="form-label">{{ 'date'|text }}</label>
                 <input class="form-control" name="publish_date" value="{{ record['publish_date'] }}" readonly placeholder="" type="datetime-local" autocomplete="off">
             </div>
-            <div class="col-3">
+            <div class="col-4">
                 <label class="form-label">{{ 'category'|text }}</label>
                 <input class="form-control" name="category" readonly type="text" value="{{ record['category']|e }}" maxlength="32">
             </div>
-            <div class="col-3">
+            <div class="col-4">
                 <label class="form-label">{{ 'type'|text }}</label>
                 <input class="form-control" name="type" readonly type="text" value="{{ record['type']|e }}" maxlength="32">                
-            </div>
-            <div class="col-3">
-                <label class="form-label">{{ 'position'|text }}</label>
-                <input class="form-control" name="position" readonly value="{{ record['position'] }}" placeholder="" type="number" autocomplete="off">
-                <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
             </div>
         </div>
         <ul class="nav nav-tabs nav-tabs-content mt-4">
