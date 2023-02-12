@@ -88,9 +88,9 @@
                 <div class="text-center">
                     <span id="language">
                     {%  if languageCode == 'mn' %}
-                        Click for <a href="{{ 'language'|link({'language': 'en'}) }}">English</a>
+                        Click for <a href="{{ 'language'|link({'code': 'en'}) }}">English</a>
                     {% else %}
-                        Системийн хэлийг <a href="{{ 'language'|link({'language': 'mn'}) }}">Монгол</a> болго
+                        Системийн хэлийг <a href="{{ 'language'|link({'code': 'mn'}) }}">Монгол</a> болго
                     {% endif %}
                     </span>
                 </div>
