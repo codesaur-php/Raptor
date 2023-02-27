@@ -261,7 +261,8 @@ class NewsController extends DashboardController
                 }
                 
                 $vars = [
-                    'record' => $record
+                    'record' => $record,
+                    'accounts' => $this->getAccounts(),
                 ];
                 $this->twigDashboard($template_path, $vars)->render();
                 

@@ -406,25 +406,30 @@ class LoginController extends \Raptor\Controller
     
     public function selectOrganization(int $id)
     {
-        if (!$this->isUserAuthorized() || $id == 0) {
-            return $this->redirectTo('home');
+        $home = $this->generateLink('home');
+        if (isset($this->getRequest()->getServerParams()['HTTP_REFERER'])) {
+            $referer = $this->getRequest()->getServerParams()['HTTP_REFERER'];
+            $location = \str_contains($referer, $home) ? $referer : $home;
+        } else {
+            $location = $home;
         }
         
-        $current_org_id = $this->getUser()->getOrganization()['id'];
-        if ($id == $current_org_id) {
-            return $this->redirectTo('home');
-        }
-        
-        $referer = $this->getRequest()->getServerParams()['HTTP_REFERER'] ?? null;
         try {
+            if (!$this->isUserAuthorized() || $id == 0) {
+                throw new \Exception('Unauthorized', StatusCodeInterface::STATUS_UNAUTHORIZED);
+            }
+
+            $current_org_id = $this->getUser()->getOrganization()['id'];
+            if ($id == $current_org_id) {
+                throw new \Exception("Organization [$id] currently selected", StatusCodeInterface::STATUS_BAD_REQUEST);
+            }
+
             $account_id = $this->getUser()->getAccount()['id'];
             $payload = ['account_id' => $account_id, 'organization_id' => $id];
             $this->indoget('/record?model=' . OrganizationUserModel::class, $payload + ['is_active' => 1]);
             
             $jwt_result = $this->indopost('/auth/organization', $payload);
             $_SESSION[__NAMESPACE__ . '\\indo\\jwt'] = $jwt_result['jwt'];
-            $home = $this->generateLink('home');
-            $location = \str_contains($referer, $home) ? $referer : $home;
             
             $account = $this->getUser()->getAccount();
             $message = "Хэрэглэгч {$account['first_name']} {$account['last_name']} нэвтэрсэн байгууллага сонгов.";
@@ -432,8 +437,6 @@ class LoginController extends \Raptor\Controller
             $this->indolog('dashboard', LogLevel::NOTICE, $message, $context);
         } catch (\Throwable $e) {
             $this->errorLog($e);
-            
-            $location = $referer;
         } finally {
             \header("Location: $location", false, 302);
             
@@ -443,11 +446,16 @@ class LoginController extends \Raptor\Controller
     
     public function language(string $code)
     {
-        $from = $this->getLanguageCode();
         $target_path = $this->getTargetPath();
         $home = (string) $this->getRequest()->getUri()->withPath($target_path);
-        $referer = $this->getRequest()->getServerParams()['HTTP_REFERER'];
-        $location = \str_contains($referer, $home) ? $referer : $home;
+        if (isset($this->getRequest()->getServerParams()['HTTP_REFERER'])) {
+            $referer = $this->getRequest()->getServerParams()['HTTP_REFERER'];
+            $location = \str_contains($referer, $home) ? $referer : $home;
+        } else {
+            $location = $home;
+        }
+
+        $from = $this->getLanguageCode();
         $language = $this->getLanguages();
         if (isset($language[$code]) && $code != $from) {
             $_SESSION[\explode('\\', __NAMESPACE__)[0] . '\\language\\code'] = $code;

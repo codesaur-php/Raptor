@@ -52,7 +52,7 @@ class FileController extends Controller
     {
         $script_path = $this->getScriptPath();
         $public_folder = "$script_path/public{$folder}";
-
+        
         $this->local = \dirname($_SERVER['SCRIPT_FILENAME']) . '/public' . $folder;
         $this->public = $relative ? $public_folder : (string) $this->getRequest()->getUri()->withPath($public_folder);
     }

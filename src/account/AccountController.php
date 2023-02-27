@@ -251,6 +251,7 @@ class AccountController extends DashboardController
                 if (isset($photo['name'])) {
                     $record['photo'] = $file->getPathUrl($photo['name']);
                 }
+
                 if (!empty($old_photo_file)) {
                     if ($file->getLastError() == -1) {
                         $this->tryDeleteFile(\dirname($_SERVER['SCRIPT_FILENAME']) . "/../private/accounts/$id/$old_photo_file");
@@ -265,7 +266,7 @@ class AccountController extends DashboardController
                 
                 $this->indoput($pattern, ['record' => $record, 'condition' => ['WHERE' => "id=$id"]]);
                 
-                $this->respondJSON([
+                $this->respondJSON([ 
                     'type' => 'primary',
                     'status' => 'success',
                     'message' => $this->text('record-update-success'),

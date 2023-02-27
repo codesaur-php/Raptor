@@ -273,6 +273,7 @@ class PagesController extends DashboardController
                 
                 $vars = [
                     'record' => $record,
+                    'accounts' => $this->getAccounts(),
                     'infos' => $this->getPagesInfos("p.id!=$id AND p.parent_id!=$id")
                 ];
                 $this->twigDashboard($template_path, $vars)->render();

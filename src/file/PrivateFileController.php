@@ -6,7 +6,7 @@ class PrivateFileController extends FileController
 {
     public function setFolder(string $folder, bool $relative = true)
     {
-        $script_path = $this->getScriptPath();
+        $script_path = $this->getTargetPath();
         $public_folder = "$script_path/private/file?name={$folder}";
         
         $this->local = \dirname($_SERVER['SCRIPT_FILENAME']) . '/../private' . $folder;
@@ -15,7 +15,7 @@ class PrivateFileController extends FileController
     
     public function getPathUrl(string $fileName): string
     {
-        return $this->public . \urlencode("/$fileName");
+        return "$this->public/" . \urlencode($fileName);
     }
     
     public function read()
