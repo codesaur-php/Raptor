@@ -9,7 +9,7 @@ class PrivateFileController extends FileController
         $script_path = $this->getTargetPath();
         $public_folder = "$script_path/private/file?name={$folder}";
         
-        $this->local = \dirname($_SERVER['SCRIPT_FILENAME']) . '/../private' . $folder;
+        $this->local = $this->getDocumentPath('/../private' . $folder);
         $this->public = $relative ? $public_folder : (string) $this->getRequest()->getUri()->withPath($public_folder);
     }
     
@@ -25,8 +25,7 @@ class PrivateFileController extends FileController
         }
 
         $fileName = $this->getQueryParams()['name'] ?? '';
-        $document = \dirname($_SERVER['SCRIPT_FILENAME']);
-        $filePath = "$document/../private/$fileName";
+        $filePath = $this->getDocumentPath("/../private/$fileName");
         if (empty($fileName) || !\file_exists($filePath)) {
             return $this->respondError(404);
         }

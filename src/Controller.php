@@ -51,6 +51,16 @@ class Controller extends \codesaur\Http\Application\Controller
         return $this->getRequest()->getServerParams()['SCRIPT_TARGET_PATH'] ?? $this->getScriptPath();
     }
     
+    protected final function getDocumentRoot(): string
+    {
+        return \dirname($this->getRequest()->getServerParams()['SCRIPT_FILENAME']);
+    }
+
+    protected final function getDocumentPath(string $filePath): string
+    {
+        return $this->getDocumentRoot() . $filePath;
+    }
+    
     public final function generateLink(string $routeName, array $params = [], bool $is_absolute = false, string $default = 'javascript:;'): string
     {
         try {
@@ -95,12 +105,14 @@ class Controller extends \codesaur\Http\Application\Controller
         $twig = new TwigTemplate($template, $vars);
         $twig->set('user', $this->getUser());
         $twig->set('localization', $this->getAttribute('localization'));
-        $twig->set('request_path', \rtrim($_SERVER['REQUEST_URI'], '/'));
-        $twig->set('request_uri', (string) $this->getRequest()->getUri());
+        $twig->set('script_path', $this->getScriptPath());
+        $twig->set('request_path', \rawurldecode($this->getRequest()->getUri()->getPath()));
+
         $twig->addFilter(new TwigFilter('text', function (string $key): string
         {
             return $this->text($key);
         }));
+
         $twig->addFilter(new TwigFilter('link', function (string $routeName, array $params = [], bool $is_absolute = false): string
         {
             return $this->generateLink($routeName, $params, $is_absolute);

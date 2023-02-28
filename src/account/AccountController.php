@@ -254,10 +254,10 @@ class AccountController extends DashboardController
 
                 if (!empty($old_photo_file)) {
                     if ($file->getLastError() == -1) {
-                        $this->tryDeleteFile(\dirname($_SERVER['SCRIPT_FILENAME']) . "/../private/accounts/$id/$old_photo_file");
+                        $this->tryDeleteFile($this->getDocumentPath("/../private/accounts/$id/$old_photo_file"));
                         $record['photo'] = '';
                     } elseif (isset($photo['name']) && $photo['name'] != $old_photo_file) {
-                        $this->tryDeleteFile(\dirname($_SERVER['SCRIPT_FILENAME']) . "/../private/accounts/$id/$old_photo_file");
+                        $this->tryDeleteFile($this->getDocumentPath("/../private/accounts/$id/$old_photo_file"));
                     }
                 }
                 if (isset($record['photo'])) {

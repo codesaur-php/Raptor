@@ -177,10 +177,10 @@ class SettingsController extends DashboardController
                 }
                 if (!empty($old_logo_file)) {
                     if ($file->getLastError() == -1) {
-                        $this->tryDeleteFile(\dirname($_SERVER['SCRIPT_FILENAME']) . "/public/settings/$old_logo_file");
+                        $this->tryDeleteFile($this->getDocumentPath("/public/settings/$old_logo_file"));
                         $content[$code]['logo'] = '';
                     } elseif (isset($logo['name']) && $logo['name'] != $old_logo_file) {
-                        $this->tryDeleteFile(\dirname($_SERVER['SCRIPT_FILENAME']) . "/public/settings/$old_logo_file");
+                        $this->tryDeleteFile($this->getDocumentPath("/public/settings/$old_logo_file"));
                     }
                 }
                 if (isset($content[$code]['logo'])) {
@@ -195,10 +195,10 @@ class SettingsController extends DashboardController
             }
             if (!empty($old_favico_file)) {
                 if ($file->getLastError() == -1) {
-                    $this->tryDeleteFile(\dirname($_SERVER['SCRIPT_FILENAME']) . "/public/settings/$old_favico_file");
+                    $this->tryDeleteFile($this->getDocumentPath("/public/settings/$old_favico_file"));
                     $record['favico'] = '';
                 } elseif (isset($ico['name']) && $ico['name'] != $old_favico_file) {
-                    $this->tryDeleteFile(\dirname($_SERVER['SCRIPT_FILENAME']) . "/public/settings/$old_favico_file");
+                    $this->tryDeleteFile($this->getDocumentPath("/public/settings/$old_favico_file"));
                 }
             }
             if (isset($record['favico'])) {
@@ -212,10 +212,10 @@ class SettingsController extends DashboardController
             }
             if (!empty($old_shortcut_icon_file)) {
                 if ($file->getLastError() == -1) {
-                    $this->tryDeleteFile(\dirname($_SERVER['SCRIPT_FILENAME']) . "/public/settings/$old_shortcut_icon_file");
+                    $this->tryDeleteFile($this->getDocumentPath("/public/settings/$old_shortcut_icon_file"));
                     $record['shortcut_icon'] = '';
                 } elseif (isset($shortcut_icon['name']) && $shortcut_icon['name'] != $old_shortcut_icon_file) {
-                    $this->tryDeleteFile(\dirname($_SERVER['SCRIPT_FILENAME']) . "/public/settings/$old_shortcut_icon_file");
+                    $this->tryDeleteFile($this->getDocumentPath("/public/settings/$old_shortcut_icon_file"));
                 }
             }
             if (isset($record['shortcut_icon'])) {
@@ -229,10 +229,10 @@ class SettingsController extends DashboardController
             }
             if (!empty($old_apple_touch_icon_file)) {
                 if ($file->getLastError() == -1) {
-                    $this->tryDeleteFile(\dirname($_SERVER['SCRIPT_FILENAME']) . "/public/settings/$old_apple_touch_icon_file");
+                    $this->tryDeleteFile($this->getDocumentPath("/public/settings/$old_apple_touch_icon_file"));
                     $record['apple_touch_icon'] = '';
                 } elseif (isset($apple_touch_icon['name']) && $apple_touch_icon['name'] != $old_apple_touch_icon_file) {
-                    $this->tryDeleteFile(\dirname($_SERVER['SCRIPT_FILENAME']) . "/public/settings/$old_apple_touch_icon_file");
+                    $this->tryDeleteFile($this->getDocumentPath("/public/settings/$old_apple_touch_icon_file"));
                 }
             }
             if (isset($record['apple_touch_icon'])) {

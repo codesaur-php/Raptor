@@ -1,5 +1,6 @@
 {% set languageCode = localization.code ?? 'en' %}
 {% set navbarColor = meta['navbar']|default('primary') %}
+{% set home_path = 'home'|link|trim('/', 'right') %}
 <!DOCTYPE html>
 <!-- template example by Mark Otto, Jacob Thornton, and Bootstrap contributors => https://getbootstrap.com/docs/5.1/examples/dashboard -->
 <html lang="{{ languageCode }}">
@@ -56,7 +57,7 @@
     </head>
     <body>
         <header class="navbar navbar-dark sticky-top bg-{{ navbarColor }} flex-md-nowrap p-0 shadow">
-            <a class="navbar-brand col-md-3 col-lg-2 me-0 px-3 text-uppercase" href="{{ 'home'|link }}">
+            <a class="navbar-brand col-md-3 col-lg-2 me-0 px-3 text-uppercase" href="{{ home_path }}">
                 {% if user.getOrganization()['logo'] is defined and user.getOrganization()['logo'] is not empty %}<img src="{{ user.getOrganization()['logo'] }}">{% endif %}
                 {{ user.getOrganization()['name'] }}
             </a>
@@ -89,7 +90,7 @@
                         {% for item in menu['submenu'] %}
                             <li class="nav-item">
                                 {% set href = item['href']|trim('/', 'right') %}
-                                <a class="nav-link{{ (href == request_path or href == request_uri) ? ' active' : '' }}" href="{{ href }}">
+                                <a class="nav-link{{ href == request_path or (href in request_path and href != home_path) ? ' active' : '' }}" href="{{ href }}">
                                     <i class="{{ item['icon'] }} side-menu-icon"></i> {{ item['title'] }}
                                 </a>
                             </li>

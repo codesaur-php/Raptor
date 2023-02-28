@@ -262,10 +262,10 @@ class OrganizationController extends DashboardController
                 }
                 if (!empty($old_logo_file)) {
                     if ($file->getLastError() == -1) {
-                        $this->tryDeleteFile(\dirname($_SERVER['SCRIPT_FILENAME']) . "/public/organizations/$id/$old_logo_file");
+                        $this->tryDeleteFile($this->getDocumentPath("/public/organizations/$id/$old_logo_file"));
                         $record['logo'] = '';
                     } elseif (isset($logo['name']) && $logo['name'] != $old_logo_file) {
-                        $this->tryDeleteFile(\dirname($_SERVER['SCRIPT_FILENAME']) . "/public/organizations/$id/$old_logo_file");
+                        $this->tryDeleteFile($this->getDocumentPath("/public/organizations/$id/$old_logo_file"));
                     }
                 }
                 if (isset($record['logo'])) {
