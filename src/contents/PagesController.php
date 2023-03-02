@@ -46,10 +46,10 @@ class PagesController extends DashboardController
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
             
-            $infos = $this->getPagesInfos();
             $code = $this->getLanguageCode();
             $language_codes = \array_keys($this->getLanguages());
             $pages = $this->indoget('/records?model=' . PagesModel::class);
+            $infos = $this->getPagesInfos();
             foreach ($pages as $record) {
                 $id = $record['id'];
                 $row = [$id, '<img src="https://via.placeholder.com/50?text=no+photo">'];
@@ -349,10 +349,10 @@ class PagesController extends DashboardController
             'SELECT p.id, c.title, p.parent_id ' .
             'FROM pages as p JOIN pages_content as c ON p.id=c.parent_id ' .
             "WHERE p.is_active=1 AND c.code='$code'";
-        $pages = $this->indo('/statement', ['query' => $pages_query]);
+        $pages = $this->indosafe('/statement', ['query' => $pages_query]);
         if (!empty($condition)) {
             $pages_query .= " AND $condition";
-            $pages_specified = $this->indo('/statement', ['query' => $pages_query]);
+            $pages_specified = $this->indosafe('/statement', ['query' => $pages_query]);
         }
         foreach ($pages as $page) {
             $id = $page['id'];
