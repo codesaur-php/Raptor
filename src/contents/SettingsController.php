@@ -164,23 +164,25 @@ class SettingsController extends DashboardController
             $old_apple_touch_icon_file = \basename($existing['apple_touch_icon'] ?? '');
             
             $file = new FileController($this->getRequest());
-            $file->init('/settings');
-            $file->allowType(3);
+            $file->setFolder('/settings');
+            $file->allowImageOnly();
             
             $record = ['alias' => $alias];
             $content = [];
             foreach (\array_keys($this->getLanguages()) as $code) {
                 $old_logo_file = \basename($existing['content']['logo'][$code] ?? '');
                 $logo = $file->moveUploaded("logo_$code");
-                if (isset($logo['name'])) {
-                    $content[$code]['logo'] = $file->getPathUrl($logo['name']);
+                if ($logo) {
+                    $content[$code]['logo'] = $logo['path'];
                 }
                 if (!empty($old_logo_file)) {
                     if ($file->getLastError() == -1) {
-                        $this->tryDeleteFile($this->getDocumentPath("/public/settings/$old_logo_file"));
+                        $file->tryDeleteFile($old_logo_file);
                         $content[$code]['logo'] = '';
-                    } elseif (isset($logo['name']) && $logo['name'] != $old_logo_file) {
-                        $this->tryDeleteFile($this->getDocumentPath("/public/settings/$old_logo_file"));
+                    } elseif (isset($content[$code]['logo'])
+                        && \basename($content[$code]['logo']) != $old_logo_file
+                    ) {
+                        $file->tryDeleteFile($old_logo_file);
                     }
                 }
                 if (isset($content[$code]['logo'])) {
@@ -190,49 +192,54 @@ class SettingsController extends DashboardController
 
             $file->allowExtensions(['ico']);
             $ico = $file->moveUploaded('favico');
-            if (isset($ico['name'])) {
-                $record['favico'] = $file->getPathUrl($ico['name']);
+            if ($ico) {
+                $record['favico'] = $ico['path'];
             }
             if (!empty($old_favico_file)) {
                 if ($file->getLastError() == -1) {
-                    $this->tryDeleteFile($this->getDocumentPath("/public/settings/$old_favico_file"));
+                    $file->tryDeleteFile($old_favico_file);
                     $record['favico'] = '';
-                } elseif (isset($ico['name']) && $ico['name'] != $old_favico_file) {
-                    $this->tryDeleteFile($this->getDocumentPath("/public/settings/$old_favico_file"));
+                } elseif (isset($record['favico'])
+                    && \basename($record['favico']) != $old_favico_file
+                ) {
+                    $file->tryDeleteFile($old_favico_file);
                 }
             }
             if (isset($record['favico'])) {
                 $context['record']['favico'] = $record['favico'];
             }
             
-            $file->allowType(3);
+            $file->allowImageOnly();
             $shortcut_icon = $file->moveUploaded('shortcut_icon');
-            if (isset($shortcut_icon['name'])) {
-                $record['shortcut_icon'] = $file->getPathUrl($shortcut_icon['name']);
+            if ($shortcut_icon) {
+                $record['shortcut_icon'] = $shortcut_icon['path'];
             }
             if (!empty($old_shortcut_icon_file)) {
                 if ($file->getLastError() == -1) {
-                    $this->tryDeleteFile($this->getDocumentPath("/public/settings/$old_shortcut_icon_file"));
+                    $file->tryDeleteFile($old_shortcut_icon_file);
                     $record['shortcut_icon'] = '';
-                } elseif (isset($shortcut_icon['name']) && $shortcut_icon['name'] != $old_shortcut_icon_file) {
-                    $this->tryDeleteFile($this->getDocumentPath("/public/settings/$old_shortcut_icon_file"));
+                } elseif (isset($record['shortcut_icon'])
+                    && \basename($record['shortcut_icon']) != $old_shortcut_icon_file
+                ) {
+                    $file->tryDeleteFile($old_shortcut_icon_file);
                 }
             }
             if (isset($record['shortcut_icon'])) {
                 $context['record']['shortcut_icon'] = $record['shortcut_icon'];
             }
             
-            $file->allowType(3);
             $apple_touch_icon = $file->moveUploaded('apple_touch_icon');
-            if (isset($apple_touch_icon['name'])) {
-                $record['apple_touch_icon'] = $file->getPathUrl($apple_touch_icon['name']);
+            if ($apple_touch_icon) {
+                $record['apple_touch_icon'] = $apple_touch_icon['path'];
             }
             if (!empty($old_apple_touch_icon_file)) {
                 if ($file->getLastError() == -1) {
-                    $this->tryDeleteFile($this->getDocumentPath("/public/settings/$old_apple_touch_icon_file"));
+                    $file->tryDeleteFile($old_apple_touch_icon_file);
                     $record['apple_touch_icon'] = '';
-                } elseif (isset($apple_touch_icon['name']) && $apple_touch_icon['name'] != $old_apple_touch_icon_file) {
-                    $this->tryDeleteFile($this->getDocumentPath("/public/settings/$old_apple_touch_icon_file"));
+                } elseif (isset($record['apple_touch_icon'])
+                    && \basename($record['apple_touch_icon']) != $old_apple_touch_icon_file
+                ) {
+                    $file->tryDeleteFile($old_apple_touch_icon_file);
                 }
             }
             if (isset($record['apple_touch_icon'])) {

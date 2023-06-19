@@ -44,7 +44,7 @@ class JWTAuthMiddleware implements MiddlewareInterface
         return $response;
     }
     
-    public function retrieveIndoUser(ServerRequestInterface $request, string $jwt): User
+    private function retrieveIndoUser(ServerRequestInterface $request, string $jwt): User
     {
         $response = $this->request(
             $request->getAttribute('indo'), 'POST', '/auth/jwt', ['jwt' => $jwt]);

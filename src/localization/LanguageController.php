@@ -128,7 +128,7 @@ class LanguageController extends DashboardController
                 $id = $this->indopost('/record?model=' . LanguageModel::class, ['code' => $payload['short'], 'full' => $payload['full']]);
                 $context['record'] = $id;
                 
-                $copied = $this->indopost('/language/copy/multimodel/content', ['from' => $mother['code'], 'to' => $payload['short']]);//, 'POST');
+                $copied = $this->indopost('/language/copy/multimodel/content', ['from' => $mother['code'], 'to' => $payload['short']]);
                 if (!empty($copied)) {
                     $this->indolog(
                         'localization',
@@ -154,11 +154,7 @@ class LanguageController extends DashboardController
                         ['condition' => ['WHERE' => "c.code='$code'"]]
                     )
                 ];
-                $template_path = \dirname(__FILE__) . '/language-insert-modal.html';
-                if (!\file_exists($template_path)) {
-                    throw new \Exception("$template_path file not found!", 500);
-                }
-                $this->twigTemplate($template_path, $vars)->render();
+                $this->twigTemplate(\dirname(__FILE__) . '/language-insert-modal.html', $vars)->render();
                 
                 $level = LogLevel::NOTICE;
                 $message = 'Шинэ хэл үүсгэх үйлдлийг эхлүүллээ';
@@ -189,12 +185,9 @@ class LanguageController extends DashboardController
             
             $record = $this->indoget('/record?model=' . LanguageModel::class, ['id' => $id]);
             $context['record'] = $record;
-            
-            $template_path = \dirname(__FILE__) . '/language-retrieve-modal.html';
-            if (!\file_exists($template_path)) {
-                throw new \Exception("$template_path file not found!", 500);
-            }
-            $this->twigTemplate($template_path, ['record' => $record, 'accounts' => $this->getAccounts()])->render();
+            $this->twigTemplate(
+                \dirname(__FILE__) . '/language-retrieve-modal.html',
+                ['record' => $record, 'accounts' => $this->getAccounts()])->render();
 
             $level = LogLevel::NOTICE;
             $message = "{$record['full']} хэлний мэдээллийг нээж үзэж байна";
@@ -259,12 +252,7 @@ class LanguageController extends DashboardController
                 $message = "{$record['full']} хэлний мэдээллийг шинэчлэх үйлдлийг амжилттай гүйцэтгэлээ";
             } else {
                 $record = $this->indoget('/record?model=' . LanguageModel::class, ['id' => $id]);
-                
-                $template_path = \dirname(__FILE__) . '/language-update-modal.html';
-                if (!\file_exists($template_path)) {
-                    throw new \Exception("$template_path file not found!", 500);
-                }
-                $this->twigTemplate($template_path, ['record' => $record])->render();
+                $this->twigTemplate(\dirname(__FILE__) . '/language-update-modal.html', ['record' => $record])->render();
                 
                 $level = LogLevel::NOTICE;
                 $context['record'] = $record;

@@ -1,0 +1,20 @@
+<div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h6 class="modal-title text-uppercase text-primary"><i class="bi bi-magic"></i> </h6>
+            <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="{{ 'close'|text|e }}"></button>
+        </div>
+        <div class="modal-body">
+            <strong>Relative URL:</strong>
+            <a class="btn btn-sm btn-primary" onclick="copyToClipboard('relative_url');">copy</a>
+            <pre class="border border-info" id="relative_url" style="white-space:pre-wrap">{{ record['path'] }}</pre>
+            <hr>
+            <strong>Absolute URL:</strong>
+            <a class="btn btn-sm btn-primary" onclick="copyToClipboard('absolute_url');">copy</a>
+            <pre class="border border-info" id="absolute_url" style="white-space:pre-wrap">{{ host ~ record['path'] }}</pre>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" data-bs-dismiss="modal">{{ 'close'|text }}</button>
+        </div>
+    </div>
+</div>

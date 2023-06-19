@@ -128,11 +128,7 @@ class CountriesController extends DashboardController
                 $level = LogLevel::INFO;
                 $message = "Шинэ улсын мэдээлэл [{$payload['id']}] үүсгэх үйлдлийг амжилттай гүйцэтгэлээ";
             } else {
-                $template_path = \dirname(__FILE__) . '/country-insert-modal.html';
-                if (!\file_exists($template_path)) {
-                    throw new \Exception("$template_path file not found!", 500);
-                }
-                $this->twigTemplate($template_path)->render();
+                $this->twigTemplate(\dirname(__FILE__) . '/country-insert-modal.html')->render();
                 
                 $level = LogLevel::NOTICE;
                 $message = 'Улсын мэдээлэл үүсгэх үйлдлийг эхлүүллээ';
@@ -162,13 +158,9 @@ class CountriesController extends DashboardController
             }
             
             $record = $this->indoget('/record?model=' . CountriesModel::class, ['p.id' => $id]);
-            $context['record'] = $record;
-            
-            $template_path = \dirname(__FILE__) . '/country-retrieve-modal.html';
-            if (!\file_exists($template_path)) {
-                throw new \Exception("$template_path file not found!", 500);
-            }
-            $this->twigTemplate($template_path,
+            $context['record'] = $record;            
+            $this->twigTemplate(
+                \dirname(__FILE__) . '/country-retrieve-modal.html',
                 ['record' => $record, 'accounts' => $this->getAccounts()])->render();
 
             $level = LogLevel::NOTICE;
@@ -211,7 +203,6 @@ class CountriesController extends DashboardController
                 if (empty($payload['id']) || empty($payload['speak'])) {
                     throw new \Exception($this->text('invalid-request'), 400);
                 }
-                
                 $id = \preg_replace('/[^A-Za-z0-9_-]/', '', $payload['id']);
                 $this->indoput('/record?model=' . CountriesModel::class,
                     ['record' => $record, 'content' => $content, 'condition' => ['WHERE' => "p.id='$id'"]]);
@@ -226,13 +217,8 @@ class CountriesController extends DashboardController
                 $level = LogLevel::INFO;
                 $message = "{$record['id']} улсын мэдээллийг шинэчлэх үйлдлийг амжилттай гүйцэтгэлээ";
             } else {
-                $record = $this->indoget('/record?model=' . CountriesModel::class, ['p.id' => $id]);
-                
-                $template_path = \dirname(__FILE__) . '/country-update-modal.html';
-                if (!\file_exists($template_path)) {
-                    throw new \Exception("$template_path file not found!", 500);
-                }
-                $this->twigTemplate($template_path, ['record' => $record])->render();
+                $record = $this->indoget('/record?model=' . CountriesModel::class, ['p.id' => $id]);                
+                $this->twigTemplate(\dirname(__FILE__) . '/country-update-modal.html', ['record' => $record])->render();
                 
                 $level = LogLevel::NOTICE;
                 $context['record'] = $record;

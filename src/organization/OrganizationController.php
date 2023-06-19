@@ -132,16 +132,15 @@ class OrganizationController extends DashboardController
                 $context['id'] = $id;
                 
                 $file = new FileController($this->getRequest());
-                $file->init("/organizations/$id");
-                $file->allowType(3);
+                $file->setFolder("/organizations/$id");
+                $file->allowImageOnly();                
                 $logo = $file->moveUploaded('org_logo');
-                if (isset($logo['name'])) {
-                    $logo_path = $file->getPathUrl($logo['name']);
+                if ($logo) {
                     $payload = [
-                        'record' => ['logo' => $logo_path],
+                        'record' => ['logo' => $logo['path']],
                         'condition' => ['WHERE' => "id=$id"]
                     ];
-                    $context['logo'] = $logo_path;
+                    $context['logo'] = $logo;
                     $this->indoput('/record?model=' . OrganizationModel::class, $payload);
                 }
                 
@@ -154,11 +153,9 @@ class OrganizationController extends DashboardController
                 $level = LogLevel::INFO;
                 $message = "Байгууллага [{$record['name']}] үүсгэх үйлдлийг амжилттай гүйцэтгэлээ";
             } else {
-                $template_path = \dirname(__FILE__) . '/organization-insert-modal.html';
-                if (!\file_exists($template_path)) {
-                    throw new \Exception("$template_path file not found!", 500);
-                }
-                $this->twigTemplate($template_path, ['parents' => $this->getParents()])->render();
+                $this->twigTemplate(
+                    \dirname(__FILE__) . '/organization-insert-modal.html',
+                    ['parents' => $this->getParents()])->render();
                 
                 $level = LogLevel::NOTICE;
                 $message = 'Байгууллага үүсгэх үйлдлийг эхлүүллээ';
@@ -194,16 +191,12 @@ class OrganizationController extends DashboardController
             
             $record = $this->indoget('/record?model=' . OrganizationModel::class, ['id' => $id]);
             $context['record'] = $record;
-            
             if (!empty($record['parent_id'])) {
                 $record['parent_name'] = $this->indosafe('/record?model=' . OrganizationModel::class, ['id' => $record['parent_id']])['name'] ?? '- no parent because its deleted -';
             }
-            
-            $template_path = \dirname(__FILE__) . '/organization-retrieve-modal.html';
-            if (!\file_exists($template_path)) {
-                throw new \Exception("$template_path file not found!", 500);
-            }
-            $this->twigTemplate($template_path, ['record' => $record, 'accounts' => $this->getAccounts()])->render();
+            $this->twigTemplate(
+                \dirname(__FILE__) . '/organization-retrieve-modal.html',
+                ['record' => $record, 'accounts' => $this->getAccounts()])->render();
 
             $level = LogLevel::NOTICE;
             $message = "{$record['name']} байгууллагын мэдээллийг нээж үзэж байна";
@@ -254,18 +247,20 @@ class OrganizationController extends DashboardController
                 $existing = $this->indosafe('/record?model=' . OrganizationModel::class, ['id' => $id, 'is_active' => 1]);
                 $old_logo_file = \basename($existing['logo'] ?? '');
                 $file = new FileController($this->getRequest());
-                $file->init("/organizations/$id");
-                $file->allowType(3);
+                $file->setFolder("/organizations/$id");
+                $file->allowImageOnly();
                 $logo = $file->moveUploaded('org_logo');
-                if (isset($logo['name'])) {
-                    $record['logo'] = $file->getPathUrl($logo['name']);
+                if ($logo) {
+                    $record['logo'] = $logo['path'];
                 }
                 if (!empty($old_logo_file)) {
                     if ($file->getLastError() == -1) {
-                        $this->tryDeleteFile($this->getDocumentPath("/public/organizations/$id/$old_logo_file"));
+                        $file->tryDeleteFile($old_logo_file);
                         $record['logo'] = '';
-                    } elseif (isset($logo['name']) && $logo['name'] != $old_logo_file) {
-                        $this->tryDeleteFile($this->getDocumentPath("/public/organizations/$id/$old_logo_file"));
+                    } elseif (isset($record['logo'])
+                        && \basename($record['logo']) != $old_logo_file
+                    ) {
+                        $file->tryDeleteFile($old_logo_file);
                     }
                 }
                 if (isset($record['logo'])) {
@@ -288,12 +283,9 @@ class OrganizationController extends DashboardController
                 $message = "{$record['name']} байгууллагын мэдээллийг шинэчлэх үйлдлийг амжилттай гүйцэтгэлээ";
             } else {
                 $record = $this->indoget('/record?model=' . OrganizationModel::class, ['id' => $id]);
-                
-                $template_path = \dirname(__FILE__) . '/organization-update-modal.html';
-                if (!\file_exists($template_path)) {
-                    throw new \Exception("$template_path file not found!", 500);
-                }
-                $this->twigTemplate($template_path, ['record' => $record, 'parents' => $this->getParents()])->render();
+                $this->twigTemplate(
+                    \dirname(__FILE__) . '/organization-update-modal.html',
+                    ['record' => $record, 'parents' => $this->getParents()])->render();
                 
                 $level = LogLevel::NOTICE;
                 $context['record'] = $record;

@@ -6,7 +6,6 @@ use Psr\Log\LogLevel;
 use Fig\Http\Message\StatusCodeInterface;
 
 use codesaur\RBAC\Accounts;
-use codesaur\Globals\Server;
 use codesaur\Template\MemoryTemplate;
 
 use Indoraptor\Auth\OrganizationUserModel;
@@ -29,8 +28,7 @@ class LoginController extends \Raptor\Controller
         $code = \preg_replace('/[^a-z]/', '', $this->getLanguageCode());
         $vars = ['meta' => $this->getAttribute('meta')];
         $vars += $this->indosafe('/reference/templates', 
-            ['WHERE' => "c.code='$code' AND (p.keyword='tos' OR p.keyword='pp') AND p.is_active=1"]);
-        
+            ['WHERE' => "c.code='$code' AND (p.keyword='tos' OR p.keyword='pp') AND p.is_active=1"]);        
         $this->twigTemplate(\dirname(__FILE__) . '/login.html', $vars)->render();
     }
     
@@ -224,7 +222,7 @@ class LoginController extends \Raptor\Controller
                 'username'    => $account['username'],
                 'last_name'   => $account['last_name'],
                 'first_name'  => $account['first_name'],
-                'remote_addr' => (new Server())->getRemoteAddr()
+                'remote_addr' => $this->getRemoteAddr()
             ];
             $id = $this->indosafe('/record/insert?model=' . ForgotModel::class, $record);
             if (empty($id)) {
@@ -313,7 +311,7 @@ class LoginController extends \Raptor\Controller
             $context += ['server_request' => [
                 'code' => $this->getLanguageCode(),
                 'method' => $this->getRequest()->getMethod(),
-                'remote_addr' => (new Server())->getRemoteAddr()
+                'remote_addr' => $this->getRemoteAddr()
             ]];
             
             $this->indolog('dashboard', $level, $message, $context, $forgot['account'] ?? null);
@@ -361,7 +359,7 @@ class LoginController extends \Raptor\Controller
                 'status' => 1,
                 'use_id' => $use_id,
                 'account' => $account_id,
-                'remote_addr' => (new Server())->getRemoteAddr()
+                'remote_addr' => $this->getRemoteAddr()
             ]);
             if (empty($record)) {
                 throw new \Exception('Unauthorized', StatusCodeInterface::STATUS_UNAUTHORIZED);

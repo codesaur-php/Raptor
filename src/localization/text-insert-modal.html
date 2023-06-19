@@ -6,7 +6,7 @@
         </div>
         <div class="modal-body">
             <form class="needs-validation" novalidate id="text_insert" action="{{ 'text-insert'|link({'table':table}) }}" method="POST" enctype="multipart/form-data">
-                <input name="type" required value="1" hidden>
+                <input name="type" required value="user-defined" hidden>
                 <div class="row mb-3">
                     <label class="col-3 col-form-label text-end">{{ 'keyword'|text }}</label>
                     <div class="col-9">

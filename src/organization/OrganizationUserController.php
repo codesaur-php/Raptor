@@ -39,7 +39,6 @@ class OrganizationUserController extends DashboardController
                 'SELECT t2.* FROM indo_organization_users as t1 JOIN indo_organizations as t2 ON t1.organization_id=t2.id ' .
                 'WHERE t1.is_active=1 AND t2.is_active=1 AND t1.account_id=' . $this->getUser()->getAccount()['id'];
             $organizations = $this->indo('/statement', ['query' => $user_orgs_query]);
-
             $this->twigDashboard(\dirname(__FILE__) . '/organization-user.html', ['organizations' => $organizations])->render();
             
             $level = LogLevel::NOTICE;
@@ -128,12 +127,7 @@ class OrganizationUserController extends DashboardController
                     'current_organizations' => $current_organizations,
                     'organizations' => $this->indoget('/records?model=' . OrganizationModel::class),
                 ];
-                
-                $template_path = \dirname(__FILE__) . '/organization-user-set-modal.html';
-                if (!\file_exists($template_path)) {
-                    throw new \Exception("$template_path file not found!", 500);
-                }
-                $this->twigTemplate($template_path, $vars)->render();
+                $this->twigTemplate(\dirname(__FILE__) . '/organization-user-set-modal.html', $vars)->render();
 
                 $context['account'] = $account;
                 $context['current_organizations'] = $current_organizations;

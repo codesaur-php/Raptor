@@ -14,7 +14,7 @@
                     </div>
                     <div class="col">
                         <label class="form-label">{{ 'name'|text }}</label>
-                        <input class="form-control" name="full" required  value="{{ record['full']|e }}" maxlength="128" placeholder="" type="text" autocomplete="off">
+                        <input class="form-control" name="full" required value="{{ record['full']|e }}" maxlength="128" placeholder="" type="text" autocomplete="off">
                         <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
                     </div>
                 </div>
@@ -32,7 +32,7 @@
                 </div>
                 <div class="mb-3">
                     <label class="form-label">{{ 'description'|text }}</label>
-                    <textarea class="form-control" name="description" rows="3">{{ record['description'] }}</textarea>
+                    <input class="form-control" name="description" value="{{ record['description']|e }}" maxlength="255" placeholder="" type="text" autocomplete="off">
                 </div>
             </form>
         </div>

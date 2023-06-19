@@ -1,3 +1,4 @@
+{% set newPageId = -random() %}
 {% set categories = {
   'general': { 'mn': 'Ерөнхий' },
   'special': { 'mn': 'Тусгай' }
@@ -9,6 +10,8 @@
   'dropdown-menu': { 'mn': 'Унжих цэс' },
   'mega-menu': { 'mn': 'Мега цэс' }
 } %}
+<script defer src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/gh/moxiecode/plupload/js/plupload.full.min.js"></script>
 <div class="card shadow border-success mt-2 mb-4">
     <div class="card-header bg-light">
         <div class="d-flex justify-content-between flex-wrap flex-md-nowrap">
@@ -80,9 +83,6 @@
                 </li>
             {% endfor %}
                 <li class="nav-item">
-                    <a class="nav-link" data-bs-toggle="tab" href="#tab-photo">{{ 'photo'|text }} <i class="bi bi-file-image"></i></a>
-                </li>
-                <li class="nav-item">
                     <a class="nav-link" data-bs-toggle="tab" href="#tab-files">{{ 'files'|text }} <i class="bi bi-paperclip"></i></a>
                 </li>
                 <li class="nav-item">
@@ -123,24 +123,30 @@
                     </div>
                 </div>
             {% endfor %}
-                <div class="tab-pane" id="tab-photo">
-                    <div class="alert alert-danger shadow-sm fade mt-4 show" role="alert">
-                        <i class="bi bi-exclamation-triangle" style="margin-right:5px"></i>
-                    {% if localization.code == 'mn' %}
-                        Уучлаарай, энэ үйлдэл одоохондоо ажиллагаанд ороогүй байна
-                    {% else %}
-                        Sorry, this feature isn’t available right now
-                    {% endif %}
-                    </div>
-                </div>
                 <div class="tab-pane" id="tab-files">
-                    <div class="alert alert-warning shadow-sm fade mt-4 show" role="alert">
-                        <i class="bi bi-exclamation-triangle" style="margin-right:5px"></i>
-                    {% if localization.code == 'mn' %}
-                        Уучлаарай, энэ үйлдэл одоохондоо ажиллагаанд ороогүй байна
-                    {% else %}
-                        Sorry, this feature isn’t available right now
-                    {% endif %}
+                    <div class="row mb-2">
+                        <div id="filelist" class="col-12">Your browser doesn't have Flash, Silverlight or HTML5 support.</div>
+                    </div>
+                    <div class="row">
+                        <div id="container">
+                            <button class="btn btn-warning shadow-sm" id="pickfiles">{{ 'select-files'|text }}</button>
+                            <button class="btn btn-secondary shadow-sm" id="uploadfiles" disabled>{{ 'upload-files'|text }}</button>
+                        </div>
+                    </div>
+                    <div class="col-12 mt-4">
+                        <table class="table table-striped table-hover" id="pages_files">
+                            <thead>
+                                <tr>
+                                    <th>{{ 'file'|text }}</th>
+                                    <th>{{ 'title'|text }}</th>
+                                    <th>{{ 'purpose'|text }}</th>
+                                    <th>{{ 'visible'|text }}</th>
+                                    <th style="width:160px">{{ 'action'|text }}</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                            <tfoot></tfoot>
+                        </table>
                     </div>
                 </div>
                 <div class="tab-pane" id="tab-meta">
@@ -189,7 +195,37 @@
 </div>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sceditor@latest/minified/themes/default.min.css">
 <script defer src="https://cdn.jsdelivr.net/combine/npm/sceditor@latest/minified/sceditor.min.js,npm/sceditor@latest/minified/formats/xhtml.min.js,npm/sceditor@latest/minified/icons/monocons.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.css"/>
+<script defer src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.umd.js"></script>
 <script type="text/javascript">
+function copyToClipboard(elem) {
+    var text = document.getElementById(elem);
+    if (document.body.createTextRange) {
+        var range = document.body.createTextRange();
+        range.moveToElementText(text);
+        range.select();
+    } else if (window.getSelection) {
+        var selection = window.getSelection();            
+        var range = document.createRange();
+        range.selectNodeContents(text);
+        selection.removeAllRanges();
+        selection.addRange(range);
+    }
+    document.execCommand('copy');
+}
+
+function isImage(url) {
+    return /\.(jpg|jpeg|png|webp|avif|gif|svg)$/.test(url);
+}
+
+function isVideo(url) {
+    return /\.(m4a|ogg|mp4|m4v|mov|wmv|swf)$/.test(url);
+}
+
+function getFileName(url) {
+    return url.split(/.*[\/|\\]/)[1];
+}
+
 document.addEventListener('DOMContentLoaded', function () {
     {% for code,title in localization.language %}
     let full_{{ code }} = document.getElementById('full_{{ code }}');
@@ -219,5 +255,181 @@ document.addEventListener('DOMContentLoaded', function () {
     });
     
     FormSubmitHandler('.submit-insert', 'form#page_insert');
+    
+    var filesTableBody = document.querySelector('#pages_files > tbody');
+    filesTableBody.onChildClick('.ajax-modal', function(a, e) {
+        e.preventDefault();
+        
+        return AjaxModal.ajaxContent(a);
+    });
+    
+    const addFilesRow = function(record) {
+        let row = document.createElement('tr');
+        let cell1 = document.createElement('td');
+        let fileName = getFileName(record['path']);
+        let file_action = '<a class="btn btn-sm btn-info ajax-modal" data-bs-target="#dashboard-modal" data-bs-toggle="modal" href="{{ 'files-modal'|link({'table':'pages', 'modal':'location'}) }}?id=' + record['id'] + '"><i class="bi bi-link"></i></a>';
+        let file = '<figure class="figure">';
+        file += '<a href="' + record['path'] + '" file-data-fancybox data-caption="' + fileName + '">';
+        if (isImage(fileName)) {
+            file += '<img src="' + record['path'] + '" style="max-height:120px;height:100%">';
+            file_action += ' <a class="btn btn-sm btn-dark ajax-modal" data-bs-target="#dashboard-modal" data-bs-toggle="modal" href="{{ 'files-modal'|link({'table':'pages', 'modal':'img-tag'}) }}?id=' + record['id'] + '"><i class="bi bi-code"></i></a>';
+        } else if (isVideo(fileName)) {
+            file += '<video style="max-height:240px;height:100%;max-width:320px;width:100%" controls><source src="' + record['path'] + '"></video>';
+            file_action += ' <a class="btn btn-sm btn-dark ajax-modal" data-bs-target="#dashboard-modal" data-bs-toggle="modal" href="{{ 'files-modal'|link({'table':'pages', 'modal':'video-tag'}) }}?id=' + record['id'] + '"><i class="bi bi-code"></i></a>';
+        } else {
+            file += '<i class="bi bi-hdd"></i>'; 
+        }
+        file += '</a>';
+        file += '<figcaption class="figure-caption text-dark"><strong>' + fileName + '</strong></figcaption>';
+        file += '</figure>';
+        file += '<p>' + file_action + '</p>';
+        cell1.innerHTML = file;
+        row.appendChild(cell1);
+        
+        let title = '';
+        let visiblity = '';
+        let img_flag;
+        {% for code,lang in localization.language %}
+        img_flag = '<img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.3/flags/{{ code }}.png">';
+        title += '<span class="input-group input-group-sm mb-1">';
+        title += '<span class="input-group-text">' + img_flag + '</span><span class="form-control">' + ((typeof record['content'] === 'undefined' || typeof record['content']['title'] === 'undefined' || typeof record['content']['title']['{{ code }}'] === 'undefined') ? '' : record['content']['title']['{{ code }}']) + '</span>';
+        title += '</span>';
+        visiblity += ' ' + img_flag;
+        {% endfor %}
+
+        let cell2 = document.createElement('td');
+        cell2.innerHTML = title;
+        row.appendChild(cell2);
+        
+        let cell3 = document.createElement('td');
+        cell3.innerHTML = record['purpose'] ?? 'generic';
+        row.appendChild(cell3);
+        
+        let cell4 = document.createElement('td');
+        cell4.innerHTML = visiblity;
+        row.appendChild(cell4);
+        
+        let action = '';
+        {% if user.can('system_content_update') %}
+        action +=' <a class="btn btn-sm btn-primary shadow-sm ajax-modal" data-bs-target="#dashboard-modal" data-bs-toggle="modal" href="{{ 'files-modal'|link({'table':'pages', 'modal':'files-update'}) }}?id=' + record['id'] + '"><i class="bi bi-pencil-square"></i></a>';
+        {% endif %}
+        {% if user.can('system_content_delete') %}
+        action +=' <a class="delete-file btn btn-sm btn-danger shadow-sm" href="'+ record['id'] + '"><i class="bi bi-trash"></i></a>';
+        {% endif %}
+        let cell5 = document.createElement('td');
+        cell5.innerHTML = action;
+        row.appendChild(cell5);
+        
+        Fancybox.bind(row, '[file-data-fancybox]', {});
+        
+        filesTableBody.appendChild(row);
+    };
+    
+    var fileList = document.getElementById('filelist');
+    var uploadFilesBtn = document.getElementById('uploadfiles');
+    var uploader = new plupload.Uploader({
+        runtimes: 'html5,flash,silverlight,html4',
+        browse_button: 'pickfiles',
+        container: document.getElementById('container'),
+        url: "{{ 'public-file-post'|link({'input': 'file', 'table':'pages', 'id':0}) }}",
+        filters: {
+            max_file_size: '8mb',
+            mime_types: [
+                { title: 'Images', extensions: 'jpg,jpeg,jpe,png,gif,ico' },
+                { title: 'Documents', extensions: 'pdf,doc,docx,xls,xlsx,ppt,pptx,pps,ppsx,odt' },
+                { title: 'Audio', extensions: 'mp3,m4a,ogg,wav' },
+                { title: 'Video', extensions: 'mp4,m4v,mov,wmv,avi,mpg,ogv,3gp,3g2' },
+                { title: 'Text files', extensions: 'txt,xml,json' },
+                { title: 'Archives', extensions: 'zip,rar' }
+            ]
+        },
+        flash_swf_url: 'https://cdn.jsdelivr.net/gh/moxiecode/plupload/js/Moxie.swf',
+        silverlight_xap_url: 'https://cdn.jsdelivr.net/gh/moxiecode/plupload/js/Moxie.xap',
+        init: {
+            PostInit: function() {
+                fileList.innerHTML = '';
+                uploadFilesBtn.onclick = function() {
+                    uploader.start();
+                    return false;
+                };
+            },
+            FilesAdded: function(up, files) {
+                plupload.each(files, function(file) {
+                    fileList.innerHTML += '<div id="' + file.id + '">' + file.name + ' (' + plupload.formatSize(file.size) + ') <b></b> <em></em></div>';
+                });
+                
+                if (uploadFilesBtn.disabled) {
+                    uploadFilesBtn.removeAttribute('disabled');
+                    uploadFilesBtn.classList.remove('btn-secondary');
+                    uploadFilesBtn.classList.add('btn-info');
+                }
+            },
+            UploadProgress: function(up, file) {
+                currentFileId = file.id;
+                document.getElementById(file.id).getElementsByTagName('b')[0].innerHTML = '<i class="bi bi-upload"> sending ' + file.percent + '%';
+                uploadFilesBtn.setAttribute('disabled', '');
+            },
+            FileUploaded: function(up, file, response) {
+                try {
+                    currentFileId = file.id;                
+                    var res = JSON.parse(response.response);
+                    if (!res.file) throw 'Invalid response!';
+                    
+                    let currentFile = document.getElementById(currentFileId);
+                    currentFile.getElementsByTagName('b')[0].innerHTML = '<i class="bi bi-check"></i> success';
+                    currentFile.classList.add('text-success');
+                    
+                    addFilesRow(res);
+
+                    NotifyTop('primary', "{{ 'success'|text }}", 'Your file [' + file.name + '] was uploaded successfully.');
+                }
+                catch (err) {
+                    if (err instanceof SyntaxError) err = 'Invalid request!';
+                    else if (res && res.error && res.error.message) err = res.error.message;
+                    else err = 'Unknown error!';
+                    
+                    let currentFile = document.getElementById(currentFileId);
+                    currentFile.getElementsByTagName('b')[0].innerHTML = '<i class="bi bi-x"> error';
+                    currentFile.getElementsByTagName('em')[0].innerHTML = err;
+                    currentFile.classList.add('text-danger');
+                    NotifyTop('danger', "{{ 'error'|text }}", err);
+                } finally {
+                    currentFileId = null;
+                }
+                
+                let files = fileList.children;
+                let processedFile = 0;
+                for (var i = 0; i < files.length; i++) {
+                    let file = files[i];
+                    if (file.getElementsByTagName('b')[0].innerHTML !== '') {
+                        processedFile++;
+                    }
+                }
+                if (processedFile === files.length) {
+                    uploadFilesBtn.classList.remove('btn-info');
+                    uploadFilesBtn.classList.add('btn-secondary');
+                    uploadFilesBtn.setAttribute('disabled', '');
+                } else {
+                    uploadFilesBtn.removeAttribute('disabled');
+                }
+            },
+            Error: function(up, err) {
+                if (currentFileId !== null) {
+                    let currentFile = document.getElementById(currentFileId);
+                    if (currentFile !== null) {
+                        currentFile.getElementsByTagName('b')[0].innerHTML = '<i class="bi bi-x"> failed';
+                        currentFile.getElementsByTagName('em')[0].innerHTML = err.message;
+                        currentFile.classList.add('text-danger');
+                        currentFileId = null;
+                    }
+                    currentFileId = null;
+                }
+                
+                NotifyTop('danger', "{{ 'error'|text }} " + err.code.toString().replace(/\D/g,''), err.message);
+            }
+        }
+    });
+    var currentFileId = null;
+    uploader.init();
 });
 </script>

@@ -11,8 +11,6 @@ use Raptor\Dashboard\DashboardController;
 
 class TextController extends DashboardController
 {
-    const RECORD_TYPE = [0 => 'sys-defined', 1 => 'user-defined'];
-
     public function __construct(ServerRequestInterface $request)
     {
         $meta = $request->getAttribute('meta', []);
@@ -77,7 +75,7 @@ class TextController extends DashboardController
                 foreach ($language_codes as $code) {
                     $row[] = \htmlentities($record['content']['text'][$code] ?? '');
                 }
-                $row[] = [\htmlentities(self::RECORD_TYPE[$record['type']] ?? $record['type'])];
+                $row[] = [\htmlentities($record['type'])];
                 
                 $action =
                     '<a class="ajax-modal btn btn-sm btn-info shadow-sm" data-bs-target="#dashboard-modal" data-bs-toggle="modal" ' .
@@ -156,11 +154,7 @@ class TextController extends DashboardController
                 $level = LogLevel::INFO;
                 $message = "$table хүснэгт дээр шинэ текст [{$payload['keyword']}] үүсгэх үйлдлийг амжилттай гүйцэтгэлээ";
             } else {
-                $template_path = \dirname(__FILE__) . '/text-insert-modal.html';
-                if (!\file_exists($template_path)) {
-                    throw new \Exception("$template_path file not found!", 500);
-                }
-                $this->twigTemplate($template_path, ['table' => $table])->render();
+                $this->twigTemplate(\dirname(__FILE__) . '/text-insert-modal.html', ['table' => $table])->render();
                 
                 $level = LogLevel::NOTICE   ;
                 $message = "$table хүснэгт дээр шинэ текст үүсгэх үйлдлийг эхлүүллээ";
@@ -190,17 +184,14 @@ class TextController extends DashboardController
             }
             $record = $this->indoget("/text/$table", ['p.id' => $id]);
             $context['record'] = $record;
-            
-            $template_path = \dirname(__FILE__) . '/text-retrieve-modal.html';
-            if (!\file_exists($template_path)) {
-                throw new \Exception("$template_path file not found!", 500);
-            }
-            $this->twigTemplate($template_path, [
-                'table' => $table,
-                'record' => $record,
-                'record_type' => self::RECORD_TYPE,
-                'accounts' => $this->getAccounts()
-            ])->render();
+            $this->twigTemplate(
+                \dirname(__FILE__) . '/text-retrieve-modal.html',
+                [
+                    'table' => $table,
+                    'record' => $record,
+                    'accounts' => $this->getAccounts()
+                ]
+            )->render();
 
             $level = LogLevel::NOTICE;
             $message = "$table хүснэгтээс [{$record['keyword']}] текст мэдээллийг нээж үзэж байна";
@@ -271,12 +262,9 @@ class TextController extends DashboardController
                 $message = "$table хүснэгтийн [{$record['keyword']}] текст мэдээллийг шинэчлэх үйлдлийг амжилттай гүйцэтгэлээ";
             } else {
                 $record = $this->indoget("/text/$table", ['p.id' => $id]);
-                
-                $template_path = \dirname(__FILE__) . '/text-update-modal.html';
-                if (!\file_exists($template_path)) {
-                    throw new \Exception("$template_path file not found!", 500);
-                }
-                $this->twigTemplate($template_path, ['record' => $record, 'table' => $table])->render();
+                $this->twigTemplate(
+                    \dirname(__FILE__) . '/text-update-modal.html',
+                    ['record' => $record, 'table' => $table])->render();
                 
                 $level = LogLevel::NOTICE;
                 $context['record'] = $record;

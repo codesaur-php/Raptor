@@ -3,10 +3,8 @@
 namespace Raptor;
 
 use Twig\TwigFilter;
-use Psr\Log\LogLevel;
 use Fig\Http\Message\StatusCodeInterface;
 
-use codesaur\Globals\Server;
 use codesaur\Router\RouterInterface;
 use codesaur\Template\TwigTemplate;
 use codesaur\Http\Message\ReasonPrhase;
@@ -208,7 +206,7 @@ class Controller extends \codesaur\Http\Application\Controller
                     'code' => $this->getLanguageCode(),
                     'method' => $this->getRequest()->getMethod(),
                     'uri' => (string) $this->getRequest()->getUri(),
-                    'remote_addr' => (new Server())->getRemoteAddr()
+                    'remote_addr' => $this->getRemoteAddr()
                 ];
             }
 
@@ -243,21 +241,6 @@ class Controller extends \codesaur\Http\Application\Controller
         }
     }
     
-    protected function tryDeleteFile(string $filePath)
-    {
-        try {
-            if (\file_exists($filePath)) {
-                \unlink($filePath);
-                
-                return $this->indolog('file', LogLevel::ALERT, "$filePath файлыг устгалаа");
-            }
-        } catch (\Throwable $e) {
-            $this->errorLog($e);
-            
-            return [];
-        }
-    }
-    
     protected final function errorLog(\Throwable $e)
     {
         if (!$this->isDevelopment()) {
@@ -265,5 +248,70 @@ class Controller extends \codesaur\Http\Application\Controller
         }
         
         \error_log($e->getMessage());
+    }
+
+    protected function getRemoteAddr(): string
+    {
+        $server = $this->getServerParams();
+        if (!empty($server['HTTP_X_FORWARDED_FOR'])) {
+            if (!empty($server['HTTP_CLIENT_IP'])
+                && $this->isValidIP($server['HTTP_CLIENT_IP'])
+            ) {
+                return $server['HTTP_CLIENT_IP'];
+            }
+            foreach (\explode(',', $server['HTTP_X_FORWARDED_FOR']) as $ip) {
+                if ($this->isValidIP(\trim($ip))) {
+                    return $ip;
+                }
+            }
+        }
+
+        if (!empty($server['HTTP_X_FORWARDED'])
+            && $this->isValidIP($server['HTTP_X_FORWARDED'])
+        ) {
+            return $server['HTTP_X_FORWARDED'];
+        } elseif (!empty($server['HTTP_X_CLUSTER_CLIENT_IP'])
+            && $this->isValidIP($server['HTTP_X_CLUSTER_CLIENT_IP'])
+        ) {
+            return $server['HTTP_X_CLUSTER_CLIENT_IP'];
+        } elseif (!empty($server['HTTP_FORWARDED_FOR'])
+            && $this->isValidIP($server['HTTP_FORWARDED_FOR'])
+        ) {
+            return $server['HTTP_FORWARDED_FOR'];
+        } elseif (!empty($server['HTTP_FORWARDED'])
+            && $this->isValidIP($server['HTTP_FORWARDED'])
+        ) {
+            return $server['HTTP_FORWARDED'];
+        }
+
+        return $server['REMOTE_ADDR'] ?? '';
+    }
+    
+    private function isValidIP(string $ip): bool
+    {
+        $real = \ip2long($ip);
+        if (empty($ip) || $real == -1 || $real === false) {
+            return false;
+        }
+
+        $private_ips = [
+            ['0.0.0.0', '2.255.255.255'],
+            ['10.0.0.0', '10.255.255.255'],
+            ['127.0.0.0', '127.255.255.255'],
+            ['169.254.0.0', '169.254.255.255'],
+            ['172.16.0.0', '172.31.255.255'],
+            ['192.0.2.0', '192.0.2.255'],
+            ['192.168.0.0', '192.168.255.255'],
+            ['255.255.255.0', '255.255.255.255']
+        ];
+        foreach ($private_ips as $r) {
+            $min = \ip2long($r[0]);
+            $max = \ip2long($r[1]);
+            if ($real >= $min && $real <= $max) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

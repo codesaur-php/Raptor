@@ -16,7 +16,7 @@ use Indoraptor\Auth\OrganizationUserModel;
 
 use Raptor\Authentication\ForgotModel;
 use Raptor\Authentication\AccountRequestsModel;
-use Raptor\File\PrivateFileController;
+use Raptor\File\PrivateFilesController;
 use Raptor\Dashboard\DashboardController;
 
 class AccountController extends DashboardController
@@ -142,18 +142,17 @@ class AccountController extends DashboardController
                     }
                 }
                 
-                $file = new PrivateFileController($this->getRequest());
-                $file->init("/accounts/$id");
-                $file->allowType(3);
+                $file = new PrivateFilesController($this->getRequest());
+                $file->setFolder("/accounts/$id");
+                $file->allowImageOnly();
                 $photo = $file->moveUploaded('photo');
-                if (isset($photo['name'])) {
-                    $photo_path = $file->getPathUrl($photo['name']);
+                if ($photo) {
                     $payload = [
-                        'record' => ['photo' => $photo_path],
+                        'record' => ['photo' => $photo['path']],
                         'condition' => ['WHERE' => "id=$id"]
                     ];
                     $this->indoput($pattern, $payload);
-                    $context += ['photo' => $photo_path];
+                    $context += ['photo' => $photo];
                 }
                 
                 $this->respondJSON([
@@ -244,22 +243,26 @@ class AccountController extends DashboardController
                 
                 $existing = $this->indosafe($pattern, ['id' => $id]);
                 $old_photo_file = \basename($existing['photo'] ?? '');
-                $file = new PrivateFileController($this->getRequest());
-                $file->init("/accounts/$id");
-                $file->allowType(3);
+                
+                $file = new PrivateFilesController($this->getRequest());
+                $file->setFolder("/accounts/$id");
+                $file->allowImageOnly();
                 $photo = $file->moveUploaded('photo');
-                if (isset($photo['name'])) {
-                    $record['photo'] = $file->getPathUrl($photo['name']);
+                if ($photo) {
+                    $record['photo'] = $photo['path'];
                 }
 
                 if (!empty($old_photo_file)) {
                     if ($file->getLastError() == -1) {
-                        $this->tryDeleteFile($this->getDocumentPath("/../private/accounts/$id/$old_photo_file"));
+                        $file->tryDeleteFile($old_photo_file);
                         $record['photo'] = '';
-                    } elseif (isset($photo['name']) && $photo['name'] != $old_photo_file) {
-                        $this->tryDeleteFile($this->getDocumentPath("/../private/accounts/$id/$old_photo_file"));
+                    } elseif (isset($record['photo'])
+                        && \basename($record['photo']) != $old_photo_file
+                    ) {
+                        $file->tryDeleteFile($old_photo_file);
                     }
                 }
+                
                 if (isset($record['photo'])) {
                     $context['photo'] = $record['photo'];
                 }
@@ -549,11 +552,6 @@ class AccountController extends DashboardController
                 throw new \Exception($this->text('invalid-request'), 400);
             }
             
-            $modal = \dirname(__FILE__) . "/$table-index-modal.html";
-            if (!\file_exists($modal)) {
-                throw new \Exception("$modal file not found!", 500);
-            }
-
             if ($table == 'forgot') {
                 $modelName = ForgotModel::class;
                 $message = 'Нууц үгээ сэргээх хүсэлтүүдийн жагсаалтыг нээж үзэж байна';
@@ -565,7 +563,7 @@ class AccountController extends DashboardController
                 'rows' => $this->indoget("/records?model=$modelName", ['WHERE' => 'is_active!=999'])
             ];
             
-            $template = $this->twigTemplate($modal, $vars);
+            $template = $this->twigTemplate(\dirname(__FILE__) . "/$table-index-modal.html", $vars);
             $template->addFunction(new TwigFunction('isExpired', function (string $date, int $minutes = 5): bool
             {
                 $now_date = new \DateTime();

@@ -162,12 +162,7 @@ class RBACController extends DashboardController
                 throw new \Exception($this->text('record-not-found'), 404);
             }
             $values += \current($role_result);
-            
-            $template_path = \dirname(__FILE__) . '/rbac-view-role-modal.html';
-            if (!\file_exists($template_path)) {
-                throw new \Exception("$template_path file not found!", 500);
-            }
-            $this->twigDashboard($template_path, $values)->render();
+            $this->twigDashboard(\dirname(__FILE__) . '/rbac-view-role-modal.html', $values)->render();
         } catch (\Throwable $e) {
             $this->modalProhibited($e->getMessage(), $e->getCode())->render();
         }
@@ -374,12 +369,7 @@ class RBACController extends DashboardController
                     $current_role[] = $row['role_id'];
                 }
                 $vars['current_role'] = \implode(',', $current_role);
-                
-                $template_path = \dirname(__FILE__) . '/rbac-set-user-role-modal.html';
-                if (!\file_exists($template_path)) {
-                    throw new \Exception("$template_path file not found!", 500);
-                }
-                $this->twigTemplate($template_path, $vars)->render();
+                $this->twigTemplate(\dirname(__FILE__) . '/rbac-set-user-role-modal.html', $vars)->render();
 
                 $this->indolog('rbac', LogLevel::NOTICE, "$id дугаартай  {$account['username']} хэрэглэгчийн дүрийг тохируулах үйлдлийг эхлүүллээ", $context);
             }

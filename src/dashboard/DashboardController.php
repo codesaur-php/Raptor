@@ -123,13 +123,21 @@ class DashboardController extends \Raptor\Controller
             $pattern = '/record?model=' . MenuModel::class;
 
             $main_id = $this->indopost($pattern, ['content' => ['mn' => ['title' => 'Үндсэн'], 'en' => ['title' => 'Main']], 'record' => ['position' => '10']]);
+            $script_path = $this->getScriptPath();
+            $home_path = \rtrim($this->generateLink('home'), '/');
+            if ($script_path != $home_path) {
+                $this->indopost($pattern, [
+                    'content' => ['mn' => ['title' => 'Нүүр хуудас'], 'en' => ['title' => 'Home page']],
+                    'record' => ['parent_id' => $main_id, 'position' => '11', 'icon' => 'bi bi-house-door-fill', 'href' => $script_path]
+                ]);
+            }
             $this->indopost($pattern, [
                 'content' => ['mn' => ['title' => 'Хянах самбар'], 'en' => ['title' => 'Dashboard']],
-                'record' => ['parent_id' => $main_id, 'position' => '11', 'icon' => 'bi bi-easel', 'href' => $this->generateLink('home')]
+                'record' => ['parent_id' => $main_id, 'position' => '12', 'icon' => 'bi bi-easel', 'href' => $home_path]
             ]);
 
             $contents_id = $this->indopost($pattern, ['content' => ['mn' => ['title' => 'Агуулгууд'], 'en' => ['title' => 'Contents']], 'record' => ['position' => '200']]);
-            $this->indopost($pattern, [
+            $this->indopost($pattern, [ 
                 'content' => ['mn' => ['title' => 'Хуудсууд'], 'en' => ['title' => 'Pages']],
                 'record' => ['parent_id' => $contents_id, 'position' => '260', 'alias' => 'system', 'permission' => 'system_content_index', 'icon' => 'bi bi-book-half', 'href' => $this->generateLink('pages')]
             ]);

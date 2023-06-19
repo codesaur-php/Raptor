@@ -126,8 +126,13 @@ class NewsController extends DashboardController
                 }
                 $context['payload'] = $payload;
                 
-                if (empty($record['publish_date'])
-                ) {
+                foreach ($content as $lang) {
+                    if (empty($lang['title'])){
+                        throw new \InvalidArgumentException($this->text('invalid-request'), 400);
+                    }
+                }
+
+                if (empty($record['publish_date'])) {
                     $record['publish_date'] = \date('Y-m-d H:i:s');
                 }
                 foreach ($content as &$visible)
@@ -146,12 +151,7 @@ class NewsController extends DashboardController
                 $level = LogLevel::INFO;
                 $message = "Шинэ мэдээ [{$content[$this->getLanguageCode()]['title']}] үүсгэх үйлдлийг амжилттай гүйцэтгэлээ";
             } else {
-                $template_path = \dirname(__FILE__) . '/news-insert.html';
-                if (!\file_exists($template_path)) {
-                    throw new \Exception("$template_path file not found!", 500);
-                }
-                
-                $this->twigDashboard($template_path)->render();
+                $this->twigDashboard(\dirname(__FILE__) . '/news-insert.html')->render();
                 
                 $level = LogLevel::NOTICE;
                 $message = 'Шинэ мэдээ үүсгэх үйлдлийг эхлүүллээ';
@@ -182,15 +182,13 @@ class NewsController extends DashboardController
             
             $record = $this->indoget('/record?model=' . NewsModel::class, ['p.id' => $id]);
             $context['record'] = $record;
-            
-            $template_path = \dirname(__FILE__) . '/news-view.html';
-            if (!\file_exists($template_path)) {
-                throw new \Exception("$template_path file not found!", 500);
-            }
-            $this->twigDashboard($template_path, [
-                'record' => $record,
-                'accounts' => $this->getAccounts()
-            ])->render();
+            $this->twigDashboard(
+                \dirname(__FILE__) . '/news-view.html',
+                [
+                    'record' => $record,
+                    'accounts' => $this->getAccounts()
+                ]
+            )->render();
 
             $level = LogLevel::NOTICE;
             $message = "{$record['content']['title'][$this->getLanguageCode()]} - мэдээллийг нээж үзэж байна";
@@ -230,8 +228,13 @@ class NewsController extends DashboardController
                 }
                 $context['payload'] = $payload;
                 
-                if (empty($record['publish_date'])
-                ) {
+                foreach ($content as $lang) {
+                    if (empty($lang['title'])){
+                        throw new \InvalidArgumentException($this->text('invalid-request'), 400);
+                    }
+                }
+
+                if (empty($record['publish_date'])) {
                     $record['publish_date'] = \date('Y-m-d H:i:s');
                 }
                 foreach ($content as &$visible)
@@ -254,17 +257,11 @@ class NewsController extends DashboardController
                 $message = "{$content[$this->getLanguageCode()]['title']} - мэдээллийг шинэчлэх үйлдлийг амжилттай гүйцэтгэлээ";
             } else {
                 $record = $this->indoget('/record?model=' . NewsModel::class, ['p.id' => $id]);
-                
-                $template_path = \dirname(__FILE__) . '/news-update.html';
-                if (!\file_exists($template_path)) {
-                    throw new \Exception("$template_path file not found!", 500);
-                }
-                
                 $vars = [
                     'record' => $record,
                     'accounts' => $this->getAccounts(),
                 ];
-                $this->twigDashboard($template_path, $vars)->render();
+                $this->twigDashboard(\dirname(__FILE__) . '/news-update.html', $vars)->render();
                 
                 $level = LogLevel::NOTICE;
                 $context['record'] = $record;

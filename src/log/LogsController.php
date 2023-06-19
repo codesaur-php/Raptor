@@ -35,8 +35,7 @@ class LogsController extends DashboardController
             $logs = [];
             foreach ($names as $name) {
                 $logs[$name] = $this->getLogsFrom($name);
-            }
-            
+            }            
             $this->twigDashboard(\dirname(__FILE__) . '/index-list-logs.html',
                 ['names' => $names, 'logs' => $logs, 'accounts' => $this->getAccounts()])->render();
         } catch (\Throwable $e) {
@@ -61,12 +60,8 @@ class LogsController extends DashboardController
             }
             
             $logdata = $this->indoget("/log?table=$table&id=$id");
-            $template_path = \dirname(__FILE__) . '/retrieve-log-modal.html';
-            if (!\file_exists($template_path)) {
-                throw new \Exception("$template_path file not found!", 500);
-            }
             (new TwigTemplate(
-                $template_path,
+                \dirname(__FILE__) . '/retrieve-log-modal.html',
                 [
                     'detailed' => $this->text('detailed'),
                     'close' => $this->text('close'),

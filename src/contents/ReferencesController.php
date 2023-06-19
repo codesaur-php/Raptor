@@ -56,8 +56,7 @@ class ReferencesController extends DashboardController
             if (!\in_array($reference, $tables)) {
                 $tables[] = $reference;
             }
-        }
-        
+        }        
         $this->twigDashboard(\dirname(__FILE__) . '/references-index.html', ['tables' => $tables])->render();
         
         $this->indolog('content', LogLevel::NOTICE, 'Лавлах хүснэгтүүдийн жагсаалтыг нээж үзэж байна',['model' => ReferenceModel::class]);
@@ -163,11 +162,7 @@ class ReferencesController extends DashboardController
                 $level = LogLevel::INFO;
                 $message = "Шинээр [{$payload['keyword']}] түлхүүртэй лавлах мэдээллийг [$table] хүснэгт дээр үүсгэх үйлдлийг амжилттай гүйцэтгэлээ";
             } else {
-                $template_path = \dirname(__FILE__) . '/reference-insert.html';
-                if (!\file_exists($template_path)) {
-                    throw new \Exception("$template_path file not found!", 500);
-                }
-                $this->twigDashboard($template_path, ['table' => $table])->render();
+                $this->twigDashboard(\dirname(__FILE__) . '/reference-insert.html', ['table' => $table])->render();
                 
                 $level = LogLevel::NOTICE;
                 $message = "Шинэ лавлах мэдээллийг [$table] хүснэгт дээр үйлдлийг эхлүүллээ";
@@ -203,15 +198,14 @@ class ReferencesController extends DashboardController
                 throw new \Exception($this->text('invalid-request'), 400);
             }
             
-            $template_path = \dirname(__FILE__) . '/reference-view.html';
-            if (!\file_exists($template_path)) {
-                throw new \Exception("$template_path file not found!", 500);
-            }
-            $this->twigDashboard($template_path, [
-                'table' => $table,
-                'record' => $record,
-                'accounts' => $this->getAccounts()
-            ])->render();
+            $this->twigDashboard(
+                \dirname(__FILE__) . '/reference-view.html',
+                [
+                    'table' => $table,
+                    'record' => $record,
+                    'accounts' => $this->getAccounts()
+                ]
+            )->render();
 
             $level = LogLevel::NOTICE;
             $message = "$table хүснэгтийн $id дугаартай [{$record['keyword']}] түлхүүртэй лавлах мэдээллийг нээж үзэж байна";
@@ -274,16 +268,14 @@ class ReferencesController extends DashboardController
                     throw new \Exception($this->text('invalid-request'), 400);
                 }
                 $context['record'] = $record;
-                
-                $template_path = \dirname(__FILE__) . '/reference-update.html';
-                if (!\file_exists($template_path)) {
-                    throw new \Exception("$template_path file not found!", 500);
-                }
-                $this->twigDashboard($template_path, [
-                    'table' => $table,
-                    'record' => $record,
-                    'accounts' => $this->getAccounts()
-                ])->render();
+                $this->twigDashboard(
+                    \dirname(__FILE__) . '/reference-update.html',
+                    [
+                        'table' => $table,
+                        'record' => $record,
+                        'accounts' => $this->getAccounts()
+                    ]
+                )->render();
                 
                 $level = LogLevel::NOTICE;
                 $message = "$table хүснэгтийн $id дугаартай [{$record['keyword']}] түлхүүртэй лавлах мэдээллийг шинэчлэхээр нээж байна";

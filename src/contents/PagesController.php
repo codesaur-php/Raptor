@@ -133,8 +133,13 @@ class PagesController extends DashboardController
                 }
                 $context['payload'] = $payload;
                 
-                if (empty($record['publish_date'])
-                ) {
+                foreach ($content as $lang) {
+                    if (empty($lang['title'])){
+                        throw new \InvalidArgumentException($this->text('invalid-request'), 400);
+                    }
+                }
+                
+                if (empty($record['publish_date'])) {
                     $record['publish_date'] = \date('Y-m-d H:i:s');
                 }
                 foreach ($content as &$visible)
@@ -153,15 +158,10 @@ class PagesController extends DashboardController
                 $level = LogLevel::INFO;
                 $message = "Шинэ хуудас [{$content[$this->getLanguageCode()]['title']}] үүсгэх үйлдлийг амжилттай гүйцэтгэлээ";
             } else {
-                $template_path = \dirname(__FILE__) . '/page-insert.html';
-                if (!\file_exists($template_path)) {
-                    throw new \Exception("$template_path file not found!", 500);
-                }
-                
                 $vars = [
                     'infos'=> $this->getPagesInfos()
                 ];
-                $this->twigDashboard($template_path, $vars)->render();
+                $this->twigDashboard(\dirname(__FILE__) . '/page-insert.html', $vars)->render();
                 
                 $level = LogLevel::NOTICE;
                 $message = 'Шинэ хуудас үүсгэх үйлдлийг эхлүүллээ';
@@ -192,16 +192,14 @@ class PagesController extends DashboardController
             
             $record = $this->indoget('/record?model=' . PagesModel::class, ['p.id' => $id]);
             $context['record'] = $record;
-            
-            $template_path = \dirname(__FILE__) . '/page-view.html';
-            if (!\file_exists($template_path)) {
-                throw new \Exception("$template_path file not found!", 500);
-            }
-            $this->twigDashboard($template_path, [
-                'record' => $record,
-                'accounts' => $this->getAccounts(),
-                'infos' => $this->getPagesInfos("(p.id=$id OR p.id={$record['parent_id']})")
-            ])->render();
+            $this->twigDashboard(
+                \dirname(__FILE__) . '/page-view.html',
+                [
+                    'record' => $record,
+                    'accounts' => $this->getAccounts(),
+                    'infos' => $this->getPagesInfos("(p.id=$id OR p.id={$record['parent_id']})")
+                ]
+            )->render();
 
             $level = LogLevel::NOTICE;
             $message = "{$record['content']['title'][$this->getLanguageCode()]} - хуудасны мэдээллийг нээж үзэж байна";
@@ -241,8 +239,13 @@ class PagesController extends DashboardController
                 }
                 $context['payload'] = $payload;
                 
-                if (empty($record['publish_date'])
-                ) {
+                foreach ($content as $lang) {
+                    if (empty($lang['title'])){
+                        throw new \InvalidArgumentException($this->text('invalid-request'), 400);
+                    }
+                }
+                
+                if (empty($record['publish_date'])) {
                     $record['publish_date'] = \date('Y-m-d H:i:s');
                 }
                 foreach ($content as &$visible)
@@ -265,18 +268,12 @@ class PagesController extends DashboardController
                 $message = "{$content[$this->getLanguageCode()]['title']} - хуудасны мэдээллийг шинэчлэх үйлдлийг амжилттай гүйцэтгэлээ";
             } else {
                 $record = $this->indoget('/record?model=' . PagesModel::class, ['p.id' => $id]);
-                
-                $template_path = \dirname(__FILE__) . '/page-update.html';
-                if (!\file_exists($template_path)) {
-                    throw new \Exception("$template_path file not found!", 500);
-                }
-                
                 $vars = [
                     'record' => $record,
                     'accounts' => $this->getAccounts(),
                     'infos' => $this->getPagesInfos("p.id!=$id AND p.parent_id!=$id")
                 ];
-                $this->twigDashboard($template_path, $vars)->render();
+                $this->twigDashboard(\dirname(__FILE__) . '/page-update.html', $vars)->render();
                 
                 $level = LogLevel::NOTICE;
                 $context['record'] = $record;
