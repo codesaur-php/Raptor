@@ -31,11 +31,11 @@ class LogsController extends DashboardController
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
         
-            $names = $this->indoget('/log/get/names');
             $logs = [];
+            $names = $this->indoget('/log/get/names');
             foreach ($names as $name) {
                 $logs[$name] = $this->getLogsFrom($name);
-            }            
+            }
             $this->twigDashboard(\dirname(__FILE__) . '/index-list-logs.html',
                 ['names' => $names, 'logs' => $logs, 'accounts' => $this->getAccounts()])->render();
         } catch (\Throwable $e) {
