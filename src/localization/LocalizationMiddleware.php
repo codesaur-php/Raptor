@@ -179,7 +179,7 @@ class LocalizationMiddleware implements MiddlewareInterface
                 ['record' => ['keyword' => 'record-insert-success', 'type' => 'sys-defined'], 'content' => ['mn' => ['text' => 'Бичлэг амжилттай нэмэгдлээ'], 'en' => ['text' => 'Record successfully added']]],
                 ['record' => ['keyword' => 'record-insert-error', 'type' => 'sys-defined'], 'content' => ['en' => ['text' => 'Error occurred while inserting record'], 'mn' => ['text' => 'Бичлэг нэмэх явцад алдаа гарлаа']]],
                 ['record' => ['keyword' => 'record-keyword-error', 'type' => 'sys-defined'], 'content' => ['mn' => ['text' => 'Түлхүүр үг давхцах боломжгүй'], 'en' => ['text' => 'It looks like [keyword] belongs to an existing record']]],
-                ['record' => ['keyword' => 'record-update-success', 'type' => 'sys-defined'], 'content' => ['en' => ['text' => 'Record successfully edited'], 'mn' => ['text' => 'Бичлэг амжилттай засагдлаа']]],
+                ['record' => ['keyword' => 'record-update-success', 'type' => 'sys-defined'], 'content' => ['en' => ['text' => 'Record successfully updated'], 'mn' => ['text' => 'Бичлэг амжилттай засагдлаа']]],
                 ['record' => ['keyword' => 'record-update-error', 'type' => 'sys-defined'], 'content' => ['en' => ['text' => 'Error occurred while updating record'], 'mn' => ['text' => 'Бичлэг засах явцад алдаа гарлаа']]],
                 ['record' => ['keyword' => 'duplicate-records', 'type' => 'sys-defined'], 'content' => ['en' => ['text' => 'Duplicate records'], 'mn' => ['text' => 'Бичлэгүүд давхцаж байна']]],
                 ['record' => ['keyword' => 'record-not-found', 'type' => 'sys-defined'], 'content' => ['en' => ['text' => 'Record not found'], 'mn' => ['text' => 'Бичлэг олдсонгүй']]],

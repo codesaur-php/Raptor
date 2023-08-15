@@ -18,6 +18,7 @@
             <th scope="col">{{ 'id'|text }}</th>
             <th scope="col">{{ 'photo'|text }}</th>
             <th scope="col">{{ 'title'|text }}</th>
+            <th scope="col">{{ 'language'|text }}</th>
             <th scope="col">{{ 'type'|text }}</th>
             <th scope="col">{{ 'position'|text }}</th>
             <th scope="col">{{ 'visibility'|text }}</th>
@@ -58,9 +59,9 @@ document.addEventListener('DOMContentLoaded', function () {
         let question = deleteAskHtml.format(title.replace(/<\/?[^>]+(>|$)/g, ''));
 
         let src = '';
-        let flag = a.parentNode.parentNode.children[2].querySelector('img');
-        if (flag) {
-            src = flag.src;
+        let photo = a.parentNode.parentNode.children[2].querySelector('img');
+        if (photo) {
+            src = photo.src;
         } else {
             question = '<i class="bi bi-flag text-danger mb-4" style="font-size:3rem"></i><p>' + question + '<p/>';
         }

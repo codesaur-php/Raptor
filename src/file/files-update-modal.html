@@ -1,5 +1,6 @@
-{% set purpose = {
-  'generic': { 'mn': 'Ерөнхий' },
+{% set category = {
+  'general': { 'mn': 'Ерөнхий' },
+  'featured': { 'mn': 'Онцолсон' },
   'attach': { 'mn': 'Хавсралт' },
   'special': { 'mn': 'Тусгай' }
 } %}
@@ -11,48 +12,67 @@
         </div>
         <div class="modal-body">
             <form class="needs-validation" novalidate id="files_update" action="{{ 'files-update'|link({'table':table, 'id':record['id']}) }}" method="PUT" enctype="multipart/form-data">
-                <div class="bg-light row mb-3">
-                    <label class="col-3 col-form-label text-end">{{ 'purpose'|text }}</label>
+                <div class="row mb-3">
+                    <label class="col-3 col-form-label text-end">{{ 'category'|text }}</label>
                     <div class="col-9">
                         <div class="input-group mb-3">
-                            <input class="form-control" name="purpose" required type="text" value="{{ purpose|keys|first }}" maxlength="32">
+                            <input class="form-control" name="file_category" type="text" value="{{ record['category']|e }}" maxlength="24">
                             <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
                             <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"></button>
-                            <ul class="dropdown-menu dropdown-menu-end" id="purpose_list">
-                            {% for value,name in purpose %}
+                            <ul class="dropdown-menu dropdown-menu-end" id="file_category_list">
+                            {% for value,name in category %}
                                 <li class="dropdown-item" value="{{ value }}">{{ name[localization.code] ?? value|capitalize }}</li>
                             {% endfor %}
                             </ul>
                         </div>
                     </div>
                 </div>
-               {% for code,lang in localization.language %}
-                <div class="row mb-3">
-                    <label class="col-3 col-form-label text-end">{{ 'title'|text }} ({{ lang }} <img style="position:relative;top:-1px" src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.3/flags/{{ code }}.png">)</label>
+                <div class="bg-light row mb-3">
+                    <label class="col-3 col-form-label text-end">{{ 'keyword'|text }}</label>
                     <div class="col-9">
-                        <textarea class="form-control" name="title[{{ code }}]" maxlength="255">{{ record['content']['title'][code] }}</textarea>
+                        <input class="form-control" name="file_keyword" type="text" value="{{ record['keyword']|e }}" maxlength="32">
                     </div>
                 </div>
-                {% endfor %}
+                <div class="row mb-3">
+                    <label class="col-3 col-form-label text-end">{{ 'description'|text }}</label>
+                    <div class="col-9">
+                        <textarea class="form-control" name="file_description" maxlength="255">{{ record['description'] }}</textarea>
+                    </div>
+                </div>
             </form>
         </div>
         <div class="modal-footer modal-footer-solid">
             <button class="btn btn-primary update-files-submit">
                 <i class="bi bi-check"></i> {{ 'save'|text }}
             </button>
-            <button class="btn btn-secondary" data-bs-dismiss="modal">
+            <button class="btn btn-secondary" data-bs-dismiss="modal" id="file_{{ record['id'] }}_close">
                 {{ 'cancel'|text }}
             </button>
         </div>
     </div>
 </div>
 <script type="text/javascript">
-    const purpose = document.querySelector('input[name="purpose"]');
-    document.getElementById('purpose_list').addEventListener('click', function (e) {
+    const category = document.querySelector('input[name="file_category"]');
+    document.getElementById('file_category_list').addEventListener('click', function (e) {
         if (e.target && e.target.nodeName === 'LI') {
-            purpose.value = e.target.getAttribute('value');
+            category.value = e.target.getAttribute('value');
         }
     });
    
-    FormSubmitHandler('.update-files-submit', 'form#files_update');
+    FormSubmitHandler('.update-files-submit', 'form#files_update', function (resp) {
+        if (resp.record === undefined || resp.record.id === undefined) return;
+        
+        let row = document.getElementById('file_' + resp.record.id);
+        if (!row || row === null) return;
+        
+        document.getElementById('file_' + resp.record.id + '_close').click();
+        
+        row.children[1].innerHTML = resp.record.category;
+        row.children[2].innerHTML = resp.record.keyword;
+        row.children[3].innerHTML = resp.record.description;
+        
+        let type = resp.type ? resp.type : 'success';
+        let title = resp.title ? resp.title : 'Success';
+        NotifyTop(type, title, resp.message ? resp.message : 'Record successfully updated');
+    });
 </script>

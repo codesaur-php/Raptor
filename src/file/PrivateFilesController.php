@@ -7,10 +7,9 @@ use Twig\TwigFilter;
 use codesaur\Http\Message\ReasonPrhase;
 use Psr\Log\LogLevel;
 
-use Indoraptor\File\FileModel;
-use Indoraptor\File\FilesModel;
+use Indoraptor\Contents\FilesModel;
 
-class PrivateFilesController extends PublicFilesController
+class PrivateFilesController extends FilesController
 {
     public function setFolder(string $folder, bool $relative = true)
     {
@@ -73,10 +72,9 @@ class PrivateFilesController extends PublicFilesController
             if (!$this->isUserAuthorized()) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
-            if (isset($this->getQueryParams()['id'])) {
-                $this->setTable($table);
-                $record = $this->getById((int) $this->getQueryParams()['id']);
-            } else {
+            
+            $id = $this->getQueryParams()['id'] ?? null;
+            if (!isset($id) || !\is_numeric($id)) {
                 throw new \Exception($this->text('invalid-request'), 400);
             }
             
@@ -89,8 +87,9 @@ class PrivateFilesController extends PublicFilesController
             }
             if ($authority != '') {
                 $host .= "//$authority";
-            }
-            
+            }            
+            $this->setTable($table);
+            $record = $this->indo("/files/$table", ['id' => (int) $id]);
             $template = $this->twigTemplate(
                 \dirname(__FILE__) . "/$modal-modal.html",
                 ['table' => $table, 'record' => $record, 'host' => $host]
@@ -129,60 +128,96 @@ class PrivateFilesController extends PublicFilesController
     public function update(string $table, int $id)
     {
         try {
-            $context = ['model' => [FileModel::class, FilesModel::class], 'table' => $table, 'id' => $id];
+            $context = [
+                'model' => FilesModel::class,
+                'table' => $table,
+                'id' => $id,
+                'reason' => 'update-file'
+            ];
             
             if (!$this->isUserCan('system_content_update')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
             
-            $record = [];
-            $content = [];
             $payload = $this->getParsedBody();
-            foreach ($payload as $index => $value) {
-                if (\is_array($value)) {
-                    foreach ($value as $key => $value) {
-                        $content[$key][$index] = $value;
-                    }
-                } else {
-                    $record[$index] = $value;
-                }
-            }
             $context['payload'] = $payload;
-            var_dump($context, $record, $content, $table, $id);exit;
-
-            foreach ($content as $lang) {
-                if (!empty($lang['sadsae'])){
-                    throw new \InvalidArgumentException($this->text('invalid-request'), 400);
+            if (empty($payload)) {
+                throw new \Exception($this->text('invalid-request'), 400);
+            }
+            
+            $record = [];
+            foreach ($payload as $k => $v) {
+                if (\str_starts_with($k, 'file_')) {
+                    $k = \substr($k, 5);
                 }
+                $record[$k] = $v;
             }
 
-            if (empty($record['publish_date'])) {
-                $record['publish_date'] = \date('Y-m-d H:i:s');
-            }
-            foreach ($content as &$visible)
-            {
-                $visible['is_visible'] = ($visible['is_visible'] ?? 'off' ) == 'on' ? 1 : 0;
-            }
-
-            $this->indoput('/record?model=' . PagesModel::class,
-                ['record' => $record, 'content' => $content, 'condition' => ['WHERE' => "p.id=$id"]]
-            );
+            $this->indoput("/files/$table", [
+                'record' => $record, 'condition' => ['WHERE' => "id=$id"]
+            ]);
 
             $this->respondJSON([
-                'status' => 'success',
                 'type' => 'primary',
+                'status' => 'success',
+                'title' => $this->text('success'),
                 'message' => $this->text('record-update-success'),
-                'href' => $this->generateLink('pages')
+                'record' => $this->indo("/files/$table", ['id' => $id])
             ]);
 
             $level = LogLevel::INFO;
-            $message = "{$content[$this->getLanguageCode()]['title']} - хуудасны мэдээллийг шинэчлэх үйлдлийг амжилттай гүйцэтгэлээ";
+            $message = "Мэдээллийн $table хүснэгтэд зориулсан $id дугаартай файлын бичлэгийг засварлалаа";
         } catch (\Throwable $e) {
             $this->respondJSON(['message' => $e->getMessage()], $e->getCode());
             
             $level = LogLevel::ERROR;
             $context['error'] = ['code' => $e->getCode(), 'message' => $e->getMessage()];
-            $message = 'Файл мэдээлэл засах үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
+            $message = "Мэдээллийн $table хүснэгтэд зориулсан $id дугаартай файлын бичлэгийг засах үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо";
+        } finally {
+            $this->indolog('file', $level, $message, $context);
+        }
+    }
+    
+    public function delete(string $table)
+    {
+        try {
+            $context = ['model' => FilesModel::class, 'table' => $table];
+            
+            if (!$this->isUserCan('system_content_delete')) {
+                throw new \Exception('No permission for an action [delete]!', 401);
+            }
+            
+            $payload = $this->getParsedBody();
+            if (empty($payload['id'])
+                || !isset($payload['title'])
+                || !\filter_var($payload['id'], \FILTER_VALIDATE_INT)
+            ) {
+                throw new \Exception($this->text('invalid-request'), 400);
+            }
+            $context['payload'] = $payload;
+            
+            $id = \filter_var($payload['id'], \FILTER_VALIDATE_INT);
+            
+            $this->indodelete("/files/$table", ['WHERE' => "id=$id"]);
+            
+            $this->respondJSON([
+                'status'  => 'success',
+                'title'   => $this->text('success'),
+                'message' => $this->text('record-successfully-deleted')
+            ]);
+            
+            $level = LogLevel::ALERT;
+            $message = "Мэдээллийн $table хүснэгтэд зориулсан $id дугаартай файлыг устгалаа";
+        } catch (\Throwable $e) {
+            $this->respondJSON([
+                'status'  => 'error',
+                'title'   => $this->text('error'),
+                'message' => $e->getMessage()
+            ], $e->getCode());
+            
+            $level = LogLevel::ERROR;
+            $message = 'Файлыг устгах үйлдлийг гүйцэтгэх явцад алдаа гарч зогслоо';
+            $context['error'] = ['code' => $e->getCode(), 'message' => $e->getMessage()];
         } finally {
             $this->indolog('file', $level, $message, $context);
         }

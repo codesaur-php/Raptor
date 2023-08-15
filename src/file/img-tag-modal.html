@@ -7,11 +7,11 @@
         <div class="modal-body">
             <strong>Relative:</strong>
             <a class="btn btn-sm btn-primary" onclick="copyToClipboard('relative');">copy</a>
-            <pre class="border border-primary bg-dark text-light" id="relative" style="white-space:pre-wrap">{{ ('<img class="img-fluid" src="' ~ record['path'] ~ '">')|e }}</pre>
+            <pre class="border border-primary bg-dark text-light" id="relative" style="white-space:pre-wrap">{{ ('<img class="img-fluid" src="' ~ record['path'] ~ '" alt="' ~ (record['description']|e) ~ '">')|e }}</pre>
             <hr>
             <strong>Absolute:</strong>
             <a class="btn btn-sm btn-primary" onclick="copyToClipboard('absolute');">copy</a>
-            <pre class="border border-primary bg-dark text-light" id="absolute" style="white-space:pre-wrap">{{ ('<img class="img-fluid" src="' ~ host ~ record['path'] ~ '">')|e }}</pre>
+            <pre class="border border-primary bg-dark text-light" id="absolute" style="white-space:pre-wrap">{{ ('<img class="img-fluid" src="' ~ host ~ record['path'] ~ '" alt="' ~ (record['description']|e) ~ '">')|e }}</pre>
         </div>
         <div class="modal-footer">
             <button class="btn btn-secondary" data-bs-dismiss="modal">{{ 'close'|text }}</button>

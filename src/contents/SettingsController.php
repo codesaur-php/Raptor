@@ -113,7 +113,7 @@ class SettingsController extends DashboardController
                 $level = LogLevel::ERROR;
                 $message = 'Системийн тохируулгыг хадгалах үед алдаа гарч зогслоо';
             } finally {
-                $this->indolog('contents', $level, $message, $context);
+                $this->indolog('content', $level, $message, $context);
             }
         } else {
             if (!$this->isUserCan('system_content_settings')) {
