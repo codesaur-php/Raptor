@@ -72,7 +72,7 @@ class FileController extends Controller
         $this->_overwrite = $overwrite;
     }
     
-    private function uniqueName(string $uploadpath, string $name, string $ext): string
+    protected function uniqueName(string $uploadpath, string $name, string $ext): string
     {
         $filename = $name . '.' . $ext;
         if (\file_exists($uploadpath . $filename)) {
@@ -109,7 +109,7 @@ class FileController extends Controller
             $upload_path = "$this->local/";
             $file_name = \basename($uploadedFile->getClientFilename());
             $name = \pathinfo($file_name, \PATHINFO_FILENAME);
-            $ext = \strtolower(pathinfo($file_name, \PATHINFO_EXTENSION));
+            $ext = \strtolower(\pathinfo($file_name, \PATHINFO_EXTENSION));
             if (!$this->_overwrite) {
                 $file_name = $this->uniqueName($upload_path, $name, $ext);
             }
@@ -159,7 +159,7 @@ class FileController extends Controller
             
             \unlink($filePath);
             
-            $this->indolog('file', LogLevel::ALERT, "$filePath файлыг устгалаа");
+            $this->indolog('files', LogLevel::ALERT, "$filePath файлыг устгалаа");
         } catch (\Throwable $e) {
             $this->errorLog($e);
         }

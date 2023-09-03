@@ -8,6 +8,7 @@ use Psr\Http\Message\ServerRequestInterface;
 use Indoraptor\Contents\PagesModel;
 
 use Raptor\Dashboard\DashboardController;
+use Raptor\File\FilesController;
 
 class PagesController extends DashboardController
 {
@@ -46,8 +47,6 @@ class PagesController extends DashboardController
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
             
-            $code = $this->getLanguageCode();
-            $language_codes = \array_keys($this->getLanguages());
             $pages = $this->indoget('/records?model=' . PagesModel::class);
             $infos = $this->getPagesInfos();
             foreach ($pages as $record) {
@@ -58,22 +57,22 @@ class PagesController extends DashboardController
                 if (isset($infos[$id]['parent_titles'])) {
                     $title .= '<span class="text-muted"><small>' . \htmlentities($infos[$id]['parent_titles']) . '</small></span> ';
                 }
-                $caption = \htmlentities($record['content']['title'][$code]);
+                $caption = \htmlentities($record['title']);
                 $title .= '<span class="text-primary">' . $caption . '</span>';
                 $row[] = $title;
+                
+                if (!empty($record['code'])) {
+                    $row[] = '<img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.3/flags/' . $record['code'] . '.png"> : ' . $record['code'];
+                } else {
+                    $row[] = '';
+                }
                 
                 $row[] =
                     '<span class="badge bg-dark">' . \htmlentities($record['category']) . '</span> ' .
                     '<span class="badge bg-warning text-dark">' . \htmlentities($record['type']) . '</span>';
                 $row[] = $record['position'];
                 
-                $visiblity = '';
-                foreach ($language_codes as $flag) {
-                    if (!empty($record['content']['is_visible'][$flag])) {
-                        $visiblity .= '<img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.3/flags/' . $flag . '.png"> ';
-                    }
-                }
-                $row[] = $visiblity;
+                $row[] = $this->text($record['published'] == 1 ? 'published' : 'invisible');
 
                 $action =
                     '<a class="btn btn-sm btn-info shadow-sm" href="' .
@@ -119,36 +118,21 @@ class PagesController extends DashboardController
             }
             
             if ($is_submit) {
-                $record = [];
-                $content = [];
-                $payload = $this->getParsedBody();
-                foreach ($payload as $index => $value) {
-                    if (\is_array($value)) {
-                        foreach ($value as $key => $value) {
-                            $content[$key][$index] = $value;
-                        }
-                    } else {
-                        $record[$index] = $value;
-                    }
-                }
-                $context['payload'] = $payload;
-                
-                foreach ($content as $lang) {
-                    if (empty($lang['title'])){
-                        throw new \InvalidArgumentException($this->text('invalid-request'), 400);
-                    }
-                }
+                $record = $this->getParsedBody();
+                $context['payload'] = $record;
                 
                 if (empty($record['publish_date'])) {
                     $record['publish_date'] = \date('Y-m-d H:i:s');
                 }
-                foreach ($content as &$visible)
-                {
-                    $visible['is_visible'] = ($visible['is_visible'] ?? 'off' ) == 'on' ? 1 : 0;
+                $record['published'] = ($record['published'] ?? 'off' ) == 'on' ? 1 : 0;
+                
+                if (isset($record['files'])) {
+                    $files = $record['files'];
+                    unset($record['files']);
                 }
                 
-                $this->indopost('/record?model=' . PagesModel::class, ['record' => $record, 'content' => $content]);
-
+                $id = $this->indopost('/record?model=' . PagesModel::class, $record);
+                
                 $this->respondJSON([
                     'status' => 'success',
                     'message' => $this->text('record-insert-success'),
@@ -156,10 +140,33 @@ class PagesController extends DashboardController
                 ]);
                 
                 $level = LogLevel::INFO;
-                $message = "Шинэ хуудас [{$content[$this->getLanguageCode()]['title']}] үүсгэх үйлдлийг амжилттай гүйцэтгэлээ";
+                $message = "Шинэ хуудас [{$record['title']}] үүсгэх үйлдлийг амжилттай гүйцэтгэлээ";
+                
+                if (!isset($files)
+                    || empty($files)
+                    || !\is_array($files)
+                ) {
+                    return;
+                }
+                $table = 'indo_pages';
+                $filesController = new FilesController($this->getRequest());
+                foreach ($files as $file_id) {
+                    $result = $this->indosafe(
+                        "/files/$table/update",
+                        ['record' => ['record_id' => $id], 'condition' => ['WHERE' => "id=$file_id"]]);
+                    if (!empty($result)) {                        
+                        $this->indolog(
+                            'files',
+                            LogLevel::INFO,
+                            "$id-р хуудаст зориулж $file_id дугаартай файлыг бүртгэлээ",
+                            ['reason' => 'register-file', 'table' => $table, 'record_id' => $id, 'file_id' => $file_id]
+                        );
+                        $filesController->moveToFolder($table, $file_id, "/pages/$id");
+                    }
+                }
             } else {
                 $vars = [
-                    'infos'=> $this->getPagesInfos()
+                    'infos' => $this->getPagesInfos()
                 ];
                 $this->twigDashboard(\dirname(__FILE__) . '/page-insert.html', $vars)->render();
                 
@@ -190,19 +197,20 @@ class PagesController extends DashboardController
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
             
-            $record = $this->indoget('/record?model=' . PagesModel::class, ['p.id' => $id]);
+            $record = $this->indoget('/record?model=' . PagesModel::class, ['id' => $id]);
             $context['record'] = $record;
+            $context['files'] = $this->indosafe(
+                '/files/records/indo_pages', ['WHERE' => "record_id=$id AND is_active=1"]);
             $this->twigDashboard(
                 \dirname(__FILE__) . '/page-view.html',
-                [
-                    'record' => $record,
+                $context + [
                     'accounts' => $this->getAccounts(),
-                    'infos' => $this->getPagesInfos("(p.id=$id OR p.id={$record['parent_id']})")
+                    'infos' => $this->getPagesInfos("(id=$id OR id={$record['parent_id']})")
                 ]
             )->render();
 
             $level = LogLevel::NOTICE;
-            $message = "{$record['content']['title'][$this->getLanguageCode()]} - хуудасны мэдээллийг нээж үзэж байна";
+            $message = "{$record['title']} - хуудасны мэдээллийг нээж үзэж байна";
         } catch (\Throwable $e ){
             $this->dashboardProhibited($e->getMessage(), $e->getCode())->render();
             
@@ -267,17 +275,18 @@ class PagesController extends DashboardController
                 $level = LogLevel::INFO;
                 $message = "{$content[$this->getLanguageCode()]['title']} - хуудасны мэдээллийг шинэчлэх үйлдлийг амжилттай гүйцэтгэлээ";
             } else {
-                $record = $this->indoget('/record?model=' . PagesModel::class, ['p.id' => $id]);
-                $vars = [
-                    'record' => $record,
+                $context['record'] = $this->indoget(
+                    '/record?model=' . PagesModel::class, ['id' => $id]);
+                $context['files'] = $this->indosafe(
+                    '/files/records/indo_pages', ['WHERE' => "record_id=$id AND is_active=1"]);
+                $vars = $context + [
                     'accounts' => $this->getAccounts(),
-                    'infos' => $this->getPagesInfos("p.id!=$id AND p.parent_id!=$id")
+                    'infos' => $this->getPagesInfos("id!=$id AND parent_id!=$id")
                 ];
                 $this->twigDashboard(\dirname(__FILE__) . '/page-update.html', $vars)->render();
                 
                 $level = LogLevel::NOTICE;
-                $context['record'] = $record;
-                $message = "{$record['content']['title'][$this->getLanguageCode()]} - хуудасны мэдээллийг шинэчлэхээр нээж байна";
+                $message = "{$context['record']['title']} - хуудасны мэдээллийг шинэчлэхээр нээж байна";
             }
         } catch (\Throwable $e) {
             if ($is_submit) {
@@ -312,8 +321,7 @@ class PagesController extends DashboardController
             }
             $context['payload'] = $payload;
             
-            $id = \filter_var($payload['id'], \FILTER_VALIDATE_INT);
-            
+            $id = \filter_var($payload['id'], \FILTER_VALIDATE_INT);            
             $this->indodelete("/record?model=" . PagesModel::class, ['WHERE' => "id=$id"]);
             
             $this->respondJSON([
@@ -341,11 +349,9 @@ class PagesController extends DashboardController
     
     private function getPagesInfos(string $condition = ''): array
     {
-        $code = \preg_replace('/[^a-z]/', '', $this->getLanguageCode());
         $pages_query = 
-            'SELECT p.id, c.title, p.parent_id ' .
-            'FROM pages as p JOIN pages_content as c ON p.id=c.parent_id ' .
-            "WHERE p.is_active=1 AND c.code='$code'";
+            'SELECT id, parent_id, title ' .
+            'FROM indo_pages WHERE is_active=1';
         $pages = $this->indosafe('/statement', ['query' => $pages_query]);
         if (!empty($condition)) {
             $pages_query .= " AND $condition";

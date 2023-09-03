@@ -8,8 +8,10 @@ class FileRouter extends Router
 {
     public function __construct()
     {
-        $this->GET('/private/file', [PrivateFilesController::class, 'read'])->name('private-file-read');
-        $this->POST('/public/file/{input}/{table}/{uint:id}', [FilesController::class, 'post'])->name('public-file-post');
+        $this->POST('/files/{input}/{table}/{uint:id}/{folder}', [FilesController::class, 'post'])->name('files-post');
+        
+        $this->GET('/private/file', [PrivateFilesController::class, 'read'])->name('private-files-read');
+        
         $this->GET('/files/{modal}/{table}', [PrivateFilesController::class, 'modal'])->name('files-modal');
         $this->PUT('/files/{table}/{uint:id}', [PrivateFilesController::class, 'update'])->name('files-update');
         $this->DELETE('/files/{table}', [PrivateFilesController::class, 'delete'])->name('files-delete');

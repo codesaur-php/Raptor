@@ -1,4 +1,4 @@
-{% set category = {
+{% set categories = {
   'general': { 'mn': 'Ерөнхий' },
   'featured': { 'mn': 'Онцолсон' },
   'attach': { 'mn': 'Хавсралт' },
@@ -20,7 +20,7 @@
                             <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
                             <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"></button>
                             <ul class="dropdown-menu dropdown-menu-end" id="file_category_list">
-                            {% for value,name in category %}
+                            {% for value,name in categories %}
                                 <li class="dropdown-item" value="{{ value }}">{{ name[localization.code] ?? value|capitalize }}</li>
                             {% endfor %}
                             </ul>

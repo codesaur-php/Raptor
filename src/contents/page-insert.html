@@ -1,6 +1,7 @@
-{% set newPageId = -random() %}
 {% set categories = {
   'general': { 'mn': 'Ерөнхий' },
+  'featured': { 'mn': 'Онцолсон' },
+  'attach': { 'mn': 'Хавсралт' },
   'special': { 'mn': 'Тусгай' }
 } %}
 {% set types = {
@@ -29,8 +30,7 @@
                 <button class="submit-insert btn btn-success shadow-sm text-uppercase">
                     <i class="bi bi-check-lg"></i> {{ 'save'|text }}
                 </button>
-                <button class="btn btn-secondary shadow-sm text-uppercase" onclick="window.history.go(-1);
-                        return false;">
+                <button class="btn btn-secondary shadow-sm text-uppercase" onclick="window.history.go(-1); return false;">
                     <i class="bi bi-arrow-left-circle"></i> {{ 'back'|text }}
                 </button>
             </div>
@@ -39,7 +39,7 @@
     <div class="card-body">
         <form class="needs-validation" id="page_insert" action="{{ 'page-insert'|link }}" method="POST" enctype="multipart/form-data" novalidate>
             <div class="row mt-1">
-                <div class="col-6">
+                <div class="col-8">
                     <label class="form-label">{{ 'parent'|text }}</label>
                     <select class="form-select" name="parent_id">
                         <option value="0" selected>- {{ localization.code == 'mn' ? 'Үндсэн меню' : 'Main menu' }} -</option>
@@ -59,18 +59,6 @@
                                 {% endfor %}
                         </ul>
                     </div>
-                </div>                        
-                <div class="col-2">
-                    <label class="form-label">{{ 'category'|text }}</label>
-                    <div class="input-group mb-3">
-                        <input class="form-control" name="category" type="text" value="{{ categories|keys|first }}" maxlength="32">
-                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"></button>
-                        <ul class="dropdown-menu dropdown-menu-end" id="category_list">
-                            {% for value,name in categories %}
-                                <li class="dropdown-item" value="{{ value }}">{{ name[localization.code] ?? value|capitalize }}</li>
-                                {% endfor %}
-                        </ul>
-                    </div>
                 </div>
                 <div class="col-2">
                     <label class="form-label">{{ 'position'|text }}</label>
@@ -78,23 +66,35 @@
                     <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
                 </div>
             </div>
-            <div class="form-group row mt-1">
-                <div class="col-4">
+            <div class="form-group row mt-4">
+                <div class="col-2">
                     <label class="form-label">{{ 'language'|text }}</label>
                     <select class="form-select select2" name="code" id="code_language">
-                        {% for code,title in localization.language %}
-                            <option value="{{ code }}"{{ loop.first ? ' selected' : '' }}>{{ title|e }}</option>
-                        {% endfor %}
+                    {% for code,title in localization.language %}
+                        <option value="{{ code }}"{{ loop.first ? ' selected' : '' }}>{{ title|e }}</option>
+                    {% endfor %}
                     </select>
                 </div>
-                <div class="col-4">
+                <div class="col-3">
+                    <label class="form-label">{{ 'category'|text }}</label>
+                    <div class="input-group mb-3">
+                        <input class="form-control" name="category" type="text" value="{{ categories|keys|first }}" maxlength="32">
+                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"></button>
+                        <ul class="dropdown-menu dropdown-menu-end" id="category_list">
+                        {% for value,name in categories %}
+                            <li class="dropdown-item" value="{{ value }}">{{ name[localization.code] ?? value|capitalize }}</li>
+                        {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+                <div class="col-3">
                     <label class="form-label">{{ 'date'|text }}</label>
                     <input class="form-control" name="publish_date" value="" placeholder="" type="datetime-local" autocomplete="off">
                 </div>
                 <div class="col-4">
                     <label class="form-label">{{ 'publish'|text }}</label>
                     <div class="form-check form-switch">
-                        <input class="form-check-input" name="published" checked type="checkbox" role="switch" aria-describedby="IsVisibleHelp">
+                        <input class="form-check-input" name="published" type="checkbox" role="switch" aria-describedby="IsVisibleHelp">
                         <div id="IsVisibleHelp" class="form-text">{{ localization.code == 'mn' ? 'бичлэг сайт дээр харагдах эсэх' : 'visiblity of content' }}</div>
                     </div>
                     <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
@@ -308,7 +308,6 @@
 
             return AjaxModal.ajaxContent(a);
         });
-
         filesTableBody.onChildClick('.delete-file', function (a, e) {
             e.preventDefault();
 
@@ -336,7 +335,7 @@
                 backdrop: true,
                 preConfirm: () => {
                     return fetch(
-                            '{{ 'files-delete'|link({'table':'pages'}) }}',
+                            '{{ 'files-delete'|link({'table':'indo_pages'}) }}',
                             {
                                 method: 'DELETE',
                                 headers: {
@@ -372,15 +371,15 @@
             row.id = "file_" + record['id'];
             let cell1 = document.createElement('td');
             let fileName = getFileName(record['path']);
-            let file_action = '<a class="btn btn-sm btn-info ajax-modal" data-bs-target="#dashboard-modal" data-bs-toggle="modal" href="{{ 'files-modal'|link({'table':'pages', 'modal':'location'}) }}?id=' + record['id'] + '"><i class="bi bi-link"></i></a>';
+            let file_action = '<a class="btn btn-sm btn-info ajax-modal" data-bs-target="#dashboard-modal" data-bs-toggle="modal" href="{{ 'files-modal'|link({'table':'indo_pages', 'modal':'location'}) }}?id=' + record['id'] + '"><i class="bi bi-link"></i></a>';
             let file = '<figure class="figure">';
             file += '<a href="' + record['path'] + '" file-data-fancybox data-caption="' + fileName + '">';
             if (isImage(fileName)) {
                 file += '<img src="' + record['path'] + '" style="max-height:120px;height:100%">';
-                file_action += ' <a class="btn btn-sm btn-dark ajax-modal" data-bs-target="#dashboard-modal" data-bs-toggle="modal" href="{{ 'files-modal'|link({'table':'pages', 'modal':'img-tag'}) }}?id=' + record['id'] + '"><i class="bi bi-code"></i></a>';
+                file_action += ' <a class="btn btn-sm btn-dark ajax-modal" data-bs-target="#dashboard-modal" data-bs-toggle="modal" href="{{ 'files-modal'|link({'table':'indo_pages', 'modal':'img-tag'}) }}?id=' + record['id'] + '"><i class="bi bi-code"></i></a>';
             } else if (isVideo(fileName)) {
                 file += '<video style="max-height:240px;height:100%;max-width:320px;width:100%" controls><source src="' + record['path'] + '"></video>';
-                file_action += ' <a class="btn btn-sm btn-dark ajax-modal" data-bs-target="#dashboard-modal" data-bs-toggle="modal" href="{{ 'files-modal'|link({'table':'pages', 'modal':'video-tag'}) }}?id=' + record['id'] + '"><i class="bi bi-code"></i></a>';
+                file_action += ' <a class="btn btn-sm btn-dark ajax-modal" data-bs-target="#dashboard-modal" data-bs-toggle="modal" href="{{ 'files-modal'|link({'table':'indo_pages', 'modal':'video-tag'}) }}?id=' + record['id'] + '"><i class="bi bi-code"></i></a>';
             } else {
                 file += '<i class="bi bi-hdd"></i>';
             }
@@ -388,7 +387,7 @@
             file += '<figcaption class="figure-caption text-dark"><strong>' + fileName + '</strong></figcaption>';
             file += '</figure>';
             file += '<p>' + file_action + '</p>';
-            cell1.innerHTML = file;
+            cell1.innerHTML = '<input name="files[]" value="' + record['id'] + '" type="hidden">' + file;
             row.appendChild(cell1);
 
             let cell2 = document.createElement('td');
@@ -405,7 +404,7 @@
 
             let action = '';
     {% if user.can('system_content_update') %}
-                action += ' <a class="btn btn-sm btn-primary shadow-sm ajax-modal" data-bs-target="#dashboard-modal" data-bs-toggle="modal" href="{{ 'files-modal'|link({'table':'pages', 'modal':'files-update'}) }}?id=' + record['id'] + '"><i class="bi bi-pencil-square"></i></a>';
+                action += ' <a class="btn btn-sm btn-primary shadow-sm ajax-modal" data-bs-target="#dashboard-modal" data-bs-toggle="modal" href="{{ 'files-modal'|link({'table':'indo_pages', 'modal':'files-update'}) }}?id=' + record['id'] + '"><i class="bi bi-pencil-square"></i></a>';
     {% endif %}
     {% if user.can('system_content_delete') %}
                 action += ' <a class="delete-file btn btn-sm btn-danger shadow-sm" href="' + record['id'] + '" data-title="' + getFileName(record['path']) + '"><i class="bi bi-trash"></i></a>';
@@ -413,10 +412,10 @@
                 let cell5 = document.createElement('td');
                 cell5.innerHTML = action;
                 row.appendChild(cell5);
-
-                Fancybox.bind(row, '[file-data-fancybox]', {});
-
                 filesTableBody.appendChild(row);
+                
+                Fancybox.close();
+                Fancybox.bind('[file-data-fancybox]', { groupAll: true });
             };
 
             var fileList = document.getElementById('filelist');
@@ -425,7 +424,7 @@
                 runtimes: 'html5,flash,silverlight,html4',
                 browse_button: 'pickfiles',
                 container: document.getElementById('container'),
-                url: "{{ 'public-file-post'|link({'input': 'file', 'table':'pages', 'id':0}) }}",
+                url: "{{ 'files-post'|link({'input':'file', 'table':'indo_pages', 'id':0, 'folder':'pages'}) }}",
                 filters: {
                     max_file_size: '8mb',
                     mime_types: [

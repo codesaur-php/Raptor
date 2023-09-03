@@ -3,9 +3,9 @@
 namespace Raptor\File;
 
 use Twig\TwigFilter;
+use Psr\Log\LogLevel;
 
 use codesaur\Http\Message\ReasonPrhase;
-use Psr\Log\LogLevel;
 
 use Indoraptor\Contents\FilesModel;
 
@@ -75,8 +75,14 @@ class PrivateFilesController extends FilesController
             
             $id = $this->getQueryParams()['id'] ?? null;
             if (!isset($id) || !\is_numeric($id)) {
-                throw new \Exception($this->text('invalid-request'), 400);
+                throw new \InvalidArgumentException($this->text('invalid-request'), 400);
             }
+            
+            $table = \preg_replace('/[^A-Za-z0-9_-]/', '', $table);
+            if (empty($table)) {
+                throw new \InvalidArgumentException(__CLASS__ . ": Table name can't empty", 1103);
+            }
+            $record = $this->indo("/files/$table", ['id' => (int) $id]);
             
             $uri = $this->getRequest()->getUri();
             $scheme = $uri->getScheme();
@@ -87,9 +93,7 @@ class PrivateFilesController extends FilesController
             }
             if ($authority != '') {
                 $host .= "//$authority";
-            }            
-            $this->setTable($table);
-            $record = $this->indo("/files/$table", ['id' => (int) $id]);
+            }
             $template = $this->twigTemplate(
                 \dirname(__FILE__) . "/$modal-modal.html",
                 ['table' => $table, 'record' => $record, 'host' => $host]
@@ -174,7 +178,7 @@ class PrivateFilesController extends FilesController
             $context['error'] = ['code' => $e->getCode(), 'message' => $e->getMessage()];
             $message = "Мэдээллийн $table хүснэгтэд зориулсан $id дугаартай файлын бичлэгийг засах үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо";
         } finally {
-            $this->indolog('file', $level, $message, $context);
+            $this->indolog('files', $level, $message, $context);
         }
     }
     
@@ -194,10 +198,8 @@ class PrivateFilesController extends FilesController
             ) {
                 throw new \Exception($this->text('invalid-request'), 400);
             }
-            $context['payload'] = $payload;
-            
-            $id = \filter_var($payload['id'], \FILTER_VALIDATE_INT);
-            
+            $context['payload'] = $payload;            
+            $id = \filter_var($payload['id'], \FILTER_VALIDATE_INT);            
             $this->indodelete("/files/$table", ['WHERE' => "id=$id"]);
             
             $this->respondJSON([
@@ -207,7 +209,7 @@ class PrivateFilesController extends FilesController
             ]);
             
             $level = LogLevel::ALERT;
-            $message = "Мэдээллийн $table хүснэгтэд зориулсан $id дугаартай файлыг устгалаа";
+            $message = "Мэдээллийн $table хүснэгтэд зориулсан $id дугаартай {$payload['title']} файлыг устгалаа";
         } catch (\Throwable $e) {
             $this->respondJSON([
                 'status'  => 'error',
@@ -219,7 +221,7 @@ class PrivateFilesController extends FilesController
             $message = 'Файлыг устгах үйлдлийг гүйцэтгэх явцад алдаа гарч зогслоо';
             $context['error'] = ['code' => $e->getCode(), 'message' => $e->getMessage()];
         } finally {
-            $this->indolog('file', $level, $message, $context);
+            $this->indolog('files', $level, $message, $context);
         }
     }
 }
