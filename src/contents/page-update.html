@@ -40,22 +40,30 @@
         <form class="needs-validation" id="page_update" action="{{ 'page-update'|link({id: record['id']}) }}" method="PUT" enctype="multipart/form-data" novalidate>
             <div class="row mt-1">
                 <div class="col-8">
-                    <div class="form-floating">
-                        <input class="form-control" name="parent_id" readonly value="{{ (infos[record['parent_id']] is not null ? ((infos[record['parent_id']]['parent_titles'] ?? '') ~ infos[record['parent_id']]['title'] ~ ' » ' ~ record['title'] ) : localization.code == 'mn' ? '- Үндсэн меню -' : '- Main menu -')|e }}" placeholder="" type="text" autocomplete="off">
-                        <label>{{ 'path'|text }}</label>
+                    <label class="form-label">{{ 'parent'|text }}</label>
+                    <select class="form-select" name="parent_id">
+                        <option value="0" selected>-</option>
+                        {% for id,info in infos %}
+                        <option value="{{ id }}"{% if id == record['parent_id'] %} selected{% endif %}>{{ (info['parent_titles'] ?? '')|e }}{{ info['title']|e }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-2">
+                    <label class="form-label">{{ 'type'|text }}</label>
+                    <div class="input-group mb-3">
+                        <input class="form-control" name="type" type="text" value="{{ types|keys|first }}" maxlength="32">
+                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"></button>
+                        <ul class="dropdown-menu dropdown-menu-end" id="type_list">
+                            {% for value,name in types %}
+                            <li class="dropdown-item" value="{{ value }}">{{ name[localization.code] ?? name['en'] }}</li>
+                            {% endfor %}
+                        </ul>
                     </div>
                 </div>
                 <div class="col-2">
-                    <div class="form-floating">
-                        <input class="form-control" name="type" readonly value="{{ (types[record['type']][localization.code] ?? record['type'])|e }}" placeholder="" type="text" autocomplete="off">
-                        <label>{{ 'type'|text }}</label>
-                    </div>
-                </div>
-                <div class="col-2">
-                    <div class="form-floating">
-                        <input class="form-control" name="position" readonly value="{{ record['position'] }}" placeholder="" type="number" autocomplete="off">
-                        <label>{{ 'position'|text }}</label>
-                    </div>
+                    <label class="form-label">{{ 'position'|text }}</label>
+                    <input class="form-control" name="position" value="100" placeholder="" type="number" autocomplete="off">
+                    <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
                 </div>
             </div>
             <div class="form-group row mt-3">
