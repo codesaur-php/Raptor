@@ -55,7 +55,7 @@
                         <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"></button>
                         <ul class="dropdown-menu dropdown-menu-end" id="type_list">
                             {% for value,name in types %}
-                                <li class="dropdown-item" value="{{ value }}">{{ name[localization.code] ?? name['en'] }}</li>
+                                <li class="dropdown-item" value="{{ value }}">{{ name[localization.code] ?? value|capitalize }}</li>
                                 {% endfor %}
                         </ul>
                     </div>
