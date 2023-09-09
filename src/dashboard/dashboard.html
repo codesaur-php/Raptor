@@ -13,8 +13,8 @@
         {% if meta['generator'] is defined %}<meta name="generator" content="{{ meta['generator']|e }}">{% endif %}
         {% if meta['content']['description'][languageCode] is not empty %}<meta name="description" content="{{ meta['content']['description'][languageCode]|e }}">{% endif %}
         {% if meta['keywords'] is defined %}<meta name="keywords" content="{{ meta['keywords']|e }}">{% endif %}
-        {% if meta['favico'] is defined %}<link rel="icon" href="{{ meta['favico'] }}" type="image/png">{% endif %}
-        {% if meta['shortcut_icon'] is defined %}<link rel="shortcut icon" href="{{ meta['shortcut_icon'] }}" type="image/x-icon">{% endif %}
+        {% if meta['favico'] is defined %}<link rel="icon" href="{{ meta['favico'] }}" type="image/x-icon">{% endif %}
+        {% if meta['shortcut_icon'] is defined %}<link rel="shortcut icon" href="{{ meta['shortcut_icon'] }}" type="image/png">{% endif %}
         {% if meta['apple_touch_icon'] is defined %}<link rel="apple-touch-icon" href="{{ meta['apple_touch_icon'] }}">{% endif %}
         {% if meta['google-site-verification'] is defined %}<meta name="google-site-verification" content="{{ meta['google-site-verification']|e }}">{% endif %}
         {% if meta['mobile-web-app-capable'] is defined %}<meta name="mobile-web-app-capable" content="{{ meta['mobile-web-app-capable']|e }}">{% endif %}
