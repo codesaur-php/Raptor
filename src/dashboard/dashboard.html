@@ -19,17 +19,17 @@
         {% if meta['google-site-verification'] is defined %}<meta name="google-site-verification" content="{{ meta['google-site-verification']|e }}">{% endif %}
         {% if meta['mobile-web-app-capable'] is defined %}<meta name="mobile-web-app-capable" content="{{ meta['mobile-web-app-capable']|e }}">{% endif %}
         {% if meta['apple-mobile-web-app-status-bar-style'] is defined %}<meta name="apple-mobile-web-app-status-bar-style" content="{{ meta['apple-mobile-web-app-status-bar-style']|e }}">{% endif %}
-        {% if meta['socials']['og']['title'] is defined %}<meta name="og:title" content="{{ meta['socials']['og']['title']|e }}">{% endif %}
-        {% if meta['socials']['og']['description'] is defined %}<meta name="og:description" content="{{ meta['socials']['og']['description']|e }}">{% endif %}
-        {% if meta['socials']['og']['type'] is defined %}<meta name="og:type" content="{{ meta['socials']['og']['type']|e }}">{% endif %}
-        {% if meta['socials']['og']['url'] is defined %}<meta name="og:url" content="{{ meta['socials']['og']['url']|e }}">{% endif %}
-        {% if meta['socials']['og']['site_name'] is defined %}<meta name="og:site_name" content="{{ meta['socials']['og']['site_name']|e }}">{% endif %}
-        {% if meta['socials']['og']['image'] is defined %}<meta name="og:image" content="{{ meta['socials']['og']['image']|e }}">{% endif %}
-        {% if meta['socials']['og']['image:width'] is defined %}<meta name="og:image:width" content="{{ meta['socials']['og']['image:width']|e }}">{% endif %}
-        {% if meta['socials']['og']['image:height'] is defined %}<meta name="og:image:height" content="{{ meta['socials']['og']['image:height']|e }}">{% endif %}
-        {% if meta['socials']['fb']['app_id'] is defined %}<meta name="fb:app_id" content="{{ meta['socials']['fb']['app_id']|e}}">{% endif %}
-        {% if meta['socials']['fb']['page_id'] is defined %}<meta name="fb:page_id" content="{{ meta['socials']['fb']['page_id']|e }}">{% endif %}
-        {% if meta['socials']['fb']['admins'] is defined %}<meta name="fb:admins" content="{{ meta['socials']['fb']['admins']|e }}">{% endif %}
+        {% if meta['socials']['og']['title'] is defined %}<meta property="og:title" content="{{ meta['socials']['og']['title']|e }}">{% endif %}
+        {% if meta['socials']['og']['description'] is defined %}<meta property="og:description" content="{{ meta['socials']['og']['description']|e }}">{% endif %}
+        {% if meta['socials']['og']['type'] is defined %}<meta property="og:type" content="{{ meta['socials']['og']['type']|e }}">{% endif %}
+        {% if meta['socials']['og']['url'] is defined %}<meta property="og:url" content="{{ meta['socials']['og']['url']|e }}">{% endif %}
+        {% if meta['socials']['og']['site_name'] is defined %}<meta property="og:site_name" content="{{ meta['socials']['og']['site_name']|e }}">{% endif %}
+        {% if meta['socials']['og']['image'] is defined %}<meta property="og:image" content="{{ meta['socials']['og']['image']|e }}">{% endif %}
+        {% if meta['socials']['og']['image:width'] is defined %}<meta property="og:image:width" content="{{ meta['socials']['og']['image:width']|e }}">{% endif %}
+        {% if meta['socials']['og']['image:height'] is defined %}<meta property="og:image:height" content="{{ meta['socials']['og']['image:height']|e }}">{% endif %}
+        {% if meta['socials']['fb']['app_id'] is defined %}<meta property="fb:app_id" content="{{ meta['socials']['fb']['app_id']|e}}">{% endif %}
+        {% if meta['socials']['fb']['page_id'] is defined %}<meta property="fb:page_id" content="{{ meta['socials']['fb']['page_id']|e }}">{% endif %}
+        {% if meta['socials']['fb']['admins'] is defined %}<meta property="fb:admins" content="{{ meta['socials']['fb']['admins']|e }}">{% endif %}
         {% if meta['socials']['twitter']['card'] is defined %}<meta name="twitter:card" content="{{ meta['socials']['twitter']['card']|e }}">{% endif %}
         {% if meta['socials']['twitter']['url'] is defined %}<meta name="twitter:url" content="{{ meta['socials']['twitter']['url']|e }}">{% endif %}
         {% if meta['socials']['twitter']['title'] is defined %}<meta name="twitter:title" content="{{ meta['socials']['twitter']['title']|e }}">{% endif %}
