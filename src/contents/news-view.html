@@ -1,37 +1,69 @@
+{% set categories = {
+  'general': { 'mn': 'Ерөнхий' },
+  'photo': { 'mn': 'Фото' },
+  'video': { 'mn': 'Видео' },
+  'announcement': { 'mn': 'Зар мэдээлэл' },
+  'special': { 'mn': 'Тусгай' }
+} %}
+{% set types = {
+  'common': { 'mn': 'Нийтлэг' },
+  'featured': { 'mn': 'Онцолсон' },
+  'hot': { 'mn': 'Халуун' },
+  'fun': { 'mn': 'Хөгжилтэй' }
+} %}
+
+<script defer src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sceditor@latest/minified/themes/default.min.css">
+<script defer src="https://cdn.jsdelivr.net/combine/npm/sceditor@latest/minified/sceditor.min.js,npm/sceditor@latest/minified/formats/xhtml.min.js,npm/sceditor@latest/minified/icons/monocons.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.css"/>
+<script defer src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.umd.js"></script>
+
 <div class="card shadow border-info mt-2 mb-4">
     <div class="card-header bg-light">
         <div class="d-flex justify-content-between flex-wrap flex-md-nowrap">
-            <h6 class="text-info text-uppercase pt-2"><i class="bi bi-eye"></i> {{ record['content']['title'][localization.code] }}</h6>
+            <h6 class="text-info text-uppercase pt-2"><i class="bi bi-eye"></i> {{ record['title'] }}</h6>
             <div class="button-group">
-                <button class="btn btn-secondary shadow-sm text-uppercase" onclick="window.history.go(-1); return false;">
+                <button class="btn btn-secondary shadow-sm text-uppercase" onclick="window.history.go(-1);
+                        return false;">
                     <i class="bi bi-arrow-left-circle"></i> {{ 'back'|text }}
                 </button>
             </div>
         </div>
     </div>
     <div class="card-body">
-        <div class="form-group row mt-3">
+        <div class="row mt-1">
+            <div class="col-4">
+                <label class="form-label">{{ 'language'|text }}</label>
+                <span class="form-control" readonly><img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.3/flags/{{ record['code'] }}.png"> {{ (localization.language[record['code']] ?? record['code'])|e }}</span>
+            </div>
+            <div class="col-4">
+                <label class="form-label">{{ 'category'|text }}</label>
+                <input class="form-control" name="category" readonly type="text" value="{{ (categories[record['category']][localization.code] ?? record['category'])|e }}" maxlength="32">
+            </div>
+            <div class="col-4">
+                <label class="form-label">{{ 'type'|text }}</label>
+                <input class="form-control" name="type" readonly value="{{ (types[record['type']][localization.code] ?? record['type'])|e }}" placeholder="" type="text" autocomplete="off">
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col-4">
+
+            </div>
             <div class="col-4">
                 <label class="form-label">{{ 'date'|text }}</label>
                 <input class="form-control" name="publish_date" value="{{ record['publish_date'] }}" readonly placeholder="" type="datetime-local" autocomplete="off">
             </div>
             <div class="col-4">
-                <label class="form-label">{{ 'category'|text }}</label>
-                <input class="form-control" name="category" readonly type="text" value="{{ record['category']|e }}" maxlength="32">
-            </div>
-            <div class="col-4">
-                <label class="form-label">{{ 'type'|text }}</label>
-                <input class="form-control" name="type" readonly type="text" value="{{ record['type']|e }}" maxlength="32">                
+                <label class="form-label">{{ 'publish'|text }}</label>
+                <div class="form-check form-switch">
+                    <input class="form-check-input"{{ record['published'] == 1 ? ' checked' : '' }} disabled name="published" type="checkbox" role="switch" aria-describedby="IsVisibleHelp">
+                    <div id="IsVisibleHelp" class="form-text">{{ localization.code == 'mn' ? 'бичлэг сайт дээр харагдах эсэх' : 'visiblity of content' }}</div>
+                </div>
             </div>
         </div>
         <ul class="nav nav-tabs nav-tabs-content mt-4">
-        {% for code,title in localization.language %}
             <li class="nav-item">
-                <a class="nav-link{% if loop.first %} active show{% endif %}" data-bs-toggle="tab" href="#tab-{{ code }}">{{ 'content'|text }} <img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.3/flags/{{ code }}.png"></a>
-            </li>
-        {% endfor %}
-            <li class="nav-item">
-                <a class="nav-link" data-bs-toggle="tab" href="#tab-photo">{{ 'photo'|text }} <i class="bi bi-file-image"></i></a>
+                <a class="nav-link active show" data-bs-toggle="tab" href="#tab-content">{{ 'content'|text }} <i class="bi bi-body-text"></i></a>
             </li>
             <li class="nav-item">
                 <a class="nav-link" data-bs-toggle="tab" href="#tab-files">{{ 'files'|text }} <i class="bi bi-paperclip"></i></a>
@@ -45,151 +77,176 @@
             <li class="nav-item">
                 <a class="nav-link" data-bs-toggle="tab" href="#tab-link">{{ 'link'|text }} <i class="bi bi-link-45deg"></i></a>
             </li>
-            <li class="nav-item">
-                <a class="nav-link" data-bs-toggle="tab" href="#tab-history">{{ 'history'|text }} <i class="bi bi-clock-history"></i></a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" data-bs-toggle="tab" href="#tab-version">{{ 'version'|text }} <i class="bi bi-sort-numeric-down"></i></a>
-            </li>
         </ul>
         <div class="tab-content">
-        {% for code,title in localization.language %}
-            <div class="tab-pane{% if loop.first %} active show{% endif %}" id="tab-{{ code }}">
+            <div class="tab-pane active show" id="tab-content">
                 <div class="form-group bg-light rounded-3">
-                    <label class="form-label">{{ 'title'|text }} ({{ code }})</label>
-                    <div id="TitleContentHelp" class="form-text">{{ 'title-note'|text }} [{{ title }}]</div>
-                    <input class="form-control" name="title[{{ code }}]" readonly value="{{ record['content']['title'][code]|e }}" maxlength="255" placeholder="" type="text" autocomplete="off" aria-describedby="TitleContentHelp">
-                    <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
+                    <label class="form-label">{{ 'title'|text }}</label>
+                    <div id="TitleContentHelp" class="form-text">{{ 'title-note'|text }}</div>
+                    <input class="form-control" name="title" readonly value="{{ record['title']|e }}" maxlength="255" placeholder="" type="text" autocomplete="off" aria-describedby="TitleContentHelp">
                 </div>
                 <div class="form-group bg-light mt-4 rounded-3">
-                    <label class="form-label">{{ 'short'|text }} ({{ code }})</label>
-                    <div id="ShortContentHelp" class="form-text">{{ 'short-note'|text }} [{{ title }}]</div>
-                    <textarea class="form-control" name="short[{{ code }}]" readonly aria-describedby="ShortContentHelp">{{ record['content']['short'][code] }}</textarea>
+                    <label class="form-label">{{ 'short'|text }}</label>
+                    <div id="ShortContentHelp" class="form-text">{{ 'short-note'|text }}</div>
+                    <textarea class="form-control" name="short" readonly aria-describedby="ShortContentHelp">{{ record['short'] }}</textarea>
                 </div>
                 <div class="form-group bg-light mt-4 rounded-3">
-                    <label class="form-label">{{ 'full'|text }} ({{ code }})</label>
-                    <div id="FullContentHelp" class="form-text">{{ 'full-note'|text }} [{{ title }}]</div>
-                    <textarea class="form-control" id="full_{{ code }}" readonly name="full[{{ code }}]" rows="10" aria-describedby="FullContentHelp">{{ record['content']['full'][code] }}</textarea>
-                </div>
-                <div class="mb-3 bg-light mt-4 rounded-3">
-                    <label class="form-label">{{ 'visible'|text }}</label>
-                    <div class="form-check form-switch">
-                        <input class="form-check-input" name="is_visible[{{ code }}]" disabled {{ record['content']['is_visible'][code] == '1' ? 'checked ' : '' }}type="checkbox" role="switch" aria-describedby="IsVisibleHelp">
-                        <div id="IsVisibleHelp" class="form-text">{{ localization.code == 'mn' ? 'бичлэг сайт дээр харагдах эсэх' : 'visiblity of content' }}</div>
-                    </div>
-                </div>
-            </div>
-        {% endfor %}
-            <div class="tab-pane" id="tab-photo">
-                <div class="alert alert-danger shadow-sm fade mt-4 show" role="alert">
-                    <i class="bi bi-exclamation-triangle" style="margin-right:5px"></i>
-                {% if localization.code == 'mn' %}
-                    Уучлаарай, энэ үйлдэл одоохондоо ажиллагаанд ороогүй байна
-                {% else %}
-                    Sorry, this feature isn’t available right now
-                {% endif %}
+                    <label class="form-label">{{ 'full'|text }}</label>
+                    <div id="FullContentHelp" class="form-text">{{ 'full-note'|text }}</div>
+                    <textarea class="form-control" id="full" name="full" readonly rows="10" aria-describedby="FullContentHelp">{{ record['short'] }}</textarea>
                 </div>
             </div>
             <div class="tab-pane" id="tab-files">
-                <div class="alert alert-warning shadow-sm fade mt-4 show" role="alert">
-                    <i class="bi bi-exclamation-triangle" style="margin-right:5px"></i>
-                {% if localization.code == 'mn' %}
-                    Уучлаарай, энэ үйлдэл одоохондоо ажиллагаанд ороогүй байна
-                {% else %}
-                    Sorry, this feature isn’t available right now
-                {% endif %}
+                <div class="col-12 mt-4">
+                    <table class="table table-striped table-hover" id="news_files">
+                        <thead>
+                            <tr>
+                                <th>{{ 'file'|text }}</th>
+                                <th>{{ 'category'|text }}</th>
+                                <th>{{ 'keyword'|text }}</th>
+                                <th>{{ 'description'|text }}</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                        <tfoot></tfoot>
+                    </table>
                 </div>
             </div>
             <div class="tab-pane" id="tab-meta">
                 <div class="alert alert-secondary shadow-sm fade mt-4 show" role="alert">
                     <i class="bi bi-exclamation-triangle" style="margin-right:5px"></i>
-                {% if localization.code == 'mn' %}
-                    Уучлаарай, энэ үйлдэл одоохондоо ажиллагаанд ороогүй байна
-                {% else %}
-                    Sorry, this feature isn’t available right now
-                {% endif %}
+                    {% if localization.code == 'mn' %}
+                        Уучлаарай, энэ үйлдэл одоохондоо ажиллагаанд ороогүй байна
+                    {% else %}
+                        Sorry, this feature isn’t available right now
+                    {% endif %}
                 </div>
             </div>
             <div class="tab-pane" id="tab-comment">
                 <div class="alert alert-primary shadow-sm fade mt-4 show" role="alert">
                     <i class="bi bi-exclamation-triangle" style="margin-right:5px"></i>
-                {% if localization.code == 'mn' %}
-                    Уучлаарай, энэ үйлдэл одоохондоо ажиллагаанд ороогүй байна
-                {% else %}
-                    Sorry, this feature isn’t available right now
-                {% endif %}
+                    {% if localization.code == 'mn' %}
+                        Уучлаарай, энэ үйлдэл одоохондоо ажиллагаанд ороогүй байна
+                    {% else %}
+                        Sorry, this feature isn’t available right now
+                    {% endif %}
                 </div>
             </div>
             <div class="tab-pane" id="tab-link">
-                <div class="alert alert-warning shadow-sm fade mt-4 show" role="alert">
+                <div class="alert alert-dark shadow-sm fade mt-4 show" role="alert">
                     <i class="bi bi-exclamation-triangle" style="margin-right:5px"></i>
-                {% if localization.code == 'mn' %}
-                    Уучлаарай, энэ үйлдэл одоохондоо ажиллагаанд ороогүй байна
-                {% else %}
-                    Sorry, this feature isn’t available right now
-                {% endif %}
-                </div>
-            </div>
-            <div class="tab-pane" id="tab-history">
-                <div class="row mb-3">
-                    <label class="col-3 col-form-label text-end">{{ 'date-created'|text }}</label>
-                    <div class="col-9">
-                        <input class="form-control" readonly value="{{ record['created_at']|e }}" type="text">
-                    </div>
-                </div>
-                <div class="row mb-3">
-                    <label class="col-3 col-form-label text-end">{{ 'created-by'|text }}</label>
-                    <div class="col-9">
-                        <input class="form-control" readonly value="{{ (accounts[record['created_by']] ?? record['created_by'])|e }}" type="text">
-                    </div>
-                </div>
-                <div class="row mb-3">
-                    <label class="col-3 col-form-label text-end">{{ 'date-modified'|text }}</label>
-                    <div class="col-9">
-                        <input class="form-control" readonly value="{{ record['updated_at']|e }}" type="text">
-                    </div>
-                </div>
-                <div class="row">
-                    <label class="col-3 col-form-label text-end">{{ 'updated-by'|text }}</label>
-                    <div class="col-9">
-                        <input class="form-control" readonly value="{{ (accounts[record['updated_by']] ?? record['updated_by'])|e }}" type="text">
-                    </div>
-                </div>
-            </div>
-            <div class="tab-pane" id="tab-version">
-                <div class="alert alert-info shadow-sm fade mt-4 show" role="alert">
-                    <i class="bi bi-exclamation-triangle" style="margin-right:5px"></i>
-                {% if localization.code == 'mn' %}
-                    Уучлаарай, энэ үйлдэл одоохондоо ажиллагаанд ороогүй байна
-                {% else %}
-                    Sorry, this feature isn’t available right now
-                {% endif %}
+                    {% if localization.code == 'mn' %}
+                        Уучлаарай, энэ үйлдэл одоохондоо ажиллагаанд ороогүй байна
+                    {% else %}
+                        Sorry, this feature isn’t available right now
+                    {% endif %}
                 </div>
             </div>
         </div>
     </div>
     <div class="card-footer">
         <div class="row pt-1 pb-1">
-            <button class="btn btn-lg btn-block btn-secondary shadow-sm" onclick="window.history.go(-1); return false;"><i class="bi bi-arrow-left"></i> {{ 'back'|text }}</button>
+            <div class="col-12 d-grid">
+                <button class="btn btn-lg btn-block btn-secondary shadow-sm" onclick="window.history.go(-1);
+                        return false;">
+                    <i class="bi bi-arrow-left"></i> {{ 'back'|text }}
+                </button>
+            </div>
         </div>
     </div>
 </div>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sceditor@latest/minified/themes/default.min.css">
-<script defer src="https://cdn.jsdelivr.net/combine/npm/sceditor@latest/minified/sceditor.min.js,npm/sceditor@latest/minified/formats/xhtml.min.js,npm/sceditor@latest/minified/icons/monocons.min.js"></script>
+
 <script type="text/javascript">
-document.addEventListener('DOMContentLoaded', function () {
-    {% for code,title in localization.language %}
-    var full_{{ code }} = document.getElementById('full_{{ code }}');
-    sceditor.create(full_{{ code }}, {
-        format: 'xhtml',
-        emoticonsEnabled: false,
-        toolbarExclude: 'indent,outdent,emoticon,bold,italic,underline,strike,subscript,superscript,left,center,right,justify,font,size,color,removeformat,cut,copy,paste,pastetext,bulletlist,orderedlist,table,code,quote,horizontalrule,image,email,link,unlink,emoticon,youtube,date,time,ltr,rtl,print,maximize,source',
-        icons: 'monocons',
-        width: '100%',
-        height: '480px',
-        readOnly: true,
-        style: 'https://cdn.jsdelivr.net/npm/sceditor@latest/minified/themes/content/default.min.css'
-    });
+    function copyToClipboard(elem) {
+        var text = document.getElementById(elem);
+        if (document.body.createTextRange) {
+            var range = document.body.createTextRange();
+            range.moveToElementText(text);
+            range.select();
+        } else if (window.getSelection) {
+            var selection = window.getSelection();
+            var range = document.createRange();
+            range.selectNodeContents(text);
+            selection.removeAllRanges();
+            selection.addRange(range);
+        }
+        document.execCommand('copy');
+    }
+
+    function isImage(url) {
+        return /\.(jpg|jpeg|png|webp|avif|gif|svg)$/.test(url);
+    }
+
+    function isVideo(url) {
+        return /\.(m4a|ogg|mp4|m4v|mov|wmv|swf)$/.test(url);
+    }
+
+    function getFileName(url) {
+        return url.split(/.*[\/|\\]/)[1];
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+
+        let full = document.getElementById('full');
+        sceditor.create(full, {
+            format: 'xhtml',
+            emoticonsEnabled: false,
+            toolbarExclude: 'emoticon',
+            icons: 'monocons',
+            readOnly: true,
+            width: '100%',
+            height: '360px',
+            style: 'https://cdn.jsdelivr.net/npm/sceditor@latest/minified/themes/content/default.min.css'
+        });
+
+        var filesTableBody = document.querySelector('#news_files > tbody');
+
+        const addFilesRow = function (record) {
+            let row = document.createElement('tr');
+            row.id = "file_" + record['id'];
+            let cell1 = document.createElement('td');
+            let fileName = getFileName(record['path']);
+            let file_action = '<a class="btn btn-sm btn-info ajax-modal" data-bs-target="#dashboard-modal" data-bs-toggle="modal" href="{{ 'files-modal'|link({'table':'indo_news', 'modal':'location'}) }}?id=' + record['id'] + '"><i class="bi bi-link"></i></a>';
+            let file = '<figure class="figure">';
+            file += '<a href="' + record['path'] + '" file-data-fancybox data-caption="' + fileName + '">';
+            if (isImage(fileName)) {
+                file += '<img src="' + record['path'] + '" style="max-height:120px;height:100%">';
+                file_action += ' <a class="btn btn-sm btn-dark ajax-modal" data-bs-target="#dashboard-modal" data-bs-toggle="modal" href="{{ 'files-modal'|link({'table':'indo_news', 'modal':'img-tag'}) }}?id=' + record['id'] + '"><i class="bi bi-code"></i></a>';
+            } else if (isVideo(fileName)) {
+                file += '<video style="max-height:240px;height:100%;max-width:320px;width:100%" controls><source src="' + record['path'] + '"></video>';
+                file_action += ' <a class="btn btn-sm btn-dark ajax-modal" data-bs-target="#dashboard-modal" data-bs-toggle="modal" href="{{ 'files-modal'|link({'table':'indo_news', 'modal':'video-tag'}) }}?id=' + record['id'] + '"><i class="bi bi-code"></i></a>';
+            } else {
+                file += '<i class="bi bi-hdd"></i>';
+            }
+            file += '</a>';
+            file += '<figcaption class="figure-caption text-dark"><strong>' + fileName + '</strong></figcaption>';
+            file += '</figure>';
+            file += '<p>' + file_action + '</p>';
+            cell1.innerHTML = '<input name="files[]" value="' + record['id'] + '" type="hidden">' + file;
+            row.appendChild(cell1);
+
+            let cell2 = document.createElement('td');
+            cell2.innerHTML = record['category'];
+            row.appendChild(cell2);
+
+            let cell3 = document.createElement('td');
+            cell3.innerHTML = record['keyword'];
+            row.appendChild(cell3);
+
+            let cell4 = document.createElement('td');
+            cell4.innerHTML = record['description'];
+            row.appendChild(cell4);
+
+            filesTableBody.appendChild(row);
+
+            Fancybox.close();
+            Fancybox.bind('[file-data-fancybox]', {groupAll: true});
+        };
+
+    {% for file in files  %}
+        addFilesRow(JSON.parse('{{ file|json_encode }}'));
     {% endfor %}
-});
+        Fancybox.bind('[file-data-fancybox]', {groupAll: true});
+        
+    });
 </script>

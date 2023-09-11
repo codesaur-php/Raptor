@@ -8,6 +8,7 @@ use Psr\Http\Message\ServerRequestInterface;
 use Indoraptor\Contents\NewsModel;
 
 use Raptor\Dashboard\DashboardController;
+use Raptor\File\FilesController;
 
 class NewsController extends DashboardController
 {
@@ -46,27 +47,25 @@ class NewsController extends DashboardController
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
             
-            $code = $this->getLanguageCode();
-            $language_codes = \array_keys($this->getLanguages());
             $pages = $this->indoget('/records?model=' . NewsModel::class);
             foreach ($pages as $record) {
                 $id = $record['id'];
                 $row = [$record['publish_date'], '<img src="https://via.placeholder.com/70?text=no+photo">'];
                 
-                $title = \htmlentities($record['content']['title'][$code]);
+                $title = \htmlentities($record['title']);
                 $row[] = $title;
+                
+                if (!empty($record['code'])) {
+                    $row[] = '<img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.3/flags/' . $record['code'] . '.png"> ' . $record['code'];
+                } else {
+                    $row[] = '';
+                }
                 
                 $row[] =
                     '<span class="badge bg-primary">' . \htmlentities($record['category']) . '</span> ' .
                     '<span class="badge bg-danger">' . \htmlentities($record['type']) . '</span>';
                 
-                $visiblity = '';
-                foreach ($language_codes as $flag) {
-                    if (!empty($record['content']['is_visible'][$flag])) {
-                        $visiblity .= '<img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.3/flags/' . $flag . '.png"> ';
-                    }
-                }
-                $row[] = $visiblity;
+                $row[] = $record['published'] == 1 ? '<i class="bi bi-emoji-heart-eyes-fill text-success"></i>' : '<i class="bi bi-eye-slash"></i>';
 
                 $action =
                     '<a class="btn btn-sm btn-info shadow-sm" href="' .
@@ -112,36 +111,21 @@ class NewsController extends DashboardController
             }
             
             if ($is_submit) {
-                $record = [];
-                $content = [];
-                $payload = $this->getParsedBody();
-                foreach ($payload as $index => $value) {
-                    if (\is_array($value)) {
-                        foreach ($value as $key => $value) {
-                            $content[$key][$index] = $value;
-                        }
-                    } else {
-                        $record[$index] = $value;
-                    }
-                }
-                $context['payload'] = $payload;
+                $record = $this->getParsedBody();
+                $context['payload'] = $record;
                 
-                foreach ($content as $lang) {
-                    if (empty($lang['title'])){
-                        throw new \InvalidArgumentException($this->text('invalid-request'), 400);
-                    }
-                }
-
                 if (empty($record['publish_date'])) {
                     $record['publish_date'] = \date('Y-m-d H:i:s');
                 }
-                foreach ($content as &$visible)
-                {
-                    $visible['is_visible'] = ($visible['is_visible'] ?? 'off' ) == 'on' ? 1 : 0;
+                $record['published'] = ($record['published'] ?? 'off' ) == 'on' ? 1 : 0;
+                
+                if (isset($record['files'])) {
+                    $files = $record['files'];
+                    unset($record['files']);
                 }
                 
-                $this->indopost('/record?model=' . NewsModel::class, ['record' => $record, 'content' => $content]);
-
+                $id = $this->indopost('/record?model=' . NewsModel::class, $record);
+                
                 $this->respondJSON([
                     'status' => 'success',
                     'message' => $this->text('record-insert-success'),
@@ -149,7 +133,30 @@ class NewsController extends DashboardController
                 ]);
                 
                 $level = LogLevel::INFO;
-                $message = "Шинэ мэдээ [{$content[$this->getLanguageCode()]['title']}] үүсгэх үйлдлийг амжилттай гүйцэтгэлээ";
+                $message = "Шинэ мэдээ [{$record['title']}] үүсгэх үйлдлийг амжилттай гүйцэтгэлээ";
+                
+                if (!isset($files)
+                    || empty($files)
+                    || !\is_array($files)
+                ) {
+                    return;
+                }
+                $table = 'indo_news';
+                $filesController = new FilesController($this->getRequest());
+                foreach ($files as $file_id) {
+                    $result = $this->indosafe(
+                        "/files/$table/update",
+                        ['record' => ['record_id' => $id], 'condition' => ['WHERE' => "id=$file_id"]]);
+                    if (!empty($result)) {                        
+                        $this->indolog(
+                            'files',
+                            LogLevel::INFO,
+                            "$id-р мэдээнд зориулж $file_id дугаартай файлыг бүртгэлээ",
+                            ['reason' => 'register-file', 'table' => $table, 'record_id' => $id, 'file_id' => $file_id]
+                        );
+                        $filesController->moveToFolder($table, $file_id, "/news/$id");
+                    }
+                }
             } else {
                 $this->twigDashboard(\dirname(__FILE__) . '/news-insert.html')->render();
                 
@@ -180,23 +187,22 @@ class NewsController extends DashboardController
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
             
-            $record = $this->indoget('/record?model=' . NewsModel::class, ['p.id' => $id]);
+            $record = $this->indoget('/record?model=' . NewsModel::class, ['id' => $id]);
             $context['record'] = $record;
+            $context['files'] = $this->indosafe(
+                '/files/records/indo_news', ['WHERE' => "record_id=$id AND is_active=1"]);
             $this->twigDashboard(
                 \dirname(__FILE__) . '/news-view.html',
-                [
-                    'record' => $record,
-                    'accounts' => $this->getAccounts()
-                ]
+                $context + ['accounts' => $this->getAccounts()]
             )->render();
 
             $level = LogLevel::NOTICE;
-            $message = "{$record['content']['title'][$this->getLanguageCode()]} - мэдээллийг нээж үзэж байна";
+            $message = "{$record['title']} - мэдээг нээж үзэж байна";
         } catch (\Throwable $e ){
             $this->dashboardProhibited($e->getMessage(), $e->getCode())->render();
             
             $level = LogLevel::ERROR;
-            $message = 'Мэдээллийг нээж үзэх үед алдаа гарч зогслоо';
+            $message = 'Мэдээг нээж үзэх үед алдаа гарч зогслоо';
             $context['error'] = ['code' => $e->getCode(), 'message' => $e->getMessage()];
         } finally {
             $this->indolog('content', $level, $message, $context);

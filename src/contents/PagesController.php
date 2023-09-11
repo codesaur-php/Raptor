@@ -62,7 +62,7 @@ class PagesController extends DashboardController
                 $row[] = $title;
                 
                 if (!empty($record['code'])) {
-                    $row[] = '<img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.3/flags/' . $record['code'] . '.png"> : ' . $record['code'];
+                    $row[] = '<img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.3/flags/' . $record['code'] . '.png"> ' . $record['code'];
                 } else {
                     $row[] = '';
                 }
@@ -72,7 +72,7 @@ class PagesController extends DashboardController
                     '<span class="badge bg-warning text-dark">' . \htmlentities($record['type']) . '</span>';
                 $row[] = $record['position'];
                 
-                $row[] = $this->text($record['published'] == 1 ? 'published' : 'invisible');
+                $row[] = $record['published'] == 1 ? '<i class="bi bi-emoji-heart-eyes-fill text-success"></i>' : '<i class="bi bi-eye-slash"></i>';
 
                 $action =
                     '<a class="btn btn-sm btn-info shadow-sm" href="' .

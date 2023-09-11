@@ -287,7 +287,18 @@
             };
         }(jQuery));
         $('#code_language').Select2Code();
-
+        
+        let full = document.getElementById('full');
+        sceditor.create(full, {
+            format: 'xhtml',
+            emoticonsEnabled: false,
+            toolbarExclude: 'emoticon',
+            icons: 'monocons',
+            width: '100%',
+            height: '360px',
+            style: 'https://cdn.jsdelivr.net/npm/sceditor@latest/minified/themes/content/default.min.css'
+        });
+        
         FormSubmitHandler('.submit-insert', 'form#page_insert');
 
         var fileList = document.getElementById('filelist');
@@ -518,5 +529,6 @@
                     }
                 });
             });
+            
         });
 </script>
