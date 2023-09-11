@@ -23,7 +23,8 @@
         <div class="d-flex justify-content-between flex-wrap flex-md-nowrap">
             <h6 class="text-uppercase pt-2">{{ record['title'] }}</h6>
             <div class="button-group">
-                <button class="btn btn-secondary shadow-sm text-uppercase" onclick="window.history.go(-1); return false;">
+                <button class="btn btn-secondary shadow-sm text-uppercase" onclick="window.history.go(-1);
+                        return false;">
                     <i class="bi bi-arrow-left-circle"></i> {{ 'back'|text }}
                 </button>
             </div>
@@ -129,31 +130,31 @@
             <div class="tab-pane" id="tab-meta">
                 <div class="alert alert-secondary shadow-sm fade mt-4 show" role="alert">
                     <i class="bi bi-exclamation-triangle" style="margin-right:5px"></i>
-                {% if localization.code == 'mn' %}
-                    Уучлаарай, энэ үйлдэл одоохондоо ажиллагаанд ороогүй байна
-                {% else %}
-                    Sorry, this feature isn’t available right now
-                {% endif %}
+                    {% if localization.code == 'mn' %}
+                        Уучлаарай, энэ үйлдэл одоохондоо ажиллагаанд ороогүй байна
+                    {% else %}
+                        Sorry, this feature isn’t available right now
+                    {% endif %}
                 </div>
             </div>
             <div class="tab-pane" id="tab-comment">
                 <div class="alert alert-primary shadow-sm fade mt-4 show" role="alert">
                     <i class="bi bi-exclamation-triangle" style="margin-right:5px"></i>
-                {% if localization.code == 'mn' %}
-                    Уучлаарай, энэ үйлдэл одоохондоо ажиллагаанд ороогүй байна
-                {% else %}
-                    Sorry, this feature isn’t available right now
-                {% endif %}
+                    {% if localization.code == 'mn' %}
+                        Уучлаарай, энэ үйлдэл одоохондоо ажиллагаанд ороогүй байна
+                    {% else %}
+                        Sorry, this feature isn’t available right now
+                    {% endif %}
                 </div>
             </div>
             <div class="tab-pane" id="tab-link">
                 <div class="alert alert-warning shadow-sm fade mt-4 show" role="alert">
                     <i class="bi bi-exclamation-triangle" style="margin-right:5px"></i>
-                {% if localization.code == 'mn' %}
-                    Уучлаарай, энэ үйлдэл одоохондоо ажиллагаанд ороогүй байна
-                {% else %}
-                    Sorry, this feature isn’t available right now
-                {% endif %}
+                    {% if localization.code == 'mn' %}
+                        Уучлаарай, энэ үйлдэл одоохондоо ажиллагаанд ороогүй байна
+                    {% else %}
+                        Sorry, this feature isn’t available right now
+                    {% endif %}
                 </div>
             </div>
             <div class="tab-pane" id="tab-history">
@@ -185,52 +186,39 @@
             <div class="tab-pane" id="tab-version">
                 <div class="alert alert-info shadow-sm fade mt-4 show" role="alert">
                     <i class="bi bi-exclamation-triangle" style="margin-right:5px"></i>
-                {% if localization.code == 'mn' %}
-                    Уучлаарай, энэ үйлдэл одоохондоо ажиллагаанд ороогүй байна
-                {% else %}
-                    Sorry, this feature isn’t available right now
-                {% endif %}
+                    {% if localization.code == 'mn' %}
+                        Уучлаарай, энэ үйлдэл одоохондоо ажиллагаанд ороогүй байна
+                    {% else %}
+                        Sorry, this feature isn’t available right now
+                    {% endif %}
                 </div>
             </div>
         </div>
     </div>
     <div class="card-footer">
         <div class="row pt-1 pb-1">
-            <button class="btn btn-lg btn-block btn-secondary shadow-sm" onclick="window.history.go(-1); return false;"><i class="bi bi-arrow-left"></i> {{ 'back'|text }}</button>
+            <button class="btn btn-lg btn-block btn-secondary shadow-sm" onclick="window.history.go(-1);
+                    return false;"><i class="bi bi-arrow-left"></i> {{ 'back'|text }}</button>
         </div>
     </div>
-</div><img class="img-fluid" src="http://localhost/Raptor/example/public/indo_pages/files/omicron_variant.png" alt="">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sceditor@latest/minified/themes/default.min.css">
-<script defer src="https://cdn.jsdelivr.net/combine/npm/sceditor@latest/minified/sceditor.min.js,npm/sceditor@latest/minified/formats/xhtml.min.js,npm/sceditor@latest/minified/icons/monocons.min.js"></script>
+</div>
+
 <script type="text/javascript">
-function copyToClipboard(elem) {
-    var text = document.getElementById(elem);
-    if (document.body.createTextRange) {
-        var range = document.body.createTextRange();
-        range.moveToElementText(text);
-        range.select();
-    } else if (window.getSelection) {
-        var selection = window.getSelection();
-        var range = document.createRange();
-        range.selectNodeContents(text);
-        selection.removeAllRanges();
-        selection.addRange(range);
+    function copyToClipboard(elem) {
+        var text = document.getElementById(elem);
+        if (document.body.createTextRange) {
+            var range = document.body.createTextRange();
+            range.moveToElementText(text);
+            range.select();
+        } else if (window.getSelection) {
+            var selection = window.getSelection();
+            var range = document.createRange();
+            range.selectNodeContents(text);
+            selection.removeAllRanges();
+            selection.addRange(range);
+        }
+        document.execCommand('copy');
     }
-    document.execCommand('copy');
-}
-    
-document.addEventListener('DOMContentLoaded', function () {
-    let full = document.getElementById('full');
-    sceditor.create(full, {
-        format: 'xhtml',
-        emoticonsEnabled: false,
-        toolbarExclude: 'emoticon',
-        icons: 'monocons',
-        width: '100%',
-        readOnly: true,
-        height: '360px',
-        style: 'https://cdn.jsdelivr.net/npm/sceditor@latest/minified/themes/content/default.min.css'
-    });
 
     function isImage(url) {
         return /\.(jpg|jpeg|png|webp|avif|gif|svg)$/.test(url);
@@ -243,50 +231,64 @@ document.addEventListener('DOMContentLoaded', function () {
     function getFileName(url) {
         return url.split(/.*[\/|\\]/)[1];
     }
-    
-    function addFilesRow(record) {
-        let row = document.createElement('tr');
-        row.id = "file_" + record['id'];
-        let cell1 = document.createElement('td');
-        let fileName = getFileName(record['path']);
-        let file_action = '<a class="btn btn-sm btn-info ajax-modal" data-bs-target="#dashboard-modal" data-bs-toggle="modal" href="{{ 'files-modal'|link({'table':'indo_pages', 'modal':'location'}) }}?id=' + record['id'] + '"><i class="bi bi-link"></i></a>';
-        let file = '<figure class="figure">';
-        file += '<a href="' + record['path'] + '" file-data-fancybox data-caption="' + fileName + '">';
-        if (isImage(fileName)) {
-            file += '<img src="' + record['path'] + '" style="max-height:120px;height:100%">';
-            file_action += ' <a class="btn btn-sm btn-dark ajax-modal" data-bs-target="#dashboard-modal" data-bs-toggle="modal" href="{{ 'files-modal'|link({'table':'indo_pages', 'modal':'img-tag'}) }}?id=' + record['id'] + '"><i class="bi bi-code"></i></a>';
-        } else if (isVideo(fileName)) {
-            file += '<video style="max-height:240px;height:100%;max-width:320px;width:100%" controls><source src="' + record['path'] + '"></video>';
-            file_action += ' <a class="btn btn-sm btn-dark ajax-modal" data-bs-target="#dashboard-modal" data-bs-toggle="modal" href="{{ 'files-modal'|link({'table':'indo_pages', 'modal':'video-tag'}) }}?id=' + record['id'] + '"><i class="bi bi-code"></i></a>';
-        } else {
-            file += '<i class="bi bi-hdd"></i>';
+
+    document.addEventListener('DOMContentLoaded', function () {
+        let full = document.getElementById('full');
+        sceditor.create(full, {
+            format: 'xhtml',
+            emoticonsEnabled: false,
+            toolbarExclude: 'emoticon',
+            icons: 'monocons',
+            width: '100%',
+            readOnly: true,
+            height: '360px',
+            style: 'https://cdn.jsdelivr.net/npm/sceditor@latest/minified/themes/content/default.min.css'
+        });
+        
+        var filesTableBody = document.querySelector('#pages_files > tbody');
+        
+        function addFilesRow(record) {
+            let row = document.createElement('tr');
+            row.id = "file_" + record['id'];
+            let cell1 = document.createElement('td');
+            let fileName = getFileName(record['path']);
+            let file_action = '<a class="btn btn-sm btn-info ajax-modal" data-bs-target="#dashboard-modal" data-bs-toggle="modal" href="{{ 'files-modal'|link({'table':'indo_pages', 'modal':'location'}) }}?id=' + record['id'] + '"><i class="bi bi-link"></i></a>';
+            let file = '<figure class="figure">';
+            file += '<a href="' + record['path'] + '" file-data-fancybox data-caption="' + fileName + '">';
+            if (isImage(fileName)) {
+                file += '<img src="' + record['path'] + '" style="max-height:120px;height:100%">';
+                file_action += ' <a class="btn btn-sm btn-dark ajax-modal" data-bs-target="#dashboard-modal" data-bs-toggle="modal" href="{{ 'files-modal'|link({'table':'indo_pages', 'modal':'img-tag'}) }}?id=' + record['id'] + '"><i class="bi bi-code"></i></a>';
+            } else if (isVideo(fileName)) {
+                file += '<video style="max-height:240px;height:100%;max-width:320px;width:100%" controls><source src="' + record['path'] + '"></video>';
+                file_action += ' <a class="btn btn-sm btn-dark ajax-modal" data-bs-target="#dashboard-modal" data-bs-toggle="modal" href="{{ 'files-modal'|link({'table':'indo_pages', 'modal':'video-tag'}) }}?id=' + record['id'] + '"><i class="bi bi-code"></i></a>';
+            } else {
+                file += '<i class="bi bi-hdd"></i>';
+            }
+            file += '</a>';
+            file += '<figcaption class="figure-caption text-dark"><strong>' + fileName + '</strong></figcaption>';
+            file += '</figure>';
+            file += '<p>' + file_action + '</p>';
+            cell1.innerHTML = '<input name="files[]" value="' + record['id'] + '" readonly type="hidden">' + file;
+            row.appendChild(cell1);
+
+            let cell2 = document.createElement('td');
+            cell2.innerHTML = record['category'];
+            row.appendChild(cell2);
+
+            let cell3 = document.createElement('td');
+            cell3.innerHTML = record['keyword'];
+            row.appendChild(cell3);
+
+            let cell4 = document.createElement('td');
+            cell4.innerHTML = record['description'];
+            row.appendChild(cell4);
+
+            filesTableBody.appendChild(row);
         }
-        file += '</a>';
-        file += '<figcaption class="figure-caption text-dark"><strong>' + fileName + '</strong></figcaption>';
-        file += '</figure>';
-        file += '<p>' + file_action + '</p>';
-        cell1.innerHTML = '<input name="files[]" value="' + record['id'] + '" readonly type="hidden">' + file;
-        row.appendChild(cell1);
-
-        let cell2 = document.createElement('td');
-        cell2.innerHTML = record['category'];
-        row.appendChild(cell2);
-
-        let cell3 = document.createElement('td');
-        cell3.innerHTML = record['keyword'];
-        row.appendChild(cell3);
-
-        let cell4 = document.createElement('td');
-        cell4.innerHTML = record['description'];
-        row.appendChild(cell4);
-
-        filesTableBody.appendChild(row);
-    };
-    
-    var filesTableBody = document.querySelector('#pages_files > tbody');
+        
 {% for file in files  %}
-    addFilesRow(JSON.parse('{{ file|json_encode }}'));
+        addFilesRow(JSON.parse('{{ file|json_encode }}'));
 {% endfor %}
-    Fancybox.bind('[file-data-fancybox]', { groupAll: true });
-});
+        Fancybox.bind('[file-data-fancybox]', {groupAll: true});
+    });
 </script>

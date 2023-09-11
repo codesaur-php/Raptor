@@ -30,7 +30,8 @@
                 <button class="submit-insert btn btn-success shadow-sm text-uppercase">
                     <i class="bi bi-check-lg"></i> {{ 'save'|text }}
                 </button>
-                <button class="btn btn-secondary shadow-sm text-uppercase" onclick="window.history.go(-1); return false;">
+                <button class="btn btn-secondary shadow-sm text-uppercase" onclick="window.history.go(-1);
+                        return false;">
                     <i class="bi bi-arrow-left-circle"></i> {{ 'back'|text }}
                 </button>
             </div>
@@ -70,9 +71,9 @@
                 <div class="col-2">
                     <label class="form-label">{{ 'language'|text }}</label>
                     <select class="form-select select2" name="code" id="code_language">
-                    {% for code,title in localization.language %}
-                        <option value="{{ code }}"{{ loop.first ? ' selected' : '' }}>{{ title|e }}</option>
-                    {% endfor %}
+                        {% for code,title in localization.language %}
+                            <option value="{{ code }}"{{ loop.first ? ' selected' : '' }}>{{ title|e }}</option>
+                        {% endfor %}
                     </select>
                 </div>
                 <div class="col-3">
@@ -81,9 +82,9 @@
                         <input class="form-control" name="category" type="text" value="{{ categories|keys|first }}" maxlength="32">
                         <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"></button>
                         <ul class="dropdown-menu dropdown-menu-end" id="category_list">
-                        {% for value,name in categories %}
-                            <li class="dropdown-item" value="{{ value }}">{{ name[localization.code] ?? value|capitalize }}</li>
-                        {% endfor %}
+                            {% for value,name in categories %}
+                                <li class="dropdown-item" value="{{ value }}">{{ name[localization.code] ?? value|capitalize }}</li>
+                                {% endfor %}
                         </ul>
                     </div>
                 </div>
@@ -213,8 +214,6 @@
 </div>
 
 <script type="text/javascript">
-    let deleteAskHtml = {% if localization.code == 'mn' %}'<p class="text-danger mb-3">Та ({0}) файлыг устгахдаа итгэлтэй байна уу?</p>'{% else %}'<p class="text-danger mb-3">Are you sure to delete the file ({0})?</p>'{% endif %};
-
     function copyToClipboard(elem) {
         var text = document.getElementById(elem);
         if (document.body.createTextRange) {
@@ -244,6 +243,21 @@
     }
 
     document.addEventListener('DOMContentLoaded', function () {
+
+        const type = document.querySelector('input[name="type"]');
+        document.getElementById('type_list').addEventListener('click', function (e) {
+            if (e.target && e.target.nodeName === 'LI') {
+                type.value = e.target.getAttribute('value');
+            }
+        });
+
+        const category = document.querySelector('input[name="category"]');
+        document.getElementById('category_list').addEventListener('click', function (e) {
+            if (e.target && e.target.nodeName === 'LI') {
+                category.value = e.target.getAttribute('value');
+            }
+        });
+
         (function ($) {
             $.fn.Select2Code = function () {
                 let format = function (option) {
@@ -272,99 +286,121 @@
                 return this;
             };
         }(jQuery));
-
         $('#code_language').Select2Code();
-
-        let full = document.getElementById('full');
-        sceditor.create(full, {
-            format: 'xhtml',
-            emoticonsEnabled: false,
-            toolbarExclude: 'emoticon',
-            icons: 'monocons',
-            width: '100%',
-            height: '360px',
-            style: 'https://cdn.jsdelivr.net/npm/sceditor@latest/minified/themes/content/default.min.css'
-        });
-
-        const category = document.querySelector('input[name="category"]');
-        document.getElementById('category_list').addEventListener('click', function (e) {
-            if (e.target && e.target.nodeName === 'LI') {
-                category.value = e.target.getAttribute('value');
-            }
-        });
-
-        const type = document.querySelector('input[name="type"]');
-        document.getElementById('type_list').addEventListener('click', function (e) {
-            if (e.target && e.target.nodeName === 'LI') {
-                type.value = e.target.getAttribute('value');
-            }
-        });
 
         FormSubmitHandler('.submit-insert', 'form#page_insert');
 
-        var filesTableBody = document.querySelector('#pages_files > tbody');
-        filesTableBody.onChildClick('.ajax-modal', function (a, e) {
-            e.preventDefault();
-
-            return AjaxModal.ajaxContent(a);
-        });
-        filesTableBody.onChildClick('.delete-file', function (a, e) {
-            e.preventDefault();
-
-            const id = a.getAttribute('href');
-            const title = a.getAttribute('data-title');
-            let question = deleteAskHtml.format(title.replace(/<\/?[^>]+(>|$)/g, ''));
-
-            let src = '';
-            let flag = a.parentNode.parentNode.children[0].querySelector('img');
-            if (flag) {
-                src = flag.src;
-            } else {
-                question = '<i class="bi bi-hdd text-danger mb-4" style="font-size:3rem"></i><p>' + question + '<p/>';
-            }
-            Swal.fire({
-                imageUrl: src,
-                imageHeight: 64,
-                html: question,
-                showCancelButton: true,
-                cancelButtonText: '{{ 'cancel'|text|e }}',
-                confirmButtonText: '<i class="bi bi-trash"></i> {{ 'delete'|text|e }}',
-                confirmButtonColor: '#df4759',
-                showLoaderOnConfirm: true,
-                allowOutsideClick: () => !Swal.isLoading(),
-                backdrop: true,
-                preConfirm: () => {
-                    return fetch(
-                            '{{ 'files-delete'|link({'table':'indo_pages'}) }}',
-                            {
-                                method: 'DELETE',
-                                headers: {
-                                    'Content-Type': 'application/json'
-                                },
-                                body: JSON.stringify({id, title})
-                            }
-                    ).then(res => {
-                        return res.json();
-                    }).then(response => {
-                        if (response.status !== 'success') {
-                            throw new Error(response.message ? response.message : 'Invalid response!');
-                        }
-
-                        Swal.close();
-
-                        NotifyTop('success', "{{ 'success'|text|e }}", response.message ? response.message : '');
-
-                        let row = a.parentNode.parentNode;
-                        if (row && row.parentNode !== null) {
-                            row.parentNode.removeChild(row);
-                        }
-                    })
-                    .catch(error => {
-                        Swal.showValidationMessage(error.message);
+        var fileList = document.getElementById('filelist');
+        var uploadFilesBtn = document.getElementById('uploadfiles');
+        var currentFileId = null;
+        var uploader = new plupload.Uploader({
+            runtimes: 'html5,flash,silverlight,html4',
+            browse_button: 'pickfiles',
+            container: document.getElementById('container'),
+            url: "{{ 'files-post'|link({'input':'file', 'table':'indo_pages', 'id':0, 'folder':'pages'}) }}",
+            filters: {
+                max_file_size: '8mb',
+                mime_types: [
+                    {title: 'Images', extensions: 'jpg,jpeg,jpe,png,gif,ico'},
+                    {title: 'Documents', extensions: 'pdf,doc,docx,xls,xlsx,ppt,pptx,pps,ppsx,odt'},
+                    {title: 'Audio', extensions: 'mp3,m4a,ogg,wav'},
+                    {title: 'Video', extensions: 'mp4,m4v,mov,wmv,avi,mpg,ogv,3gp,3g2'},
+                    {title: 'Text files', extensions: 'txt,xml,json'},
+                    {title: 'Archives', extensions: 'zip,rar'}
+                ]
+            },
+            flash_swf_url: 'https://cdn.jsdelivr.net/gh/moxiecode/plupload/js/Moxie.swf',
+            silverlight_xap_url: 'https://cdn.jsdelivr.net/gh/moxiecode/plupload/js/Moxie.xap',
+            init: {
+                PostInit: function () {
+                    fileList.innerHTML = '';
+                    uploadFilesBtn.onclick = function () {
+                        uploader.start();
+                        return false;
+                    };
+                },
+                FilesAdded: function (up, files) {
+                    plupload.each(files, function (file) {
+                        fileList.innerHTML += '<div id="' + file.id + '">' + file.name + ' (' + plupload.formatSize(file.size) + ') <b></b> <em></em></div>';
                     });
+
+                    if (uploadFilesBtn.disabled) {
+                        uploadFilesBtn.removeAttribute('disabled');
+                        uploadFilesBtn.classList.remove('btn-secondary');
+                        uploadFilesBtn.classList.add('btn-info');
+                    }
+                },
+                UploadProgress: function (up, file) {
+                    currentFileId = file.id;
+                    document.getElementById(file.id).getElementsByTagName('b')[0].innerHTML = '<i class="bi bi-upload"> sending ' + file.percent + '%';
+                    uploadFilesBtn.setAttribute('disabled', '');
+                },
+                FileUploaded: function (up, file, response) {
+                    try {
+                        currentFileId = file.id;
+                        var res = JSON.parse(response.response);
+                        if (!res.file)
+                            throw 'Invalid response!';
+
+                        let currentFile = document.getElementById(currentFileId);
+                        currentFile.getElementsByTagName('b')[0].innerHTML = '<i class="bi bi-check"></i> success';
+                        currentFile.classList.add('text-success');
+
+                        addFilesRow(res);
+
+                        NotifyTop('primary', "{{ 'success'|text }}", 'Your file [' + file.name + '] was uploaded successfully.');
+                    } catch (err) {
+                        if (err instanceof SyntaxError)
+                            err = 'Invalid request!';
+                        else if (res && res.error && res.error.message)
+                            err = res.error.message;
+                        else
+                            err = 'Unknown error!';
+
+                        let currentFile = document.getElementById(currentFileId);
+                        currentFile.getElementsByTagName('b')[0].innerHTML = '<i class="bi bi-x"> error';
+                        currentFile.getElementsByTagName('em')[0].innerHTML = err;
+                        currentFile.classList.add('text-danger');
+                        NotifyTop('danger', "{{ 'error'|text }}", err);
+                    } finally {
+                        currentFileId = null;
+                    }
+
+                    let files = fileList.children;
+                    let processedFile = 0;
+                    for (var i = 0; i < files.length; i++) {
+                        let file = files[i];
+                        if (file.getElementsByTagName('b')[0].innerHTML !== '') {
+                            processedFile++;
+                        }
+                    }
+                    if (processedFile === files.length) {
+                        uploadFilesBtn.classList.remove('btn-info');
+                        uploadFilesBtn.classList.add('btn-secondary');
+                        uploadFilesBtn.setAttribute('disabled', '');
+                    } else {
+                        uploadFilesBtn.removeAttribute('disabled');
+                    }
+                },
+                Error: function (up, err) {
+                    if (currentFileId !== null) {
+                        let currentFile = document.getElementById(currentFileId);
+                        if (currentFile !== null) {
+                            currentFile.getElementsByTagName('b')[0].innerHTML = '<i class="bi bi-x"> failed';
+                            currentFile.getElementsByTagName('em')[0].innerHTML = err.message;
+                            currentFile.classList.add('text-danger');
+                            currentFileId = null;
+                        }
+                        currentFileId = null;
+                    }
+
+                    NotifyTop('danger', "{{ 'error'|text }} " + err.code.toString().replace(/\D/g, ''), err.message);
                 }
-            });
+            }
         });
+        uploader.init();
+
+        var filesTableBody = document.querySelector('#pages_files > tbody');
 
         const addFilesRow = function (record) {
             let row = document.createElement('tr');
@@ -413,119 +449,74 @@
                 cell5.innerHTML = action;
                 row.appendChild(cell5);
                 filesTableBody.appendChild(row);
-                
+
                 Fancybox.close();
-                Fancybox.bind('[file-data-fancybox]', { groupAll: true });
+                Fancybox.bind('[file-data-fancybox]', {groupAll: true});
             };
 
-            var fileList = document.getElementById('filelist');
-            var uploadFilesBtn = document.getElementById('uploadfiles');
-            var uploader = new plupload.Uploader({
-                runtimes: 'html5,flash,silverlight,html4',
-                browse_button: 'pickfiles',
-                container: document.getElementById('container'),
-                url: "{{ 'files-post'|link({'input':'file', 'table':'indo_pages', 'id':0, 'folder':'pages'}) }}",
-                filters: {
-                    max_file_size: '8mb',
-                    mime_types: [
-                        {title: 'Images', extensions: 'jpg,jpeg,jpe,png,gif,ico'},
-                        {title: 'Documents', extensions: 'pdf,doc,docx,xls,xlsx,ppt,pptx,pps,ppsx,odt'},
-                        {title: 'Audio', extensions: 'mp3,m4a,ogg,wav'},
-                        {title: 'Video', extensions: 'mp4,m4v,mov,wmv,avi,mpg,ogv,3gp,3g2'},
-                        {title: 'Text files', extensions: 'txt,xml,json'},
-                        {title: 'Archives', extensions: 'zip,rar'}
-                    ]
-                },
-                flash_swf_url: 'https://cdn.jsdelivr.net/gh/moxiecode/plupload/js/Moxie.swf',
-                silverlight_xap_url: 'https://cdn.jsdelivr.net/gh/moxiecode/plupload/js/Moxie.xap',
-                init: {
-                    PostInit: function () {
-                        fileList.innerHTML = '';
-                        uploadFilesBtn.onclick = function () {
-                            uploader.start();
-                            return false;
-                        };
-                    },
-                    FilesAdded: function (up, files) {
-                        plupload.each(files, function (file) {
-                            fileList.innerHTML += '<div id="' + file.id + '">' + file.name + ' (' + plupload.formatSize(file.size) + ') <b></b> <em></em></div>';
-                        });
+            filesTableBody.onChildClick('.ajax-modal', function (a, e) {
+                e.preventDefault();
 
-                        if (uploadFilesBtn.disabled) {
-                            uploadFilesBtn.removeAttribute('disabled');
-                            uploadFilesBtn.classList.remove('btn-secondary');
-                            uploadFilesBtn.classList.add('btn-info');
-                        }
-                    },
-                    UploadProgress: function (up, file) {
-                        currentFileId = file.id;
-                        document.getElementById(file.id).getElementsByTagName('b')[0].innerHTML = '<i class="bi bi-upload"> sending ' + file.percent + '%';
-                        uploadFilesBtn.setAttribute('disabled', '');
-                    },
-                    FileUploaded: function (up, file, response) {
-                        try {
-                            currentFileId = file.id;
-                            var res = JSON.parse(response.response);
-                            if (!res.file)
-                                throw 'Invalid response!';
-
-                            let currentFile = document.getElementById(currentFileId);
-                            currentFile.getElementsByTagName('b')[0].innerHTML = '<i class="bi bi-check"></i> success';
-                            currentFile.classList.add('text-success');
-
-                            addFilesRow(res);
-
-                            NotifyTop('primary', "{{ 'success'|text }}", 'Your file [' + file.name + '] was uploaded successfully.');
-                        } catch (err) {
-                            if (err instanceof SyntaxError)
-                                err = 'Invalid request!';
-                            else if (res && res.error && res.error.message)
-                                err = res.error.message;
-                            else
-                                err = 'Unknown error!';
-
-                            let currentFile = document.getElementById(currentFileId);
-                            currentFile.getElementsByTagName('b')[0].innerHTML = '<i class="bi bi-x"> error';
-                            currentFile.getElementsByTagName('em')[0].innerHTML = err;
-                            currentFile.classList.add('text-danger');
-                            NotifyTop('danger', "{{ 'error'|text }}", err);
-                        } finally {
-                            currentFileId = null;
-                        }
-
-                        let files = fileList.children;
-                        let processedFile = 0;
-                        for (var i = 0; i < files.length; i++) {
-                            let file = files[i];
-                            if (file.getElementsByTagName('b')[0].innerHTML !== '') {
-                                processedFile++;
-                            }
-                        }
-                        if (processedFile === files.length) {
-                            uploadFilesBtn.classList.remove('btn-info');
-                            uploadFilesBtn.classList.add('btn-secondary');
-                            uploadFilesBtn.setAttribute('disabled', '');
-                        } else {
-                            uploadFilesBtn.removeAttribute('disabled');
-                        }
-                    },
-                    Error: function (up, err) {
-                        if (currentFileId !== null) {
-                            let currentFile = document.getElementById(currentFileId);
-                            if (currentFile !== null) {
-                                currentFile.getElementsByTagName('b')[0].innerHTML = '<i class="bi bi-x"> failed';
-                                currentFile.getElementsByTagName('em')[0].innerHTML = err.message;
-                                currentFile.classList.add('text-danger');
-                                currentFileId = null;
-                            }
-                            currentFileId = null;
-                        }
-
-                        NotifyTop('danger', "{{ 'error'|text }} " + err.code.toString().replace(/\D/g, ''), err.message);
-                    }
-                }
+                return AjaxModal.ajaxContent(a);
             });
-            var currentFileId = null;
-            uploader.init();
+
+            let deleteAskHtml = {% if localization.code == 'mn' %}'<p class="text-danger mb-3">Та ({0}) файлыг устгахдаа итгэлтэй байна уу?</p>'{% else %}'<p class="text-danger mb-3">Are you sure to delete the file ({0})?</p>'{% endif %};
+            filesTableBody.onChildClick('.delete-file', function (a, e) {
+                e.preventDefault();
+
+                const id = a.getAttribute('href');
+                const title = a.getAttribute('data-title');
+                let question = deleteAskHtml.format(title.replace(/<\/?[^>]+(>|$)/g, ''));
+
+                let src = '';
+                let flag = a.parentNode.parentNode.children[0].querySelector('img');
+                if (flag) {
+                    src = flag.src;
+                } else {
+                    question = '<i class="bi bi-hdd text-danger mb-4" style="font-size:3rem"></i><p>' + question + '<p/>';
+                }
+                Swal.fire({
+                    imageUrl: src,
+                    imageHeight: 64,
+                    html: question,
+                    showCancelButton: true,
+                    cancelButtonText: '{{ 'cancel'|text|e }}',
+                    confirmButtonText: '<i class="bi bi-trash"></i> {{ 'delete'|text|e }}',
+                    confirmButtonColor: '#df4759',
+                    showLoaderOnConfirm: true,
+                    allowOutsideClick: () => !Swal.isLoading(),
+                    backdrop: true,
+                    preConfirm: () => {
+                        return fetch(
+                                '{{ 'files-delete'|link({'table':'indo_pages'}) }}',
+                                {
+                                    method: 'DELETE',
+                                    headers: {
+                                        'Content-Type': 'application/json'
+                                    },
+                                    body: JSON.stringify({id, title})
+                                }
+                        ).then(res => {
+                            return res.json();
+                        }).then(response => {
+                            if (response.status !== 'success') {
+                                throw new Error(response.message ? response.message : 'Invalid response!');
+                            }
+
+                            Swal.close();
+
+                            NotifyTop('success', "{{ 'success'|text|e }}", response.message ? response.message : '');
+
+                            let row = a.parentNode.parentNode;
+                            if (row && row.parentNode !== null) {
+                                row.parentNode.removeChild(row);
+                            }
+                        })
+                                .catch(error => {
+                                    Swal.showValidationMessage(error.message);
+                                });
+                    }
+                });
+            });
         });
 </script>

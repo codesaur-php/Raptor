@@ -233,36 +233,21 @@ class PagesController extends DashboardController
             }
             
             if ($is_submit) {
-                $record = [];
-                $content = [];
-                $payload = $this->getParsedBody();
-                foreach ($payload as $index => $value) {
-                    if (\is_array($value)) {
-                        foreach ($value as $key => $value) {
-                            $content[$key][$index] = $value;
-                        }
-                    } else {
-                        $record[$index] = $value;
-                    }
-                }
-                $context['payload'] = $payload;
+                $record = $this->getParsedBody();
+                $context['payload'] = $record;
                 
-                foreach ($content as $lang) {
-                    if (empty($lang['title'])){
-                        throw new \InvalidArgumentException($this->text('invalid-request'), 400);
-                    }
-                }
+                $record['published'] = ($record['published'] ?? 'off' ) == 'on' ? 1 : 0;
                 
-                if (empty($record['publish_date'])) {
-                    $record['publish_date'] = \date('Y-m-d H:i:s');
+                if (isset($record['files'])) {
+                    $files = $record['files'];
+                    unset($record['files']);
                 }
-                foreach ($content as &$visible)
-                {
-                    $visible['is_visible'] = ($visible['is_visible'] ?? 'off' ) == 'on' ? 1 : 0;
+                if (empty($record['title'])){
+                    throw new \InvalidArgumentException($this->text('invalid-request'), 400);
                 }
                 
                 $this->indoput('/record?model=' . PagesModel::class,
-                    ['record' => $record, 'content' => $content, 'condition' => ['WHERE' => "p.id=$id"]]
+                    ['record' => $record, 'condition' => ['WHERE' => "id=$id"]]
                 );
                 
                 $this->respondJSON([
@@ -273,7 +258,34 @@ class PagesController extends DashboardController
                 ]);
                 
                 $level = LogLevel::INFO;
-                $message = "{$content[$this->getLanguageCode()]['title']} - хуудасны мэдээллийг шинэчлэх үйлдлийг амжилттай гүйцэтгэлээ";
+                $message = "{$record['title']} - хуудасны мэдээллийг шинэчлэх үйлдлийг амжилттай гүйцэтгэлээ";
+                
+                if (!isset($files)
+                    || empty($files)
+                    || !\is_array($files)
+                ) {
+                    return;
+                }
+                $table = 'indo_pages';
+                $current_files = $this->indosafe(
+                    '/files/records/indo_pages', ['WHERE' => "record_id=$id AND is_active=1"]);
+                foreach ($files as $file_id) {
+                    $fid = (int) $file_id;
+                    if (\array_key_exists($fid, $current_files)) {
+                        continue;
+                    }
+                    $result = $this->indosafe(
+                        "/files/$table/update",
+                        ['record' => ['record_id' => $id], 'condition' => ['WHERE' => "id=$fid"]]);
+                    if (!empty($result)) {                        
+                        $this->indolog(
+                            'files',
+                            LogLevel::INFO,
+                            "$id-р хуудаст зориулж $fid дугаартай файлыг бүртгэлээ",
+                            ['reason' => 'register-file', 'table' => $table, 'record_id' => $id, 'file_id' => $fid]
+                        );
+                    }
+                }
             } else {
                 $context['record'] = $this->indoget(
                     '/record?model=' . PagesModel::class, ['id' => $id]);

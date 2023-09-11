@@ -22,6 +22,9 @@ class FilesController extends FileController
             }
             
             $record = $uploaded;
+            if ($id > 0) {
+                $record['record_id'] = $id;
+            }
             $record['id'] = $this->indo("/files/$table/insert", $record);
             $text = "Мэдээллийн $table хүснэгтийн $id-р бичлэгт зориулж {$record['id']} дугаартай файлыг байршуулан холболоо";
             $this->indolog('files', LogLevel::INFO, $text, ['reason' => 'insert-upload-file', 'table' => $table, 'record' => $record]);            

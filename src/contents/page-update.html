@@ -30,7 +30,8 @@
                 <button class="submit-update btn btn-primary shadow-sm text-uppercase">
                     <i class="bi bi-check-lg"></i> {{ 'save'|text }}
                 </button>
-                <button class="btn btn-secondary shadow-sm text-uppercase" onclick="window.history.go(-1); return false;">
+                <button class="btn btn-secondary shadow-sm text-uppercase" onclick="window.history.go(-1);
+                        return false;">
                     <i class="bi bi-arrow-left-circle"></i> {{ 'back'|text }}
                 </button>
             </div>
@@ -44,47 +45,60 @@
                     <select class="form-select" name="parent_id">
                         <option value="0" selected>-</option>
                         {% for id,info in infos %}
-                        <option value="{{ id }}"{% if id == record['parent_id'] %} selected{% endif %}>{{ (info['parent_titles'] ?? '')|e }}{{ info['title']|e }}</option>
+                            <option value="{{ id }}"{% if id == record['parent_id'] %} selected{% endif %}>{{ (info['parent_titles'] ?? '')|e }}{{ info['title']|e }}</option>
                         {% endfor %}
                     </select>
                 </div>
                 <div class="col-2">
                     <label class="form-label">{{ 'type'|text }}</label>
                     <div class="input-group mb-3">
-                        <input class="form-control" name="type" type="text" value="{{ types|keys|first }}" maxlength="32">
+                        <input class="form-control" name="type" type="text" value="{{ record['type']|e }}" maxlength="32">
                         <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"></button>
                         <ul class="dropdown-menu dropdown-menu-end" id="type_list">
                             {% for value,name in types %}
-                            <li class="dropdown-item" value="{{ value }}">{{ name[localization.code] ?? name['en'] }}</li>
-                            {% endfor %}
+                                <li class="dropdown-item" value="{{ value }}">{{ name[localization.code] ?? value|capitalize }}</li>
+                                {% endfor %}
                         </ul>
                     </div>
                 </div>
                 <div class="col-2">
                     <label class="form-label">{{ 'position'|text }}</label>
-                    <input class="form-control" name="position" value="100" placeholder="" type="number" autocomplete="off">
+                    <input class="form-control" name="position" value="{{ record['position']|e }}" placeholder="" type="number" autocomplete="off">
                     <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
                 </div>
             </div>
             <div class="form-group row mt-3">
                 <div class="col-2">
                     <label class="form-label">{{ 'language'|text }}</label>
-                    <span class="form-control" readonly><img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.3/flags/{{ record['code'] }}.png"> {{ (localization.language[record['code']] ?? record['code'])|e }}</span>
-                </div>
-                <div class="col-3">
-                    <label class="form-label">{{ 'date'|text }}</label>
-                    <input class="form-control" name="publish_date" value="{{ record['publish_date'] }}" readonly placeholder="" type="datetime-local" autocomplete="off">
+                    <select class="form-select select2" name="code" id="code_language">
+                        {% for code,title in localization.language %}
+                            <option value="{{ code }}"{{ record['code'] == code ? ' selected' : '' }}>{{ title|e }}</option>
+                        {% endfor %}
+                    </select>
                 </div>
                 <div class="col-3">
                     <label class="form-label">{{ 'category'|text }}</label>
-                    <input class="form-control" name="category" readonly type="text" value="{{ (categories[record['category']][localization.code] ?? record['category'])|e }}" maxlength="32">
+                    <div class="input-group mb-3">
+                        <input class="form-control" name="category" type="text" value="{{ record['category']|e }}" maxlength="32">
+                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"></button>
+                        <ul class="dropdown-menu dropdown-menu-end" id="category_list">
+                            {% for value,name in categories %}
+                                <li class="dropdown-item" value="{{ value }}">{{ name[localization.code] ?? value|capitalize }}</li>
+                                {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+                <div class="col-3">
+                    <label for="publish_date" class="form-label">{{ 'date'|text }}</label>
+                    <input class="form-control" name="publish_date" id="publish_date" value="{{ record['publish_date'] }}" placeholder="" type="datetime-local" autocomplete="off">
                 </div>
                 <div class="col-4">
                     <label class="form-label">{{ 'publish'|text }}</label>
                     <div class="form-check form-switch">
-                        <input class="form-check-input"{{ record['published'] == 1 ? ' checked' : '' }} disabled name="published" type="checkbox" role="switch" aria-describedby="IsVisibleHelp">
+                        <input class="form-check-input" name="published"{{ record['published'] == 1 ? ' checked' : '' }} type="checkbox" role="switch" aria-describedby="IsVisibleHelp">
                         <div id="IsVisibleHelp" class="form-text">{{ localization.code == 'mn' ? 'бичлэг сайт дээр харагдах эсэх' : 'visiblity of content' }}</div>
                     </div>
+                    <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
                 </div>
             </div>
             <ul class="nav nav-tabs nav-tabs-content mt-4">
@@ -115,20 +129,29 @@
                     <div class="form-group bg-light rounded-3">
                         <label class="form-label">{{ 'title'|text }}</label>
                         <div id="TitleContentHelp" class="form-text">{{ 'title-note'|text }}</div>
-                        <input class="form-control" name="title" readonly value="{{ record['title']|e }}" maxlength="255" placeholder="" type="text" autocomplete="off" aria-describedby="TitleContentHelp">
+                        <input class="form-control" name="title" value="{{ record['title']|e }}" maxlength="255" placeholder="" type="text" autocomplete="off" aria-describedby="TitleContentHelp">
                     </div>
                     <div class="form-group bg-light mt-4 rounded-3">
                         <label class="form-label">{{ 'short'|text }}</label>
                         <div id="ShortContentHelp" class="form-text">{{ 'short-note'|text }}</div>
-                        <textarea class="form-control" name="short" readonly aria-describedby="ShortContentHelp">{{ record['short'] }}</textarea>
+                        <textarea class="form-control" name="short" aria-describedby="ShortContentHelp">{{ record['short'] }}</textarea>
                     </div>
                     <div class="form-group bg-light mt-4 rounded-3">
                         <label class="form-label">{{ 'full'|text }}</label>
                         <div id="FullContentHelp" class="form-text">{{ 'full-note'|text }}</div>
-                        <textarea class="form-control" id="full" name="full" readonly rows="10" aria-describedby="FullContentHelp">{{ record['full'] }}</textarea>
+                        <textarea class="form-control" id="full" name="full" rows="10" aria-describedby="FullContentHelp">{{ record['full'] }}</textarea>
                     </div>
                 </div>
                 <div class="tab-pane" id="tab-files">
+                    <div class="row mb-2">
+                        <div id="filelist" class="col-12">Your browser doesn't have Flash, Silverlight or HTML5 support.</div>
+                    </div>
+                    <div class="row">
+                        <div id="container">
+                            <button class="btn btn-warning shadow-sm" id="pickfiles">{{ 'select-files'|text }}</button>
+                            <button class="btn btn-secondary shadow-sm" id="uploadfiles" disabled>{{ 'upload-files'|text }}</button>
+                        </div>
+                    </div>
                     <table class="table table-striped table-hover" id="pages_files">
                         <thead>
                             <tr>
@@ -145,31 +168,31 @@
                 <div class="tab-pane" id="tab-meta">
                     <div class="alert alert-secondary shadow-sm fade mt-4 show" role="alert">
                         <i class="bi bi-exclamation-triangle" style="margin-right:5px"></i>
-                    {% if localization.code == 'mn' %}
-                        Уучлаарай, энэ үйлдэл одоохондоо ажиллагаанд ороогүй байна
-                    {% else %}
-                        Sorry, this feature isn’t available right now
-                    {% endif %}
+                        {% if localization.code == 'mn' %}
+                            Уучлаарай, энэ үйлдэл одоохондоо ажиллагаанд ороогүй байна
+                        {% else %}
+                            Sorry, this feature isn’t available right now
+                        {% endif %}
                     </div>
                 </div>
                 <div class="tab-pane" id="tab-comment">
                     <div class="alert alert-primary shadow-sm fade mt-4 show" role="alert">
                         <i class="bi bi-exclamation-triangle" style="margin-right:5px"></i>
-                    {% if localization.code == 'mn' %}
-                        Уучлаарай, энэ үйлдэл одоохондоо ажиллагаанд ороогүй байна
-                    {% else %}
-                        Sorry, this feature isn’t available right now
-                    {% endif %}
+                        {% if localization.code == 'mn' %}
+                            Уучлаарай, энэ үйлдэл одоохондоо ажиллагаанд ороогүй байна
+                        {% else %}
+                            Sorry, this feature isn’t available right now
+                        {% endif %}
                     </div>
                 </div>
                 <div class="tab-pane" id="tab-link">
                     <div class="alert alert-warning shadow-sm fade mt-4 show" role="alert">
                         <i class="bi bi-exclamation-triangle" style="margin-right:5px"></i>
-                    {% if localization.code == 'mn' %}
-                        Уучлаарай, энэ үйлдэл одоохондоо ажиллагаанд ороогүй байна
-                    {% else %}
-                        Sorry, this feature isn’t available right now
-                    {% endif %}
+                        {% if localization.code == 'mn' %}
+                            Уучлаарай, энэ үйлдэл одоохондоо ажиллагаанд ороогүй байна
+                        {% else %}
+                            Sorry, this feature isn’t available right now
+                        {% endif %}
                     </div>
                 </div>
                 <div class="tab-pane" id="tab-history">
@@ -201,11 +224,11 @@
                 <div class="tab-pane" id="tab-version">
                     <div class="alert alert-info shadow-sm fade mt-4 show" role="alert">
                         <i class="bi bi-exclamation-triangle" style="margin-right:5px"></i>
-                    {% if localization.code == 'mn' %}
-                        Уучлаарай, энэ үйлдэл одоохондоо ажиллагаанд ороогүй байна
-                    {% else %}
-                        Sorry, this feature isn’t available right now
-                    {% endif %}
+                        {% if localization.code == 'mn' %}
+                            Уучлаарай, энэ үйлдэл одоохондоо ажиллагаанд ороогүй байна
+                        {% else %}
+                            Sorry, this feature isn’t available right now
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -217,40 +240,29 @@
                 <button class="submit-update btn btn-lg btn-primary shadow-sm" type="submit"><i class="bi bi-check2"></i> {{ 'save'|text }}</button>
             </div>
             <div class="col-6 d-grid">
-                <button class="btn btn-lg btn-block btn-secondary shadow-sm" onclick="window.history.go(-1); return false;"><i class="bi bi-arrow-left"></i> {{ 'back'|text }}</button>
+                <button class="btn btn-lg btn-block btn-secondary shadow-sm" onclick="window.history.go(-1);
+                        return false;"><i class="bi bi-arrow-left"></i> {{ 'back'|text }}</button>
             </div>
         </div>
     </div>
 </div>
+
 <script type="text/javascript">
-function copyToClipboard(elem) {
-    var text = document.getElementById(elem);
-    if (document.body.createTextRange) {
-        var range = document.body.createTextRange();
-        range.moveToElementText(text);
-        range.select();
-    } else if (window.getSelection) {
-        var selection = window.getSelection();
-        var range = document.createRange();
-        range.selectNodeContents(text);
-        selection.removeAllRanges();
-        selection.addRange(range);
+    function copyToClipboard(elem) {
+        var text = document.getElementById(elem);
+        if (document.body.createTextRange) {
+            var range = document.body.createTextRange();
+            range.moveToElementText(text);
+            range.select();
+        } else if (window.getSelection) {
+            var selection = window.getSelection();
+            var range = document.createRange();
+            range.selectNodeContents(text);
+            selection.removeAllRanges();
+            selection.addRange(range);
+        }
+        document.execCommand('copy');
     }
-    document.execCommand('copy');
-}
-    
-document.addEventListener('DOMContentLoaded', function () {
-    let full = document.getElementById('full');
-    sceditor.create(full, {
-        format: 'xhtml',
-        emoticonsEnabled: false,
-        toolbarExclude: 'emoticon',
-        icons: 'monocons',
-        width: '100%',
-        readOnly: true,
-        height: '360px',
-        style: 'https://cdn.jsdelivr.net/npm/sceditor@latest/minified/themes/content/default.min.css'
-    });
 
     function isImage(url) {
         return /\.(jpg|jpeg|png|webp|avif|gif|svg)$/.test(url);
@@ -263,53 +275,298 @@ document.addEventListener('DOMContentLoaded', function () {
     function getFileName(url) {
         return url.split(/.*[\/|\\]/)[1];
     }
-    
-    function addFilesRow(record) {
-        let row = document.createElement('tr');
-        row.id = "file_" + record['id'];
-        let cell1 = document.createElement('td');
-        let fileName = getFileName(record['path']);
-        let file_action = '<a class="btn btn-sm btn-info ajax-modal" data-bs-target="#dashboard-modal" data-bs-toggle="modal" href="{{ 'files-modal'|link({'table':'indo_pages', 'modal':'location'}) }}?id=' + record['id'] + '"><i class="bi bi-link"></i></a>';
-        let file = '<figure class="figure">';
-        file += '<a href="' + record['path'] + '" file-data-fancybox data-caption="' + fileName + '">';
-        if (isImage(fileName)) {
-            file += '<img src="' + record['path'] + '" style="max-height:120px;height:100%">';
-            file_action += ' <a class="btn btn-sm btn-dark ajax-modal" data-bs-target="#dashboard-modal" data-bs-toggle="modal" href="{{ 'files-modal'|link({'table':'indo_pages', 'modal':'img-tag'}) }}?id=' + record['id'] + '"><i class="bi bi-code"></i></a>';
-        } else if (isVideo(fileName)) {
-            file += '<video style="max-height:240px;height:100%;max-width:320px;width:100%" controls><source src="' + record['path'] + '"></video>';
-            file_action += ' <a class="btn btn-sm btn-dark ajax-modal" data-bs-target="#dashboard-modal" data-bs-toggle="modal" href="{{ 'files-modal'|link({'table':'indo_pages', 'modal':'video-tag'}) }}?id=' + record['id'] + '"><i class="bi bi-code"></i></a>';
-        } else {
-            file += '<i class="bi bi-hdd"></i>';
-        }
-        file += '</a>';
-        file += '<figcaption class="figure-caption text-dark"><strong>' + fileName + '</strong></figcaption>';
-        file += '</figure>';
-        file += '<p>' + file_action + '</p>';
-        cell1.innerHTML = '<input name="files[]" value="' + record['id'] + '" readonly type="hidden">' + file;
-        row.appendChild(cell1);
 
-        let cell2 = document.createElement('td');
-        cell2.innerHTML = record['category'];
-        row.appendChild(cell2);
+    document.addEventListener('DOMContentLoaded', function () {
 
-        let cell3 = document.createElement('td');
-        cell3.innerHTML = record['keyword'];
-        row.appendChild(cell3);
+        const type = document.querySelector('input[name="type"]');
+        document.getElementById('type_list').addEventListener('click', function (e) {
+            if (e.target && e.target.nodeName === 'LI') {
+                type.value = e.target.getAttribute('value');
+            }
+        });
 
-        let cell4 = document.createElement('td');
-        cell4.innerHTML = record['description'];
-        row.appendChild(cell4);
+        const category = document.querySelector('input[name="category"]');
+        document.getElementById('category_list').addEventListener('click', function (e) {
+            if (e.target && e.target.nodeName === 'LI') {
+                category.value = e.target.getAttribute('value');
+            }
+        });
 
-        filesTableBody.appendChild(row);
-    };
-    
-    var filesTableBody = document.querySelector('#pages_files > tbody');
-{% for file in files  %}
-    addFilesRow(JSON.parse('{{ file|json_encode }}'));
-{% endfor %}
-    Fancybox.bind('[file-data-fancybox]', { groupAll: true });
+        (function ($) {
+            $.fn.Select2Code = function () {
+                let format = function (option) {
+                    if (!option.id) {
+                        return option.text;
+                    }
 
-    FormSubmitHandler('.submit-update', 'form#page_update');
-});
+                    let ID = option.element.value.toLowerCase();
+                    return $('<span><img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.3/flags/' + ID + '.png"> ' + option.text + '</span>');
+                };
 
+                if (jQuery().select2) {
+                    this.select2({
+                        width: '100%',
+                        templateResult: format,
+                        templateSelection: format,
+                        minimumResultsForSearch: -1,
+                        theme: 'bootstrap-5',
+                        escapeMarkup: function (m) {
+                            return m;
+                        }
+                    });
+                }
+                ;
+
+                return this;
+            };
+        }(jQuery));
+        $('#code_language').Select2Code();
+
+        let full = document.getElementById('full');
+        sceditor.create(full, {
+            format: 'xhtml',
+            emoticonsEnabled: false,
+            toolbarExclude: 'emoticon',
+            icons: 'monocons',
+            width: '100%',
+            height: '360px',
+            style: 'https://cdn.jsdelivr.net/npm/sceditor@latest/minified/themes/content/default.min.css'
+        });
+
+        FormSubmitHandler('.submit-update', 'form#page_update');
+
+        var fileList = document.getElementById('filelist');
+        var uploadFilesBtn = document.getElementById('uploadfiles');
+        var currentFileId = null;
+        var uploader = new plupload.Uploader({
+            runtimes: 'html5,flash,silverlight,html4',
+            browse_button: 'pickfiles',
+            container: document.getElementById('container'),
+            url: "{{ 'files-post'|link({'input':'file', 'table':'indo_pages', 'id':record['id'], 'folder':'pages'}) }}",
+            filters: {
+                max_file_size: '8mb',
+                mime_types: [
+                    {title: 'Images', extensions: 'jpg,jpeg,jpe,png,gif,ico'},
+                    {title: 'Documents', extensions: 'pdf,doc,docx,xls,xlsx,ppt,pptx,pps,ppsx,odt'},
+                    {title: 'Audio', extensions: 'mp3,m4a,ogg,wav'},
+                    {title: 'Video', extensions: 'mp4,m4v,mov,wmv,avi,mpg,ogv,3gp,3g2'},
+                    {title: 'Text files', extensions: 'txt,xml,json'},
+                    {title: 'Archives', extensions: 'zip,rar'}
+                ]
+            },
+            flash_swf_url: 'https://cdn.jsdelivr.net/gh/moxiecode/plupload/js/Moxie.swf',
+            silverlight_xap_url: 'https://cdn.jsdelivr.net/gh/moxiecode/plupload/js/Moxie.xap',
+            init: {
+                PostInit: function () {
+                    fileList.innerHTML = '';
+                    uploadFilesBtn.onclick = function () {
+                        uploader.start();
+                        return false;
+                    };
+                },
+                FilesAdded: function (up, files) {
+                    plupload.each(files, function (file) {
+                        fileList.innerHTML += '<div id="' + file.id + '">' + file.name + ' (' + plupload.formatSize(file.size) + ') <b></b> <em></em></div>';
+                    });
+
+                    if (uploadFilesBtn.disabled) {
+                        uploadFilesBtn.removeAttribute('disabled');
+                        uploadFilesBtn.classList.remove('btn-secondary');
+                        uploadFilesBtn.classList.add('btn-info');
+                    }
+                },
+                UploadProgress: function (up, file) {
+                    currentFileId = file.id;
+                    document.getElementById(file.id).getElementsByTagName('b')[0].innerHTML = '<i class="bi bi-upload"> sending ' + file.percent + '%';
+                    uploadFilesBtn.setAttribute('disabled', '');
+                },
+                FileUploaded: function (up, file, response) {
+                    try {
+                        currentFileId = file.id;
+                        var res = JSON.parse(response.response);
+                        if (!res.file)
+                            throw 'Invalid response!';
+
+                        let currentFile = document.getElementById(currentFileId);
+                        currentFile.getElementsByTagName('b')[0].innerHTML = '<i class="bi bi-check"></i> success';
+                        currentFile.classList.add('text-success');
+
+                        addFilesRow(res);
+
+                        NotifyTop('primary', "{{ 'success'|text }}", 'Your file [' + file.name + '] was uploaded successfully.');
+                    } catch (err) {
+                        if (err instanceof SyntaxError)
+                            err = 'Invalid request!';
+                        else if (res && res.error && res.error.message)
+                            err = res.error.message;
+                        else
+                            err = 'Unknown error!';
+
+                        let currentFile = document.getElementById(currentFileId);
+                        currentFile.getElementsByTagName('b')[0].innerHTML = '<i class="bi bi-x"> error';
+                        currentFile.getElementsByTagName('em')[0].innerHTML = err;
+                        currentFile.classList.add('text-danger');
+                        NotifyTop('danger', "{{ 'error'|text }}", err);
+                    } finally {
+                        currentFileId = null;
+                    }
+
+                    let files = fileList.children;
+                    let processedFile = 0;
+                    for (var i = 0; i < files.length; i++) {
+                        let file = files[i];
+                        if (file.getElementsByTagName('b')[0].innerHTML !== '') {
+                            processedFile++;
+                        }
+                    }
+                    if (processedFile === files.length) {
+                        uploadFilesBtn.classList.remove('btn-info');
+                        uploadFilesBtn.classList.add('btn-secondary');
+                        uploadFilesBtn.setAttribute('disabled', '');
+                    } else {
+                        uploadFilesBtn.removeAttribute('disabled');
+                    }
+                },
+                Error: function (up, err) {
+                    if (currentFileId !== null) {
+                        let currentFile = document.getElementById(currentFileId);
+                        if (currentFile !== null) {
+                            currentFile.getElementsByTagName('b')[0].innerHTML = '<i class="bi bi-x"> failed';
+                            currentFile.getElementsByTagName('em')[0].innerHTML = err.message;
+                            currentFile.classList.add('text-danger');
+                            currentFileId = null;
+                        }
+                        currentFileId = null;
+                    }
+
+                    NotifyTop('danger', "{{ 'error'|text }} " + err.code.toString().replace(/\D/g, ''), err.message);
+                }
+            }
+        });
+        uploader.init();
+
+        var filesTableBody = document.querySelector('#pages_files > tbody');
+
+        const addFilesRow = function (record) {
+            let row = document.createElement('tr');
+            row.id = "file_" + record['id'];
+            let cell1 = document.createElement('td');
+            let fileName = getFileName(record['path']);
+            let file_action = '<a class="btn btn-sm btn-info ajax-modal" data-bs-target="#dashboard-modal" data-bs-toggle="modal" href="{{ 'files-modal'|link({'table':'indo_pages', 'modal':'location'}) }}?id=' + record['id'] + '"><i class="bi bi-link"></i></a>';
+            let file = '<figure class="figure">';
+            file += '<a href="' + record['path'] + '" file-data-fancybox data-caption="' + fileName + '">';
+            if (isImage(fileName)) {
+                file += '<img src="' + record['path'] + '" style="max-height:120px;height:100%">';
+                file_action += ' <a class="btn btn-sm btn-dark ajax-modal" data-bs-target="#dashboard-modal" data-bs-toggle="modal" href="{{ 'files-modal'|link({'table':'indo_pages', 'modal':'img-tag'}) }}?id=' + record['id'] + '"><i class="bi bi-code"></i></a>';
+            } else if (isVideo(fileName)) {
+                file += '<video style="max-height:240px;height:100%;max-width:320px;width:100%" controls><source src="' + record['path'] + '"></video>';
+                file_action += ' <a class="btn btn-sm btn-dark ajax-modal" data-bs-target="#dashboard-modal" data-bs-toggle="modal" href="{{ 'files-modal'|link({'table':'indo_pages', 'modal':'video-tag'}) }}?id=' + record['id'] + '"><i class="bi bi-code"></i></a>';
+            } else {
+                file += '<i class="bi bi-hdd"></i>';
+            }
+            file += '</a>';
+            file += '<figcaption class="figure-caption text-dark"><strong>' + fileName + '</strong></figcaption>';
+            file += '</figure>';
+            file += '<p>' + file_action + '</p>';
+            cell1.innerHTML = '<input name="files[]" value="' + record['id'] + '" type="hidden">' + file;
+            row.appendChild(cell1);
+
+            let cell2 = document.createElement('td');
+            cell2.innerHTML = record['category'];
+            row.appendChild(cell2);
+
+            let cell3 = document.createElement('td');
+            cell3.innerHTML = record['keyword'];
+            row.appendChild(cell3);
+
+            let cell4 = document.createElement('td');
+            cell4.innerHTML = record['description'];
+            row.appendChild(cell4);
+
+            let action = '';
+    {% if user.can('system_content_update') %}
+                action += ' <a class="btn btn-sm btn-primary shadow-sm ajax-modal" data-bs-target="#dashboard-modal" data-bs-toggle="modal" href="{{ 'files-modal'|link({'table':'indo_pages', 'modal':'files-update'}) }}?id=' + record['id'] + '"><i class="bi bi-pencil-square"></i></a>';
+    {% endif %}
+    {% if user.can('system_content_delete') %}
+                action += ' <a class="delete-file btn btn-sm btn-danger shadow-sm" href="' + record['id'] + '" data-title="' + getFileName(record['path']) + '"><i class="bi bi-trash"></i></a>';
+    {% endif %}
+                let cell5 = document.createElement('td');
+                cell5.innerHTML = action;
+                row.appendChild(cell5);
+                filesTableBody.appendChild(row);
+
+                Fancybox.close();
+                Fancybox.bind('[file-data-fancybox]', {groupAll: true});
+            };
+
+    {% for file in files  %}
+            addFilesRow(JSON.parse('{{ file|json_encode }}'));
+    {% endfor %}
+            Fancybox.bind('[file-data-fancybox]', {groupAll: true});
+
+            filesTableBody.onChildClick('.ajax-modal', function (a, e) {
+                e.preventDefault();
+
+                return AjaxModal.ajaxContent(a);
+            });
+
+            let deleteAskHtml = {% if localization.code == 'mn' %}'<p class="text-danger mb-3">Та ({0}) файлыг устгахдаа итгэлтэй байна уу?</p>'{% else %}'<p class="text-danger mb-3">Are you sure to delete the file ({0})?</p>'{% endif %};
+            filesTableBody.onChildClick('.delete-file', function (a, e) {
+                e.preventDefault();
+
+                const id = a.getAttribute('href');
+                const title = a.getAttribute('data-title');
+                let question = deleteAskHtml.format(title.replace(/<\/?[^>]+(>|$)/g, ''));
+
+                let src = '';
+                let flag = a.parentNode.parentNode.children[0].querySelector('img');
+                if (flag) {
+                    src = flag.src;
+                } else {
+                    question = '<i class="bi bi-hdd text-danger mb-4" style="font-size:3rem"></i><p>' + question + '<p/>';
+                }
+                Swal.fire({
+                    imageUrl: src,
+                    imageHeight: 64,
+                    html: question,
+                    showCancelButton: true,
+                    cancelButtonText: '{{ 'cancel'|text|e }}',
+                    confirmButtonText: '<i class="bi bi-trash"></i> {{ 'delete'|text|e }}',
+                    confirmButtonColor: '#df4759',
+                    showLoaderOnConfirm: true,
+                    allowOutsideClick: () => !Swal.isLoading(),
+                    backdrop: true,
+                    preConfirm: () => {
+                        return fetch(
+                                '{{ 'files-delete'|link({'table':'indo_pages'}) }}',
+                                {
+                                    method: 'DELETE',
+                                    headers: {
+                                        'Content-Type': 'application/json'
+                                    },
+                                    body: JSON.stringify({id, title})
+                                }
+                        ).then(res => {
+                            return res.json();
+                        }).then(response => {
+                            if (response.status !== 'success') {
+                                throw new Error(response.message ? response.message : 'Invalid response!');
+                            }
+
+                            Swal.close();
+
+                            NotifyTop('success', "{{ 'success'|text|e }}", response.message ? response.message : '');
+
+                            let row = a.parentNode.parentNode;
+                            if (row && row.parentNode !== null) {
+                                row.parentNode.removeChild(row);
+                            }
+                        })
+                                .catch(error => {
+                                    Swal.showValidationMessage(error.message);
+                                });
+                    }
+                });
+            });
+        });
 </script>
