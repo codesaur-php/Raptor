@@ -13,11 +13,9 @@ namespace Raptor\Example;
 \error_reporting(\E_ALL);
 
 use Psr\Http\Message\ServerRequestInterface;
-use Fig\Http\Message\StatusCodeInterface;
 use Psr\Log\LogLevel;
 
 use codesaur\Http\Message\ServerRequest;
-use codesaur\Http\Message\ReasonPrhase;
 use codesaur\Http\Client\Mail;
 
 use Raptor\Application;
@@ -37,7 +35,6 @@ $indo->INTERNAL('/send/mail', function (ServerRequestInterface $request)
         $payload = $request->getParsedBody();
         if (!isset($payload['subject'])
             || !isset($payload['message'])
-            || \filter_var($payload['to'], \FILTER_VALIDATE_EMAIL) === false
             || (!isset($payload['to']) && !isset($payload['recipients']))
         ) {
             throw new \Exception('Invalid Request');
@@ -56,9 +53,12 @@ $indo->INTERNAL('/send/mail', function (ServerRequestInterface $request)
                     foreach ($recipients as $recipient) {
                         try {
                             switch ($type) {
-                                case 'To': $mail->addRecipient($recipient['email'] ?? 'null', $recipient['name'] ?? ''); break;
-                                case 'Cc': $mail->addCCRecipient($recipient['email'] ?? 'null', $recipient['name'] ?? ''); break;
-                                case 'Bcc': $mail->addBCCRecipient($recipient['email'] ?? 'null', $recipient['name'] ?? ''); break;
+                                case 'To': $mail->addRecipient($recipient['email'] ?? 'null', $recipient['name'] ?? '');
+                                    break;
+                                case 'Cc': $mail->addCCRecipient($recipient['email'] ?? 'null', $recipient['name'] ?? '');
+                                    break;
+                                case 'Bcc': $mail->addBCCRecipient($recipient['email'] ?? 'null', $recipient['name'] ?? '');
+                                    break;
                             }
                         } catch (\Throwable $e) {
                             if ($is_development) {
@@ -77,7 +77,6 @@ $indo->INTERNAL('/send/mail', function (ServerRequestInterface $request)
         
         $level = LogLevel::NOTICE;
         $context['status']  = 'success';
-        $context['code'] = StatusCodeInterface::STATUS_OK;
         $context['message'] = 'Email successfully sent to destination';
     } catch (\Throwable $e) {
         if ($is_development) {
@@ -89,36 +88,22 @@ $indo->INTERNAL('/send/mail', function (ServerRequestInterface $request)
         $context['code'] = $e->getCode();
         $context['message'] = $e->getMessage();
     } finally {
+        echo \json_encode($context) ?: '{}';
+        
         $pdo = $request->getAttribute('pdo');
         if (!$pdo instanceof \PDO) {
-            $logger = new LoggerModel($pdo);
-            $logger->setTable('mailer', $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
-            $to = $payload['to'] ?? '';
-            $name = $payload['name'] ?? '';
-            $subject = $payload['subject'] ?? 'Unknown message';
-            $logger->log(
-                $level,
-                "$name - [$to] - $subject",
-                $context + ['remote_addr' => $request->getServerParams()['REMOTE_ADDR'] ?? null]
-            );
+            return;
         }
-
-        if (!\headers_sent()) {
-            if (!empty($context['code'])
-                && \is_int($context['code'])
-            ) {
-                if ($context['code'] != StatusCodeInterface::STATUS_OK) {
-                    $status_code = "STATUS_{$context['code']}";
-                    $reasonPhraseClass = ReasonPrhase::class;
-                    if (\defined("$reasonPhraseClass::$status_code")) {
-                        \http_response_code((int) $context['code']);
-                    }
-                }
-            }
-            \header('Content-Type: application/json');
-        }
-        
-        echo \json_encode($context) ?: '{}';
+        $logger = new LoggerModel($pdo);
+        $logger->setTable('mailer', $_ENV['INDO_DB_COLLATION'] ?? 'utf8_unicode_ci');
+        $to = $payload['to'] ?? '';
+        $name = $payload['name'] ?? '';
+        $subject = $payload['subject'] ?? 'Unknown message';
+        $logger->log(
+            $level,
+            "$name - [$to] - $subject",
+            $context + ['remote_addr' => $request->getServerParams()['REMOTE_ADDR'] ?? null]
+        );
     }
 });
 
