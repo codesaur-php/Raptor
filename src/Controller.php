@@ -25,6 +25,11 @@ class Controller extends \codesaur\Http\Application\Controller
         return $this->getAttribute('user');
     }
     
+    public final function isUser(string $role): bool
+    {
+        return $this->getUser()?->is($role) ?? false;
+    }
+    
     public final function isUserAuthorized(): bool
     {
         return $this->getUser() instanceof UserInterface;
