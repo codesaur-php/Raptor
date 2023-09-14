@@ -17,7 +17,6 @@ class ContentsRouter extends Router
 
         $this->GET_POST('/settings', [SettingsController::class, 'index'])->name('settings');
         $this->POST('/settings/files', [SettingsController::class, 'files'])->name('settings-files');
-        $this->POST('/settings/mailer', [SettingsController::class, 'mailer'])->name('settings-mailer');
     
         $this->GET('/pages', [PagesController::class, 'index'])->name('pages');
         $this->GET('/pages/datatable', [PagesController::class, 'datatable'])->name('pages-datatable');

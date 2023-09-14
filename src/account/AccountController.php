@@ -657,10 +657,9 @@ class AccountController extends DashboardController
                 $template->set('email', $record['email']);
                 $template->set('login', $this->generateLink('login', [], true));
                 $template->set('username', $record['username']);
-                $this->indosafe('/send/smtp/email', [
+                $this->indosafe('/send/email', [
                     'name' => $record['username'],
                     'to' => $record['email'],
-                    'code' => $record['code'],
                     'message' => $template->output(),
                     'subject' => $content['title'][$code]
                 ]);

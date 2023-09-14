@@ -10,7 +10,6 @@
     <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-logo">{{ 'logo'|text }} <i class="bi bi-images"></i></a></li>
     <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-social">{{ 'social-network'|text }} <i class="bi bi-share"></i></a></li>
     <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-options">{{ 'options'|text }} <i class="bi bi-gear"></i></a></li>
-    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-mailer">{{ 'mail-carrier'|text }} <i class="bi bi-envelope-paper"></i></a></li>
 </ul>
 <div class="tab-content mb-4">
     <div class="tab-pane active show" id="tab-general" role="tabpanel">
@@ -139,92 +138,7 @@
             <button class="submit-settings btn btn-lg btn-primary shadow-sm mt-2"><i class="bi bi-save"></i> {{ 'save'|text }}</button>
             {% endif %}
         </form>
-    </div>
-    <div class="tab-pane" id="tab-mailer" role="tabpanel">
-        <form class="needs-validation" novalidate action="{{ 'settings-mailer'|link }}" method="POST" enctype="multipart/form-data">
-            <div class="row mb-3 mt-2">
-                <div class="col">
-                    <label class="form-label">IsSMTP</label>
-                    <div class="form-check form-switch">
-                        <input class="form-check-input" name="is_smtp"{{ mailer['is_smtp'] == 1 ? ' checked' : '' }} type="checkbox" role="switch">
-                    </div>
-                </div>
-                <div class="col">
-                    <label class="form-label">SMTP Auth</label>
-                    <div class="form-check form-switch">
-                        <input class="form-check-input" name="smtp_auth"{{ mailer['smtp_auth'] == 1 ? ' checked' : '' }} type="checkbox" role="switch">
-                    </div>
-                </div>
-            </div>
-            <div class="row mb-3">
-                <div class="col">
-                    <div class="form-floating">
-                        <input class="form-control" required name="charset" value="{{ mailer['charset'] }}" maxlength="6" placeholder="Charset" type="text" autocomplete="off">
-                        <label>Charset</label>
-                        <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="form-floating">
-                        <input class="form-control" required name="smtp_secure" value="{{ mailer['smtp_secure'] }}" maxlength="6" placeholder="SMTP Secure" type="text" autocomplete="off">
-                        <label>SMTP Secure</label>
-                        <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
-                    </div>
-                </div>
-            </div>
-            <div class="row mb-3">
-                <div class="col">
-                    <div class="form-floating">
-                        <input class="form-control" required name="host" value="{{ mailer['host'] }}" maxlength="255" placeholder="Host" type="text" autocomplete="off">
-                        <label>Host</label>
-                        <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="form-floating">
-                        <input class="form-control" required name="port" value="{{ mailer['port'] }}" maxlength="6" placeholder="Port" type="number" autocomplete="off">
-                        <label>Port</label>
-                        <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
-                    </div>
-                </div>
-            </div>
-            <div class="row mb-3">
-                <div class="col">
-                    <div class="form-floating">
-                        <input class="form-control" required name="username" value="{{ mailer['username'] }}" maxlength="128" placeholder="Username" type="text" autocomplete="off">
-                        <label>Username</label>
-                        <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="form-floating">
-                        <input class="form-control" required name="password" value="{{ mailer['password'] }}" maxlength="255" placeholder="Password" type="password" autocomplete="off">
-                        <label>Password</label>
-                        <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
-                    </div>
-                </div>
-            </div>
-            <div class="row mb-3">
-                <div class="col">
-                    <div class="form-floating">
-                        <input class="form-control" required name="name" value="{{ mailer['name'] }}" maxlength="255" placeholder="From" type="text" autocomplete="off">
-                        <label>From</label>
-                        <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="form-floating">
-                        <input class="form-control" required name="email" value="{{ mailer['email'] }}" maxlength="128" placeholder="Reply to" type="email" autocomplete="off">
-                        <label>Reply to</label>
-                        <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
-                    </div>
-                </div>
-            </div>
-            {% if user_can %}
-            <button class="submit-settings btn btn-lg btn-primary shadow-sm mt-2"><i class="bi bi-save"></i> {{ 'save'|text }}</button>
-            {% endif %}
-        </form>
-    </div>
+    </div>  
 </div>
 <script type="text/javascript">
 document.addEventListener('DOMContentLoaded', function () {

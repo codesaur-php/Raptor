@@ -163,10 +163,9 @@ class LoginController extends \Raptor\Controller
             $template->set('email', $payload['email']);
             $template->set('username', $payload['username']);
             $template->source($content['full'][$payload['code']]);
-            $this->indosafe('/send/smtp/email', [
+            $this->indosafe('/send/email', [
                 'name' => $payload['username'],
                 'to' => $payload['email'],
-                'code' => $payload['code'],
                 'message' => $template->output(),
                 'subject' => $content['title'][$payload['code']]
             ]);
@@ -196,7 +195,7 @@ class LoginController extends \Raptor\Controller
             ) {
                 throw new \Exception('Please provide valid email address', StatusCodeInterface::STATUS_BAD_REQUEST);
             }
-            $payload['code'] = $this->getLanguageCode();
+            $payload['code'] = \preg_replace('/[^a-z]/', '', $this->getLanguageCode());
             
             $reference = $this->indosafe('/reference/templates',
                 ['WHERE' => "c.code='{$payload['code']}' AND p.keyword='forgotten-password-reset' AND p.is_active=1"]);
@@ -237,10 +236,9 @@ class LoginController extends \Raptor\Controller
             $template->set('link', "{$this->generateLink('login', [], true)}?forgot={$record['use_id']}");
             $template->source($content['full'][$payload['code']]);
             $receiver = $record['first_name'] . ' ' . $record['last_name'];
-            $this->indosafe('/send/smtp/email', [
+            $this->indosafe('/send/email', [
                 'name' => $receiver,
                 'to' => $payload['email'],
-                'code' => $payload['code'],
                 'message' => $template->output(),
                 'subject' => $content['title'][$payload['code']]
             ]);

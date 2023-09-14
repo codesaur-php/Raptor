@@ -5,7 +5,6 @@ namespace Raptor\Contents;
 use Psr\Log\LogLevel;
 use Psr\Http\Message\ServerRequestInterface;
 
-use Indoraptor\Mailer\MailerModel;
 use Indoraptor\Contents\SettingsModel;
 
 use Raptor\Dashboard\DashboardController;
@@ -131,14 +130,7 @@ class SettingsController extends DashboardController
                 $record = ['alias' => $alias];
             }
             
-            $mailer_rows = $this->indosafe('/records?model=' . MailerModel::class);
-            if (empty($mailer_rows)) {
-                $mailer = ['is_smtp' => 1, 'smtp_auth' => 1];
-            } else {
-                $mailer = \end($mailer_rows);
-            }
-            
-            $this->twigDashboard(\dirname(__FILE__) . '/settings.html', ['record' => $record, 'mailer' => $mailer])->render();
+            $this->twigDashboard(\dirname(__FILE__) . '/settings.html', ['record' => $record])->render();
 
             $this->indolog('content', LogLevel::NOTICE, 'Системийн тохируулгыг нээж үзэж байна', $context);
         }
@@ -268,54 +260,6 @@ class SettingsController extends DashboardController
             
             $level = LogLevel::ERROR;
             $message = 'Системийн тохируулгыг хадгалах үед алдаа гарч зогслоо';
-        } finally {
-            $this->indolog('content', $level, $message, $context);
-        }
-    }
-    
-    public function mailer()
-    {
-        try {
-            $context = ['model' => MailerModel::class, 'reason' => 'mailer'];
-            
-            if (!$this->isUserCan('system_content_settings')) {
-                throw new \Exception($this->text('system-no-permission'), 401);
-            }
-            
-            $record = [];
-            foreach ($this->getParsedBody() as $index => $value) {
-                $record[$index] = $value;
-            }
-            $record['is_smtp'] = isset($record['is_smtp']) && $record['is_smtp'] == 'on' ? 1 : 0;
-            $record['smtp_auth'] = isset($record['smtp_auth']) && $record['smtp_auth'] == 'on' ? 1 : 0;
-            $context['record'] = $record;
-            
-            $mailer_rows = $this->indosafe('/records?model=' . MailerModel::class);
-            if (!empty($mailer_rows)) {
-                $existing = \end($mailer_rows);
-            }
-            
-            if (isset($existing['id'])) {
-                $id = $existing['id'];
-                $this->indoput('/record?model=' . MailerModel::class, ['record' => $record, 'condition' => ['WHERE' => "id=$id"]]);
-                $notify = 'primary';
-                $notice = $this->text('record-update-success');
-            } else {
-                $id = $this->indopost('/record?model=' . MailerModel::class, $record);
-                $notify = 'success';
-                $notice = $this->text('record-insert-success');
-            }
-            $context['record']['id'] = $id;
-            
-            $this->respondJSON(['status' => 'success', 'type' => $notify, 'message' => $notice]);
-
-            $level = LogLevel::INFO;
-            $message = 'Системийн шууданчын тохируулгыг амжилттай хадгаллаа';
-        } catch (\Throwable $e) {
-            $this->respondJSON(['message' => $e->getMessage()], $e->getCode(), $e->getCode());
-
-            $level = LogLevel::ERROR;
-            $message = 'Системийн шууданчын тохируулгыг хадгалах үед алдаа гарч зогслоо';
         } finally {
             $this->indolog('content', $level, $message, $context);
         }

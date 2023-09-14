@@ -10,6 +10,5 @@ class LogsRouter extends Router
     {
         $this->GET('/logs', [LogsController::class, 'index'])->name('logs');
         $this->GET('/logs/view', [LogsController::class, 'view'])->name('logs-view');
-        $this->GET('/logs/mailer', [LogsController::class, 'mailer'])->name('mailer-logs');
     }
 }
