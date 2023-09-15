@@ -47,7 +47,9 @@ $indo->INTERNAL('/send/mail', function (ServerRequestInterface $request)
         if (isset($payload['to'])) {
             $mail->targetTo($payload['to'], $payload['name'] ?? '');
         }
-        if (isset($payload['recipients']) && \is_array($payload['recipients'])) {
+        if (isset($payload['recipients'])
+            && \is_array($payload['recipients'])
+        ) {
             foreach ($payload['recipients'] as $type => $recipients) {
                 if (\is_array($recipients)) {
                     foreach ($recipients as $recipient) {
@@ -67,6 +69,13 @@ $indo->INTERNAL('/send/mail', function (ServerRequestInterface $request)
                         }
                     }
                 }
+            }
+        }
+        if (isset($payload['attachments'])
+            && \is_array($payload['attachments'])
+        ) {
+            foreach ($payload['attachments'] as $attachment) {
+                $mail->addAttachment($attachment);
             }
         }
         
