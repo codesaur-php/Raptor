@@ -42,7 +42,7 @@ $indo->INTERNAL('/send/mail', function (ServerRequestInterface $request)
         
         $mail = new Mail();
         $mail->setSubject($payload['subject']);
-        $mail->setSubject($payload['message']);
+        $mail->setMessage($payload['message']);
         
         if (isset($payload['to'])) {
             $mail->targetTo($payload['to'], $payload['name'] ?? '');
