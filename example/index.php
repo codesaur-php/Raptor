@@ -42,8 +42,7 @@ $indo->INTERNAL('/send/mail', function (ServerRequestInterface $request)
         
         $mail = new Mail();
         $mail->setSubject($payload['subject']);
-        $mail->setMessage($payload['message']);
-        
+        $mail->setMessage($payload['message']);        
         if (isset($payload['to'])) {
             $mail->targetTo($payload['to'], $payload['name'] ?? '');
         }
@@ -77,8 +76,7 @@ $indo->INTERNAL('/send/mail', function (ServerRequestInterface $request)
             foreach ($payload['attachments'] as $attachment) {
                 $mail->addAttachment($attachment);
             }
-        }
-        
+        }        
         if (empty($payload['from'])) {
             $mail->setFrom('codesaur+noreply@gmail.com'); // THIS IS YOUR DEFAULT EMAIL SENDER ID!
         } else {
