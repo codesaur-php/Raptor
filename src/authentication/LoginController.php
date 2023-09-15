@@ -163,8 +163,7 @@ class LoginController extends \Raptor\Controller
             $template->set('email', $payload['email']);
             $template->set('username', $payload['username']);
             $template->source($content['full'][$payload['code']]);
-            $this->indosafe('/send/email', [
-                'name' => $payload['username'],
+            $this->indosafe('/send/mail', [
                 'to' => $payload['email'],
                 'message' => $template->output(),
                 'subject' => $content['title'][$payload['code']]
@@ -236,8 +235,7 @@ class LoginController extends \Raptor\Controller
             $template->set('link', "{$this->generateLink('login', [], true)}?forgot={$record['use_id']}");
             $template->source($content['full'][$payload['code']]);
             $receiver = $record['first_name'] . ' ' . $record['last_name'];
-            $this->indosafe('/send/email', [
-                'name' => $receiver,
+            $this->indosafe('/send/mail', [
                 'to' => $payload['email'],
                 'message' => $template->output(),
                 'subject' => $content['title'][$payload['code']]
