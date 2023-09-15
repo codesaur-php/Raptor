@@ -79,7 +79,15 @@ $indo->INTERNAL('/send/mail', function (ServerRequestInterface $request)
             }
         }
         
-        $mail->setFrom('codesaur+noreply@gmail.com');
+        if (empty($payload['from'])) {
+            $mail->setFrom('codesaur+noreply@gmail.com'); // THIS IS YOUR DEFAULT EMAIL SENDER ID!
+        } else {
+            $mail->setFrom($payload['from'], $payload['from_name'] ?? '');
+        }
+        if (!empty($payload['reply_to'])) {
+            $mail->setReplyTo($payload['reply_to'], $payload['reply_to_name'] ?? '');
+        }
+        
         if (!$mail->send()) {
             throw new \RuntimeException('Email sending failed!');
         }
