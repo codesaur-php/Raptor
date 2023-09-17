@@ -317,7 +317,7 @@ class NewsController extends DashboardController
             ]);
             
             $level = LogLevel::ALERT;
-            $message = "{$payload['title']} - хуудсыг устгалаа";
+            $message = "{$payload['title']} - мэдээг устгалаа";
         } catch (\Throwable $e) {
             $this->respondJSON([
                 'status'  => 'error',
@@ -326,7 +326,7 @@ class NewsController extends DashboardController
             ], $e->getCode());
             
             $level = LogLevel::ERROR;
-            $message = 'Хуудсыг устгах үйлдлийг гүйцэтгэх явцад алдаа гарч зогслоо';
+            $message = 'Мэдээг устгах үйлдлийг гүйцэтгэх явцад алдаа гарч зогслоо';
             $context['error'] = ['code' => $e->getCode(), 'message' => $e->getMessage()];
         } finally {
             $this->indolog('content', $level, $message, $context);
