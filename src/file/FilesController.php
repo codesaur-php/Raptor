@@ -9,8 +9,12 @@ class FilesController extends FileController
     public function post(string $input, string $table, int $id, string $folder)
     {
         try {
-            $table = \preg_replace('/[^A-Za-z0-9_-]/', '', $table);
-            if (empty($table)) {
+            if (!$this->isUserAuthorized()) {
+                throw new \Exception('Unauthorized', 401);
+            }
+            
+            $_table = \preg_replace('/[^A-Za-z0-9_-]/', '', $table);
+            if (empty($_table)) {
                 throw new \InvalidArgumentException(__CLASS__ . ": Table name can't empty", 1103);
             }
             
@@ -25,15 +29,15 @@ class FilesController extends FileController
             if ($id > 0) {
                 $record['record_id'] = $id;
             }
-            $record['id'] = $this->indo("/files/$table/insert", $record);
-            $text = "Мэдээллийн $table хүснэгтийн $id-р бичлэгт зориулж {$record['id']} дугаартай файлыг байршуулан холболоо";
-            $this->indolog('files', LogLevel::INFO, $text, ['reason' => 'insert-upload-file', 'table' => $table, 'record' => $record]);            
+            $record['id'] = $this->indo("/files/$_table/insert", $record);
+            $text = "Мэдээллийн $_table хүснэгтийн $id-р бичлэгт зориулж {$record['id']} дугаартай файлыг байршуулан холболоо";
+            $this->indolog('files', LogLevel::INFO, $text, ['reason' => 'insert-upload-file', 'table' => $_table, 'record' => $record]);            
             $this->respondJSON($record);
         } catch (\Throwable $e) {
             $error = ['error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]];
             $this->respondJSON($error, $e->getCode());
             
-            if ($uploaded ?? false) {
+            if (!empty($uploaded['file'])) {
                 $this->tryDeleteFile(\basename($uploaded['file']));
             }
         }
@@ -41,8 +45,12 @@ class FilesController extends FileController
     
     protected function submit(string $table, array|false $upload, array $record): array|null
     {
-        $table = \preg_replace('/[^A-Za-z0-9_-]/', '', $table);
-        if (empty($table)
+        if (!$this->isUserAuthorized()) {
+            throw new \Exception('Unauthorized', 401);
+        }
+        
+        $_table = \preg_replace('/[^A-Za-z0-9_-]/', '', $table);
+        if (empty($_table)
             || !isset($upload['dir'])
             || empty($upload['name'])
         ) {
@@ -53,25 +61,29 @@ class FilesController extends FileController
         
         $record['file'] = $upload['dir'] . $upload['name'];
         $record['path'] = $this->getPath($upload['name']);
-        $record['id'] = $this->indo("/files/$table/insert", $record);
+        $record['id'] = $this->indo("/files/$_table/insert", $record);
         $this->indolog(
             'files',
             LogLevel::INFO,
-            "Мэдээллийн $table хүснэгтийн {$record['record_id']}-р бичлэгт зориулж {$record['id']} дугаартай файлыг бүртгэлээ",
-            ['reason' => 'insert-file', 'table' => $table, 'record' => $record]
+            "Мэдээллийн $_table хүснэгтийн {$record['record_id']}-р бичлэгт зориулж {$record['id']} дугаартай файлыг бүртгэлээ",
+            ['reason' => 'insert-file', 'table' => $_table, 'record' => $record]
         );
-        return $this->indo("/files/$table", ['id' => $record['id']]);
+        return $this->indo("/files/$_table", ['id' => $record['id']]);
     }
     
     public function moveToFolder(string $table, int $id, string $folder, int $mode = 0755)
     {
         try {
-            $table = \preg_replace('/[^A-Za-z0-9_-]/', '', $table);
-            if (empty($table)) {
+            if (!$this->isUserAuthorized()) {
+                throw new \Exception('Unauthorized', 401);
+            }
+            
+            $_table = \preg_replace('/[^A-Za-z0-9_-]/', '', $table);
+            if (empty($_table)) {
                 throw new \InvalidArgumentException(__CLASS__ . ": Table name can't empty", 1103);
             }
             
-            $record = $this->indo("/files/$table", ['id' => $id]);
+            $record = $this->indo("/files/$_table", ['id' => $id]);
             $this->setFolder($folder);
             $upload_path = "$this->local/";
             $file_name = \basename($record['file']);
@@ -87,13 +99,13 @@ class FilesController extends FileController
                 throw new \Exception("Can't rename file [{$record['file']}] to [$newPath]");
             }
             $update = ['file' => $newPath, 'path' => $this->getPath($file_name)];
-            $this->indo("/files/$table/update", [
+            $this->indo("/files/$_table/update", [
                 'record' => $update, 'condition' => ['WHERE' => "id=$id"]
             ]);
             
-            $text = "Мэдээллийн $table хүснэгтийн {$record['record_id']}-р бичлэгт зориулcан $id дугаартай файлын байршил солигдлоо";
+            $text = "Мэдээллийн $_table хүснэгтийн {$record['record_id']}-р бичлэгт зориулcан $id дугаартай файлын байршил солигдлоо";
             $this->indolog('files', LogLevel::INFO, $text, [
-                'reason' => 'rename-file-folder', 'table' => $table, 'folder' => $folder, 'record' =>  $update + $record, 'mode' => $mode
+                'reason' => 'rename-file-folder', 'table' => $_table, 'folder' => $folder, 'record' =>  $update + $record, 'mode' => $mode
             ]);
             return true;
         } catch (\Throwable $e) {

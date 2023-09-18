@@ -78,11 +78,11 @@ class PrivateFilesController extends FilesController
                 throw new \InvalidArgumentException($this->text('invalid-request'), 400);
             }
             
-            $table = \preg_replace('/[^A-Za-z0-9_-]/', '', $table);
-            if (empty($table)) {
+            $_table = \preg_replace('/[^A-Za-z0-9_-]/', '', $table);
+            if (empty($_table)) {
                 throw new \InvalidArgumentException(__CLASS__ . ": Table name can't empty", 1103);
             }
-            $record = $this->indo("/files/$table", ['id' => (int) $id]);
+            $record = $this->indo("/files/$_table", ['id' => (int) $id]);
             
             $uri = $this->getRequest()->getUri();
             $scheme = $uri->getScheme();
@@ -96,7 +96,7 @@ class PrivateFilesController extends FilesController
             }
             $template = $this->twigTemplate(
                 \dirname(__FILE__) . "/$modal-modal.html",
-                ['table' => $table, 'record' => $record, 'host' => $host]
+                ['table' => $_table, 'record' => $record, 'host' => $host]
             );
             $template->addFilter(new TwigFilter('basename', function (string $path): string
             {

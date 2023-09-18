@@ -232,6 +232,8 @@ class PagesController extends DashboardController
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
             
+            $table = 'indo_pages';
+            
             if ($is_submit) {
                 $record = $this->getParsedBody();
                 $context['payload'] = $record;
@@ -266,9 +268,8 @@ class PagesController extends DashboardController
                 ) {
                     return;
                 }
-                $table = 'indo_pages';
                 $current_files = $this->indosafe(
-                    '/files/records/indo_pages', ['WHERE' => "record_id=$id AND is_active=1"]);
+                    "/files/records/$table", ['WHERE' => "record_id=$id AND is_active=1"]);
                 foreach ($files as $file_id) {
                     $fid = (int) $file_id;
                     if (\array_key_exists($fid, $current_files)) {
@@ -290,7 +291,7 @@ class PagesController extends DashboardController
                 $context['record'] = $this->indoget(
                     '/record?model=' . PagesModel::class, ['id' => $id]);
                 $context['files'] = $this->indosafe(
-                    '/files/records/indo_pages', ['WHERE' => "record_id=$id AND is_active=1"]);
+                    "/files/records/$table", ['WHERE' => "record_id=$id AND is_active=1"]);
                 $vars = $context + [
                     'accounts' => $this->getAccounts(),
                     'infos' => $this->getPagesInfos("id!=$id AND parent_id!=$id")

@@ -47,8 +47,8 @@ class NewsController extends DashboardController
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
             
-            $pages = $this->indoget('/records?model=' . NewsModel::class);
-            foreach ($pages as $record) {
+            $news = $this->indoget('/records?model=' . NewsModel::class);
+            foreach ($news as $record) {
                 $id = $record['id'];
                 $row = [$record['publish_date'], '<img src="https://via.placeholder.com/70?text=no+photo">'];
                 
@@ -110,6 +110,8 @@ class NewsController extends DashboardController
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
             
+            $table = 'indo_news';
+            
             if ($is_submit) {
                 $record = $this->getParsedBody();
                 $context['payload'] = $record;
@@ -141,7 +143,6 @@ class NewsController extends DashboardController
                 ) {
                     return;
                 }
-                $table = 'indo_news';
                 $filesController = new FilesController($this->getRequest());
                 foreach ($files as $file_id) {
                     $result = $this->indosafe(
@@ -219,37 +220,24 @@ class NewsController extends DashboardController
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
             
+            $table = 'indo_news';
+            
             if ($is_submit) {
-                $record = [];
-                $content = [];
-                $payload = $this->getParsedBody();
-                foreach ($payload as $index => $value) {
-                    if (\is_array($value)) {
-                        foreach ($value as $key => $value) {
-                            $content[$key][$index] = $value;
-                        }
-                    } else {
-                        $record[$index] = $value;
-                    }
-                }
-                $context['payload'] = $payload;
+                $record = $this->getParsedBody();
+                $context['payload'] = $record;
                 
-                foreach ($content as $lang) {
-                    if (empty($lang['title'])){
-                        throw new \InvalidArgumentException($this->text('invalid-request'), 400);
-                    }
+                $record['published'] = ($record['published'] ?? 'off' ) == 'on' ? 1 : 0;
+                
+                if (isset($record['files'])) {
+                    $files = $record['files'];
+                    unset($record['files']);
                 }
-
-                if (empty($record['publish_date'])) {
-                    $record['publish_date'] = \date('Y-m-d H:i:s');
-                }
-                foreach ($content as &$visible)
-                {
-                    $visible['is_visible'] = ($visible['is_visible'] ?? 'off' ) == 'on' ? 1 : 0;
+                if (empty($record['title'])){
+                    throw new \InvalidArgumentException($this->text('invalid-request'), 400);
                 }
                 
                 $this->indoput('/record?model=' . NewsModel::class,
-                    ['record' => $record, 'content' => $content, 'condition' => ['WHERE' => "p.id=$id"]]
+                    ['record' => $record, 'condition' => ['WHERE' => "id=$id"]]
                 );
                 
                 $this->respondJSON([
@@ -260,18 +248,43 @@ class NewsController extends DashboardController
                 ]);
                 
                 $level = LogLevel::INFO;
-                $message = "{$content[$this->getLanguageCode()]['title']} - мэдээллийг шинэчлэх үйлдлийг амжилттай гүйцэтгэлээ";
+                $message = "{$record['title']} - мэдээг шинэчлэх үйлдлийг амжилттай гүйцэтгэлээ";
+                
+                if (!isset($files)
+                    || empty($files)
+                    || !\is_array($files)
+                ) {
+                    return;
+                }
+                $current_files = $this->indosafe(
+                    "/files/records/$table", ['WHERE' => "record_id=$id AND is_active=1"]);
+                foreach ($files as $file_id) {
+                    $fid = (int) $file_id;
+                    if (\array_key_exists($fid, $current_files)) {
+                        continue;
+                    }
+                    $result = $this->indosafe(
+                        "/files/$table/update",
+                        ['record' => ['record_id' => $id], 'condition' => ['WHERE' => "id=$fid"]]);
+                    if (!empty($result)) {                        
+                        $this->indolog(
+                            'files',
+                            LogLevel::INFO,
+                            "$id-р мэдээнд зориулж $fid дугаартай файлыг бүртгэлээ",
+                            ['reason' => 'register-file', 'table' => $table, 'record_id' => $id, 'file_id' => $fid]
+                        );
+                    }
+                }
             } else {
-                $record = $this->indoget('/record?model=' . NewsModel::class, ['p.id' => $id]);
-                $vars = [
-                    'record' => $record,
-                    'accounts' => $this->getAccounts(),
-                ];
+                $context['record'] = $this->indoget(
+                    '/record?model=' . NewsModel::class, ['id' => $id]);
+                $context['files'] = $this->indosafe(
+                    "/files/records/$table", ['WHERE' => "record_id=$id AND is_active=1"]);
+                $vars = $context + ['accounts' => $this->getAccounts()];
                 $this->twigDashboard(\dirname(__FILE__) . '/news-update.html', $vars)->render();
                 
                 $level = LogLevel::NOTICE;
-                $context['record'] = $record;
-                $message = "{$record['content']['title'][$this->getLanguageCode()]} - мэдээллийг шинэчлэхээр нээж байна";
+                $message = "{$context['record']['title']} - мэдээг шинэчлэхээр нээж байна";
             }
         } catch (\Throwable $e) {
             if ($is_submit) {
@@ -282,7 +295,7 @@ class NewsController extends DashboardController
             
             $level = LogLevel::ERROR;
             $context['error'] = ['code' => $e->getCode(), 'message' => $e->getMessage()];
-            $message = 'Мэдээллийг засах үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
+            $message = 'Мэдээг засах үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
         } finally {
             $this->indolog('content', $level, $message, $context);
         }
