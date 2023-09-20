@@ -146,6 +146,10 @@ class DashboardController extends \Raptor\Controller
                 'record' => ['parent_id' => $contents_id, 'position' => '270', 'alias' => 'system', 'permission' => 'system_content_index', 'icon' => 'bi bi-newspaper', 'href' => $this->generateLink('news')]
             ]);
             $this->indopost($pattern, [
+                'content' => ['mn' => ['title' => 'Файлууд'], 'en' => ['title' => 'Files']],
+                'record' => ['parent_id' => $contents_id, 'position' => '275', 'alias' => 'system', 'permission' => 'system_content_index', 'icon' => 'bi bi-folder', 'href' => $this->generateLink('files')]
+            ]);
+            $this->indopost($pattern, [
                 'content' => ['mn' => ['title' => 'Хэл'], 'en' => ['title' => 'Languages']],
                 'record' => ['parent_id' => $contents_id, 'position' => '280', 'alias' => 'system', 'permission' => 'system_localization_index', 'icon' => 'bi bi-flag-fill', 'href' => $this->generateLink('languages')]
             ]);

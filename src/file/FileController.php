@@ -5,9 +5,9 @@ namespace Raptor\File;
 use Psr\Http\Message\UploadedFileInterface;
 use Psr\Log\LogLevel;
 
-use Raptor\Controller;
+use Raptor\Dashboard\DashboardController;
 
-class FileController extends Controller
+class FileController extends DashboardController
 {
     protected string $local;
     

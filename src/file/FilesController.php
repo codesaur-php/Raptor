@@ -4,8 +4,22 @@ namespace Raptor\File;
 
 use Psr\Log\LogLevel;
 
+use Indoraptor\Contents\FilesModel;
+
 class FilesController extends FileController
 {
+    public function index()
+    {
+        if (!$this->isUserCan('system_content_index')) {
+            $this->dashboardProhibited(null, 401)->render();
+            return;
+        }
+
+        $this->twigDashboard(\dirname(__FILE__) . '/files-index.html')->render();
+        
+        $this->indolog('files', LogLevel::NOTICE, 'Файлын жагсаалтыг нээж үзэж байна', ['model' => FilesModel::class]);
+    }
+    
     public function post(string $input, string $table, int $id, string $folder)
     {
         try {
