@@ -9,6 +9,7 @@ class FileRouter extends Router
     public function __construct()
     {
         $this->GET('/files', [FilesController::class, 'index'])->name('files');
+        $this->GET('/files/datatable/{table}', [FilesController::class, 'datatable'])->name('files-datatable');
         
         $this->POST('/files/{input}/{table}/{uint:id}/{folder}', [FilesController::class, 'post'])->name('files-post');
         

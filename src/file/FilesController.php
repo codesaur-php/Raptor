@@ -14,10 +14,68 @@ class FilesController extends FileController
             $this->dashboardProhibited(null, 401)->render();
             return;
         }
+        
+        $tblNames =  $this->indo('/statement', ['query' => "SHOW TABLES LIKE '%_files'"]);
+        $tables = [];
+        $total = ['tables' => 0, 'rows' => 0];
+        foreach ($tblNames as $result) {
+            $table = \current($result);
+            $rows =  $this->indo('/statement', ['query' => "SELECT COUNT(*) as files FROM $table WHERE is_active=1"]);
+            $count =  $rows[0]['files'];
+            $tables[$table] = $count;
+            ++$total['tables'];
+            $total['rows'] = $count;
+        }
 
-        $this->twigDashboard(\dirname(__FILE__) . '/files-index.html')->render();
+        $this->twigDashboard(
+            \dirname(__FILE__) . '/files-index.html',
+            [
+                'tables' => $tables, 'total' => $total,
+                'table' => $this->getQueryParams()['table'] ?? null
+            ]
+        )->render();
         
         $this->indolog('files', LogLevel::NOTICE, 'Файлын жагсаалтыг нээж үзэж байна', ['model' => FilesModel::class]);
+    }
+    
+    public function datatable($table)
+    {
+        try {
+            $rows = [];
+            
+            if (!$this->isUserCan('system_content_index')) {
+                throw new \Exception($this->text('system-no-permission'), 401);
+            }
+            
+            $name = \substr($table, 0, -\strlen('_files'));
+            $files = $this->indoget("/files/records/$name");
+            foreach ($files as $record) {
+                $row = [$record['id']];
+                $row[] = $record['file'];
+                $row[] = $record['size'];
+                $row[] = $record['type'];
+                $row[] = $record['mime_content_type'];
+                $row[] = $record['record_id'];
+                $row[] = \htmlentities($record['category'] ?? '');
+                $row[] = \htmlentities($record['keyword'] ?? '');
+                $row[] = \htmlentities($record['description'] ?? '');
+                
+                $row[] = '<a class="btn btn-sm btn-info shadow-sm" href="' .
+                    $this->generateLink('files-open', ['id' => $record['id']]) . '"><i class="bi bi-eye"></i></a>';
+                
+                $rows[] = $row;
+            }
+        } catch (\Throwable $e) {
+            $this->errorLog($e);
+        } finally {
+            $count = \count($rows);
+            $this->respondJSON([
+                'data' => $rows,
+                'recordsTotal' => $count,
+                'recordsFiltered' => $count,
+                'draw' => (int) ($this->getQueryParams()['draw'] ?? 0)
+            ]);
+        }
     }
     
     public function post(string $input, string $table, int $id, string $folder)
