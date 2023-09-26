@@ -2,11 +2,10 @@
     <h3 class="text-success text-uppercase" style="padding-right:10px"><i class="bi bi-person-plus-fill"></i> {{ 'new-account'|text }}</h3>
     <div class="btn-group">
         {% if user.can('system_account_insert') %}
-        <button class="submit btn btn-success shadow-sm ">
-            <i class="bi bi-check"></i> {{ 'submit'|text }}
+        <button class="submit btn btn-success shadow-sm">
+            <i class="bi bi-check"></i> {{ 'submit'|text|upper }}
         </button>
         {% endif %}
-        <button class="btn btn-outline-dark shadow-sm" onclick="window.history.go(-1);return false;">{{ 'back'|text }}</button>
     </div>
 </div>
 <ul class="nav nav-tabs mb-4" role="tablist">
@@ -78,9 +77,11 @@
 </form>
 <div class="btn-toolbar mb-5">
 {% if user.can('system_account_insert') %}
-    <button class="submit btn btn-lg btn-success shadow-sm"><i class="bi bi-check"></i> {{ 'submit'|text }}</button>
+    <button class="submit btn btn-lg btn-success shadow-sm"><i class="bi bi-check"></i> {{ 'submit'|text|upper }}</button>
 {% endif %}
-    <button class="btn btn-lg  btn-secondary shadow-sm mx-2" onclick="window.history.go(-1);return false;">{{ 'cancel'|text }}</button>
+    <a class="btn btn-lg btn-secondary shadow-sm mx-2" href="{{ 'accounts'|link }}">
+        <i class="bi bi-arrow-left"></i> {{ 'accounts'|text }}
+    </a>
 </div>
 <script type="text/javascript">
 function warnStatus(checked) {

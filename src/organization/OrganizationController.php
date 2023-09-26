@@ -3,7 +3,6 @@
 namespace Raptor\Organization;
 
 use Psr\Log\LogLevel;
-use Psr\Http\Message\ServerRequestInterface;
 
 use Indoraptor\Auth\OrganizationModel;
 
@@ -12,20 +11,6 @@ use Raptor\File\FileController;
 
 class OrganizationController extends DashboardController
 {
-    public function __construct(ServerRequestInterface $request)
-    {
-        $meta = $request->getAttribute('meta', []);
-        $localization = $request->getAttribute('localization');
-        if (isset($localization['code'])
-            && isset($localization['text']['organizations'])
-        ) {
-            $meta['content']['title'][$localization['code']] = $localization['text']['organizations'];
-            $request = $request->withAttribute('meta', $meta);
-        }
-        
-        parent::__construct($request);
-    }
-    
     public function index()
     {
         if (!$this->isUserCan('system_organization_index')) {
@@ -33,7 +18,9 @@ class OrganizationController extends DashboardController
             return;
         }
         
-        $this->twigDashboard(\dirname(__FILE__) . '/organization-index.html')->render();
+        $dashboard = $this->twigDashboard(\dirname(__FILE__) . '/organization-index.html');
+        $dashboard->set('title', $this->text('organizations'));
+        $dashboard->render();
         
         $this->indolog('organization', LogLevel::NOTICE, 'Байгууллагуудын жагсаалтыг нээж үзэж байна', ['model' => OrganizationModel::class]);
     }

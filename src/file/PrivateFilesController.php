@@ -5,8 +5,6 @@ namespace Raptor\File;
 use Twig\TwigFilter;
 use Psr\Log\LogLevel;
 
-use codesaur\Http\Message\ReasonPrhase;
-
 use Indoraptor\Contents\FilesModel;
 
 class PrivateFilesController extends FilesController
@@ -47,33 +45,19 @@ class PrivateFilesController extends FilesController
             \readfile($filePath);
         } catch (\Throwable $e) {
             $this->errorLog($e);
-            
-            if (\headers_sent()) {
-                return;
-            }
-            
-            $code = $e->getCode();
-            $status_code = "STATUS_$code";
-            $reasonPhraseClass = ReasonPrhase::class;
-            if (empty($code)
-                || !\is_int($code)
-                || !\defined("$reasonPhraseClass::$status_code")
-            ) {
-                $code = 500;
-            }
-            
-            \http_response_code($code);
+            $this->headerResponseCode($e->getCode());
         }
     }
     
-    public function modal(string $modal, string $table)
+    public function modal(string $table)
     {
         try {
             if (!$this->isUserAuthorized()) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
             
-            $id = $this->getQueryParams()['id'] ?? null;
+            $queryParams = $this->getQueryParams();
+            $id = $queryParams['id'] ?? null;
             if (!isset($id) || !\is_numeric($id)) {
                 throw new \InvalidArgumentException($this->text('invalid-request'), 400);
             }
@@ -94,6 +78,7 @@ class PrivateFilesController extends FilesController
             if ($authority != '') {
                 $host .= "//$authority";
             }
+            $modal = \preg_replace('/[^A-Za-z0-9_-]/', '', $queryParams['modal'] ?? 'null');
             $template = $this->twigTemplate(
                 \dirname(__FILE__) . "/$modal-modal.html",
                 ['table' => $_table, 'record' => $record, 'host' => $host]
@@ -104,14 +89,7 @@ class PrivateFilesController extends FilesController
             }));
             $template->render();
         } catch (\Throwable $e) {
-            if (!\headers_sent()) {
-                $code = $e->getCode();
-                $status_code = "STATUS_$code";
-                $reasonPhraseClass = ReasonPrhase::class;
-                if (\defined("$reasonPhraseClass::$status_code")) {
-                    \http_response_code($code);
-                }
-            }
+            $this->headerResponseCode($e->getCode());
             
             echo '<div class="modal-dialog modal-dialog-centered" role="document">
                     <div class="modal-content">

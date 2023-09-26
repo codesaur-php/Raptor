@@ -5,7 +5,6 @@ namespace Raptor\Account;
 use Twig\TwigFunction;
 
 use Psr\Log\LogLevel;
-use Psr\Http\Message\ServerRequestInterface;
 
 use codesaur\RBAC\Accounts;
 use codesaur\RBAC\UserRole;
@@ -20,21 +19,7 @@ use Raptor\File\PrivateFilesController;
 use Raptor\Dashboard\DashboardController;
 
 class AccountController extends DashboardController
-{
-    function __construct(ServerRequestInterface $request)
-    {
-        $meta = $request->getAttribute('meta', []);
-        $localization = $request->getAttribute('localization');
-        if (isset($localization['code'])
-            && isset($localization['text']['accounts'])
-        ) {
-            $meta['content']['title'][$localization['code']] = $localization['text']['accounts'];
-            $request = $request->withAttribute('meta', $meta);
-        }
-        
-        parent::__construct($request);
-    }
-    
+{    
     public function index()
     {
         try {
@@ -74,8 +59,12 @@ class AccountController extends DashboardController
                 }
             });
             
-            $this->twigDashboard(\dirname(__FILE__) . '/account-index.html',
-                ['accounts' => $accounts, 'organizations' => $organizations])->render();
+            $dashboard = $this->twigDashboard(
+                \dirname(__FILE__) . '/account-index.html',
+                ['accounts' => $accounts, 'organizations' => $organizations]
+            );
+            $dashboard->set('title', $this->text('accounts'));
+            $dashboard->render();
             
             $level = LogLevel::NOTICE;
             $message = 'Хэрэглэгчдийн жагсаалтыг нээж үзэж байна';
@@ -166,7 +155,12 @@ class AccountController extends DashboardController
                 $message = 'Хэрэглэгч үүсгэх үйлдлийг амжилттай гүйцэтгэлээ';
             } else {
                 $organizations = $this->indoget('/records?model=' . OrganizationModel::class);
-                $this->twigDashboard(\dirname(__FILE__) . '/account-insert.html', ['organizations' => $organizations])->render();
+                $dashboard = $this->twigDashboard(
+                    \dirname(__FILE__) . '/account-insert.html',
+                    ['organizations' => $organizations]
+                );
+                $dashboard->set('title', $this->text('new-account'));
+                $dashboard->render();
                 
                 $level = LogLevel::NOTICE;
                 $message = 'Хэрэглэгч үүсгэх үйлдлийг эхлүүллээ';
@@ -273,7 +267,7 @@ class AccountController extends DashboardController
                     'type' => 'primary',
                     'status' => 'success',
                     'message' => $this->text('record-update-success'),
-                    'href' => $id == $this->getUser()->getAccount()['id'] ? $this->generateLink('home') : $this->generateLink('accounts')
+                    'href' => $this->generateLink('accounts')
                 ]);
                 
                 $organizations = [];
@@ -425,7 +419,9 @@ class AccountController extends DashboardController
                 }
                 $vars['current_role'] = \implode(',', $current_role);
                 
-                $this->twigDashboard(\dirname(__FILE__) . '/account-update.html', $vars)->render();
+                $dashboard = $this->twigDashboard(\dirname(__FILE__) . '/account-update.html', $vars);
+                $dashboard->set('title', $this->text('edit-account'));
+                $dashboard->render();
                 
                 $level = LogLevel::NOTICE;
                 $context += [
@@ -474,9 +470,15 @@ class AccountController extends DashboardController
                 "WHERE t1.is_active=1 AND t1.user_id=$id";
             $user_roles = $this->indo('/statement', ['query' => $user_role_query]);
             
-            $this->twigDashboard(\dirname(__FILE__) . '/account-view.html', [
-                'record' => $record, 'roles' => $user_roles, 'organizations' => $organizations, 'accounts' => $this->getAccounts()
-            ])->render();
+            $dashboard = $this->twigDashboard(
+                \dirname(__FILE__) . '/account-view.html',
+                [
+                    'record' => $record, 'roles' => $user_roles,
+                    'organizations' => $organizations, 'accounts' => $this->getAccounts()
+                ]
+            );
+            $dashboard->set('title', $this->text('account'));
+            $dashboard->render();
 
             $level = LogLevel::NOTICE;
             $message = "{$record['username']} хэрэглэгчийн мэдээллийг нээж үзэж байна";

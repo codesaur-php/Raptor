@@ -2,7 +2,9 @@
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center mb-3 mt-2">
     <h3 class="text-primary text-uppercase" style="padding-right:10px"><i class="bi bi-gear-fill"></i> {{ 'settings'|text }}</h3>
     <div class="btn-group">
-        <button class="btn btn-outline-dark shadow-sm" onclick="window.history.go(-1);return false;">{{ 'back'|text }}</button>
+        <a class="btn btn-outline-dark shadow-sm" href="{{ 'home'|link }}">
+            <i class="bi bi-x-square"></i> {{ 'cancel'|text|upper }}
+        </a>
     </div>
 </div>
 <ul class="nav nav-tabs mb-3" role="tablist">

@@ -2,28 +2,12 @@
 
 namespace Raptor\Log;
 
-use Psr\Http\Message\ServerRequestInterface;
-
 use codesaur\Template\TwigTemplate;
 
 use Raptor\Dashboard\DashboardController;
 
 class LogsController extends DashboardController
 {
-    public function __construct(ServerRequestInterface $request)
-    {
-        $meta = $request->getAttribute('meta', []);
-        $localization = $request->getAttribute('localization');
-        if (isset($localization['code'])
-            && isset($localization['text']['access-log'])
-        ) {
-            $meta['content']['title'][$localization['code']] = $localization['text']['access-log'];
-            $request = $request->withAttribute('meta', $meta);
-        }
-        
-        parent::__construct($request);
-    }
-    
     public function index()
     {
         try {
@@ -36,8 +20,12 @@ class LogsController extends DashboardController
             foreach ($names as $name) {
                 $logs[$name] = $this->getLogsFrom($name);
             }
-            $this->twigDashboard(\dirname(__FILE__) . '/index-list-logs.html',
-                ['names' => $names, 'logs' => $logs, 'accounts' => $this->getAccounts()])->render();
+            $dashboard =  $this->twigDashboard(
+                \dirname(__FILE__) . '/index-list-logs.html',
+                ['names' => $names, 'logs' => $logs, 'accounts' => $this->getAccounts()]
+            );
+            $dashboard->set('title', $this->text('access-log'));
+            $dashboard->render();
         } catch (\Throwable $e) {
             $this->dashboardProhibited($e->getMessage(), $e->getCode())->render();
         }

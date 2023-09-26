@@ -3,7 +3,6 @@
 namespace Raptor\Contents;
 
 use Psr\Log\LogLevel;
-use Psr\Http\Message\ServerRequestInterface;
 
 use Indoraptor\Contents\PagesModel;
 
@@ -12,28 +11,16 @@ use Raptor\File\FilesController;
 
 class PagesController extends DashboardController
 {
-    function __construct(ServerRequestInterface $request)
-    {
-        $meta = $request->getAttribute('meta', []);
-        $localization = $request->getAttribute('localization');
-        if (isset($localization['code'])
-            && isset($localization['text']['pages'])
-        ) {
-            $meta['content']['title'][$localization['code']] = $localization['text']['pages'];
-            $request = $request->withAttribute('meta', $meta);
-        }
-        
-        parent::__construct($request);
-    }
-    
     public function index()
     {
         if (!$this->isUserCan('system_content_index')) {
             $this->dashboardProhibited(null, 401)->render();
             return;
         }
-
-        $this->twigDashboard(\dirname(__FILE__) . '/pages-index.html')->render();
+        
+        $dashboard = $this->twigDashboard(\dirname(__FILE__) . '/pages-index.html');
+        $dashboard->set('title', $this->text('pages'));
+        $dashboard->render();
         
         $this->indolog('content', LogLevel::NOTICE, 'Хуудас жагсаалтыг нээж үзэж байна', ['model' => PagesModel::class]);
     }
@@ -47,29 +34,63 @@ class PagesController extends DashboardController
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
             
-            $pages = $this->indoget('/records?model=' . PagesModel::class);
+            $pages_query = 
+                'SELECT id, title, code, category, type, position, published ' .
+                'FROM indo_pages WHERE is_active=1';
+            $pages = $this->indo('/statement', ['query' => $pages_query]);
+            $page_files_query = 
+                'SELECT p.id as id, COUNT(*) as files ' .
+                'FROM indo_pages as p JOIN indo_pages_files as f ON p.id=f.record_id ' .
+                'WHERE p.is_active=1 AND f.is_active=1 ' .
+                'GROUP BY f.record_id';
+            $page_files = $this->indo('/statement', ['query' => $page_files_query]);
+            $page_image_query = 
+                'SELECT p.id as id, min(f.id), f.path as image ' .
+                'FROM indo_pages as p JOIN indo_pages_files as f ON p.id=f.record_id ' .
+                "WHERE p.is_active=1 AND f.is_active=1 AND f.type='image' " .
+                'GROUP BY f.record_id';
+            $page_image = $this->indo('/statement', ['query' => $page_image_query]);
+            $page_featured_query = 
+                'SELECT p.id as id, min(f.id), f.path as featured ' .
+                'FROM indo_pages as p JOIN indo_pages_files as f ON p.id=f.record_id ' .
+                "WHERE p.is_active=1 AND f.is_active=1 AND f.type='image' AND f.category='featured' " .
+                'GROUP BY f.record_id';
+            $page_featured = $this->indo('/statement', ['query' => $page_featured_query]);
+            foreach ($pages as $id => &$page) {
+                $page['files'] =
+                    $page_files[$id]['files'] ?? 0;
+                $page['image'] =
+                    $page_featured[$id]['featured']
+                    ?? $page_image[$id]['image']
+                    ?? 'https://via.placeholder.com/60?text=no+photo';
+            }
             $infos = $this->getPagesInfos();
             foreach ($pages as $record) {
+                if (!empty($record['code'])) {
+                    $lang = '<img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.3/flags/' . $record['code'] . '.png"> ' . $record['code'];
+                } else {
+                    $lang = '';
+                }
+                
                 $id = $record['id'];
-                $row = [$id, '<img src="https://via.placeholder.com/50?text=no+photo">'];
+                $row = [$id, $lang];
+                
+                $row[] = "<img style=\"max-width:60px;max-height:60px\" src=\"{$record['image']}\"\>";
                 
                 $title = '';
                 if (isset($infos[$id]['parent_titles'])) {
-                    $title .= '<span class="text-muted"><small>' . \htmlentities($infos[$id]['parent_titles']) . '</small></span> ';
+                    $title .= '<span class="fw-lighter"><small>' . \htmlentities($infos[$id]['parent_titles']) . '</small></span> ';
                 }
                 $caption = \htmlentities($record['title']);
-                $title .= '<span class="text-primary">' . $caption . '</span>';
+                $title .= '<span class="fw-medium">' . $caption . '</span>';
                 $row[] = $title;
                 
-                if (!empty($record['code'])) {
-                    $row[] = '<img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.3/flags/' . $record['code'] . '.png"> ' . $record['code'];
-                } else {
-                    $row[] = '';
-                }
+                $row[] = $record['files'];
                 
                 $row[] =
                     '<span class="badge bg-dark">' . \htmlentities($record['category']) . '</span> ' .
                     '<span class="badge bg-warning text-dark">' . \htmlentities($record['type']) . '</span>';
+                    
                 $row[] = $record['position'];
                 
                 $row[] = $record['published'] == 1 ? '<i class="bi bi-emoji-heart-eyes-fill text-success"></i>' : '<i class="bi bi-eye-slash"></i>';
@@ -168,7 +189,9 @@ class PagesController extends DashboardController
                 $vars = [
                     'infos' => $this->getPagesInfos()
                 ];
-                $this->twigDashboard(\dirname(__FILE__) . '/page-insert.html', $vars)->render();
+                $dashboard = $this->twigDashboard(\dirname(__FILE__) . '/page-insert.html', $vars);
+                $dashboard->set('title', $this->text('add-record') . ' | Pages');
+                $dashboard->render();
                 
                 $level = LogLevel::NOTICE;
                 $message = 'Шинэ хуудас үүсгэх үйлдлийг эхлүүллээ';
@@ -201,13 +224,15 @@ class PagesController extends DashboardController
             $context['record'] = $record;
             $context['files'] = $this->indosafe(
                 '/files/records/indo_pages', ['WHERE' => "record_id=$id AND is_active=1"]);
-            $this->twigDashboard(
+            $dashboard = $this->twigDashboard(
                 \dirname(__FILE__) . '/page-view.html',
                 $context + [
                     'accounts' => $this->getAccounts(),
                     'infos' => $this->getPagesInfos("(id=$id OR id={$record['parent_id']})")
                 ]
-            )->render();
+            );
+            $dashboard->set('title', $this->text('view-record') . ' | Pages');
+            $dashboard->render();
 
             $level = LogLevel::NOTICE;
             $message = "{$record['title']} - хуудасны мэдээллийг нээж үзэж байна";
@@ -296,7 +321,9 @@ class PagesController extends DashboardController
                     'accounts' => $this->getAccounts(),
                     'infos' => $this->getPagesInfos("id!=$id AND parent_id!=$id")
                 ];
-                $this->twigDashboard(\dirname(__FILE__) . '/page-update.html', $vars)->render();
+                $dashboard = $this->twigDashboard(\dirname(__FILE__) . '/page-update.html', $vars);
+                $dashboard->set('title', $this->text('edit-record') . ' | Pages');
+                $dashboard->render();
                 
                 $level = LogLevel::NOTICE;
                 $message = "{$context['record']['title']} - хуудасны мэдээллийг шинэчлэхээр нээж байна";

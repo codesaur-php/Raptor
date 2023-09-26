@@ -42,7 +42,7 @@ class DashboardController extends \Raptor\Controller
             ['alert' => $alert ?? $this->text('system-no-permission'), 'close' => $this->text('close')]);
     }
     
-    private function headerResponseCode(int|string $code)
+    protected function headerResponseCode(int|string $code)
     {
         if (!empty($code) && !\headers_sent()) {
             if ($code != StatusCodeInterface::STATUS_OK) {

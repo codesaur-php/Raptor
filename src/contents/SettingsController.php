@@ -3,7 +3,6 @@
 namespace Raptor\Contents;
 
 use Psr\Log\LogLevel;
-use Psr\Http\Message\ServerRequestInterface;
 
 use Indoraptor\Contents\SettingsModel;
 
@@ -11,21 +10,7 @@ use Raptor\Dashboard\DashboardController;
 use Raptor\File\FileController;
 
 class SettingsController extends DashboardController
-{
-    function __construct(ServerRequestInterface $request)
-    {
-        $meta = $request->getAttribute('meta', []);
-        $localization = $request->getAttribute('localization');
-        if (isset($localization['code'])
-            && isset($localization['text']['settings'])
-        ) {
-            $meta['content']['title'][$localization['code']] = $localization['text']['settings'];
-            $request = $request->withAttribute('meta', $meta);
-        }
-        
-        parent::__construct($request);
-    }
-    
+{    
     public function index()
     {
         $context = ['model' => SettingsModel::class];
@@ -130,7 +115,9 @@ class SettingsController extends DashboardController
                 $record = ['alias' => $alias];
             }
             
-            $this->twigDashboard(\dirname(__FILE__) . '/settings.html', ['record' => $record])->render();
+            $dashboard = $this->twigDashboard(\dirname(__FILE__) . '/settings.html', ['record' => $record]);
+            $dashboard->set('title', $this->text('settings'));
+            $dashboard->render();
 
             $this->indolog('content', LogLevel::NOTICE, 'Системийн тохируулгыг нээж үзэж байна', $context);
         }

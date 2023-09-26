@@ -200,7 +200,7 @@ class LocalizationMiddleware implements MiddlewareInterface
                 ['record' => ['keyword' => 'lang-name-existing', 'type' => 'sys-defined'], 'content' => ['mn' => ['text' => 'Системд хэлний нэрийг ашиглаж байгаа тул өөр нэр ашиглана уу!'], 'en' => ['text' => 'Системд хэлний нэрийг ашиглаж байгаа тул өөр нэр ашиглана уу!']]],
                 ['record' => ['keyword' => 'language-added', 'type' => 'sys-defined'], 'content' => ['mn' => ['text' => 'Системд шинэ хэл нэмлээ'], 'en' => ['text' => 'Системд шинэ хэл нэмлээ']]],
                 ['record' => ['keyword' => 'select-text-settings', 'type' => 'sys-defined'], 'content' => ['mn' => ['text' => 'Текстийн тохиргоог сонгоно уу'], 'en' => ['text' => 'Select text settings']]],
-                ['record' => ['keyword' => 'texted-tables:', 'type' => 'sys-defined'], 'content' => ['mn' => ['text' => 'Текстийг хуулсан хүснэгтүүд:'], 'en' => ['text' => 'Tables of text copied:']]],
+                ['record' => ['keyword' => 'are-your-sure', 'type' => 'sys-defined'], 'content' => ['mn' => ['text' => 'Та итгэлтэй байна уу'], 'en' => ['text' => 'Are you sure']]],
                 ['record' => ['keyword' => 'dont-have-account-yet', 'type' => 'sys-defined'], 'content' => ['en' => ['text' => 'Don\'t have an account yet?'], 'mn' => ['text' => 'Хэрэглэгч болж амжаагүй байна уу?']]],
                 ['record' => ['keyword' => 'username-or-email', 'type' => 'sys-defined'], 'content' => ['en' => ['text' => 'Username or Email'], 'mn' => ['text' => 'Нэр эсвэл имейл']]],
                 ['record' => ['keyword' => 'enter-account-details', 'type' => 'sys-defined'], 'content' => ['en' => ['text' => 'Enter your account details below:'], 'mn' => ['text' => 'Нэвтрэх эрхийн мэдээлэл бөглөнө үү:']]],

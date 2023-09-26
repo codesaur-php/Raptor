@@ -14,9 +14,6 @@
                 <button class="submit-update btn btn-primary shadow-sm text-uppercase">
                     <i class="bi bi-check-lg"></i> {{ 'save'|text }}
                 </button>
-                <button class="btn btn-secondary shadow-sm text-uppercase" onclick="window.history.go(-1);return false;">
-                    <i class="bi bi-arrow-left-circle"></i> {{ 'back'|text }}
-                </button>
             </div>
         </div>
     </div>
@@ -122,7 +119,9 @@
                 <button class="submit-update btn btn-lg btn-primary shadow-sm" type="submit"><i class="bi bi-check2"></i> {{ 'save'|text }}</button>
             </div>
             <div class="col-6 d-grid">
-                <button class="btn btn-lg btn-block btn-secondary shadow-sm" onclick="window.history.go(-1);return false;"><i class="bi bi-arrow-left"></i> {{ 'back'|text }}</button>
+                <a class="btn btn-lg btn-block btn-secondary shadow-sm" href="{{ 'references'|link }}">
+                    <i class="bi bi-arrow-left"></i> {{ 'reference-tables'|text }}
+                </a>
             </div>
         </div>
     </div>

@@ -67,9 +67,9 @@
         
         document.getElementById('file_' + resp.record.id + '_close').click();
         
-        row.children[1].innerHTML = resp.record.category;
-        row.children[2].innerHTML = resp.record.keyword;
-        row.children[3].innerHTML = resp.record.description;
+        row.children[2].innerHTML = resp.record.description;
+        row.children[3].innerHTML = resp.record.category;
+        row.children[4].innerHTML = resp.record.keyword;
         
         let type = resp.type ? resp.type : 'success';
         let title = resp.title ? resp.title : 'Success';

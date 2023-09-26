@@ -1,20 +1,20 @@
 <div class="modal-dialog modal-lg modal-dialog-centered">
     <div class="modal-content">
         <div class="modal-header">
-            <h6 class="modal-title text-uppercase text-primary"><i class="bi bi-magic"></i> </h6>
+            <h6 class="modal-title text-uppercase text-dark"><i class="bi bi-magic"></i>  Video embed code</h6>
             <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="{{ 'close'|text|e }}"></button>
         </div>
         <div class="modal-body">
             <strong>Relative:</strong>
-            <a class="btn btn-sm btn-primary" onclick="copyToClipboard('relative');">copy</a>
-            <pre class="border border-primary bg-dark text-light" id="relative" style="white-space:pre-wrap">{{ ('<video height="360" controls><source src="' ~ record['path'] ~ '"></video>')|e }}</pre>
+            <a class="btn btn-sm btn-dark" onclick="copy('relative');">copy</a>
+            <pre class="border border-dark bg-secondary text-light" id="relative" style="white-space:pre-wrap">{{ ('<video height="360" controls><source src="' ~ record['path'] ~ '"></video>')|e }}</pre>
             <hr>
             <strong>Absolute:</strong>
-            <a class="btn btn-sm btn-primary" onclick="copyToClipboard('absolute');">copy</a>
-            <pre class="border border-primary bg-dark text-light" id="absolute" style="white-space:pre-wrap">{{ ('<video height="360" controls><source src="' ~ host ~ record['path'] ~ '"></video>')|e }}</pre>
+            <a class="btn btn-sm btn-dark" onclick="copy('absolute');">copy</a>
+            <pre class="border border-dark bg-secondary text-light" id="absolute" style="white-space:pre-wrap">{{ ('<video height="360" controls><source src="' ~ host ~ record['path'] ~ '"></video>')|e }}</pre>
         </div>
         <div class="modal-footer">
-            <button class="btn btn-secondary" data-bs-dismiss="modal">{{ 'close'|text }}</button>
+            <button class="btn btn-dark" data-bs-dismiss="modal">{{ 'close'|text }}</button>
         </div>
     </div>
 </div>

@@ -3,7 +3,6 @@
 namespace Raptor\Contents;
 
 use Psr\Log\LogLevel;
-use Psr\Http\Message\ServerRequestInterface;
 
 use Indoraptor\Contents\ReferenceModel;
 use Indoraptor\Contents\ReferenceInitial;
@@ -12,20 +11,6 @@ use Raptor\Dashboard\DashboardController;
 
 class ReferencesController extends DashboardController
 {
-    public function __construct(ServerRequestInterface $request)
-    {
-        $meta = $request->getAttribute('meta', []);
-        $localization = $request->getAttribute('localization');
-        if (isset($localization['code'])
-            && isset($localization['text']['reference-tables'])
-        ) {
-            $meta['content']['title'][$localization['code']] = $localization['text']['reference-tables'];
-            $request = $request->withAttribute('meta', $meta);
-        }
-        
-        parent::__construct($request);
-    }
-    
     public function index()
     {
         if (!$this->isUserCan('system_content_index')) {
@@ -57,7 +42,9 @@ class ReferencesController extends DashboardController
                 $tables[] = $reference;
             }
         }        
-        $this->twigDashboard(\dirname(__FILE__) . '/references-index.html', ['tables' => $tables])->render();
+        $dashboard = $this->twigDashboard(\dirname(__FILE__) . '/references-index.html', ['tables' => $tables]);
+        $dashboard->set('title', $this->text('reference-tables'));
+        $dashboard->render();
         
         $this->indolog('content', LogLevel::NOTICE, 'Лавлах хүснэгтүүдийн жагсаалтыг нээж үзэж байна',['model' => ReferenceModel::class]);
     }
@@ -162,7 +149,9 @@ class ReferencesController extends DashboardController
                 $level = LogLevel::INFO;
                 $message = "Шинээр [{$payload['keyword']}] түлхүүртэй лавлах мэдээллийг [$table] хүснэгт дээр үүсгэх үйлдлийг амжилттай гүйцэтгэлээ";
             } else {
-                $this->twigDashboard(\dirname(__FILE__) . '/reference-insert.html', ['table' => $table])->render();
+                $dashboard = $this->twigDashboard(\dirname(__FILE__) . '/reference-insert.html', ['table' => $table]);
+                $dashboard->set('title', $this->text('add-record') . ' | ' . \ucfirst($table));
+                $dashboard->render();
                 
                 $level = LogLevel::NOTICE;
                 $message = "Шинэ лавлах мэдээллийг [$table] хүснэгт дээр үйлдлийг эхлүүллээ";
@@ -198,14 +187,16 @@ class ReferencesController extends DashboardController
                 throw new \Exception($this->text('invalid-request'), 400);
             }
             
-            $this->twigDashboard(
+            $dashboard = $this->twigDashboard(
                 \dirname(__FILE__) . '/reference-view.html',
                 [
                     'table' => $table,
                     'record' => $record,
                     'accounts' => $this->getAccounts()
                 ]
-            )->render();
+            );
+            $dashboard->set('title', $this->text('view-record') . ' | ' . \ucfirst($table));
+            $dashboard->render();
 
             $level = LogLevel::NOTICE;
             $message = "$table хүснэгтийн $id дугаартай [{$record['keyword']}] түлхүүртэй лавлах мэдээллийг нээж үзэж байна";
@@ -268,14 +259,16 @@ class ReferencesController extends DashboardController
                     throw new \Exception($this->text('invalid-request'), 400);
                 }
                 $context['record'] = $record;
-                $this->twigDashboard(
+                $dashboard = $this->twigDashboard(
                     \dirname(__FILE__) . '/reference-update.html',
                     [
                         'table' => $table,
                         'record' => $record,
                         'accounts' => $this->getAccounts()
                     ]
-                )->render();
+                );
+                $dashboard->set('title', $this->text('edit-record') . ' | ' . \ucfirst($table));
+                $dashboard->render();
                 
                 $level = LogLevel::NOTICE;
                 $message = "$table хүснэгтийн $id дугаартай [{$record['keyword']}] түлхүүртэй лавлах мэдээллийг шинэчлэхээр нээж байна";

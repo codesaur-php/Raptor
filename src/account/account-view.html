@@ -1,7 +1,9 @@
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center mb-4 mt-2">
     <h3 class="text-info text-uppercase" style="padding-right:10px"><i class="bi bi-person-circle"></i> {{ record['first_name'] ~ ' ' ~ record['last_name'] }}</h3>
     <div class="btn-group">
-        <button class="btn btn-outline-dark shadow-sm" onclick="window.history.go(-1);return false;">{{ 'back'|text }}</button>
+        <a class="btn btn-outline-dark shadow-sm" href="{{ 'accounts'|link }}">
+            <i class="bi bi-arrow-left"></i> {{ 'accounts'|text|upper }}
+        </a>
     </div>
 </div>
 <div class="row mb-2">

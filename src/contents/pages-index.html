@@ -15,10 +15,11 @@
 <table class="table table-striped table-hover" id="pages">
     <thead>
         <tr>
-            <th scope="col">{{ 'id'|text }}</th>
+            <th scope="col">#</th>
+            <th scope="col">{{ 'language'|text }}</th>
             <th scope="col">{{ 'photo'|text }}</th>
             <th scope="col">{{ 'title'|text }}</th>
-            <th scope="col">{{ 'language'|text }}</th>
+            <th scope="col">{{ 'file'|text }}</th>
             <th scope="col">{{ 'type'|text }}</th>
             <th scope="col">{{ 'position'|text }}</th>
             <th scope="col">{{ 'publish'|text }}</th>
@@ -60,14 +61,17 @@ document.addEventListener('DOMContentLoaded', function () {
 
         let src = '';
         let photo = a.parentNode.parentNode.children[2].querySelector('img');
-        if (photo) {
+        if (photo
+            && photo.src
+            && !photo.src.includes('https://via.placeholder.com')
+        ) {
             src = photo.src;
         } else {
-            question = '<i class="bi bi-flag text-danger mb-4" style="font-size:3rem"></i><p>' + question + '<p/>';
+            question = '<i class="bi bi-question-circle text-danger mb-4" style="font-size:3rem"></i><p>' + question + '<p/>';
         }
         Swal.fire({
             imageUrl: src,
-            imageHeight: 11,
+            imageHeight: 50,
             html: question,
             showCancelButton: true,
             cancelButtonText: '{{ 'cancel'|text|e }}',

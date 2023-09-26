@@ -1,20 +1,20 @@
 <div class="modal-dialog modal-lg modal-dialog-centered">
     <div class="modal-content">
         <div class="modal-header">
-            <h6 class="modal-title text-uppercase text-primary"><i class="bi bi-magic"></i> </h6>
+            <h6 class="modal-title text-uppercase text-primary"><i class="bi bi-magic"></i> Image embed code</h6>
             <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="{{ 'close'|text|e }}"></button>
         </div>
         <div class="modal-body">
             <strong>Relative:</strong>
-            <a class="btn btn-sm btn-primary" onclick="copyToClipboard('relative');">copy</a>
+            <a class="btn btn-sm btn-primary" onclick="copy('relative');">copy</a>
             <pre class="border border-primary bg-dark text-light" id="relative" style="white-space:pre-wrap">{{ ('<img class="img-fluid" src="' ~ record['path'] ~ '" alt="' ~ (record['description']|e) ~ '">')|e }}</pre>
             <hr>
             <strong>Absolute:</strong>
-            <a class="btn btn-sm btn-primary" onclick="copyToClipboard('absolute');">copy</a>
+            <a class="btn btn-sm btn-primary" onclick="copy('absolute');">copy</a>
             <pre class="border border-primary bg-dark text-light" id="absolute" style="white-space:pre-wrap">{{ ('<img class="img-fluid" src="' ~ host ~ record['path'] ~ '" alt="' ~ (record['description']|e) ~ '">')|e }}</pre>
         </div>
         <div class="modal-footer">
-            <button class="btn btn-secondary" data-bs-dismiss="modal">{{ 'close'|text }}</button>
+            <button class="btn btn-primary" data-bs-dismiss="modal">{{ 'close'|text }}</button>
         </div>
     </div>
 </div>

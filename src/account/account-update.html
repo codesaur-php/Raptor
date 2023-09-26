@@ -3,11 +3,10 @@
     <h3 class="text-primary text-uppercase" style="padding-right:10px"><i class="bi bi-person-lines-fill"></i> {{ record['first_name'] ~ ' ' ~ record['last_name'] }}</h3>
     <div class="btn-group">
         {% if can_update %}
-        <button class="submit btn btn-primary shadow-sm ">
-            <i class="bi bi-check"></i> {{ 'submit'|text }}
+        <button class="submit btn btn-primary shadow-sm">
+            <i class="bi bi-check"></i> {{ 'submit'|text|upper }}
         </button>
         {% endif %}
-        <button class="btn btn-outline-dark shadow-sm" onclick="window.history.go(-1);return false;">{{ 'back'|text }}</button>
     </div>
 </div>
 <ul class="nav nav-tabs mb-4" role="tablist">
@@ -95,9 +94,13 @@
 </form>
 <div class="btn-toolbar mb-5">
 {% if can_update %}
-    <button class="submit btn btn-lg btn-primary shadow-sm"><i class="bi bi-check"></i> {{ 'submit'|text }}</button>
+    <button class="submit btn btn-lg btn-primary shadow-sm">
+        <i class="bi bi-check"></i> {{ 'submit'|text|upper }}
+    </button>
 {% endif %}
-    <button class="btn btn-lg  btn-secondary shadow-sm mx-2" onclick="window.history.go(-1);return false;">{{ 'cancel'|text }}</button>
+    <a class="btn btn-lg btn-secondary shadow-sm mx-2" href="{{ 'accounts'|link }}">
+        <i class="bi bi-arrow-left"></i> {{ 'accounts'|text }}
+    </a>
 </div>
 <script defer src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">

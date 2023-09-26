@@ -1,7 +1,9 @@
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center mb-3 mt-2">
     <h3 class="text-secondary text-uppercase" style="padding-right:10px"><i class="bi bi-list"></i> {{ 'logs'|text }}</h3>
     <div class="btn-group me-2">
-        <button class="btn btn-outline-dark shadow-sm" onclick="window.history.go(-1);return false;">{{ 'back'|text }}</button>
+        <a class="btn btn-outline-dark shadow-sm" href="{{ 'home'|link }}">
+           <i class="bi bi-house-door-fill"></i> {{ 'home'|text|upper }}
+        </a>
     </div>
 </div>
 <ul class="nav nav-tabs mb-4" role="tablist">

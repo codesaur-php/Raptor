@@ -3,7 +3,6 @@
 namespace Raptor\RBAC;
 
 use Psr\Log\LogLevel;
-use Psr\Http\Message\ServerRequestInterface;
 
 use codesaur\RBAC\Roles;
 use codesaur\RBAC\Accounts;
@@ -15,20 +14,6 @@ use Raptor\Dashboard\DashboardController;
 
 class RBACController extends DashboardController
 {
-    public function __construct(ServerRequestInterface $request)
-    {
-        $meta = $request->getAttribute('meta', []);
-        $localization = $request->getAttribute('localization');
-        if (isset($localization['code'])) {
-            $queryParams = $request->getQueryParams();
-            $alias = $queryParams['alias'] ?? null;
-            $meta['content']['title'][$localization['code']] = "RBAC - $alias";
-            $request = $request->withAttribute('meta', $meta);
-        }
-        
-        parent::__construct($request);
-    }
-    
     public function alias()
     {
         try {
@@ -84,7 +69,7 @@ class RBACController extends DashboardController
             foreach ($rp ?? [] as $row) {
                 $role_permission[$row['role_id']][$row['permission_id']] = true;
             }
-            $this->twigDashboard(
+            $dashboard = $this->twigDashboard(
                 \dirname(__FILE__) . '/rbac-alias.html',
                 [
                     'alias' => $alias, 
@@ -93,7 +78,10 @@ class RBACController extends DashboardController
                     'permissions' => $permissions,
                     'role_permission' => $role_permission
                 ]
-            )->render();
+            );
+            $dashboard->set('title', "RBAC - $alias");
+            $dashboard->render();
+            
             $message = "RBAC [$alias] жагсаалтыг нээж үзэж байна";
         } catch (\Throwable $e) {
             $message = 'RBAC жагсаалтыг нээх үед алдаа гарлаа. ' . $e->getMessage();
@@ -162,7 +150,7 @@ class RBACController extends DashboardController
                 throw new \Exception($this->text('record-not-found'), 404);
             }
             $values += \current($role_result);
-            $this->twigDashboard(\dirname(__FILE__) . '/rbac-view-role-modal.html', $values)->render();
+            $this->twigTemplate(\dirname(__FILE__) . '/rbac-view-role-modal.html', $values)->render();
         } catch (\Throwable $e) {
             $this->modalProhibited($e->getMessage(), $e->getCode())->render();
         }

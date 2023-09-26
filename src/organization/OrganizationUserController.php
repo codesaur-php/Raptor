@@ -3,7 +3,6 @@
 namespace Raptor\Organization;
 
 use Psr\Log\LogLevel;
-use Psr\Http\Message\ServerRequestInterface;
 
 use codesaur\RBAC\Accounts;
 
@@ -14,20 +13,6 @@ use Raptor\Dashboard\DashboardController;
 
 class OrganizationUserController extends DashboardController
 {
-    public function __construct(ServerRequestInterface $request)
-    {
-        $meta = $request->getAttribute('meta', []);
-        $localization = $request->getAttribute('localization');
-        if (isset($localization['code'])
-            && isset($localization['text']['organization'])
-        ) {
-            $meta['content']['title'][$localization['code']] = $localization['text']['organization'];
-            $request = $request->withAttribute('meta', $meta);
-        }
-        
-        parent::__construct($request);
-    }
-    
     public function index()
     {
         try {
@@ -39,7 +24,12 @@ class OrganizationUserController extends DashboardController
                 'SELECT t2.* FROM indo_organization_users as t1 JOIN indo_organizations as t2 ON t1.organization_id=t2.id ' .
                 'WHERE t1.is_active=1 AND t2.is_active=1 AND t1.account_id=' . $this->getUser()->getAccount()['id'];
             $organizations = $this->indo('/statement', ['query' => $user_orgs_query]);
-            $this->twigDashboard(\dirname(__FILE__) . '/organization-user.html', ['organizations' => $organizations])->render();
+            $dashboard = $this->twigDashboard(
+                \dirname(__FILE__) . '/organization-user.html',
+                ['organizations' => $organizations]
+            );
+            $dashboard->set('title', $this->text('organization'));
+            $dashboard->render();
             
             $level = LogLevel::NOTICE;
             $message = 'Хэрэглэгч өөрийн байгууллагуудын жагсаалтыг нээж үзэж байна';

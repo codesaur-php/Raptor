@@ -3,7 +3,6 @@
 namespace Raptor\Localization;
 
 use Psr\Log\LogLevel;
-use Psr\Http\Message\ServerRequestInterface;
 
 use Indoraptor\Localization\LanguageModel;
 use Indoraptor\Localization\CountriesModel;
@@ -12,20 +11,6 @@ use Raptor\Dashboard\DashboardController;
 
 class LanguageController extends DashboardController
 {
-    function __construct(ServerRequestInterface $request)
-    {
-        $meta = $request->getAttribute('meta', []);
-        $localization = $request->getAttribute('localization');
-        if (isset($localization['code'])
-            && isset($localization['text']['languages'])
-        ) {
-            $meta['content']['title'][$localization['code']] = $localization['text']['languages'];
-            $request = $request->withAttribute('meta', $meta);
-        }
-        
-        parent::__construct($request);
-    }
-    
     public function index()
     {
         if (!$this->isUserCan('system_localization_index')) {
@@ -33,7 +18,9 @@ class LanguageController extends DashboardController
             return;
         }
 
-        $this->twigDashboard(\dirname(__FILE__) . '/languages-index.html')->render();
+        $dashboard = $this->twigDashboard(\dirname(__FILE__) . '/languages-index.html');
+        $dashboard->set('title', $this->text('languages'));
+        $dashboard->render();
         
         $this->indolog('localization', LogLevel::NOTICE, 'Хэлний жагсаалтыг нээж үзэж байна', ['model' => LanguageModel::class]);
     }

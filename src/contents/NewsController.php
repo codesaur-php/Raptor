@@ -3,7 +3,6 @@
 namespace Raptor\Contents;
 
 use Psr\Log\LogLevel;
-use Psr\Http\Message\ServerRequestInterface;
 
 use Indoraptor\Contents\NewsModel;
 
@@ -11,21 +10,7 @@ use Raptor\Dashboard\DashboardController;
 use Raptor\File\FilesController;
 
 class NewsController extends DashboardController
-{
-    function __construct(ServerRequestInterface $request)
-    {
-        $meta = $request->getAttribute('meta', []);
-        $localization = $request->getAttribute('localization');
-        if (isset($localization['code'])
-            && isset($localization['text']['news'])
-        ) {
-            $meta['content']['title'][$localization['code']] = $localization['text']['news'];
-            $request = $request->withAttribute('meta', $meta);
-        }
-        
-        parent::__construct($request);
-    }
-    
+{    
     public function index()
     {
         if (!$this->isUserCan('system_content_index')) {
@@ -33,7 +18,9 @@ class NewsController extends DashboardController
             return;
         }
 
-        $this->twigDashboard(\dirname(__FILE__) . '/news-index.html')->render();
+        $dashboard = $this->twigDashboard(\dirname(__FILE__) . '/news-index.html');
+        $dashboard->set('title', $this->text('news'));
+        $dashboard->render();
         
         $this->indolog('content', LogLevel::NOTICE, 'Мэдээний жагсаалтыг нээж үзэж байна', ['model' => NewsModel::class]);
     }
@@ -47,19 +34,47 @@ class NewsController extends DashboardController
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
             
-            $news = $this->indoget('/records?model=' . NewsModel::class);
+            $news_query = 
+                'SELECT id, title, code, category, type, published, publish_date ' .
+                'FROM indo_news WHERE is_active=1';
+            $news = $this->indo('/statement', ['query' => $news_query]);
+            $news_files_query = 
+                'SELECT n.id as id, COUNT(*) as files ' .
+                'FROM indo_news as n JOIN indo_news_files as f ON n.id=f.record_id ' .
+                'WHERE n.is_active=1 AND f.is_active=1 ' .
+                'GROUP BY f.record_id';
+            $news_files = $this->indo('/statement', ['query' => $news_files_query]);
+            $news_image_query = 
+                'SELECT n.id as id, min(f.id), f.path as image ' .
+                'FROM indo_news as n JOIN indo_news_files as f ON n.id=f.record_id ' .
+                "WHERE n.is_active=1 AND f.is_active=1 AND f.type='image' " .
+                'GROUP BY f.record_id';
+            $news_image = $this->indo('/statement', ['query' => $news_image_query]);
+            $news_featured_query = 
+                'SELECT n.id as id, min(f.id), f.path as featured ' .
+                'FROM indo_news as n JOIN indo_news_files as f ON n.id=f.record_id ' .
+                "WHERE n.is_active=1 AND f.is_active=1 AND f.type='image' AND f.category='featured' " .
+                'GROUP BY f.record_id';
+            $news_featured = $this->indo('/statement', ['query' => $news_featured_query]);
             foreach ($news as $record) {
+                if (!empty($record['code'])) {
+                    $lang = '<img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.3/flags/' . $record['code'] . '.png"> ' . $record['code'];
+                } else {
+                    $lang = '';
+                }
                 $id = $record['id'];
-                $row = [$record['publish_date'], '<img src="https://via.placeholder.com/70?text=no+photo">'];
+                $row = [$record['publish_date'], $lang];
+                
+                $image =
+                    $news_featured[$id]['featured']
+                    ?? $news_image[$id]['image']
+                    ?? 'https://via.placeholder.com/60?text=no+photo';
+                $row[] = "<img style=\"max-width:60px;max-height:60px\" src=\"$image\"\>";
                 
                 $title = \htmlentities($record['title']);
                 $row[] = $title;
                 
-                if (!empty($record['code'])) {
-                    $row[] = '<img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.3/flags/' . $record['code'] . '.png"> ' . $record['code'];
-                } else {
-                    $row[] = '';
-                }
+                $row[] = $news_files[$id]['files'] ?? 0;
                 
                 $row[] =
                     '<span class="badge bg-primary">' . \htmlentities($record['category']) . '</span> ' .
@@ -159,7 +174,9 @@ class NewsController extends DashboardController
                     }
                 }
             } else {
-                $this->twigDashboard(\dirname(__FILE__) . '/news-insert.html')->render();
+                $dashboard = $this->twigDashboard(\dirname(__FILE__) . '/news-insert.html');
+                $dashboard->set('title', $this->text('add-record') . ' | News');
+                $dashboard->render();
                 
                 $level = LogLevel::NOTICE;
                 $message = 'Шинэ мэдээ үүсгэх үйлдлийг эхлүүллээ';
@@ -192,10 +209,12 @@ class NewsController extends DashboardController
             $context['record'] = $record;
             $context['files'] = $this->indosafe(
                 '/files/records/indo_news', ['WHERE' => "record_id=$id AND is_active=1"]);
-            $this->twigDashboard(
+            $dashboard = $this->twigDashboard(
                 \dirname(__FILE__) . '/news-view.html',
                 $context + ['accounts' => $this->getAccounts()]
-            )->render();
+            );
+            $dashboard->set('title', $this->text('view-record') . ' | News');
+            $dashboard->render();
 
             $level = LogLevel::NOTICE;
             $message = "{$record['title']} - мэдээг нээж үзэж байна";
@@ -281,7 +300,9 @@ class NewsController extends DashboardController
                 $context['files'] = $this->indosafe(
                     "/files/records/$table", ['WHERE' => "record_id=$id AND is_active=1"]);
                 $vars = $context + ['accounts' => $this->getAccounts()];
-                $this->twigDashboard(\dirname(__FILE__) . '/news-update.html', $vars)->render();
+                $dashboard = $this->twigDashboard(\dirname(__FILE__) . '/news-update.html', $vars);
+                $dashboard->set('title', $this->text('edit-record') . ' | News');
+                $dashboard->render();
                 
                 $level = LogLevel::NOTICE;
                 $message = "{$context['record']['title']} - мэдээг шинэчлэхээр нээж байна";

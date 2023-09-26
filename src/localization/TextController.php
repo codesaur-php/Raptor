@@ -11,18 +11,6 @@ use Raptor\Dashboard\DashboardController;
 
 class TextController extends DashboardController
 {
-    public function __construct(ServerRequestInterface $request)
-    {
-        $meta = $request->getAttribute('meta', []);
-        $localization = $request->getAttribute('localization');
-        if (isset($localization['code'])) {
-            $meta['content']['title'][$localization['code']] = $localization['code'] == 'mn' ? 'Текстүүд' : 'Texts';
-            $request = $request->withAttribute('meta', $meta);
-        }
-        
-        parent::__construct($request);
-    }
-    
     public function index()
     {
         if (!$this->isUserCan('system_localization_index')) {
@@ -52,7 +40,9 @@ class TextController extends DashboardController
                 unset($colors[$index]);
             }
         }
-        $this->twigDashboard(\dirname(__FILE__) . '/texts-index.html', ['tables' => $tables])->render();
+        $dashboard = $this->twigDashboard(\dirname(__FILE__) . '/texts-index.html', ['tables' => $tables]);
+        $dashboard->set('title', $this->getLanguageCode() == 'mn' ? 'Текстүүд' : 'Texts');
+        $dashboard->render();
         
         $this->indolog('localization', LogLevel::NOTICE, 'Системийн текст жагсаалтыг нээж үзэж байна', ['model' => TextModel::class, 'tables' => $tables]);
     }

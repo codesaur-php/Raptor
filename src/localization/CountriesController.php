@@ -3,28 +3,13 @@
 namespace Raptor\Localization;
 
 use Psr\Log\LogLevel;
-use Psr\Http\Message\ServerRequestInterface;
 
 use Indoraptor\Localization\CountriesModel;
 
 use Raptor\Dashboard\DashboardController;
 
 class CountriesController extends DashboardController
-{
-    function __construct(ServerRequestInterface $request)
-    {
-        $meta = $request->getAttribute('meta', []);
-        $localization = $request->getAttribute('localization');
-        if (isset($localization['code'])
-            && isset($localization['text']['countries'])
-        ) {
-            $meta['content']['title'][$localization['code']] = $localization['text']['world-countries'];
-            $request = $request->withAttribute('meta', $meta);
-        }
-        
-        parent::__construct($request);
-    }
-    
+{    
     public function index()
     {
         if (!$this->isUserCan('system_localization_index')) {
@@ -32,7 +17,9 @@ class CountriesController extends DashboardController
             return;
         }
 
-        $this->twigDashboard(\dirname(__FILE__) . '/countries-index.html')->render();
+        $dashboard = $this->twigDashboard(\dirname(__FILE__) . '/countries-index.html');
+        $dashboard->set('title', $this->text('countries'));
+        $dashboard->render();
         
         $this->indolog('localization', LogLevel::NOTICE, 'Дэлхийн улсуудын жагсаалтыг нээж үзэж байна', ['model' => CountriesModel::class]);
     }

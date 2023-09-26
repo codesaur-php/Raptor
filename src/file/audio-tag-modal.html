@@ -1,0 +1,20 @@
+<div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h6 class="modal-title text-uppercase text-warning"><i class="bi bi-magic"></i>  Audio embed code</h6>
+            <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="{{ 'close'|text|e }}"></button>
+        </div>
+        <div class="modal-body">
+            <strong>Relative:</strong>
+            <a class="btn btn-sm btn-warning" onclick="copy('relative');">copy</a>
+            <pre class="border border-warning bg-dark text-light" id="relative" style="white-space:pre-wrap">{{ ('<audio controls><source src="' ~ record['path'] ~ '" type="' ~ record['mime_content_type'] ~ '"></audio>')|e }}</pre>
+            <hr>
+            <strong>Absolute:</strong>
+            <a class="btn btn-sm btn-warning" onclick="copy('absolute');">copy</a>
+            <pre class="border border-warning bg-dark text-light" id="absolute" style="white-space:pre-wrap">{{ ('<audio controls><source src="' ~ host ~ record['path'] ~ '" type="' ~ record['mime_content_type'] ~ '"></audio>')|e }}</pre>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-warning" data-bs-dismiss="modal">{{ 'close'|text }}</button>
+        </div>
+    </div>
+</div>

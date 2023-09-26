@@ -1,43 +1,43 @@
+<!-- template example by Mark Otto, Jacob Thornton, and Bootstrap contributors => https://getbootstrap.com/docs/5.1/examples/dashboard -->
 {% set languageCode = localization.code ?? 'en' %}
 {% set navbarColor = meta['navbar']|default('primary') %}
 {% set home_path = 'home'|link|trim('/', 'right') %}
 <!DOCTYPE html>
-<!-- template example by Mark Otto, Jacob Thornton, and Bootstrap contributors => https://getbootstrap.com/docs/5.1/examples/dashboard -->
 <html lang="{{ languageCode }}">
     <head>
         <meta charset="utf-8">
-        <title>{{ (meta['content']['title'][languageCode] is not empty ? meta['content']['title'][languageCode] : 'dashboard'|text)|e }}</title>
+        <title>{{ title ?? 'dashboard'|text }}</title>
         <meta name="robots" content="{{ meta['robots']|default('index,follow')|e }}">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        {% if meta['author'] is defined %}<meta name="author" content="{{ meta['author'] }}">{% endif %}
+        {% if description is not empty %}<meta name="description" content="{{ description|e }}">{% endif %}
+        {% if meta['author'] is not empty %}<meta name="author" content="{{ meta['author'] }}">{% endif %}
         {% if meta['generator'] is defined %}<meta name="generator" content="{{ meta['generator']|e }}">{% endif %}
-        {% if meta['content']['description'][languageCode] is not empty %}<meta name="description" content="{{ meta['content']['description'][languageCode]|e }}">{% endif %}
-        {% if meta['keywords'] is defined %}<meta name="keywords" content="{{ meta['keywords']|e }}">{% endif %}
-        {% if meta['favico'] is defined %}<link rel="icon" href="{{ meta['favico'] }}" type="image/x-icon">{% endif %}
-        {% if meta['shortcut_icon'] is defined %}<link rel="shortcut icon" href="{{ meta['shortcut_icon'] }}" type="image/png">{% endif %}
-        {% if meta['apple_touch_icon'] is defined %}<link rel="apple-touch-icon" href="{{ meta['apple_touch_icon'] }}">{% endif %}
-        {% if meta['google-site-verification'] is defined %}<meta name="google-site-verification" content="{{ meta['google-site-verification']|e }}">{% endif %}
-        {% if meta['mobile-web-app-capable'] is defined %}<meta name="mobile-web-app-capable" content="{{ meta['mobile-web-app-capable']|e }}">{% endif %}
-        {% if meta['apple-mobile-web-app-status-bar-style'] is defined %}<meta name="apple-mobile-web-app-status-bar-style" content="{{ meta['apple-mobile-web-app-status-bar-style']|e }}">{% endif %}
-        {% if meta['socials']['og']['title'] is defined %}<meta property="og:title" content="{{ meta['socials']['og']['title']|e }}">{% endif %}
-        {% if meta['socials']['og']['description'] is defined %}<meta property="og:description" content="{{ meta['socials']['og']['description']|e }}">{% endif %}
-        {% if meta['socials']['og']['type'] is defined %}<meta property="og:type" content="{{ meta['socials']['og']['type']|e }}">{% endif %}
-        {% if meta['socials']['og']['url'] is defined %}<meta property="og:url" content="{{ meta['socials']['og']['url']|e }}">{% endif %}
-        {% if meta['socials']['og']['site_name'] is defined %}<meta property="og:site_name" content="{{ meta['socials']['og']['site_name']|e }}">{% endif %}
-        {% if meta['socials']['og']['image'] is defined %}<meta property="og:image" content="{{ meta['socials']['og']['image']|e }}">{% endif %}
-        {% if meta['socials']['og']['image:width'] is defined %}<meta property="og:image:width" content="{{ meta['socials']['og']['image:width']|e }}">{% endif %}
-        {% if meta['socials']['og']['image:height'] is defined %}<meta property="og:image:height" content="{{ meta['socials']['og']['image:height']|e }}">{% endif %}
-        {% if meta['socials']['fb']['app_id'] is defined %}<meta property="fb:app_id" content="{{ meta['socials']['fb']['app_id']|e}}">{% endif %}
-        {% if meta['socials']['fb']['page_id'] is defined %}<meta property="fb:page_id" content="{{ meta['socials']['fb']['page_id']|e }}">{% endif %}
-        {% if meta['socials']['fb']['admins'] is defined %}<meta property="fb:admins" content="{{ meta['socials']['fb']['admins']|e }}">{% endif %}
-        {% if meta['socials']['twitter']['card'] is defined %}<meta name="twitter:card" content="{{ meta['socials']['twitter']['card']|e }}">{% endif %}
-        {% if meta['socials']['twitter']['url'] is defined %}<meta name="twitter:url" content="{{ meta['socials']['twitter']['url']|e }}">{% endif %}
-        {% if meta['socials']['twitter']['title'] is defined %}<meta name="twitter:title" content="{{ meta['socials']['twitter']['title']|e }}">{% endif %}
-        {% if meta['socials']['twitter']['description'] is defined %}<meta name="twitter:description" content="{{ meta['socials']['twitter']['description']|e }}">{% endif %}
-        {% if meta['socials']['twitter']['image'] is defined %}<meta name="twitter:image" content="{{ meta['socials']['twitter']['image']|e }}">{% endif %}
-        {% if meta['socials']['twitter']['image:width'] is defined %}<meta name="twitter:image:width" content="{{ meta['socials']['twitter']['image:width']|e }}">{% endif %}
-        {% if meta['socials']['twitter']['image:height'] is defined %}<meta name="twitter:image:height" content="{{ meta['socials']['twitter']['image:height']|e }}">{% endif %}
-        {% if meta['socials']['twitter']['site'] is defined %}<meta name="twitter:site" content="{{ meta['socials']['twitter']['site']|e }}">{% endif %}
+        {% if meta['keywords'] is not empty %}<meta name="keywords" content="{{ meta['keywords']|e }}">{% endif %}
+        {% if meta['favico'] is not empty %}<link rel="icon" href="{{ meta['favico'] }}" type="image/x-icon">{% endif %}
+        {% if meta['shortcut_icon'] is not empty %}<link rel="shortcut icon" href="{{ meta['shortcut_icon'] }}" type="image/png">{% endif %}
+        {% if meta['apple_touch_icon'] is not empty %}<link rel="apple-touch-icon" href="{{ meta['apple_touch_icon'] }}">{% endif %}
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        {% if meta['google-site-verification'] is not empty %}<meta name="google-site-verification" content="{{ meta['google-site-verification']|e }}">{% endif %}
+        {% if meta['mobile-web-app-capable'] is not empty %}<meta name="mobile-web-app-capable" content="{{ meta['mobile-web-app-capable']|e }}">{% endif %}
+        {% if meta['apple-mobile-web-app-status-bar-style'] is not empty %}<meta name="apple-mobile-web-app-status-bar-style" content="{{ meta['apple-mobile-web-app-status-bar-style']|e }}">{% endif %}
+        {% if meta['socials']['og']['title'] is not empty %}<meta property="og:title" content="{{ meta['socials']['og']['title']|e }}">{% endif %}
+        {% if meta['socials']['og']['description'] is not empty %}<meta property="og:description" content="{{ meta['socials']['og']['description']|e }}">{% endif %}
+        {% if meta['socials']['og']['type'] is not empty %}<meta property="og:type" content="{{ meta['socials']['og']['type']|e }}">{% endif %}
+        {% if meta['socials']['og']['url'] is not empty %}<meta property="og:url" content="{{ meta['socials']['og']['url']|e }}">{% endif %}
+        {% if meta['socials']['og']['site_name'] is not empty %}<meta property="og:site_name" content="{{ meta['socials']['og']['site_name']|e }}">{% endif %}
+        {% if meta['socials']['og']['image'] is not empty %}<meta property="og:image" content="{{ meta['socials']['og']['image']|e }}">{% endif %}
+        {% if meta['socials']['og']['image:width'] is not empty %}<meta property="og:image:width" content="{{ meta['socials']['og']['image:width']|e }}">{% endif %}
+        {% if meta['socials']['og']['image:height'] is not empty %}<meta property="og:image:height" content="{{ meta['socials']['og']['image:height']|e }}">{% endif %}
+        {% if meta['socials']['fb']['app_id'] is not empty %}<meta property="fb:app_id" content="{{ meta['socials']['fb']['app_id']|e}}">{% endif %}
+        {% if meta['socials']['fb']['page_id'] is not empty %}<meta property="fb:page_id" content="{{ meta['socials']['fb']['page_id']|e }}">{% endif %}
+        {% if meta['socials']['fb']['admins'] is not empty %}<meta property="fb:admins" content="{{ meta['socials']['fb']['admins']|e }}">{% endif %}
+        {% if meta['socials']['twitter']['card'] is not empty %}<meta name="twitter:card" content="{{ meta['socials']['twitter']['card']|e }}">{% endif %}
+        {% if meta['socials']['twitter']['url'] is not empty %}<meta name="twitter:url" content="{{ meta['socials']['twitter']['url']|e }}">{% endif %}
+        {% if meta['socials']['twitter']['title'] is not empty %}<meta name="twitter:title" content="{{ meta['socials']['twitter']['title']|e }}">{% endif %}
+        {% if meta['socials']['twitter']['description'] is not empty %}<meta name="twitter:description" content="{{ meta['socials']['twitter']['description']|e }}">{% endif %}
+        {% if meta['socials']['twitter']['image'] is  not empty %}<meta name="twitter:image" content="{{ meta['socials']['twitter']['image']|e }}">{% endif %}
+        {% if meta['socials']['twitter']['image:width'] is not empty %}<meta name="twitter:image:width" content="{{ meta['socials']['twitter']['image:width']|e }}">{% endif %}
+        {% if meta['socials']['twitter']['image:height'] is not empty %}<meta name="twitter:image:height" content="{{ meta['socials']['twitter']['image:height']|e }}">{% endif %}
+        {% if meta['socials']['twitter']['site'] is not empty %}<meta name="twitter:site" content="{{ meta['socials']['twitter']['site']|e }}">{% endif %}
         
         <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.9.1/font/bootstrap-icons.css" rel="stylesheet">
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
@@ -58,7 +58,7 @@
     <body>
         <header class="navbar navbar-dark sticky-top bg-{{ navbarColor }} flex-md-nowrap p-0 shadow">
             <a class="navbar-brand col-md-3 col-lg-2 me-0 px-3 text-uppercase" href="{{ home_path }}">
-                {% if user.getOrganization()['logo'] is defined and user.getOrganization()['logo'] is not empty %}<img src="{{ user.getOrganization()['logo'] }}">{% endif %}
+                {% if user.getOrganization()['logo'] is not empty %}<img src="{{ user.getOrganization()['logo'] }}">{% endif %}
                 {{ user.getOrganization()['name'] }}
             </a>
             <button class="navbar-toggler position-absolute d-md-none collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
@@ -141,7 +141,7 @@
                 Dashboard.init("{{ ('loading')|text|e }}");
             });
         </script>
-        {% if meta['socials']['google']['analytics']['id'] is defined %}
+        {% if meta['socials']['google']['analytics']['id'] is not empty %}
         <script type="text/javascript">
             (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
             (i[r].q=i[r].q||[]).push(arguments);},i[r].l=1*new Date();a=s.createElement(o),
@@ -150,7 +150,7 @@
             ga('create', '{{ meta['socials']['google']['analytics']['id']|e }}', 'auto'); ga('send', 'pageview');
         </script>
         {%  endif %}
-        {% if meta['socials']['fb']['page']['id'] is defined %}
+        {% if meta['socials']['fb']['page']['id'] is not empty %}
         <div id="fb-root"></div>
         <script type="text/javascript">
             window.fbAsyncInit = function() {
@@ -165,7 +165,7 @@
             }(document, 'script', 'facebook-jssdk'));
         </script>
         <div class="fb-customerchat" attribution=setup_tool page_id="{{ meta['fb']['page']['id'] }}"
-            {% if meta['socials']['fb']['page']['messenger_theme_color'] is defined %} theme_color="{{ meta['socials']['fb']['page']['messenger_theme_color']|e }}"{% endif %}
+            {% if meta['socials']['fb']['page']['messenger_theme_color'] is not empty %} theme_color="{{ meta['socials']['fb']['page']['messenger_theme_color']|e }}"{% endif %}
             logged_in_greeting="{{ meta['socials']['fb']['page']['messenger_in_greeting']|default('Сайн байна уу? Бидэнтэй холбогдож байгаа таньд баярлалаа')|e }}"
             logged_out_greeting="{{ meta['socials']['fb']['page']['messenger_out_greeting']|default('Сайн байна уу? Бидэнтэй холбогдож байгаа таньд баярлалаа')|e }}">
         </div>

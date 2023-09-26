@@ -8,129 +8,109 @@ use Indoraptor\Contents\FilesModel;
 
 class FilesController extends FileController
 {
+
     public function index()
     {
         if (!$this->isUserCan('system_content_index')) {
             $this->dashboardProhibited(null, 401)->render();
             return;
         }
-        
-        $tblNames =  $this->indo('/statement', ['query' => "SHOW TABLES LIKE '%_files'"]);
+
+        $tblNames = $this->indo('/statement', ['query' => "SHOW TABLES LIKE '%_files'"]);
         $tables = [];
-        $total = ['tables' => 0, 'rows' => 0];
+        $total = ['tables' => 0, 'rows' => 0, 'sizes' => 0];
         foreach ($tblNames as $result) {
             $table = \current($result);
-            $rows =  $this->indo('/statement', ['query' => "SELECT COUNT(*) as files FROM $table WHERE is_active=1"]);
-            $count =  $rows[0]['files'];
-            $tables[$table] = $count;
+            $rows = $this->indo('/statement', ['query' => "SELECT COUNT(*) as count FROM $table WHERE is_active=1"]);
+            $sizes = $this->indo('/statement', ['query' => "SELECT SUM(size) as size FROM $table WHERE is_active=1"]);
+            $count = $rows[0]['count'];
+            $size = $sizes[0]['size'];
             ++$total['tables'];
-            $total['rows'] = $count;
+            $total['rows'] += $count;
+            $total['sizes'] += $size;
+            $tables[$table] = ['count' => $count, 'size' => $this->formatSizeUnits($size)];
         }
-
-        $this->twigDashboard(
+        
+        if (isset($this->getQueryParams()['table'])) {
+            $table = \preg_replace('/[^A-Za-z0-9_-]/', '',  $this->getQueryParams()['table']);
+        } elseif (!empty($tables)) {
+            $keys = \array_keys($tables);
+            $table = \reset($keys);
+        } else {
+            $this->dashboardProhibited('No file tables found!', 404)->render();
+            return;
+        }
+        
+        $files = $this->indosafe("/files/records/$table");
+        $total['sizes'] = $this->formatSizeUnits($total['sizes']);
+        $dashboard = $this->twigDashboard(
             \dirname(__FILE__) . '/files-index.html',
             [
-                'tables' => $tables, 'total' => $total,
-                'table' => $this->getQueryParams()['table'] ?? null
+                'tables' => $tables,
+                'total' => $total,
+                'table' => $table,
+                'files' => $files
             ]
-        )->render();
-        
-        $this->indolog('files', LogLevel::NOTICE, 'Файлын жагсаалтыг нээж үзэж байна', ['model' => FilesModel::class]);
+        );
+        $dashboard->set('title', $this->text('files'));
+        $dashboard->render();
+
+        $this->indolog('files', LogLevel::NOTICE, 'Файлын жагсаалтыг нээж үзэж байна', [
+            'model' => FilesModel::class, 'tables' => $tables, 'total' => $total, 'table' => $table
+        ]);
     }
-    
-    public function datatable($table)
-    {
-        try {
-            $rows = [];
-            
-            if (!$this->isUserCan('system_content_index')) {
-                throw new \Exception($this->text('system-no-permission'), 401);
-            }
-            
-            $name = \substr($table, 0, -\strlen('_files'));
-            $files = $this->indoget("/files/records/$name");
-            foreach ($files as $record) {
-                $row = [$record['id']];
-                $row[] = $record['file'];
-                $row[] = $record['size'];
-                $row[] = $record['type'];
-                $row[] = $record['mime_content_type'];
-                $row[] = $record['record_id'];
-                $row[] = \htmlentities($record['category'] ?? '');
-                $row[] = \htmlentities($record['keyword'] ?? '');
-                $row[] = \htmlentities($record['description'] ?? '');
-                
-                $row[] = '<a class="btn btn-sm btn-info shadow-sm" href="' .
-                    $this->generateLink('files-open', ['id' => $record['id']]) . '"><i class="bi bi-eye"></i></a>';
-                
-                $rows[] = $row;
-            }
-        } catch (\Throwable $e) {
-            $this->errorLog($e);
-        } finally {
-            $count = \count($rows);
-            $this->respondJSON([
-                'data' => $rows,
-                'recordsTotal' => $count,
-                'recordsFiltered' => $count,
-                'draw' => (int) ($this->getQueryParams()['draw'] ?? 0)
-            ]);
-        }
-    }
-    
+
     public function post(string $input, string $table, int $id, string $folder)
     {
         try {
             if (!$this->isUserAuthorized()) {
                 throw new \Exception('Unauthorized', 401);
             }
-            
+
             $_table = \preg_replace('/[^A-Za-z0-9_-]/', '', $table);
             if (empty($_table)) {
                 throw new \InvalidArgumentException(__CLASS__ . ": Table name can't empty", 1103);
             }
-            
+
             $this->setFolder("/$folder/" . ($id == 0 ? 'files' : $id));
             $this->allowCommonTypes();
             $uploaded = $this->moveUploaded($input);
             if (!$uploaded) {
                 throw new \InvalidArgumentException(__CLASS__ . ': Invalid upload!', 400);
             }
-            
+
             $record = $uploaded;
             if ($id > 0) {
                 $record['record_id'] = $id;
             }
             $record['id'] = $this->indo("/files/$_table/insert", $record);
             $text = "Мэдээллийн $_table хүснэгтийн $id-р бичлэгт зориулж {$record['id']} дугаартай файлыг байршуулан холболоо";
-            $this->indolog('files', LogLevel::INFO, $text, ['reason' => 'insert-upload-file', 'table' => $_table, 'record' => $record]);            
+            $this->indolog('files', LogLevel::INFO, $text, ['reason' => 'insert-upload-file', 'table' => $_table, 'record' => $record]);
             $this->respondJSON($record);
         } catch (\Throwable $e) {
             $error = ['error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]];
             $this->respondJSON($error, $e->getCode());
-            
+
             if (!empty($uploaded['file'])) {
                 $this->tryDeleteFile(\basename($uploaded['file']));
             }
         }
     }
-    
+
     protected function submit(string $table, array|false $upload, array $record): array|null
     {
         if (!$this->isUserAuthorized()) {
             throw new \Exception('Unauthorized', 401);
         }
-        
+
         $_table = \preg_replace('/[^A-Za-z0-9_-]/', '', $table);
-        if (empty($_table)
-            || !isset($upload['dir'])
-            || empty($upload['name'])
+        if (empty($_table) || !isset($upload['dir']) || empty($upload['name'])
         ) {
             throw new \InvalidArgumentException(__CLASS__ . ': Invalid upload data for submit!', 400);
         } elseif (!isset($record['record_id'])) {
             throw new \InvalidArgumentException(__CLASS__ . ': Invalid record data!', 400);
         }
-        
+
         $record['file'] = $upload['dir'] . $upload['name'];
         $record['path'] = $this->getPath($upload['name']);
         $record['id'] = $this->indo("/files/$_table/insert", $record);
@@ -142,19 +122,19 @@ class FilesController extends FileController
         );
         return $this->indo("/files/$_table", ['id' => $record['id']]);
     }
-    
+
     public function moveToFolder(string $table, int $id, string $folder, int $mode = 0755)
     {
         try {
             if (!$this->isUserAuthorized()) {
                 throw new \Exception('Unauthorized', 401);
             }
-            
+
             $_table = \preg_replace('/[^A-Za-z0-9_-]/', '', $table);
             if (empty($_table)) {
                 throw new \InvalidArgumentException(__CLASS__ . ": Table name can't empty", 1103);
             }
-            
+
             $record = $this->indo("/files/$_table", ['id' => $id]);
             $this->setFolder($folder);
             $upload_path = "$this->local/";
@@ -174,15 +154,30 @@ class FilesController extends FileController
             $this->indo("/files/$_table/update", [
                 'record' => $update, 'condition' => ['WHERE' => "id=$id"]
             ]);
-            
+
             $text = "Мэдээллийн $_table хүснэгтийн {$record['record_id']}-р бичлэгт зориулcан $id дугаартай файлын байршил солигдлоо";
             $this->indolog('files', LogLevel::INFO, $text, [
-                'reason' => 'rename-file-folder', 'table' => $_table, 'folder' => $folder, 'record' =>  $update + $record, 'mode' => $mode
+                'reason' => 'rename-file-folder', 'table' => $_table, 'folder' => $folder, 'record' => $update + $record, 'mode' => $mode
             ]);
             return true;
         } catch (\Throwable $e) {
             $this->errorLog($e);
             return false;
+        }
+    }
+
+    private function formatSizeUnits(int $bytes): string
+    {
+        if ($bytes >= 1099511627776) {
+            return \number_format($bytes / 1099511627776, 2) . ' TB';
+        } elseif ($bytes >= 1073741824) {
+            return \number_format($bytes / 1073741824, 2) . ' GB';
+        } elseif ($bytes >= 1048576) {
+            return \number_format($bytes / 1048576, 2) . ' MB';
+        } elseif ($bytes >= 1024) {
+            return \number_format($bytes / 1024, 2) . ' KB';
+        } else {
+            return "$bytes bytes";
         }
     }
 }
