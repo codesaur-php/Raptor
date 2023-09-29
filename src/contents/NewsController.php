@@ -17,7 +17,7 @@ class NewsController extends DashboardController
             $this->dashboardProhibited(null, 401)->render();
             return;
         }
-
+        
         $dashboard = $this->twigDashboard(\dirname(__FILE__) . '/news-index.html');
         $dashboard->set('title', $this->text('news'));
         $dashboard->render();
@@ -34,28 +34,14 @@ class NewsController extends DashboardController
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
             
+            $images = $this->getImages();
+            $featured = $this->getFeaturedImages();
+            $files_counts = $this->getFilesCounts();
+            
             $news_query = 
                 'SELECT id, title, code, category, type, published, publish_date ' .
                 'FROM indo_news WHERE is_active=1';
             $news = $this->indo('/statement', ['query' => $news_query]);
-            $news_files_query = 
-                'SELECT n.id as id, COUNT(*) as files ' .
-                'FROM indo_news as n JOIN indo_news_files as f ON n.id=f.record_id ' .
-                'WHERE n.is_active=1 AND f.is_active=1 ' .
-                'GROUP BY f.record_id';
-            $news_files = $this->indo('/statement', ['query' => $news_files_query]);
-            $news_image_query = 
-                'SELECT n.id as id, min(f.id), f.path as image ' .
-                'FROM indo_news as n JOIN indo_news_files as f ON n.id=f.record_id ' .
-                "WHERE n.is_active=1 AND f.is_active=1 AND f.type='image' " .
-                'GROUP BY f.record_id';
-            $news_image = $this->indo('/statement', ['query' => $news_image_query]);
-            $news_featured_query = 
-                'SELECT n.id as id, min(f.id), f.path as featured ' .
-                'FROM indo_news as n JOIN indo_news_files as f ON n.id=f.record_id ' .
-                "WHERE n.is_active=1 AND f.is_active=1 AND f.type='image' AND f.category='featured' " .
-                'GROUP BY f.record_id';
-            $news_featured = $this->indo('/statement', ['query' => $news_featured_query]);
             foreach ($news as $record) {
                 if (!empty($record['code'])) {
                     $lang = '<img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.3/flags/' . $record['code'] . '.png"> ' . $record['code'];
@@ -65,16 +51,13 @@ class NewsController extends DashboardController
                 $id = $record['id'];
                 $row = [$record['publish_date'], $lang];
                 
-                $image =
-                    $news_featured[$id]['featured']
-                    ?? $news_image[$id]['image']
-                    ?? 'https://via.placeholder.com/60?text=no+photo';
+                $image = $featured[$id] ?? $images[$id] ?? 'https://via.placeholder.com/60?text=no+photo';
                 $row[] = "<img style=\"max-width:60px;max-height:60px\" src=\"$image\"\>";
                 
                 $title = \htmlentities($record['title']);
                 $row[] = $title;
                 
-                $row[] = $news_files[$id]['files'] ?? 0;
+                $row[] = $files_counts[$id] ?? 0;
                 
                 $row[] =
                     '<span class="badge bg-primary">' . \htmlentities($record['category']) . '</span> ' .
@@ -365,5 +348,56 @@ class NewsController extends DashboardController
         } finally {
             $this->indolog('content', $level, $message, $context);
         }
+    }
+    
+    private function getFilesCounts(): array
+    {
+        $files_count_query = 
+            'SELECT n.id as id, COUNT(*) as files ' .
+            'FROM indo_news as n JOIN indo_news_files as f ON n.id=f.record_id ' .
+            'WHERE n.is_active=1 AND f.is_active=1 ' .
+            'GROUP BY f.record_id';
+        $result =  $this->indo('/statement', ['query' => $files_count_query]);
+        $counts = [];
+        foreach ($result as $count) {
+            $counts[$count['id']] = $count['files'];
+        }
+        return $counts;
+    }
+    
+    private function getImages(): array
+    {
+        $images_query = 
+            'SELECT n.id as id, f.path as image ' .
+            'FROM indo_news as n JOIN indo_news_files as f ON n.id=f.record_id ' .
+            "WHERE n.is_active=1 AND f.is_active=1 AND f.type='image' " .
+            'GROUP BY f.record_id';
+        $result =  $this->indo('/statement', ['query' => $images_query]);
+        $images = [];
+        foreach ($result as $file) {
+            $images[$file['id']] = $file['image'];
+        }
+        return $images;
+    }
+    
+    private function getFeaturedImages(): array
+    {
+        $featured_query = 
+            'SELECT n.id as id, f.path as image, f.id as file_id ' .
+            'FROM indo_news as n JOIN indo_news_files as f ON n.id=f.record_id ' .
+            "WHERE n.is_active=1 AND f.is_active=1 AND f.type='image' AND f.category='featured' " .
+            'ORDER BY f.updated_at desc';
+        $result = $this->indo('/statement', ['query' => $featured_query]);
+        $featured = [];
+        foreach ($result as $file) {
+            if (isset($featured[$file['id']])) {
+                $this->indosafe(
+                    '/files/indo_news_files/update',
+                    ['record' => ['category' => ''], 'condition' => ['WHERE' => "id={$file['file_id']}"]]);
+            } else {
+                $featured[$file['id']] = $file['image'];
+            }
+        }
+        return $featured;
     }
 }

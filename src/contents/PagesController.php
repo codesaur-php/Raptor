@@ -34,36 +34,13 @@ class PagesController extends DashboardController
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
             
+            $images = $this->getImages();
+            $featured = $this->getFeaturedImages();
+            $files_counts = $this->getFilesCounts();
             $pages_query = 
                 'SELECT id, title, code, category, type, position, published ' .
                 'FROM indo_pages WHERE is_active=1';
             $pages = $this->indo('/statement', ['query' => $pages_query]);
-            $page_files_query = 
-                'SELECT p.id as id, COUNT(*) as files ' .
-                'FROM indo_pages as p JOIN indo_pages_files as f ON p.id=f.record_id ' .
-                'WHERE p.is_active=1 AND f.is_active=1 ' .
-                'GROUP BY f.record_id';
-            $page_files = $this->indo('/statement', ['query' => $page_files_query]);
-            $page_image_query = 
-                'SELECT p.id as id, min(f.id), f.path as image ' .
-                'FROM indo_pages as p JOIN indo_pages_files as f ON p.id=f.record_id ' .
-                "WHERE p.is_active=1 AND f.is_active=1 AND f.type='image' " .
-                'GROUP BY f.record_id';
-            $page_image = $this->indo('/statement', ['query' => $page_image_query]);
-            $page_featured_query = 
-                'SELECT p.id as id, min(f.id), f.path as featured ' .
-                'FROM indo_pages as p JOIN indo_pages_files as f ON p.id=f.record_id ' .
-                "WHERE p.is_active=1 AND f.is_active=1 AND f.type='image' AND f.category='featured' " .
-                'GROUP BY f.record_id';
-            $page_featured = $this->indo('/statement', ['query' => $page_featured_query]);
-            foreach ($pages as $id => &$page) {
-                $page['files'] =
-                    $page_files[$id]['files'] ?? 0;
-                $page['image'] =
-                    $page_featured[$id]['featured']
-                    ?? $page_image[$id]['image']
-                    ?? 'https://via.placeholder.com/60?text=no+photo';
-            }
             $infos = $this->getPagesInfos();
             foreach ($pages as $record) {
                 if (!empty($record['code'])) {
@@ -75,7 +52,8 @@ class PagesController extends DashboardController
                 $id = $record['id'];
                 $row = [$id, $lang];
                 
-                $row[] = "<img style=\"max-width:60px;max-height:60px\" src=\"{$record['image']}\"\>";
+                $image = $featured[$id] ?? $images[$id] ?? 'https://via.placeholder.com/60?text=no+photo';
+                $row[] = "<img style=\"max-width:60px;max-height:60px\" src=\"$image\"\>";
                 
                 $title = '';
                 if (isset($infos[$id]['parent_titles'])) {
@@ -85,7 +63,7 @@ class PagesController extends DashboardController
                 $title .= '<span class="fw-medium">' . $caption . '</span>';
                 $row[] = $title;
                 
-                $row[] = $record['files'];
+                $row[] = $files_counts[$id] ?? 0;
                 
                 $row[] =
                     '<span class="badge bg-dark">' . \htmlentities($record['category']) . '</span> ' .
@@ -392,10 +370,18 @@ class PagesController extends DashboardController
         $pages_query = 
             'SELECT id, parent_id, title ' .
             'FROM indo_pages WHERE is_active=1';
-        $pages = $this->indosafe('/statement', ['query' => $pages_query]);
+        $result = $this->indosafe('/statement', ['query' => $pages_query]);
+        $pages = [];
+        foreach ($result as $record) {
+            $pages[$record['id']] = $record;
+        }
         if (!empty($condition)) {
             $pages_query .= " AND $condition";
-            $pages_specified = $this->indosafe('/statement', ['query' => $pages_query]);
+            $result_specified = $this->indosafe('/statement', ['query' => $pages_query]);
+            $pages_specified = [];
+            foreach ($result_specified as $row) {
+                $pages_specified[$row['id']] = $row;
+            }
         }
         foreach ($pages as $page) {
             $id = $page['id'];
@@ -435,5 +421,56 @@ class PagesController extends DashboardController
         
         $ancestry[$parent] = \count($ancestry) + 1;
         return $this->findAncestry($parent, $pages, $ancestry);
+    }
+    
+    private function getFilesCounts(): array
+    {
+        $files_count_query = 
+            'SELECT n.id as id, COUNT(*) as files ' .
+            'FROM indo_pages as n JOIN indo_pages_files as f ON n.id=f.record_id ' .
+            'WHERE n.is_active=1 AND f.is_active=1 ' .
+            'GROUP BY f.record_id';
+        $result =  $this->indo('/statement', ['query' => $files_count_query]);
+        $counts = [];
+        foreach ($result as $count) {
+            $counts[$count['id']] = $count['files'];
+        }
+        return $counts;
+    }
+    
+    private function getImages(): array
+    {
+        $images_query = 
+            'SELECT n.id as id, f.path as image ' .
+            'FROM indo_pages as n JOIN indo_pages_files as f ON n.id=f.record_id ' .
+            "WHERE n.is_active=1 AND f.is_active=1 AND f.type='image' " .
+            'GROUP BY f.record_id';
+        $result =  $this->indo('/statement', ['query' => $images_query]);
+        $images = [];
+        foreach ($result as $file) {
+            $images[$file['id']] = $file['image'];
+        }
+        return $images;
+    }
+    
+    private function getFeaturedImages(): array
+    {
+        $featured_query = 
+            'SELECT n.id as id, f.path as image, f.id as file_id ' .
+            'FROM indo_pages as n JOIN indo_pages_files as f ON n.id=f.record_id ' .
+            "WHERE n.is_active=1 AND f.is_active=1 AND f.type='image' AND f.category='featured' " .
+            'ORDER BY f.updated_at desc';
+        $result = $this->indo('/statement', ['query' => $featured_query]);
+        $featured = [];
+        foreach ($result as $file) {
+            if (isset($featured[$file['id']])) {
+                $this->indosafe(
+                    '/files/indo_pages_files/update',
+                    ['record' => ['category' => ''], 'condition' => ['WHERE' => "id={$file['file_id']}"]]);
+            } else {
+                $featured[$file['id']] = $file['image'];
+            }
+        }
+        return $featured;
     }
 }
