@@ -123,17 +123,9 @@ class DashboardController extends \Raptor\Controller
             $pattern = '/record?model=' . MenuModel::class;
 
             $main_id = $this->indopost($pattern, ['content' => ['mn' => ['title' => 'Үндсэн'], 'en' => ['title' => 'Main']], 'record' => ['position' => '10']]);
-            $script_path = $this->getScriptPath();
-            $home_path = \rtrim($this->generateLink('home'), '/');
-            if ($script_path != $home_path) {
-                $this->indopost($pattern, [
-                    'content' => ['mn' => ['title' => 'Нүүр хуудас'], 'en' => ['title' => 'Home page']],
-                    'record' => ['parent_id' => $main_id, 'position' => '11', 'icon' => 'bi bi-house-door-fill', 'href' => $script_path]
-                ]);
-            }
             $this->indopost($pattern, [
                 'content' => ['mn' => ['title' => 'Хянах самбар'], 'en' => ['title' => 'Dashboard']],
-                'record' => ['parent_id' => $main_id, 'position' => '12', 'icon' => 'bi bi-easel', 'href' => $home_path]
+                'record' => ['parent_id' => $main_id, 'position' => '12', 'icon' => 'bi bi-easel', 'href' => $this->generateLink('home')]
             ]);
 
             $contents_id = $this->indopost($pattern, ['content' => ['mn' => ['title' => 'Агуулгууд'], 'en' => ['title' => 'Contents']], 'record' => ['position' => '200']]);
