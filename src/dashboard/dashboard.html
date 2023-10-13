@@ -10,7 +10,7 @@
         <meta name="robots" content="{{ meta['robots']|default('index,follow')|e }}">
         {% if description is not empty %}<meta name="description" content="{{ description|e }}">{% endif %}
         {% if meta['author'] is not empty %}<meta name="author" content="{{ meta['author'] }}">{% endif %}
-        {% if meta['generator'] is defined %}<meta name="generator" content="{{ meta['generator']|e }}">{% endif %}
+        {% if meta['generator'] is not empty %}<meta name="generator" content="{{ meta['generator']|e }}">{% endif %}
         {% if meta['keywords'] is not empty %}<meta name="keywords" content="{{ meta['keywords']|e }}">{% endif %}
         {% if meta['favico'] is not empty %}<link rel="icon" href="{{ meta['favico'] }}" type="image/x-icon">{% endif %}
         {% if meta['shortcut_icon'] is not empty %}<link rel="shortcut icon" href="{{ meta['shortcut_icon'] }}" type="image/png">{% endif %}
