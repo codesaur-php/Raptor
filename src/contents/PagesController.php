@@ -455,57 +455,69 @@ class PagesController extends DashboardController
     
     private function getFilesCounts(): array
     {
-        $files_count_query = 
-            'SELECT n.id as id, COUNT(*) as files ' .
-            'FROM indo_pages as n JOIN indo_pages_files as f ON n.id=f.record_id ' .
-            'WHERE n.is_active=1 AND f.is_active=1 ' .
-            'GROUP BY f.record_id';
-        $result =  $this->indo('/statement', ['query' => $files_count_query]);
-        $counts = [];
-        foreach ($result as $count) {
-            $counts[$count['id']] = $count['files'];
+        try {
+            $files_count_query = 
+                'SELECT n.id as id, COUNT(*) as files ' .
+                'FROM indo_pages as n JOIN indo_pages_files as f ON n.id=f.record_id ' .
+                'WHERE n.is_active=1 AND f.is_active=1 ' .
+                'GROUP BY f.record_id';
+            $result =  $this->indo('/statement', ['query' => $files_count_query]);
+            $counts = [];
+            foreach ($result as $count) {
+                $counts[$count['id']] = $count['files'];
+            }
+            return $counts;
+        } catch (\Throwable $e) {
+            return [];
         }
-        return $counts;
     }
     
     private function getImages(): array
     {
-        $images_query = 
-            'SELECT n.id as id, f.path as image ' .
-            'FROM indo_pages as n JOIN indo_pages_files as f ON n.id=f.record_id ' .
-            "WHERE n.is_active=1 AND f.is_active=1 AND f.type='image' " .
-            'GROUP BY f.record_id';
-        $result =  $this->indo('/statement', ['query' => $images_query]);
-        $images = [];
-        foreach ($result as $file) {
-            $images[$file['id']] = $file['image'];
+        try {
+            $images_query = 
+                'SELECT n.id as id, f.path as image ' .
+                'FROM indo_pages as n JOIN indo_pages_files as f ON n.id=f.record_id ' .
+                "WHERE n.is_active=1 AND f.is_active=1 AND f.type='image' " .
+                'GROUP BY f.record_id';
+            $result =  $this->indo('/statement', ['query' => $images_query]);
+            $images = [];
+            foreach ($result as $file) {
+                $images[$file['id']] = $file['image'];
+            }
+            return $images;
+        } catch (\Throwable $e) {
+            return [];
         }
-        return $images;
     }
     
     private function getFeaturedImages(): array
     {
-        $featured_query = 
-            'SELECT n.id as id, f.path as image, f.id as file_id ' .
-            'FROM indo_pages as n JOIN indo_pages_files as f ON n.id=f.record_id ' .
-            "WHERE n.is_active=1 AND f.is_active=1 AND f.type='image' AND f.category='featured' " .
-            'ORDER BY f.updated_at desc';
-        $result = $this->indo('/statement', ['query' => $featured_query]);
-        $featured = [];
-        foreach ($result as $file) {
-            if (isset($featured[$file['id']])) {
-                try {
-                    $this->indo(
-                        '/files/indo_pages_files/update',
-                        ['record' => ['category' => ''], 'condition' => ['WHERE' => "id={$file['file_id']}"]]
-                    );
-                } catch (\Throwable $e) {
-                    $this->errorLog($e);
+        try {
+            $featured_query = 
+                'SELECT n.id as id, f.path as image, f.id as file_id ' .
+                'FROM indo_pages as n JOIN indo_pages_files as f ON n.id=f.record_id ' .
+                "WHERE n.is_active=1 AND f.is_active=1 AND f.type='image' AND f.category='featured' " .
+                'ORDER BY f.updated_at desc';
+            $result = $this->indo('/statement', ['query' => $featured_query]);
+            $featured = [];
+            foreach ($result as $file) {
+                if (isset($featured[$file['id']])) {
+                    try {
+                        $this->indo(
+                            '/files/indo_pages_files/update',
+                            ['record' => ['category' => ''], 'condition' => ['WHERE' => "id={$file['file_id']}"]]
+                        );
+                    } catch (\Throwable $e) {
+                        $this->errorLog($e);
+                    }
+                } else {
+                    $featured[$file['id']] = $file['image'];
                 }
-            } else {
-                $featured[$file['id']] = $file['image'];
             }
+            return $featured;
+        } catch (\Throwable $e) {
+            return [];
         }
-        return $featured;
     }
 }
