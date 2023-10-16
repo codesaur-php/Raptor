@@ -235,17 +235,6 @@ class Controller extends \codesaur\Http\Application\Controller
         }
     }
     
-    public final function indosafe(string $pattern, array $payload = [], string $method = 'INTERNAL')
-    {
-        try {
-            return $this->indo($pattern, $payload, $method);
-        } catch (\Throwable $e) {
-            $this->errorLog($e);
-            
-            return [];
-        }
-    }
-    
     protected final function errorLog(\Throwable $e)
     {
         if (!$this->isDevelopment()) {

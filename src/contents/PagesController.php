@@ -150,10 +150,11 @@ class PagesController extends DashboardController
                 $table = 'indo_pages';
                 $filesController = new FilesController($this->getRequest());
                 foreach ($files as $file_id) {
-                    $result = $this->indosafe(
-                        "/files/$table/update",
-                        ['record' => ['record_id' => $id], 'condition' => ['WHERE' => "id=$file_id"]]);
-                    if (!empty($result)) {                        
+                    try {
+                        $this->indo(
+                            "/files/$table/update",
+                            ['record' => ['record_id' => $id], 'condition' => ['WHERE' => "id=$file_id"]]
+                        );
                         $this->indolog(
                             'files',
                             LogLevel::INFO,
@@ -161,6 +162,8 @@ class PagesController extends DashboardController
                             ['reason' => 'register-file', 'table' => $table, 'record_id' => $id, 'file_id' => $file_id]
                         );
                         $filesController->moveToFolder($table, $file_id, "/pages/$id");
+                    } catch (\Throwable $e) {
+                        $this->errorLog($e);
                     }
                 }
             } else {
@@ -200,8 +203,14 @@ class PagesController extends DashboardController
             
             $record = $this->indoget('/record?model=' . PagesModel::class, ['id' => $id]);
             $context['record'] = $record;
-            $context['files'] = $this->indosafe(
-                '/files/records/indo_pages', ['WHERE' => "record_id=$id AND is_active=1"]);
+            try {
+                $context['files'] = $this->indo(
+                    '/files/records/indo_pages',
+                    ['WHERE' => "record_id=$id AND is_active=1"]
+                );
+            } catch (\Throwable $e) {
+                $context['files'] = [];
+            }
             $dashboard = $this->twigDashboard(
                 \dirname(__FILE__) . '/page-view.html',
                 $context + [
@@ -214,7 +223,7 @@ class PagesController extends DashboardController
 
             $level = LogLevel::NOTICE;
             $message = "{$record['title']} - хуудасны мэдээллийг нээж үзэж байна";
-        } catch (\Throwable $e ){
+        } catch (\Throwable $e) {
             $this->dashboardProhibited($e->getMessage(), $e->getCode())->render();
             
             $level = LogLevel::ERROR;
@@ -271,30 +280,45 @@ class PagesController extends DashboardController
                 ) {
                     return;
                 }
-                $current_files = $this->indosafe(
-                    "/files/records/$table", ['WHERE' => "record_id=$id AND is_active=1"]);
+                try {
+                    $current_files = $this->indo(
+                        "/files/records/$table",
+                        ['WHERE' => "record_id=$id AND is_active=1"]
+                    );
+                } catch (\Throwable $e) {
+                    $current_files = [];
+                }
                 foreach ($files as $file_id) {
                     $fid = (int) $file_id;
                     if (\array_key_exists($fid, $current_files)) {
                         continue;
                     }
-                    $result = $this->indosafe(
-                        "/files/$table/update",
-                        ['record' => ['record_id' => $id], 'condition' => ['WHERE' => "id=$fid"]]);
-                    if (!empty($result)) {                        
+                    try {
+                        $this->indo(
+                            "/files/$table/update",
+                            ['record' => ['record_id' => $id], 'condition' => ['WHERE' => "id=$fid"]]
+                        );
                         $this->indolog(
                             'files',
                             LogLevel::INFO,
                             "$id-р хуудаст зориулж $fid дугаартай файлыг бүртгэлээ",
                             ['reason' => 'register-file', 'table' => $table, 'record_id' => $id, 'file_id' => $fid]
                         );
+                    } catch (\Throwable $e) {
+                        $this->errorLog($e);
                     }
                 }
             } else {
                 $context['record'] = $this->indoget(
                     '/record?model=' . PagesModel::class, ['id' => $id]);
-                $context['files'] = $this->indosafe(
-                    "/files/records/$table", ['WHERE' => "record_id=$id AND is_active=1"]);
+                try {
+                    $context['files'] = $this->indo(
+                        "/files/records/$table",
+                        ['WHERE' => "record_id=$id AND is_active=1"]
+                    );
+                } catch (\Throwable $e) {
+                    $context['files'] = [];
+                }
                 $vars = $context + [
                     'accounts' => $this->getAccounts(),
                     'infos' => $this->getPagesInfos("id!=$id AND parent_id!=$id")
@@ -367,20 +391,26 @@ class PagesController extends DashboardController
     
     private function getPagesInfos(string $condition = ''): array
     {
-        $pages_query = 
-            'SELECT id, parent_id, title ' .
-            'FROM indo_pages WHERE is_active=1';
-        $result = $this->indosafe('/statement', ['query' => $pages_query]);
         $pages = [];
-        foreach ($result as $record) {
-            $pages[$record['id']] = $record;
+        try {
+            $pages_query = 
+                'SELECT id, parent_id, title ' .
+                'FROM indo_pages WHERE is_active=1';
+            $result = $this->indo('/statement', ['query' => $pages_query]);
+            foreach ($result as $record) {
+                $pages[$record['id']] = $record;
+            }
+        } catch (\Throwable $e) {
         }
         if (!empty($condition)) {
-            $pages_query .= " AND $condition";
-            $result_specified = $this->indosafe('/statement', ['query' => $pages_query]);
             $pages_specified = [];
-            foreach ($result_specified as $row) {
-                $pages_specified[$row['id']] = $row;
+            try {
+                $pages_query .= " AND $condition";
+                $result_specified = $this->indo('/statement', ['query' => $pages_query]);
+                foreach ($result_specified as $row) {
+                    $pages_specified[$row['id']] = $row;
+                }
+            } catch (\Throwable $e) {
             }
         }
         foreach ($pages as $page) {
@@ -464,9 +494,14 @@ class PagesController extends DashboardController
         $featured = [];
         foreach ($result as $file) {
             if (isset($featured[$file['id']])) {
-                $this->indosafe(
-                    '/files/indo_pages_files/update',
-                    ['record' => ['category' => ''], 'condition' => ['WHERE' => "id={$file['file_id']}"]]);
+                try {
+                    $this->indo(
+                        '/files/indo_pages_files/update',
+                        ['record' => ['category' => ''], 'condition' => ['WHERE' => "id={$file['file_id']}"]]
+                    );
+                } catch (\Throwable $e) {
+                    $this->errorLog($e);
+                }
             } else {
                 $featured[$file['id']] = $file['image'];
             }

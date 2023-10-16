@@ -57,27 +57,44 @@ class DashboardController extends \Raptor\Controller
     
     public function getAccounts(): array
     {
-        $accounts = [];
-        $rows = $this->indosafe('/records?model=' . Accounts::class);
-        if (!empty($rows)) {
+        try {
+            $rows = $this->indo('/records?model=' . Accounts::class);
+            $accounts = [];
             foreach ($rows as $rows) {
                 $accounts[$rows['id']] = $rows['username'] . ' » ' . $rows['first_name'] . ' ' . $rows['last_name'] . ' (' . $rows['email'] . ')';
             }
+            return $accounts;
+        } catch (\Throwable $e) {
+            return [];
         }
-        return $accounts;
     }
     
     public function getAccountMenu(): array
     {
-        $has_menu_table = $this->indosafe('/statement', [
-            'query' => "select exists(select 1 from raptor_account_menu)"
-        ]);
+        try {
+            $has_menu_table = $this->indo(
+                '/statement',
+                [
+                    'query' => "select exists(select 1 from raptor_account_menu)"
+                ]
+            );
+        } catch (\Throwable $e) {
+            $has_menu_table = [];
+        }
+        
         if (empty($has_menu_table) || \reset($has_menu_table[0]) == '0') {
             $this->createDefaultMenu();
         }
 
-        $menu = $this->indosafe('/records?model=' . MenuModel::class,
-            ['ORDER BY' => 'p.position', 'WHERE' => 'p.is_active=1']);
+        try {
+            $menu = $this->indo(
+                '/records?model=' . MenuModel::class,
+                ['ORDER BY' => 'p.position', 'WHERE' => 'p.is_active=1']
+            );
+        } catch (\Throwable $e) {
+            $menu = [];
+        }
+        
         $sidemenu = [];
         foreach ($menu as $row) {
             $title = $row['content']['title'][$this->getLanguageCode()];

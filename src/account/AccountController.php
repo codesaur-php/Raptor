@@ -120,13 +120,11 @@ class AccountController extends DashboardController
                 if (!empty($parsedBody['organization'] ?? null)) {
                     $organization = \filter_var($parsedBody['organization'], \FILTER_VALIDATE_INT);
                     if ($organization !== false) {
-                        $org_exists = $this->indosafe('/record?model=' . OrganizationModel::class, ['id' => $organization]);
-                        if (!empty($org_exists)) {
-                            $this->indopost(
-                                '/record?model=' . OrganizationUserModel::class,
-                                ['organization_id' => $organization, 'account_id' => $id]
-                            );
+                        try {
+                            $this->indo('/record?model=' . OrganizationModel::class, ['id' => $organization]);
+                            $this->indopost('/record?model=' . OrganizationUserModel::class, ['organization_id' => $organization, 'account_id' => $id]);
                             $context += ['organization' => $organization];
+                        } catch (\Throwable $e) {
                         }
                     }
                 }
@@ -165,7 +163,7 @@ class AccountController extends DashboardController
                 $level = LogLevel::NOTICE;
                 $message = 'Хэрэглэгч үүсгэх үйлдлийг эхлүүллээ';
             }
-        } catch (\Throwable $e){
+        } catch (\Throwable $e) {
             if ($this->getRequest()->getMethod() == 'POST') {
                 $this->respondJSON(['message' => $e->getMessage()], $e->getCode());
             } else {
@@ -225,18 +223,27 @@ class AccountController extends DashboardController
                 $context = ['record' => $record + ['id' => $id]];
                 
                 $pattern = '/record?model=' . Accounts::class;
-                
-                $existing_username = $this->indosafe($pattern, ['username' => $record['username']]);
-                if (!empty($existing_username) && $existing_username['id'] != $id) {
-                    throw new \Exception($this->text('account-exists') . " username => [{$record['username']}]", 403);
+                try {
+                    $existing_username = $this->indo($pattern, ['username' => $record['username']]);
+                } catch (\Throwable $e) {
                 }
-                $existing_email = $this->indosafe($pattern, ['email' => $record['email']]);
-                if (!empty($existing_email) && $existing_email['id'] != $id) {
+                
+                try {
+                    $existing_email = $this->indo($pattern, ['email' => $record['email']]);
+                } catch (\Throwable $e) {
+                }
+                
+                if (!empty($existing_username)) {
+                    throw new \Exception($this->text('account-exists') . " username => [{$record['username']}]", 403);
+                } elseif (!empty($existing_email)) {
                     throw new \Exception($this->text('account-exists') . " email => [{$record['email']}]", 403);
                 }
                 
-                $existing = $this->indosafe($pattern, ['id' => $id]);
-                $old_photo_file = \basename($existing['photo'] ?? '');
+                try {
+                    $old_photo_file = \basename($this->indo($pattern, ['id' => $id])['photo']);
+                } catch (\Throwable $e) {
+                    $old_photo_file = null;
+                }
                 
                 $file = new PrivateFilesController($this->getRequest());
                 $file->setFolder("/accounts/$id");
@@ -639,31 +646,39 @@ class AccountController extends DashboardController
             if (!$organization_id) {
                 $organization_id = 1;
             }
-            $posted = $this->indosafe(
-                '/record/insert?model=' . OrganizationUserModel::class,
-                ['account_id' => $account_id, 'organization_id' => $organization_id],
-                'INTERNAL');
-            if (!empty($posted)) {
+            
+            try {
+                $this->indo(
+                    '/record/insert?model=' . OrganizationUserModel::class,
+                    ['account_id' => $account_id, 'organization_id' => $organization_id]
+                );
                 $context += ['organization' => $organization_id];
+            } catch (\Throwable $e) {
+                $this->errorLog($e);
             }
             
-            $code = \preg_replace('/[^a-z]/', '', $this->getLanguageCode());
-            $reference = $this->indosafe('/reference/templates',
-                ['WHERE' => "c.code='$code' AND p.keyword='approve-new-account' AND p.is_active=1"]
-            );
-            if (isset($reference['approve-new-account'])) {
+            try {
+                $code = \preg_replace('/[^a-z]/', '', $this->getLanguageCode());
+                $reference = $this->indo(
+                    '/reference/templates',
+                    ['WHERE' => "c.code='$code' AND p.keyword='approve-new-account' AND p.is_active=1"]
+                );
                 $content = $reference['approve-new-account'];
-                
                 $template = new MemoryTemplate();
                 $template->source($content['full'][$code]);
                 $template->set('email', $record['email']);
                 $template->set('login', $this->generateLink('login', [], true));
                 $template->set('username', $record['username']);
-                $this->indosafe('/send/mail', [
-                    'to' => $record['email'],
-                    'message' => $template->output(),
-                    'subject' => $content['title'][$code]
-                ]);
+                $this->indo(
+                    '/send/mail',
+                    [
+                        'to' => $record['email'],
+                        'message' => $template->output(),
+                        'subject' => $content['title'][$code]
+                    ]
+                );
+            } catch (\Throwable $e) {
+                $this->errorLog($e);
             }
             
             $this->respondJSON([

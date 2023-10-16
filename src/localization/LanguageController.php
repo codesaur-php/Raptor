@@ -94,12 +94,23 @@ class LanguageController extends DashboardController
                 }
                 $context['payload'] = $payload;
                 
-                $mother = $this->indosafe('/record?model=' . LanguageModel::class, ['code' => $payload['copy'], 'is_active' => 1]);
+                try {
+                    $mother = $this->indo(
+                        '/record?model=' . LanguageModel::class,
+                        ['code' => $payload['copy'], 'is_active' => 1]
+                    );
+                } catch (\Throwable $e) {
+                    $this->errorLog($e);
+                }
                 if (!isset($mother['code'])) {
                     throw new \Exception($this->text('invalid-request'), 400);
                 }
                 
-                $languages = $this->indosafe('/language', [], 'GET');
+                try {
+                    $languages = $this->indo('/language', [], 'GET');
+                } catch (\Throwable $e) {
+                    $languages = [];
+                }
                 foreach ($languages as $key => $value) {
                     if ($payload['short'] == $key && $payload['full'] == $value) {
                         throw new \Exception($this->text('lang-existing'), 403);
@@ -134,13 +145,17 @@ class LanguageController extends DashboardController
                 $level = LogLevel::INFO;
                 $message = "Шинэ хэл [{$payload['full']}] үүсгэх үйлдлийг амжилттай гүйцэтгэлээ";
             } else {
-                $code = \preg_replace('/[^a-z]/', '', $this->getLanguageCode());
-                $vars = [
-                    'countries' => $this->indosafe(
-                        '/records?model=' . CountriesModel::class,
-                        ['condition' => ['WHERE' => "c.code='$code'"]]
-                    )
-                ];
+                try {
+                    $code = \preg_replace('/[^a-z]/', '', $this->getLanguageCode());
+                    $vars = [
+                        'countries' => $this->indo(
+                            '/records?model=' . CountriesModel::class,
+                            ['condition' => ['WHERE' => "c.code='$code'"]]
+                        )
+                    ];
+                } catch (\Throwable $e) {
+                    $vars = [];
+                }
                 $this->twigTemplate(\dirname(__FILE__) . '/language-insert-modal.html', $vars)->render();
                 
                 $level = LogLevel::NOTICE;
@@ -178,7 +193,7 @@ class LanguageController extends DashboardController
 
             $level = LogLevel::NOTICE;
             $message = "{$record['full']} хэлний мэдээллийг нээж үзэж байна";
-        } catch (\Throwable $e ){
+        } catch (\Throwable $e) {
             $this->modalProhibited($e->getMessage(), $e->getCode())->render();
             
             $level = LogLevel::ERROR;
@@ -215,13 +230,21 @@ class LanguageController extends DashboardController
                 $context['record'] = $record;
                 $context['record']['id'] = $id;
 
-                $defLanguage = $this->indosafe('/record?model=' . LanguageModel::class, ['is_default' => 1]);
-                if (isset($defLanguage['id']) && $record['is_default'] == 1) {
-                    if ($defLanguage['id'] != $id) {
-                        $this->indoput('/record?model=' . LanguageModel::class,
-                            ['record' => ['is_default' => 0], 'condition' => ['WHERE' => "id={$defLanguage['id']}"]]
-                        );
-                    }
+                try {
+                    $defLanguage = $this->indo(
+                        '/record?model=' . LanguageModel::class, ['is_default' => 1]
+                    );
+                } catch (\Throwable $e) {
+                    $defLanguage = [];
+                }
+                
+                if (isset($defLanguage['id'])
+                    && $defLanguage['id'] != $id
+                ) {
+                    $this->indoput(
+                        '/record?model=' . LanguageModel::class,
+                        ['record' => ['is_default' => 0], 'condition' => ['WHERE' => "id={$defLanguage['id']}"]]
+                    );
                 }
                 
                 $this->indoput('/record?model=' . LanguageModel::class,
@@ -279,13 +302,18 @@ class LanguageController extends DashboardController
             $context['payload'] = $payload;
             
             $id = \filter_var($payload['id'], \FILTER_VALIDATE_INT);
-            $defLanguage = $this->indosafe("/record?model=" . LanguageModel::class, ['is_default' => 1]);
+            try {
+                $defLanguage = $this->indo(
+                    "/record?model=" . LanguageModel::class, ['is_default' => 1]
+                );
+            } catch (\Throwable $e) {
+                $defLanguage = [];
+            }
             if (isset($defLanguage['id'])) {
                 if ($defLanguage['id'] == $id) {
                     throw new \Exception('Cannot remove default language!', 403);
                 }
             }
-            
             $this->indodelete("/record?model=" . LanguageModel::class, ['WHERE' => "id=$id"]);
             
             $this->respondJSON([

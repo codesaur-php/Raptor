@@ -18,7 +18,11 @@ class ReferencesController extends DashboardController
             return;
         }
         
-        $reference_likes = $this->indosafe('/statement', ['query' => "SHOW TABLES LIKE 'reference_%'"]);
+        try {
+            $reference_likes = $this->indo('/statement', ['query' => "SHOW TABLES LIKE 'reference_%'"]);
+        } catch (\Throwable $e) {
+            $reference_likes = [];
+        }
         $names = [];
         foreach ($reference_likes as $name) {
             $names[] = \reset($name);
@@ -156,16 +160,16 @@ class ReferencesController extends DashboardController
                 $level = LogLevel::NOTICE;
                 $message = "Шинэ лавлах мэдээллийг [$table] хүснэгт дээр үйлдлийг эхлүүллээ";
             }
-        } catch (\Throwable $th) {
+        } catch (\Throwable $e) {
             if ($is_submit) {
-                $this->respondJSON(['message' => $th->getMessage()], $th->getCode());
+                $this->respondJSON(['message' => $e->getMessage()], $e->getCode());
             } else {
-                $this->dashboardProhibited($th->getMessage(), $th->getCode())->render();
+                $this->dashboardProhibited($e->getMessage(), $e->getCode())->render();
             }
             
             $level = LogLevel::ERROR;
             $message = "Шинэ лавлах мэдээллийг [$table] хүснэгтэд үүсгэх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо";
-            $context['error'] = ['code' => $th->getCode(), 'message' => $th->getMessage()];
+            $context['error'] = ['code' => $e->getCode(), 'message' => $e->getMessage()];
         } finally {
             $this->indolog('content', $level, $message, $context);
         }

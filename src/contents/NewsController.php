@@ -143,10 +143,11 @@ class NewsController extends DashboardController
                 }
                 $filesController = new FilesController($this->getRequest());
                 foreach ($files as $file_id) {
-                    $result = $this->indosafe(
-                        "/files/$table/update",
-                        ['record' => ['record_id' => $id], 'condition' => ['WHERE' => "id=$file_id"]]);
-                    if (!empty($result)) {                        
+                    try {
+                        $this->indo(
+                            "/files/$table/update",
+                            ['record' => ['record_id' => $id], 'condition' => ['WHERE' => "id=$file_id"]]
+                        );
                         $this->indolog(
                             'files',
                             LogLevel::INFO,
@@ -154,6 +155,8 @@ class NewsController extends DashboardController
                             ['reason' => 'register-file', 'table' => $table, 'record_id' => $id, 'file_id' => $file_id]
                         );
                         $filesController->moveToFolder($table, $file_id, "/news/$id");
+                    } catch (\Throwable $e) {
+                        $this->errorLog($e);
                     }
                 }
             } else {
@@ -190,8 +193,14 @@ class NewsController extends DashboardController
             
             $record = $this->indoget('/record?model=' . NewsModel::class, ['id' => $id]);
             $context['record'] = $record;
-            $context['files'] = $this->indosafe(
-                '/files/records/indo_news', ['WHERE' => "record_id=$id AND is_active=1"]);
+            try {
+                $context['files'] = $this->indo(
+                    '/files/records/indo_news',
+                    ['WHERE' => "record_id=$id AND is_active=1"]
+                );
+            } catch (\Throwable $e) {
+                $context['files'] = [];
+            }
             $dashboard = $this->twigDashboard(
                 \dirname(__FILE__) . '/news-view.html',
                 $context + ['accounts' => $this->getAccounts()]
@@ -201,7 +210,7 @@ class NewsController extends DashboardController
 
             $level = LogLevel::NOTICE;
             $message = "{$record['title']} - мэдээг нээж үзэж байна";
-        } catch (\Throwable $e ){
+        } catch (\Throwable $e) {
             $this->dashboardProhibited($e->getMessage(), $e->getCode())->render();
             
             $level = LogLevel::ERROR;
@@ -258,30 +267,45 @@ class NewsController extends DashboardController
                 ) {
                     return;
                 }
-                $current_files = $this->indosafe(
-                    "/files/records/$table", ['WHERE' => "record_id=$id AND is_active=1"]);
+                try {
+                    $current_files = $this->indo(
+                        "/files/records/$table",
+                        ['WHERE' => "record_id=$id AND is_active=1"]
+                    );
+                } catch (\Throwable $e) {
+                    $current_files = [];
+                }
                 foreach ($files as $file_id) {
                     $fid = (int) $file_id;
                     if (\array_key_exists($fid, $current_files)) {
                         continue;
                     }
-                    $result = $this->indosafe(
-                        "/files/$table/update",
-                        ['record' => ['record_id' => $id], 'condition' => ['WHERE' => "id=$fid"]]);
-                    if (!empty($result)) {                        
+                    try {
+                        $this->indo(
+                            "/files/$table/update",
+                            ['record' => ['record_id' => $id], 'condition' => ['WHERE' => "id=$fid"]]
+                        );
                         $this->indolog(
                             'files',
                             LogLevel::INFO,
                             "$id-р мэдээнд зориулж $fid дугаартай файлыг бүртгэлээ",
                             ['reason' => 'register-file', 'table' => $table, 'record_id' => $id, 'file_id' => $fid]
                         );
+                    } catch (\Throwable $e) {
+                        $this->errorLog($e);
                     }
                 }
             } else {
                 $context['record'] = $this->indoget(
                     '/record?model=' . NewsModel::class, ['id' => $id]);
-                $context['files'] = $this->indosafe(
-                    "/files/records/$table", ['WHERE' => "record_id=$id AND is_active=1"]);
+                try {
+                    $context['files'] = $this->indo(
+                        "/files/records/$table",
+                        ['WHERE' => "record_id=$id AND is_active=1"]
+                    );
+                } catch (\Throwable $e) {
+                    $context['files'] = [];
+                }
                 $vars = $context + ['accounts' => $this->getAccounts()];
                 $dashboard = $this->twigDashboard(\dirname(__FILE__) . '/news-update.html', $vars);
                 $dashboard->set('title', $this->text('edit-record') . ' | News');
@@ -391,9 +415,14 @@ class NewsController extends DashboardController
         $featured = [];
         foreach ($result as $file) {
             if (isset($featured[$file['id']])) {
-                $this->indosafe(
-                    '/files/indo_news_files/update',
-                    ['record' => ['category' => ''], 'condition' => ['WHERE' => "id={$file['file_id']}"]]);
+                try {
+                    $this->indo(
+                        '/files/indo_news_files/update',
+                        ['record' => ['category' => ''], 'condition' => ['WHERE' => "id={$file['file_id']}"]]
+                    );
+                } catch (\Throwable $e) {
+                    $this->errorLog($e);
+                }
             } else {
                 $featured[$file['id']] = $file['image'];
             }

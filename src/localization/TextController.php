@@ -126,11 +126,21 @@ class TextController extends DashboardController
                     throw new \Exception($this->text('invalid-values'), 400);
                 }
                 
-                $found = $this->indosafe('/text/find/keyword', ['keyword' => $record['keyword']], 'POST');
-                if (!empty($found['table'])) {
+                try {
+                    $found = $this->indopost(
+                        '/text/find/keyword',
+                        ['keyword' => $record['keyword']]
+                    );
+                } catch (\Throwable $e) {
+                    $found = [];
+                }
+                if (isset($found['id'])
+                    && !empty($found['table'])
+                ) {
                     throw new \Exception(
                         $this->text('keyword-existing') . ' -> ID = ' .
-                        $found['id'] . ', Table = ' . $found['table']);
+                        $found['id'] . ', Table = ' . $found['table']
+                    );
                 }
                 
                 $this->indopost("/text/$table", ['record' => $record, 'content' => $content]);
@@ -225,8 +235,16 @@ class TextController extends DashboardController
                     throw new \Exception($this->text('invalid-request'), 400);
                 }
 
-                $found = $this->indosafe('/text/find/keyword', ['keyword' => $record['keyword']], 'POST');
-                if (!empty($found)
+                try {
+                    $found = $this->indopost(
+                        '/text/find/keyword',
+                        ['keyword' => $record['keyword']]
+                    );
+                } catch (\Throwable $e) {
+                    $found = [];
+                }
+                if (isset($found['table'])
+                    && isset($found['id'])
                     && (
                         (int) $found['id'] != $id
                         || $found['table'] != "localization_text_$table"

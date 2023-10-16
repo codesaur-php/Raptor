@@ -41,7 +41,11 @@ class FilesController extends FileController
             return;
         }
         
-        $files = $this->indosafe("/files/records/$table");
+        try {
+            $files = $this->indo("/files/records/$table");
+        } catch (\Throwable $e) {
+            $files = [];
+        }
         $total['sizes'] = $this->formatSizeUnits($total['sizes']);
         $dashboard = $this->twigDashboard(
             \dirname(__FILE__) . '/files-index.html',

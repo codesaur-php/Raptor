@@ -164,7 +164,14 @@ class OrganizationController extends DashboardController
     
     private function getParents(): array
     {
-        return $this->indosafe('/records?model=' . OrganizationModel::class, ['WHERE' => 'parent_id=0 OR parent_id is null']);
+        try {
+            return $this->indo(
+                '/records?model=' . OrganizationModel::class,
+                ['WHERE' => 'parent_id=0 OR parent_id is null']
+            );
+        } catch (\Throwable $e) {
+            return [];
+        }
     }
     
     public function view(int $id)
@@ -179,7 +186,14 @@ class OrganizationController extends DashboardController
             $record = $this->indoget('/record?model=' . OrganizationModel::class, ['id' => $id]);
             $context['record'] = $record;
             if (!empty($record['parent_id'])) {
-                $record['parent_name'] = $this->indosafe('/record?model=' . OrganizationModel::class, ['id' => $record['parent_id']])['name'] ?? '- no parent because its deleted -';
+                try {
+                    $record['parent_name'] = $this->indo(
+                        '/record?model=' . OrganizationModel::class,
+                        ['id' => $record['parent_id']]
+                    )['name'];
+                } catch (\Throwable $e) {
+                    $record['parent_name'] = '- no parent because its deleted -';
+                }
             }
             $this->twigTemplate(
                 \dirname(__FILE__) . '/organization-retrieve-modal.html',
@@ -231,8 +245,16 @@ class OrganizationController extends DashboardController
                 $context['record'] = $record;
                 $context['record']['id'] = $id;
                 
-                $existing = $this->indosafe('/record?model=' . OrganizationModel::class, ['id' => $id, 'is_active' => 1]);
-                $old_logo_file = \basename($existing['logo'] ?? '');
+                try {
+                    $existing = $this->indo(
+                        '/record?model=' . OrganizationModel::class,
+                        ['id' => $id, 'is_active' => 1]
+                    );
+                    $old_logo_file = \basename($existing['logo']);
+                } catch (\Throwable $e) {
+                    $old_logo_file = '';
+                }
+                
                 $file = new FileController($this->getRequest());
                 $file->setFolder("/organizations/$id");
                 $file->allowImageOnly();

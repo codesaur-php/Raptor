@@ -72,8 +72,8 @@ class LogsController extends DashboardController
     {
         try {
             return $this->indoget("/log?table=$table&limit=$limit");
-        } catch (\Throwable $th) {
-            $this->errorLog($th);
+        } catch (\Throwable $e) {
+            $this->errorLog($e);
             
             return [];
         }

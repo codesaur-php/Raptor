@@ -71,17 +71,30 @@ class SettingsController extends DashboardController
                     }
                 }
                 
-                $existing = $this->indosafe('/record?model=' . SettingsModel::class, ['p.alias' => $record['alias'], 'p.is_active' => 1]);
+                try {
+                    $existing = $this->indo(
+                        '/record?model=' . SettingsModel::class,
+                        ['p.alias' => $record['alias'], 'p.is_active' => 1]
+                    );
+                } catch (\Throwable $e) {
+                    $existing = [];
+                }
                 if (isset($existing['id'])) {
                     $id = $existing['id'];
-                    $this->indoput('/record?model=' . SettingsModel::class, ['record' => $record, 'content' => $content, 'condition' => ['WHERE' => "p.id=$id"]]);
+                    $this->indoput(
+                        '/record?model=' . SettingsModel::class,
+                        ['record' => $record, 'content' => $content, 'condition' => ['WHERE' => "p.id=$id"]]
+                    );
                     $notify = 'primary';
                     $notice = $this->text('record-update-success');
                 } else {
                     if (empty($content)) {
                         $content[$this->getLanguageCode()]['title'] = '';
                     }
-                    $id = $this->indopost('/record?model=' . SettingsModel::class, ['record' => $record, 'content' => $content]);
+                    $id = $this->indopost(
+                        '/record?model=' . SettingsModel::class,
+                        ['record' => $record, 'content' => $content]
+                    );
                     $notify = 'success';
                     $notice = $this->text('record-insert-success');
                 }
@@ -137,7 +150,15 @@ class SettingsController extends DashboardController
                 throw new \Exception($this->text('invalid-request'), 400);
             }
             
-            $existing = $this->indosafe('/record?model=' . SettingsModel::class, ['p.alias' => $alias, 'p.is_active' => 1]);
+            try {
+                $existing = $this->indo(
+                    '/record?model=' . SettingsModel::class,
+                    ['p.alias' => $alias, 'p.is_active' => 1]
+                );
+            } catch (\Throwable $e) {
+                $existing = [];
+            }
+            
             $old_favico_file = \basename($existing['favico'] ?? '');
             $old_shortcut_icon_file = \basename($existing['shortcut_icon'] ?? '');
             $old_apple_touch_icon_file = \basename($existing['apple_touch_icon'] ?? '');

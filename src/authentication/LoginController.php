@@ -25,10 +25,16 @@ class LoginController extends \Raptor\Controller
             return $this->redirectTo('home');
         }
         
-        $code = \preg_replace('/[^a-z]/', '', $this->getLanguageCode());
         $vars = ['meta' => $this->getAttribute('meta')];
-        $vars += $this->indosafe('/reference/templates', 
-            ['WHERE' => "c.code='$code' AND (p.keyword='tos' OR p.keyword='pp') AND p.is_active=1"]);        
+        try {
+            $code = \preg_replace('/[^a-z]/', '', $this->getLanguageCode());
+            $vars += $this->indo(
+                '/reference/templates', 
+                ['WHERE' => "c.code='$code' AND (p.keyword='tos' OR p.keyword='pp') AND p.is_active=1"]
+            );
+        } catch (\Throwable $e) {
+        }
+        
         $this->twigTemplate(\dirname(__FILE__) . '/login.html', $vars)->render();
     }
     
@@ -56,10 +62,16 @@ class LoginController extends \Raptor\Controller
             $this->respondJSON(['status' => 'success', 'message' => $message]);
 
             if (empty($account['code'])) {
-                $this->indosafe('/record/update?model=' . Accounts::class, [
-                    'record' => ['code' => $this->getLanguageCode()],
-                    'condition' => ['WHERE' => "id={$account['id']}"]
-                ]);
+                try {
+                    $this->indo(
+                        '/record/update?model=' . Accounts::class,
+                        [
+                            'record' => ['code' => $this->getLanguageCode()],
+                            'condition' => ['WHERE' => "id={$account['id']}"]
+                        ]
+                    );
+                } catch (\Throwable $e) {
+                }
             } elseif ($account['code'] != $this->getLanguageCode()
                 && isset($this->getLanguages()[$account['code']])
             ) {
@@ -125,12 +137,15 @@ class LoginController extends \Raptor\Controller
             $payload['password'] = \password_hash($password, \PASSWORD_BCRYPT);
             $payload['code'] = \preg_replace('/[^a-z]/', '', $this->getLanguageCode());
             
-            $reference = $this->indosafe('/reference/templates', 
-                ['WHERE' => "c.code='{$payload['code']}' AND p.keyword='request-new-account' AND p.is_active=1"]);
-            if (empty($reference['request-new-account'])) {
+            try {
+                $reference = $this->indo(
+                    '/reference/templates', 
+                    ['WHERE' => "c.code='{$payload['code']}' AND p.keyword='request-new-account' AND p.is_active=1"]
+                );
+                $content = $reference['request-new-account'];
+            } catch (\Throwable $e) {
                 throw new \Exception($this->text('email-template-not-set'), StatusCodeInterface::STATUS_INTERNAL_SERVER_ERROR);
             }
-            $content = $reference['request-new-account'];
             
             if (empty($payload['email']) || empty($payload['username'])) {
                 throw new \Exception('Invalid payload', StatusCodeInterface::STATUS_BAD_REQUEST);
@@ -138,23 +153,49 @@ class LoginController extends \Raptor\Controller
                 throw new \Exception('Please provide valid email address.', StatusCodeInterface::STATUS_BAD_REQUEST);
             }
             
-            $existing_email = $this->indosafe('/record?model=' . Accounts::class, ['email' => $payload['email']]);
-            $existing_username = $this->indosafe('/record?model=' . Accounts::class, ['username' => $payload['username']]);
+            try {
+                $existing_email = $this->indo('/record?model=' . Accounts::class, ['email' => $payload['email']]);
+            } catch (\Throwable $e) {
+            }
+            
+            try {
+                $existing_username = $this->indo('/record?model=' . Accounts::class, ['username' => $payload['username']]);
+            } catch (\Throwable $e) {
+            }
+            
             if (!empty($existing_email)) {
                 throw new \Exception("Бүртгэлтэй [{$payload['email']}] хаягаар шинэ хэрэглэгч үүсгэх хүсэлт ирүүллээ. Татгалзав.", StatusCodeInterface::STATUS_FORBIDDEN);
             } elseif (!empty($existing_username)) {
                 throw new \Exception("Бүртгэлтэй [{$payload['username']}] хэрэглэгчийн нэрээр шинэ хэрэглэгч үүсгэх хүсэлт ирүүллээ. Татгалзав.", StatusCodeInterface::STATUS_FORBIDDEN);
             }
             
-            $requests_email = $this->indosafe('/record?model=' . AccountRequestsModel::class, ['email' => $payload['email'], 'status' => 1, 'is_active' => 1]);
-            $requests_username = $this->indosafe('/record?model=' . AccountRequestsModel::class, ['username' => $payload['username'], 'status' => 1, 'is_active' => 1]);
+            try {
+                $requests_email = $this->indo(
+                    '/record?model=' . AccountRequestsModel::class,
+                    ['email' => $payload['email'], 'status' => 1, 'is_active' => 1]
+                );
+            } catch (\Throwable $e) {
+            }
+            
+            try {
+                $requests_username = $this->indo(
+                    '/record?model=' . AccountRequestsModel::class,
+                    ['username' => $payload['username'], 'status' => 1, 'is_active' => 1]
+                );
+            } catch (\Throwable $e) {
+            }
+            
             if (!empty($requests_email)) {
                 throw new \Exception("Шинээр [{$payload['email']}] хаягтай хэрэглэгч үүсгэх хүсэлт ирүүлсэн боловч, уг мэдээллээр урьд нь хүсэлт өгч байсныг бүртгэсэн байсан учир дахин хүсэлт бүртгэхээс татгалзав.", StatusCodeInterface::STATUS_FORBIDDEN);
             } elseif (!empty($requests_username)) {
                 throw new \Exception("Шинээр [{$payload['username']}] нэртэй хэрэглэгч үүсгэх хүсэлт ирүүлсэн боловч, уг мэдээллээр урьд нь хүсэлт өгч байсныг бүртгэсэн байсан учир дахин хүсэлт бүртгэхээс татгалзав.", StatusCodeInterface::STATUS_FORBIDDEN);
             }
             
-            $id = $this->indosafe('/record/insert?model=' . AccountRequestsModel::class, $payload);
+            try {
+                $id = $this->indo('/record/insert?model=' . AccountRequestsModel::class, $payload);
+            } catch (\Throwable $e) {
+            }
+            
             if (empty($id)) {
                 throw new \Exception("Шинээр [{$payload['username']}] нэртэй [{$payload['email']}] хаягтай хэрэглэгч үүсгэх хүсэлт ирүүлснийг мэдээлллийн санд бүртгэн хадгалах үйлдэл гүйцэтгэх явцад алдаа гарч зогслоо.", StatusCodeInterface::STATUS_INTERNAL_SERVER_ERROR);
             }
@@ -163,12 +204,19 @@ class LoginController extends \Raptor\Controller
             $template->set('email', $payload['email']);
             $template->set('username', $payload['username']);
             $template->source($content['full'][$payload['code']]);
-            $this->indosafe('/send/mail', [
-                'to' => $payload['email'],
-                'message' => $template->output(),
-                'subject' => $content['title'][$payload['code']]
-            ]);
-            $this->respondJSON(['status' => 'success', 'message' => $this->text('to-complete-registration-check-email')]);
+            try {
+                $this->indo(
+                    '/send/mail',
+                    [
+                        'to' => $payload['email'],
+                        'message' => $template->output(),
+                        'subject' => $content['title'][$payload['code']]
+                    ]
+                );
+                $this->respondJSON(['status' => 'success', 'message' => $this->text('to-complete-registration-check-email')]);
+            } catch (\Throwable $e) {
+                $this->respondJSON(['status' => 'success', 'message' => 'Хэрэглэгчээр бүртгүүлэх хүсэлтийг хүлээн авлаа!']);
+            }
             
             $level = LogLevel::ALERT;
             $message = "{$payload['username']} нэртэй {$payload['email']} хаягтай шинэ хэрэглэгч үүсгэх хүсэлт бүртгүүллээ";
@@ -194,16 +242,23 @@ class LoginController extends \Raptor\Controller
             ) {
                 throw new \Exception('Please provide valid email address', StatusCodeInterface::STATUS_BAD_REQUEST);
             }
-            $payload['code'] = \preg_replace('/[^a-z]/', '', $this->getLanguageCode());
             
-            $reference = $this->indosafe('/reference/templates',
-                ['WHERE' => "c.code='{$payload['code']}' AND p.keyword='forgotten-password-reset' AND p.is_active=1"]);
-            if (empty($reference['forgotten-password-reset'])) {
+            try {
+                $payload['code'] = \preg_replace('/[^a-z]/', '', $this->getLanguageCode());
+                $reference = $this->indo(
+                    '/reference/templates',
+                    ['WHERE' => "c.code='{$payload['code']}' AND p.keyword='forgotten-password-reset' AND p.is_active=1"]
+                );
+                $content = $reference['forgotten-password-reset'];
+            } catch (\Throwable $e) {
                 throw new \Exception($this->text('email-template-not-set'), StatusCodeInterface::STATUS_NOT_FOUND);
             }
-            $content = $reference['forgotten-password-reset'];
             
-            $account = $this->indosafe('/record?model=' . Accounts::class, ['email' => $payload['email']]);
+            try {
+                $account = $this->indo('/record?model=' . Accounts::class, ['email' => $payload['email']]);                
+            } catch (\Throwable $e) {
+            }
+            
             if (empty($account)) {
                 throw new \Exception("Бүртгэлгүй [{$payload['email']}] хаяг дээр нууц үг шинээр тааруулах хүсэлт илгээхийг оролдлоо. Татгалзав.", StatusCodeInterface::STATUS_NOT_FOUND);
             }
@@ -211,39 +266,51 @@ class LoginController extends \Raptor\Controller
                 throw new \Exception("Эрх нь нээгдээгүй хэрэглэгч [{$payload['email']}] нууц үг шинэчлэх хүсэлт илгээх оролдлого хийв. Татгалзав.", StatusCodeInterface::STATUS_FORBIDDEN);
             }
             
-            $record = [
-                'status'      => 1,
-                'use_id'      => \uniqid('use'),
-                'account'     => $account['id'],
-                'email'       => $account['email'],
-                'code'        => $payload['code'],
-                'username'    => $account['username'],
-                'last_name'   => $account['last_name'],
-                'first_name'  => $account['first_name'],
-                'remote_addr' => $this->getRemoteAddr()
-            ];
-            $id = $this->indosafe('/record/insert?model=' . ForgotModel::class, $record);
+            try {
+                $record = [
+                    'status'      => 1,
+                    'use_id'      => \uniqid('use'),
+                    'account'     => $account['id'],
+                    'email'       => $account['email'],
+                    'code'        => $payload['code'],
+                    'username'    => $account['username'],
+                    'last_name'   => $account['last_name'],
+                    'first_name'  => $account['first_name'],
+                    'remote_addr' => $this->getRemoteAddr()
+                ];
+                $id = $this->indo('/record/insert?model=' . ForgotModel::class, $record);
+            } catch (\Throwable $e) {
+                $this->errorLog($e);
+            }
+            
             if (empty($id)) {
                 throw new \Exception("Хэрэглэгч [{$payload['email']}] нууц үг шинэчлэх хүсэлт илгээснийг мэдээлллийн санд бүртгэн хадгалах үйлдэл гүйцэтгэх явцад алдаа гарч зогслоо.", StatusCodeInterface::STATUS_INTERNAL_SERVER_ERROR);
             }
-            $record['id'] = $id;
-            $context += ['forgot' => $record];
             
-            $template = new MemoryTemplate();
-            $template->set('email', $payload['email']);
-            $template->set('minutes', CODESAUR_PASSWORD_RESET_MINUTES);
-            $template->set('link', "{$this->generateLink('login', [], true)}?forgot={$record['use_id']}");
-            $template->source($content['full'][$payload['code']]);
-            $receiver = $record['first_name'] . ' ' . $record['last_name'];
-            $this->indosafe('/send/mail', [
-                'to' => $payload['email'],
-                'message' => $template->output(),
-                'subject' => $content['title'][$payload['code']]
-            ]);
-            $this->respondJSON(['status' => 'success', 'message' => $this->text('reset-email-sent')]);
-
             $level = LogLevel::INFO;
             $message = "{$payload['email']} хаягтай хэрэглэгч  нууц үгээ шинээр тааруулах хүсэлт илгээснийг бүртгүүллээ";
+
+            try {
+                $record['id'] = $id;
+                $context += ['forgot' => $record];
+
+                $template = new MemoryTemplate();
+                $template->set('email', $payload['email']);
+                $template->set('minutes', CODESAUR_PASSWORD_RESET_MINUTES);
+                $template->set('link', "{$this->generateLink('login', [], true)}?forgot={$record['use_id']}");
+                $template->source($content['full'][$payload['code']]);
+                $this->indo(
+                    '/send/mail',
+                    [
+                        'to' => $payload['email'],
+                        'message' => $template->output(),
+                        'subject' => $content['title'][$payload['code']]
+                    ]
+                );
+                $this->respondJSON(['status' => 'success', 'message' => $this->text('reset-email-sent')]);
+            } catch (\Throwable $e) {
+                $this->respondJSON(['status' => 'success', 'message' => $message]);
+            }
         } catch (\Throwable $e) {
             $message = $e->getMessage();
             $this->respondJSON(['message' => '<span class="text-secondary">Хэрэглэгч нууц үгээ шинэчлэх хүсэлт илгээх үед алдаа гарч зогслоо.</span><br/>' . $message], $e->getCode());
@@ -351,14 +418,18 @@ class LoginController extends \Raptor\Controller
                 throw new \Exception('<span class="text-secondary">Шинэ нууц үгээ буруу бичсэн.</span><br/>' . $this->text('password-must-match'), StatusCodeInterface::STATUS_BAD_REQUEST);
             }
             
-            $record = $this->indosafe('/record?model=' . ForgotModel::class, [
-                'status' => 1,
-                'use_id' => $use_id,
-                'account' => $account_id,
-                'remote_addr' => $this->getRemoteAddr()
-            ]);
-            if (empty($record)) {
-                throw new \Exception('Unauthorized', StatusCodeInterface::STATUS_UNAUTHORIZED);
+            try {
+                $record = $this->indo(
+                    '/record?model=' . ForgotModel::class,
+                    [
+                        'status' => 1,
+                        'use_id' => $use_id,
+                        'account' => $account_id,
+                        'remote_addr' => $this->getRemoteAddr()
+                    ]
+                );
+            } catch (\Throwable $e) {
+                throw new \Exception('Unauthorized! ' . $e->getMessage(), StatusCodeInterface::STATUS_UNAUTHORIZED);
             }
             
             $account = $this->indo('/record?model=' . Accounts::class, ['id' => $account_id]);
