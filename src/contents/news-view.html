@@ -73,6 +73,12 @@
             <li class="nav-item">
                 <a class="nav-link" data-bs-toggle="tab" href="#tab-link">{{ 'link'|text }} <i class="bi bi-link-45deg"></i></a>
             </li>
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="tab" href="#tab-history">{{ 'history'|text }} <i class="bi bi-clock-history"></i></a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="tab" href="#tab-version">{{ 'version'|text }} <i class="bi bi-sort-numeric-down"></i></a>
+            </li>
         </ul>
         <div class="tab-content">
             <div class="tab-pane active show" id="tab-content">
@@ -130,7 +136,43 @@
                 </div>
             </div>
             <div class="tab-pane" id="tab-link">
-                <div class="alert alert-dark shadow-sm fade mt-4 show" role="alert">
+                <div class="alert alert-warning shadow-sm fade mt-4 show" role="alert">
+                    <i class="bi bi-exclamation-triangle" style="margin-right:5px"></i>
+                    {% if localization.code == 'mn' %}
+                    Уучлаарай, энэ үйлдэл одоохондоо ажиллагаанд ороогүй байна
+                    {% else %}
+                    Sorry, this feature isn’t available right now
+                    {% endif %}
+                </div>
+            </div>
+            <div class="tab-pane" id="tab-history">
+                <div class="row mb-3">
+                    <label class="col-3 col-form-label text-end">{{ 'date-created'|text }}</label>
+                    <div class="col-9">
+                        <input class="form-control" readonly value="{{ record['created_at']|e }}" type="text">
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <label class="col-3 col-form-label text-end">{{ 'created-by'|text }}</label>
+                    <div class="col-9">
+                        <input class="form-control" readonly value="{{ (accounts[record['created_by']] ?? record['created_by'])|e }}" type="text">
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <label class="col-3 col-form-label text-end">{{ 'date-modified'|text }}</label>
+                    <div class="col-9">
+                        <input class="form-control" readonly value="{{ record['updated_at']|e }}" type="text">
+                    </div>
+                </div>
+                <div class="row">
+                    <label class="col-3 col-form-label text-end">{{ 'updated-by'|text }}</label>
+                    <div class="col-9">
+                        <input class="form-control" readonly value="{{ (accounts[record['updated_by']] ?? record['updated_by'])|e }}" type="text">
+                    </div>
+                </div>
+            </div>
+            <div class="tab-pane" id="tab-version">
+                <div class="alert alert-info shadow-sm fade mt-4 show" role="alert">
                     <i class="bi bi-exclamation-triangle" style="margin-right:5px"></i>
                     {% if localization.code == 'mn' %}
                     Уучлаарай, энэ үйлдэл одоохондоо ажиллагаанд ороогүй байна
