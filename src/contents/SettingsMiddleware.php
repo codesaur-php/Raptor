@@ -26,7 +26,9 @@ class SettingsMiddleware implements MiddlewareInterface
                 }
                 $localization = $request->getAttribute('localization');
                 $payload = ['alias' => $alias ?: 'system', 'is_active' => 1];
-                if (!empty($localization['code'])) {
+                if (empty($localization['code'])) {
+                   $payload['code'] = 'en';
+               } else {
                    $payload['code'] = $localization['code'];
                }
                 $request->getAttribute('indo')->handle(
@@ -46,6 +48,12 @@ class SettingsMiddleware implements MiddlewareInterface
                     $settings['options'] = \json_decode($settings['options'], true)
                         ?? ['error' => __CLASS__ . ': Error decoding Indoraptor response!'];
                 }
+                
+                foreach ($settings['content'] as $key => $content) {
+                    $settings[$key] = $content[$payload['code']] ?? null;
+                }
+                unset($settings['content']);
+                
                 \ob_end_clean();
             }
         } catch (\Throwable $e) {

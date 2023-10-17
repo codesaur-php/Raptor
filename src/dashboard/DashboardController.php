@@ -17,8 +17,12 @@ class DashboardController extends \Raptor\Controller
     
     public function twigDashboard(string $template, array $vars = []): TwigTemplate
     {
+        $meta = $this->getAttribute('meta', []);
+        
         $dashboard = $this->twigTemplate(\dirname(__FILE__) . '/dashboard.html');
-        $dashboard->set('meta', $this->getAttribute('meta'));
+        $dashboard->set('meta', $meta); 
+        $dashboard->set('title', $meta['title'] ?? null);
+        $dashboard->set('description', $meta['description'] ?? null);
         $dashboard->set('sidemenu', $this->getAccountMenu());
         $dashboard->set('content', $this->twigTemplate($template, $vars));
         return $dashboard;
