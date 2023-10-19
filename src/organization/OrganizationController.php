@@ -246,13 +246,16 @@ class OrganizationController extends DashboardController
                 $context['record']['id'] = $id;
                 
                 try {
-                    $existing = $this->indo(
+                    $current_record = $this->indo(
                         '/record?model=' . OrganizationModel::class,
                         ['id' => $id, 'is_active' => 1]
                     );
-                    $old_logo_file = \basename($existing['logo']);
+                    if (empty($current_record['logo'])) {
+                        throw new \Exception('Current record had no logo!');
+                    }
+                    $current_logo_file = \basename($current_record['logo']);
                 } catch (\Throwable $e) {
-                    $old_logo_file = '';
+                    $current_logo_file = '';
                 }
                 
                 $file = new FileController($this->getRequest());
@@ -262,14 +265,14 @@ class OrganizationController extends DashboardController
                 if ($logo) {
                     $record['logo'] = $logo['path'];
                 }
-                if (!empty($old_logo_file)) {
+                if (!empty($current_logo_file)) {
                     if ($file->getLastError() == -1) {
-                        $file->tryDeleteFile($old_logo_file);
+                        $file->tryDeleteFile($current_logo_file);
                         $record['logo'] = '';
                     } elseif (isset($record['logo'])
-                        && \basename($record['logo']) != $old_logo_file
+                        && \basename($record['logo']) != $current_logo_file
                     ) {
-                        $file->tryDeleteFile($old_logo_file);
+                        $file->tryDeleteFile($current_logo_file);
                     }
                 }
                 if (isset($record['logo'])) {

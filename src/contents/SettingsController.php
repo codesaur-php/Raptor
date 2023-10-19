@@ -72,15 +72,15 @@ class SettingsController extends DashboardController
                 }
                 
                 try {
-                    $existing = $this->indo(
+                    $current = $this->indo(
                         '/record?model=' . SettingsModel::class,
                         ['p.alias' => $record['alias'], 'p.is_active' => 1]
                     );
                 } catch (\Throwable $e) {
-                    $existing = [];
+                    $current = [];
                 }
-                if (isset($existing['id'])) {
-                    $id = $existing['id'];
+                if (isset($current['id'])) {
+                    $id = $current['id'];
                     $this->indoput(
                         '/record?model=' . SettingsModel::class,
                         ['record' => $record, 'content' => $content, 'condition' => ['WHERE' => "p.id=$id"]]
@@ -151,17 +151,17 @@ class SettingsController extends DashboardController
             }
             
             try {
-                $existing = $this->indo(
+                $current_record = $this->indo(
                     '/record?model=' . SettingsModel::class,
                     ['p.alias' => $alias, 'p.is_active' => 1]
                 );
             } catch (\Throwable $e) {
-                $existing = [];
+                $current_record = [];
             }
             
-            $old_favico_file = \basename($existing['favico'] ?? '');
-            $old_shortcut_icon_file = \basename($existing['shortcut_icon'] ?? '');
-            $old_apple_touch_icon_file = \basename($existing['apple_touch_icon'] ?? '');
+            $current_favico_file = \basename($current_record['favico'] ?? '');
+            $current_shortcut_icon_file = \basename($current_record['shortcut_icon'] ?? '');
+            $current_apple_touch_icon_file = \basename($current_record['apple_touch_icon'] ?? '');
             
             $file = new FileController($this->getRequest());
             $file->setFolder('/settings');
@@ -170,19 +170,19 @@ class SettingsController extends DashboardController
             $record = ['alias' => $alias];
             $content = [];
             foreach (\array_keys($this->getLanguages()) as $code) {
-                $old_logo_file = \basename($existing['content']['logo'][$code] ?? '');
+                $current_logo_file = \basename($current_record['content']['logo'][$code] ?? '');
                 $logo = $file->moveUploaded("logo_$code");
                 if ($logo) {
                     $content[$code]['logo'] = $logo['path'];
                 }
-                if (!empty($old_logo_file)) {
+                if (!empty($current_logo_file)) {
                     if ($file->getLastError() == -1) {
-                        $file->tryDeleteFile($old_logo_file);
+                        $file->tryDeleteFile($current_logo_file);
                         $content[$code]['logo'] = '';
                     } elseif (isset($content[$code]['logo'])
-                        && \basename($content[$code]['logo']) != $old_logo_file
+                        && \basename($content[$code]['logo']) != $current_logo_file
                     ) {
-                        $file->tryDeleteFile($old_logo_file);
+                        $file->tryDeleteFile($current_logo_file);
                     }
                 }
                 if (isset($content[$code]['logo'])) {
@@ -195,14 +195,14 @@ class SettingsController extends DashboardController
             if ($ico) {
                 $record['favico'] = $ico['path'];
             }
-            if (!empty($old_favico_file)) {
+            if (!empty($current_favico_file)) {
                 if ($file->getLastError() == -1) {
-                    $file->tryDeleteFile($old_favico_file);
+                    $file->tryDeleteFile($current_favico_file);
                     $record['favico'] = '';
                 } elseif (isset($record['favico'])
-                    && \basename($record['favico']) != $old_favico_file
+                    && \basename($record['favico']) != $current_favico_file
                 ) {
-                    $file->tryDeleteFile($old_favico_file);
+                    $file->tryDeleteFile($current_favico_file);
                 }
             }
             if (isset($record['favico'])) {
@@ -214,14 +214,14 @@ class SettingsController extends DashboardController
             if ($shortcut_icon) {
                 $record['shortcut_icon'] = $shortcut_icon['path'];
             }
-            if (!empty($old_shortcut_icon_file)) {
+            if (!empty($current_shortcut_icon_file)) {
                 if ($file->getLastError() == -1) {
-                    $file->tryDeleteFile($old_shortcut_icon_file);
+                    $file->tryDeleteFile($current_shortcut_icon_file);
                     $record['shortcut_icon'] = '';
                 } elseif (isset($record['shortcut_icon'])
-                    && \basename($record['shortcut_icon']) != $old_shortcut_icon_file
+                    && \basename($record['shortcut_icon']) != $current_shortcut_icon_file
                 ) {
-                    $file->tryDeleteFile($old_shortcut_icon_file);
+                    $file->tryDeleteFile($current_shortcut_icon_file);
                 }
             }
             if (isset($record['shortcut_icon'])) {
@@ -232,22 +232,22 @@ class SettingsController extends DashboardController
             if ($apple_touch_icon) {
                 $record['apple_touch_icon'] = $apple_touch_icon['path'];
             }
-            if (!empty($old_apple_touch_icon_file)) {
+            if (!empty($current_apple_touch_icon_file)) {
                 if ($file->getLastError() == -1) {
-                    $file->tryDeleteFile($old_apple_touch_icon_file);
+                    $file->tryDeleteFile($current_apple_touch_icon_file);
                     $record['apple_touch_icon'] = '';
                 } elseif (isset($record['apple_touch_icon'])
-                    && \basename($record['apple_touch_icon']) != $old_apple_touch_icon_file
+                    && \basename($record['apple_touch_icon']) != $current_apple_touch_icon_file
                 ) {
-                    $file->tryDeleteFile($old_apple_touch_icon_file);
+                    $file->tryDeleteFile($current_apple_touch_icon_file);
                 }
             }
             if (isset($record['apple_touch_icon'])) {
                 $context['record']['apple_touch_icon'] = $record['apple_touch_icon'];
             }
             
-            if (isset($existing['id'])) {
-                $id = $existing['id'];
+            if (isset($current_record['id'])) {
+                $id = $current_record['id'];
                 $this->indoput('/record?model=' . SettingsModel::class, ['record' => $record, 'content' => $content, 'condition' => ['WHERE' => "p.id=$id"]]);
                 $notify = 'primary';
                 $notice = $this->text('record-update-success');

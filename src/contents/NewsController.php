@@ -37,7 +37,8 @@ class NewsController extends DashboardController
             $images = $this->getImages();
             $featured = $this->getFeaturedImages();
             $files_counts = $this->getFilesCounts();
-            
+            $org_name = \strtoupper($this->getUser()->getOrganization()['name'] ?? 'no photo');
+            $placeholder_image = 'https://via.placeholder.com/60?text=' . \urlencode($org_name);            
             $news_query = 
                 'SELECT id, title, code, category, type, published, publish_date ' .
                 'FROM indo_news WHERE is_active=1';
@@ -51,7 +52,7 @@ class NewsController extends DashboardController
                 $id = $record['id'];
                 $row = [$record['publish_date'], $lang];
                 
-                $image = $featured[$id] ?? $images[$id] ?? 'https://via.placeholder.com/60?text=no+photo';
+                $image = $featured[$id] ?? $images[$id] ?? $placeholder_image;
                 $row[] = "<img style=\"max-width:60px;max-height:60px\" src=\"$image\"\>";
                 
                 $title = \htmlentities($record['title']);
@@ -198,6 +199,9 @@ class NewsController extends DashboardController
                     '/files/records/indo_news',
                     ['WHERE' => "record_id=$id AND is_active=1"]
                 );
+                foreach ($context['files'] as &$file) {
+                    unset($file['file']);
+                }
             } catch (\Throwable $e) {
                 $context['files'] = [];
             }
@@ -303,6 +307,9 @@ class NewsController extends DashboardController
                         "/files/records/$table",
                         ['WHERE' => "record_id=$id AND is_active=1"]
                     );
+                    foreach ($context['files'] as &$file) {
+                        unset($file['file']);
+                    }
                 } catch (\Throwable $e) {
                     $context['files'] = [];
                 }

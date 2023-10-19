@@ -37,6 +37,8 @@ class PagesController extends DashboardController
             $images = $this->getImages();
             $featured = $this->getFeaturedImages();
             $files_counts = $this->getFilesCounts();
+            $org_name = \strtoupper($this->getUser()->getOrganization()['name'] ?? 'no photo');
+            $placeholder_image = 'https://via.placeholder.com/60?text=' . \urlencode($org_name);
             $pages_query = 
                 'SELECT id, title, code, category, type, position, published ' .
                 'FROM indo_pages WHERE is_active=1';
@@ -52,7 +54,7 @@ class PagesController extends DashboardController
                 $id = $record['id'];
                 $row = [$id, $lang];
                 
-                $image = $featured[$id] ?? $images[$id] ?? 'https://via.placeholder.com/60?text=no+photo';
+                $image = $featured[$id] ?? $images[$id] ?? $placeholder_image;
                 $row[] = "<img style=\"max-width:60px;max-height:60px\" src=\"$image\"\>";
                 
                 $title = '';
@@ -208,6 +210,9 @@ class PagesController extends DashboardController
                     '/files/records/indo_pages',
                     ['WHERE' => "record_id=$id AND is_active=1"]
                 );
+                foreach ($context['files'] as &$file) {
+                    unset($file['file']);
+                }
             } catch (\Throwable $e) {
                 $context['files'] = [];
             }
@@ -316,6 +321,9 @@ class PagesController extends DashboardController
                         "/files/records/$table",
                         ['WHERE' => "record_id=$id AND is_active=1"]
                     );
+                    foreach ($context['files'] as &$file) {
+                        unset($file['file']);
+                    }
                 } catch (\Throwable $e) {
                     $context['files'] = [];
                 }

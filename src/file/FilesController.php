@@ -46,6 +46,11 @@ class FilesController extends FileController
         } catch (\Throwable $e) {
             $files = [];
         }
+        
+        foreach ($files as &$file) {
+            unset($file['file']);
+        }
+        
         $total['sizes'] = $this->formatSizeUnits($total['sizes']);
         $dashboard = $this->twigDashboard(
             \dirname(__FILE__) . '/files-index.html',
@@ -170,7 +175,7 @@ class FilesController extends FileController
         }
     }
 
-    private function formatSizeUnits(int $bytes): string
+    private function formatSizeUnits(?int $bytes): string
     {
         if ($bytes >= 1099511627776) {
             return \number_format($bytes / 1099511627776, 2) . ' TB';

@@ -233,16 +233,20 @@ class AccountController extends DashboardController
                 } catch (\Throwable $e) {
                 }
                 
-                if (!empty($existing_username)) {
+                if (!empty($existing_username) && $existing_username['id'] != $id) {
                     throw new \Exception($this->text('account-exists') . " username => [{$record['username']}]", 403);
-                } elseif (!empty($existing_email)) {
+                } elseif (!empty($existing_email) && $existing_email['id'] != $id) {
                     throw new \Exception($this->text('account-exists') . " email => [{$record['email']}]", 403);
                 }
                 
                 try {
-                    $old_photo_file = \basename($this->indo($pattern, ['id' => $id])['photo']);
+                    $current_record = $this->indo($pattern, ['id' => $id]);
+                    if (empty($current_record['photo'])) {
+                        throw new \Exception('Current record had no photo!');
+                    }
+                    $current_photo_file = \basename($current_record['photo']);
                 } catch (\Throwable $e) {
-                    $old_photo_file = null;
+                    $current_photo_file = null;
                 }
                 
                 $file = new PrivateFilesController($this->getRequest());
@@ -253,14 +257,14 @@ class AccountController extends DashboardController
                     $record['photo'] = $photo['path'];
                 }
 
-                if (!empty($old_photo_file)) {
+                if (!empty($current_photo_file)) {
                     if ($file->getLastError() == -1) {
-                        $file->tryDeleteFile($old_photo_file);
+                        $file->tryDeleteFile($current_photo_file);
                         $record['photo'] = '';
-                    } elseif (isset($record['photo'])
-                        && \basename($record['photo']) != $old_photo_file
+                    } elseif (!empty($record['photo'])
+                        && \basename($record['photo']) != $current_photo_file
                     ) {
-                        $file->tryDeleteFile($old_photo_file);
+                        $file->tryDeleteFile($current_photo_file);
                     }
                 }
                 
