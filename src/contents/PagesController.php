@@ -37,7 +37,7 @@ class PagesController extends DashboardController
             $images = $this->getImages();
             $featured = $this->getFeaturedImages();
             $files_counts = $this->getFilesCounts();
-            $org_name = \strtoupper($this->getUser()->getOrganization()['name'] ?? 'no photo');
+            $org_name = \mb_strtoupper($this->getUser()->getOrganization()['name'] ?? 'no photo');
             $placeholder_image = 'https://via.placeholder.com/60?text=' . \urlencode($org_name);
             $pages_query = 
                 'SELECT id, title, code, category, type, position, published ' .
