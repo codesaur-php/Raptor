@@ -56,7 +56,7 @@
     <body>
         {% set navbar = meta['navbar']|default('primary') %}
         <header class="navbar navbar-dark sticky-top bg-{{ navbar }} flex-md-nowrap p-0 shadow">
-            <a class="navbar-brand col-md-3 col-lg-2 me-0 px-3 text-uppercase" href="{{ 'home'|link }}">
+            <a class="navbar-brand col-md-3 col-lg-2 me-0 px-3 text-uppercase" href="{{ script_path }}" target="__blank">
                 {% if user.getOrganization()['logo'] is not empty %}<img src="{{ user.getOrganization()['logo'] }}">{% endif %}
                 {{ user.getOrganization()['name'] }}
             </a>
@@ -91,8 +91,7 @@
                         <ul class="nav flex-column">
                         {% for item in menu['submenu'] %}
                             <li class="nav-item">
-                                {% set href = item['href'] %}
-                                <a class="nav-link{% if href in request_path %} active{% endif %}" href="{{ href }}">
+                                <a class="nav-link{% if item['href'] in request_path %} active{% endif %}" href="{{ item['href'] }}">
                                     <i class="{{ item['icon'] }} side-menu-icon"></i> {{ item['title'] }}
                                 </a>
                             </li>
