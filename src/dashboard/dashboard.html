@@ -1,9 +1,7 @@
 <!-- template example by Mark Otto, Jacob Thornton, and Bootstrap contributors => https://getbootstrap.com/docs/5.1/examples/dashboard -->
-{% set languageCode = localization.code ?? 'en' %}
-{% set navbarColor = meta['navbar']|default('primary') %}
-{% set home_path = 'home'|link|trim('/', 'right') %}
+{% set lang = localization.code ?? 'en' %}
 <!DOCTYPE html>
-<html lang="{{ languageCode }}">
+<html lang="{{ lang }}">
     <head>
         <meta charset="utf-8">
         <title>{{ (title is not empty ? title : 'dashboard'|text)|e }}</title>
@@ -56,8 +54,9 @@
         <script defer src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.3/scripts/Dashboard.js"></script>
     </head>
     <body>
-        <header class="navbar navbar-dark sticky-top bg-{{ navbarColor }} flex-md-nowrap p-0 shadow">
-            <a class="navbar-brand col-md-3 col-lg-2 me-0 px-3 text-uppercase" href="{{ home_path }}">
+        {% set navbar = meta['navbar']|default('primary') %}
+        <header class="navbar navbar-dark sticky-top bg-{{ navbar }} flex-md-nowrap p-0 shadow">
+            <a class="navbar-brand col-md-3 col-lg-2 me-0 px-3 text-uppercase" href="{{ 'home'|link }}">
                 {% if user.getOrganization()['logo'] is not empty %}<img src="{{ user.getOrganization()['logo'] }}">{% endif %}
                 {{ user.getOrganization()['name'] }}
             </a>
@@ -66,13 +65,13 @@
             </button>
             <input class="form-control form-control-dark w-100" type="text" placeholder="{{ 'search'|text|e }}" aria-label="{{ 'search'|text|e }}" />
             <div class="dropdown px-2 lang-menu">
-                <button class="btn btn-{{ navbarColor }}" type="button" id="dropdownLanguage" data-bs-toggle="dropdown" aria-expanded="false">
-                    <img class="shadow-sm" src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.3/flags/{{ languageCode }}.png">
+                <button class="btn btn-{{ navbar }}" type="button" id="dropdownLanguage" data-bs-toggle="dropdown" aria-expanded="false">
+                    <img class="shadow-sm" src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.3/flags/{{ lang }}.png">
                 </button>
                 <div class="dropdown-menu bg-dark dropdown-menu-lg-end" aria-labelledby="dropdownLanguage">
-                    {% for lang, country in localization.language %}
-                    <a class="dropdown-item{{ lang == languageCode ? ' active' : '' }}" href="{{ 'language'|link({'code': lang}) }}">
-                        <img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.3/flags/{{ lang }}.png"> {{ country }}
+                    {% for code, country in localization.language %}
+                    <a class="dropdown-item{{ code == lang ? ' active' : '' }}" href="{{ 'language'|link({'code': code}) }}">
+                        <img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.3/flags/{{ code }}.png"> {{ country }}
                     </a>
                     {% endfor %}
                 </div>
@@ -81,6 +80,9 @@
         <div class="container-fluid">
             <div class="row">
                 <nav class="col-md-3 col-lg-2 d-md-block bg-dark sidebar collapse" id="sidebarMenu">
+                    <a class="nav-link mt-3{% if 'home'|link == request_path ~ '/' %} active{% endif %}" href="{{ 'home'|link }}">
+                        <i class="bi bi-easel side-menu-icon"></i> {{ 'dashboard'|text }}
+                    </a>
                     {% for menu in sidemenu %}
                     <div class="position-sticky mt-{{ loop.first ? '3' : '1' }}">
                         <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-3 mb-1 text-muted">
@@ -89,8 +91,8 @@
                         <ul class="nav flex-column">
                         {% for item in menu['submenu'] %}
                             <li class="nav-item">
-                                {% set href = item['href']|trim('/', 'right') %}
-                                <a class="nav-link{{ href == request_path or (href in request_path and href != home_path) ? ' active' : '' }}" href="{{ href }}">
+                                {% set href = item['href'] %}
+                                <a class="nav-link{% if href in request_path %} active{% endif %}" href="{{ href }}">
                                     <i class="{{ item['icon'] }} side-menu-icon"></i> {{ item['title'] }}
                                 </a>
                             </li>

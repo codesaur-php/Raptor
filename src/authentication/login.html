@@ -1,7 +1,7 @@
 <!-- template example by Mark Otto, Jacob Thornton, and Bootstrap contributors => https://getbootstrap.com/docs/5.1/examples/sign-in -->
-{% set languageCode = localization.code ?? 'en' %}
+{% set lang = localization.code ?? 'en' %}
 <!doctype html>
-<html lang="{{ languageCode }}">
+<html lang="{{ lang }}">
     <head>
         <meta charset="utf-8">
         <title>{{ (meta['title'] is not empty ? meta['title'] : 'login'|text)|e }}</title>
@@ -87,7 +87,7 @@
                 </p>
                 <div class="text-center">
                     <span id="language">
-                    {%  if languageCode == 'mn' %}
+                    {%  if lang == 'mn' %}
                         Click for <a href="{{ 'language'|link({'code': 'en'}) }}">English</a>
                     {% else %}
                         Системийн хэлийг <a href="{{ 'language'|link({'code': 'mn'}) }}">Монгол</a> болго
@@ -131,7 +131,7 @@
                 </div>
                 <hr>
                 <div class="text-center mb-2">
-                {% if languageCode == 'mn' %}
+                {% if lang == 'mn' %}
                     Бүртгүүлэх товчыг дарснаар, та манай <a data-bs-toggle="modal" data-bs-target="#tos" href="javascript:;">системийг хэрэглэх ерөнхий нөхцөл</a>
                     хүлээн зөвшөөрч, <a data-bs-toggle="modal" data-bs-target="#pp" href="javascript:;">хувийн нууцлалын бодлоготой</a> танилцсан болно.
                 {% else %}
@@ -362,12 +362,12 @@
             <div class="modal-dialog modal-lg" role="document">
                 <div class="modal-content">
                     <div class="modal-header modal-header-solid">
-                        <h5 class="modal-title text-primary text-uppercase">{{ tos['title'][languageCode] }}</h5>
+                        <h5 class="modal-title text-primary text-uppercase">{{ tos['title'][lang] }}</h5>
                         <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="{{ 'close'|text|e }}"></button>
                     </div>
                     <div class="modal-body">
                         <div style="height:400px;overflow-y:auto;overflow-x:hidden;">
-                            {{ tos['full'][languageCode] }}
+                            {{ tos['full'][lang] }}
                         </div>
                     </div>
                     <div class="modal-footer modal-footer-solid">
@@ -380,12 +380,12 @@
             <div class="modal-dialog modal-lg" role="document">
                 <div class="modal-content">
                     <div class="modal-header modal-header-solid">
-                        <h5 class="modal-title text-primary text-uppercase">{{ pp['title'][languageCode] }}</h5>
+                        <h5 class="modal-title text-primary text-uppercase">{{ pp['title'][lang] }}</h5>
                         <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="{{ 'close'|text|e }}"></button>
                     </div>
                     <div class="modal-body">
                         <div style="height:400px;overflow-y:auto;overflow-x:hidden;">
-                        {{ pp['full'][languageCode] }}
+                        {{ pp['full'][lang] }}
                         </div>
                     </div>
                     <div class="modal-footer modal-footer-solid">
