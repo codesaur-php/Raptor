@@ -56,7 +56,7 @@
     <body>
         {% set navbar = meta['navbar']|default('primary') %}
         <header class="navbar navbar-dark sticky-top bg-{{ navbar }} flex-md-nowrap p-0 shadow">
-            <a class="navbar-brand col-md-3 col-lg-2 me-0 px-3 text-uppercase" href="{{ script_path }}" target="__blank">
+            <a class="navbar-brand col-md-3 col-lg-2 me-0 px-3 text-uppercase" href="{{ index }}" target="__blank">
                 {% if user.getOrganization()['logo'] is not empty %}<img src="{{ user.getOrganization()['logo'] }}">{% endif %}
                 {{ user.getOrganization()['name'] }}
             </a>
@@ -80,7 +80,7 @@
         <div class="container-fluid">
             <div class="row">
                 <nav class="col-md-3 col-lg-2 d-md-block bg-dark sidebar collapse" id="sidebarMenu">
-                    <a class="nav-link mt-3{% if 'home'|link == request_path ~ '/' %} active{% endif %}" href="{{ 'home'|link }}">
+                    <a class="nav-link mt-3{% if 'home'|link == request ~ '/' %} active{% endif %}" href="{{ 'home'|link }}">
                         <i class="bi bi-easel side-menu-icon"></i> {{ 'dashboard'|text }}
                     </a>
                     {% for menu in sidemenu %}
@@ -91,7 +91,7 @@
                         <ul class="nav flex-column">
                         {% for item in menu['submenu'] %}
                             <li class="nav-item">
-                                <a class="nav-link{% if item['href'] in request_path %} active{% endif %}" href="{{ item['href'] }}">
+                                <a class="nav-link{% if item['href'] in request %} active{% endif %}" href="{{ item['href'] }}">
                                     <i class="{{ item['icon'] }} side-menu-icon"></i> {{ item['title'] }}
                                 </a>
                             </li>
@@ -109,7 +109,7 @@
                         <ul class="nav flex-column">
                             {% set account_profile_link = 'account-update'|link({'id': user.getAccount()['id']}) %}
                             <li class="nav-item">
-                                <a class="nav-link{{ request_path == account_profile_link ? ' active' : '' }}" href="{{ account_profile_link }}">
+                                <a class="nav-link{{ request == account_profile_link ? ' active' : '' }}" href="{{ account_profile_link }}">
                                 {% if user.getAccount()['photo'] is not empty %}
                                     <img class="account-profile-photo rounded-circle shadow-sm" src="{{ user.getAccount()['photo'] }}">
                                 {% else %}
@@ -120,7 +120,7 @@
                             </li>
                             {% if user.getOrganizations()|length > 1 %}
                             <li class="nav-item">
-                                <a class="nav-link{{ request_path == 'organization-user'|link ? ' active' : '' }}" href="{{ 'organization-user'|link }}">
+                                <a class="nav-link{{ request == 'organization-user'|link ? ' active' : '' }}" href="{{ 'organization-user'|link }}">
                                     <i class="bi bi-bank side-menu-icon"
                                     {% if user.getAccount()['photo'] is not empty %} style="position:relative;left:7px;margin-right:15px"{% endif %}}></i> {{ 'organization'|text }}
                                 </a>

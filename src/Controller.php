@@ -105,11 +105,13 @@ class Controller extends \codesaur\Http\Application\Controller
     
     public function twigTemplate(string $template, array $vars = []): TwigTemplate
     {
+        $request_path = $this->getRequest()->getUri()->getPath();
+        
         $twig = new TwigTemplate($template, $vars);
         $twig->set('user', $this->getUser());
+        $twig->set('index', $this->getScriptPath());
+        $twig->set('request', \rawurldecode($request_path));
         $twig->set('localization', $this->getAttribute('localization'));
-        $twig->set('script_path', $this->getScriptPath());
-        $twig->set('request_path', \rawurldecode($this->getRequest()->getUri()->getPath()));
 
         $twig->addFilter(new TwigFilter('text', function (string $key): string
         {
