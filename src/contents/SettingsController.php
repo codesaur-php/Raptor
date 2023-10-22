@@ -4,8 +4,6 @@ namespace Raptor\Contents;
 
 use Psr\Log\LogLevel;
 
-use Indoraptor\Contents\SettingsModel;
-
 use Raptor\Dashboard\DashboardController;
 use Raptor\File\FileController;
 
@@ -38,36 +36,9 @@ class SettingsController extends DashboardController
                     throw new \Exception($this->text('invalid-request'), 400);
                 }
                 
-                if (!empty($record['socials'])) {
-                    if (\json_decode($record['socials']) == null) {
-                        throw new \Exception('Additional settings for social networks must be valid JSON!', 400);
-                    }
-                }
-                
-                if (!empty($record['options'])) {
-                    if (\json_decode($record['options']) == null) {
-                        throw new \Exception('Extra options must be valid JSON!', 400);
-                    }
-                }
-                
-                if (!empty($record['facebook'])) {
-                    $fbUrlCheck = '/^(https?:\/\/)?(www\.)?facebook.com\/[a-zA-Z0-9(\.\?)?]/';
-                    if (\preg_match($fbUrlCheck, $record['facebook']) != 1) {
-                        throw new \Exception('Facebook URL is is not valid!', 400);
-                    }
-                }
-                
-                if (!empty($record['twitter'])) {
-                    $twUrlCheck = '/^(https?:\/\/)?(www\.)?twitter.com\/[a-zA-Z0-9(\.\?)?]/';
-                    if (\preg_match($twUrlCheck, $record['twitter']) != 1) {
-                        throw new \Exception('Twitter URL is is not valid!', 400);
-                    }
-                }
-                
-                if (!empty($record['youtube'])) {
-                    $twUrlCheck = '/^(https?:\/\/)?(www\.)?youtube.com\/[a-zA-Z0-9(\.\?)?]/';
-                    if (\preg_match($twUrlCheck, $record['youtube']) != 1) {
-                        throw new \Exception('YouTube URL is is not valid!', 400);
+                if (!empty($record['config'])) {
+                    if (\json_decode($record['config']) == null) {
+                        throw new \Exception('Extra config must be valid JSON!', 400);
                     }
                 }
                 
@@ -121,10 +92,11 @@ class SettingsController extends DashboardController
             $alias = $this->getUser()->getOrganization()['alias'];
 
             try {
-                $record = $this->indoget('/record?model=' . SettingsModel::class, ['p.alias' => $alias, 'p.is_active' => 1]);
+                $record = $this->indoget(
+                    '/record?model=' . SettingsModel::class,
+                    ['p.alias' => $alias, 'p.is_active' => 1]
+                );
             } catch (\Throwable $e) {
-                $this->errorLog($e);
-
                 $record = ['alias' => $alias];
             }
             

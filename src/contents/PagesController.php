@@ -42,7 +42,7 @@ class PagesController extends DashboardController
             $pages_query = 
                 'SELECT id, title, code, category, type, position, published ' .
                 'FROM indo_pages WHERE is_active=1';
-            $pages = $this->indo('/statement', ['query' => $pages_query]);
+            $pages = $this->indo('/execute', ['query' => $pages_query]);
             $infos = $this->getPagesInfos();
             foreach ($pages as $record) {
                 if (!empty($record['code'])) {
@@ -404,7 +404,7 @@ class PagesController extends DashboardController
             $pages_query = 
                 'SELECT id, parent_id, title ' .
                 'FROM indo_pages WHERE is_active=1';
-            $result = $this->indo('/statement', ['query' => $pages_query]);
+            $result = $this->indo('/execute', ['query' => $pages_query]);
             foreach ($result as $record) {
                 $pages[$record['id']] = $record;
             }
@@ -414,7 +414,7 @@ class PagesController extends DashboardController
             $pages_specified = [];
             try {
                 $pages_query .= " AND $condition";
-                $result_specified = $this->indo('/statement', ['query' => $pages_query]);
+                $result_specified = $this->indo('/execute', ['query' => $pages_query]);
                 foreach ($result_specified as $row) {
                     $pages_specified[$row['id']] = $row;
                 }
@@ -466,10 +466,10 @@ class PagesController extends DashboardController
         try {
             $files_count_query = 
                 'SELECT n.id as id, COUNT(*) as files ' .
-                'FROM indo_pages as n JOIN indo_pages_files as f ON n.id=f.record_id ' .
+                'FROM indo_pages as n INNER JOIN indo_pages_files as f ON n.id=f.record_id ' .
                 'WHERE n.is_active=1 AND f.is_active=1 ' .
                 'GROUP BY f.record_id';
-            $result =  $this->indo('/statement', ['query' => $files_count_query]);
+            $result =  $this->indo('/execute', ['query' => $files_count_query]);
             $counts = [];
             foreach ($result as $count) {
                 $counts[$count['id']] = $count['files'];
@@ -485,10 +485,10 @@ class PagesController extends DashboardController
         try {
             $images_query = 
                 'SELECT n.id as id, f.path as image ' .
-                'FROM indo_pages as n JOIN indo_pages_files as f ON n.id=f.record_id ' .
+                'FROM indo_pages as n INNER JOIN indo_pages_files as f ON n.id=f.record_id ' .
                 "WHERE n.is_active=1 AND f.is_active=1 AND f.type='image' " .
                 'GROUP BY f.record_id';
-            $result =  $this->indo('/statement', ['query' => $images_query]);
+            $result =  $this->indo('/execute', ['query' => $images_query]);
             $images = [];
             foreach ($result as $file) {
                 $images[$file['id']] = $file['image'];
@@ -504,10 +504,10 @@ class PagesController extends DashboardController
         try {
             $featured_query = 
                 'SELECT n.id as id, f.path as image, f.id as file_id ' .
-                'FROM indo_pages as n JOIN indo_pages_files as f ON n.id=f.record_id ' .
+                'FROM indo_pages as n INNER JOIN indo_pages_files as f ON n.id=f.record_id ' .
                 "WHERE n.is_active=1 AND f.is_active=1 AND f.type='image' AND f.category='featured' " .
                 'ORDER BY f.updated_at desc';
-            $result = $this->indo('/statement', ['query' => $featured_query]);
+            $result = $this->indo('/execute', ['query' => $featured_query]);
             $featured = [];
             foreach ($result as $file) {
                 if (isset($featured[$file['id']])) {

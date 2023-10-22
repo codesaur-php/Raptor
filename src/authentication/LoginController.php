@@ -25,7 +25,7 @@ class LoginController extends \Raptor\Controller
             return $this->redirectTo('home');
         }
         
-        $vars = ['meta' => $this->getAttribute('meta')];
+        $vars = (array)$this->getAttribute('settings');
         try {
             $code = \preg_replace('/[^a-z]/', '', $this->getLanguageCode());
             $vars += $this->indo(
@@ -325,8 +325,10 @@ class LoginController extends \Raptor\Controller
     public function forgotPassword(string $use_id)
     {
         try {
-            $vars = ['use_id' => $use_id];
-            $context = ['reason' => 'forgot-password'] + $vars;
+            $context = ['reason' => 'forgot-password', 'use_id' => $use_id];
+            
+            $vars = (array)$this->getAttribute('settings');
+            $vars['use_id'] = $use_id;
             
             $forgot = $this->indo(
                 '/record?model=' . ForgotModel::class,
@@ -367,9 +369,7 @@ class LoginController extends \Raptor\Controller
             $message = "Нууц үгээ шинээр тааруулж эхлэх үед алдаа гарч зогслоо. $notice";
             $context += ['error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]];
         } finally {
-            $this->twigTemplate(
-                \dirname(__FILE__) . '/login-reset-password.html', 
-                $vars + ['meta' => $this->getAttribute('meta')])->render();
+            $this->twigTemplate(\dirname(__FILE__) . '/login-reset-password.html', $vars)->render();
             
             $context += ['server_request' => [
                 'code' => $this->getLanguageCode(),
@@ -387,8 +387,10 @@ class LoginController extends \Raptor\Controller
             $context = ['reason' => 'reset-password'];
             $parsedBody = $this->getParsedBody();
             $use_id = $parsedBody['use_id'];
-            $vars = ['use_id' => $use_id];
-            $context += ['payload' => $parsedBody] + $vars;
+            
+            $vars = (array)$this->getAttribute('settings');
+            $vars['use_id'] = $use_id;
+            $context += ['payload' => $parsedBody, 'use_id' => $use_id];
             if (isset($parsedBody['password_new'])) {
                 $password_new = $parsedBody['password_new'];
                 unset($context['payload']['password_new']);
@@ -461,9 +463,7 @@ class LoginController extends \Raptor\Controller
             $message = 'Шинээр нууц үг тааруулах үед алдаа гарлаа';
             $context += ['error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]];
         } finally {
-            $this->twigTemplate(
-                \dirname(__FILE__) . '/login-reset-password.html', 
-                $vars + ['meta' => $this->getAttribute('meta')])->render();
+            $this->twigTemplate(\dirname(__FILE__) . '/login-reset-password.html', $vars)->render();
             
             $this->indolog('dashboard', $level ?? LogLevel::NOTICE, $message ?? 'reset-password', $context, $account['id'] ?? null);
         }

@@ -17,14 +17,12 @@ class DashboardController extends \Raptor\Controller
     
     public function twigDashboard(string $template, array $vars = []): TwigTemplate
     {
-        $meta = $this->getAttribute('meta', []);
-        
         $dashboard = $this->twigTemplate(\dirname(__FILE__) . '/dashboard.html');
-        $dashboard->set('meta', $meta); 
-        $dashboard->set('title', $meta['title'] ?? null);
-        $dashboard->set('description', $meta['description'] ?? null);
         $dashboard->set('sidemenu', $this->getAccountMenu());
         $dashboard->set('content', $this->twigTemplate($template, $vars));
+        foreach ($this->getAttribute('settings', []) as $key => $value) {
+            $dashboard->set($key, $value);
+        }
         return $dashboard;
     }
     
@@ -77,7 +75,7 @@ class DashboardController extends \Raptor\Controller
     {
         try {
             $has_menu_table = $this->indo(
-                '/statement',
+                '/execute',
                 [
                     'query' => "select exists(select 1 from raptor_account_menu)"
                 ]

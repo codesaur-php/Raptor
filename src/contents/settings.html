@@ -8,13 +8,12 @@
     </div>
 </div>
 <ul class="nav nav-tabs mb-3" role="tablist">
-    <li class="nav-item"><a class="nav-link active show" data-bs-toggle="tab" href="#tab-general">{{ 'general'|text }} <i class="bi bi-pencil"></i></a></li>
+    <li class="nav-item"><a class="nav-link active show" data-bs-toggle="tab" href="#tab-meta">{{ 'meta'|text }} <i class="bi bi-card-text"></i></a></li>
     <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-logo">{{ 'logo'|text }} <i class="bi bi-images"></i></a></li>
-    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-social">{{ 'social-network'|text }} <i class="bi bi-share"></i></a></li>
-    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-options">{{ 'options'|text }} <i class="bi bi-gear"></i></a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-config">{{ 'config'|text }} <i class="bi bi-gear"></i></a></li>
 </ul>
 <div class="tab-content mb-4">
-    <div class="tab-pane active show" id="tab-general" role="tabpanel">
+    <div class="tab-pane active show" id="tab-meta" role="tabpanel">
         <form class="needs-validation" novalidate action="{{ 'settings'|link }}" method="POST" enctype="multipart/form-data">
             <input name="alias" readonly value="{{ record['alias']|e }}" type="hidden">
             {% for code in localization.language|keys %}
@@ -28,6 +27,13 @@
             <div class="form-floating mt-{{ loop.first ? '4' : '2' }}">
                 <input class="form-control" name="description[{{ code }}]" value="{{ record['content']['description'][code] }}" maxlength="155" autocomplete="off">
                 <label>{{ 'description'|text }} <img style="position:relative;top:-2px" src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.3/flags/{{ code }}.png"></label>
+            </div>
+            {% endfor %}
+            <hr>
+            {% for code in localization.language|keys %}
+            <div class="form-floating mt-{{ loop.first ? '4' : '2' }}">
+                <input class="form-control" name="urgent[{{ code }}]" value="{{ record['content']['urgent'][code] }}" maxlength="155" autocomplete="off">
+                <label>{{ 'urgent'|text }} <img style="position:relative;top:-2px" src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.3/flags/{{ code }}.png"></label>
             </div>
             {% endfor %}
             <hr>
@@ -81,7 +87,7 @@
                     {% endfor %}
                 </div>
                 <div class="col">
-                    <label class="form-label">{{ 'icon'|text }}</label>
+                    <label class="form-label">Favico</label>
                     <input type="file" name="favico">
                     <hr>
                     <label class="form-label">Shortcut image icon</label>
@@ -96,46 +102,12 @@
             {% endif %}
         </form>
     </div>
-    <div class="tab-pane" id="tab-social" role="tabpanel">
+    <div class="tab-pane" id="tab-config" role="tabpanel">
         <form class="needs-validation" novalidate action="{{ 'settings'|link }}" method="POST" enctype="multipart/form-data">
             <input name="alias" readonly value="{{ record['alias']|e }}" type="hidden">
-            <div class="form-floating mt-2">
-                <input class="form-control" name="facebook" value="{{ record['facebook'] }}" maxlength="255" autocomplete="off">
-                <label><i class="bi bi-facebook"></i> Facebook</label>
-            </div>
-            <div class="mt-2">
-                <label class="form-label text-muted small">Facebook widget</label>
-                <textarea class="form-control" name="facebook_widget" rows="5" style="height:120px">{{ record['facebook_widget'] }}</textarea>
-            </div>
-            <hr>
-            <div class="form-floating mt-4">
-                <input class="form-control" name="twitter" value="{{ record['twitter'] }}" maxlength="255" autocomplete="off">
-                <label><i class="bi bi-twitter"></i> Twitter</label>
-            </div>
-            <div class="mt-2">
-                <label class="form-label text-muted small">Twitter widget</label>
-                <textarea class="form-control" name="twitter_widget" rows="5" style="height:120px">{{ record['twitter_widget'] }}</textarea>
-            </div>
-            <hr>
-            <div class="form-floating mt-4">
-                <input class="form-control" name="youtube" value="{{ record['youtube'] }}" maxlength="255" autocomplete="off">
-                <label><i class="bi bi-youtube"></i> Youtube</label>
-            </div>
-            <hr>
-            <div class="mt-4 mb-3">
-                <label class="form-label text-muted small">Additional settings for social networks (must be valid JSON)</label>
-                <textarea class="form-control" name="socials" rows="12" style="height:240px">{{ record['socials'] }}</textarea>
-            </div>
-            {% if user_can %}
-            <button class="submit-settings btn btn-lg btn-primary shadow-sm mt-2"><i class="bi bi-save"></i> {{ 'save'|text }}</button>
-            {% endif %}
-        </form>
-    </div>
-    <div class="tab-pane" id="tab-options" role="tabpanel">
-        <form class="needs-validation" novalidate action="{{ 'settings'|link }}" method="POST" enctype="multipart/form-data">
-            <input name="alias" readonly value="{{ record['alias']|e }}" type="hidden">
-            <label class="form-label text-muted small">Extra options (must be valid JSON)</label>
-            <textarea class="form-control mb-3" name="options" rows="25" style="height:500px">{{ record['options'] }}</textarea>
+            <label class="form-label text-muted small"><i>must be valid JSON</i></label>
+            <a class="badge bg-info mb-2" href="javascript:;" onclick="prettyPrint();">pretty print</a>
+            <textarea class="form-control mb-3" name="config" id="config_editor" rows="25" style="height:500px">{{ record['config'] }}</textarea>
             {% if user_can %}
             <button class="submit-settings btn btn-lg btn-primary shadow-sm mt-2"><i class="bi bi-save"></i> {{ 'save'|text }}</button>
             {% endif %}
@@ -147,10 +119,21 @@ document.addEventListener('DOMContentLoaded', function () {
     {% for code in localization.language|keys %}
     document.getElementsByName('logo_{{ code }}')[0].imageInput("{{ record['content']['logo'][code]|e }}", "{{ 'select-image'|text }}", "{{ 'choose'|text }}", "{{ 'change'|text }}", "{{ 'remove'|text }}", 480);
     {% endfor %}
-    document.getElementsByName('favico')[0].imageInput("{{ record['favico']|e }}", "{{ 'select-image'|text }}", "{{ 'choose'|text }}", "{{ 'change'|text }}", "{{ 'remove'|text }}", 256, 256, '.ico');
+    document.getElementsByName('favico')[0].imageInput("{{ record['favico']|e }}", "Select icon file", "{{ 'choose'|text }}", "{{ 'change'|text }}", "{{ 'remove'|text }}", 256, 256, '.ico');
     document.getElementsByName('shortcut_icon')[0].imageInput("{{ record['shortcut_icon']|e }}", "{{ 'select-image'|text }}", "{{ 'choose'|text }}", "{{ 'change'|text }}", "{{ 'remove'|text }}", 32);
     document.getElementsByName('apple_touch_icon')[0].imageInput("{{ record['apple_touch_icon']|e }}", "{{ 'select-image'|text }}", "{{ 'choose'|text }}", "{{ 'change'|text }}", "{{ 'remove'|text }}", 128);
     
     FormSubmitHandler('.submit-settings');
 });
+
+function prettyPrint() {
+    try {
+        var ugly = document.getElementById('config_editor').value;
+        var obj = JSON.parse(ugly);
+        var pretty = JSON.stringify(obj, undefined, 4);
+        document.getElementById('config_editor').value = pretty;
+    } catch (e) {
+        NotifyTop('warning', '{{ 'error'|text|e }}', e.message);
+    }
+}
 </script>

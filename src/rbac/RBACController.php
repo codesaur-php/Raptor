@@ -29,10 +29,10 @@ class RBACController extends DashboardController
             
             $payload = ['bind' => [':alias' => ['var' => $alias]]];
             $payload['query'] = "SELECT id,name,description FROM rbac_roles WHERE alias=:alias AND is_active=1 AND !(name='coder' AND alias='system')";
-            $roles = $this->indo('/statement', $payload);
+            $roles = $this->indo('/execute', $payload);
             
             $payload['query'] = 'SELECT id,name,description FROM rbac_permissions WHERE alias=:alias AND is_active=1 ORDER By module';
-            $permissions = $this->indo('/statement', $payload);
+            $permissions = $this->indo('/execute', $payload);
             
             if ($alias == 'system'
                 && empty($permissions)
@@ -59,13 +59,13 @@ class RBACController extends DashboardController
                     . "('$nowdate','system','localization','localization_insert',''),"
                     . "('$nowdate','system','localization','localization_update',''),"
                     . "('$nowdate','system','localization','localization_delete','')";
-                $this->indo('/statement', ['query' => $query]);
-                $permissions = $this->indo('/statement', $payload);
+                $this->indo('/execute', ['query' => $query]);
+                $permissions = $this->indo('/execute', $payload);
             }
             
             $role_permission = [];
             $payload['query'] = 'SELECT role_id,permission_id FROM rbac_role_permission WHERE alias=:alias AND is_active=1';
-            $rp = $this->indo('/statement', $payload);
+            $rp = $this->indo('/execute', $payload);
             foreach ($rp ?? [] as $row) {
                 $role_permission[$row['role_id']][$row['permission_id']] = true;
             }
@@ -142,7 +142,7 @@ class RBACController extends DashboardController
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
             $values = ['role' => $this->getQueryParams()['role'] ?? ''];
-            $role_result = $this->indo('/statement', [
+            $role_result = $this->indo('/execute', [
                 'bind' => [':role' => ['var' => $values['role']]],
                 'query' => "SELECT id,description FROM rbac_roles WHERE CONCAT_WS('_',alias,name)=:role AND is_active=1 ORDER By id desc LIMIT 1"
             ]);
@@ -217,7 +217,7 @@ class RBACController extends DashboardController
             }
             $payload['alias'] = $alias;
             
-            $result = $this->indo('/statement', [
+            $result = $this->indo('/execute', [
                 'query' => 'SELECT id FROM rbac_role_permission WHERE alias=:alias AND role_id=:role AND permission_id=:permission AND is_active=1',
                 'bind' => [
                     ':alias' => ['var' => $payload['alias']],
@@ -272,7 +272,7 @@ class RBACController extends DashboardController
                     throw new \Exception('Default user must have a role', 403);
                 }
 
-                $user_role = $this->indo('/statement', [
+                $user_role = $this->indo('/execute', [
                     'query' => "SELECT id,role_id FROM rbac_user_role WHERE user_id=$id AND is_active=1"
                 ]);
                 foreach ($user_role as $row) {
@@ -323,7 +323,7 @@ class RBACController extends DashboardController
 
                 $rbacs = ['common' => 'Common'];
                 $organizations_query = "SELECT alias,name FROM indo_organizations WHERE alias!='common' AND is_active=1 ORDER By id desc";
-                $organizations_result = $this->indo('/statement', ['query' => $organizations_query]);
+                $organizations_result = $this->indo('/execute', ['query' => $organizations_query]);
                 foreach ($organizations_result as $row) {
                     if (isset($rbacs[$row['alias']])) {
                         $rbacs[$row['alias']] .= ", {$row['name']}";
@@ -335,7 +335,7 @@ class RBACController extends DashboardController
 
                 $roles = \array_map(function() { return []; }, \array_flip(\array_keys($rbacs)));
                 $roles_query = 'SELECT id,alias,name,description FROM rbac_roles WHERE is_active=1';
-                $roles_result = $this->indo('/statement', ['query' => $roles_query]);
+                $roles_result = $this->indo('/execute', ['query' => $roles_query]);
                 \array_walk($roles_result, function($value) use (&$roles) {
                     if (!isset($roles[$value['alias']])) {
                         $roles[$value['alias']] = [];
@@ -352,7 +352,7 @@ class RBACController extends DashboardController
                 $current_role_query =
                     'SELECT rur.role_id FROM rbac_user_role as rur INNER JOIN rbac_roles as rr ON rur.role_id=rr.id ' .
                     "WHERE rur.user_id=$id AND rur.is_active=1 AND rr.is_active=1";
-                $current_roles = $this->indo('/statement', ['query' => $current_role_query]);
+                $current_roles = $this->indo('/execute', ['query' => $current_role_query]);
                 foreach ($current_roles as $row) {
                     $current_role[] = $row['role_id'];
                 }

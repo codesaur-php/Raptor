@@ -34,9 +34,9 @@ class AccountController extends DashboardController
             
             $org_users_query =
                 'SELECT t1.account_id, t1.organization_id ' .
-                'FROM indo_organization_users as t1 JOIN indo_organizations as t2 ON t1.organization_id=t2.id ' .
+                'FROM indo_organization_users as t1 INNER JOIN indo_organizations as t2 ON t1.organization_id=t2.id ' .
                 'WHERE t1.is_active=1 AND t2.is_active=1';
-            $org_users = $this->indo('/statement', ['query' => $org_users_query]);
+            $org_users = $this->indo('/execute', ['query' => $org_users_query]);
             \array_walk($org_users, function($value) use (&$accounts) {
                 if (isset($accounts[$value['account_id']])) {
                     if (!isset($accounts[$value['account_id']]['organizations'])) {
@@ -48,8 +48,8 @@ class AccountController extends DashboardController
             
             $user_role_query =
                 'SELECT t1.role_id, t1.user_id, t2.name, t2.alias ' . 
-                'FROM rbac_user_role as t1 JOIN rbac_roles as t2 ON t1.role_id=t2.id WHERE t1.is_active=1';
-            $user_role = $this->indo('/statement', ['query' => $user_role_query]);
+                'FROM rbac_user_role as t1 INNER JOIN rbac_roles as t2 ON t1.role_id=t2.id WHERE t1.is_active=1';
+            $user_role = $this->indo('/execute', ['query' => $user_role_query]);
             \array_walk($user_role, function($value) use (&$accounts) {
                 if (isset($accounts[$value['user_id']])) {
                     if (!isset($accounts[$value['user_id']]['roles'])) {
@@ -288,7 +288,7 @@ class AccountController extends DashboardController
                 }
                 
                 if ($this->isUserCan('system_account_organization_set') && !empty($organizations)) {
-                    $org_user = $this->indo('/statement', [
+                    $org_user = $this->indo('/execute', [
                         'query' => "SELECT id,organization_id FROM indo_organization_users WHERE account_id=$id AND is_active=1"
                     ]);
                     foreach ($org_user as $row) {
@@ -331,7 +331,7 @@ class AccountController extends DashboardController
                         $roles[$role] = true;
                     }
 
-                    $user_role = $this->indo('/statement', [
+                    $user_role = $this->indo('/execute', [
                         'query' => "SELECT id,role_id FROM rbac_user_role WHERE user_id=$id AND is_active=1"
                     ]);
                     foreach ($user_role as $row) {
@@ -382,9 +382,9 @@ class AccountController extends DashboardController
              
                 $org_id_query =
                     'SELECT ou.organization_id as id ' .
-                    'FROM indo_organization_users as ou JOIN indo_organizations as o ON ou.organization_id=o.id ' .
+                    'FROM indo_organization_users as ou INNER JOIN indo_organizations as o ON ou.organization_id=o.id ' .
                     "WHERE ou.account_id=$id AND ou.is_active=1 AND o.is_active=1";
-                $org_ids = $this->indo('/statement', ['query' => $org_id_query]);
+                $org_ids = $this->indo('/execute', ['query' => $org_id_query]);
                 $ids = [];
                 foreach ($org_ids as $org) {
                     $ids[] = $org['id'];
@@ -392,7 +392,7 @@ class AccountController extends DashboardController
                 $vars['current_organizations'] = \implode(',', $ids);
                 
                 $rbacs = ['common' => 'Common'];
-                $alias_names = $this->indo('/statement', [
+                $alias_names = $this->indo('/execute', [
                     'query' => "SELECT alias,name FROM indo_organizations WHERE alias!='common' AND is_active=1 ORDER By id desc"
                 ]);
                 foreach ($alias_names as $row) {
@@ -405,7 +405,7 @@ class AccountController extends DashboardController
                 $vars['rbacs'] = $rbacs;
 
                 $roles = \array_map(function() { return []; }, \array_flip(\array_keys($rbacs)));
-                $rbac_roles = $this->indo('/statement', [
+                $rbac_roles = $this->indo('/execute', [
                     'query' => 'SELECT id,alias,name,description FROM rbac_roles WHERE is_active=1'
                 ]);
                 \array_walk($rbac_roles, function($value) use (&$roles) {
@@ -423,7 +423,7 @@ class AccountController extends DashboardController
                 $current_role_query =
                     'SELECT rur.role_id FROM rbac_user_role as rur INNER JOIN rbac_roles as rr ON rur.role_id=rr.id ' .
                     "WHERE rur.user_id=$id AND rur.is_active=1 AND rr.is_active=1";
-                $current_roles = $this->indo('/statement', ['query' => $current_role_query]);
+                $current_roles = $this->indo('/execute', ['query' => $current_role_query]);
                 $current_role = [];
                 foreach ($current_roles as $row) {
                     $current_role[] = $row['role_id'];
@@ -471,15 +471,15 @@ class AccountController extends DashboardController
             
             $organizations_query =
                 'SELECT t2.name ' .
-                'FROM indo_organization_users as t1 JOIN indo_organizations as t2 ON t1.organization_id=t2.id ' .
+                'FROM indo_organization_users as t1 INNER JOIN indo_organizations as t2 ON t1.organization_id=t2.id ' .
                 "WHERE t1.is_active=1 AND t2.is_active=1 AND t1.account_id=$id";
-            $organizations = $this->indo('/statement', ['query' => $organizations_query]);
+            $organizations = $this->indo('/execute', ['query' => $organizations_query]);
 
             $user_role_query =
                 'SELECT CONCAT(t2.alias, "_", t2.name) as name ' . 
-                'FROM rbac_user_role as t1 JOIN rbac_roles as t2 ON t1.role_id=t2.id ' .
+                'FROM rbac_user_role as t1 INNER JOIN rbac_roles as t2 ON t1.role_id=t2.id ' .
                 "WHERE t1.is_active=1 AND t1.user_id=$id";
-            $user_roles = $this->indo('/statement', ['query' => $user_role_query]);
+            $user_roles = $this->indo('/execute', ['query' => $user_role_query]);
             
             $dashboard = $this->twigDashboard(
                 \dirname(__FILE__) . '/account-view.html',
@@ -618,7 +618,7 @@ class AccountController extends DashboardController
             $context += ['payload' => $parsedBody, 'id' => $id];
             
             $record = $this->indoget('/record?model=' . AccountRequestsModel::class, ['id' => $id]);
-            $existing = $this->indo('/statement', [
+            $existing = $this->indo('/execute', [
                 'query' => 'SELECT id FROM rbac_accounts WHERE username=:username OR email=:email',
                 'bind' => [
                     ':email' => ['var' => $record['email']],

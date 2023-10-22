@@ -42,7 +42,7 @@ class NewsController extends DashboardController
             $news_query = 
                 'SELECT id, title, code, category, type, published, publish_date ' .
                 'FROM indo_news WHERE is_active=1';
-            $news = $this->indo('/statement', ['query' => $news_query]);
+            $news = $this->indo('/execute', ['query' => $news_query]);
             foreach ($news as $record) {
                 if (!empty($record['code'])) {
                     $lang = '<img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.3/flags/' . $record['code'] . '.png"> ' . $record['code'];
@@ -386,10 +386,10 @@ class NewsController extends DashboardController
         try {
             $files_count_query = 
                 'SELECT n.id as id, COUNT(*) as files ' .
-                'FROM indo_news as n JOIN indo_news_files as f ON n.id=f.record_id ' .
+                'FROM indo_news as n INNER JOIN indo_news_files as f ON n.id=f.record_id ' .
                 'WHERE n.is_active=1 AND f.is_active=1 ' .
                 'GROUP BY f.record_id';
-            $result =  $this->indo('/statement', ['query' => $files_count_query]);
+            $result =  $this->indo('/execute', ['query' => $files_count_query]);
             $counts = [];
             foreach ($result as $count) {
                 $counts[$count['id']] = $count['files'];
@@ -405,10 +405,10 @@ class NewsController extends DashboardController
         try {
             $images_query = 
                 'SELECT n.id as id, f.path as image ' .
-                'FROM indo_news as n JOIN indo_news_files as f ON n.id=f.record_id ' .
+                'FROM indo_news as n INNER JOIN indo_news_files as f ON n.id=f.record_id ' .
                 "WHERE n.is_active=1 AND f.is_active=1 AND f.type='image' " .
                 'GROUP BY f.record_id';
-            $result =  $this->indo('/statement', ['query' => $images_query]);
+            $result =  $this->indo('/execute', ['query' => $images_query]);
             $images = [];
             foreach ($result as $file) {
                 $images[$file['id']] = $file['image'];
@@ -424,10 +424,10 @@ class NewsController extends DashboardController
         try {
             $featured_query = 
                 'SELECT n.id as id, f.path as image, f.id as file_id ' .
-                'FROM indo_news as n JOIN indo_news_files as f ON n.id=f.record_id ' .
+                'FROM indo_news as n INNER JOIN indo_news_files as f ON n.id=f.record_id ' .
                 "WHERE n.is_active=1 AND f.is_active=1 AND f.type='image' AND f.category='featured' " .
                 'ORDER BY f.updated_at desc';
-            $result = $this->indo('/statement', ['query' => $featured_query]);
+            $result = $this->indo('/execute', ['query' => $featured_query]);
             $featured = [];
             foreach ($result as $file) {
                 if (isset($featured[$file['id']])) {

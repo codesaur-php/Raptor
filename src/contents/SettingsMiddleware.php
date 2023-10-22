@@ -8,7 +8,6 @@ use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 
 use Indoraptor\InternalRequest;
-use Indoraptor\Contents\SettingsModel;
 
 use Raptor\Authentication\UserInterface;
 
@@ -25,34 +24,36 @@ class SettingsMiddleware implements MiddlewareInterface
                     $alias = $user->getOrganization()['alias'];
                 }
                 $localization = $request->getAttribute('localization');
-                $payload = ['alias' => $alias ?: 'system', 'is_active' => 1];
-                if (empty($localization['code'])) {
-                   $payload['code'] = 'en';
-               } else {
-                   $payload['code'] = $localization['code'];
-               }
-                $request->getAttribute('indo')->handle(
-                    new InternalRequest('INTERNAL', '/record?model=' . SettingsModel::class, $payload));
-                $settings = \json_decode(\ob_get_contents(), true)
+                $request->getAttribute('indo')->handle(new InternalRequest(
+                    'INTERNAL',
+                    '/execute',
+                    [
+                        'query' =>
+                            'SELECT p.keywords, p.email, p.phone, p.favico, p.shortcut_icon, p.apple_touch_icon, p.config, ' .
+                            'c.title, c.logo, c.description, c.urgent, c.contact, c.address, c.copyright ' .
+                            'FROM raptor_settings as p INNER JOIN raptor_settings_content as c ON p.id=c.parent_id ' .
+                            'WHERE p.is_active=1 AND p.alias=:alias AND c.code=:code ' .
+                            'ORDER BY p.updated_at desc LIMIT 1',
+                        'bind' => [
+                            ':alias' => ['var' => $alias ?: 'system'],
+                            ':code' => ['var' => empty($localization['code']) ? 'en' : $localization['code']]
+                        ]
+                    ]   
+                ));
+                $response = \json_decode(\ob_get_contents(), true)
                     ?? ['error' => __CLASS__ . ': Error decoding Indoraptor response!'];
-                if (isset($settings['error']['code'])
-                    && isset($settings['error']['message'])
+                if (isset($response['error']['code'])
+                    && isset($response['error']['message'])
                 ) {
-                    throw new \Exception($settings['error']['message'], $settings['error']['code']);
+                    throw new \Exception($response['error']['message'], $response['error']['code']);
                 }
-                if (!empty($settings['socials'])) {
-                    $settings['socials'] = \json_decode($settings['socials'], true)
-                        ?? ['error' => __CLASS__ . ': Error decoding Indoraptor response!'];
+                $settings = \reset($response);
+                if (!empty($settings['config'])) {
+                    $settings['config'] =  \json_decode($settings['config'], true)
+                        ?? ['error' => __CLASS__ . ': Error decoding config!'];
+                } else {
+                    $settings['config'] = [];
                 }
-                if (!empty($settings['options'])) {
-                    $settings['options'] = \json_decode($settings['options'], true)
-                        ?? ['error' => __CLASS__ . ': Error decoding Indoraptor response!'];
-                }
-                
-                foreach ($settings['content'] as $key => $content) {
-                    $settings[$key] = $content[$payload['code']] ?? null;
-                }
-                unset($settings['content']);
                 
                 \ob_end_clean();
             }
@@ -70,6 +71,6 @@ class SettingsMiddleware implements MiddlewareInterface
             }
         }
         
-        return $handler->handle($request->withAttribute('meta', $settings ?? []));
+        return $handler->handle($request->withAttribute('settings', $settings ?? []));
     }
 }

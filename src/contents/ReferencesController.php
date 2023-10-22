@@ -19,7 +19,7 @@ class ReferencesController extends DashboardController
         }
         
         try {
-            $reference_likes = $this->indo('/statement', ['query' => "SHOW TABLES LIKE 'reference_%'"]);
+            $reference_likes = $this->indo('/execute', ['query' => "SHOW TABLES LIKE 'reference_%'"]);
         } catch (\Throwable $e) {
             $reference_likes = [];
         }
