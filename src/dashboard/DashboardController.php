@@ -75,7 +75,7 @@ class DashboardController extends \Raptor\Controller
     {
         try {
             $has_menu_table = $this->indo(
-                '/execute',
+                '/execute/fetch/all',
                 [
                     'query' => "select exists(select 1 from raptor_account_menu)"
                 ]

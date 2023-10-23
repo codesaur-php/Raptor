@@ -16,13 +16,13 @@ class FilesController extends FileController
             return;
         }
 
-        $tblNames = $this->indo('/execute', ['query' => "SHOW TABLES LIKE '%_files'"]);
+        $tblNames = $this->indo('/execute/fetch/all', ['query' => "SHOW TABLES LIKE '%_files'"]);
         $tables = [];
         $total = ['tables' => 0, 'rows' => 0, 'sizes' => 0];
         foreach ($tblNames as $result) {
             $table = \current($result);
-            $rows = $this->indo('/execute', ['query' => "SELECT COUNT(*) as count FROM $table WHERE is_active=1"]);
-            $sizes = $this->indo('/execute', ['query' => "SELECT SUM(size) as size FROM $table WHERE is_active=1"]);
+            $rows = $this->indo('/execute/fetch/all', ['query' => "SELECT COUNT(*) as count FROM $table WHERE is_active=1"]);
+            $sizes = $this->indo('/execute/fetch/all', ['query' => "SELECT SUM(size) as size FROM $table WHERE is_active=1"]);
             $count = $rows[0]['count'];
             $size = $sizes[0]['size'];
             ++$total['tables'];

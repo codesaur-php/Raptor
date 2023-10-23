@@ -26,7 +26,7 @@ class SettingsMiddleware implements MiddlewareInterface
                 $localization = $request->getAttribute('localization');
                 $request->getAttribute('indo')->handle(new InternalRequest(
                     'INTERNAL',
-                    '/execute',
+                    '/execute/fetch/all',
                     [
                         'query' =>
                             'SELECT p.keywords, p.email, p.phone, p.favico, p.shortcut_icon, p.apple_touch_icon, p.config, ' .
@@ -47,7 +47,7 @@ class SettingsMiddleware implements MiddlewareInterface
                 ) {
                     throw new \Exception($response['error']['message'], $response['error']['code']);
                 }
-                $settings = \reset($response);
+                $settings = $response[0];
                 if (!empty($settings['config'])) {
                     $settings['config'] =  \json_decode($settings['config'], true)
                         ?? ['error' => __CLASS__ . ': Error decoding config!'];

@@ -23,7 +23,7 @@ class OrganizationUserController extends DashboardController
             $user_orgs_query =
                 'SELECT t2.* FROM indo_organization_users as t1 INNER JOIN indo_organizations as t2 ON t1.organization_id=t2.id ' .
                 'WHERE t1.is_active=1 AND t2.is_active=1 AND t1.account_id=' . $this->getUser()->getAccount()['id'];
-            $organizations = $this->indo('/execute', ['query' => $user_orgs_query]);
+            $organizations = $this->indo('/execute/fetch/all', ['query' => $user_orgs_query]);
             $dashboard = $this->twigDashboard(
                 \dirname(__FILE__) . '/organization-user.html',
                 ['organizations' => $organizations]
@@ -65,7 +65,7 @@ class OrganizationUserController extends DashboardController
                     throw new \Exception('Default user must belong to an organization', 503);
                 }
 
-                $user_orgs = $this->indo('/execute',
+                $user_orgs = $this->indo('/execute/fetch/all',
                     ['query' => "SELECT id,organization_id FROM indo_organization_users WHERE account_id=$account_id AND is_active=1"]);
                 foreach ($user_orgs as $row) {
                     if (isset($organizations[(int) $row['organization_id']])) {
@@ -104,7 +104,7 @@ class OrganizationUserController extends DashboardController
                     'SELECT ou.organization_id as id ' .
                     'FROM indo_organization_users as ou INNER JOIN indo_organizations as o ON ou.organization_id=o.id ' .
                     "WHERE ou.account_id=$account_id AND ou.is_active=1 AND o.is_active=1";
-                $response = $this->indo('/execute', ['query' => $query]);
+                $response = $this->indo('/execute/fetch/all', ['query' => $query]);
                 $ids = [];
                 foreach ($response as $org) {
                     $ids[] = $org['id'];
