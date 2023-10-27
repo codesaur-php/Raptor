@@ -124,6 +124,9 @@ class LanguageController extends DashboardController
                 }
 
                 $id = $this->indopost('/record?model=' . LanguageModel::class, ['code' => $payload['short'], 'full' => $payload['full']]);
+                if ($id == false) {
+                    throw new \Exception($this->text('record-insert-error'));
+                }
                 $context['record'] = $id;
                 
                 $copied = $this->indopost('/language/copy/multimodel/content', ['from' => $mother['code'], 'to' => $payload['short']]);
@@ -247,9 +250,13 @@ class LanguageController extends DashboardController
                     );
                 }
                 
-                $this->indoput('/record?model=' . LanguageModel::class,
+                $updated = $this->indoput(
+                    '/record?model=' . LanguageModel::class,
                     ['record' => $record, 'condition' => ['WHERE' => "id=$id"]]
                 );
+                if (empty($updated)) {
+                    throw new \Exception($this->text('no-record-selected'));
+                }
                 
                 $this->respondJSON([
                     'status' => 'success',
@@ -314,7 +321,10 @@ class LanguageController extends DashboardController
                     throw new \Exception('Cannot remove default language!', 403);
                 }
             }
-            $this->indodelete("/record?model=" . LanguageModel::class, ['WHERE' => "id=$id"]);
+            $deleted = $this->indodelete("/record?model=" . LanguageModel::class, ['WHERE' => "id=$id"]);
+            if (empty($deleted)) {
+                throw new \Exception($this->text('no-record-selected'));
+            }
             
             $this->respondJSON([
                 'status'  => 'success',

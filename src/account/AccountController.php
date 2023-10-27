@@ -116,6 +116,9 @@ class AccountController extends DashboardController
                 $status = $parsedBody['status'] ?? 'off';
                 $record['status'] = $status != 'on' ? 0 : 1;
                 $id = $this->indopost($pattern, $record);
+                if ($id == false) {
+                    throw new \Exception($this->text('record-insert-error'));
+                }
                 
                 if (!empty($parsedBody['organization'] ?? null)) {
                     $organization = \filter_var($parsedBody['organization'], \FILTER_VALIDATE_INT);
@@ -272,7 +275,10 @@ class AccountController extends DashboardController
                     $context['photo'] = $record['photo'];
                 }
                 
-                $this->indoput($pattern, ['record' => $record, 'condition' => ['WHERE' => "id=$id"]]);
+                $updated = $this->indoput($pattern, ['record' => $record, 'condition' => ['WHERE' => "id=$id"]]);
+                if (empty($updated)) {
+                    throw new \Exception($this->text('no-record-selected'));
+                }
                 
                 $this->respondJSON([ 
                     'type' => 'primary',
@@ -529,7 +535,10 @@ class AccountController extends DashboardController
                 throw new \Exception('Cannot remove first acccount!', 403);
             }
             
-            $this->indodelete('/record?model=' . Accounts::class, ['WHERE' => "id=$id"]);
+            $deleted = $this->indodelete('/record?model=' . Accounts::class, ['WHERE' => "id=$id"]);
+            if (empty($deleted)) {
+                throw new \Exception($this->text('no-record-selected'));
+            }
             
             $this->respondJSON([
                 'status'  => 'success',
@@ -644,7 +653,10 @@ class AccountController extends DashboardController
                 'condition' => ['WHERE' => "id=$id"],
                 'record' => ['is_active' => 0, 'status' => 2, 'rbac_account_id' => $account_id]
             ];
-            $this->indoput('/record?model=' . AccountRequestsModel::class, $payload);
+            $updated = $this->indoput('/record?model=' . AccountRequestsModel::class, $payload);
+            if (empty($updated)) {
+                throw new \Exception($this->text('no-record-selected'));
+            }
             
             $organization_id = \filter_var($parsedBody['organization_id'] ?? 0, \FILTER_VALIDATE_INT);
             if (!$organization_id) {
@@ -726,7 +738,10 @@ class AccountController extends DashboardController
             }
             $context += ['payload' => $payload];
             
-            $this->indodelete('/record?model=' . AccountRequestsModel::class, ['WHERE' => "id='{$payload['id']}'"]);
+            $deleted = $this->indodelete('/record?model=' . AccountRequestsModel::class, ['WHERE' => "id='{$payload['id']}'"]);
+            if (empty($deleted)) {
+                throw new \Exception($this->text('no-record-selected'));
+            }
             
             $this->respondJSON([
                 'status'  => 'success',

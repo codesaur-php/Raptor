@@ -53,10 +53,12 @@
     </div>
 </div>
 <script type="text/javascript">
-let approveAskHtml = {% if localization.code == 'mn' %}'<p class="text-primary">Та ({0}) хэрэглэгчийн бүртгүүлэх хүсэлтийг зөвшөөрөхдөө итгэлтэй байна уу?</p>'{% else %}'<p class="text-primary">Are you sure to accept this account request ({0})?</p>'{% endif %};
+let approveAskHtml = {% if localization.code == 'mn' %}'<p class="text-primary">Та ({0}) хэрэглэгчийн бүртгүүлэх хүсэлтийг зөвшөөрөхдөө итгэлтэй байна уу?</p>';{% else %}'<p class="text-primary">Are you sure to accept this account request ({0})?</p>';{% endif %}
 let deleteRequestAskHtml = {% if localization.code == 'mn' %}'<p class="text-danger">Та ({0}) хэрэглэгчийн бүртгүүлэх хүсэлтийг устгахдаа итгэлтэй байна уу?</p>'{% else %}'<p class="text-danger">Are you sure to delete this account request ({0})?</p>'{% endif %};
 $('table#new_account_requests').DataTable({
-    pageLength: 10, responsive: true, order: [[ 3, 'desc' ]],
+    pageLength: 10,
+    responsive: true,
+    order: [[ 3, 'desc' ]],
     lengthMenu: [[5, 10, 20, 50, -1], [5, 10, 20, 50, "{{ 'all'|text|e }}"]]
     {% if localization.code == 'mn' %}, language: {url: 'https://cdn.datatables.net/plug-ins/1.11.3/i18n/mn.json'}{% endif %}
 });

@@ -8,7 +8,6 @@ use Indoraptor\Contents\FilesModel;
 
 class FilesController extends FileController
 {
-
     public function index()
     {
         if (!$this->isUserCan('system_content_index')) {
@@ -31,6 +30,10 @@ class FilesController extends FileController
             $tables[$table] = ['count' => $count, 'size' => $this->formatSizeUnits($size)];
         }
         
+        if (empty($tables['indo_general_files'])) {
+            $tables = ['indo_general_files' => ['count' => 0, 'size' => 0]] + $tables;
+        }
+        
         if (isset($this->getQueryParams()['table'])) {
             $table = \preg_replace('/[^A-Za-z0-9_-]/', '',  $this->getQueryParams()['table']);
         } elseif (!empty($tables)) {
@@ -51,14 +54,21 @@ class FilesController extends FileController
             unset($file['file']);
         }
         
+        if (\file_exists(\dirname(__FILE__) . "/$table-index.html")) {
+            $template = \dirname(__FILE__) . "/$table-index.html";
+        } else {
+            $template = \dirname(__FILE__) . '/files-index.html';
+        }
+        
         $total['sizes'] = $this->formatSizeUnits($total['sizes']);
         $dashboard = $this->twigDashboard(
-            \dirname(__FILE__) . '/files-index.html',
+            $template,
             [
                 'tables' => $tables,
                 'total' => $total,
                 'table' => $table,
-                'files' => $files
+                'files' => $files,
+                'max_file_size' => $this->getMaximumFileUploadSize()
             ]
         );
         $dashboard->set('title', $this->text('files'));
@@ -93,6 +103,10 @@ class FilesController extends FileController
                 $record['record_id'] = $id;
             }
             $record['id'] = $this->indo("/files/$_table/insert", $record);
+            if ($record['id'] == false) {
+                throw new \Exception($this->text('record-insert-error'));
+            }
+            
             $text = "Мэдээллийн $_table хүснэгтийн $id-р бичлэгт зориулж {$record['id']} дугаартай файлыг байршуулан холболоо";
             $this->indolog('files', LogLevel::INFO, $text, ['reason' => 'insert-upload-file', 'table' => $_table, 'record' => $record]);
             $this->respondJSON($record);
@@ -123,6 +137,10 @@ class FilesController extends FileController
         $record['file'] = $upload['dir'] . $upload['name'];
         $record['path'] = $this->getPath($upload['name']);
         $record['id'] = $this->indo("/files/$_table/insert", $record);
+        if ($record['id'] == false) {
+            throw new \Exception($this->text('record-insert-error'));
+        }
+        
         $this->indolog(
             'files',
             LogLevel::INFO,
@@ -160,9 +178,12 @@ class FilesController extends FileController
                 throw new \Exception("Can't rename file [{$record['file']}] to [$newPath]");
             }
             $update = ['file' => $newPath, 'path' => $this->getPath($file_name)];
-            $this->indo("/files/$_table/update", [
+            $updated = $this->indo("/files/$_table/update", [
                 'record' => $update, 'condition' => ['WHERE' => "id=$id"]
             ]);
+            if (empty($updated)) {
+                throw new \Exception($this->text('no-record-selected'));
+            }
 
             $text = "Мэдээллийн $_table хүснэгтийн {$record['record_id']}-р бичлэгт зориулcан $id дугаартай файлын байршил солигдлоо";
             $this->indolog('files', LogLevel::INFO, $text, [
@@ -178,15 +199,48 @@ class FilesController extends FileController
     private function formatSizeUnits(?int $bytes): string
     {
         if ($bytes >= 1099511627776) {
-            return \number_format($bytes / 1099511627776, 2) . ' TB';
+            return \number_format($bytes / 1099511627776, 2) . 'tb';
         } elseif ($bytes >= 1073741824) {
-            return \number_format($bytes / 1073741824, 2) . ' GB';
+            return \number_format($bytes / 1073741824, 2) . 'gb';
         } elseif ($bytes >= 1048576) {
-            return \number_format($bytes / 1048576, 2) . ' MB';
+            return \number_format($bytes / 1048576, 2) . 'mb';
         } elseif ($bytes >= 1024) {
-            return \number_format($bytes / 1024, 2) . ' KB';
+            return \number_format($bytes / 1024, 2) . 'kb';
         } else {
-            return "$bytes bytes";
+            return $bytes . 'b';
         }
+    }
+    
+    private function getMaximumFileUploadSize(): string
+    {
+        return $this->formatSizeUnits(
+            \min(
+                $this->convertPHPSizeToBytes(\ini_get('post_max_size')),
+                $this->convertPHPSizeToBytes(\ini_get('upload_max_filesize'))
+            )
+        );
+    }
+    
+    private function convertPHPSizeToBytes($sSize): int
+    {
+        $sSuffix = \strtoupper(\substr($sSize, -1));
+        if (!\in_array($sSuffix, ['P','T','G','M','K'])){
+            return (int)$sSize;
+        }
+        $iValue = \substr($sSize, 0, -1);
+        switch ($sSuffix) {
+            case 'P':
+                $iValue *= 1024;
+            case 'T':
+                $iValue *= 1024;
+            case 'G':
+                $iValue *= 1024;
+            case 'M':
+                $iValue *= 1024;
+            case 'K':
+                $iValue *= 1024;
+                break;
+        }
+        return (int)$iValue;
     }
 }

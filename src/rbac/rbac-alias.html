@@ -1,3 +1,9 @@
+<script defer src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/jquery.blockUI/2.70/jquery.blockUI.min.js"></script>
+<script defer src="https://cdn.datatables.net/1.11.3/js/jquery.dataTables.min.js"></script>
+<link href="https://cdn.datatables.net/1.11.3/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+<script defer src="https://cdn.datatables.net/1.11.3/js/dataTables.bootstrap5.min.js"></script>
+
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center mb-4 mt-2">
     <h3 class="text-danger" style="padding-right:10px"><i class="bi bi-shield-fill-check"></i> RBAC / {{ alias ~ (title is empty ? '' : ' / ' ~ title)}}</h3>
     <div class="mb-2 mb-md-0">
@@ -40,11 +46,6 @@
     </tbody>
     <tfoot></tfoot>
 </table>
-<link href="https://cdn.datatables.net/1.11.3/css/dataTables.bootstrap5.min.css" rel="stylesheet">
-<script defer src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
-<script defer src="https://cdnjs.cloudflare.com/ajax/libs/jquery.blockUI/2.70/jquery.blockUI.min.js"></script>
-<script defer src="https://cdn.datatables.net/1.11.3/js/jquery.dataTables.min.js"></script>
-<script defer src="https://cdn.datatables.net/1.11.3/js/dataTables.bootstrap5.min.js"></script>
 <script type="text/javascript">
     document.addEventListener('DOMContentLoaded', function () {
         let rbacTable = document.querySelector('table#rbac_{{ alias }}');
@@ -55,7 +56,6 @@
             columnDefs: [{ targets: '_all', orderable: false }]
             {% if localization.code == 'mn' %}, language: {url: 'https://cdn.datatables.net/plug-ins/1.11.3/i18n/mn.json'}{% endif %}
         });
-        
         
         var setRolePermission = function() {
             $.blockUI({message: '{{ 'loading'|text|e }}', baseZ: 2000});

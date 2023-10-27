@@ -135,9 +135,12 @@ class PrivateFilesController extends FilesController
                 $record[$k] = $v;
             }
 
-            $this->indoput("/files/$table", [
+            $updated = $this->indoput("/files/$table", [
                 'record' => $record, 'condition' => ['WHERE' => "id=$id"]
             ]);
+            if (empty($updated)) {
+                throw new \Exception($this->text('no-record-selected'));
+            }
 
             $this->respondJSON([
                 'type' => 'primary',
@@ -178,7 +181,10 @@ class PrivateFilesController extends FilesController
             }
             $context['payload'] = $payload;            
             $id = \filter_var($payload['id'], \FILTER_VALIDATE_INT);            
-            $this->indodelete("/files/$table", ['WHERE' => "id=$id"]);
+            $deleted = $this->indodelete("/files/$table", ['WHERE' => "id=$id"]);
+            if (empty($deleted)) {
+                throw new \Exception($this->text('no-record-selected'));
+            }
             
             $this->respondJSON([
                 'status'  => 'success',

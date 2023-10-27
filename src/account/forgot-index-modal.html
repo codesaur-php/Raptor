@@ -48,7 +48,9 @@
 </div>
 <script type="text/javascript">
     $('table#forgot_requests').DataTable({
-        pageLength: 10, responsive: true, order: [[ 4, 'desc' ]],
+        pageLength: 10,
+        responsive: true,
+        order: [[ 4, 'desc' ]],
         lengthMenu: [[5, 10, 20, 50, -1], [5, 10, 20, 50, "{{ 'all'|text|e }}"]]
         {% if localization.code == 'mn' %}, language: {url: 'https://cdn.datatables.net/plug-ins/1.11.3/i18n/mn.json'}{% endif %}
     });

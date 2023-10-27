@@ -141,7 +141,9 @@ class ReferencesController extends DashboardController
                 }
                 
                 $id = $this->indopost("/reference/$table", ['record' => $record, 'content' => $content]);
-               
+                if ($id == false) {
+                    throw new \Exception($this->text('record-insert-error'));
+                }
                 $context['record'] = $id;
                 
                 $this->respondJSON([
@@ -243,9 +245,12 @@ class ReferencesController extends DashboardController
                     throw new \Exception($this->text('invalid-request'), 400);
                 }
                 
-                $this->indoput("/reference/$table", [
+                $updated = $this->indoput("/reference/$table", [
                     'record' => $record, 'content' => $content, 'condition' => ['WHERE' => "p.id=$id"]
                 ]);
+                if (empty($updated)) {
+                    throw new \Exception($this->text('no-record-selected'));
+                }
                 
                 $this->respondJSON([
                     'status' => 'success',
@@ -312,7 +317,10 @@ class ReferencesController extends DashboardController
             
             $table = $payload['table'];
             $id = \filter_var($payload['id'], \FILTER_VALIDATE_INT);
-            $this->indodelete("/reference/$table", ['WHERE' => "id=$id"]);
+            $deleted = $this->indodelete("/reference/$table", ['WHERE' => "id=$id"]);
+            if (empty($deleted)) {
+                throw new \Exception($this->text('no-record-selected'));
+            }
             
             $this->respondJSON([
                 'status'  => 'success',

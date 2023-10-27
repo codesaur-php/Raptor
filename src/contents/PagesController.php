@@ -76,6 +76,10 @@ class PagesController extends DashboardController
                 $row[] = $record['published'] == 1 ? '<i class="bi bi-emoji-heart-eyes-fill text-success"></i>' : '<i class="bi bi-eye-slash"></i>';
 
                 $action =
+                    '<a class="btn btn-sm btn-warning shadow-sm" href="' .
+                    $this->generateLink('page-read', ['id' => $id]) . '"><i class="bi bi-book"></i></a> ';
+                
+                $action .=
                     '<a class="btn btn-sm btn-info shadow-sm" href="' .
                     $this->generateLink('page-view', ['id' => $id]) . '"><i class="bi bi-eye"></i></a>';
                 
@@ -132,7 +136,16 @@ class PagesController extends DashboardController
                     unset($record['files']);
                 }
                 
+                if ($record['published'] == 1
+                    && !$this->isUserCan('system_content_publish')
+                ) {
+                    throw new \Exception($this->text('system-no-permission'), 401);
+                }
+                
                 $id = $this->indopost('/record?model=' . PagesModel::class, $record);
+                if ($id == false) {
+                    throw new \Exception($this->text('record-insert-error'));
+                }
                 
                 $this->respondJSON([
                     'status' => 'success',
@@ -170,7 +183,8 @@ class PagesController extends DashboardController
                 }
             } else {
                 $vars = [
-                    'infos' => $this->getPagesInfos()
+                    'infos' => $this->getPagesInfos(),
+                    'max_file_size' => $this->getMaximumFileUploadSize()
                 ];
                 $dashboard = $this->twigDashboard(\dirname(__FILE__) . '/page-insert.html', $vars);
                 $dashboard->set('title', $this->text('add-record') . ' | Pages');
@@ -194,6 +208,78 @@ class PagesController extends DashboardController
         }
     }
     
+    public function read(int $id)
+    {
+        try {
+            $context = ['id' => $id, 'model' => PagesModel::class];
+            
+            if (!$this->isUserCan('system_content_index')) {
+                throw new \Exception($this->text('system-no-permission'), 401);
+            }
+            
+            $record = $this->indoget('/record?model=' . PagesModel::class, ['id' => $id]);
+            $context['record'] = $record;
+            try {
+                $context['files'] = $this->indo(
+                    '/files/records/indo_pages_files',
+                    [
+                        'WHERE' => "record_id=$id AND is_active=1",
+                        'ORDER BY' => 'updated_at'
+                    ]
+                );
+                $image = null;
+                foreach ($context['files'] as &$file) {
+                    unset($file['file']);                    
+                    if ($file['type'] == 'image') {
+                        if (!isset($image)) {
+                            $image = $file;
+                        }
+                        if ($file['category'] == 'featured') {
+                            $featured = $file;
+                        }
+                    }
+                }
+            } catch (\Throwable $e) {
+                $context['files'] = [];
+            }
+            $context['image'] = $featured ?? $image;
+            $template = $this->twigTemplate(
+                \dirname(__FILE__) . '/page-read.html',
+                ['accounts' => $this->getAccounts()]
+            );
+            foreach ($this->getAttribute('settings', []) as $key => $value) {
+                $template->set($key, $value);
+            }
+            foreach ($context as $key => $value) {
+                $template->set($key, $value);
+            }
+            $template->render();
+
+            $level = LogLevel::NOTICE;
+            $message = "{$record['title']} - хуудсыг уншиж байна";
+            
+            try {
+                $this->indoput(
+                    '/record?model=' . PagesModel::class,
+                    [
+                        'condition' => ['WHERE' => "id=$id"],
+                        'record' => ['read_count' => $record['read_count'] + 1]
+                    ]
+                );
+            } catch (\Throwable $e) {
+                $this->errorLog($e);
+            }
+        } catch (\Throwable $e) {
+            $this->dashboardProhibited($e->getMessage(), $e->getCode())->render();
+            
+            $level = LogLevel::ERROR;
+            $message = 'Хуудас унших үед алдаа гарч зогслоо';
+            $context['error'] = ['code' => $e->getCode(), 'message' => $e->getMessage()];
+        } finally {
+            $this->indolog('content', $level, $message, $context);
+        }
+    }
+    
     public function view(int $id)
     {
         try {
@@ -207,7 +293,7 @@ class PagesController extends DashboardController
             $context['record'] = $record;
             try {
                 $context['files'] = $this->indo(
-                    '/files/records/indo_pages',
+                    '/files/records/indo_pages_files',
                     ['WHERE' => "record_id=$id AND is_active=1"]
                 );
                 foreach ($context['files'] as &$file) {
@@ -261,13 +347,24 @@ class PagesController extends DashboardController
                     $files = $record['files'];
                     unset($record['files']);
                 }
+                
                 if (empty($record['title'])){
                     throw new \InvalidArgumentException($this->text('invalid-request'), 400);
                 }
                 
-                $this->indoput('/record?model=' . PagesModel::class,
+                $current = $this->indoget('/record?model=' . PagesModel::class, ['id' => $id]);
+                if ($record['published'] != $current['published']
+                    && !$this->isUserCan('system_content_publish')
+                ) {
+                    throw new \Exception($this->text('system-no-permission'), 401);
+                }
+                
+                $updated = $this->indoput('/record?model=' . PagesModel::class,
                     ['record' => $record, 'condition' => ['WHERE' => "id=$id"]]
                 );
+                if (empty($updated)) {
+                    throw new \Exception($this->text('no-record-selected'));
+                }
                 
                 $this->respondJSON([
                     'status' => 'success',
@@ -329,7 +426,8 @@ class PagesController extends DashboardController
                 }
                 $vars = $context + [
                     'accounts' => $this->getAccounts(),
-                    'infos' => $this->getPagesInfos("id!=$id AND parent_id!=$id")
+                    'infos' => $this->getPagesInfos("id!=$id AND parent_id!=$id"),
+                    'max_file_size' => $this->getMaximumFileUploadSize()
                 ];
                 $dashboard = $this->twigDashboard(\dirname(__FILE__) . '/page-update.html', $vars);
                 $dashboard->set('title', $this->text('edit-record') . ' | Pages');
@@ -372,7 +470,10 @@ class PagesController extends DashboardController
             $context['payload'] = $payload;
             
             $id = \filter_var($payload['id'], \FILTER_VALIDATE_INT);            
-            $this->indodelete("/record?model=" . PagesModel::class, ['WHERE' => "id=$id"]);
+            $deleted = $this->indodelete("/record?model=" . PagesModel::class, ['WHERE' => "id=$id"]);
+            if (empty($deleted)) {
+                throw new \Exception($this->text('no-record-selected'));
+            }
             
             $this->respondJSON([
                 'status'  => 'success',
@@ -526,6 +627,54 @@ class PagesController extends DashboardController
             return $featured;
         } catch (\Throwable $e) {
             return [];
+        }
+    }
+    
+    private function getMaximumFileUploadSize(): string
+    {
+        return $this->formatSizeUnits(
+            \min(
+                $this->convertPHPSizeToBytes(\ini_get('post_max_size')),
+                $this->convertPHPSizeToBytes(\ini_get('upload_max_filesize'))
+            )
+        );
+    }
+    
+    private function convertPHPSizeToBytes($sSize): int
+    {
+        $sSuffix = \strtoupper(\substr($sSize, -1));
+        if (!\in_array($sSuffix, ['P','T','G','M','K'])){
+            return (int)$sSize;
+        }
+        $iValue = \substr($sSize, 0, -1);
+        switch ($sSuffix) {
+            case 'P':
+                $iValue *= 1024;
+            case 'T':
+                $iValue *= 1024;
+            case 'G':
+                $iValue *= 1024;
+            case 'M':
+                $iValue *= 1024;
+            case 'K':
+                $iValue *= 1024;
+                break;
+        }
+        return (int)$iValue;
+    }
+
+    private function formatSizeUnits(?int $bytes): string
+    {
+        if ($bytes >= 1099511627776) {
+            return \number_format($bytes / 1099511627776, 2) . 'tb';
+        } elseif ($bytes >= 1073741824) {
+            return \number_format($bytes / 1073741824, 2) . 'gb';
+        } elseif ($bytes >= 1048576) {
+            return \number_format($bytes / 1048576, 2) . 'mb';
+        } elseif ($bytes >= 1024) {
+            return \number_format($bytes / 1024, 2) . 'kb';
+        } else {
+            return $bytes . 'b';
         }
     }
 }

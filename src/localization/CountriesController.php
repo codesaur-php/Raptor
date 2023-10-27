@@ -102,9 +102,13 @@ class CountriesController extends DashboardController
                     throw new \Exception($this->text('invalid-values'), 400);
                 }
                 
-                $this->indopost(
+                $id = $this->indopost(
                     '/record?model=' . CountriesModel::class,
-                    ['record' => $record, 'content' => $content]);
+                    ['record' => $record, 'content' => $content]
+                );
+                if ($id == false) {
+                    throw new \Exception($this->text('record-insert-error'));
+                }
         
                 $this->respondJSON([
                     'status' => 'success',
@@ -191,8 +195,13 @@ class CountriesController extends DashboardController
                     throw new \Exception($this->text('invalid-request'), 400);
                 }
                 $id = \preg_replace('/[^A-Za-z0-9_-]/', '', $payload['id']);
-                $this->indoput('/record?model=' . CountriesModel::class,
-                    ['record' => $record, 'content' => $content, 'condition' => ['WHERE' => "p.id='$id'"]]);
+                $updated = $this->indoput(
+                    '/record?model=' . CountriesModel::class,
+                    ['record' => $record, 'content' => $content, 'condition' => ['WHERE' => "p.id='$id'"]]
+                );
+                if (empty($updated)) {
+                    throw new \Exception($this->text('no-record-selected'));
+                }
                 
                 $this->respondJSON([
                     'status' => 'success',
@@ -242,7 +251,10 @@ class CountriesController extends DashboardController
             $context['payload'] = $payload;
             
             $id = \preg_replace('/[^A-Za-z0-9_-]/', '', $payload['id']);
-            $this->indodelete('/record?model=' . CountriesModel::class, ['WHERE' => "id='$id'"]);
+            $deleted = $this->indodelete('/record?model=' . CountriesModel::class, ['WHERE' => "id='$id'"]);
+            if (empty($deleted)) {
+                throw new \Exception($this->text('no-record-selected'));
+            }
             
             $this->respondJSON([
                 'status'  => 'success',

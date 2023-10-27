@@ -102,7 +102,9 @@ class FileController extends DashboardController
             }
 
             $file_size = $uploadedFile->getSize();
-            if ($this->_size_limit && $file_size > $this->_size_limit) {
+            if ($this->_size_limit
+                && $file_size > $this->_size_limit
+            ) {
                 throw new \Exception('The uploaded file exceeds the MAX_FILE_SIZE directive that was specified in the HTML form', \UPLOAD_ERR_FORM_SIZE);
             }
 
@@ -120,7 +122,9 @@ class FileController extends DashboardController
                 throw new \Exception('The uploaded file ext is not allowed', 9);
             }
 
-            if (!\file_exists($upload_path) || !\is_dir($upload_path)) {
+            if (!\file_exists($upload_path)
+                || !\is_dir($upload_path)
+            ) {
                 \mkdir($upload_path, $mode, true);
             }
             

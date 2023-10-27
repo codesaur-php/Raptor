@@ -53,7 +53,7 @@ class RBACController extends DashboardController
                     . "('$nowdate','system','content','content_settings',''),"
                     . "('$nowdate','system','content','content_index',''),"
                     . "('$nowdate','system','content','content_insert',''),"
-                    . "('$nowdate','system','content','content_update',''),"
+                    . "('$nowdate','system','content','content_publish',''),"
                     . "('$nowdate','system','content','content_delete',''),"
                     . "('$nowdate','system','localization','localization_index',''),"
                     . "('$nowdate','system','localization','localization_insert',''),"

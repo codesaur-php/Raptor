@@ -443,13 +443,16 @@ class LoginController extends \Raptor\Controller
                 'record' => ['password' => \password_hash($password_new, \PASSWORD_BCRYPT)],
                 'condition' => ['WHERE' => "id={$account['id']}"]
             ]);
-            if (!$result) {
+            if (empty($result)) {
                 throw new \Exception("Can't reset account [{$account['username']}] password", StatusCodeInterface::STATUS_INTERNAL_SERVER_ERROR);
             }
-            $this->indo(
+            $updated = $this->indo(
                 '/record/update?model=' . ForgotModel::class,
                 ['record' => ['status' => 0], 'condition' => ['WHERE' => "id={$record['id']}"]]
             );
+            if (empty($updated)) {
+                throw new \Exception($this->text('no-record-selected'));
+            }
             
             $vars += ['title' => $this->text('success'), 'notice' => $this->text('set-new-password-success')];
 

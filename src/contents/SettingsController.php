@@ -52,10 +52,13 @@ class SettingsController extends DashboardController
                 }
                 if (isset($current['id'])) {
                     $id = $current['id'];
-                    $this->indoput(
+                    $updated = $this->indoput(
                         '/record?model=' . SettingsModel::class,
                         ['record' => $record, 'content' => $content, 'condition' => ['WHERE' => "p.id=$id"]]
                     );
+                    if (empty($updated)) {
+                        throw new \Exception($this->text('no-record-selected'));
+                    }
                     $notify = 'primary';
                     $notice = $this->text('record-update-success');
                 } else {
@@ -66,6 +69,9 @@ class SettingsController extends DashboardController
                         '/record?model=' . SettingsModel::class,
                         ['record' => $record, 'content' => $content]
                     );
+                    if ($id == false) {
+                        throw new \Exception($this->text('record-insert-error'));
+                    }
                     $notify = 'success';
                     $notice = $this->text('record-insert-success');
                 }
@@ -220,11 +226,17 @@ class SettingsController extends DashboardController
             
             if (isset($current_record['id'])) {
                 $id = $current_record['id'];
-                $this->indoput('/record?model=' . SettingsModel::class, ['record' => $record, 'content' => $content, 'condition' => ['WHERE' => "p.id=$id"]]);
+                $updated = $this->indoput('/record?model=' . SettingsModel::class, ['record' => $record, 'content' => $content, 'condition' => ['WHERE' => "p.id=$id"]]);
+                if (empty($updated)) {
+                    throw new \Exception($this->text('no-record-selected'));
+                }
                 $notify = 'primary';
                 $notice = $this->text('record-update-success');
             } else {
                 $id = $this->indopost('/record?model=' . SettingsModel::class, ['record' => $record, 'content' => $content]);
+                if ($id == false) {
+                    throw new \Exception($this->text('record-insert-error'));
+                }
                 $notify = 'success';
                 $notice = $this->text('record-insert-success');
             }

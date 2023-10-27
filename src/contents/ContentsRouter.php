@@ -22,6 +22,7 @@ class ContentsRouter extends Router
         $this->GET('/pages/datatable', [PagesController::class, 'datatable'])->name('pages-datatable');
         $this->GET_POST('/pages/insert', [PagesController::class, 'insert'])->name('page-insert');
         $this->GET_PUT('/pages/{uint:id}', [PagesController::class, 'update'])->name('page-update');
+        $this->GET('/pages/read/{uint:id}', [PagesController::class, 'read'])->name('page-read');
         $this->GET('/pages/view/{uint:id}', [PagesController::class, 'view'])->name('page-view');
         $this->DELETE('/pages', [PagesController::class, 'delete'])->name('page-delete');
 
@@ -29,6 +30,7 @@ class ContentsRouter extends Router
         $this->GET('/news/datatable', [NewsController::class, 'datatable'])->name('news-datatable');
         $this->GET_POST('/news/insert', [NewsController::class, 'insert'])->name('news-insert');
         $this->GET_PUT('/news/{uint:id}', [NewsController::class, 'update'])->name('news-update');
+        $this->GET('/news/read/{uint:id}', [NewsController::class, 'read'])->name('news-read');
         $this->GET('/news/view/{uint:id}', [NewsController::class, 'view'])->name('news-view');
         $this->DELETE('/news', [NewsController::class, 'delete'])->name('news-delete');
     }

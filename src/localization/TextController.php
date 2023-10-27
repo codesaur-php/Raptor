@@ -3,7 +3,6 @@
 namespace Raptor\Localization;
 
 use Psr\Log\LogLevel;
-use Psr\Http\Message\ServerRequestInterface;
 
 use Indoraptor\Localization\TextModel;
 
@@ -143,8 +142,14 @@ class TextController extends DashboardController
                     );
                 }
                 
-                $this->indopost("/text/$table", ['record' => $record, 'content' => $content]);
-        
+                $id = $this->indopost(
+                    "/text/$table",
+                    ['record' => $record, 'content' => $content]
+                );
+                if ($id == false) {
+                    throw new \Exception($this->text('no-record-selected'));
+                }
+                
                 $this->respondJSON([
                     'status' => 'success',
                     'href' => $this->generateLink('texts'),
@@ -255,9 +260,17 @@ class TextController extends DashboardController
                         $found['id'] . ', Table = ' . $found['table']);
                 }
                 
-                $this->indoput("/text/$table", [
-                    'record' => $record, 'content' => $content, 'condition' => ['WHERE' => "p.id=$id"]
-                ]);
+                $updated = $this->indoput(
+                    "/text/$table",
+                    [
+                        'record' => $record,
+                        'content' => $content,
+                        'condition' => ['WHERE' => "p.id=$id"]
+                    ]
+                );
+                if (empty($updated)) {
+                    throw new \Exception($this->text('no-record-selected'));
+                }
                 
                 $this->respondJSON([
                     'type' => 'primary',
@@ -313,7 +326,10 @@ class TextController extends DashboardController
             
             $table = $payload['table'];
             $id = \filter_var($payload['id'], \FILTER_VALIDATE_INT);
-            $this->indodelete("/text/$table", ['WHERE' => "id=$id"]);
+            $deleted = $this->indodelete("/text/$table", ['WHERE' => "id=$id"]);
+            if (empty($deleted)) {
+                throw new \Exception($this->text('no-record-selected'));
+            }
             
             $this->respondJSON([
                 'status'  => 'success',
