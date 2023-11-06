@@ -53,7 +53,7 @@
     <body>
         {% set navbar = config['navbar']|default('primary') %}
         <header class="navbar navbar-dark sticky-top bg-{{ navbar }} flex-md-nowrap p-0 shadow">
-            <a class="navbar-brand col-md-3 col-lg-2 me-0 px-3 text-uppercase" href="{{ index }}" target="__blank">
+            <a class="navbar-brand col-md-3 col-lg-2 me-0 px-3 text-uppercase" href="{{ index is not empty ? index : '/' }}" target="__blank">
                 {% if user.getOrganization()['logo'] is not empty %}<img src="{{ user.getOrganization()['logo'] }}">{% endif %}
                 {{ user.getOrganization()['name'] }}
             </a>
