@@ -45,7 +45,7 @@
             </div>
             <div class="col-2">
                 <div class="form-floating">
-                    <input class="form-control" name="position" readonly value="{{ record['position'] }}" placeholder="" type="number" autocomplete="off">
+                    <input class="form-control" name="position" readonly value="{{ record['position']|e }}" placeholder="" type="number" autocomplete="off">
                     <label>{{ 'position'|text }}</label>
                 </div>
             </div>
@@ -57,7 +57,7 @@
             </div>
             <div class="col-3">
                 <label class="form-label">{{ 'date'|text }}</label>
-                <input class="form-control" name="publish_date" value="{{ record['publish_date'] }}" readonly placeholder="" type="datetime-local" autocomplete="off">
+                <input class="form-control" name="publish_date" value="{{ record['publish_date']|e }}" readonly placeholder="" type="datetime-local" autocomplete="off">
             </div>
             <div class="col-3">
                 <label class="form-label">{{ 'category'|text }}</label>

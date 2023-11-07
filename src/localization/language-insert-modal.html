@@ -27,7 +27,7 @@
                         <select class="form-control select2" id="countries">
                             <option value=""></option>
                             {% for country in countries %}
-                            <option data-speak="{{ country['speak'] }}" value="{{ country['id'] }}"> &nbsp;{{ country['content']['title'][localization.code]|e }}</option>
+                            <option data-speak="{{ country['speak']|e }}" value="{{ country['id']|e }}"> &nbsp;{{ country['content']['title'][localization.code]|e }}</option>
                             {% endfor %}
                         </select>
                     </div>

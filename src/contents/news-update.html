@@ -54,7 +54,7 @@
                         <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"></button>
                         <ul class="dropdown-menu dropdown-menu-end" id="category_list">
                             {% for value,name in categories %}
-                            <li class="dropdown-item" value="{{ value }}">{{ name[localization.code] ?? value|capitalize }}</li>
+                            <li class="dropdown-item" value="{{ value|e }}">{{ name[localization.code] ?? value|capitalize }}</li>
                             {% endfor %}
                         </ul>
                     </div>
@@ -66,7 +66,7 @@
                         <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"></button>
                         <ul class="dropdown-menu dropdown-menu-end" id="type_list">
                             {% for value,name in types %}
-                            <li class="dropdown-item" value="{{ value }}">{{ name[localization.code] ?? value|capitalize }}</li>
+                            <li class="dropdown-item" value="{{ value|e }}">{{ name[localization.code] ?? value|capitalize }}</li>
                             {% endfor %}
                         </ul>
                     </div>
@@ -78,7 +78,7 @@
                 </div>
                 <div class="col-4">
                     <label class="form-label">{{ 'date'|text }}</label>
-                    <input class="form-control" name="publish_date" id="publish_date" value="{{ record['publish_date'] }}" placeholder="" type="datetime-local" autocomplete="off">
+                    <input class="form-control" name="publish_date" id="publish_date" value="{{ record['publish_date']|e }}" placeholder="" type="datetime-local" autocomplete="off">
                 </div>
                 <div class="col-4">
                     <label class="form-label">{{ 'publish'|text }}</label>

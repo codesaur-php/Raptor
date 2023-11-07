@@ -23,7 +23,7 @@
                         </div>
                         <div class="col">
                             <div class="form-floating">
-                                <input class="form-control" required name="org_alias" value="{{ record['alias'] }}" maxlength="64" placeholder="RBAC" type="text" autocomplete="off">
+                                <input class="form-control" required name="org_alias" value="{{ record['alias']|e }}" maxlength="64" placeholder="RBAC" type="text" autocomplete="off">
                                 <label>RBAC</label>
                                 <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
                             </div>
@@ -32,7 +32,7 @@
                     <div class="row mb-3">
                         <div class="col">
                             <div class="form-floating">
-                                <input class="form-control" required name="org_name" value="{{ record['name'] }}" maxlength="512" placeholder="{{ 'name'|text|e }}" type="text" autocomplete="off">
+                                <input class="form-control" required name="org_name" value="{{ record['name']|e }}" maxlength="512" placeholder="{{ 'name'|text|e }}" type="text" autocomplete="off">
                                 <label>{{ 'name'|text }}</label>
                                 <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
                             </div>

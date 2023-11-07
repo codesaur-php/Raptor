@@ -28,7 +28,7 @@
             </header>
             <h2>{{ record['title'] }}</h2>
             {% if image is not empty %}
-            <img class="img-fluid mt-3" file-data-fancybox src="{{ image['path'] }}" alt="{{ image['description'] is not empty ? image['description'] : 'Featured image'}}"></img>
+            <img class="img-fluid mt-3" file-data-fancybox src="{{ image['path'] }}" alt="{{ (image['description'] is not empty ? image['description'] : 'Featured image')|e }}"></img>
             {% endif %}
             <div class="col-12 mt-4">
                 {{ record['full'] }}

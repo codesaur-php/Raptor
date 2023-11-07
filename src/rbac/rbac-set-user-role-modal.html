@@ -11,9 +11,9 @@
                         <label>{{ account['first_name'] ~ ' ' ~ account['last_name'] ~ ' (' ~ account['username'] ~ ' => ' ~ account['email'] ~ ')' }} хэрэглэгчийн дүрийг сонгон тохируулна уу!</label>
                         <select class="form-control" multiple name="roles[]" id="roles">
                             {% for key,data in roles %}
-                            <optgroup label="{{ rbacs[key] }}" alias="{{ key }}">
+                            <optgroup label="{{ rbacs[key]|e }}" alias="{{ key|e }}">
                                 {% for value,name in data %}
-                                <option value="{{ value }}" data-description="{{ name[1] }}">{{ name[0]|e }}</option>
+                                <option value="{{ value|e }}" data-description="{{ name[1]|e }}">{{ name[0]|e }}</option>
                                 {% endfor %}
                             </optgroup>
                             {% endfor %}

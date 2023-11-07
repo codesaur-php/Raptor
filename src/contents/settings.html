@@ -18,55 +18,55 @@
             <input name="alias" readonly value="{{ record['alias']|e }}" type="hidden">
             {% for code in localization.language|keys %}
             <div class="form-floating mt-{{ loop.first ? '4' : '2' }}">
-                <input class="form-control" name="title[{{ code }}]" value="{{ record['content']['title'][code] }}" maxlength="70" autocomplete="off">
+                <input class="form-control" name="title[{{ code }}]" value="{{ record['content']['title'][code]|e }}" maxlength="70" autocomplete="off">
                 <label>{{ 'title'|text }} <img style="position:relative;top:-2px" src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.3/flags/{{ code }}.png"></label>
             </div>
             {% endfor %}
             <hr>
             {% for code in localization.language|keys %}
             <div class="form-floating mt-{{ loop.first ? '4' : '2' }}">
-                <input class="form-control" name="description[{{ code }}]" value="{{ record['content']['description'][code] }}" maxlength="155" autocomplete="off">
+                <input class="form-control" name="description[{{ code }}]" value="{{ record['content']['description'][code]|e }}" maxlength="155" autocomplete="off">
                 <label>{{ 'description'|text }} <img style="position:relative;top:-2px" src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.3/flags/{{ code }}.png"></label>
             </div>
             {% endfor %}
             <hr>
             {% for code in localization.language|keys %}
             <div class="form-floating mt-{{ loop.first ? '4' : '2' }}">
-                <input class="form-control" name="urgent[{{ code }}]" value="{{ record['content']['urgent'][code] }}" maxlength="155" autocomplete="off">
+                <input class="form-control" name="urgent[{{ code }}]" value="{{ record['content']['urgent'][code]|e }}" maxlength="155" autocomplete="off">
                 <label>{{ 'urgent'|text }} <img style="position:relative;top:-2px" src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.3/flags/{{ code }}.png"></label>
             </div>
             {% endfor %}
             <hr>
             <div class="form-floating mt-4">
-                <input class="form-control" name="keywords" value="{{ record['keywords'] }}" maxlength="256" autocomplete="off">
+                <input class="form-control" name="keywords" value="{{ record['keywords']|e }}" maxlength="256" autocomplete="off">
                 <label>SEO search keywords</label>
             </div>
             <div class="form-floating mt-4">
-                <input class="form-control" name="email" type="email" value="{{ record['email'] }}" maxlength="70" autocomplete="off">
+                <input class="form-control" name="email" type="email" value="{{ record['email']|e }}" maxlength="70" autocomplete="off">
                 <label>{{ 'email'|text }}</label>
             </div>
             <div class="form-floating mt-4">
-                <input class="form-control" name="phone" value="{{ record['phone'] }}" maxlength="710" autocomplete="off">
+                <input class="form-control" name="phone" value="{{ record['phone']|e }}" maxlength="710" autocomplete="off">
                 <label>{{ 'phone'|text }}</label>
             </div>
             <hr>
             {% for code in localization.language|keys %}
             <div class="form-floating mt-{{ loop.first ? '4' : '2' }}">
-                <input class="form-control" name="contact[{{ code }}]" value="{{ record['content']['contact'][code] }}" maxlength="512" autocomplete="off">
+                <input class="form-control" name="contact[{{ code }}]" value="{{ record['content']['contact'][code]|e }}" maxlength="512" autocomplete="off">
                 <label>{{ 'contact'|text }} <img style="position:relative;top:-2px" src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.3/flags/{{ code }}.png"></label>
             </div>
             {% endfor %}
             <hr>
             {% for code in localization.language|keys %}
             <div class="form-floating mt-{{ loop.first ? '4' : '2' }}">
-                <input class="form-control" name="address[{{ code }}]" value="{{ record['content']['address'][code] }}" maxlength="512" autocomplete="off">
+                <input class="form-control" name="address[{{ code }}]" value="{{ record['content']['address'][code]|e }}" maxlength="512" autocomplete="off">
                 <label>{{ 'address'|text }} <img style="position:relative;top:-2px" src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.3/flags/{{ code }}.png"></label>
             </div>
             {% endfor %}
             <hr>
             {% for code in localization.language|keys %}
             <div class="form-floating mt-{{ loop.first ? '4' : '2' }}">
-                <input class="form-control" name="copyright[{{ code }}]" value="{{ record['content']['copyright'][code] }}" maxlength="512" autocomplete="off">
+                <input class="form-control" name="copyright[{{ code }}]" value="{{ record['content']['copyright'][code]|e }}" maxlength="512" autocomplete="off">
                 <label>Copyright <img style="position:relative;top:-2px" src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.3/flags/{{ code }}.png"></label>
             </div>
             {% endfor %}

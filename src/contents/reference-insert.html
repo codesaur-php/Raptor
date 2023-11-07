@@ -32,12 +32,12 @@
                 <div class="col-lg-6">
                     <label class="form-label">{{ 'category'|text }}</label>
                     <div class="input-group mb-3">
-                        <input class="form-control" name="category" required type="text" value="{{ categories|keys|first }}" maxlength="32">
+                        <input class="form-control" name="category" required type="text" value="{{ categories|keys|first|e }}" maxlength="32">
                         <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
                         <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"></button>
                         <ul class="dropdown-menu dropdown-menu-end" id="category_list">
                         {% for value,name in categories %}
-                            <li class="dropdown-item" value="{{ value }}">{{ name[localization.code] ?? value|capitalize }}</li>
+                            <li class="dropdown-item" value="{{ value|e }}">{{ (name[localization.code] ?? value)|capitalize }}</li>
                         {% endfor %}
                         </ul>
                     </div>

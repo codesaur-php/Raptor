@@ -84,9 +84,9 @@
                 {% if user.can('system_rbac') %}
                 <select class="form-control" multiple name="roles[]" id="roles" aria-describedby="roleHelpBlock">
                     {% for key,data in roles %}
-                    <optgroup label="{{ rbacs[key] }}" alias="{{ key }}">
+                    <optgroup label="{{ rbacs[key]|e }}" alias="{{ key|e }}">
                         {% for value,name in data %}
-                        <option value="{{ value }}" data-description="{{ name[1] }}">{{ name[0]|e }}</option>
+                        <option value="{{ value|e }}" data-description="{{ name[1]|e }}">{{ name[0]|e }}</option>
                         {% endfor %}
                     </optgroup>
                     {% endfor %}
