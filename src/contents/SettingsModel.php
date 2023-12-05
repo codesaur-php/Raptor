@@ -32,9 +32,9 @@ class SettingsModel extends MultiModel
             new Column('title', 'varchar', 70),
             new Column('logo', 'varchar', 255),
             new Column('description', 'varchar', 255),
-            new Column('urgent', 'varchar', 255),
+            new Column('urgent', 'text'),
             new Column('contact', 'text'),
-            new Column('address', 'varchar', 255),
+            new Column('address', 'text'),
             new Column('copyright', 'varchar', 255)
         ]);
         
