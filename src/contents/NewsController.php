@@ -40,7 +40,7 @@ class NewsController extends DashboardController
             $org_name = \mb_strtoupper($this->getUser()->getOrganization()['name'] ?? 'no photo');
             $placeholder_image = 'https://via.placeholder.com/60?text=' . \urlencode($org_name);            
             $news_query = 
-                'SELECT id, title, code, category, type, published, publish_date ' .
+                'SELECT id, title, code, category, type, published, published_date ' .
                 'FROM indo_news WHERE is_active=1';
             $news = $this->indo('/execute/fetch/all', ['query' => $news_query]);
             foreach ($news as $record) {
@@ -50,7 +50,7 @@ class NewsController extends DashboardController
                     $lang = '';
                 }
                 $id = $record['id'];
-                $row = [$record['publish_date'], $lang];
+                $row = [$record['published_date'], $lang];
                 
                 $image = $featured[$id] ?? $images[$id] ?? $placeholder_image;
                 $row[] = "<img style=\"max-width:60px;max-height:60px\" src=\"$image\"\>";
@@ -119,8 +119,8 @@ class NewsController extends DashboardController
                 $record = $this->getParsedBody();
                 $context['payload'] = $record;
                 
-                if (empty($record['publish_date'])) {
-                    $record['publish_date'] = \date('Y-m-d H:i:s');
+                if (empty($record['published_date'])) {
+                    $record['published_date'] = \date('Y-m-d H:i:s');
                 }
                 $record['published'] = ($record['published'] ?? 'off' ) == 'on' ? 1 : 0;
                 

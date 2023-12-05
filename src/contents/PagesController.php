@@ -126,8 +126,8 @@ class PagesController extends DashboardController
                 $record = $this->getParsedBody();
                 $context['payload'] = $record;
                 
-                if (empty($record['publish_date'])) {
-                    $record['publish_date'] = \date('Y-m-d H:i:s');
+                if (empty($record['published_date'])) {
+                    $record['published_date'] = \date('Y-m-d H:i:s');
                 }
                 $record['published'] = ($record['published'] ?? 'off' ) == 'on' ? 1 : 0;
                 

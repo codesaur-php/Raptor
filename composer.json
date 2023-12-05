@@ -13,7 +13,7 @@
     ],
     "require": {
         "codesaur/template": ">=1.4.9",
-        "codesaur/indoraptor": ">=6.4.0",
+        "codesaur/indoraptor": ">=6.5.0",
         "codesaur/http-client": ">=1.4.3"
     },
     "autoload": {
