@@ -21,7 +21,9 @@ class User implements UserInterface
 
     public function is(string $role): bool
     {
-        if (isset($this->_rbac['system_coder'])) {
+        if (isset($this->_rbac['system_coder'])
+            && $this->getAlias() == 'system'
+        ) {
             return true;
         }
         
@@ -30,7 +32,9 @@ class User implements UserInterface
 
     public function can(string $permission, ?string $role = null): bool
     {
-        if (isset($this->_rbac['system_coder'])) {
+        if (isset($this->_rbac['system_coder'])
+            && $this->getAlias() == 'system'
+        ) {
             return true;
         }
         

@@ -17,7 +17,7 @@
                 <ul class="list-unstyled mb-3">
                     <li>
                     {% if org['logo'] is defined and org['logo'] is not empty %}
-                        <img class="img-fluid img-thumbnail" src="{{ org['logo'] }}" style="height:100px">
+                        <img class="img-fluid img-thumbnail" src="{{ org['logo'] }}" style="min-height:100px;height:100px">
                     {% else %}
                         <i class="bi bi-bank text-{{ current ? 'dark' : 'secondary' }}" style="font-size:4.2rem"></i>
                     {% endif %}
