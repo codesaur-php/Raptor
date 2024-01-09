@@ -115,7 +115,7 @@
                                     {{ user.getAccount()['first_name'] ~ ' ' ~ user.getAccount()['last_name'] }}
                                 </a>
                             </li>
-                            {% if user.getOrganizations()|length > 1 %}
+                            {% if user.getOrganizations()|length > 1 or user.is('system_coder') %}
                             <li class="nav-item">
                                 <a class="nav-link{{ request == 'organization-user'|link ? ' active' : '' }}" href="{{ 'organization-user'|link }}">
                                     <i class="bi bi-bank side-menu-icon"

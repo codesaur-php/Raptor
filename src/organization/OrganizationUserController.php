@@ -19,11 +19,15 @@ class OrganizationUserController extends DashboardController
             if (!$this->isUserAuthorized()) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
-
-            $user_orgs_query =
-                'SELECT t2.* FROM indo_organization_users as t1 INNER JOIN indo_organizations as t2 ON t1.organization_id=t2.id ' .
-                'WHERE t1.is_active=1 AND t2.is_active=1 AND t1.account_id=' . $this->getUser()->getAccount()['id'];
-            $organizations = $this->indo('/execute/fetch/all', ['query' => $user_orgs_query]);
+            
+            if ($this->isUser('system_coder')) {
+                $organizations = $this->indoget('/records?model=' . OrganizationModel::class);
+            } else {
+                $user_orgs_query =
+                    'SELECT t2.* FROM indo_organization_users as t1 INNER JOIN indo_organizations as t2 ON t1.organization_id=t2.id ' .
+                    'WHERE t1.is_active=1 AND t2.is_active=1 AND t1.account_id=' . $this->getUser()->getAccount()['id'];
+                $organizations = $this->indo('/execute/fetch/all', ['query' => $user_orgs_query]);
+            }
             $dashboard = $this->twigDashboard(
                 \dirname(__FILE__) . '/organization-user.html',
                 ['organizations' => $organizations]

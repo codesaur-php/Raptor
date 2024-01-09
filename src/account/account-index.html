@@ -71,15 +71,20 @@
                    class="btn btn-dark btn-sm shadow-sm" data-bs-target="#dashboard-modal" data-bs-toggle="modal"><i class="bi bi-bank"></i>
                 </a>
             {% endif %}
-            {% for org in account['organizations'] %}
-                <a class="badge bg-{{ organizations[org]['alias'] == 'system' ? 'primary' : 'warning' }} fw-normal text-decoration-none" href="{{ 'organization-view'|link({'id': organizations[org]['id']}) }}" data-bs-target="#dashboard-modal" data-bs-toggle="modal">
-                    {{ organizations[org]['name'] }}
-                </a>
-            {% endfor %}
+            {% if 'system_coder' in account['roles']  %}
+                <br/><span class="badge bg-secondary fw-normal">system_coder can enter any organization</span>
+            {% else %}
+                {% for org in account['organizations'] %}
+                    <a class="badge bg-{{ organizations[org]['alias'] == 'system' ? 'primary' : 'warning' }} fw-normal text-decoration-none" href="{{ 'organization-view'|link({'id': organizations[org]['id']}) }}" data-bs-target="#dashboard-modal" data-bs-toggle="modal">
+                        {{ organizations[org]['name'] }}
+                    </a>
+                {% endfor %}
+            {% endif %}
             </td>
             <td>
             {% if user.can('system_rbac') %}    
-                <a class="btn btn-danger btn-sm shadow-sm" href="{{ 'rbac-set-user-role'|link({'id': account['id']}) }}" data-bs-target="#dashboard-modal" data-bs-toggle="modal"><i class="bi bi-shield-fill-check"></i>
+                <a class="btn btn-danger btn-sm shadow-sm" href="{{ 'rbac-set-user-role'|link({'id': account['id']}) }}" data-bs-target="#dashboard-modal" data-bs-toggle="modal">
+                    <i class="bi bi-shield-fill-check"></i>
                 </a>
             {% endif %}
             {% for role in account['roles'] %}
