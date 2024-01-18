@@ -428,7 +428,6 @@
 
         var fileList = document.getElementById('filelist');
         var uploadFilesBtn = document.getElementById('uploadfiles');
-        var currentFileId = null;
         var uploader = new plupload.Uploader({
             runtimes: 'html5,flash,silverlight,html4',
             browse_button: 'pickfiles',
@@ -467,20 +466,20 @@
                     }
                 },
                 UploadProgress: function (up, file) {
-                    currentFileId = file.id;
                     document.getElementById(file.id).getElementsByTagName('b')[0].innerHTML = '<i class="bi bi-upload"> sending ' + file.percent + '%';
                     uploadFilesBtn.setAttribute('disabled', '');
                 },
                 FileUploaded: function (up, file, response) {
                     try {
-                        currentFileId = file.id;
                         var res = JSON.parse(response.response);
                         if (!res.file)
                             throw 'Invalid response!';
 
-                        let currentFile = document.getElementById(currentFileId);
-                        currentFile.getElementsByTagName('b')[0].innerHTML = '<i class="bi bi-check"></i> success';
-                        currentFile.classList.add('text-success');
+                        let currentFile = document.getElementById(file.id);
+                        if (currentFile !== null) {
+                            currentFile.getElementsByTagName('b')[0].innerHTML = '<i class="bi bi-check"></i> success';
+                            currentFile.classList.add('text-success');
+                        }
 
                         filesTable.addFileRow(res);
 
@@ -493,13 +492,13 @@
                         else
                             err = 'Unknown error!';
 
-                        let currentFile = document.getElementById(currentFileId);
-                        currentFile.getElementsByTagName('b')[0].innerHTML = '<i class="bi bi-x"> error';
-                        currentFile.getElementsByTagName('em')[0].innerHTML = err;
-                        currentFile.classList.add('text-danger');
+                        let currentFile = document.getElementById(file.id);
+                        if (currentFile !== null) {
+                            currentFile.getElementsByTagName('b')[0].innerHTML = '<i class="bi bi-x"> error';
+                            currentFile.getElementsByTagName('em')[0].innerHTML = err;
+                            currentFile.classList.add('text-danger');
+                        }
                         NotifyTop('danger', "{{ 'error'|text }}", err);
-                    } finally {
-                        currentFileId = null;
                     }
 
                     let files = fileList.children;
@@ -519,15 +518,13 @@
                     }
                 },
                 Error: function (up, err) {
-                    if (currentFileId !== null) {
-                        let currentFile = document.getElementById(currentFileId);
+                    if (err.file.id !== null) {
+                        let currentFile = document.getElementById(err.file.id);
                         if (currentFile !== null) {
                             currentFile.getElementsByTagName('b')[0].innerHTML = '<i class="bi bi-x"> failed';
                             currentFile.getElementsByTagName('em')[0].innerHTML = err.message;
                             currentFile.classList.add('text-danger');
-                            currentFileId = null;
                         }
-                        currentFileId = null;
                     }
 
                     NotifyTop('danger', "{{ 'error'|text }} " + err.code.toString().replace(/\D/g, ''), err.message);
