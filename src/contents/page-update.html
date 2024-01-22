@@ -478,7 +478,7 @@
                 },
                 FileUploaded: function (up, file, response) {
                     try {
-                        let res = JSON.parse(response.response);
+                        var res = JSON.parse(response.response);
                         if (!res.file) {
                             throw 'Invalid response!';
                         }
@@ -493,12 +493,13 @@
 
                         NotifyTop('primary', "{{ 'success'|text }}", 'Your file [' + file.name + '] was uploaded successfully.');
                     } catch (err) {
-                        if (err instanceof SyntaxError)
+                        if (err instanceof SyntaxError) {
                             err = 'Invalid request!';
-                        else if (res && res.error && res.error.message)
+                        } else if (res && res.error && res.error.message) {
                             err = res.error.message;
-                        else
+                        } else {
                             err = 'Unknown error!';
+                        }
 
                         let currentFile = document.getElementById(file.id);
                         if (currentFile) {
