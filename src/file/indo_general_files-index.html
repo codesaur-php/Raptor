@@ -220,10 +220,11 @@
                 },
                 FileUploaded: function (up, file, response) {
                     try {
-                        var res = JSON.parse(response.response);
-                        if (!res.path)
+                        let res = JSON.parse(response.response);
+                        if (!res.path) {
                             throw 'Invalid response!';
-
+                        }
+                        
                         let currentFile = document.getElementById(file.id);
                         if (currentFile !== null) {
                             currentFile.getElementsByTagName('b')[0].innerHTML = '<i class="bi bi-check"></i> success';
