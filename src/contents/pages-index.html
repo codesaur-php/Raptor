@@ -85,12 +85,12 @@ document.addEventListener('DOMContentLoaded', function () {
                     return res.json();
                 }).then(response => {
                     if (response.status !== 'success') {
-                        throw new Error(response.message ? response.message : 'Invalid response!');
+                        throw new Error(response.message ?? 'Invalid response!');
                     }
 
                     Swal.close();
 
-                    NotifyTop('success', "{{ 'success'|text|e }}", response.message ? response.message : '');
+                    NotifyTop('success', "{{ 'success'|text|e }}", response.message ?? '');
 
                     let row = a.parentNode.parentNode;
                     if (row && row.parentNode !== null) {

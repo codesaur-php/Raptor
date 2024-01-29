@@ -94,10 +94,10 @@ document.querySelectorAll('#new_account_requests a.approve-request').forEach(fun
                     return res.json();
                 }).then(response => {
                     if (response.status !== 'success') {
-                        throw new Error(response.message ? response.message : 'Invalid response!');
+                        throw new Error(response.message ?? 'Invalid response!');
                     }
 
-                    NotifyTop('success', "{{ 'success'|text|e }}", response.message ? response.message : '');
+                    NotifyTop('success', "{{ 'success'|text|e }}", response.message ?? '');
                     
                     window.location.href = "{{ 'accounts'|link }}";
                 })
@@ -140,10 +140,10 @@ document.querySelectorAll('#new_account_requests a.delete-request').forEach(func
                     return res.json();
                 }).then(response => {
                     if (response.status !== 'success') {
-                        throw new Error(response.message ? response.message : 'Invalid response!');
+                        throw new Error(response.message ?? 'Invalid response!');
                     }
 
-                    NotifyTop('success', "{{ 'success'|text|e }}", response.message ? response.message : '');
+                    NotifyTop('success', "{{ 'success'|text|e }}", response.message ?? '');
 
                     let row = a.parentNode.parentNode;
                     if (row && row.parentNode !== null) {

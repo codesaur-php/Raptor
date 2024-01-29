@@ -72,8 +72,8 @@
         row.children[3].innerHTML = resp.record.category;
         row.children[4].innerHTML = resp.record.keyword;
         
-        let type = resp.type ? resp.type : 'success';
-        let title = resp.title ? resp.title : 'Success';
-        NotifyTop(type, title, resp.message ? resp.message : 'Record successfully updated');
+        let type = resp.type ?? 'success';
+        let title = resp.title ?? 'Success';
+        NotifyTop(type, title, resp.message ?? 'Record successfully updated');
     });
 </script>

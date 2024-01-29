@@ -64,17 +64,17 @@
             formData.append('role_id',this.getAttribute('role_id'));
             formData.append('permission_id', this.getAttribute('permission_id'));
             fetch(
-                    '{{ 'rbac-set-role-permission'|link({'alias':alias}) }}',
-                    {
-                        method: this.checked ? 'POST' : 'PUT',
-                        body: formData
-                    }
+                '{{ 'rbac-set-role-permission'|link({'alias':alias}) }}',
+                {
+                    method: this.checked ? 'POST' : 'PUT',
+                    body: formData
+                }
             ).then(res => {
                 return res.json();
             }).then(response => {
-                let type = response.type ? response.type : 'warning';
-                let title = response.title ? response.title : '{{ 'notice'|text|e }}';
-                NotifyTop(type, title, response.message ? response.message : '');
+                let type = response.type ?? 'warning';
+                let title = response.title ?? '{{ 'notice'|text|e }}';
+                NotifyTop(type, title, response.message ?? '');
                 $.unblockUI();
             })
             .catch(error => {
