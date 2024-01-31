@@ -31,7 +31,7 @@ class PrivateFilesController extends FilesController
             }
 
             $fileName = $this->getQueryParams()['name'] ?? '';
-            $filePath = $this->getDocumentPath("/../private/$fileName");
+            $filePath = $this->getDocumentPath('/../private' . $fileName);
             if (empty($fileName) || !\file_exists($filePath)) {
                 throw new \Exception('Not Found', 404);
             }
