@@ -128,10 +128,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
 function prettyPrint() {
     try {
-        var ugly = document.getElementById('config_editor').value;
-        var obj = JSON.parse(ugly);
+        const configEditor = document.getElementById('config_editor');
+        var mayugly = configEditor.value;
+        var obj = JSON.parse(mayugly);
         var pretty = JSON.stringify(obj, undefined, 4);
-        document.getElementById('config_editor').value = pretty;
+        configEditor.value = pretty;
     } catch (e) {
         NotifyTop('warning', '{{ 'error'|text|e }}', e.message);
     }
