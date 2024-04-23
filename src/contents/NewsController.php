@@ -25,81 +25,35 @@ class NewsController extends DashboardController
         $this->indolog('content', LogLevel::NOTICE, 'Мэдээний жагсаалтыг нээж үзэж байна', ['model' => NewsModel::class]);
     }
     
-    public function datatable()
+    public function list()
     {
         try {
-            $rows = [];
-            
             if (!$this->isUserCan('system_content_index')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
             
-            $images = $this->getImages();
-            $featured = $this->getFeaturedImages();
-            $files_counts = $this->getFilesCounts();
-            $org_name = \mb_strtoupper($this->getUser()->getOrganization()['name'] ?? 'no photo');
-            $placeholder_image = 'https://via.placeholder.com/60?text=' . \urlencode($org_name);            
-            $news_query = 
-                'SELECT id, title, code, category, type, published, published_date ' .
-                'FROM indo_news WHERE is_active=1';
-            $news = $this->indo('/execute/fetch/all', ['query' => $news_query]);
-            foreach ($news as $record) {
-                if (!empty($record['code'])) {
-                    $lang = '<img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.3/flags/' . $record['code'] . '.png"> ' . $record['code'];
-                } else {
-                    $lang = '';
-                }
-                $id = $record['id'];
-                $row = [$record['published_date'], $lang];
-                
-                $image = $featured[$id] ?? $images[$id] ?? $placeholder_image;
-                $row[] = "<img style=\"max-width:60px;max-height:60px\" src=\"$image\"\>";
-                
-                $title = \htmlentities($record['title']);
-                $row[] = $title;
-                
-                $row[] = $files_counts[$id] ?? 0;
-                
-                $row[] =
-                    '<span class="badge bg-primary">' . \htmlentities($record['category']) . '</span> ' .
-                    '<span class="badge bg-danger">' . \htmlentities($record['type']) . '</span>';
-                
-                $row[] = $record['published'] == 1 ? '<i class="bi bi-emoji-heart-eyes-fill text-success"></i>' : '<i class="bi bi-eye-slash"></i>';
-
-                $action =
-                    '<a class="btn btn-sm btn-warning shadow-sm" href="' .
-                    $this->generateLink('news-read', ['id' => $id]) . '"><i class="bi bi-book"></i></a> ';
-
-                $action .=
-                    '<a class="btn btn-sm btn-info shadow-sm" href="' .
-                    $this->generateLink('news-view', ['id' => $id]) . '"><i class="bi bi-eye"></i></a>';
-                
-                if ($this->getUser()->can('system_content_update')) {
-                    $action .=
-                        ' <a class="btn btn-sm btn-primary shadow-sm" href="'
-                        . $this->generateLink('news-update', ['id' => $id]) . '"><i class="bi bi-pencil-square"></i></a>';
-                }
-                
-                if ($this->getUser()->can('system_content_delete')) {
-                    $action .= 
-                        ' <a class="delete-news btn btn-sm btn-danger shadow-sm" href="' . $id .
-                        '" data-title="' . $title . '"><i class="bi bi-trash"></i></a>';
-                }
-                
-                $row[] = $action;
-                
-                $rows[] = $row;
+            $exists = $this->indo(
+                '/execute/fetch/all',
+                ['query' => "SHOW TABLES LIKE 'indo_news'"]
+            );
+            if (!empty($exists)) {
+                $images = $this->getImages();
+                $featured = $this->getFeaturedImages();
+                $files_counts = $this->getFilesCounts();
+                $news_query = 
+                    'SELECT id, title, code, category, type, published, published_date ' .
+                    'FROM indo_news WHERE is_active=1';
+                $news = $this->indo('/execute/fetch/all', ['query' => $news_query]);
             }
-        } catch (\Throwable $e) {
-            $this->errorLog($e);
-        } finally {
-            $count = \count($rows);
             $this->respondJSON([
-                'data' => $rows,
-                'recordsTotal' => $count,
-                'recordsFiltered' => $count,
-                'draw' => (int) ($this->getQueryParams()['draw'] ?? 0)
+                'status' => 'success',
+                'list' => $news ?? [],
+                'images' => $images ?? [],
+                'featured' => $featured ?? [],
+                'files_counts' => $files_counts ?? []
             ]);
+        } catch (\Throwable $e) {
+            $this->respondJSON(['message' => $e->getMessage()], $e->getCode());
         }
     }
     
@@ -142,8 +96,7 @@ class NewsController extends DashboardController
                 
                 $this->respondJSON([
                     'status' => 'success',
-                    'message' => $this->text('record-insert-success'),
-                    'href' => $this->generateLink('news')
+                    'message' => $this->text('record-insert-success')
                 ]);
                 
                 $level = LogLevel::INFO;
@@ -234,10 +187,7 @@ class NewsController extends DashboardController
                 $context['files'] = [];
             }
             $context['image'] = $featured ?? $image;
-            $template = $this->twigTemplate(
-                \dirname(__FILE__) . '/news-read.html',
-                ['accounts' => $this->getAccounts()]
-            );
+            $template = $this->twigTemplate(\dirname(__FILE__) . '/news-read.html');
             foreach ($this->getAttribute('settings', []) as $key => $value) {
                 $template->set($key, $value);
             }
@@ -281,6 +231,7 @@ class NewsController extends DashboardController
             }
             
             $record = $this->indoget('/record?model=' . NewsModel::class, ['id' => $id]);
+            $record['rbac_accounts'] = $this->getRBACAccounts($record['created_by'], $record['updated_by']);
             $context['record'] = $record;
             try {
                 $context['files'] = $this->indo(
@@ -293,10 +244,7 @@ class NewsController extends DashboardController
             } catch (\Throwable $e) {
                 $context['files'] = [];
             }
-            $dashboard = $this->twigDashboard(
-                \dirname(__FILE__) . '/news-view.html',
-                $context + ['accounts' => $this->getAccounts()]
-            );
+            $dashboard = $this->twigDashboard(\dirname(__FILE__) . '/news-view.html', $context);
             $dashboard->set('title', $this->text('view-record') . ' | News');
             $dashboard->render();
 
@@ -357,8 +305,7 @@ class NewsController extends DashboardController
                 $this->respondJSON([
                     'status' => 'success',
                     'type' => 'primary',
-                    'message' => $this->text('record-update-success'),
-                    'href' => $this->generateLink('news')
+                    'message' => $this->text('record-update-success')
                 ]);
                 
                 $level = LogLevel::INFO;
@@ -399,8 +346,9 @@ class NewsController extends DashboardController
                     }
                 }
             } else {
-                $context['record'] = $this->indoget(
-                    '/record?model=' . NewsModel::class, ['id' => $id]);
+                $record = $this->indoget('/record?model=' . NewsModel::class, ['id' => $id]);                
+                $record['rbac_accounts'] = $this->getRBACAccounts($record['created_by'], $record['updated_by']);
+                $context['record'] = $record;
                 try {
                     $context['files'] = $this->indo(
                         "/files/records/$table",
@@ -412,11 +360,8 @@ class NewsController extends DashboardController
                 } catch (\Throwable $e) {
                     $context['files'] = [];
                 }
-                $vars = $context + [
-                    'accounts' => $this->getAccounts(),
-                    'max_file_size' => $this->getMaximumFileUploadSize()
-                ];
-                $dashboard = $this->twigDashboard(\dirname(__FILE__) . '/news-update.html', $vars);
+                $context['max_file_size'] = $this->getMaximumFileUploadSize();
+                $dashboard = $this->twigDashboard(\dirname(__FILE__) . '/news-update.html', $context);
                 $dashboard->set('title', $this->text('edit-record') . ' | News');
                 $dashboard->render();
                 
@@ -448,7 +393,7 @@ class NewsController extends DashboardController
             }
             
             $payload = $this->getParsedBody();
-            if (empty($payload['id'])
+            if (!isset($payload['id'])
                 || !isset($payload['title'])
                 || !\filter_var($payload['id'], \FILTER_VALIDATE_INT)
             ) {

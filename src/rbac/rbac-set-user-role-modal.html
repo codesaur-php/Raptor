@@ -1,78 +1,93 @@
-<div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+<div class="modal-lg modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content">
-        <div class="modal-header modal-header">
-            <h5 class="modal-title text-danger"><i class="bi bi-shield-lock-fill"></i> {{ 'role2'|text }}</h5>
+        <div class="modal-header">
+            <h3 class="modal-title fs-6">
+                <i class="bi bi-shield-lock-fill"></i> {{ 'role2'|text }}
+            </h3>
             <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="{{ 'close'|text|e }}"></button>
         </div>
         <div class="modal-body">
-            <form autocomplete="off" id="rbac_user_role" role="form" action="{{ 'rbac-set-user-role'|link({'id': account['id']}) }}" method="POST" enctype="multipart/form-data">
+            <form autocomplete="off" id="rbac_user_role" role="form" action="{{ 'rbac-set-user-role'|link ~ '?id=' ~ account['id'] }}" method="POST" enctype="multipart/form-data">
                 <div style="height:400px;overflow-y:auto;overflow-x:hidden;">
                     <div class="form-group">
                         <label>{{ account['first_name'] ~ ' ' ~ account['last_name'] ~ ' (' ~ account['username'] ~ ' => ' ~ account['email'] ~ ')' }} хэрэглэгчийн дүрийг сонгон тохируулна уу!</label>
-                        <select class="form-control" multiple name="roles[]" id="roles">
+                        <select class="form-control" multiple name="roles[]" id="user_roles">
                             {% for key,data in roles %}
-                            <optgroup label="{{ rbacs[key]|e }}" alias="{{ key|e }}">
-                                {% for value,name in data %}
-                                <option value="{{ value|e }}" data-description="{{ name[1]|e }}">{{ name[0]|e }}</option>
-                                {% endfor %}
-                            </optgroup>
+                                <optgroup label="{{ rbacs[key]|e }}" alias="{{ key|e }}">
+                                    {% for value,name in data %}
+                                        <option value="{{ value|e }}"{% if value in current_role %} selected{% endif %}>[{{ name[0]|e }}] {{ name[1]|e }}</option>
+                                    {% endfor %}
+                                </optgroup>
                             {% endfor %}
                         </select>
                     </div>
                 </div>
             </form>
         </div>
-        <div class="modal-footer modal-footer-solid">
-            <button class="submit-user-role btn btn-danger shadow-sm" type="submit">
-                <i class="bi bi-check"></i> <strong>{{ 'save'|text }}</strong>
+        <div class="modal-footer">
+            <button class="submit-user-role btn btn-dark shadow-sm">
+                <i class="bi bi-check"></i> {{ 'save'|text }}
+            </button>
+            <button class="btn btn-secondary shadow-sm" data-bs-dismiss="modal" type="button">
+                {{ 'cancel'|text }}
             </button>
         </div>
     </div>
 </div>
 <script type="text/javascript">
-    (function($) {
-        $.fn.Select2Roles = function() {
-            let formatSelection = function(state) {
-                if (!state.id) {
-                    return state.text;
-                }
-                
-                let option = $(state.element);
-                let group = option.closest('optgroup');
-                if (group) {
-                    return group.attr('alias') + '_' + state.text;
-                } else {
-                    return state.text;
-                }
-            };
-
-            let formatMenu = function(state) {
-                if (!state.id) {
-                    return state.text;
-                }
-
-                return state.text + ' &nbsp;<span class="text-muted float-right">' + $(state.element).data('description') + '</span>';
-            };
-
-            if (jQuery().select2) {
-                this.select2({
-                    width: '100%',
-                    templateResult: formatMenu,
-                    templateSelection: formatSelection,
-                    dropdownParent: $('#dashboard-modal'),
-                    escapeMarkup: function(m) { return m; }
-                });
-            };
-
-            return this;
-        };
-    } (jQuery));
+    const userRoles = document.getElementById('user_roles');
+    if (userRoles) {
+        new Choices(userRoles, {removeItemButton: true});
+    }
     
-    $('#roles').Select2Roles();
-    {% if current_role is defined and current_role is not empty %}
-    $('#roles').val([{{ current_role }}]);
-    $('#roles').trigger('change');
-    {% endif %}
-        
-    FormSubmitHandler('.submit-user-role', 'form#rbac_user_role');
+    const forUserRole = document.querySelector('form#rbac_user_role');
+    if (!forUserRole) {
+        NotifyTop('danger', "{{ 'error'|text|e }}", 'Form not found!');
+    } else {
+        const submitter = document.querySelector('button.submit-user-role');
+        submitter.addEventListener('click', function (e) {
+            e.preventDefault();
+
+            forUserRole.requestSubmit();
+        });
+
+        forUserRole.addEventListener('submit', function (event) {
+            event.preventDefault();
+
+            const _valid = this.checkValidity();
+            this.classList.add('was-validated');
+            if (!_valid) {
+                event.stopPropagation();
+                return NotifyTop('danger', "{{ 'error'|text|e }}", "{{ 'u-have-some-form-errors'|text|e }}");
+            }
+
+            submitter.growNstop();
+
+            const data = new FormData(this);
+            fetch(
+                this.action,
+                {
+                    body: data,
+                    method: this.getAttribute('method') ?? 'POST'
+                }
+            ).then(res => {
+                let contentType = res.headers.get('content-type');
+                if (contentType.indexOf('application/json') !== -1) {
+                    return res.json();
+                }
+                throw new Error("HTTP [{0}]: {1}".format(res.status, res.statusText));
+            }).then(response => {
+                if (response.status !== 'success') {
+                    throw new Error(response.message ? response.message : 'Invalid response!');
+                }
+
+                window.location.reload();
+
+                NotifyTop(response.type ?? 'success', response.title ?? "{{ 'success'|text|e }}", response.message ?? 'User role set');
+            }).catch(error => {
+                NotifyTop('danger', "{{ 'error'|text|e }}", error.message);
+                submitter.growNstop();
+            });
+        });
+    }
 </script>

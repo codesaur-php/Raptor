@@ -405,7 +405,7 @@ class LoginController extends \Raptor\Controller
             }
             $account_id = \filter_var($parsedBody['account'], \FILTER_VALIDATE_INT);
             if ($account_id === false) {
-                throw new \Exception('<span class="text-secondary">Хэрэглэгчийн дугаар заагдаагүй байна.</span><br/>' . $this->text('invalid-request-data'), StatusCodeInterface::STATUS_BAD_REQUEST);
+                throw new \Exception('<span class="text-secondary">Хэрэглэгчийн дугаар заагдаагүй байна.</span><br/>Мэдээлэл буруу оруулсан байна. Анхааралтай бөглөөд дахин оролдоно уу', StatusCodeInterface::STATUS_BAD_REQUEST);
             }
             $vars += ['account' => $account_id];
 

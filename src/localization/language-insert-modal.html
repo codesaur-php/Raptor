@@ -1,208 +1,296 @@
-<div class="modal-dialog modal-lg">
+<style>
+    .requesting {
+        z-index: 2000;
+        display: none;
+        position: fixed;
+        margin: 0;
+        padding: 0;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        cursor: wait;
+        border: none;
+    }
+    .requesting-bg {
+        width: 100%;
+        height: 100%;
+        background-color: rgb(0, 0, 0);
+        opacity: 0.6;
+    }
+    .requesting-content {
+        position: absolute;
+        padding: .7rem .5rem .2rem .5rem;
+        margin: 0;
+        top: 40%;
+        left: 35%;
+        width: 30%;
+        text-align: center;
+        color: #0d6efd;
+        border-radius: 7px;
+        border: 2px solid #0d6efd;
+        background-color: rgb(255, 255, 255);
+    }
+    .requesting-content img {
+        height: 42px;
+        margin-bottom: .3rem;
+    }
+</style>
+<div class="requesting">
+    <div class="requesting-bg"></div>
+    <div class="requesting-content">
+        <span class="spinner-border" role="status"></span>
+        <h6>Processing request ...</h6>
+    </div>
+</div>
+<div class="modal-lg modal-dialog">
     <div class="modal-content">
-        <div class="modal-header modal-header-solid">
-            <h6 class="modal-title text-uppercase text-success"><i class="bi bi-plus-circle"></i> {{ 'add-record'|text }}</h6>
+        <div class="modal-header">
+            <h3 class="modal-title fs-6 text-uppercase text-success">
+                <i class="bi bi-plus-circle"></i> {{ 'add-record'|text }}
+            </h3>
             <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="{{ 'close'|text|e }}"></button>
         </div>
         <div class="modal-body">
-            <div class="progress mb-4">
+            <div class="progress mb-2">
                 <div class="progress-bar progress-bar-striped progress-bar-animated" id="collectProgress" role="progressbar" style="width:33%" aria-valuenow="33" aria-valuemin="0" aria-valuemax="100"></div>
             </div>
             <ul class="nav nav-tabs" id="langInsertTab" role="tablist">
                 <li class="nav-item">
-                    <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#generalPanel" role="tab" aria-controls="generalPanel" aria-selected="true">{{ 'general-info'|text }}</button>
+                    <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#generalPanel" role="tab" aria-controls="generalPanel" aria-selected="true" type="button">
+                        {{ 'general-info'|text }}
+                    </button>
                 </li>
                 <li class="nav-item">
-                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#settingsPanel" role="tab" aria-controls="settingsPanel" aria-selected="false">{{ 'text-settings'|text }}</button>
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#settingsPanel" role="tab" aria-controls="settingsPanel" aria-selected="false" type="button">
+                        {{ 'text-settings'|text }}
+                    </button>
                 </li>
                 <li class="nav-item">
-                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#confirmPanel" role="tab" aria-controls="confirmPanel" aria-selected="false">{{ 'confirm'|text }}</button>
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#confirmPanel" role="tab" aria-controls="confirmPanel" aria-selected="false" type="button">
+                        {{ 'confirm'|text }}
+                    </button>
                 </li>
             </ul>
             <div class="tab-content mt-2">
                 <div class="tab-pane fade show active" id="generalPanel" role="tabpanel">
-                    <h5 class="mt-4">{{ 'enter-language-details'|text }}</h5>
-                    <div class="mt-4">
-                        <label>{{ 'country'|text }}</label>
-                        <select class="form-control select2" id="countries">
-                            <option value=""></option>
-                            {% for country in countries %}
-                            <option data-speak="{{ country['speak']|e }}" value="{{ country['id']|e }}"> &nbsp;{{ country['content']['title'][localization.code]|e }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="mt-4">
-                        <label>{{ 'code'|text }}*</label>
-                        <input class="form-control lang_short" autocomplete="off" maxlength="6" placeholder="" readonly value="" type="text">
+                    <h5>{{ 'enter-language-details'|text }}</h5>
+                    <div class="mt-2">
+                        <label>{{ 'code'|text }}</label>
+                        <input class="form-control lang_code" autocomplete="off" maxlength="6" placeholder="" value="" type="text">
                     </div>
                     <div class="mt-4">
                         <label>{{ 'flag'|text }}</label>
                         <p class="lang_flag"></p>
                     </div>
-                    <div class="mt-4 mb-3">
-                        <label>{{ 'language'|text }}*</label>
-                        <input class="form-control lang_full" id="txt_full" autocomplete="off" maxlength="32" placeholder="" value="" type="text">
+                    <div class="mt-2">
+                        <label>{{ 'name'|text }}</label>
+                        <input class="form-control lang_full" autocomplete="off" maxlength="128" placeholder="" value="" type="text">
+                    </div>
+                    <div class="mt-2">
+                        <label>{{ 'description'|text }}</label>
+                        <input class="form-control lang_description" autocomplete="off" maxlength="255" placeholder="" value="" type="text">
                     </div>
                 </div>
                 <div class="tab-pane fade" id="settingsPanel" role="tabpanel">
-                    <h5 class="mt-4">{{ 'select-text-settings'|text }}</h5>
-                    <div class="mt-4">
+                    <h5>{{ 'select-text-settings'|text }}</h5>
+                    <div class="mt-2">
                         <label>{{ 'copy-text-from'|text }}</label>
-                        <select class="form-control" id="available_languages">
+                        <select class="form-control available_languages">
                             <option value=""></option>
                             {% for code,name in localization.language %}
-                            <option value="{{ code }}">{{ name }}</option>
+                                <option value="{{ code }}">{{ name }}</option>
                             {% endfor %}
                         </select>
                     </div>
-                    <div class="mt-4">
+                    <div class="mt-2">
                         <label>{{ 'code'|text }}</label>
-                        <input class="form-control copy_short" autocomplete="off" maxlength="6" placeholder="" readonly value="" type="text">
+                        <input class="form-control copy_code" autocomplete="off" maxlength="6" placeholder="" readonly value="" type="text">
                     </div>
-                    <div class="mt-4 mb-3">
+                    <div class="mt-2">
                         <label>{{ 'flag'|text }}</label>
                         <p class="copy_flag"></p>
                     </div>
                 </div>
                 <div class="tab-pane fade" id="confirmPanel" role="tabpanel">
-                    <h5 class="mt-4">{{ 'confirm-info'|text }}</h5>
-                    <form id="insert_form" action="{{ 'language-insert'|link }}" method="POST" enctype="multipart/form-data" role="form" novalidate="novalidate">
-                        <div class="mt-4">
-                            <label>{{ 'code'|text }}</label>
-                            <input class="form-control lang_short" readonly required autocomplete="off" maxlength="6" name="short" placeholder="" value="" type="text">
-                        </div>
-                        <div class="mt-4">
-                            <label>{{ 'flag'|text }}</label>
-                            <p class="lang_flag"></p>
-                        </div>
-                        <div class="mt-4">
-                            <label>{{ 'name'|text }}</label>
-                            <input class="form-control lang_full" id="txt_full_confirm" required autocomplete="off" maxlength="32" name="full" placeholder="" value="" type="text">
-                        </div>
-                        <div class="mt-4 mb-3">
-                            <label>{{ 'copy-text-from'|text }}</label>
-                            <input class="form-control copy_short" readonly required autocomplete="off" maxlength="6" name="copy" placeholder="" value="" type="text">
-                        </div>
-                    </form>
+                    <h5>{{ 'please-confirm-info'|text }}</h5>
+                    <div class="mt-2">
+                        <label>{{ 'code'|text }}</label>
+                        <input class="form-control lang_code" readonly autocomplete="off" maxlength="6" name="code" placeholder="" value="" type="text">
+                    </div>
+                    <div class="mt-2">
+                        <label>{{ 'flag'|text }}</label>
+                        <p class="lang_flag"></p>
+                    </div>
+                    <div class="mt-2">
+                        <label>{{ 'name'|text }}</label>
+                        <input class="form-control" readonly autocomplete="off" maxlength="128" name="full" placeholder="" value="" type="text">
+                    </div>
+                    <div class="mt-2">
+                        <label>{{ 'description'|text }}</label>
+                        <input class="form-control" readonly autocomplete="off" maxlength="255" name="description" placeholder="" value="" type="text">
+                    </div>
+                    <div class="mt-2">
+                        <label>{{ 'copy-text-from'|text }}</label>
+                        <input class="form-control" readonly autocomplete="off" maxlength="6" name="copy" placeholder="" value="" type="text">
+                    </div>
                 </div>
             </div>
         </div>
-        <div class="modal-footer modal-footer-solid">
-            <button class="btn btn-info" id="back">
+        <div class="modal-footer">
+            <button class="btn btn-info" id="back" type="button">
                 <i class="bi bi-arrow-left"></i> {{ 'back'|text }}
             </button>
-            <button class="btn btn-primary" id="continue">
+            <button class="btn btn-primary" id="continue" type="button">
                 {{ 'continue'|text }} <i class="bi bi-arrow-right"></i>
             </button>
             <button class="btn btn-success" id="confirm">
                 <i class="bi bi-check"></i> {{ 'confirm'|text }}
             </button>
-            <button class="btn btn-secondary" data-bs-dismiss="modal">
+            <button class="btn btn-secondary" data-bs-dismiss="modal" type="button">
                 {{ 'close'|text }}
             </button>
         </div>
     </div>
 </div>
 <script type="text/javascript">
-let btnBack = document.querySelector('.modal-footer #back');
-let btnContinue = document.querySelector('.modal-footer #continue');
-let btnConfirm = document.querySelector('.modal-footer #confirm');
-let headGeneral = document.querySelector('#langInsertTab button[data-bs-target="#generalPanel"]');
-let headSettings = document.querySelector('#langInsertTab button[data-bs-target="#settingsPanel"]');
-let headConfirm = document.querySelector('#langInsertTab button[data-bs-target="#confirmPanel"]');
-let progressBar = document.querySelector('#collectProgress');
+    let progressBar = document.querySelector('#collectProgress');
+    let headGeneral = document.querySelector('#langInsertTab button[data-bs-target="#generalPanel"]');
+    let headSettings = document.querySelector('#langInsertTab button[data-bs-target="#settingsPanel"]');
+    let headConfirm = document.querySelector('#langInsertTab button[data-bs-target="#confirmPanel"]');
+    let codeInput = document.querySelector('#generalPanel input.lang_code');
+    let flagInput = document.querySelector('#generalPanel p.lang_flag');
+    let nameInput = document.querySelector('#generalPanel input.lang_full');
+    let descriprionInput = document.querySelector('#generalPanel input.lang_description');
+    let copySelect = document.querySelector('#settingsPanel select.available_languages');
+    let btnBack = document.querySelector('.modal-footer #back');
+    let btnContinue = document.querySelector('.modal-footer #continue');
+    let btnConfirm = document.querySelector('.modal-footer #confirm');
 
-FormSubmitHandler(btnConfirm, 'form#insert_form');
+    codeInput.addEventListener('input', function () {
+        let confirmFlag = document.querySelector('#confirmPanel p.lang_flag');
+        let confirmCode = document.querySelector('#confirmPanel input[name="code"]');
+        if (this.value.length === 2) {
+            let flagstr = this.value === 'en' ? 'us' : this.value;
+            flagInput.innerHTML = `<img src="https://flagcdn.com/40x30/${flagstr}.png" srcset="https://flagcdn.com/80x60/${flagstr}.png 2x" width="40" height="30">`;
+            confirmFlag.innerHTML = flagInput.innerHTML;
+            confirmCode.value = this.value;
+        } else {
+            confirmFlag.innerHTML = '';
+            confirmCode.value = '';
+        }
+    }, false);
 
-btnBack.addEventListener('click', function(e) {
-    e.preventDefault();
+    nameInput.addEventListener('input', function () {
+        document.querySelector('#confirmPanel input[name="full"]').value = this.value;
+    }, false);
+
+    descriprionInput.addEventListener('input', function () {
+        document.querySelector('#confirmPanel input[name="description"]').value = this.value;
+    }, false);
+
+    copySelect.onchange = function () {
+        let copyFlag = document.querySelector('#settingsPanel p.copy_flag');
+        let copyCode = document.querySelector('#settingsPanel input.copy_code');
+        let confirmCopyCode = document.querySelector('#confirmPanel input[name="copy"]');
+        if (this.value) {
+            let flagstr = this.value === 'en' ? 'us' : this.value;
+            copyFlag.innerHTML = `<img src="https://flagcdn.com/40x30/${flagstr}.png" srcset="https://flagcdn.com/80x60/${flagstr}.png 2x" width="40" height="30">`;
+            copyCode.value = this.value;
+            confirmCopyCode.value = this.value;
+        } else {
+            copyFlag.innerHTML = '';
+            copyCode.value = '';
+            confirmCopyCode.value = '';
+        }
+    };
+
+    btnBack.addEventListener('click', function (e) {
+        e.preventDefault();
+
+        let id = document.querySelector('.modal-body .tab-content .active').id;
+        if (id === 'settingsPanel') {
+            headGeneral.click();
+        } else if (id === 'confirmPanel') {
+            headSettings.click();
+        }
+    });
+
+    btnContinue.addEventListener('click', function (e) {
+        e.preventDefault();
+
+        let id = document.querySelector('.modal-body .tab-content .active').id;
+        if (id === 'generalPanel') {
+            headSettings.click();
+        } else if (id === 'settingsPanel') {
+            headConfirm.click();
+        }
+    });
+
+    headGeneral.addEventListener('click', function () {
+        btnBack.style.display = 'none';
+        btnContinue.style.display = 'block';
+        btnConfirm.style.display = 'none';
+        progressBar.style.width = '33%';
+    });
+
+    headSettings.addEventListener('click', function () {
+        btnBack.style.display = 'block';
+        btnContinue.style.display = 'block';
+        btnConfirm.style.display = 'none';
+        progressBar.style.width = '66%';
+    });
+
+    headConfirm.addEventListener('click', function () {
+        progressBar.style.width = '99%';
+        btnBack.style.display = 'block';
+        btnContinue.style.display = 'none';
+        btnConfirm.style.display = 'block';
+    });
+
+    headGeneral.click();
     
-    let id = document.querySelector('.tab-content .active').id;
-    if (id === 'settingsPanel') {
-        headGeneral.click();
-    } else if (id === 'confirmPanel') {
-        headSettings.click();
-    }
-});
-
-btnContinue.addEventListener('click', function(e) {
-    e.preventDefault();
-    
-    let id = document.querySelector('.tab-content .active').id;
-    if (id === 'generalPanel') {
-        headSettings.click();
-    } else if (id === 'settingsPanel') {
-        headConfirm.click();
-    }
-});
-
-headGeneral.addEventListener('click', function() {
-    btnBack.style.display = 'none';
-    btnContinue.style.display = 'block';
-    btnConfirm.style.display = 'none';
-    progressBar.style.width = '33%';
-});
-
-headSettings.addEventListener('click', function() {
-    btnBack.style.display = 'block';
-    btnContinue.style.display = 'block';
-    btnConfirm.style.display = 'none';
-    progressBar.style.width = '66%';
-});
-
-headConfirm.addEventListener('click', function() {
-    progressBar.style.width = '99%';
-    btnBack.style.display = 'block';
-    btnContinue.style.display = 'none';
-    btnConfirm.style.display = 'block';
-});
-
-headGeneral.click();
-
-(function($) {
-    $.fn.Select2Country = function() {
-        let format = function(country) {
-            if (!country.id) {
-                return country.text;
+    btnConfirm.addEventListener('click', function (e) {
+        e.preventDefault();
+        
+        btnConfirm.growNstop();
+        const requesting = document.querySelector('div.requesting');
+        if (requesting) {
+            requesting.style.display = 'block';
+        }
+        
+        var formData = new FormData();
+        let inputs = document.querySelectorAll('#confirmPanel input');
+        inputs.forEach(function (input) {
+            formData.append(input.name, input.value);
+        }); 
+        fetch(
+            "{{ 'language-insert'|link }}",
+            {
+                method: 'POST',
+                body: formData
+            }
+        ).then(res => {
+            let contentType = res.headers.get('content-type');
+            if (contentType.indexOf('application/json') !== -1) {
+                return res.json();
+            }
+            throw new Error("HTTP [{0}]: {1}".format(res.status, res.statusText));
+        }).then(response => {
+            if (response.status !== 'success') {
+                throw new Error(response.message ? response.message : 'Invalid response!');
             }
 
-            let ID = country.element.value.toLowerCase();
-            return $('<span><img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.3/flags/' + ID + '.png"> ' + country.text + '</span>');
-        };
-
-        if (jQuery().select2) {
-            this.select2({
-                width: '100%',
-                templateResult: format,
-                templateSelection: format,
-                dropdownParent: $('#dashboard-modal'),
-                escapeMarkup: function(m) { return m; },
-                placeholder: '<i class="bi bi-geo-alt"></i>&nbsp; {{ 'select-a-country'|text }}'
-            });
-        };
-
-        return this;
-    };
-} (jQuery));
-
-$('#countries').Select2Country();
-
-$('#countries').on('change', function() {
-    let ID = $(this).find('option:selected').attr('value').toLowerCase();
-    let Name = $(this).find('option:selected').attr('data-speak');
-
-    $('.lang_short').val(ID);
-    $('.lang_flag').html('<img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.3/flags/' + ID + '.png">');
-    $('.lang_full').val(Name);
-});
-
-$('#txt_full').bind('input', function() {
-    $('#txt_full_confirm').val($(this).val());
-});
-
-$('#available_languages').on('change', function() {
-    let code = $(this).find('option:selected').val();
-    $('.copy_short').val(code);
-    $('.copy_flag').html('<img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.3/flags/' + code + '.png">');
-});
+            window.location.reload();
+            
+            NotifyTop(response.type ?? 'success', response.title ?? "{{ 'success'|text|e }}", response.message ?? 'Language inserted');
+        }).catch(error => {
+            NotifyTop('danger', "{{ 'error'|text|e }}", error.message);
+            btnConfirm.growNstop();
+        }).finally(() => {
+            if (requesting) {
+                requesting.style.display = 'none';
+            }
+        });
+    });
 </script>

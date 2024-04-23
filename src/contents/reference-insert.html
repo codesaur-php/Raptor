@@ -6,16 +6,17 @@
   'notification': { 'mn': 'Сонордуулга' },
   'email': { 'mn': 'Цахим захиа' }
 } %}
-
-<div class="card shadow border-success mt-2 mb-4">
-    <div class="card-header bg-light">
-        <div class="d-flex justify-content-between flex-wrap flex-md-nowrap">
-            <h6 class="text-success text-uppercase pt-2"><i class="bi bi-plus-circle-dotted"></i> {{ 'add-record'|text }} ({{ table }})</h6>
-            <div class="button-group">
-                <button class="submit-insert btn btn-success shadow-sm text-uppercase">
-                    <i class="bi bi-check-lg"></i> {{ 'save'|text }}
+<div class="card shadow border-success">
+    <div class="card-header text-uppercase">
+        <div class="d-flex flex-wrap justify-content-between align-items-center">
+            <h3 class="text-success fs-6 pt-1">
+                <i class="bi bi-plus-circle-dotted"></i> {{ 'add-record'|text }} ({{ table }})
+            </h3>
+            <div class="ms-auto">
+                <button class="submit-insert btn btn-sm btn-success text-uppercase shadow-sm" type="button">
+                    <i class="bi bi-check"></i> {{ 'save'|text }}
                 </button>
-                <a class="btn btn-secondary shadow-sm text-uppercase" href="{{ 'references'|link }}">
+                <a class="btn btn-sm btn-secondary shadow-sm" href="{{ 'references'|link }}">
                     <i class="bi bi-arrow-left"></i> {{ 'reference-tables'|text }}
                 </a>
             </div>
@@ -23,15 +24,15 @@
     </div>
     <div class="card-body">
         <form class="needs-validation" id="reference_insert" action="{{ 'reference-insert'|link({'table': table}) }}" method="POST" enctype="multipart/form-data" novalidate>
-            <div class="form-group row mt-3">
-                <div class="col-lg-6">
+            <div class="form-group row">
+                <div class="col-6">
                     <label class="form-label">{{ 'keyword'|text }}</label>
                     <input class="form-control" name="keyword" value="" maxlength="128" placeholder="" required type="text" autocomplete="off">
                     <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
                 </div>
-                <div class="col-lg-6">
+                <div class="col-6">
                     <label class="form-label">{{ 'category'|text }}</label>
-                    <div class="input-group mb-3">
+                    <div class="input-group">
                         <input class="form-control" name="category" required type="text" value="{{ categories|keys|first|e }}" maxlength="32">
                         <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
                         <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"></button>
@@ -43,31 +44,32 @@
                     </div>
                 </div>
             </div>
-            <ul class="nav nav-tabs nav-tabs-content mt-4">
+            <ul class="nav nav-tabs nav-tabs-content mt-3">
                 {% for code,title in localization.language %}
-                <li class="nav-item">
-                    <a class="nav-link{% if loop.first %} active show{% endif %}" data-bs-toggle="tab" href="#tab-{{ code }}">{{ 'content'|text }} <img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.3/flags/{{ code }}.png"></a>
-                </li>
+                    <li class="nav-item">
+                        <a class="nav-link{% if loop.first %} active show{% endif %}" data-bs-toggle="tab" href="#tab-{{ code }}">
+                            {{ 'content'|text }}
+                            {% set flag = code == 'en' ? 'us' : code %}
+                            <img src="https://flagcdn.com/20x15/{{ flag }}.png" srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x" width="16" height="12">
+                        </a>
+                    </li>
                 {% endfor %}
             </ul>
             <div class="tab-content">
                 {% for code,title in localization.language %}
-                <div class="tab-pane{% if loop.first %} active show{% endif %}" id="tab-{{ code }}">
-                    <div class="form-group bg-light rounded-3">
+                <div class="tab-pane{% if loop.first %} active show{% endif %} mt-2" id="tab-{{ code }}">
+                    <div class="form-group">
                         <label class="form-label">{{ 'title'|text }} ({{ code }})</label>
-                        <div id="TitleContentHelp" class="form-text">{{ 'title-note'|text }} [{{ title }}]</div>
-                        <input class="form-control" name="title[{{ code }}]" required value="" maxlength="255" placeholder="" type="text" autocomplete="off" aria-describedby="TitleContentHelp">
+                        <input class="form-control" name="title[{{ code }}]" required value="" maxlength="255" placeholder="" type="text" autocomplete="off">
                         <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
                     </div>
-                    <div class="form-group bg-light mt-4 rounded-3">
+                    <div class="form-group mt-2">
                         <label class="form-label">{{ 'short'|text }} ({{ code }})</label>
-                        <div id="ShortContentHelp" class="form-text">{{ 'short-note'|text }} [{{ title }}]</div>
-                        <textarea class="form-control" name="short[{{ code }}]" aria-describedby="ShortContentHelp"></textarea>
+                        <textarea class="form-control" name="short[{{ code }}]"></textarea>
                     </div>
-                    <div class="form-group bg-light mt-4 rounded-3">
+                    <div class="form-group mt-2">
                         <label class="form-label">{{ 'full'|text }} ({{ code }})</label>
-                        <div id="FullContentHelp" class="form-text">{{ 'full-note'|text }} [{{ title }}]</div>
-                        <textarea class="form-control" name="full[{{ code }}]" required rows="10" aria-describedby="FullContentHelp"></textarea>
+                        <textarea class="form-control" name="full[{{ code }}]" required rows="10"></textarea>
                         <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
                     </div>
                 </div>
@@ -76,12 +78,14 @@
         </form>
     </div>
     <div class="card-footer">
-        <div class="row pt-1 pb-1">
+        <div class="row pb-1">
             <div class="col-6 d-grid">
-                <button class="submit-insert btn btn-lg btn-success shadow-sm" type="submit"><i class="bi bi-check2"></i> {{ 'save'|text }}</button>
+                <button class="submit-insert btn btn-success text-uppercase shadow-sm" type="button">
+                    <i class="bi bi-check2"></i> {{ 'save'|text }}
+                </button>
             </div>
             <div class="col-6 d-grid">
-                <a class="btn btn-lg btn-block btn-secondary shadow-sm" href="{{ 'references'|link }}">
+                <a class="btn btn-secondary text-uppercase shadow-sm" href="{{ 'references'|link }}">
                     <i class="bi bi-arrow-left"></i> {{ 'reference-tables'|text }}
                 </a>
             </div>
@@ -89,14 +93,68 @@
     </div>
 </div>
 <script type="text/javascript">
-document.addEventListener('DOMContentLoaded', function () {
     const category = document.querySelector('input[name="category"]');
     document.getElementById('category_list').addEventListener('click', function (e) {
         if (e.target && e.target.nodeName === 'LI') {
             category.value = e.target.getAttribute('value');
         }
     });
-   
-    FormSubmitHandler('.submit-insert', 'form#reference_insert');
-});
+    
+    const formInsert = document.querySelector('form#reference_insert');
+    if (!formInsert) {
+        NotifyTop('danger', "{{ 'error'|text|e }}", 'Form not found!');
+    } else {
+        const submitters = document.querySelectorAll('button.submit-insert');
+        submitters.forEach(function (button) {
+            button.addEventListener('click', function (e) {
+                e.preventDefault();
+
+                formInsert.requestSubmit();
+            });
+        });
+
+        formInsert.addEventListener('submit', function (event) {
+            event.preventDefault();
+
+            const _valid = this.checkValidity();
+            this.classList.add('was-validated');
+            if (!_valid) {
+                event.stopPropagation();
+                return NotifyTop('danger', "{{ 'error'|text|e }}", "{{ 'u-have-some-form-errors'|text|e }}");
+            }
+
+            submitters.forEach(function (btn) {
+                btn.growNstop();
+            });
+
+            const data = new FormData(this);
+            fetch(
+                this.action,
+                {
+                    body: data,
+                    method: this.getAttribute('method') ?? 'POST'
+                }
+            ).then(res => {
+                let contentType = res.headers.get('content-type');
+                if (contentType.indexOf('application/json') !== -1) {
+                    return res.json();
+                }
+                throw new Error("HTTP [{0}]: {1}".format(res.status, res.statusText));
+            }).then(response => {
+                if (response.status !== 'success') {
+                    throw new Error(response.message ? response.message : 'Invalid response!');
+                }
+
+                window.location.href = "{{ 'references'|link }}";
+
+                NotifyTop(response.type ?? 'success', response.title ?? "{{ 'success'|text|e }}", response.message ?? 'Reference updated');
+            }).catch(error => {
+                NotifyTop('danger', "{{ 'error'|text|e }}", error.message);
+            }).finally(() => {
+                submitters.forEach(function (btn) {
+                    btn.growNstop();
+                });
+            });
+        });
+    }
 </script>

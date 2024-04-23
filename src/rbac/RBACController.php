@@ -109,8 +109,7 @@ class RBACController extends DashboardController
                 
                 $this->respondJSON([
                     'status' => 'success',
-                    'message' => $this->text('record-insert-success'),
-                    'href' => $this->generateLink('rbac-alias') . '?alias=' . \urlencode($alias) . '&title=' . \urlencode($this->getQueryParams()['title'] ?? '')
+                    'message' => $this->text('record-insert-success')
                 ]);
                 
                 $this->indolog('rbac', LogLevel::INFO, 'RBAC дүр шинээр нэмэх үйлдлийг амжилттай гүйцэтгэлээ', $context);
@@ -147,7 +146,7 @@ class RBACController extends DashboardController
                 'query' => "SELECT id,description FROM rbac_roles WHERE CONCAT_WS('_',alias,name)=:role AND is_active=1 ORDER By id desc LIMIT 1"
             ]);
             if (empty($role_result)) {
-                throw new \Exception($this->text('record-not-found'), 404);
+                throw new \Exception('Record not found', 404);
             }
             $values += \current($role_result);
             $this->twigTemplate(\dirname(__FILE__) . '/rbac-view-role-modal.html', $values)->render();
@@ -174,13 +173,19 @@ class RBACController extends DashboardController
                 
                 $this->respondJSON([
                     'status' => 'success',
-                    'message' => $this->text('record-insert-success'),
-                    'href' => $this->generateLink('rbac-alias') . '?alias=' . \urlencode($alias) . '&title=' . \urlencode($title)
+                    'message' => $this->text('record-insert-success')
                 ]);
                 
                 $this->indolog('rbac', LogLevel::INFO, 'RBAC зөвшөөрөл шинээр нэмэх үйлдлийг амжилттай гүйцэтгэлээ', $context);
             } else {
-                $this->twigTemplate(\dirname(__FILE__) . '/rbac-insert-permission-modal.html', ['alias' => $alias, 'title' => $title])->render();
+                $modules = $this->indo('/execute/fetch/all', [
+                    'bind' => [':alias' => ['var' => $alias]],
+                    'query' => "SELECT DISTINCT(module) FROM rbac_permissions WHERE alias=:alias AND is_active=1 AND module<>''"
+                ]);
+                $this->twigTemplate(
+                    \dirname(__FILE__) . '/rbac-insert-permission-modal.html',
+                    ['alias' => $alias, 'title' => $title, 'modules' => $modules]
+                )->render();
                 
                 $this->indolog('rbac', LogLevel::NOTICE, 'RBAC зөвшөөрөл шинээр нэмэх үйлдлийг амжилттай эхлүүллээ', $context);
             }
@@ -207,7 +212,6 @@ class RBACController extends DashboardController
             if (!$this->isUserCan('system_rbac')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
-            
             $payload = $this->getParsedBody();
             if (empty($alias)
                 || empty($payload['role_id'])
@@ -249,15 +253,24 @@ class RBACController extends DashboardController
         }
     }
     
-    public function setUserRole(int $id)
+    public function setUserRole()
     {
         try {
             $is_submit = $this->getRequest()->getMethod() == 'POST';
-            $context = ['reason' => 'rbac-set-user-role', 'id' => $id];
+            $context = ['reason' => 'rbac-set-user-role'];
             
             if (!$this->isUserCan('system_rbac')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
+            
+            $params = $this->getQueryParams();
+            if (empty($params['id'])
+                || \filter_var($params['id'], \FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]) === false
+            ) {
+                throw new \Exception($this->text('invalid-request'), 400);
+            }
+            $id = (int) $params['id'];
+            $context['id'] = $id;
             
             $account = $this->indoget('/record?model=' . Accounts::class, ['id' => $id]);
             $context['account'] = $account;
@@ -356,7 +369,8 @@ class RBACController extends DashboardController
                 foreach ($current_roles as $row) {
                     $current_role[] = $row['role_id'];
                 }
-                $vars['current_role'] = \implode(',', $current_role);
+                $vars['current_role'] = $current_role;
+                
                 $this->twigTemplate(\dirname(__FILE__) . '/rbac-set-user-role-modal.html', $vars)->render();
 
                 $this->indolog('rbac', LogLevel::NOTICE, "$id дугаартай  {$account['username']} хэрэглэгчийн дүрийг тохируулах үйлдлийг эхлүүллээ", $context);
@@ -373,7 +387,12 @@ class RBACController extends DashboardController
             }
             
             $context['error'] = ['code' => $e->getCode(), 'message' => $e->getMessage()];
-            $this->indolog('rbac', LogLevel::ERROR, "$id дугаартай хэрэглэгчийн дүрийг тохируулах үйлдлийг гүйцэтгэх явцад алдаа гарч зогслоо", $context);
+            $this->indolog(
+                'rbac',
+                LogLevel::ERROR,
+                ($id ?? 'үл мэдэгдэх'). ' дугаартай хэрэглэгчийн дүрийг тохируулах үйлдлийг гүйцэтгэх явцад алдаа гарч зогслоо',
+                $context
+            );
         }
     }
 }

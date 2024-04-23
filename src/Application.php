@@ -22,6 +22,7 @@ class Application extends \codesaur\Http\Application\Application
         $this->use(new Contents\ContentsRouter());
         $this->use(new File\FileRouter());
         $this->use(new Log\LogsRouter());
+        $this->use(new Dashboard\MenuRouter());
         
         $this->GET('/', [Dashboard\DashboardController::class, 'home'])->name('home');
     }

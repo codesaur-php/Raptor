@@ -95,12 +95,12 @@ class PrivateFilesController extends FilesController
                     <div class="modal-content">
                         <div class="modal-body">
                             <div class="alert alert-danger shadow-sm fade mt-3 show" role="alert">
-                                <i class="bi bi-shield-fill-exclamation" style="margin-right:5px"></i>'
+                                <i class="bi bi-shield-fill-exclamation" style="margin-right:.3rem"></i>'
                             . $e->getMessage() .
                             '</div>
                         </div>
-                        <div class="modal-footer modal-footer-solid">
-                            <button class="btn btn-secondary shadow-sm" data-bs-dismiss="modal">' . $this->text('close') . '</button>
+                        <div class="modal-footer">
+                            <button class="btn btn-secondary shadow-sm" data-bs-dismiss="modal" type="button">' . $this->text('close') . '</button>
                         </div>
                     </div>
                 </div>';
@@ -173,7 +173,7 @@ class PrivateFilesController extends FilesController
             }
             
             $payload = $this->getParsedBody();
-            if (empty($payload['id'])
+            if (!isset($payload['id'])
                 || !isset($payload['title'])
                 || !\filter_var($payload['id'], \FILTER_VALIDATE_INT)
             ) {

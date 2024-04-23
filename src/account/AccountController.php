@@ -29,40 +29,7 @@ class AccountController extends DashboardController
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
             
-            $accounts = $this->indoget('/records?model=' . Accounts::class);
-            $organizations = $this->indoget('/records?model=' . OrganizationModel::class);
-            
-            $org_users_query =
-                'SELECT t1.account_id, t1.organization_id ' .
-                'FROM indo_organization_users as t1 INNER JOIN indo_organizations as t2 ON t1.organization_id=t2.id ' .
-                'WHERE t1.is_active=1 AND t2.is_active=1';
-            $org_users = $this->indo('/execute/fetch/all', ['query' => $org_users_query]);
-            \array_walk($org_users, function($value) use (&$accounts) {
-                if (isset($accounts[$value['account_id']])) {
-                    if (!isset($accounts[$value['account_id']]['organizations'])) {
-                        $accounts[$value['account_id']]['organizations'] = [];
-                    }
-                    $accounts[$value['account_id']]['organizations'][] = $value['organization_id'];
-                }
-            });
-            
-            $user_role_query =
-                'SELECT t1.role_id, t1.user_id, t2.name, t2.alias ' . 
-                'FROM rbac_user_role as t1 INNER JOIN rbac_roles as t2 ON t1.role_id=t2.id WHERE t1.is_active=1';
-            $user_role = $this->indo('/execute/fetch/all', ['query' => $user_role_query]);
-            \array_walk($user_role, function($value) use (&$accounts) {
-                if (isset($accounts[$value['user_id']])) {
-                    if (!isset($accounts[$value['user_id']]['roles'])) {
-                        $accounts[$value['user_id']]['roles'] = [];
-                    }
-                    $accounts[$value['user_id']]['roles'][] = "{$value['alias']}_{$value['name']}";
-                }
-            });
-            
-            $dashboard = $this->twigDashboard(
-                \dirname(__FILE__) . '/account-index.html',
-                ['accounts' => $accounts, 'organizations' => $organizations]
-            );
+            $dashboard = $this->twigDashboard(\dirname(__FILE__) . '/account-index.html');
             $dashboard->set('title', $this->text('accounts'));
             $dashboard->render();
             
@@ -76,6 +43,61 @@ class AccountController extends DashboardController
             $this->dashboardProhibited("$message.<br/><br/>{$e->getMessage()}", $e->getCode())->render();
         } finally {
             $this->indolog('account', $level, $message, $context + ['model' => Accounts::class]);
+        }
+    }
+    
+    public function list()
+    {
+        try {
+            if (!$this->isUserCan('system_account_index')) {
+                throw new \Exception($this->text('system-no-permission'), 401);
+            }
+            
+            $account_infos = $this->indo('/execute/fetch/all', [
+                'query' => 'SELECT id,photo,last_name,first_name,username,phone,email,status FROM rbac_accounts WHERE is_active=1'
+            ]);
+            
+            $accounts = [];
+            foreach ($account_infos as $account) {
+                $accounts[$account['id']] = $account;
+            }
+            
+            $user_role_query =
+                'SELECT t1.role_id, t1.user_id, t2.name, t2.alias ' . 
+                'FROM rbac_user_role as t1 INNER JOIN rbac_roles as t2 ON t1.role_id=t2.id WHERE t1.is_active=1';
+            $user_role = $this->indo('/execute/fetch/all', ['query' => $user_role_query]);
+            \array_walk($user_role, function($value) use (&$accounts) {
+                if (isset($accounts[$value['user_id']])) {
+                    if (!isset($accounts[$value['user_id']]['roles'])) {
+                        $accounts[$value['user_id']]['roles'] = [];
+                    }
+                    $accounts[$value['user_id']]['roles'][$value['role_id']] = "{$value['alias']}_{$value['name']}";
+                }
+            });
+            
+            $org_users_query =
+                'SELECT t1.account_id, t1.organization_id as id, t2.name, t2.alias ' .
+                'FROM indo_organization_users as t1 '.
+                'INNER JOIN indo_organizations as t2 ON t1.organization_id=t2.id ' .
+                'WHERE t1.is_active=1 AND t2.is_active=1';
+            $org_users = $this->indo('/execute/fetch/all', ['query' => $org_users_query]);
+            \array_walk($org_users, function($value) use (&$accounts) {
+                $account_id = $value['account_id'];
+                unset($value['account_id']);
+                if (isset($accounts[$account_id])) {
+                    if (!isset($accounts[$account_id]['organizations'])) {
+                        $accounts[$account_id]['organizations'] = [];
+                    }
+                    $accounts[$account_id]['organizations'][] = $value;
+                }
+            });
+            
+            $this->respondJSON([
+                'status' => 'success',
+                'list' => \array_values($accounts)
+            ]);
+        } catch (\Throwable $e) {
+            $this->respondJSON(['message' => $e->getMessage()], $e->getCode());
         }
     }
     
@@ -147,8 +169,7 @@ class AccountController extends DashboardController
                 
                 $this->respondJSON([
                     'status' => 'success',
-                    'message' => $this->text('record-insert-success'),
-                    'href' => $this->generateLink('accounts')
+                    'message' => $this->text('record-insert-success')
                 ]);
                 
                 $level = LogLevel::INFO;
@@ -160,7 +181,7 @@ class AccountController extends DashboardController
                     \dirname(__FILE__) . '/account-insert.html',
                     ['organizations' => $organizations]
                 );
-                $dashboard->set('title', $this->text('new-account'));
+                $dashboard->set('title', $this->text('create-new-account'));
                 $dashboard->render();
                 
                 $level = LogLevel::NOTICE;
@@ -188,7 +209,7 @@ class AccountController extends DashboardController
             
             if (!$this->isUserAuthorized()
                 || (!$this->getUser()->can('system_account_update')
-                    && $this->getUser()->getAccount()['id'] != $id)
+                && $this->getUser()->getAccount()['id'] != $id)
             ) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
@@ -199,12 +220,13 @@ class AccountController extends DashboardController
             
             if ($this->getRequest()->getMethod() == 'PUT') {
                 $parsedBody = $this->getParsedBody();
+                $context['payload'] = $parsedBody;
                 if (empty($parsedBody['username']) || empty($parsedBody['email'])
                     || \filter_var($parsedBody['email'], \FILTER_VALIDATE_EMAIL) === false
                 ) {
                     throw new \Exception($this->text('invalid-request'), 400);
                 }
-
+                
                 $record = [
                     'username' => $parsedBody['username'],
                     'first_name' => $parsedBody['first_name'] ?? null,
@@ -223,7 +245,7 @@ class AccountController extends DashboardController
                     unset($record['status']);
                 }
                 
-                $context = ['record' => $record + ['id' => $id]];
+                $context += ['record' => $record + ['id' => $id]];
                 
                 $pattern = '/record?model=' . Accounts::class;
                 try {
@@ -279,13 +301,6 @@ class AccountController extends DashboardController
                 if (empty($updated)) {
                     throw new \Exception($this->text('no-record-selected'));
                 }
-                
-                $this->respondJSON([ 
-                    'type' => 'primary',
-                    'status' => 'success',
-                    'message' => $this->text('record-update-success'),
-                    'href' => $this->generateLink('accounts')
-                ]);
                 
                 $organizations = [];
                 $post_organizations = \filter_var($parsedBody['organizations'] ?? [], \FILTER_VALIDATE_INT, \FILTER_REQUIRE_ARRAY);
@@ -379,13 +394,18 @@ class AccountController extends DashboardController
                     }
                 }
                 
+                $this->respondJSON([ 
+                    'type' => 'primary',
+                    'status' => 'success',
+                    'message' => $this->text('record-update-success')
+                ]);
+                
                 $level = LogLevel::INFO;
                 $message = "{$record['username']} хэрэглэгчийн мэдээллийг шинэчлэх үйлдлийг амжилттай гүйцэтгэлээ";
             } else {
                 $record = $this->indoget('/record?model=' . Accounts::class, ['id' => $id]);
                 $organizations = $this->indoget('/records?model=' . OrganizationModel::class);
                 $vars = ['record' => $record, 'organizations' => $organizations];
-             
                 $org_id_query =
                     'SELECT ou.organization_id as id ' .
                     'FROM indo_organization_users as ou INNER JOIN indo_organizations as o ON ou.organization_id=o.id ' .
@@ -395,7 +415,7 @@ class AccountController extends DashboardController
                 foreach ($org_ids as $org) {
                     $ids[] = $org['id'];
                 }
-                $vars['current_organizations'] = \implode(',', $ids);
+                $vars['current_organizations'] = $ids;
                 
                 $rbacs = ['common' => 'Common'];
                 $alias_names = $this->indo('/execute/fetch/all', [
@@ -434,7 +454,7 @@ class AccountController extends DashboardController
                 foreach ($current_roles as $row) {
                     $current_role[] = $row['role_id'];
                 }
-                $vars['current_role'] = \implode(',', $current_role);
+                $vars['current_role'] = $current_role;
                 
                 $dashboard = $this->twigDashboard(\dirname(__FILE__) . '/account-update.html', $vars);
                 $dashboard->set('title', $this->text('edit-account'));
@@ -457,7 +477,7 @@ class AccountController extends DashboardController
             
             $level = LogLevel::ERROR;
             $message = 'Хэрэглэгчийн мэдээллийг шинэчлэх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
-            $context = ['error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]];
+            $context += ['error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]];
         } finally {
             $this->indolog('account', $level, $message, $context + ['model' => Accounts::class]);
         }
@@ -472,11 +492,10 @@ class AccountController extends DashboardController
             ) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
-            
             $record = $this->indoget('/record?model=' . Accounts::class, ['id' => $id]);
-            
+            $record['rbac_accounts'] = $this->getRBACAccounts($record['created_by'], $record['updated_by']);
             $organizations_query =
-                'SELECT t2.name ' .
+                'SELECT t2.name, t2.alias, t2.id ' .
                 'FROM indo_organization_users as t1 INNER JOIN indo_organizations as t2 ON t1.organization_id=t2.id ' .
                 "WHERE t1.is_active=1 AND t2.is_active=1 AND t1.account_id=$id";
             $organizations = $this->indo('/execute/fetch/all', ['query' => $organizations_query]);
@@ -489,10 +508,7 @@ class AccountController extends DashboardController
             
             $dashboard = $this->twigDashboard(
                 \dirname(__FILE__) . '/account-view.html',
-                [
-                    'record' => $record, 'roles' => $user_roles,
-                    'organizations' => $organizations, 'accounts' => $this->getAccounts()
-                ]
+                ['record' => $record, 'roles' => $user_roles, 'organizations' => $organizations]
             );
             $dashboard->set('title', $this->text('account'));
             $dashboard->render();
@@ -520,7 +536,7 @@ class AccountController extends DashboardController
             
             $payload = $this->getParsedBody();
             $context = ['payload' => $payload];
-            if (empty($payload['id'])
+            if (!isset($payload['id'])
                 || !isset($payload['name'])
                 || !\filter_var($payload['id'], \FILTER_VALIDATE_INT)
             ) {
@@ -582,7 +598,10 @@ class AccountController extends DashboardController
                 $message = 'Шинэ хэрэглэгчээр бүртгүүлэх хүсэлтүүдийн жагсаалтыг нээж үзэж байна';
             }
             $vars = [
-                'rows' => $this->indoget("/records?model=$modelName", ['WHERE' => 'is_active!=999'])
+                'rows' => $this->indoget(
+                    "/records?model=$modelName",
+                    ['WHERE' => 'is_active!=999', 'ORDER BY' => 'created_at desc']
+                )
             ];
             
             $template = $this->twigTemplate(\dirname(__FILE__) . "/$table-index-modal.html", $vars);
@@ -730,7 +749,7 @@ class AccountController extends DashboardController
             }
             
             $payload = $this->getParsedBody();
-            if (empty($payload['id'])
+            if (!isset($payload['id'])
                 || !isset($payload['name'])
                 || !\filter_var($payload['id'], \FILTER_VALIDATE_INT)
             ) {

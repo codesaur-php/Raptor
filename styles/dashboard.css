@@ -1,0 +1,108 @@
+body {
+    font-size: .9rem;
+}
+.navbar-brand img {
+    position: relative;
+    top: -.15rem;
+    height: 1.6rem;
+    margin-right: .1rem;
+}
+@media only screen and (min-width: 768px) {
+    .sidebar {
+        position: fixed;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        z-index: 1021;
+        padding: 0;
+        overflow-y: auto;
+    }
+}
+.sidebar-menu {
+    font-size: .875rem;
+}
+.sidebar-menu a {
+    color: #ccc;
+}
+.sidebar-menu a i {
+    color: #727272;
+    margin-right: .4rem;
+}
+.sidebar-menu a.active,
+.sidebar-menu a.active i {
+    font-weight: 500;
+    color: white;
+}
+.sidebar-menu a:hover,
+.sidebar-menu a:hover i {
+    color: white;
+}
+.sidebar-menu h6 {
+    color: #6c757d;
+    font-size: .75rem;
+    text-transform: uppercase;
+}
+.sidebar-menu img {
+    height: .9rem;
+    width: .9rem;
+    margin-top: -.2rem;
+    margin-right: .4rem;
+}
+.sidebar-brand {
+    padding: .8rem;
+    text-align: center;
+    background: #0d6efd;
+    margin-bottom: .5rem;
+    -webkit-box-shadow: 0px 5px 3px 0px rgba(27,27,27,0.85);
+    -moz-box-shadow: 0px 5px 3px 0px rgba(27,27,27,0.85);
+    box-shadow: 0px 5px 3px 0px rgba(27,27,27,0.85);
+}
+.sidebar-brand img  {
+    height: auto;
+    width: auto;
+    max-width: 100%;
+    max-height: 100px;
+    margin-bottom: .2rem;
+}
+.sidebar-brand a {
+    text-decoration:none
+}
+.sidebar-brand p {
+    color: white;
+    text-transform: uppercase;
+    font-size: 1.1rem;
+    margin-bottom: 0;
+}
+.sidebar-menu > hr {
+    margin: 1rem 0;
+    color: gray;
+    border: 0;
+    border-top: 1px solid;
+    opacity: .25;
+}
+.scroll-up {
+    display: inline-block;
+    cursor: pointer;
+    background-color: #7952b3;
+    width: 40px;
+    height: 40px;
+    text-align: center;
+    border-radius: 4px;
+    position: fixed;
+    bottom: 40px;
+    right: 40px;
+    transition: background-color .3s, opacity .5s, visibility .5s;
+    opacity: 0;
+    visibility: hidden;
+    z-index: 1000;
+}
+.scroll-up i {
+    border: solid black;
+    border-width: 0 3px 3px 0;
+    border-color: white;
+    display: inline-block;
+    padding: 3.4px;
+    margin-top: 17px;
+    transform: rotate(-135deg);
+    -webkit-transform: rotate(-135deg);
+}

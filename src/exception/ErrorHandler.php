@@ -33,7 +33,6 @@ class ErrorHandler implements ExceptionHandlerInterface
                 }
             }
         }
-        
         \error_log("$title: $message");
         
         $host = ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')

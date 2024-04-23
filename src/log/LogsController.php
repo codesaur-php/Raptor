@@ -22,9 +22,12 @@ class LogsController extends DashboardController
             }
             $dashboard =  $this->twigDashboard(
                 \dirname(__FILE__) . '/index-list-logs.html',
-                ['names' => $names, 'logs' => $logs, 'accounts' => $this->getAccounts()]
+                [
+                    'names' => $names, 'logs' => $logs,
+                    'rbac_accounts' => $this->getRBACAccounts()
+                ]
             );
-            $dashboard->set('title', $this->text('access-log'));
+            $dashboard->set('title', $this->text('log'));
             $dashboard->render();
         } catch (\Throwable $e) {
             $this->dashboardProhibited($e->getMessage(), $e->getCode())->render();
@@ -48,15 +51,17 @@ class LogsController extends DashboardController
             }
             
             $logdata = $this->indoget("/log?table=$table&id=$id");
+            if (isset($logdata['created_by']) && $logdata['created_by'] !== null) {
+                $logdata['created_by'] = $this->getRBACAccounts($logdata['created_by'])[$logdata['created_by']];
+            }
             (new TwigTemplate(
                 \dirname(__FILE__) . '/retrieve-log-modal.html',
                 [
-                    'detailed' => $this->text('detailed'),
-                    'close' => $this->text('close'),
-                    'table' => $table,
                     'id' => $id,
-                    'accounts' => $this->getAccounts(),
-                    'data' => $logdata
+                    'table' => $table,
+                    'data' => $logdata,
+                    'detailed' => $this->text('detailed'),
+                    'close' => $this->text('close')
                 ]
             ))->render();
 
@@ -68,7 +73,7 @@ class LogsController extends DashboardController
         }
     }
     
-    private function getLogsFrom(string $table, int $limit = 100): array
+    private function getLogsFrom(string $table, int $limit = 1000): array
     {
         try {
             return $this->indoget("/log?table=$table&limit=$limit");

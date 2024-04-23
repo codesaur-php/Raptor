@@ -1,43 +1,34 @@
-{% macro formGroupRow(label, content, class, col, accounts) %}
+{% macro formGroupRow(label, content, class, col) %}
     {% import _self as self %}
-    
     {% if content is iterable %}
-        <hr><strong>{{ self.formGroupRow(label|upper, '', 'col-6 text-warning text-right', 6, accounts) }}</strong>
+        <hr>
+        <strong>{{ self.formGroupRow(label|upper, '', 'col-6 text-warning text-right', 6) }}</strong>
         {% for key,value in content %}
-            {{ self.formGroupRow(key, value, 'col-3 text-primary text-right', 9, accounts) }}
+            {{ self.formGroupRow(key, value, 'col-3 text-primary text-right', 9) }}
         {% endfor %}
         <hr>
     {% else %}
         <div class="form-group row">
             <div class="{{ class }}">{{ label }}</div>
-            <div class="col-{{ col }}">
-                {% if label == 'url' %}
-                    {{ content }}
-                {% elseif label == 'created_by' %}
-                    {{ accounts[content] ?? content }}
-                {% else %}
-                    {{ content }}
-                {% endif %}
-            </div>
+            <div class="col-{{ col }}">{{ content }}</div>
         </div>
     {% endif %}
-    
 {% endmacro %}
 
 {% from _self import formGroupRow %}
 
-<div class="modal-dialog modal-xl modal-dialog-centered" role="document">
+<div class="modal-dialog modal-fullscreen modal-dialog-scrollable"  role="document">
     <div class="modal-content">
-        <div class="modal-header modal-header-info">
-            <h5 class="modal-title text-uppercase">{{ detailed }} ({{ table }}/{{ id }})</h5>
-            <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="{{ close|e }}"></button>
+        <div class="modal-header text-bg-secondary">
+            <h3 class="modal-title fs-6 text-uppercase">{{ detailed }} ({{ table }}/{{ id }})</h3>
         </div>
         <div class="modal-body">
-            <div style="height:400px;overflow-y:auto;overflow-x:hidden;">
             {% for key,value in data %}
-                {{ formGroupRow(key, value, 'col-3 text-danger text-right', 9, accounts) }}
+                {{ formGroupRow(key, value, 'col-3 text-danger text-right', 9) }}
             {% endfor %}
-            </div>
+        </div>
+        <div class="modal-footer text-bg-secondary">
+            <button class="btn btn-light shadow-sm" data-bs-dismiss="modal" type="button">{{ close }}</button>
         </div>
     </div>
 </div>

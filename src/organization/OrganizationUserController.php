@@ -47,15 +47,24 @@ class OrganizationUserController extends DashboardController
         }
     }
     
-    public function set(int $account_id)
+    public function set()
     {
         try {
             $is_submit = $this->getRequest()->getMethod() == 'POST';
-            $context = ['reason' => 'organization-user-set', 'account_id' => $account_id];
+            $context = ['reason' => 'organization-user-set'];
             
             if (!$this->isUserCan('system_account_organization_set')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
+            
+            $params = $this->getQueryParams();
+            if (empty($params['account_id'])
+                || \filter_var($params['account_id'], \FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]) === false
+            ) {
+                throw new \Exception($this->text('invalid-request'), 400);
+            }
+            $account_id = (int) $params['account_id'];
+            $context['account_id'] = $account_id;
             
             if ($is_submit) {
                 $organizations = [];
@@ -109,11 +118,10 @@ class OrganizationUserController extends DashboardController
                     'FROM indo_organization_users as ou INNER JOIN indo_organizations as o ON ou.organization_id=o.id ' .
                     "WHERE ou.account_id=$account_id AND ou.is_active=1 AND o.is_active=1";
                 $response = $this->indo('/execute/fetch/all', ['query' => $query]);
-                $ids = [];
+                $current_organizations = [];
                 foreach ($response as $org) {
-                    $ids[] = $org['id'];
+                    $current_organizations[] = $org['id'];
                 }
-                $current_organizations = \implode(',', $ids);
 
                 $account = $this->indoget('/record?model=' . Accounts::class, ['id' => $account_id]);
                 $vars = [
@@ -147,7 +155,7 @@ class OrganizationUserController extends DashboardController
             $this->indolog(
                 'account',
                 LogLevel::ERROR,
-                "$account_id дугаартай хэрэглэгчийн байгууллагын мэдээллийг өөрчлөх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо",
+                ($account_id ?? 'үл мэдэгдэх'). ' дугаартай хэрэглэгчийн байгууллагын мэдээллийг өөрчлөх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо',
                 $context
             );
         }

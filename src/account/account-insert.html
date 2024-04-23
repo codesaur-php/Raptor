@@ -1,20 +1,26 @@
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center mb-3 mt-2">
-    <h3 class="text-success text-uppercase" style="padding-right:10px"><i class="bi bi-person-plus-fill"></i> {{ 'new-account'|text }}</h3>
-    <div class="btn-group">
+<script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase text-bg-light rounded p-1 mb-2">
+    <h3 class="px-2 my-auto fs-6 text-success">
+        <i class="bi bi-person-plus-fill"></i> {{ 'create-new-account'|text }}
+    </h3>
+    <div class="ms-auto">
         {% if user.can('system_account_insert') %}
-        <button class="submit btn btn-success shadow-sm">
-            <i class="bi bi-check"></i> {{ 'submit'|text|upper }}
-        </button>
+            <button class="submit-insert btn btn-sm btn-success text-uppercase shadow-sm">
+                <i class="bi bi-check"></i> {{ 'submit'|text }}
+            </button>
         {% endif %}
+        <a class="btn btn-sm btn-secondary shadow-sm" href="{{ 'accounts'|link }}">
+            <i class="bi bi-arrow-left"></i> {{ 'accounts'|text }}
+        </a>
     </div>
 </div>
-<ul class="nav nav-tabs mb-4" role="tablist">
+<ul class="nav nav-tabs" role="tablist">
     <li class="nav-item"><a class="nav-link active show" data-bs-toggle="tab" href="#tab-personal">{{ 'personal-info'|text }} <i class="bi bi-postcard"></i></a></li>
     <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-picture">{{ 'image'|text }} <i class="bi bi-camera"></i></a></li>
     <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-organization">{{ 'organization'|text }} <i class="bi bi-building"></i></a></li>
 </ul>
-<form class="needs-validation" novalidate id="account_insert" action="{{ 'account-insert'|link }}" method="POST" enctype="multipart/form-data">
-    <div class="tab-content mb-4">
+<form class="needs-validation pt-3" novalidate id="account_insert" action="{{ 'account-insert'|link }}" method="POST" enctype="multipart/form-data">
+    <div class="tab-content">
         <div class="tab-pane active show" id="tab-personal" role="tabpanel">
             <div class="mb-3">
                 <label class="form-label">{{ 'login'|text }}</label>
@@ -49,60 +55,163 @@
                     <div class="invalid-feedback">{{ 'enter-valid-email'|text }}</div>
                 </div>
             </div>
-            <div class="mb-3 bg-light rounded-3">
+            <div class="rounded-3">
                 <label class="form-label">{{ 'status'|text }}</label>
                 <div class="form-check form-switch">
-                  <input class="form-check-input" name="status" checked type="checkbox" role="switch" aria-describedby="activeHelpBlock" onclick="warnStatus(this.checked);">
-                  <div id="activeHelpBlock" class="form-text">{{ 'active-account-can-login'|text }}</div>
+                    <input class="form-check-input" name="status" checked type="checkbox" role="switch" aria-describedby="activeHelpBlock" onclick="warnStatus(this.checked);">
+                    <div id="activeHelpBlock" class="form-text">{{ 'active-account-can-login'|text }}</div>
                 </div>
             </div>
         </div>
         <div class="tab-pane" id="tab-picture" role="tabpanel">
-            <div class="mb-3">
-                <input type="file" name="photo">
+            <div class="input-group">
+                <input class="form-control" type="text" id="photo_name" disabled value="" placeholder="{{ 'select-an-image'|text|e }}">
+                <div class="input-group-append">
+                    <div class="btn-group">
+                        <input type="file" name="photo" accept="image/*" maxlength="256" style="display:none;">
+                        <button class="photo-browse btn btn-info" type="button" onclick="this.previousElementSibling.click();">{{ 'choose'|text }}</button>
+                    </div>
+                </div>
             </div>
+            <img class="img-thumbnail img-fluid" id="photo_preview" src="" style=display:none;">
         </div>
         <div class="tab-pane" id="tab-organization" role="tabpanel">
-            <div class="mb-3">
-                <label class="form-label">{{ 'organization'|text }}</label>
-                <select class="form-control" name="organization">
-                    <option value="0"></option>
-                    {% for org in organizations %}
+            <label class="form-label">{{ 'organization'|text }}</label>
+            <select class="form-control" name="organization">
+                {% for org in organizations %}
                     <option value="{{ org['id'] }}"{{ loop.first ? ' selected' : '' }}>{{ org['name']|e }}</option>
-                    {% endfor %}
-                </select>
-            </div>
+                {% endfor %}
+            </select>
         </div>
     </div>
 </form>
-<div class="btn-toolbar mb-5">
-{% if user.can('system_account_insert') %}
-    <button class="submit btn btn-lg btn-success shadow-sm"><i class="bi bi-check"></i> {{ 'submit'|text|upper }}</button>
-{% endif %}
-    <a class="btn btn-lg btn-secondary shadow-sm mx-2" href="{{ 'accounts'|link }}">
+<div class="text-bg-light rounded p-2 mt-3">
+    {% if user.can('system_account_insert') %}
+        <button class="submit-insert btn btn-success text-uppercase shadow-sm">
+            <i class="bi bi-check"></i> {{ 'submit'|text }}
+        </button>
+    {% endif %}
+    <a class="btn btn-secondary text-uppercase shadow-sm" href="{{ 'accounts'|link }}">
         <i class="bi bi-arrow-left"></i> {{ 'accounts'|text }}
     </a>
 </div>
 <script type="text/javascript">
-function warnStatus(checked) {
-    if (checked) {
-        return;
+    function warnStatus(checked) {
+        if (checked) {
+            return;
+        }
+
+        Swal.fire({
+            position: 'top-end',
+            icon: 'warning',
+            html: "{{ 'active-account-can-login'|text }}",
+            showConfirmButton: false,
+            timer: 1500
+        });
     }
     
-    Swal.fire({
-        position: 'top-end',
-        icon: 'warning',
-        html: "{{ 'active-account-can-login'|text }}",
-        showConfirmButton: false,
-        timer: 1500
-    });
-}
+    const photoName = document.getElementById('photo_name');
+    const photoBrowse = document.querySelector('button.photo-browse');
+    const photoPreview = document.getElementById('photo_preview');
+    const photo = document.querySelector('input[name="photo"]');
+    photo.addEventListener('change', function (e) {
+        e.preventDefault();
+        
+        photo.name = 'photo';
+        photoName.value = photo.files[0].name;
+        
+        photoBrowse.innerHTML = "{{ 'change'|text|e }}";
+        if (photoBrowse.nextElementSibling?.tagName !== 'BUTTON') {
+            let photoClear = document.createElement('button');
+            photoClear.classList.add('btn', 'btn-danger');
+            photoClear.type = 'button';
+            photoClear.innerHTML = '{{ 'remove'|text }}';
+            photoClear.addEventListener('click', function (e) {
+                e.preventDefault();
+                
+                photoPreview.removeAttribute('src');
+                photoPreview.style.display = 'none';
 
-document.addEventListener('DOMContentLoaded', function () {
-    Dashboard.activateLink("{{ 'accounts'|link }}");
-    
-    document.getElementsByName('photo')[0].imageInput(null, "{{ 'select-image'|text }}", "{{ 'choose'|text }}", "{{ 'change'|text }}", "{{ 'remove'|text }}");
-    
-    FormSubmitHandler('.submit', 'form#account_insert');
-});
+                photoName.value = '';
+                photoBrowse.innerHTML = "{{ 'choose'|text|e }}";
+
+                photo.value = '';
+                photo.removeAttribute('name');
+
+                photoClear.remove();
+            });
+            if (photoBrowse.nextSibling) {
+                photoBrowse.parentNode.insertBefore(photoClear, photoBrowse.nextSibling);
+            } else {
+                photoBrowse.parentNode.appendChild(photoClear);
+            }
+        }
+
+        let reader = new FileReader();
+        reader.onload = function (e) {
+            photoPreview.src = e.target.result;
+            if (photoPreview.style.display === 'none') {
+                photoPreview.style.display = 'block';
+            }
+        };
+        reader.readAsDataURL(photo.files[0]);
+    });
+
+    const formInsert = document.querySelector('form#account_insert');
+    if (!formInsert) {
+        NotifyTop('danger', "{{ 'error'|text|e }}", 'Form not found!');
+    } else {
+        const submitters = document.querySelectorAll('button.submit-insert');
+        submitters.forEach(function (button) {
+            button.addEventListener('click', function (e) {
+                e.preventDefault();
+
+                formInsert.requestSubmit();
+            });
+        });
+
+        formInsert.addEventListener('submit', function (event) {
+            event.preventDefault();
+
+            const _valid = this.checkValidity();
+            this.classList.add('was-validated');
+            if (!_valid) {
+                event.stopPropagation();
+                return NotifyTop('danger', "{{ 'error'|text|e }}", "{{ 'u-have-some-form-errors'|text|e }}");
+            }
+
+            submitters.forEach(function (btn) {
+                btn.growNstop();
+            });
+
+            const data = new FormData(this);
+            fetch(
+                this.action,
+                {
+                    body: data,
+                    method: this.getAttribute('method') ?? 'POST'
+                }
+            ).then(res => {
+                let contentType = res.headers.get('content-type');
+                if (contentType.indexOf('application/json') !== -1) {
+                    return res.json();
+                }
+                throw new Error("HTTP [{0}]: {1}".format(res.status, res.statusText));
+            }).then(response => {
+                if (response.status !== 'success') {
+                    throw new Error(response.message ? response.message : 'Invalid response!');
+                }
+
+                window.location.href = "{{ 'accounts'|link }}";
+
+                NotifyTop(response.type ?? 'success', response.title ?? "{{ 'success'|text|e }}", response.message ?? 'Account updated');
+            }).catch(error => {
+                NotifyTop('danger', "{{ 'error'|text|e }}", error.message);
+            }).finally(() => {
+                submitters.forEach(function (btn) {
+                    btn.growNstop();
+                });
+            });
+        });
+    }
 </script>

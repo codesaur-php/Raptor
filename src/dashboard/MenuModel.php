@@ -19,6 +19,7 @@ class MenuModel extends MultiModel
             new Column('alias', 'varchar', 64),
             new Column('permission', 'varchar', 128),
             new Column('position', 'smallint', 2, 100),
+            new Column('is_visible', 'tinyint', 1, 1),
             new Column('is_active', 'tinyint', 1, 1),
             new Column('created_at', 'datetime'),
             new Column('created_by', 'bigint', 8),

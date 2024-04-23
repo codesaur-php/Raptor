@@ -1,4 +1,3 @@
-<!-- template example by Mark Otto, Jacob Thornton, and Bootstrap contributors => https://getbootstrap.com/docs/5.1/examples/sign-in -->
 {% set lang = localization.code ?? 'en' %}
 <!doctype html>
 <html lang="{{ lang }}">
@@ -16,44 +15,18 @@
         {% if config['mobile-web-app-capable'] is not empty %}<meta name="mobile-web-app-capable" content="{{ config['mobile-web-app-capable']|e }}">{% endif %}
         {% if config['apple-mobile-web-app-status-bar-style'] is not empty %}<meta name="apple-mobile-web-app-status-bar-style" content="{{ config['apple-mobile-web-app-status-bar-style']|e }}">{% endif %}
         {% if config['fb']['page']['id'] is not empty %}<meta property="fb:page_id" content="{{ config['fb']['page']['id']|e }}">{% endif %}
-        
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.9.1/font/bootstrap-icons.css" rel="stylesheet">
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
-        <script defer src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
-        <link href="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.3/styles/bootstrap-extend.css" rel="stylesheet">
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+        <script defer src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
         <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet">
-        <script defer src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.3/scripts/spinner.js"></script>
         <style>
-            html,
-            body {
-                height: 100%;
-            }
-            body {
-                display: flex;
-                align-items: center;
-                padding-top: 40px;
-                padding-bottom: 40px;
-                background-color: #f5f5f5;
-            }
             .form-signin {
                 width: 100%;
                 max-width: 420px;
                 padding: 15px;
                 margin: auto;
             }
-            .bd-placeholder-img {
-                font-size: 1.125rem;
-                text-anchor: middle;
-                -webkit-user-select: none;
-                -moz-user-select: none;
-                user-select: none;
-            }
-            @media (min-width: 768px) {
-                .bd-placeholder-img-lg {
-                    font-size: 3.5rem;
-                }
-            }
-      </style>
+       </style>
     </head>
     <body class="text-center">
         <main class="form-signin">
@@ -62,14 +35,14 @@
                 <img class="img-fluid" src="{{ logo }}">
             </div>
             {% endif %}
-            <form id="login_form" action="{{ 'entry'|link }}" method="POST">
+            <form id="login" action="{{ 'entry'|link }}" method="POST">
                 <div class="form-floating mb-3">
                     <input class="form-control" autofocus required type="text" name="username" id="username" autocomplete="on" placeholder="{{ 'user'|text|e }}">
-                    <label>{{ 'user'|text }}</label>
+                    <label for="username">{{ 'user'|text }}</label>
                 </div>
                 <div class="form-floating mb-4">
                     <input class="form-control" required type="password" name="password" id="password" placeholder="{{ 'password'|text|e }}">
-                    <label>{{ 'password'|text }}</label>
+                    <label for="password">{{ 'password'|text }}</label>
                 </div>
                 <button class="w-100 btn btn-lg btn-{{ button|default('primary') }} text-uppercase mb-4" id="login_signin_submit">
                     <i class="bi-person-check"></i> {{ 'signin'|text }}
@@ -80,7 +53,7 @@
                 {% if content is defined %}<hr>{{ content }}{% endif %}
                 <hr>
                 <div class="text-center">
-                    <span>{{ 'dont-have-account-yet'|text }}</span>
+                    <span>{{ 'ask-dont-have-account-yet'|text }}</span>
                     <a href="javascript:;" id="signup">{{ 'signup'|text }}</a>
                 </div>
                 <hr>
@@ -98,38 +71,38 @@
                 </div>
             </form>
                     
-            <form class="d-none" id="forgot_form" action="{{ 'login-forgot'|link }}" method="POST">
+            <form class="d-none" id="forgot" action="{{ 'login-forgot'|link }}" method="POST">
                 <h3 class="text-center mb-4">{{ 'forgotten-password-reset'|text }}</h3>
                 <span>{{ 'enter-email-below'|text }}</span>
                 <div class="form-floating mt-2">
                     <input class="form-control" type="email" placeholder="{{ 'email'|text|e }}" name="codeForgetEmail" id="codeForgetEmail" autocomplete="off">
-                    <label>{{ 'email'|text }}</label>
+                    <label for="codeForgetEmail">{{ 'email'|text }}</label>
                 </div>
  
                 <div class="mt-3">
                     <button class="btn btn-primary shadow-sm float-left" id="forgot_password_submit">{{ 'request'|text }}</button>
-                    <button class="cancel btn btn-secondary shadow-sm float-right">{{ 'cancel'|text }}</button>
+                    <button class="cancel btn btn-secondary shadow-sm float-right" type="button">{{ 'cancel'|text }}</button>
                 </div>
             </form>
 
-            <form id="signup_form" class="d-none" action="{{ 'signup'|link }}" method="POST">
+            <form class="d-none" id="register" action="{{ 'signup'|link }}" method="POST">
                 <h3 class="text-center mb-4">{{ 'signup'|text }}</h3>
                 <span>{{ 'enter-personal-details'|text }}</span>
                 <div class="form-floating mt-3 mb-2">
                     <input class="form-control" type="text" placeholder="{{ 'username'|text|e }}" name="codeUsername" id="codeUsername" autocomplete="new-account">
-                    <label>{{ 'username'|text }}</label>
+                    <label for="codeUsername">{{ 'username'|text }}</label>
                 </div>
                 <div class="form-floating mb-2">
                     <input class="form-control" type="text" placeholder="{{ 'email'|text|e }}" name="codeEmail" id="codeEmail" autocomplete="new-email">
-                    <label>{{ 'email'|text }}</label>
+                    <label for="codeEmail">{{ 'email'|text }}</label>
                 </div>
                 <div class="form-floating mb-2">
                     <input class="form-control" type="password" placeholder="{{ 'password'|text|e }}" name="codePassword" id="codePassword" autocomplete="new-password">
-                    <label>{{ 'password'|text }}</label>
+                    <label for="codePassword">{{ 'password'|text }}</label>
                 </div>
                 <div class="form-floating mb-3">
-                    <input class="form-control" type="password" placeholder="{{ 'retype-password'|text|e }}" name="codeRePassword" id="codeRePassword"  autocomplete="new-password-retype">
-                    <label>{{ 'retype-password'|text }}</label>
+                    <input class="form-control" type="password" placeholder="{{ 'retype-password'|text|e }}" name="codeRePassword" id="codeRePassword" autocomplete="new-password-retype">
+                    <label for="codeRePassword">{{ 'retype-password'|text }}</label>
                 </div>
                 <hr>
                 <div class="text-center mb-2">
@@ -144,23 +117,47 @@
                 <hr>
                 <div class="mt-2">
                     <button class="btn btn-primary shadow-sm" id="signup_submit">{{ 'signup'|text }}</button>
-                    <button class="cancel btn btn-secondary shadow-sm">{{ 'cancel'|text }}</button>
+                    <button class="cancel btn btn-secondary shadow-sm" type="button">{{ 'cancel'|text }}</button>
                 </div>
             </form>
         </main>
         <script type="text/javascript">
-            document.addEventListener('DOMContentLoaded', function () {
-                let formLogin = document.querySelector('#login_form');
-                let formForgot = document.querySelector('#forgot_form');
-                let formSignUp = document.querySelector('#signup_form');
-                
-                const btnLoginSubmit = document.querySelector('#login_signin_submit');
-                const btnForgotPassword = document.querySelector('#forgot_password');
-                const btnForgotPasswordSubmit = document.querySelector('#forgot_password_submit');
-                const btnSignup = document.querySelector('#signup');
-                const btnSignupSubmit = document.querySelector('#signup_submit');
+            if (localStorage.getItem('data-bs-theme') === 'dark') {
+                document.body.setAttribute('data-bs-theme', 'dark');
+            }
+            
+            function spinNstop(ele)
+            {
+                let isDisabled = ele.disabled,
+                    hasDisabled = ele.classList.contains('disabled'),
+                    attrText = ele.getAttribute('data-innerHTML');
+                if (isDisabled && hasDisabled && attrText) {
+                    ele.disabled = false;
+                    ele.classList.remove('disabled');
+                    ele.innerHTML = attrText;
+                    return;
+                }
 
-                function showMessage(form, type, msg) {
+                const html = ele.innerHTML;
+                ele.setAttribute('data-innerHTML', html);
+                ele.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+                ele.disabled = true;
+                ele.classList.add('disabled');
+            }
+            
+            document.addEventListener('DOMContentLoaded', function () {
+                const formLogin = document.querySelector('form#login');
+                const formForgot = document.querySelector('form#forgot');
+                const formSignUp = document.querySelector('form#register');
+                
+                const btnLoginSubmit = document.querySelector('button#login_signin_submit');
+                const btnForgotPassword = document.querySelector('a#forgot_password');
+                const btnForgotPasswordSubmit = document.querySelector('button#forgot_password_submit');
+                const btnSignup = document.querySelector('a#signup');
+                const btnSignupSubmit = document.querySelector('button#signup_submit');
+
+                function showMessage(form, type, msg)
+                {
                     removeAlert(form);
                     
                     let alert = document.createElement('div');
@@ -170,18 +167,21 @@
                     form.insertBefore(alert, form.firstChild);
                 };
                 
-                function isBlank(str) {
+                function isBlank(str)
+                {
                     return !str || /^\s*$/.test(str);
                 }
                 
-                function removeAlert(form) {
+                function removeAlert(form)
+                {
                     let alert = form.querySelector('.alert');
                     if (alert !== null) {
                         form.removeChild(alert);
                     }
                 }
                 
-                function validateEmail(email) {
+                function validateEmail(email)
+                {
                     return String(email)
                         .toLowerCase()
                         .match(
@@ -189,7 +189,8 @@
                     );
                 };
 
-                function displaySignIn() {
+                function displaySignIn()
+                {
                     formSignUp.classList.add('d-none');
                     formForgot.classList.add('d-none');
 
@@ -238,17 +239,17 @@
                 btnLoginSubmit.addEventListener('click', function(e) {
                     e.preventDefault();
                     
-                    const username = formLogin.querySelector('#username').value;
-                    const password = formLogin.querySelector('#password').value;                    
+                    const username = formLogin.querySelector('input[name="username"]').value;
+                    const password = formLogin.querySelector('input[name="password"]').value;                    
                     if (isBlank(username)) {
                         return showMessage(formLogin, 'warning', "{{ 'error-username-empty'|text|e }}");
                     } else if (isBlank(password)) {
                         return showMessage(formLogin, 'warning', "{{ 'error-password-empty'|text|e }}");
                     }
                     
-                    this.spinner('start', 'grow', true);
+                    spinNstop(this);
                     fetch(
-                        formLogin.getAttribute('action'),
+                        formLogin.action,
                         {
                             method: 'POST',
                             headers: {
@@ -267,26 +268,25 @@
                         }
                         showMessage(formLogin, 'success', response.message);
                         window.location.href = "{{ 'home'|link }}";
-                    })
-                    .catch(error => {
-                        this.spinner('stop');
-                        return showMessage(formLogin, 'danger', error.message);
+                    }).catch(error => {
+                        spinNstop(this);
+                        showMessage(formLogin, 'danger', error.message);
                     });
                 });
                 
                 btnForgotPasswordSubmit.addEventListener('click', function(e) {
                     e.preventDefault();
                     
-                    const email = formForgot.querySelector('#codeForgetEmail').value;
+                    const email = formForgot.querySelector('input[name="codeForgetEmail"]').value;
                     if (isBlank(email)) {
                         return showMessage(formForgot, 'warning', "{{ 'enter-email-empty'|text|e }}");
                     } else if (!validateEmail(email)) {
                         return showMessage(formForgot, 'warning', "{{ 'enter-valid-email'|text|e }}");
                     }
                     
-                    this.spinner('start', 'grow', true);
+                    spinNstop(this);
                     fetch(
-                        formForgot.getAttribute('action'),
+                        formForgot.action,
                         {
                             method: 'POST',
                             headers: {
@@ -295,7 +295,6 @@
                             body: JSON.stringify({email: email})
                         }
                     ).then(res => {
-                        this.spinner('stop');
                         return res.json();
                     }).then(response => {
                         if (response.status !== 'success') {
@@ -304,19 +303,20 @@
                         
                         displaySignIn();
                         showMessage(formLogin, 'success', response.message ?? 'Success');
-                    })
-                    .catch(error => {
-                        return showMessage(formForgot, 'danger', error.message);
+                    }).catch(error => {
+                        showMessage(formForgot, 'danger', error.message);
+                    }).finally(() => {
+                        spinNstop(this);
                     });
                 });
                 
                 btnSignupSubmit.addEventListener('click', function(e) {
                     e.preventDefault();
                     
-                    const username = formSignUp.querySelector('#codeUsername').value;
-                    const email = formSignUp.querySelector('#codeEmail').value;
-                    const password = formSignUp.querySelector('#codePassword').value;
-                    const password_re = formSignUp.querySelector('#codeRePassword').value;
+                    const username = formSignUp.querySelector('input[name="codeUsername"]').value;
+                    const email = formSignUp.querySelector('input[name="codeEmail"]').value;
+                    const password = formSignUp.querySelector('input[name="codePassword"]').value;
+                    const password_re = formSignUp.querySelector('input[name="codeRePassword"]').value;
                     if (isBlank(username)) {
                         return showMessage(formSignUp, 'warning', "{{ 'error-username-empty'|text|e }}");
                     } else if (isBlank(email)) {
@@ -333,9 +333,9 @@
                     
                     let payload = { username, email, password, password_re };
                     
-                    this.spinner('start', 'grow', true);
+                    spinNstop(this);
                     fetch(
-                        formSignUp.getAttribute('action'),
+                        formSignUp.action,
                         {
                             method: 'POST',
                             headers: {
@@ -344,7 +344,6 @@
                             body: JSON.stringify(payload)
                         }
                     ).then(res => {
-                        this.spinner('stop');
                         return res.json();
                     }).then(response => {
                         if (response.status !== 'success') {
@@ -353,45 +352,42 @@
                         
                         displaySignIn();
                         showMessage(formLogin, 'success', response.message ?? 'Success');
-                    })
-                    .catch(error => {
-                        return showMessage(formSignUp, 'danger', error.message);
+                    }).catch(error => {
+                        showMessage(formSignUp, 'danger', error.message);
+                    }).finally(() => {
+                        spinNstop(this);
                     });
                 });
             });
         </script>
         <div class="modal fade" id="tos" role="dialog" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-xl modal-dialog modal-dialog-scrollable" role="document">
                 <div class="modal-content">
-                    <div class="modal-header modal-header-solid">
+                    <div class="modal-header">
                         <h5 class="modal-title text-primary text-uppercase">{{ tos['title'][lang] }}</h5>
                         <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="{{ 'close'|text|e }}"></button>
                     </div>
                     <div class="modal-body">
-                        <div style="height:400px;overflow-y:auto;overflow-x:hidden;">
-                            {{ tos['full'][lang] }}
-                        </div>
+                        {{ tos['full'][lang] }}
                     </div>
-                    <div class="modal-footer modal-footer-solid">
-                         <button class="btn btn-primary shadow-sm" data-bs-dismiss="modal">{{ 'close'|text }}</button>
+                    <div class="modal-footer">
+                         <button class="btn btn-primary shadow-sm" data-bs-dismiss="modal" type="button">{{ 'close'|text }}</button>
                     </div>
                 </div>
             </div>
         </div>
         <div class="modal fade" id="pp" role="dialog" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-xl modal-dialog modal-dialog-scrollable" role="document">
                 <div class="modal-content">
-                    <div class="modal-header modal-header-solid">
+                    <div class="modal-header">
                         <h5 class="modal-title text-primary text-uppercase">{{ pp['title'][lang] }}</h5>
                         <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="{{ 'close'|text|e }}"></button>
                     </div>
                     <div class="modal-body">
-                        <div style="height:400px;overflow-y:auto;overflow-x:hidden;">
                         {{ pp['full'][lang] }}
-                        </div>
                     </div>
-                    <div class="modal-footer modal-footer-solid">
-                         <button class="btn btn-primary shadow-sm" data-bs-dismiss="modal">{{ 'close'|text }}</button>
+                    <div class="modal-footer">
+                         <button class="btn btn-primary shadow-sm" data-bs-dismiss="modal" type="button">{{ 'close'|text }}</button>
                     </div>
                 </div>
             </div>

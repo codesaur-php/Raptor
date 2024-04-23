@@ -9,7 +9,6 @@ class ContentsRouter extends Router
     public function __construct()
     {
         $this->GET('/references', [ReferencesController::class, 'index'])->name('references');
-        $this->GET('/references/datatable/{table}', [ReferencesController::class, 'datatable'])->name('reference-datatable');
         $this->GET_POST('/references/{table}', [ReferencesController::class, 'insert'])->name('reference-insert');
         $this->GET_PUT('/references/{table}/{uint:id}', [ReferencesController::class, 'update'])->name('reference-update');
         $this->GET('/references/view/{table}/{uint:id}', [ReferencesController::class, 'view'])->name('reference-view');
@@ -19,7 +18,7 @@ class ContentsRouter extends Router
         $this->POST('/settings/files', [SettingsController::class, 'files'])->name('settings-files');
     
         $this->GET('/pages', [PagesController::class, 'index'])->name('pages');
-        $this->GET('/pages/datatable', [PagesController::class, 'datatable'])->name('pages-datatable');
+        $this->GET('/pages/list', [PagesController::class, 'list'])->name('pages-list');
         $this->GET_POST('/pages/insert', [PagesController::class, 'insert'])->name('page-insert');
         $this->GET_PUT('/pages/{uint:id}', [PagesController::class, 'update'])->name('page-update');
         $this->GET('/pages/read/{uint:id}', [PagesController::class, 'read'])->name('page-read');
@@ -27,7 +26,7 @@ class ContentsRouter extends Router
         $this->DELETE('/pages', [PagesController::class, 'delete'])->name('page-delete');
 
         $this->GET('/news', [NewsController::class, 'index'])->name('news');
-        $this->GET('/news/datatable', [NewsController::class, 'datatable'])->name('news-datatable');
+        $this->GET('/news/list', [NewsController::class, 'list'])->name('news-list');
         $this->GET_POST('/news/insert', [NewsController::class, 'insert'])->name('news-insert');
         $this->GET_PUT('/news/{uint:id}', [NewsController::class, 'update'])->name('news-update');
         $this->GET('/news/read/{uint:id}', [NewsController::class, 'read'])->name('news-read');

@@ -40,73 +40,20 @@ class ReferencesController extends DashboardController
                 $references[] = $initial;
             }
         }
-        $tables = ['templates'];
+        $tables = ['templates' => []];
         foreach ($references as $reference) {
-            if (!\in_array($reference, $tables)) {
-                $tables[] = $reference;
+            if (!\in_array($reference,\array_keys($tables))) {
+                $tables[$reference] = [];
             }
-        }        
+        }
+        foreach (\array_keys($tables) as $table) {
+            $tables[$table] = $this->indoget("/reference/records/$table");
+        }
         $dashboard = $this->twigDashboard(\dirname(__FILE__) . '/references-index.html', ['tables' => $tables]);
         $dashboard->set('title', $this->text('reference-tables'));
         $dashboard->render();
         
-        $this->indolog('content', LogLevel::NOTICE, 'Лавлах хүснэгтүүдийн жагсаалтыг нээж үзэж байна',['model' => ReferenceModel::class]);
-    }
-    
-    public function datatable(string $table)
-    {
-        try {
-            $rows = [];
-            
-            if (!$this->isUserCan('system_content_index')) {
-                throw new \Exception($this->text('system-no-permission'), 401);
-            }
-            
-            $language_codes = \array_keys($this->getLanguages());
-            $records = $this->indoget("/reference/records/$table");
-            foreach ($records as $record) {
-                $id = $record['id'];
-                $row = [$id];
-                
-                $row[] = \htmlentities($record['keyword']);
-                foreach ($language_codes as $code) {
-                    $row[] = \htmlentities($record['content']['title'][$code] ?? '');
-                }
-                $row[] = \htmlentities($record['category']);
-                
-                $action =
-                    '<a class="btn btn-sm btn-info shadow-sm" href="' .
-                    $this->generateLink('reference-view', ['table' => $table, 'id' => $id]) .
-                    '"><i class="bi bi-eye"></i></a>';
-                
-                if ($this->getUser()->can('system_content_update')) {
-                    $action .=
-                        ' <a class="btn btn-sm btn-primary shadow-sm" href="' .
-                        $this->generateLink('reference-update', ['table' => $table, 'id' => $id]) .
-                        '"><i class="bi bi-pencil-square"></i></a>';
-                }
-                
-                if ($this->getUser()->can('system_content_delete')) {
-                    $action .=
-                        ' <a class="delete-reference btn btn-sm btn-danger shadow-sm" href="' .
-                        "$table:$id" . '"><i class="bi bi-trash"></i></a>';
-                }
-                
-                $row[] = $action;
-                
-                $rows[] = $row;
-            }
-        } catch (\Throwable $e) {
-            $this->errorLog($e);
-        } finally {
-            $count = \count($rows);
-            $this->respondJSON([
-                'data' => $rows,
-                'recordsTotal' => $count,
-                'recordsFiltered' => $count,
-                'draw' => (int) ($this->getQueryParams()['draw'] ?? 0)
-            ]);
-        }
+        $this->indolog('content', LogLevel::NOTICE, 'Лавлах хүснэгтүүдийн жагсаалтыг нээж үзэж байна', ['model' => ReferenceModel::class]);
     }
     
     public function insert(string $table)
@@ -114,7 +61,6 @@ class ReferencesController extends DashboardController
         try {
             $is_submit = $this->getRequest()->getMethod() == 'POST';
             $context = ['model' => ReferenceModel::class, 'table' => $table];
-            
             if (!$this->isUserCan('system_content_insert')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
@@ -148,8 +94,7 @@ class ReferencesController extends DashboardController
                 
                 $this->respondJSON([
                     'status' => 'success',
-                    'message' => $this->text('record-insert-success'),
-                    'href' => $this->generateLink('references')
+                    'message' => $this->text('record-insert-success')
                 ]);
                 
                 $level = LogLevel::INFO;
@@ -188,6 +133,7 @@ class ReferencesController extends DashboardController
             
             $records = $this->indoget("/reference/records/$table", ['WHERE' => "p.id=$id"]);
             $record = \reset($records);
+            $record['rbac_accounts'] = $this->getRBACAccounts($record['created_by'], $record['updated_by']);
             $context['record'] = $record;
             if (empty($record)) {
                 throw new \Exception($this->text('invalid-request'), 400);
@@ -195,11 +141,7 @@ class ReferencesController extends DashboardController
             
             $dashboard = $this->twigDashboard(
                 \dirname(__FILE__) . '/reference-view.html',
-                [
-                    'table' => $table,
-                    'record' => $record,
-                    'accounts' => $this->getAccounts()
-                ]
+                ['table' => $table, 'record' => $record]
             );
             $dashboard->set('title', $this->text('view-record') . ' | ' . \ucfirst($table));
             $dashboard->render();
@@ -255,8 +197,7 @@ class ReferencesController extends DashboardController
                 $this->respondJSON([
                     'status' => 'success',
                     'type' => 'primary',
-                    'message' => $this->text('record-update-success'),
-                    'href' => $this->generateLink('references')
+                    'message' => $this->text('record-update-success')
                 ]);
                 
                 $level = LogLevel::INFO;
@@ -267,14 +208,11 @@ class ReferencesController extends DashboardController
                 if (empty($record)) {
                     throw new \Exception($this->text('invalid-request'), 400);
                 }
+                $record['rbac_accounts'] = $this->getRBACAccounts($record['created_by'], $record['updated_by']);
                 $context['record'] = $record;
                 $dashboard = $this->twigDashboard(
                     \dirname(__FILE__) . '/reference-update.html',
-                    [
-                        'table' => $table,
-                        'record' => $record,
-                        'accounts' => $this->getAccounts()
-                    ]
+                    ['table' => $table, 'record' => $record]
                 );
                 $dashboard->set('title', $this->text('edit-record') . ' | ' . \ucfirst($table));
                 $dashboard->render();
@@ -307,9 +245,9 @@ class ReferencesController extends DashboardController
             
             $payload = $this->getParsedBody();
             $context['payload'] = $payload;
-            if (empty($payload['id'])
-                || !isset($payload['name'])
+            if (!isset($payload['id'])
                 || empty($payload['table'])
+                || !isset($payload['keyword'])
                 || !\filter_var($payload['id'], \FILTER_VALIDATE_INT)
             ) {
                 throw new \Exception($this->text('invalid-request'), 400);
@@ -329,7 +267,7 @@ class ReferencesController extends DashboardController
             ]);
             
             $level = LogLevel::ALERT;
-            $message = "$table хүснэгтээс $id дугаартай [{$payload['name']}] түлхүүртэй лавлах мэдээллийг устгалаа";
+            $message = "$table хүснэгтээс $id дугаартай [{$payload['keyword']}] түлхүүртэй лавлах мэдээллийг устгалаа";
         } catch (\Throwable $e) {
             $this->respondJSON([
                 'status'  => 'error',

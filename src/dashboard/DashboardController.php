@@ -4,7 +4,6 @@ namespace Raptor\Dashboard;
 
 use Fig\Http\Message\StatusCodeInterface;
 
-use codesaur\RBAC\Accounts;
 use codesaur\Template\TwigTemplate;
 use codesaur\Http\Message\ReasonPrhase;
 
@@ -46,27 +45,38 @@ class DashboardController extends \Raptor\Controller
     
     protected function headerResponseCode(int|string $code)
     {
-        if (!empty($code) && !\headers_sent()) {
-            if ($code != StatusCodeInterface::STATUS_OK) {
-                $status_code = "STATUS_$code";
-                $reasonPhraseClass = ReasonPrhase::class;
-                if (\defined("$reasonPhraseClass::$status_code")) {
-                    \http_response_code($code);
-                }
-            }
+        if (\headers_sent()
+            || empty($code)
+            || $code == StatusCodeInterface::STATUS_OK
+            || !\defined(ReasonPrhase::class . "::STATUS_$code")
+        ) {
+            return;
         }
+        
+        \http_response_code($code);
     }
     
-    public function getAccounts(): array
+    protected function getRBACAccounts(?int ...$ids)
     {
         try {
-            $rows = $this->indo('/records?model=' . Accounts::class);
+            $had_condition = !empty($ids);
+            $accounts_query = 'SELECT id,username,first_name,last_name,email FROM rbac_accounts';
+            if ($had_condition) {
+                $ids = \array_filter($ids, function ($v) { return $v !== null; });
+                if (empty($ids)) {
+                    throw new \Exception(__FUNCTION__ . ': invalid arguments!');
+                }
+                \array_walk($ids, function(&$v) { $v = "id=$v"; });
+                $accounts_query .= ' WHERE ' . \implode(' OR ', $ids);
+            }
+            $accounts_result = $this->indo('/execute/fetch/all', ['query' => $accounts_query]);
             $accounts = [];
-            foreach ($rows as $rows) {
-                $accounts[$rows['id']] = $rows['username'] . ' » ' . $rows['first_name'] . ' ' . $rows['last_name'] . ' (' . $rows['email'] . ')';
+            foreach ($accounts_result as $account) {
+                $accounts[$account['id']] = $account['username'] . ' » ' . $account['first_name'] . ' ' . $account['last_name'] . ' (' . $account['email'] . ')';
             }
             return $accounts;
         } catch (\Throwable $e) {
+            $this->errorLog($e);
             return [];
         }
     }
@@ -91,7 +101,7 @@ class DashboardController extends \Raptor\Controller
         try {
             $menu = $this->indo(
                 '/records?model=' . MenuModel::class,
-                ['ORDER BY' => 'p.position', 'WHERE' => 'p.is_active=1']
+                ['ORDER BY' => 'p.position', 'WHERE' => 'p.is_active=1 AND p.is_visible=1']
             );
         } catch (\Throwable $e) {
             $menu = [];
@@ -99,6 +109,9 @@ class DashboardController extends \Raptor\Controller
         
         $sidemenu = [];
         foreach ($menu as $row) {
+            if (!isset($row['content']['title'][$this->getLanguageCode()])) {
+                continue;
+            }
             $title = $row['content']['title'][$this->getLanguageCode()];
             if (!empty($row['alias'])
                 && $this->getUser()->getAlias() != $row['alias']
@@ -144,49 +157,41 @@ class DashboardController extends \Raptor\Controller
             $contents_id = $this->indopost($recordMenu, ['content' => ['mn' => ['title' => 'Агуулгууд'], 'en' => ['title' => 'Contents']], 'record' => ['position' => '200']]);
             $this->indopost($recordMenu, [ 
                 'content' => ['mn' => ['title' => 'Хуудсууд'], 'en' => ['title' => 'Pages']],
-                'record' => ['parent_id' => $contents_id, 'position' => '260', 'permission' => 'system_content_index', 'icon' => 'bi bi-book-half', 'href' => $this->generateLink('pages')]
+                'record' => ['parent_id' => $contents_id, 'position' => '250', 'alias' => 'system', 'permission' => 'system_content_index', 'icon' => 'bi bi-book-half', 'href' => $this->generateLink('pages')]
             ]);
             $this->indopost($recordMenu, [
                 'content' => ['mn' => ['title' => 'Мэдээнүүд'], 'en' => ['title' => 'News']],
-                'record' => ['parent_id' => $contents_id, 'position' => '270', 'permission' => 'system_content_index', 'icon' => 'bi bi-newspaper', 'href' => $this->generateLink('news')]
+                'record' => ['parent_id' => $contents_id, 'position' => '260', 'alias' => 'system', 'permission' => 'system_content_index', 'icon' => 'bi bi-newspaper', 'href' => $this->generateLink('news')]
             ]);
             $this->indopost($recordMenu, [
                 'content' => ['mn' => ['title' => 'Файлууд'], 'en' => ['title' => 'Files']],
-                'record' => ['parent_id' => $contents_id, 'position' => '275', 'permission' => 'system_content_index', 'icon' => 'bi bi-folder', 'href' => $this->generateLink('files')]
+                'record' => ['parent_id' => $contents_id, 'position' => '270', 'alias' => 'system', 'permission' => 'system_content_index', 'icon' => 'bi bi-folder', 'href' => $this->generateLink('files')]
             ]);
             $this->indopost($recordMenu, [
-                'content' => ['mn' => ['title' => 'Хэл'], 'en' => ['title' => 'Languages']],
-                'record' => ['parent_id' => $contents_id, 'position' => '280', 'alias' => 'system', 'permission' => 'system_localization_index', 'icon' => 'bi bi-flag-fill', 'href' => $this->generateLink('languages')]
-            ]);
-            $this->indopost($recordMenu, [
-                'content' => ['mn' => ['title' => 'Текстүүд'], 'en' => ['title' => 'Texts']],
-                'record' => ['parent_id' => $contents_id, 'position' => '285', 'permission' => 'system_localization_index', 'icon' => 'bi bi-translate', 'href' => $this->generateLink('texts')]
+                'content' => ['mn' => ['title' => 'Нутагшуулалт'], 'en' => ['title' => 'Localization']],
+                'record' => ['parent_id' => $contents_id, 'position' => '280', 'alias' => 'system', 'permission' => 'system_localization_index', 'icon' => 'bi bi-translate', 'href' => $this->generateLink('localization')]
             ]);
             $this->indopost($recordMenu, [
                 'content' => ['mn' => ['title' => 'Лавлах хүснэгтүүд'], 'en' => ['title' => 'Reference Tables']],
-                'record' => ['parent_id' => $contents_id, 'position' => '290', 'permission' => 'system_templates_index', 'icon' => 'bi bi-layout-wtf', 'href' => $this->generateLink('references')]
+                'record' => ['parent_id' => $contents_id, 'position' => '290', 'alias' => 'system', 'permission' => 'system_templates_index', 'icon' => 'bi bi-layout-wtf', 'href' => $this->generateLink('references')]
             ]);
             $this->indopost($recordMenu, [
-                'content' => ['mn' => ['title' => 'Дэлхийн улсууд'], 'en' => ['title' => 'World countries']],
-                'record' => ['parent_id' => $contents_id, 'position' => '295', 'alias' => 'system', 'permission' => 'system_localization_index', 'icon' => 'bi bi-flag', 'href' => $this->generateLink('countries')]
+                'content' => ['mn' => ['title' => 'Тохируулгууд'], 'en' => ['title' => 'Settings']],
+                'record' => ['parent_id' => $contents_id, 'position' => '295', 'alias' => 'system', 'permission' => 'system_content_settings', 'icon' => 'bi bi-gear-wide-connected', 'href' => $this->generateLink('settings')]
             ]);
             
             $system_id = $this->indopost($recordMenu, ['content' => ['mn' => ['title' => 'Систем'], 'en' => ['title' => 'System']], 'record' => ['position' => '300']]);
             $this->indopost($recordMenu, [
                 'content' => ['mn' => ['title' => 'Хэрэглэгчид'], 'en' => ['title' => 'Accounts']],
-                'record' => ['parent_id' => $system_id, 'position' => '310', 'permission' => 'system_account_index', 'icon' => 'bi bi-people-fill', 'href' => $this->generateLink('accounts')]
+                'record' => ['parent_id' => $system_id, 'position' => '310', 'alias' => 'system', 'permission' => 'system_account_index', 'icon' => 'bi bi-people-fill', 'href' => $this->generateLink('accounts')]
             ]);
             $this->indopost($recordMenu, [
                 'content' => ['mn' => ['title' => 'Байгууллагууд'], 'en' => ['title' => 'Organizations']],
                 'record' => ['parent_id' => $system_id, 'position' => '320', 'alias' => 'system', 'permission' => 'system_organization_index', 'icon' => 'bi bi-building', 'href' => $this->generateLink('organizations')]
             ]);
             $this->indopost($recordMenu, [
-                'content' => ['mn' => ['title' => 'Тохируулгууд'], 'en' => ['title' => 'Settings']],
-                'record' => ['parent_id' => $system_id, 'position' => '330', 'permission' => 'system_content_settings', 'icon' => 'bi bi-gear-wide-connected', 'href' => $this->generateLink('settings')]
-            ]);
-            $this->indopost($recordMenu, [
                 'content' => ['mn' => ['title' => 'Хандалтын протокол'], 'en' => ['title' => 'Access logs']],
-                'record' => ['parent_id' => $system_id, 'position' => '340', 'permission' => 'system_logger', 'icon' => 'bi bi-list-stars', 'href' => $this->generateLink('logs')]
+                'record' => ['parent_id' => $system_id, 'position' => '340', 'alias' => 'system', 'permission' => 'system_logger', 'icon' => 'bi bi-list-stars', 'href' => $this->generateLink('logs')]
             ]);
         } catch (\Throwable $e) {
             $this->errorLog($e);

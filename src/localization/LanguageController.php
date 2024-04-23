@@ -5,75 +5,11 @@ namespace Raptor\Localization;
 use Psr\Log\LogLevel;
 
 use Indoraptor\Localization\LanguageModel;
-use Indoraptor\Localization\CountriesModel;
 
 use Raptor\Dashboard\DashboardController;
 
 class LanguageController extends DashboardController
 {
-    public function index()
-    {
-        if (!$this->isUserCan('system_localization_index')) {
-            $this->dashboardProhibited(null, 401)->render();
-            return;
-        }
-
-        $dashboard = $this->twigDashboard(\dirname(__FILE__) . '/languages-index.html');
-        $dashboard->set('title', $this->text('languages'));
-        $dashboard->render();
-        
-        $this->indolog('localization', LogLevel::NOTICE, 'Хэлний жагсаалтыг нээж үзэж байна', ['model' => LanguageModel::class]);
-    }
-    
-    public function datatable()
-    {
-        try {
-            $rows = [];
-            
-            if (!$this->isUserCan('system_localization_index')) {
-                throw new \Exception($this->text('system-no-permission'), 401);
-            }
-            
-            $languages = $this->indoget('/records?model=' . LanguageModel::class);
-            foreach ($languages as $record) {
-                $id = $record['id'];
-                $row = [$record['code']];
-                
-                $row[] = \htmlentities($record['full']);
-                $row[] = '<img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.3/flags/' . $record['code'] . '.png">';
-                $row[] = \htmlentities($record['created_at']);
-
-                $action =
-                    '<a class="ajax-modal btn btn-sm btn-info shadow-sm" data-bs-target="#dashboard-modal" data-bs-toggle="modal" ' .
-                    'href="' . $this->generateLink('language-view', ['id' => $id]) . '"><i class="bi bi-eye"></i></a>';
-                
-                if ($this->getUser()->can('system_localization_update')) {
-                    $action .=
-                        ' <a class="ajax-modal btn btn-sm btn-primary shadow-sm" data-bs-target="#dashboard-modal" data-bs-toggle="modal" ' .
-                        'href="' . $this->generateLink('language-update', ['id' => $id]) . '"><i class="bi bi-pencil-square"></i></a>';
-                }
-                
-                if ($this->getUser()->can('system_localization_delete')) {
-                    $action .= ' <a class="delete-language btn btn-sm btn-danger shadow-sm" href="' . $id . '"><i class="bi bi-trash"></i></a>';
-                }
-                
-                $row[] = $action;
-                
-                $rows[] = $row;
-            }
-        } catch (\Throwable $e) {
-            $this->errorLog($e);
-        } finally {
-            $count = \count($rows);
-            $this->respondJSON([
-                'data' => $rows,
-                'recordsTotal' => $count,
-                'recordsFiltered' => $count,
-                'draw' => (int) ($this->getQueryParams()['draw'] ?? 0)
-            ]);
-        }
-    }
-    
     public function insert()
     {
         try {
@@ -87,7 +23,7 @@ class LanguageController extends DashboardController
             if ($is_submit) {
                 $payload = $this->getParsedBody();
                 if (empty($payload['copy'])
-                    || empty($payload['short'])
+                    || empty($payload['code'])
                     || empty($payload['full'])
                 ) {
                     throw new \Exception($this->text('invalid-values'), 400);
@@ -112,37 +48,39 @@ class LanguageController extends DashboardController
                     $languages = [];
                 }
                 foreach ($languages as $key => $value) {
-                    if ($payload['short'] == $key && $payload['full'] == $value) {
-                        throw new \Exception($this->text('lang-existing'), 403);
+                    if ($payload['code'] == $key && $payload['full'] == $value) {
+                        throw new \Exception($this->text('error-lang-existing'), 403);
                    }
-                   if ($payload['short'] == $key) {
-                        throw new \Exception($this->text('lang-code-existing'), 403);
+                   if ($payload['code'] == $key) {
+                        throw new \Exception($this->text('error-existing-lang-code'), 403);
                    }
                    if ($payload['full'] == $value) {
-                        throw new \Exception($this->text('lang-name-existing'), 403);
+                        throw new \Exception($this->text('error-lang-name-existing'), 403);
                    }
                 }
 
-                $id = $this->indopost('/record?model=' . LanguageModel::class, ['code' => $payload['short'], 'full' => $payload['full']]);
+                $id = $this->indopost(
+                    '/record?model=' . LanguageModel::class,
+                    ['code' => $payload['code'], 'full' => $payload['full'], 'description' => $payload['description']]
+                );
                 if ($id == false) {
                     throw new \Exception($this->text('record-insert-error'));
                 }
                 $context['record'] = $id;
                 
-                $copied = $this->indopost('/language/copy/multimodel/content', ['from' => $mother['code'], 'to' => $payload['short']]);
+                $copied = $this->indopost('/language/copy/multimodel/content', ['from' => $mother['code'], 'to' => $payload['code']]);
                 if (!empty($copied)) {
                     $this->indolog(
                         'localization',
                         LogLevel::ALERT,
-                        __CLASS__ . ' объект нь ' . $mother['code'] . ' хэлнээс ' . $payload['short'] . ' хэлийг хуулбарлан үүсгэлээ. ',
+                        __CLASS__ . ' объект нь ' . $mother['code'] . ' хэлнээс ' . $payload['code'] . ' хэлийг хуулбарлан үүсгэлээ. ',
                         ['reason' => 'copy', 'copied' => $copied] + $context
                     );
                 }
                 
                 $this->respondJSON([
                     'status' => 'success',
-                    'message' => $this->text('record-insert-success'),
-                    'href' => $this->generateLink('languages')
+                    'message' => $this->text('record-insert-success')
                 ]);
                 
                 $level = LogLevel::INFO;
@@ -189,10 +127,9 @@ class LanguageController extends DashboardController
             }
             
             $record = $this->indoget('/record?model=' . LanguageModel::class, ['id' => $id]);
+            $record['rbac_accounts'] = $this->getRBACAccounts($record['created_by'], $record['updated_by']);
             $context['record'] = $record;
-            $this->twigTemplate(
-                \dirname(__FILE__) . '/language-retrieve-modal.html',
-                ['record' => $record, 'accounts' => $this->getAccounts()])->render();
+            $this->twigTemplate(\dirname(__FILE__) . '/language-retrieve-modal.html', ['record' => $record])->render();
 
             $level = LogLevel::NOTICE;
             $message = "{$record['full']} хэлний мэдээллийг нээж үзэж байна";
@@ -261,8 +198,7 @@ class LanguageController extends DashboardController
                 $this->respondJSON([
                     'status' => 'success',
                     'type' => 'primary',
-                    'message' => $this->text('record-update-success'),
-                    'href' => $this->generateLink('languages')
+                    'message' => $this->text('record-update-success')
                 ]);
                 
                 $level = LogLevel::INFO;
@@ -300,7 +236,7 @@ class LanguageController extends DashboardController
             }
             
             $payload = $this->getParsedBody();
-            if (empty($payload['id'])
+            if (!isset($payload['id'])
                 || !isset($payload['name'])
                 || !\filter_var($payload['id'], \FILTER_VALIDATE_INT)
             ) {
@@ -311,7 +247,7 @@ class LanguageController extends DashboardController
             $id = \filter_var($payload['id'], \FILTER_VALIDATE_INT);
             try {
                 $defLanguage = $this->indo(
-                    "/record?model=" . LanguageModel::class, ['is_default' => 1]
+                    '/record?model=' . LanguageModel::class, ['is_default' => 1]
                 );
             } catch (\Throwable $e) {
                 $defLanguage = [];

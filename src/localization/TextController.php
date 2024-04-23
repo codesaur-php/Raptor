@@ -10,92 +10,6 @@ use Raptor\Dashboard\DashboardController;
 
 class TextController extends DashboardController
 {
-    public function index()
-    {
-        if (!$this->isUserCan('system_localization_index')) {
-            $this->dashboardProhibited(null, 401)->render();
-            return;
-        }
-        
-        $colors = [
-            'success' => 1,
-            'primary' => 2,
-            'danger' => 3,
-            'warning' => 4,
-            'info' => 5,
-            'dark' => 6
-        ];
-        $names = $this->indoget('/text/table/names');
-        $table = ['user', 'default', 'dashboard'];
-        foreach ($names as $name) {
-            if (\in_array($name, $table)) {
-                $table[] = $name;
-            }
-        }
-        $tables = \array_flip($table);
-        foreach ($tables as &$index) {
-            $index = \array_rand($colors);
-            if (\count($colors) > 1) {
-                unset($colors[$index]);
-            }
-        }
-        $dashboard = $this->twigDashboard(\dirname(__FILE__) . '/texts-index.html', ['tables' => $tables]);
-        $dashboard->set('title', $this->getLanguageCode() == 'mn' ? 'Текстүүд' : 'Texts');
-        $dashboard->render();
-        
-        $this->indolog('localization', LogLevel::NOTICE, 'Системийн текст жагсаалтыг нээж үзэж байна', ['model' => TextModel::class, 'tables' => $tables]);
-    }
-    
-    public function datatable(string $table)
-    {
-        try {
-            $rows = [];
-            
-            if (!$this->isUserCan('system_localization_index')) {
-                throw new \Exception($this->text('system-no-permission'), 401);
-            }
-            
-            $texts = $this->indoget("/text/records/$table");
-            $language_codes = \array_keys($this->getLanguages());
-            foreach ($texts as $record) {
-                $id = $record['id'];
-                
-                $row = [\htmlentities($record['keyword'])];
-                foreach ($language_codes as $code) {
-                    $row[] = \htmlentities($record['content']['text'][$code] ?? '');
-                }
-                $row[] = [\htmlentities($record['type'])];
-                
-                $action =
-                    '<a class="ajax-modal btn btn-sm btn-info shadow-sm" data-bs-target="#dashboard-modal" data-bs-toggle="modal" ' .
-                    'href="' . $this->generateLink('text-view', ['table' => $table, 'id' => $id]) . '"><i class="bi bi-eye"></i></a>';
-                
-                if ($this->getUser()->can('system_localization_update')) {
-                    $action .=
-                        ' <a class="ajax-modal btn btn-sm btn-primary shadow-sm" data-bs-target="#dashboard-modal" data-bs-toggle="modal" ' .
-                        'href="' . $this->generateLink('text-update', ['table' => $table, 'id' => $id]) . '"><i class="bi bi-pencil-square"></i></a>';
-                }
-                if ($this->getUser()->can('system_localization_delete')) {
-                    $action .= ' <a class="delete-text btn btn-sm btn-danger shadow-sm" href="' . "$table:$id" . '"><i class="bi bi-trash"></i></a>';
-                }
-                
-                $row[] = $action;
-                
-                $rows[] = $row;
-            }
-        } catch (\Throwable $e) {
-            $this->errorLog($e);
-        } finally {
-            $count = \count($rows);
-            $this->respondJSON([
-                'data' => $rows,
-                'recordsTotal' => $count,
-                'recordsFiltered' => $count,
-                'draw' => (int) ($this->getQueryParams()['draw'] ?? 0)
-            ]);
-        }
-    }
-    
     public function insert(string $table)
     {
         try {
@@ -137,7 +51,7 @@ class TextController extends DashboardController
                     && !empty($found['table'])
                 ) {
                     throw new \Exception(
-                        $this->text('keyword-existing') . ' -> ID = ' .
+                        $this->text('keyword-existing-in') . ' -> ID = ' .
                         $found['id'] . ', Table = ' . $found['table']
                     );
                 }
@@ -152,7 +66,6 @@ class TextController extends DashboardController
                 
                 $this->respondJSON([
                     'status' => 'success',
-                    'href' => $this->generateLink('texts'),
                     'message' => $this->text('record-insert-success')
                 ]);
                 
@@ -188,14 +101,11 @@ class TextController extends DashboardController
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
             $record = $this->indoget("/text/$table", ['p.id' => $id]);
+            $record['rbac_accounts'] = $this->getRBACAccounts($record['created_by'], $record['updated_by']);
             $context['record'] = $record;
             $this->twigTemplate(
                 \dirname(__FILE__) . '/text-retrieve-modal.html',
-                [
-                    'table' => $table,
-                    'record' => $record,
-                    'accounts' => $this->getAccounts()
-                ]
+                ['table' => $table, 'record' => $record]
             )->render();
 
             $level = LogLevel::NOTICE;
@@ -256,7 +166,7 @@ class TextController extends DashboardController
                     )
                 ) {
                     throw new \Exception(
-                        $this->text('keyword-existing') . ' -> ID = ' .
+                        $this->text('keyword-existing-in') . ' -> ID = ' .
                         $found['id'] . ', Table = ' . $found['table']);
                 }
                 
@@ -275,7 +185,6 @@ class TextController extends DashboardController
                 $this->respondJSON([
                     'type' => 'primary',
                     'status' => 'success',
-                    'href' => $this->generateLink('texts'),
                     'message' => $this->text('record-update-success')
                 ]);
                 
@@ -317,7 +226,7 @@ class TextController extends DashboardController
             
             $payload = $this->getParsedBody();
             if (empty($payload['table'])
-                || empty($payload['id'])
+                || !isset($payload['id'])
                 || !\filter_var($payload['id'], \FILTER_VALIDATE_INT)
             ) {
                 throw new \Exception($this->text('invalid-request'), 400);
@@ -338,9 +247,9 @@ class TextController extends DashboardController
             ]);
             
             $level = LogLevel::ALERT;
-            $message = "$table хүснэгтээс [" . ($payload['name'] ?? $id) . '] текст мэдээллийг устгалаа';
+            $message = "$table хүснэгтээс [" . ($payload['keyword'] ?? $id) . '] текст мэдээллийг устгалаа';
         } catch (\Throwable $e) {
-            $this->respondJSON([
+            $this->respondJSON([ 
                 'status'  => 'error',
                 'title'   => $this->text('error'),
                 'message' => $e->getMessage()

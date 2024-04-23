@@ -44,16 +44,6 @@ class FilesController extends FileController
             return;
         }
         
-        try {
-            $files = $this->indo("/files/records/$table");
-        } catch (\Throwable $e) {
-            $files = [];
-        }
-        
-        foreach ($files as &$file) {
-            unset($file['file']);
-        }
-        
         if (\file_exists(\dirname(__FILE__) . "/$table-index.html")) {
             $template = \dirname(__FILE__) . "/$table-index.html";
         } else {
@@ -64,10 +54,9 @@ class FilesController extends FileController
         $dashboard = $this->twigDashboard(
             $template,
             [
-                'tables' => $tables,
                 'total' => $total,
                 'table' => $table,
-                'files' => $files,
+                'tables' => $tables,
                 'max_file_size' => $this->getMaximumFileUploadSize()
             ]
         );
@@ -77,6 +66,32 @@ class FilesController extends FileController
         $this->indolog('files', LogLevel::NOTICE, 'Файлын жагсаалтыг нээж үзэж байна', [
             'model' => FilesModel::class, 'tables' => $tables, 'total' => $total, 'table' => $table
         ]);
+    }
+    
+    public function list(string $table)
+    {
+        try {
+            if (!$this->isUserCan('system_content_index')) {
+                throw new \Exception($this->text('system-no-permission'), 401);
+            }
+            
+            $sql_table = \preg_replace('/[^A-Za-z0-9_-]/', '', $table);
+            $exists = $this->indo(
+                '/execute/fetch/all',
+                ['query' => "SHOW TABLES LIKE '$sql_table'"]
+            );
+            if (empty($exists)) {
+                $files = [];
+            } else {
+                $files_query = 
+                    'SELECT id, record_id, file, path, size, type, mime_content_type, category, keyword, description ' .
+                    "FROM $sql_table WHERE is_active=1";
+                $files = $this->indo('/execute/fetch/all', ['query' => $files_query]);
+            }
+            $this->respondJSON(['status' => 'success', 'list' => $files]);
+        } catch (\Throwable $e) {
+            $this->respondJSON(['message' => $e->getMessage()], $e->getCode());
+        }
     }
 
     public function post(string $input, string $table, int $id, string $folder)

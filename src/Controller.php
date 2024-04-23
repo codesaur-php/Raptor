@@ -9,7 +9,7 @@ use codesaur\Router\RouterInterface;
 use codesaur\Template\TwigTemplate;
 use codesaur\Http\Message\ReasonPrhase;
 
-use Indoraptor\InternalRequest;
+use Indoraptor\Internal\InternalRequest;
 
 use Raptor\Authentication\UserInterface;
 
@@ -131,14 +131,10 @@ class Controller extends \codesaur\Http\Application\Controller
         if (!\headers_sent()) {
             if (!empty($code)
                 && \is_int($code)
+                && $code != StatusCodeInterface::STATUS_OK
+                && \defined(ReasonPrhase::class . "::STATUS_$code")
             ) {
-                if ($code != StatusCodeInterface::STATUS_OK) {
-                    $status_code = "STATUS_$code";
-                    $reasonPhraseClass = ReasonPrhase::class;
-                    if (\defined("$reasonPhraseClass::$status_code")) {
-                        \http_response_code($code);
-                    }
-                }
+                \http_response_code($code);
             }
             \header('Content-Type: application/json');
         }

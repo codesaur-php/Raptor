@@ -7,8 +7,8 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 
-use Indoraptor\InternalRequest;
 use Indoraptor\IndoApplication;
+use Indoraptor\Internal\InternalRequest;
 
 use Raptor\Authentication\User;
 

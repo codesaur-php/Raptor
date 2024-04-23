@@ -1,14 +1,4 @@
-<script defer src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
-<script defer src="https://cdn.jsdelivr.net/gh/moxiecode/plupload/js/plupload.full.min.js"></script>
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css">
-<script defer src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sceditor@latest/minified/themes/default.min.css">
-<script defer src="https://cdn.jsdelivr.net/combine/npm/sceditor@latest/minified/sceditor.min.js,npm/sceditor@latest/minified/formats/xhtml.min.js,npm/sceditor@latest/minified/icons/monocons.min.js"></script>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.css">
-<script defer src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.umd.js"></script>
-
-{% set categories = {
+    {% set categories = {
   'general': { 'mn': 'Ерөнхий' },
   'photo': { 'mn': 'Фото' },
   'video': { 'mn': 'Видео' },
@@ -21,194 +11,187 @@
   'hot': { 'mn': 'Халуун' },
   'fun': { 'mn': 'Хөгжилтэй' }
 } %}
-
-<div class="card shadow border-success mt-2 mb-4">
-    <div class="card-header bg-light">
-        <div class="d-flex justify-content-between flex-wrap flex-md-nowrap">
-            <h6 class="text-success text-uppercase pt-2"><i class="bi bi-book"></i> {{ 'add-record'|text }} (news)</h6>
-            <div class="button-group">
-                <button class="submit-insert btn btn-success shadow-sm text-uppercase">
-                    <i class="bi bi-check-lg"></i> {{ 'save'|text }}
-                </button>
-                <a class="btn btn-secondary shadow-sm text-uppercase" href="{{ 'news'|link }}">
-                    <i class="bi bi-arrow-left"></i> {{ 'list'|text }}
-                </a>
+<script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11" type="text/javascript"></script>
+<script defer src="https://cdn.jsdelivr.net/gh/moxiecode/plupload/js/plupload.full.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sceditor@latest/minified/themes/default.min.css">
+<script defer src="https://cdn.jsdelivr.net/combine/npm/sceditor@latest/minified/sceditor.min.js,npm/sceditor@latest/minified/formats/xhtml.min.js,npm/sceditor@latest/minified/icons/monocons.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.css">
+<script defer src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.umd.js"></script>
+<div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase text-bg-light rounded p-1 mb-2">
+    <h3 class="px-2 my-auto fs-6 text-success">
+        <i class="bi bi-book"></i> {{ 'add-record'|text }} (news)
+    </h3>
+    <div class="ms-auto">
+        {% if user.can('system_content_insert') %}
+            <button class="submit-insert btn btn-sm btn-success text-uppercase shadow-sm">
+                <i class="bi bi-check-lg"></i> {{ 'save'|text }}
+            </button>
+        {% endif %}
+        <a class="btn btn-sm btn-secondary shadow-sm" href="{{ 'news'|link }}">
+            <i class="bi bi-arrow-left"></i> {{ 'list'|text }}
+        </a>
+    </div>
+</div>
+<form class="needs-validation" id="news_insert" action="{{ 'news-insert'|link }}" method="POST" enctype="multipart/form-data" novalidate>
+    <div class="row">
+        <div class="col-4">
+            <label class="form-label">{{ 'language'|text }}</label>
+            <select class="form-select" name="code">
+                {% for code,title in localization.language %}
+                    <option value="{{ code }}"{{ loop.first ? ' selected' : '' }}>{{ title|e }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-4">
+            <label class="form-label">{{ 'category'|text }}</label>
+            <div class="input-group">
+                <input class="form-control" name="category" type="text" value="{{ categories|keys|first|e }}" maxlength="32">
+                <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"></button>
+                <ul class="dropdown-menu dropdown-menu-end" id="category_list">
+                    {% for value,name in categories %}
+                        <li class="dropdown-item" value="{{ value|e }}">{{ name[localization.code] ?? value|capitalize }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>  
+        <div class="col-4">
+            <label class="form-label">{{ 'type'|text }}</label>
+            <div class="input-group">
+                <input class="form-control" name="type" type="text" value="{{ types|keys|first|e }}" maxlength="32">
+                <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"></button>
+                <ul class="dropdown-menu dropdown-menu-end" id="type_list">
+                    {% for value,name in types %}
+                        <li class="dropdown-item" value="{{ value|e }}">{{ name[localization.code] ?? value|capitalize }}</li>
+                    {% endfor %}
+                </ul>
             </div>
         </div>
     </div>
-    <div class="card-body">
-        <form class="needs-validation" id="news_insert" action="{{ 'news-insert'|link }}" method="POST" enctype="multipart/form-data" novalidate>
-            <div class="row mt-1">
-                <div class="col-4">
-                    <label class="form-label">{{ 'language'|text }}</label>
-                    <select class="form-select select2" name="code" id="code_language">
-                        {% for code,title in localization.language %}
-                        <option value="{{ code }}"{{ loop.first ? ' selected' : '' }}>{{ title|e }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="col-4">
-                    <label class="form-label">{{ 'category'|text }}</label>
-                    <div class="input-group mb-3">
-                        <input class="form-control" name="category" type="text" value="{{ categories|keys|first|e }}" maxlength="32">
-                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"></button>
-                        <ul class="dropdown-menu dropdown-menu-end" id="category_list">
-                            {% for value,name in categories %}
-                            <li class="dropdown-item" value="{{ value|e }}">{{ name[localization.code] ?? value|capitalize }}</li>
-                            {% endfor %}
-                        </ul>
-                    </div>
-                </div>  
-                <div class="col-4">
-                    <label class="form-label">{{ 'type'|text }}</label>
-                    <div class="input-group mb-3">
-                        <input class="form-control" name="type" type="text" value="{{ types|keys|first|e }}" maxlength="32">
-                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"></button>
-                        <ul class="dropdown-menu dropdown-menu-end" id="type_list">
-                            {% for value,name in types %}
-                            <li class="dropdown-item" value="{{ value|e }}">{{ name[localization.code] ?? value|capitalize }}</li>
-                            {% endfor %}
-                        </ul>
-                    </div>
-                </div>
+    <div class="row mt-3">
+        <div class="col-4">
+        </div>
+        <div class="col-4">
+            <label class="form-label">{{ 'date'|text }}</label>
+            <input class="form-control" name="published_date" value="" placeholder="" type="datetime-local" autocomplete="off">
+        </div>
+        <div class="col-4">
+            <label class="form-label">{{ 'publish'|text }}</label>
+            <div class="form-check form-switch">
+                <input class="form-check-input" name="published"{% if not user.can('system_content_publish') %} disabled{% endif %} type="checkbox" role="switch" aria-describedby="IsVisibleHelp">
+                <div class="form-text" id="IsVisibleHelp">{{ localization.code == 'mn' ? 'бичлэг сайт дээр харагдах эсэх' : 'visiblity of content' }}</div>
             </div>
-            <div class="row mt-1">
-                <div class="col-4">
-                        
-                </div>
-                <div class="col-4">
-                    <label class="form-label">{{ 'date'|text }}</label>
-                    <input class="form-control" name="published_date" value="" placeholder="" type="datetime-local" autocomplete="off">
-                </div>
-                <div class="col-4">
-                    <label class="form-label">{{ 'publish'|text }}</label>
-                    <div class="form-check form-switch">
-                        <input class="form-check-input" name="published"{% if not user.can('system_content_publish') %} disabled{% endif %} type="checkbox" role="switch" aria-describedby="IsVisibleHelp">
-                        <div id="IsVisibleHelp" class="form-text">{{ localization.code == 'mn' ? 'бичлэг сайт дээр харагдах эсэх' : 'visiblity of content' }}</div>
-                    </div>
-                    <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
-                </div>
-            </div>
-            <ul class="nav nav-tabs nav-tabs-content mt-4">
-                <li class="nav-item">
-                    <a class="nav-link active show" data-bs-toggle="tab" href="#tab-content">{{ 'content'|text }} <i class="bi bi-body-text"></i></a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" data-bs-toggle="tab" href="#tab-files">{{ 'files'|text }} <i class="bi bi-paperclip"></i></a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" data-bs-toggle="tab" href="#tab-meta">{{ 'meta'|text }} <i class="bi bi-share"></i></a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" data-bs-toggle="tab" href="#tab-comment">{{ 'comment'|text }} <i class="bi bi-chat-left-text"></i></a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" data-bs-toggle="tab" href="#tab-link">{{ 'link'|text }} <i class="bi bi-link-45deg"></i></a>
-                </li>
-            </ul>
-            <div class="tab-content">
-                <div class="tab-pane active show" id="tab-content">
-                    <div class="form-group bg-light rounded-3">
-                        <label class="form-label">{{ 'title'|text }}</label>
-                        <div id="TitleContentHelp" class="form-text">{{ 'title-note'|text }}</div>
-                        <input class="form-control" name="title" required value="" maxlength="255" placeholder="" type="text" autocomplete="off" aria-describedby="TitleContentHelp">
-                        <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
-                    </div>
-                    <div class="form-group bg-light mt-4 rounded-3">
-                        <label class="form-label">{{ 'short'|text }}</label>
-                        <div id="ShortContentHelp" class="form-text">{{ 'short-note'|text }}</div>
-                        <textarea class="form-control" name="short" aria-describedby="ShortContentHelp"></textarea>
-                    </div>
-                    <div class="form-group bg-light mt-4 rounded-3">
-                        <label class="form-label">{{ 'full'|text }}</label>
-                        <div id="FullContentHelp" class="form-text">{{ 'full-note'|text }}</div>
-                        <textarea class="form-control" id="full" name="full" rows="10" aria-describedby="FullContentHelp"></textarea>
-                    </div>
-                </div>
-                <div class="tab-pane" id="tab-files">
-                    <div class="row mb-2">
-                        <div id="filelist" class="col-12">Your browser doesn't have Flash, Silverlight or HTML5 support.</div>
-                    </div>
-                    <div class="row">
-                        <div id="container">
-                            <button class="btn btn-warning shadow-sm" id="pickfiles">{{ 'select-files'|text }}</button>
-                            <button class="btn btn-secondary shadow-sm" id="uploadfiles" disabled>{{ 'upload-files'|text }}</button>
-                        </div>
-                    </div>
-                    <div class="col-12 mt-4">
-                        <table class="table table-striped table-hover" id="news_files">
-                            <thead>
-                                <tr>
-                                    <th>{{ 'file'|text }}</th>
-                                    <th>{{ 'properties'|text }}</th>
-                                    <th>{{ 'description'|text }}</th>
-                                    <th>{{ 'category'|text }}</th>
-                                    <th>{{ 'keyword'|text }}</th>
-                                </tr>
-                            </thead>
-                            <tbody></tbody>
-                            <tfoot></tfoot>
-                        </table>
-                    </div>
-                </div>
-                <div class="tab-pane" id="tab-meta">
-                    <div class="alert alert-secondary shadow-sm fade mt-4 show" role="alert">
-                        <i class="bi bi-exclamation-triangle" style="margin-right:5px"></i>
-                        {% if localization.code == 'mn' %}
-                        Уучлаарай, энэ үйлдэл одоохондоо ажиллагаанд ороогүй байна
-                        {% else %}
-                        Sorry, this feature isn’t available right now
-                        {% endif %}
-                    </div>
-                </div>
-                <div class="tab-pane" id="tab-comment">
-                    <div class="alert alert-primary shadow-sm fade mt-4 show" role="alert">
-                        <i class="bi bi-exclamation-triangle" style="margin-right:5px"></i>
-                        {% if localization.code == 'mn' %}
-                        Уучлаарай, энэ үйлдэл одоохондоо ажиллагаанд ороогүй байна
-                        {% else %}
-                        Sorry, this feature isn’t available right now
-                        {% endif %}
-                    </div>
-                </div>
-                <div class="tab-pane" id="tab-link">
-                    <div class="alert alert-dark shadow-sm fade mt-4 show" role="alert">
-                        <i class="bi bi-exclamation-triangle" style="margin-right:5px"></i>
-                        {% if localization.code == 'mn' %}
-                        Уучлаарай, энэ үйлдэл одоохондоо ажиллагаанд ороогүй байна
-                        {% else %}
-                        Sorry, this feature isn’t available right now
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-        </form>
+            <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
+        </div>
     </div>
-    <div class="card-footer">
-        <div class="row pt-1 pb-1">
-            <div class="col-6 d-grid">
-                <button class="submit-insert btn btn-lg btn-success shadow-sm" type="submit">
-                    <i class="bi bi-check2"></i> {{ 'save'|text }}
-                </button>
+    <ul class="nav nav-tabs nav-tabs-content mt-3">
+        <li class="nav-item">
+            <a class="nav-link active show" data-bs-toggle="tab" href="#tab-content">{{ 'content'|text }} <i class="bi bi-body-text"></i></a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#tab-files">{{ 'files'|text }} <i class="bi bi-paperclip"></i></a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#tab-meta">{{ 'meta'|text }} <i class="bi bi-share"></i></a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#tab-comment">{{ 'comment'|text }} <i class="bi bi-chat-left-text"></i></a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#tab-link">{{ 'link'|text }} <i class="bi bi-link-45deg"></i></a>
+        </li>
+    </ul>
+    <div class="tab-content">
+        <div class="tab-pane active show" id="tab-content">
+            <div class="form-group mt-3">
+                <label class="form-label">{{ 'title'|text }}</label>
+                <input class="form-control" name="title" required value="" maxlength="255" placeholder="" type="text" autocomplete="off">
+                <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
             </div>
-            <div class="col-6 d-grid">
-                <a class="btn btn-lg btn-block btn-secondary shadow-sm" href="{{ 'news'|link }}">
-                    <i class="bi bi-arrow-left"></i> {{ 'list'|text }}
-                </a>
+            <div class="form-group mt-3">
+                <label class="form-label">{{ 'short'|text }}</label>
+                <textarea class="form-control" name="short"></textarea>
+            </div>
+            <div class="form-group mt-3">
+                <label class="form-label">{{ 'full'|text }}</label>
+                <textarea class="form-control" id="full" name="full" rows="10"></textarea>
+            </div>
+        </div>
+        <div class="tab-pane pt-2" id="tab-files">
+            <div class="row mb-2">
+                <div class="col-12" id="filelist">Your browser doesn't have Silverlight or HTML5 support.</div>
+            </div>
+            <div class="row">
+                <div id="container">
+                    <button class="btn btn-warning shadow-sm" id="pickfiles" type="button">{{ 'select-files'|text }}</button>
+                    <button class="btn btn-secondary shadow-sm" id="uploadfiles" disabled type="button">{{ 'upload-files'|text }}</button>
+                </div>
+            </div>
+            <table class="table table-striped table-hover" id="news_files">
+                <thead>
+                    <tr>
+                        <th>{{ 'file'|text }}</th>
+                        <th>{{ 'properties'|text }}</th>
+                        <th>{{ 'description'|text }}</th>
+                        <th>{{ 'category'|text }}</th>
+                        <th>{{ 'keyword'|text }}</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+                <tfoot></tfoot>
+            </table>
+        </div>
+        <div class="tab-pane" id="tab-meta">
+            <div class="alert alert-secondary shadow-sm fade mt-3 show" role="alert">
+                <i class="bi bi-exclamation-triangle" style="margin-right:.3rem"></i>
+                {% if localization.code == 'mn' %}
+                    Уучлаарай, энэ үйлдэл одоохондоо ажиллагаанд ороогүй байна
+                {% else %}
+                    Sorry, this feature isn’t available right now
+                {% endif %}
+            </div>
+        </div>
+        <div class="tab-pane" id="tab-comment">
+            <div class="alert alert-primary shadow-sm fade mt-3 show" role="alert">
+                <i class="bi bi-exclamation-triangle" style="margin-right:.3rem"></i>
+                {% if localization.code == 'mn' %}
+                    Уучлаарай, энэ үйлдэл одоохондоо ажиллагаанд ороогүй байна
+                {% else %}
+                    Sorry, this feature isn’t available right now
+                {% endif %}
+            </div>
+        </div>
+        <div class="tab-pane" id="tab-link">
+            <div class="alert alert-dark shadow-sm fade mt-3 show" role="alert">
+                <i class="bi bi-exclamation-triangle" style="margin-right:.3rem"></i>
+                {% if localization.code == 'mn' %}
+                    Уучлаарай, энэ үйлдэл одоохондоо ажиллагаанд ороогүй байна
+                {% else %}
+                    Sorry, this feature isn’t available right now
+                {% endif %}
             </div>
         </div>
     </div>
+</form>
+<div class="text-bg-light rounded p-2 mt-3">
+    {% if user.can('system_content_insert') %}
+        <button class="submit-insert btn btn-success text-uppercase shadow-sm">
+            <i class="bi bi-check2"></i> {{ 'save'|text }}
+        </button>
+    {% endif %}
+    <a class="btn btn-secondary text-uppercase shadow-sm" href="{{ 'news'|link }}">
+        <i class="bi bi-arrow-left"></i> {{ 'list'|text }}
+    </a>
 </div>
 <script type="text/javascript">
     function copy(elem) {
-        var text = document.getElementById(elem);
+        let text = document.getElementById(elem);
         if (document.body.createTextRange) {
-            var range = document.body.createTextRange();
+            let range = document.body.createTextRange();
             range.moveToElementText(text);
             range.select();
         } else if (window.getSelection) {
-            var selection = window.getSelection();
-            var range = document.createRange();
+            let selection = window.getSelection();
+            let range = document.createRange();
             range.selectNodeContents(text);
             selection.removeAllRanges();
             selection.addRange(range);
@@ -248,129 +231,22 @@
         };
         return s.replace(/[&"'<>]/g, c => lookup[c]);
     }
-
-    Element.prototype.addFileRow = function (record) {
-        let fileName = escape(basename(record['path']));
-        let fileLinkAttr = ' target="__blank" onclick="return confirm(\'Are you sure you want to open this file [' + fileName + ']?\')"';
-        let fileAction = ' <a class="btn btn-sm btn-dark ajax-modal" data-bs-target="#dashboard-modal" data-bs-toggle="modal" href="{{ 'files-modal'|link({'table':'indo_news_files'}) }}?modal=' + record['type'] + '-tag&' + 'id=' + record['id'] + '"><i class="bi bi-code"></i></a>';
-        let fileIcon;
-        switch (record['type']) {
-            case 'image':
-                {
-                    fileIcon = '<img src="' + record['path'] + '" style="max-height:120px;height:100%">';
-                    if (record['mime_content_type'] !== 'image/gif') {
-                        if (record['description']) {
-                            fileLinkAttr = ' file-data-fancybox data-caption="' + escape(record['description']) + '"';
-                        } else {
-                            fileLinkAttr = ' file-data-fancybox data-caption="' + fileName + '"';
-                        }
-                    }
-                }
-                break;
-            case 'video':
-                fileIcon = '<video style="max-height:240px;height:100%;max-width:320px;width:100%" controls><source src="' + record['path'] + '"></video>';
-                break;
-            case 'audio':
-                fileIcon = '<audio controls><source src="' + record['path'] + '" type="' + record['mime_content_type'] + '"></audio>';
-                break;
-            default:
-                {
-                    fileIcon = '<i class="bi bi-hdd"></i>';
-                    fileAction = '';
-                }
-                break;
+    
+    const type = document.querySelector('input[name="type"]');
+    document.getElementById('type_list').addEventListener('click', function (e) {
+        if (e.target && e.target.nodeName === 'LI') {
+            type.value = e.target.getAttribute('value');
         }
-        fileAction = '<a class="btn btn-sm btn-info ajax-modal" data-bs-target="#dashboard-modal" data-bs-toggle="modal" href="{{ 'files-modal'|link({'table':'indo_news_files'}) }}?modal=location&id=' + record['id'] + '"><i class="bi bi-link"></i></a>' + fileAction;
-        {% if user.can('system_content_update') %}
-        fileAction += ' <a class="btn btn-sm btn-primary shadow-sm ajax-modal" data-bs-target="#dashboard-modal" data-bs-toggle="modal" href="{{ 'files-modal'|link({'table':'indo_news_files'}) }}?modal=files-update&id=' + record['id'] + '"><i class="bi bi-pencil-square"></i></a>';
-        {% endif %}
-        {% if user.can('system_content_delete') %}
-        fileAction += ' <a class="delete-file btn btn-sm btn-danger shadow-sm" href="' + record['id'] + '" data-title="' + fileName + '"><i class="bi bi-trash"></i></a>';
-        {% endif %}
+    });
 
-        let fileLink = '<a href="' + record['path'] + '"' + fileLinkAttr + '>' + fileIcon;
-        let fileFigure = '<figure class="figure">' + fileLink;
-        fileFigure += '<figcaption class="figure-caption text-primary">' + fileName + '</figcaption></a>';
-        fileFigure += '<p>' + fileAction + '</p>';
-        fileFigure += '</figure>';
-
-        let row = document.createElement('tr');
-        row.id = "file_" + record['id'];
-        let cell1 = document.createElement('td');
-        cell1.innerHTML = '<input name="files[]" value="' + record['id'] + '" type="hidden">' + fileFigure;
-        row.appendChild(cell1);
-
-        let cell2 = document.createElement('td');
-        cell2.innerHTML = '<p style="max-width:180px;word-wrap:break-all"><u>' + record['mime_content_type'] + '</u></p>' + formatSizeUnits(record['size']);
-        row.appendChild(cell2);
-
-        let cell3 = document.createElement('td');
-        cell3.innerHTML = record['description'];
-        row.appendChild(cell3);
-
-        let cell4 = document.createElement('td');
-        cell4.innerHTML = record['category'];
-        row.appendChild(cell4);
-
-        let cell5 = document.createElement('td');
-        cell5.innerHTML = record['keyword'];
-        row.appendChild(cell5);
-
-        this.querySelector('tbody')?.appendChild(row);
+    const category = document.querySelector('input[name="category"]');
+    document.getElementById('category_list').addEventListener('click', function (e) {
+        if (e.target && e.target.nodeName === 'LI') {
+            category.value = e.target.getAttribute('value');
+        }
+    });
         
-        if (record['type'] === 'image'
-            && record['mime_content_type'] !== 'image/gif'
-        ) {
-            Fancybox.close();
-            Fancybox.bind('[file-data-fancybox]', {groupAll: true});
-        }
-    };
-
     document.addEventListener('DOMContentLoaded', function () {
-        const type = document.querySelector('input[name="type"]');
-        document.getElementById('type_list').addEventListener('click', function (e) {
-            if (e.target && e.target.nodeName === 'LI') {
-                type.value = e.target.getAttribute('value');
-            }
-        });
-
-        const category = document.querySelector('input[name="category"]');
-        document.getElementById('category_list').addEventListener('click', function (e) {
-            if (e.target && e.target.nodeName === 'LI') {
-                category.value = e.target.getAttribute('value');
-            }
-        });
-
-        (function ($) {
-            $.fn.Select2Code = function () {
-                let format = function (option) {
-                    if (!option.id) {
-                        return option.text;
-                    }
-
-                    let ID = option.element.value.toLowerCase();
-                    return $('<span><img src="https://cdn.jsdelivr.net/gh/codesaur-php/HTML-Assets@2.5.3/flags/' + ID + '.png"> ' + option.text + '</span>');
-                };
-
-                if (jQuery().select2) {
-                    this.select2({
-                        width: '100%',
-                        templateResult: format,
-                        templateSelection: format,
-                        minimumResultsForSearch: -1,
-                        theme: 'bootstrap-5',
-                        escapeMarkup: function (m) {
-                            return m;
-                        }
-                    });
-                }
-                ;
-
-                return this;
-            };
-        }(jQuery));
-        $('#code_language').Select2Code();
-
         let full = document.getElementById('full');
         sceditor.create(full, {
             format: 'xhtml',
@@ -382,11 +258,12 @@
             style: 'https://cdn.jsdelivr.net/npm/sceditor@latest/minified/themes/content/default.min.css'
         });
         
-        FormSubmitHandler('.submit-insert', 'form#news_insert');
-
-        var fileList = document.getElementById('filelist');
-        var uploadFilesBtn = document.getElementById('uploadfiles');
-        var uploader = new plupload.Uploader({
+        let files = new motable('table#news_files');
+        files.setReady();
+        
+        let fileList = document.getElementById('filelist');
+        let uploadFilesBtn = document.getElementById('uploadfiles');
+        let uploader = new plupload.Uploader({
             runtimes: 'html5,flash,silverlight,html4',
             browse_button: 'pickfiles',
             container: document.getElementById('container'),
@@ -414,7 +291,7 @@
                 },
                 FilesAdded: function (up, files) {
                     plupload.each(files, function (file) {
-                        fileList.innerHTML += '<div id="' + file.id + '">' + file.name + ' (' + plupload.formatSize(file.size) + ') <b></b> <em></em></div>';
+                        fileList.innerHTML += `<div id="${file.id}">${file.name} (${plupload.formatSize(file.size)}) <b></b> <em></em></div>`;
                     });
 
                     if (uploadFilesBtn.disabled) {
@@ -424,12 +301,12 @@
                     }
                 },
                 UploadProgress: function (up, file) {
-                    document.getElementById(file.id).getElementsByTagName('b')[0].innerHTML = '<i class="bi bi-upload"> sending ' + file.percent + '%';
+                    document.getElementById(file.id).getElementsByTagName('b')[0].innerHTML = `<i class="bi bi-upload"> sending ${file.percent}'%`;
                     uploadFilesBtn.setAttribute('disabled', '');
                 },
                 FileUploaded: function (up, file, response) {
                     try {
-                        var res = JSON.parse(response.response);
+                        let res = JSON.parse(response.response);
                         if (!res.file) {
                             throw 'Invalid response!';
                         }
@@ -439,10 +316,10 @@
                             currentFile.getElementsByTagName('b')[0].innerHTML = '<i class="bi bi-check"></i> success';
                             currentFile.classList.add('text-success');
                         }
-                        
-                        filesTable.addFileRow(res);
 
-                        NotifyTop('primary', "{{ 'success'|text }}", 'Your file [' + file.name + '] was uploaded successfully.');
+                        files.append(res);
+
+                        NotifyTop('primary', "{{ 'success'|text }}", `Your file [${file.name}] was uploaded successfully.`);
                     } catch (err) {
                         if (err instanceof SyntaxError) {
                             err = 'Invalid request!';
@@ -451,7 +328,7 @@
                         } else {
                             err = 'Unknown error!';
                         }
-                        
+
                         let currentFile = document.getElementById(file.id);
                         if (currentFile !== null) {
                             currentFile.getElementsByTagName('b')[0].innerHTML = '<i class="bi bi-x"> error';
@@ -461,15 +338,15 @@
                         NotifyTop('danger', "{{ 'error'|text }}", err);
                     }
 
-                    let files = fileList.children;
+                    let list = fileList.children;
                     let processedFile = 0;
-                    for (var i = 0; i < files.length; i++) {
-                        let file = files[i];
+                    for (let i = 0; i < list.length; i++) {
+                        let file = list[i];
                         if (file.getElementsByTagName('b')[0].innerHTML !== '') {
                             processedFile++;
                         }
                     }
-                    if (processedFile === files.length) {
+                    if (processedFile === list.length) {
                         uploadFilesBtn.classList.remove('btn-info');
                         uploadFilesBtn.classList.add('btn-secondary');
                         uploadFilesBtn.setAttribute('disabled', '');
@@ -492,72 +369,212 @@
             }
         });
         uploader.init();
-
-        var filesTable = document.querySelector('#news_files');
-
-        filesTable.onChildClick('.ajax-modal', function (a, e) {
-            e.preventDefault();
-
-            return AjaxModal.ajaxContent(a);
-        });
-
-        let deleteAskHtml = {% if localization.code == 'mn' %}'<p class="text-danger mb-3">Та ({0}) файлыг устгахдаа итгэлтэй байна уу?</p>'{% else %}'<p class="text-danger mb-3">Are you sure to delete the file ({0})?</p>'{% endif %};
-        filesTable.onChildClick('.delete-file', function (a, e) {
-            e.preventDefault();
-
-            const id = a.getAttribute('href');
-            const title = a.getAttribute('data-title');
-            let question = deleteAskHtml.format(title.replace(/<\/?[^>]+(>|$)/g, ''));
-
-            let src = '';
-            let flag = a.parentNode.parentNode.children[0].querySelector('img');
-            if (flag) {
-                src = flag.src;
-            } else {
-                question = '<i class="bi bi-hdd text-danger mb-4" style="font-size:3rem"></i><p>' + question + '<p/>';
+        
+        const newsFilesLink = "{{ 'files-modal'|link({'table':'indo_news_files'}) }}";
+        const userCanUpdate = "{{ user.can('system_content_update') ? 'true' : '' }}";
+        const userCanDelete = "{{ user.can('system_content_delete') ? 'true' : '' }}";
+        motable.prototype.append = function (record) {
+            let fileIcon;
+            let fileName = escape(basename(record['path']));
+            let fileLinkAttr = `target="__blank" onclick="return confirm('Are you sure you want to open this file [${fileName}]?')"`;
+            let fileAction = ` <a class="btn btn-sm btn-dark ajax-modal" data-bs-target="#static-modal" data-bs-toggle="modal" href="${newsFilesLink}?modal=${record['type']}-tag&id=${record['id']}"><i class="bi bi-code"></i></a>`;
+            switch (record['type']) {
+                case 'image':
+                    {
+                        fileIcon = `<img src="${record['path']}" style="max-height:7.5rem;height:100%">`;
+                        if (record['mime_content_type'] !== 'image/gif') {
+                            if (record['description']) {
+                                fileLinkAttr = `file-data-fancybox data-caption="${escape(record['description'])}"`;
+                            } else {
+                                fileLinkAttr = `file-data-fancybox data-caption="${fileName}"`;
+                            }
+                        }
+                    }
+                    break;
+                case 'video':
+                    fileIcon = `<video style="max-height:15rem;height:100%;max-width:20rem;width:100%" controls><source src="${record['path']}"></video>`;
+                    break;
+                case 'audio':
+                    fileIcon = `<audio controls><source src="${record['path']}" type="${record['mime_content_type']}"></audio>`;
+                    break;
+                default:
+                    {
+                        fileIcon = '<i class="bi bi-hdd"></i>';
+                        fileAction = '';
+                    }
+                    break;
             }
-            Swal.fire({
-                imageUrl: src,
-                imageHeight: 64,
-                html: question,
-                showCancelButton: true,
-                cancelButtonText: '{{ 'cancel'|text|e }}',
-                confirmButtonText: '<i class="bi bi-trash"></i> {{ 'delete'|text|e }}',
-                confirmButtonColor: '#df4759',
-                showLoaderOnConfirm: true,
-                allowOutsideClick: () => !Swal.isLoading(),
-                backdrop: true,
-                preConfirm: () => {
-                    return fetch(
-                        '{{ 'files-delete'|link({'table':'indo_news_files'}) }}',
-                        {
-                            method: 'DELETE',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({id, title})
-                        }
-                    ).then(res => {
-                        return res.json();
-                    }).then(response => {
-                        if (response.status !== 'success') {
-                            throw new Error(response.message ?? 'Invalid response!');
-                        }
+           
+            fileAction = `<a class="btn btn-sm btn-info ajax-modal" data-bs-target="#static-modal" data-bs-toggle="modal" href="${newsFilesLink}?modal=location&id=${record['id']}"><i class="bi bi-link"></i></a>${fileAction}`;
+            if (userCanUpdate) fileAction += ` <a class="btn btn-sm btn-primary shadow-sm ajax-modal" data-bs-target="#static-modal" data-bs-toggle="modal" href="${newsFilesLink}?modal=files-update&id=${record['id']}"><i class="bi bi-pencil-square"></i></a>`;
+            if (userCanDelete) fileAction += ` <button class="delete-file btn btn-sm btn-danger shadow-sm" value="${record['id']}" type="button"><i class="bi bi-trash"></i></button>`;
+            
+            let fileFigure = `<a href="${record['path']}" ${fileLinkAttr}>${fileIcon}`;
+            fileFigure += ` <span style="display:block">${fileName}</span></a> ${fileAction}`;
 
-                        Swal.close();
+            let row = document.createElement('tr');
+            row.id = `file_${record['id']}`;
+            row.style.fontSize = '.875rem';
+            let cell1 = document.createElement('td');
+            cell1.innerHTML = `<input name="files[]" value="${record['id']}" type="hidden">${fileFigure}`;
+            row.appendChild(cell1);
 
-                        NotifyTop('success', "{{ 'success'|text|e }}", response.message ?? '');
+            let cell2 = document.createElement('td');
+            cell2.innerHTML = `<p style="max-width:11.25rem;word-wrap:break-all"><u>${record['mime_content_type']}</u></p>${formatSizeUnits(record['size'])}`;
+            row.appendChild(cell2);
 
-                        let row = a.parentNode.parentNode.parentNode.parentNode;
-                        if (row && row.parentNode !== null) {
-                            row.parentNode.removeChild(row);
-                        }
-                    })
-                    .catch(error => {
-                        Swal.showValidationMessage(error.message);
-                    });
+            let cell3 = document.createElement('td');
+            cell3.innerHTML = record['description'] ?? '';
+            row.appendChild(cell3);
+
+            let cell4 = document.createElement('td');
+            cell4.innerHTML = record['category'] ?? '';
+            row.appendChild(cell4);
+
+            let cell5 = document.createElement('td');
+            cell5.innerHTML = record['keyword'] ?? '';
+            row.appendChild(cell5);
+
+            let tBody = this.table.querySelector('tbody');
+            if (!tBody) {
+                tBody = document.createElement('tbody');
+                this.table.appendChild(tBody);
+
+                if (this.options.style.tbody)
+                    tBody.style.cssText = this.options.style.tbody;
+            }
+            tBody.appendChild(row);
+            
+            this.setReady();
+
+            if (record['type'] === 'image'
+                && record['mime_content_type'] !== 'image/gif'
+            ) {
+                Fancybox.close();
+                Fancybox.bind('[file-data-fancybox]', {groupAll: true});
+            }
+
+            let rowModals = row.querySelectorAll('.ajax-modal');
+            rowModals.forEach(a => a.addEventListener('click', function (e) {
+                e.preventDefault();            
+                ajaxModal(a);
+            }));
+
+            let thisTable = this;
+            const deleteFile = row.querySelector('.delete-file');
+            deleteFile.addEventListener('click', function (e) {
+                e.preventDefault();
+
+                let questiondel;
+                if (document.documentElement.lang === 'mn') {
+                    questiondel = '<p class="text-danger mb-3">Та {0} файлыг устгахдаа итгэлтэй байна уу?</p>';
+                } else {
+                    questiondel = '<p class="text-danger mb-3">Are you sure to delete the file {0}?</p>';
                 }
+
+                const id = deleteFile.value;
+                const title = row.children[0].textContent;
+                let question = questiondel.format(title.replace(/<\/?[^>]+(>|$)/g, ''));
+
+                let src = '';
+                let flag = row.children[0].querySelector('img');
+                if (flag) {
+                    src = flag.src;
+                } else {
+                    question = `<i class="bi bi-hdd text-danger mb-4" style="font-size:3rem"></i><p>${question}<p/>`;
+                }
+                Swal.fire({
+                    imageUrl: src,
+                    imageHeight: 64,
+                    html: question,
+                    showCancelButton: true,
+                    cancelButtonText: '{{ 'cancel'|text|e }}',
+                    confirmButtonText: '<i class="bi bi-trash"></i> {{ 'delete'|text|e }}',
+                    confirmButtonColor: '#df4759',
+                    showLoaderOnConfirm: true,
+                    allowOutsideClick: () => !Swal.isLoading(),
+                    backdrop: true,
+                    preConfirm: () => {
+                        return fetch(
+                            "{{ 'files-delete'|link({'table':'indo_news_files'}) }}",
+                            {
+                                method: 'DELETE',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({id, title})
+                            }
+                        ).then(res => {
+                            return res.json();
+                        }).then(response => {
+                            if (response.status !== 'success') {
+                                throw new Error(response.message ?? 'Invalid response!');
+                            }
+
+                            Swal.close();
+
+                            NotifyTop('success', "{{ 'success'|text|e }}", response.message ?? `File:${id} deleted`);
+
+                            row.remove();
+                            thisTable.setReady();
+                        }).catch(error => {
+                            Swal.showValidationMessage(error.message);
+                        });
+                    }
+                });
+            });
+        };
+    });
+        
+    const formInsert = document.querySelector('form#news_insert');
+    if (!formInsert) {
+        NotifyTop('danger', "{{ 'error'|text|e }}", 'Form not found!');
+    } else {
+        const submitters = document.querySelectorAll('button.submit-insert');
+        submitters.forEach(function (btn) {
+            btn.addEventListener('click', function (e) {
+                e.preventDefault();
+                formInsert.requestSubmit();
             });
         });
-    });
+
+        formInsert.addEventListener('submit', function (event) {
+            event.preventDefault();
+
+            const _valid = this.checkValidity();
+            this.classList.add('was-validated');
+            if (!_valid) {
+                event.stopPropagation();
+                return NotifyTop('danger', "{{ 'error'|text|e }}", "{{ 'u-have-some-form-errors'|text|e }}");
+            }
+
+            submitters.forEach(function (btn) { btn.growNstop(); });
+
+            const data = new FormData(this);
+            fetch(
+                this.action,
+                {
+                    body: data,
+                    method: this.getAttribute('method') ?? 'POST'
+                }
+            ).then(res => {
+                let contentType = res.headers.get('content-type');
+                if (contentType.indexOf('application/json') !== -1) {
+                    return res.json();
+                }
+                throw new Error("HTTP [{0}]: {1}".format(res.status, res.statusText));
+            }).then(response => {
+                if (response.status !== 'success') {
+                    throw new Error(response.message ? response.message : 'Invalid response!');
+                }
+
+                window.location.href = "{{ 'news'|link }}";
+                
+                NotifyTop(response.type ?? 'success', response.title ?? "{{ 'success'|text|e }}", response.message ?? 'News created');
+            }).catch(error => {
+                NotifyTop('danger', "{{ 'error'|text|e }}", error.message);
+                submitters.forEach(function (btn) { btn.growNstop(); });
+            });
+        });
+    }
 </script>

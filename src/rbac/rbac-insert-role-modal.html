@@ -1,7 +1,7 @@
-<div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+<div class="modal-lg modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content">
-        <div class="modal-header modal-header-solid">
-            <h6 class="modal-title text-uppercase text-info">Add Role</h6>
+        <div class="modal-header">
+            <h3 class="modal-title fs-6 text-uppercase text-info">Add Role</h3>
             <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="{{ 'close'|text|e }}"></button>
         </div>
         <div class="modal-body">
@@ -22,14 +22,65 @@
                 </div>
             </form>
         </div>
-        <div class="modal-footer modal-footer-solid">
-            <button class="submit-new-role btn btn-info shadow-sm text-light" type="submit">
+        <div class="modal-footer">
+            <button class="submit-new-role btn btn-info shadow-sm text-light"">
                 <i class="bi bi-check"></i> <strong>{{ 'submit'|text }}</strong>
             </button>
-            <button class="btn btn-secondary shadow-sm" data-bs-dismiss="modal">{{ 'back'|text }}</button>
+            <button class="btn btn-secondary shadow-sm" type="button" data-bs-dismiss="modal" type="button">
+                {{ 'back'|text }}
+            </button>
         </div>
     </div>
 </div>
 <script type="text/javascript">
-FormSubmitHandler('.submit-new-role', 'form#rbac_role_insert');
+    const formInsert = document.querySelector('form#rbac_role_insert');
+    if (!formInsert) {
+        NotifyTop('danger', "{{ 'error'|text|e }}", 'Form not found!');
+    } else {
+        const submitter = document.querySelector('button.submit-new-role');
+        submitter.addEventListener('click', function (e) {
+            e.preventDefault();
+
+            formInsert.requestSubmit();
+        });
+
+        formInsert.addEventListener('submit', function (event) {
+            event.preventDefault();
+
+            const _valid = this.checkValidity();
+            this.classList.add('was-validated');
+            if (!_valid) {
+                event.stopPropagation();
+                return NotifyTop('danger', "{{ 'error'|text|e }}", "{{ 'u-have-some-form-errors'|text|e }}");
+            }
+
+            submitter.growNstop();
+
+            const data = new FormData(this);
+            fetch(
+                this.action,
+                {
+                    body: data,
+                    method: this.getAttribute('method') ?? 'POST'
+                }
+            ).then(res => {
+                let contentType = res.headers.get('content-type');
+                if (contentType.indexOf('application/json') !== -1) {
+                    return res.json();
+                }
+                throw new Error("HTTP [{0}]: {1}".format(res.status, res.statusText));
+            }).then(response => {
+                if (response.status !== 'success') {
+                    throw new Error(response.message ? response.message : 'Invalid response!');
+                }
+
+                window.location.reload();
+
+                NotifyTop(response.type ?? 'success', response.title ?? "{{ 'success'|text|e }}", response.message ?? 'Role created');
+            }).catch(error => {
+                NotifyTop('danger', "{{ 'error'|text|e }}", error.message);
+                submitter.growNstop();
+            });
+        });
+    }
 </script>

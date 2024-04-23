@@ -13,77 +13,50 @@ class OrganizationController extends DashboardController
 {
     public function index()
     {
-        if (!$this->isUserCan('system_organization_index')) {
-            $this->dashboardProhibited(null, 401)->render();
-            return;
-        }
-        
-        $dashboard = $this->twigDashboard(\dirname(__FILE__) . '/organization-index.html');
-        $dashboard->set('title', $this->text('organizations'));
-        $dashboard->render();
-        
-        $this->indolog('organization', LogLevel::NOTICE, 'Байгууллагуудын жагсаалтыг нээж үзэж байна', ['model' => OrganizationModel::class]);
-    }
-    
-    public function datatable()
-    {
         try {
-            $rows = [];
+            $context = ['model' => OrganizationModel::class];
             
             if (!$this->isUserCan('system_organization_index')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
             
-            $organizations = $this->indoget('/records?model=' . OrganizationModel::class);
-            $rbac_link = $this->generateLink('rbac-alias');
-            foreach ($organizations as $record) {
-                $id = $record['id'];
-                
-                $row = [$id];
-                
-                if (empty($record['logo'])) {
-                    $row[] = ' <i class="bi bi-building text-secondary" style="font-size:1.5rem"></i>';
-                } else {
-                    $row[] = '<img class="img-fluid img-thumbnail" src="' . $record['logo'] . '"  style="max-width:150px;max-height:60px">';
-                }
-                
-                $row[] = \htmlentities($record['name']);
-                
-                if ($this->getUser()->can('system_rbac')) {
-                    $rbac_query = 'alias=' . \urlencode($record['alias']) . '&title=' . \urlencode($record['name']);
-                    $row[] = '<a href="' . $rbac_link . '?' . $rbac_query . '">' . \htmlentities($record['alias']) . '</a>';
-                } else {
-                    $row[] = \htmlentities($record['alias']);
-                }
-
-                $action =
-                    '<a class="ajax-modal btn btn-sm btn-info shadow-sm" data-bs-target="#dashboard-modal" data-bs-toggle="modal" ' .
-                    'href="' . $this->generateLink('organization-view', ['id' => $id]) . '"><i class="bi bi-eye"></i></a>';
-                
-                if ($this->getUser()->can('system_organization_update')) {
-                    $action .=
-                        ' <a class="ajax-modal btn btn-sm btn-primary shadow-sm" data-bs-target="#dashboard-modal" data-bs-toggle="modal" ' .
-                        'href="' . $this->generateLink('organization-update', ['id' => $id]) . '"><i class="bi bi-pencil-square"></i></a>';
-                }
-                
-                if ($this->getUser()->can('system_organization_delete')) {
-                    $action .= ' <a class="delete-organization btn btn-sm btn-danger shadow-sm" href="' . $id . '"><i class="bi bi-trash"></i></a>';
-                }
-                
-                $row[] = $action;
-
-                $rows[] = $row;
-            }
-        } catch (\Throwable $e) {
-            $this->errorLog($e);
-        } finally {
-            $count = \count($rows);
-            $this->respondJSON([
-                'data' => $rows,
-                'recordsTotal' => $count,
-                'recordsFiltered' => $count,
-                'draw' => (int) ($this->getQueryParams()['draw'] ?? 0)
+            $organizations = $this->indo('/execute/fetch/all', [
+                'query' => 'SELECT id,name,logo,alias FROM indo_organizations WHERE is_active=1'
             ]);
+            $dashboard = $this->twigDashboard(
+                \dirname(__FILE__) . '/organization-index.html',
+                ['organizations' => $organizations]
+            );
+            $dashboard->set('title', $this->text('organizations'));
+            $dashboard->render();
+            
+            $message = 'Байгууллагуудын жагсаалтыг нээж үзэж байна';
+        } catch (\Throwable $e) {
+            $this->dashboardProhibited($e->getMessage(), $e->getCode())->render();
+
+            $level = LogLevel::ERROR;
+            $message = 'Байгууллагуудын жагсаалтыг нээж үзэх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
+            $context['error'] = ['code' => $e->getCode(), 'message' => $e->getMessage()];
+        } finally {
+            $this->indolog('organization', $level ?? LogLevel::NOTICE, $message, $context);
+        }
+    }
+    
+    public function list()
+    {
+        try {
+            if (!$this->isUserCan('system_organization_index')) {
+                throw new \Exception($this->text('system-no-permission'), 401);
+            }
+            
+            $this->respondJSON([
+                'status' => 'success',
+                'list' => $this->indo('/execute/fetch/all', [
+                    'query' => 'SELECT id,name,alias,logo FROM indo_organizations WHERE is_active=1'
+                ])
+            ]);
+        } catch (\Throwable $e) {
+            $this->respondJSON(['message' => $e->getMessage()], $e->getCode());
         }
     }
     
@@ -99,17 +72,17 @@ class OrganizationController extends DashboardController
             
             if ($is_submit) {
                 $parsedBody = $this->getParsedBody();
-                if (empty($parsedBody['org_alias'])
-                    || empty($parsedBody['org_name'])
+                if (empty($parsedBody['alias'])
+                    || empty($parsedBody['name'])
                 ) {
                     throw new \Exception($this->text('invalid-request'), 400);
                 }
                 
                 $record = [
-                    'name' => $parsedBody['org_name'],
-                    'alias' => \preg_replace('/[^A-Za-z0-9_-]/', '', $parsedBody['org_alias'])
+                    'name' => $parsedBody['name'],
+                    'alias' => \preg_replace('/[^A-Za-z0-9_-]/', '', $parsedBody['alias'])
                 ];
-                $parent_id = \filter_var($parsedBody['org_parent_id'] ?? 0, \FILTER_VALIDATE_INT);
+                $parent_id = \filter_var($parsedBody['parent_id'] ?? 0, \FILTER_VALIDATE_INT);
                 if ($parent_id !== false && $parent_id > 0) {
                     $record['parent_id'] = $parent_id;
                 }
@@ -121,7 +94,7 @@ class OrganizationController extends DashboardController
                 $file = new FileController($this->getRequest());
                 $file->setFolder("/organizations/$id");
                 $file->allowImageOnly();                
-                $logo = $file->moveUploaded('org_logo');
+                $logo = $file->moveUploaded('logo');
                 if ($logo) {
                     $payload = [
                         'record' => ['logo' => $logo['path']],
@@ -133,8 +106,7 @@ class OrganizationController extends DashboardController
                 
                 $this->respondJSON([
                     'status' => 'success',
-                    'message' => $this->text('record-insert-success'),
-                    'href' => $this->generateLink('organizations')
+                    'message' => $this->text('record-insert-success')
                 ]);
                 
                 $level = LogLevel::INFO;
@@ -184,6 +156,7 @@ class OrganizationController extends DashboardController
             }
             
             $record = $this->indoget('/record?model=' . OrganizationModel::class, ['id' => $id]);
+            $record['rbac_accounts'] = $this->getRBACAccounts($record['created_by'], $record['updated_by']);
             $context['record'] = $record;
             if (!empty($record['parent_id'])) {
                 try {
@@ -195,9 +168,7 @@ class OrganizationController extends DashboardController
                     $record['parent_name'] = '- no parent because its deleted -';
                 }
             }
-            $this->twigTemplate(
-                \dirname(__FILE__) . '/organization-retrieve-modal.html',
-                ['record' => $record, 'accounts' => $this->getAccounts()])->render();
+            $this->twigTemplate(\dirname(__FILE__) . '/organization-retrieve-modal.html', ['record' => $record])->render();
 
             $level = LogLevel::NOTICE;
             $message = "{$record['name']} байгууллагын мэдээллийг нээж үзэж байна";
@@ -224,19 +195,19 @@ class OrganizationController extends DashboardController
             
             if ($is_submit) {
                 $payload = $this->getParsedBody();
-                if (empty($payload['org_alias'])
-                    || empty($payload['org_name'])
+                if (empty($payload['alias'])
+                    || empty($payload['name'])
                 ) {
                     throw new \Exception($this->text('invalid-request'), 400);
                 }
                 
                 $record = [
-                    'name' => $payload['org_name'],
-                    'alias' => \preg_replace('/[^A-Za-z0-9_-]/', '', $payload['org_alias'])
+                    'name' => $payload['name'],
+                    'alias' => \preg_replace('/[^A-Za-z0-9_-]/', '', $payload['alias'])
                 ];
                 
-                if (isset($payload['org_parent_id'])) {
-                    $parent_id = \filter_var($payload['org_parent_id'], \FILTER_VALIDATE_INT);
+                if (isset($payload['parent_id'])) {
+                    $parent_id = \filter_var($payload['parent_id'], \FILTER_VALIDATE_INT);
                     if ($parent_id !== false && $parent_id >= 0) {
                         $record['parent_id'] = $parent_id;
                     }
@@ -261,7 +232,7 @@ class OrganizationController extends DashboardController
                 $file = new FileController($this->getRequest());
                 $file->setFolder("/organizations/$id");
                 $file->allowImageOnly();
-                $logo = $file->moveUploaded('org_logo');
+                $logo = $file->moveUploaded('logo');
                 if ($logo) {
                     $record['logo'] = $logo['path'];
                 }
@@ -287,8 +258,7 @@ class OrganizationController extends DashboardController
                 $this->respondJSON([
                     'status' => 'success',
                     'type' => 'primary',
-                    'message' => $this->text('record-update-success'),
-                    'href' => $this->generateLink('organizations')
+                    'message' => $this->text('record-update-success')
                 ]);
                 
                 $level = LogLevel::INFO;
@@ -328,7 +298,7 @@ class OrganizationController extends DashboardController
             }
             
             $payload = $this->getParsedBody();
-            if (empty($payload['id'])
+            if (!isset($payload['id'])
                 || !isset($payload['name'])
                 || !\filter_var($payload['id'], \FILTER_VALIDATE_INT)
             ) {
