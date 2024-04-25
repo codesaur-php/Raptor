@@ -286,11 +286,10 @@
             NotifyTop(response.type ?? 'success', response.title ?? "{{ 'success'|text|e }}", response.message ?? 'Language inserted');
         }).catch(error => {
             NotifyTop('danger', "{{ 'error'|text|e }}", error.message);
-            btnConfirm.growNstop();
-        }).finally(() => {
             if (requesting) {
                 requesting.style.display = 'none';
             }
+            btnConfirm.growNstop();
         });
     });
 </script>

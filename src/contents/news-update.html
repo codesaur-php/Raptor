@@ -17,7 +17,7 @@
 <script defer src="https://cdn.jsdelivr.net/combine/npm/sceditor@latest/minified/sceditor.min.js,npm/sceditor@latest/minified/formats/xhtml.min.js,npm/sceditor@latest/minified/icons/monocons.min.js"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.css">
 <script defer src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.umd.js"></script>
-<div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase text-bg-light rounded p-1 mb-2">
+<div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-2 shadow">
     <h3 class="px-2 my-auto fs-6 text-primary text-uppercase">
         <i class="bi bi-pencil-square"></i> {{ record['title']|e }}
     </h3>
@@ -214,7 +214,7 @@
         </div>
     </div>    
 </form>
-<div class="text-bg-light rounded p-2 mt-3">
+<div class="rounded p-2 mt-3 shadow">
     {% if user.can('system_content_update') %}
         <button class="submit-update btn btn-primary text-uppercase shadow-sm">
             <i class="bi bi-check2"></i> {{ 'save'|text }}
@@ -580,24 +580,24 @@
         submitters.forEach(function (button) {
             button.addEventListener('click', function (e) {
                 e.preventDefault();
-
                 formUpdate.requestSubmit();
             });
         });
 
         formUpdate.addEventListener('submit', function (event) {
             event.preventDefault();
-
+            
+            let datetimes = this.querySelectorAll('input[type="datetime-local"]');
+            datetimes?.forEach(input => { input.type = 'text'; });
             const _valid = this.checkValidity();
             this.classList.add('was-validated');
             if (!_valid) {
                 event.stopPropagation();
+                datetimes?.forEach(input => { input.type = 'datetime-local'; });
                 return NotifyTop('danger', "{{ 'error'|text|e }}", "{{ 'u-have-some-form-errors'|text|e }}");
             }
 
-            submitters.forEach(function (btn) {
-                btn.growNstop();
-            });
+            submitters.forEach(function (btn) { btn.growNstop(); });
 
             const data = new FormData(this);
             fetch(
@@ -622,10 +622,8 @@
                 NotifyTop(response.type ?? 'success', response.title ?? "{{ 'success'|text|e }}", response.message ?? 'News updated');
             }).catch(error => {
                 NotifyTop('danger', "{{ 'error'|text|e }}", error.message);
-            }).finally(() => {
-                submitters.forEach(function (btn) {
-                    btn.growNstop();
-                });
+                datetimes?.forEach(input => { input.type = 'datetime-local'; });
+                submitters.forEach(function (btn) { btn.growNstop(); });
             });
         });
     }

@@ -108,7 +108,6 @@
         submitters.forEach(function (button) {
             button.addEventListener('click', function (e) {
                 e.preventDefault();
-
                 formInsert.requestSubmit();
             });
         });
@@ -123,9 +122,7 @@
                 return NotifyTop('danger', "{{ 'error'|text|e }}", "{{ 'u-have-some-form-errors'|text|e }}");
             }
 
-            submitters.forEach(function (btn) {
-                btn.growNstop();
-            });
+            submitters.forEach(function (btn) { btn.growNstop(); });
 
             const data = new FormData(this);
             fetch(
@@ -150,10 +147,7 @@
                 NotifyTop(response.type ?? 'success', response.title ?? "{{ 'success'|text|e }}", response.message ?? 'Reference updated');
             }).catch(error => {
                 NotifyTop('danger', "{{ 'error'|text|e }}", error.message);
-            }).finally(() => {
-                submitters.forEach(function (btn) {
-                    btn.growNstop();
-                });
+                submitters.forEach(function (btn) { btn.growNstop(); });
             });
         });
     }

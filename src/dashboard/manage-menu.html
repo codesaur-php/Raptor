@@ -19,7 +19,7 @@
     }
 </style>
 <script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11" type="text/javascript"></script>
-<div class="d-flex flex-wrap justify-content-between align-items-center text-bg-light rounded p-1 mb-2">
+<div class="d-flex flex-wrap justify-content-between align-items-center rounded p-1 mb-2 shadow">
     <h3 class="px-2 my-auto fs-6 text-warning text-uppercase">
         <i class="bi bi-menu-button-wide-fill"></i> {{ 'menu'|text }}
     </h3>
@@ -541,7 +541,6 @@
         const submitter = document.querySelector('button.insert-menu');
         submitter.addEventListener('click', function (e) {
             e.preventDefault();
-
             formInsert.requestSubmit();
         });
 
@@ -592,7 +591,6 @@
         const submitter = document.querySelector('button.update-menu');
         submitter.addEventListener('click', function (e) {
             e.preventDefault();
-
             formUpdate.requestSubmit();
         });
 

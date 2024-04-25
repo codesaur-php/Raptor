@@ -269,8 +269,8 @@
                         showMessage(formLogin, 'success', response.message);
                         window.location.href = "{{ 'home'|link }}";
                     }).catch(error => {
-                        spinNstop(this);
                         showMessage(formLogin, 'danger', error.message);
+                        spinNstop(this);
                     });
                 });
                 
@@ -305,7 +305,6 @@
                         showMessage(formLogin, 'success', response.message ?? 'Success');
                     }).catch(error => {
                         showMessage(formForgot, 'danger', error.message);
-                    }).finally(() => {
                         spinNstop(this);
                     });
                 });
@@ -354,7 +353,6 @@
                         showMessage(formLogin, 'success', response.message ?? 'Success');
                     }).catch(error => {
                         showMessage(formSignUp, 'danger', error.message);
-                    }).finally(() => {
                         spinNstop(this);
                     });
                 });

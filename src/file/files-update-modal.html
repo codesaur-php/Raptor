@@ -68,7 +68,6 @@
         const submitter = document.querySelector('button.update-files-submit');
         submitter.addEventListener('click', function (e) {
             e.preventDefault();
-
             formUpdate.requestSubmit();
         });
 
@@ -116,6 +115,7 @@
                 NotifyTop(resp.type ?? 'success', resp.title ?? "{{ 'success'|text|e }}", resp.message ?? 'File record successfully updated');
             }).catch(error => {
                 NotifyTop('danger', "{{ 'error'|text|e }}", error.message);
+            }).finally(() => {
                 submitter.growNstop();
             });
         });

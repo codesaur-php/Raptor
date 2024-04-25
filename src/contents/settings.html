@@ -1,5 +1,5 @@
 {% set user_can = user.can('system_content_settings') %}
-<div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase text-bg-light rounded p-1 mb-2">
+<div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-2 shadow">
     <h3 class="px-2 my-auto fs-6 text-primary">
         <i class="bi bi-gear-fill"></i> {{ 'settings'|text }}
     </h3>
@@ -304,9 +304,7 @@
                 return NotifyTop('danger', "{{ 'error'|text|e }}", "{{ 'u-have-some-form-errors'|text|e }}");
             }
 
-            submitters.forEach(function (btn) {
-                btn.spinNstop();
-            });
+            submitters.forEach(function (btn) { btn.spinNstop(); });
 
             const data = new FormData(this);
             fetch(
@@ -330,9 +328,7 @@
             }).catch(error => {
                 NotifyTop('danger', "{{ 'error'|text|e }}", error.message);
             }).finally(() => {
-                submitters.forEach(function (btn) {
-                    btn.spinNstop();
-                });
+                submitters.forEach(function (btn) { btn.spinNstop(); });
             });
         });
     });
