@@ -99,7 +99,7 @@
                                         {{ user.getAccount()['first_name'] ~ ' ' ~ user.getAccount()['last_name'] }}
                                     </a>
                                 </li>
-                                {% if user.getOrganizations()|length > 1 or user.is('system_coder') %}
+                                {% if user.getOrganizations()|length > 1 or (user.is('system_coder') and org_count > 1) %}
                                     <li class="nav-item">
                                         <a class="nav-link" href="{{ 'organization-user'|link }}">
                                             {% if user.getOrganization()['logo'] is not empty %}

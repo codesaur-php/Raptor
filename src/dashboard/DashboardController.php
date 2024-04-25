@@ -16,9 +16,20 @@ class DashboardController extends \Raptor\Controller
     
     public function twigDashboard(string $template, array $vars = []): TwigTemplate
     {
+        try {
+            $result = $this->indo('/execute/fetch/all', [
+                'query' => 'SELECT COUNT(*) FROM indo_organizations WHERE is_active=1'
+            ]);
+            $org_count = $result[0]['COUNT(*)'];
+        } catch(\Throwable $e) {
+            $this->errorLog($e);
+        }
+        
         $dashboard = $this->twigTemplate(\dirname(__FILE__) . '/dashboard.html');
+        $dashboard->set('org_count', $org_count ?? 2);
         $dashboard->set('sidemenu', $this->getAccountMenu());
         $dashboard->set('content', $this->twigTemplate($template, $vars));
+        
         foreach ($this->getAttribute('settings', []) as $key => $value) {
             $dashboard->set($key, $value);
         }
@@ -183,15 +194,15 @@ class DashboardController extends \Raptor\Controller
             $system_id = $this->indopost($recordMenu, ['content' => ['mn' => ['title' => 'Систем'], 'en' => ['title' => 'System']], 'record' => ['position' => '300']]);
             $this->indopost($recordMenu, [
                 'content' => ['mn' => ['title' => 'Хэрэглэгчид'], 'en' => ['title' => 'Accounts']],
-                'record' => ['parent_id' => $system_id, 'position' => '310', 'alias' => 'system', 'permission' => 'system_account_index', 'icon' => 'bi bi-people-fill', 'href' => $this->generateLink('accounts')]
+                'record' => ['parent_id' => $system_id, 'position' => '310', 'permission' => 'system_account_index', 'icon' => 'bi bi-people-fill', 'href' => $this->generateLink('accounts')]
             ]);
             $this->indopost($recordMenu, [
                 'content' => ['mn' => ['title' => 'Байгууллагууд'], 'en' => ['title' => 'Organizations']],
-                'record' => ['parent_id' => $system_id, 'position' => '320', 'alias' => 'system', 'permission' => 'system_organization_index', 'icon' => 'bi bi-building', 'href' => $this->generateLink('organizations')]
+                'record' => ['parent_id' => $system_id, 'position' => '320', 'permission' => 'system_organization_index', 'icon' => 'bi bi-building', 'href' => $this->generateLink('organizations')]
             ]);
             $this->indopost($recordMenu, [
                 'content' => ['mn' => ['title' => 'Хандалтын протокол'], 'en' => ['title' => 'Access logs']],
-                'record' => ['parent_id' => $system_id, 'position' => '340', 'alias' => 'system', 'permission' => 'system_logger', 'icon' => 'bi bi-list-stars', 'href' => $this->generateLink('logs')]
+                'record' => ['parent_id' => $system_id, 'position' => '340', 'permission' => 'system_logger', 'icon' => 'bi bi-list-stars', 'href' => $this->generateLink('logs')]
             ]);
         } catch (\Throwable $e) {
             $this->errorLog($e);
