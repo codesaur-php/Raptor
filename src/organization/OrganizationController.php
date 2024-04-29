@@ -93,7 +93,7 @@ class OrganizationController extends DashboardController
                 
                 $file = new FileController($this->getRequest());
                 $file->setFolder("/organizations/$id");
-                $file->allowImageOnly();                
+                $file->allowImageOnly();
                 $logo = $file->moveUploaded('logo');
                 if ($logo) {
                     $payload = [

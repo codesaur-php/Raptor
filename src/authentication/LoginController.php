@@ -255,7 +255,7 @@ class LoginController extends \Raptor\Controller
             }
             
             try {
-                $account = $this->indo('/record?model=' . Accounts::class, ['email' => $payload['email']]);                
+                $account = $this->indo('/record?model=' . Accounts::class, ['email' => $payload['email']]);
             } catch (\Throwable $e) {
             }
             

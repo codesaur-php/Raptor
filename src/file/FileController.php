@@ -129,7 +129,7 @@ class FileController extends DashboardController
             }
             
             $uploadedFile->moveTo($upload_path . $file_name);
-            $this->_error = \UPLOAD_ERR_OK;            
+            $this->_error = \UPLOAD_ERR_OK;
             
             $file_path = $upload_path . $file_name;
             $mime_type = \mime_content_type($file_path) ?: 'application/octet-stream';

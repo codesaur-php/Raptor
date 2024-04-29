@@ -194,7 +194,7 @@
                     formSignUp.classList.add('d-none');
                     formForgot.classList.add('d-none');
 
-                    formLogin.classList.remove('d-none');            
+                    formLogin.classList.remove('d-none');
                     formLogin.classList.add('animate__animated', 'animate__flipInX');
                     
                     removeAlert(formSignUp);
@@ -214,7 +214,7 @@
                     formLogin.classList.add('d-none');
                     formSignUp.classList.add('d-none');
 
-                    formForgot.classList.remove('d-none');            
+                    formForgot.classList.remove('d-none');
                     formForgot.classList.add('animate__animated', 'animate__flipInX');
                 });
                 
@@ -224,7 +224,7 @@
                     formLogin.classList.add('d-none');
                     formForgot.classList.add('d-none');
 
-                    formSignUp.classList.remove('d-none');            
+                    formSignUp.classList.remove('d-none');
                     formSignUp.classList.add('animate__animated', 'animate__flipInX');
                 });
                 
@@ -240,7 +240,7 @@
                     e.preventDefault();
                     
                     const username = formLogin.querySelector('input[name="username"]').value;
-                    const password = formLogin.querySelector('input[name="password"]').value;                    
+                    const password = formLogin.querySelector('input[name="password"]').value;
                     if (isBlank(username)) {
                         return showMessage(formLogin, 'warning', "{{ 'error-username-empty'|text|e }}");
                     } else if (isBlank(password)) {

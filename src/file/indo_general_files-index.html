@@ -97,7 +97,7 @@
             switch (file['type']) {
                 case 'image':
                     {
-                        fileIcon = `<img src="${file['path']}" style="max-height:7.5rem;max-width:20rem;height:100%">`;                    
+                        fileIcon = `<img src="${file['path']}" style="max-height:7.5rem;max-width:20rem;height:100%">`;
                         if (file['mime_content_type'] !== 'image/gif') {
                             if (file['description']) {
                                 fileLinkAttr = `file-data-fancybox data-caption="${escape(file['description'])}"`;
@@ -166,7 +166,7 @@
 
             let rowModals = row.querySelectorAll('.ajax-modal');
             rowModals.forEach(a => a.addEventListener('click', function (e) {
-                e.preventDefault();            
+                e.preventDefault();
                 ajaxModal(a);
             }));
             

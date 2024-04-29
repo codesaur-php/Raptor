@@ -175,7 +175,7 @@ class PagesController extends DashboardController
                 );
                 $image = null;
                 foreach ($context['files'] as &$file) {
-                    unset($file['file']);                    
+                    unset($file['file']);
                     if ($file['type'] == 'image') {
                         if (!isset($image)) {
                             $image = $file;
@@ -353,7 +353,7 @@ class PagesController extends DashboardController
                     }
                 }
             } else {
-                $record = $this->indoget('/record?model=' . PagesModel::class, ['id' => $id]);                
+                $record = $this->indoget('/record?model=' . PagesModel::class, ['id' => $id]);
                 $record['rbac_accounts'] = $this->getRBACAccounts($record['created_by'], $record['updated_by']);
                 $context['record'] = $record;
                 try {
@@ -409,7 +409,7 @@ class PagesController extends DashboardController
             }
             $context['payload'] = $payload;
             
-            $id = \filter_var($payload['id'], \FILTER_VALIDATE_INT);            
+            $id = \filter_var($payload['id'], \FILTER_VALIDATE_INT);
             $deleted = $this->indodelete("/record?model=" . PagesModel::class, ['WHERE' => "id=$id"]);
             if (empty($deleted)) {
                 throw new \Exception($this->text('no-record-selected'));

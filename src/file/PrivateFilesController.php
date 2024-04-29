@@ -179,8 +179,8 @@ class PrivateFilesController extends FilesController
             ) {
                 throw new \Exception($this->text('invalid-request'), 400);
             }
-            $context['payload'] = $payload;            
-            $id = \filter_var($payload['id'], \FILTER_VALIDATE_INT);            
+            $context['payload'] = $payload;
+            $id = \filter_var($payload['id'], \FILTER_VALIDATE_INT);
             $deleted = $this->indodelete("/files/$table", ['WHERE' => "id=$id"]);
             if (empty($deleted)) {
                 throw new \Exception($this->text('no-record-selected'));

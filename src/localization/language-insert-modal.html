@@ -263,7 +263,7 @@
         let inputs = document.querySelectorAll('#confirmPanel input');
         inputs.forEach(function (input) {
             formData.append(input.name, input.value);
-        }); 
+        });
         fetch(
             "{{ 'language-insert'|link }}",
             {

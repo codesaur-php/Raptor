@@ -475,7 +475,7 @@
 
             let rowModals = row.querySelectorAll('.ajax-modal');
             rowModals.forEach(a => a.addEventListener('click', function (e) {
-                e.preventDefault();            
+                e.preventDefault();
                 ajaxModal(a);
             }));
 
@@ -560,7 +560,7 @@
                 event.preventDefault();
 
                 let datetimes = this.querySelectorAll('input[type="datetime-local"]');
-                datetimes?.forEach(input => { input.type = 'text'; });            
+                datetimes?.forEach(input => { input.type = 'text'; });
                 const _valid = this.checkValidity();
                 this.classList.add('was-validated');
                 if (!_valid) {

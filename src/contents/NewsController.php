@@ -173,7 +173,7 @@ class NewsController extends DashboardController
                 );
                 $image = null;
                 foreach ($context['files'] as &$file) {
-                    unset($file['file']);                    
+                    unset($file['file']);
                     if ($file['type'] == 'image') {
                         if (!isset($image)) {
                             $image = $file;
@@ -346,7 +346,7 @@ class NewsController extends DashboardController
                     }
                 }
             } else {
-                $record = $this->indoget('/record?model=' . NewsModel::class, ['id' => $id]);                
+                $record = $this->indoget('/record?model=' . NewsModel::class, ['id' => $id]);
                 $record['rbac_accounts'] = $this->getRBACAccounts($record['created_by'], $record['updated_by']);
                 $context['record'] = $record;
                 try {
