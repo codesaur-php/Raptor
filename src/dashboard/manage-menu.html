@@ -532,105 +532,105 @@
             viewModal.querySelector('input[name="updated_at"]').value = record.updated_at;
             viewModal.querySelector('input[name="updated_by"]').value = record.updated_by;
         }));
+        
+        const formInsert = document.querySelector('form#menu_insert');
+        if (!formInsert) {
+            NotifyTop('danger', "{{ 'error'|text|e }}", 'Form not found!');
+        } else {
+            const submitter = document.querySelector('button.insert-menu');
+            submitter.addEventListener('click', function (e) {
+                e.preventDefault();
+                formInsert.requestSubmit();
+            });
+
+            formInsert.addEventListener('submit', function (event) {
+                event.preventDefault();
+
+                const _valid = this.checkValidity();
+                this.classList.add('was-validated');
+                if (!_valid) {
+                    event.stopPropagation();
+                    return NotifyTop('danger', "{{ 'error'|text|e }}", "{{ 'u-have-some-form-errors'|text|e }}");
+                }
+
+                submitter.growNstop();
+
+                const data = new FormData(this);
+                fetch(
+                    this.action,
+                    {
+                        body: data,
+                        method: this.getAttribute('method') ?? 'POST'
+                    }
+                ).then(res => {
+                    let contentType = res.headers.get('content-type');
+                    if (contentType.indexOf('application/json') !== -1) {
+                        return res.json();
+                    }
+                    throw new Error("HTTP [{0}]: {1}".format(res.status, res.statusText));
+                }).then(response => {
+                    if (response.status !== 'success') {
+                        throw new Error(response.message ? response.message : 'Invalid response!');
+                    }
+
+                    window.location.reload();
+
+                    NotifyTop(response.type ?? 'success', response.title ?? "{{ 'success'|text|e }}", response.message ?? 'Menu created');
+                }).catch(error => {
+                    NotifyTop('danger', "{{ 'error'|text|e }}", error.message);
+                    submitter.growNstop();
+                });
+            });
+        }
+
+        const formUpdate = document.querySelector('form#menu_update');
+        if (!formUpdate) {
+            NotifyTop('danger', "{{ 'error'|text|e }}", 'Form not found!');
+        } else {
+            const submitter = document.querySelector('button.update-menu');
+            submitter.addEventListener('click', function (e) {
+                e.preventDefault();
+                formUpdate.requestSubmit();
+            });
+
+            formUpdate.addEventListener('submit', function (event) {
+                event.preventDefault();
+
+                const _valid = this.checkValidity();
+                this.classList.add('was-validated');
+                if (!_valid) {
+                    event.stopPropagation();
+                    return NotifyTop('danger', "{{ 'error'|text|e }}", "{{ 'u-have-some-form-errors'|text|e }}");
+                }
+
+                submitter.growNstop();
+
+                const data = new FormData(this);
+                fetch(
+                    this.action,
+                    {
+                        body: data,
+                        method: this.getAttribute('method') ?? 'PUT'
+                    }
+                ).then(res => {
+                    let contentType = res.headers.get('content-type');
+                    if (contentType.indexOf('application/json') !== -1) {
+                        return res.json();
+                    }
+                    throw new Error("HTTP [{0}]: {1}".format(res.status, res.statusText));
+                }).then(response => {
+                    if (response.status !== 'success') {
+                        throw new Error(response.message ? response.message : 'Invalid response!');
+                    }
+
+                    window.location.reload();
+
+                    NotifyTop(response.type ?? 'success', response.title ?? "{{ 'success'|text|e }}", response.message ?? 'Menu updated');
+                }).catch(error => {
+                    NotifyTop('danger', "{{ 'error'|text|e }}", error.message);
+                    submitter.growNstop();
+                });
+            });
+        }
     });
-    
-    const formInsert = document.querySelector('form#menu_insert');
-    if (!formInsert) {
-        NotifyTop('danger', "{{ 'error'|text|e }}", 'Form not found!');
-    } else {
-        const submitter = document.querySelector('button.insert-menu');
-        submitter.addEventListener('click', function (e) {
-            e.preventDefault();
-            formInsert.requestSubmit();
-        });
-
-        formInsert.addEventListener('submit', function (event) {
-            event.preventDefault();
-
-            const _valid = this.checkValidity();
-            this.classList.add('was-validated');
-            if (!_valid) {
-                event.stopPropagation();
-                return NotifyTop('danger', "{{ 'error'|text|e }}", "{{ 'u-have-some-form-errors'|text|e }}");
-            }
-
-            submitter.growNstop();
-
-            const data = new FormData(this);
-            fetch(
-                this.action,
-                {
-                    body: data,
-                    method: this.getAttribute('method') ?? 'POST'
-                }
-            ).then(res => {
-                let contentType = res.headers.get('content-type');
-                if (contentType.indexOf('application/json') !== -1) {
-                    return res.json();
-                }
-                throw new Error("HTTP [{0}]: {1}".format(res.status, res.statusText));
-            }).then(response => {
-                if (response.status !== 'success') {
-                    throw new Error(response.message ? response.message : 'Invalid response!');
-                }
-
-                window.location.reload();
-
-                NotifyTop(response.type ?? 'success', response.title ?? "{{ 'success'|text|e }}", response.message ?? 'Menu created');
-            }).catch(error => {
-                NotifyTop('danger', "{{ 'error'|text|e }}", error.message);
-                submitter.growNstop();
-            });
-        });
-    }
-    
-    const formUpdate = document.querySelector('form#menu_update');
-    if (!formUpdate) {
-        NotifyTop('danger', "{{ 'error'|text|e }}", 'Form not found!');
-    } else {
-        const submitter = document.querySelector('button.update-menu');
-        submitter.addEventListener('click', function (e) {
-            e.preventDefault();
-            formUpdate.requestSubmit();
-        });
-
-        formUpdate.addEventListener('submit', function (event) {
-            event.preventDefault();
-
-            const _valid = this.checkValidity();
-            this.classList.add('was-validated');
-            if (!_valid) {
-                event.stopPropagation();
-                return NotifyTop('danger', "{{ 'error'|text|e }}", "{{ 'u-have-some-form-errors'|text|e }}");
-            }
-
-            submitter.growNstop();
-
-            const data = new FormData(this);
-            fetch(
-                this.action,
-                {
-                    body: data,
-                    method: this.getAttribute('method') ?? 'PUT'
-                }
-            ).then(res => {
-                let contentType = res.headers.get('content-type');
-                if (contentType.indexOf('application/json') !== -1) {
-                    return res.json();
-                }
-                throw new Error("HTTP [{0}]: {1}".format(res.status, res.statusText));
-            }).then(response => {
-                if (response.status !== 'success') {
-                    throw new Error(response.message ? response.message : 'Invalid response!');
-                }
-
-                window.location.reload();
-
-                NotifyTop(response.type ?? 'success', response.title ?? "{{ 'success'|text|e }}", response.message ?? 'Menu updated');
-            }).catch(error => {
-                NotifyTop('danger', "{{ 'error'|text|e }}", error.message);
-                submitter.growNstop();
-            });
-        });
-    }
 </script>

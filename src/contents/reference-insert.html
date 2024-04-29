@@ -100,55 +100,57 @@
         }
     });
     
-    const formInsert = document.querySelector('form#reference_insert');
-    if (!formInsert) {
-        NotifyTop('danger', "{{ 'error'|text|e }}", 'Form not found!');
-    } else {
-        const submitters = document.querySelectorAll('button.submit-insert');
-        submitters.forEach(function (button) {
-            button.addEventListener('click', function (e) {
-                e.preventDefault();
-                formInsert.requestSubmit();
+    document.addEventListener('DOMContentLoaded', function () {
+        const formInsert = document.querySelector('form#reference_insert');
+        if (!formInsert) {
+            NotifyTop('danger', "{{ 'error'|text|e }}", 'Form not found!');
+        } else {
+            const submitters = document.querySelectorAll('button.submit-insert');
+            submitters.forEach(function (button) {
+                button.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    formInsert.requestSubmit();
+                });
             });
-        });
 
-        formInsert.addEventListener('submit', function (event) {
-            event.preventDefault();
+            formInsert.addEventListener('submit', function (event) {
+                event.preventDefault();
 
-            const _valid = this.checkValidity();
-            this.classList.add('was-validated');
-            if (!_valid) {
-                event.stopPropagation();
-                return NotifyTop('danger', "{{ 'error'|text|e }}", "{{ 'u-have-some-form-errors'|text|e }}");
-            }
-
-            submitters.forEach(function (btn) { btn.growNstop(); });
-
-            const data = new FormData(this);
-            fetch(
-                this.action,
-                {
-                    body: data,
-                    method: this.getAttribute('method') ?? 'POST'
-                }
-            ).then(res => {
-                let contentType = res.headers.get('content-type');
-                if (contentType.indexOf('application/json') !== -1) {
-                    return res.json();
-                }
-                throw new Error("HTTP [{0}]: {1}".format(res.status, res.statusText));
-            }).then(response => {
-                if (response.status !== 'success') {
-                    throw new Error(response.message ? response.message : 'Invalid response!');
+                const _valid = this.checkValidity();
+                this.classList.add('was-validated');
+                if (!_valid) {
+                    event.stopPropagation();
+                    return NotifyTop('danger', "{{ 'error'|text|e }}", "{{ 'u-have-some-form-errors'|text|e }}");
                 }
 
-                window.location.href = "{{ 'references'|link }}";
-
-                NotifyTop(response.type ?? 'success', response.title ?? "{{ 'success'|text|e }}", response.message ?? 'Reference updated');
-            }).catch(error => {
-                NotifyTop('danger', "{{ 'error'|text|e }}", error.message);
                 submitters.forEach(function (btn) { btn.growNstop(); });
+
+                const data = new FormData(this);
+                fetch(
+                    this.action,
+                    {
+                        body: data,
+                        method: this.getAttribute('method') ?? 'POST'
+                    }
+                ).then(res => {
+                    let contentType = res.headers.get('content-type');
+                    if (contentType.indexOf('application/json') !== -1) {
+                        return res.json();
+                    }
+                    throw new Error("HTTP [{0}]: {1}".format(res.status, res.statusText));
+                }).then(response => {
+                    if (response.status !== 'success') {
+                        throw new Error(response.message ? response.message : 'Invalid response!');
+                    }
+
+                    window.location.href = "{{ 'references'|link }}";
+
+                    NotifyTop(response.type ?? 'success', response.title ?? "{{ 'success'|text|e }}", response.message ?? 'Reference updated');
+                }).catch(error => {
+                    NotifyTop('danger', "{{ 'error'|text|e }}", error.message);
+                    submitters.forEach(function (btn) { btn.growNstop(); });
+                });
             });
-        });
-    }
+        }
+    });
 </script>
