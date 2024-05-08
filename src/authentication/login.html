@@ -62,9 +62,9 @@
                 </p>
                 <div class="text-center">
                     <span id="language">
-                    {%  if lang == 'mn' %}
+                    {%  if lang == 'mn' and localization.language['en'] %}
                         Click for <a href="{{ 'language'|link({'code': 'en'}) }}">English</a>
-                    {% else %}
+                    {% elseif localization.language['mn'] %}
                         Системийн хэлийг <a href="{{ 'language'|link({'code': 'mn'}) }}">Монгол</a> болго
                     {% endif %}
                     </span>
