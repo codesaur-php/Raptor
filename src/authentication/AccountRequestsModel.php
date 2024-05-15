@@ -21,7 +21,6 @@ class AccountRequestsModel extends Model
             new Column('status', 'tinyint', 1, 1),
             new Column('is_active', 'tinyint', 1, 1),
             new Column('created_at', 'datetime'),
-            new Column('created_by', 'bigint', 8),
             new Column('updated_at', 'datetime'),
             new Column('updated_by', 'bigint', 8)
         ]);
