@@ -481,6 +481,7 @@
 
                         thisRow.remove();
                         menu.setReady();
+                        
                         window.location.reload();
 
                         NotifyTop('success', "{{ 'success'|text|e }}", response.message ?? `Menu (${caption}) deleted`);
