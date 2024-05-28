@@ -167,6 +167,7 @@
                     NotifyTop('success', "{{ 'success'|text|e }}", response.message ?? `Account (${name}) request deleted`);
 
                     thisRow.remove();
+                    newbies.setReady();
                 }).catch(error => {
                     Swal.showValidationMessage(error.message);
                 });
