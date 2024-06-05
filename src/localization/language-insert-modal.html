@@ -265,7 +265,7 @@
             formData.append(input.name, input.value);
         });
         fetch(
-            "{{ 'language-insert'|link }}",
+            `{{ 'language-insert'|link }}`,
             {
                 method: 'POST',
                 body: formData
@@ -283,9 +283,9 @@
 
             window.location.reload();
             
-            NotifyTop(response.type ?? 'success', response.title ?? "{{ 'success'|text|e }}", response.message ?? 'Language inserted');
+            NotifyTop(response.type ?? 'success', response.title ?? `{{ 'success'|text|e }}`, response.message ?? 'Language inserted');
         }).catch(error => {
-            NotifyTop('danger', "{{ 'error'|text|e }}", error.message);
+            NotifyTop('danger', `{{ 'error'|text|e }}`, error.message);
             if (requesting) {
                 requesting.style.display = 'none';
             }

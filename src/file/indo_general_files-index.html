@@ -20,8 +20,8 @@
 </div>
 <div class="row">
     <div id="container">
-        <button class="btn btn-warning shadow-sm" id="pickfiles" type="button">{{ 'select-files'|text }}</button>
-        <button class="btn btn-secondary shadow-sm" id="uploadfiles" disabled type="button">{{ 'upload-files'|text }}</button>
+        <button class="btn btn-sm btn-warning shadow-sm" id="pickfiles" type="button">{{ 'select-files'|text }}</button>
+        <button class="btn btn-sm btn-secondary shadow-sm" id="uploadfiles" disabled type="button">{{ 'upload-files'|text }}</button>
     </div>
 </div>
 <table class="table table-sm table-bordered table-striped table-hover" id="files">
@@ -86,9 +86,9 @@
     }
     
     document.addEventListener('DOMContentLoaded', function () {
-        const filesModalLink = "{{ 'files-modal'|link({'table': table}) }}";
-        const userCanUpdate = "{{ user.can('system_content_update') ? 'true' : '' }}";
-        const userCanDelete = "{{ user.can('system_content_delete') ? 'true' : '' }}";
+        const filesModalLink = `{{ 'files-modal'|link({'table': table}) }}`;
+        const userCanUpdate = `{{ user.can('system_content_update') ? 'true' : '' }}`;
+        const userCanDelete = `{{ user.can('system_content_delete') ? 'true' : '' }}`;
         motable.prototype.append = function (file) {
             let fileIcon;
             let fileName = escape(basename(file['path']));
@@ -198,15 +198,15 @@
                     imageHeight: 64,
                     html: question,
                     showCancelButton: true,
-                    cancelButtonText: '{{ 'cancel'|text|e }}',
-                    confirmButtonText: '<i class="bi bi-trash"></i> {{ 'delete'|text|e }}',
+                    cancelButtonText: `{{ 'cancel'|text|e }}`,
+                    confirmButtonText: `<i class="bi bi-trash"></i> {{ 'delete'|text|e }}`,
                     confirmButtonColor: '#df4759',
                     showLoaderOnConfirm: true,
                     allowOutsideClick: () => !Swal.isLoading(),
                     backdrop: true,
                     preConfirm: () => {
                         return fetch(
-                            "{{ 'files-delete'|link({'table':table}) }}",
+                            `{{ 'files-delete'|link({'table':table}) }}`,
                             {
                                 method: 'DELETE',
                                 headers: {
@@ -223,7 +223,7 @@
 
                             Swal.close();
 
-                            NotifyTop('success', "{{ 'success'|text|e }}", response.message ?? `File:${id} deleted`);
+                            NotifyTop('success', `{{ 'success'|text|e }}`, response.message ?? `File:${id} deleted`);
 
                             row.remove();
                             thisTable.setReady();
@@ -237,7 +237,7 @@
         
         const files = new motable('table#files');
         fetch(
-            "{{ 'files-list'|link({'table': table}) }}"
+            `{{ 'files-list'|link({'table': table}) }}`
         ).then(res => {
             let contentType = res.headers.get('content-type');
             if (contentType.indexOf('application/json') !== -1) {
@@ -263,9 +263,9 @@
             runtimes: 'html5,flash,silverlight,html4',
             browse_button: 'pickfiles',
             container: document.getElementById('container'),
-            url: "{{ 'files-post'|link({'input':'file', 'table':table, 'id':0, 'folder':'file'}) }}",
+            url: `{{ 'files-post'|link({'input':'file', 'table':table, 'id':0, 'folder':'file'}) }}`,
             filters: {
-                max_file_size: '{{ max_file_size ?? '8mb' }}',
+                max_file_size: `{{ max_file_size ?? '8mb' }}`,
                 mime_types: [
                     {title: 'Images', extensions: 'jpg,jpeg,jpe,png,gif,ico'},
                     {title: 'Documents', extensions: 'pdf,doc,docx,xls,xlsx,ppt,pptx,pps,ppsx,odt'},
@@ -287,7 +287,7 @@
                 },
                 FilesAdded: function (up, files) {
                     plupload.each(files, function (file) {
-                        fileList.innerHTML += `<div id="${file.id}">${file.name} ('${plupload.formatSize(file.size)}) <b></b> <em></em></div>`;
+                        fileList.innerHTML += `<div id="${file.id}">${file.name} (${plupload.formatSize(file.size)}) <b></b> <em></em></div>`;
                     });
 
                     if (uploadFilesBtn.disabled) {
@@ -322,7 +322,7 @@
                             Fancybox.bind('[file-data-fancybox]', {groupAll: true});
                         }
 
-                        NotifyTop('primary', "{{ 'success'|text }}", `Your file [${file.name}] was uploaded successfully.`);
+                        NotifyTop('primary', `{{ 'success'|text }}`, `Your file [${file.name}] was uploaded successfully.`);
                     } catch (err) {
                         if (err instanceof SyntaxError) {
                             err = 'Invalid request!';
@@ -338,7 +338,7 @@
                             currentFile.getElementsByTagName('em')[0].innerHTML = err;
                             currentFile.classList.add('text-danger');
                         }
-                        NotifyTop('danger', "{{ 'error'|text }}", err);
+                        NotifyTop('danger', `{{ 'error'|text }}`, err);
                     }
 
                     let list = fileList.children;
@@ -367,7 +367,7 @@
                         }
                     }
 
-                    NotifyTop('danger', "{{ 'error'|text }} " + err.code.toString().replace(/\D/g, ''), err.message);
+                    NotifyTop('danger', `{{ 'error'|text }} ${err.code.toString().replace(/\D/g, '')}`, err.message);
                 }
             }
         });

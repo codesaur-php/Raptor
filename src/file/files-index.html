@@ -75,7 +75,7 @@
     }
     
     document.addEventListener('DOMContentLoaded', function () {
-        const filesLink = "{{ 'files-modal'|link({'table': table}) }}";
+        const filesLink = `{{ 'files-modal'|link({'table': table}) }}`;
         motable.prototype.append = function (file) {
             let fileIcon;
             let fileName = escape(basename(file['path']));
@@ -154,7 +154,7 @@
         
         const files = new motable('table#files');
         fetch(
-            "{{ 'files-list'|link({'table': table}) }}"
+            `{{ 'files-list'|link({'table': table}) }}`
         ).then(res => {
             let contentType = res.headers.get('content-type');
             if (contentType.indexOf('application/json') !== -1) {

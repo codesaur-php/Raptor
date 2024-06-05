@@ -719,7 +719,8 @@ class AccountController extends DashboardController
             $this->respondJSON([
                 'status'  => 'success',
                 'title'   => $this->text('success'),
-                'message' => $this->text('record-insert-success')
+                'message' => $this->text('record-insert-success'),
+                'record' => $this->indoget('/record?model=' . Accounts::class, ['id' => $account_id])
             ]);
             
             $level = LogLevel::ALERT;

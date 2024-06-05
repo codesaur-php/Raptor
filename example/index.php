@@ -78,7 +78,7 @@ $indo->INTERNAL('/send/mail', function (ServerRequestInterface $request)
             }
         }        
         if (empty($payload['from'])) {
-            $mail->setFrom('codesaur+noreply@gmail.com'); // THIS IS YOUR DEFAULT EMAIL SENDER ID!
+            $mail->setFrom('codesaur+noreply@gmail.com'); // THIS IS SENDER EMAIL!
         } else {
             $mail->setFrom($payload['from'], $payload['from_name'] ?? '');
         }

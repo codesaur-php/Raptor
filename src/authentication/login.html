@@ -62,15 +62,15 @@
                 </p>
                 <div class="text-center">
                     <span id="language">
-                    {%  if lang == 'mn' and localization.language['en'] %}
+                    {%  if lang != 'en' and localization.language['en'] %}
                         Click for <a href="{{ 'language'|link({'code': 'en'}) }}">English</a>
-                    {% elseif localization.language['mn'] %}
+                    {% elseif lang != 'mn' and localization.language['mn'] %}
                         Системийн хэлийг <a href="{{ 'language'|link({'code': 'mn'}) }}">Монгол</a> болго
                     {% endif %}
                     </span>
                 </div>
             </form>
-                    
+            
             <form class="d-none" id="forgot" action="{{ 'login-forgot'|link }}" method="POST">
                 <h3 class="text-center mb-4">{{ 'forgotten-password-reset'|text }}</h3>
                 <span>{{ 'enter-email-below'|text }}</span>
@@ -138,7 +138,7 @@
                     return;
                 }
 
-                const html = ele.innerHTML;
+                let html = ele.innerHTML;
                 ele.setAttribute('data-innerHTML', html);
                 ele.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
                 ele.disabled = true;
@@ -146,15 +146,15 @@
             }
             
             document.addEventListener('DOMContentLoaded', function () {
-                const formLogin = document.querySelector('form#login');
-                const formForgot = document.querySelector('form#forgot');
-                const formSignUp = document.querySelector('form#register');
+                let formLogin = document.querySelector('form#login');
+                let formForgot = document.querySelector('form#forgot');
+                let formSignUp = document.querySelector('form#register');
                 
-                const btnLoginSubmit = document.querySelector('button#login_signin_submit');
-                const btnForgotPassword = document.querySelector('a#forgot_password');
-                const btnForgotPasswordSubmit = document.querySelector('button#forgot_password_submit');
-                const btnSignup = document.querySelector('a#signup');
-                const btnSignupSubmit = document.querySelector('button#signup_submit');
+                let btnLoginSubmit = document.querySelector('button#login_signin_submit');
+                let btnForgotPassword = document.querySelector('a#forgot_password');
+                let btnForgotPasswordSubmit = document.querySelector('button#forgot_password_submit');
+                let btnSignup = document.querySelector('a#signup');
+                let btnSignupSubmit = document.querySelector('button#signup_submit');
 
                 function showMessage(form, type, msg)
                 {
@@ -162,7 +162,7 @@
                     
                     let alert = document.createElement('div');
                     alert.setAttribute('role', 'alert');
-                    alert.className = 'alert alert-' + type;
+                    alert.className = `alert alert-${type}`;
                     alert.innerHTML = msg;
                     form.insertBefore(alert, form.firstChild);
                 };
@@ -201,8 +201,8 @@
                     removeAlert(formForgot);
                 }
 
-                const queryString = window.location.search;
-                const urlParams = new URLSearchParams(queryString);
+                let queryString = window.location.search;
+                let urlParams = new URLSearchParams(queryString);
                 if (urlParams && urlParams.get('message')) {
                     showMessage(formLogin, urlParams.get('message_type') ?? 'warning', urlParams.get('message'));
                     window.history.replaceState({}, document.title, location.protocol + '//' + location.host + location.pathname);
@@ -239,12 +239,12 @@
                 btnLoginSubmit.addEventListener('click', function(e) {
                     e.preventDefault();
                     
-                    const username = formLogin.querySelector('input[name="username"]').value;
-                    const password = formLogin.querySelector('input[name="password"]').value;
+                    let username = formLogin.querySelector('input[name="username"]').value;
+                    let password = formLogin.querySelector('input[name="password"]').value;
                     if (isBlank(username)) {
-                        return showMessage(formLogin, 'warning', "{{ 'error-username-empty'|text|e }}");
+                        return showMessage(formLogin, 'warning', `{{ 'error-username-empty'|text|e }}`);
                     } else if (isBlank(password)) {
-                        return showMessage(formLogin, 'warning', "{{ 'error-password-empty'|text|e }}");
+                        return showMessage(formLogin, 'warning', `{{ 'error-password-empty'|text|e }}`);
                     }
                     
                     spinNstop(this);
@@ -264,10 +264,10 @@
                         return res.json();
                     }).then(response => {
                         if (response.status !== 'success') {
-                            throw new Error(response.message ?? "{{ 'something-went-wrong'|text|e }}");
+                            throw new Error(response.message ?? `{{ 'something-went-wrong'|text|e }}`);
                         }
                         showMessage(formLogin, 'success', response.message);
-                        window.location.href = "{{ 'home'|link }}";
+                        window.location.href = `{{ 'home'|link }}`;
                     }).catch(error => {
                         showMessage(formLogin, 'danger', error.message);
                         spinNstop(this);
@@ -277,11 +277,12 @@
                 btnForgotPasswordSubmit.addEventListener('click', function(e) {
                     e.preventDefault();
                     
-                    const email = formForgot.querySelector('input[name="codeForgetEmail"]').value;
+                    let emailInput = formForgot.querySelector('input[name="codeForgetEmail"]');
+                    let email = emailInput?.value;
                     if (isBlank(email)) {
-                        return showMessage(formForgot, 'warning', "{{ 'enter-email-empty'|text|e }}");
+                        return showMessage(formForgot, 'warning', `{{ 'enter-email-empty'|text|e }}`);
                     } else if (!validateEmail(email)) {
-                        return showMessage(formForgot, 'warning', "{{ 'enter-valid-email'|text|e }}");
+                        return showMessage(formForgot, 'warning', `{{ 'enter-valid-email'|text|e }}`);
                     }
                     
                     spinNstop(this);
@@ -292,19 +293,21 @@
                             headers: {
                                 'Content-Type': 'application/json'
                             },
-                            body: JSON.stringify({email: email})
+                            body: JSON.stringify({email})
                         }
                     ).then(res => {
                         return res.json();
                     }).then(response => {
                         if (response.status !== 'success') {
-                            throw new Error(response.message ?? "{{ 'something-went-wrong'|text|e }}");
+                            throw new Error(response.message ?? `{{ 'something-went-wrong'|text|e }}`);
                         }
                         
                         displaySignIn();
                         showMessage(formLogin, 'success', response.message ?? 'Success');
+                        emailInput.value = '';
                     }).catch(error => {
                         showMessage(formForgot, 'danger', error.message);
+                    }).finally(() => {
                         spinNstop(this);
                     });
                 });
@@ -312,25 +315,27 @@
                 btnSignupSubmit.addEventListener('click', function(e) {
                     e.preventDefault();
                     
-                    const username = formSignUp.querySelector('input[name="codeUsername"]').value;
-                    const email = formSignUp.querySelector('input[name="codeEmail"]').value;
-                    const password = formSignUp.querySelector('input[name="codePassword"]').value;
-                    const password_re = formSignUp.querySelector('input[name="codeRePassword"]').value;
+                    let usernameInput = formSignUp.querySelector('input[name="codeUsername"]');
+                    let emailInput = formSignUp.querySelector('input[name="codeEmail"]');
+                    let passwordInput = formSignUp.querySelector('input[name="codePassword"]');
+                    let passwordReInput = formSignUp.querySelector('input[name="codeRePassword"]');
+                    let username = usernameInput.value;
+                    let email = emailInput.value;
+                    let password = passwordInput.value;
+                    let password_re = passwordReInput.value;
                     if (isBlank(username)) {
-                        return showMessage(formSignUp, 'warning', "{{ 'error-username-empty'|text|e }}");
+                        return showMessage(formSignUp, 'warning', `{{ 'error-username-empty'|text|e }}`);
                     } else if (isBlank(email)) {
-                        return showMessage(formSignUp, 'warning', "{{ 'enter-email-empty'|text|e }}");
+                        return showMessage(formSignUp, 'warning', `{{ 'enter-email-empty'|text|e }}`);
                     } else if (!validateEmail(email)) {
-                        return showMessage(formSignUp, 'warning', "{{ 'enter-valid-email'|text|e }}");
+                        return showMessage(formSignUp, 'warning', `{{ 'enter-valid-email'|text|e }}`);
                     } else if (isBlank(password)) {
-                        return showMessage(formSignUp, 'warning', "{{ 'error-password-empty'|text|e }}");
+                        return showMessage(formSignUp, 'warning', `{{ 'error-password-empty'|text|e }}`);
                     } else if (isBlank(password_re)) {
-                        return showMessage(formSignUp, 'warning', "{{ 'password-must-confirm'|text|e }}");
+                        return showMessage(formSignUp, 'warning', `{{ 'password-must-confirm'|text|e }}`);
                     } else if (password !== password_re) {
-                        return showMessage(formSignUp, 'warning', "{{ 'password-must-match'|text|e }}");
+                        return showMessage(formSignUp, 'warning', `{{ 'password-must-match'|text|e }}`);
                     }
-                    
-                    let payload = { username, email, password, password_re };
                     
                     spinNstop(this);
                     fetch(
@@ -340,19 +345,24 @@
                             headers: {
                                 'Content-Type': 'application/json'
                             },
-                            body: JSON.stringify(payload)
+                            body: JSON.stringify({username, email, password, password_re})
                         }
                     ).then(res => {
                         return res.json();
                     }).then(response => {
                         if (response.status !== 'success') {
-                            throw new Error(response.message ?? "{{ 'something-went-wrong'|text|e }}");
+                            throw new Error(response.message ?? `{{ 'something-went-wrong'|text|e }}`);
                         }
                         
                         displaySignIn();
                         showMessage(formLogin, 'success', response.message ?? 'Success');
+                        usernameInput.value = '';
+                        emailInput.value = '';
+                        passwordInput.value = '';
+                        passwordReInput.value = '';
                     }).catch(error => {
                         showMessage(formSignUp, 'danger', error.message);
+                    }).finally(() => {
                         spinNstop(this);
                     });
                 });
@@ -390,16 +400,16 @@
                 </div>
             </div>
         </div>
-         {% if config['google']['analytics']['id'] is defined %}
+         {% if config['google']['analytics']['id'] is not empty %}
         <script type="text/javascript">
             (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
             (i[r].q=i[r].q||[]).push(arguments);},i[r].l=1*new Date();a=s.createElement(o),
             m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m);
             })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
-            ga('create', '{{ config['google']['analytics']['id']|e }}', 'auto'); ga('send', 'pageview');
+            ga('create', `{{ config['google']['analytics']['id']|e }}`, 'auto'); ga('send', 'pageview');
         </script>
-        {%  endif %}
-        {% if config['fb']['page']['id'] is defined %}
+        {% endif %}
+        {% if config['fb']['page']['id'] is not empty %}
         <div id="fb-root"></div>
         <script type="text/javascript">
             window.fbAsyncInit = function() {

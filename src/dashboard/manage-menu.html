@@ -438,7 +438,7 @@
 
             let thisRow = btn.closest('tr');
             if (!thisRow) {
-                return NotifyTop('warning', "{{ 'error'|text|e }}", 'Cannot select row!');
+                return NotifyTop('warning', `{{ 'error'|text|e }}`, 'Cannot select row!');
             }
             let caption = thisRow.children[1].innerHTML;
             let ask = question.format(caption.replace(/<\/?[^>]+(>|$)/g, ''));
@@ -450,15 +450,15 @@
                 html: ask,
                 input: 'text',
                 showCancelButton: true,
-                cancelButtonText: '{{ 'cancel'|text|e }}',
-                confirmButtonText: '<i class="bi bi-trash"></i> {{ 'delete'|text|e }}',
+                cancelButtonText: `{{ 'cancel'|text|e }}`,
+                confirmButtonText: `<i class="bi bi-trash"></i> {{ 'delete'|text|e }}`,
                 confirmButtonColor: '#df4759',
                 showLoaderOnConfirm: true,
                 allowOutsideClick: () => !Swal.isLoading(),
                 backdrop: true,
                 preConfirm: (reason) => {
                     return fetch(
-                        "{{ 'manage-menu-delete'|link }}",
+                        `{{ 'manage-menu-delete'|link }}`,
                         {
                             method: 'DELETE',
                             headers: {
@@ -484,7 +484,7 @@
                         
                         window.location.reload();
 
-                        NotifyTop('success', "{{ 'success'|text|e }}", response.message ?? `Menu (${caption}) deleted`);
+                        NotifyTop('success', `{{ 'success'|text|e }}`, response.message ?? `Menu (${caption}) deleted`);
                     }).catch(error => {
                         Swal.showValidationMessage(error.message);
                     });
@@ -536,7 +536,7 @@
         
         const formInsert = document.querySelector('form#menu_insert');
         if (!formInsert) {
-            NotifyTop('danger', "{{ 'error'|text|e }}", 'Form not found!');
+            NotifyTop('danger', `{{ 'error'|text|e }}`, 'Form not found!');
         } else {
             const submitter = document.querySelector('button.insert-menu');
             submitter.addEventListener('click', function (e) {
@@ -551,7 +551,7 @@
                 this.classList.add('was-validated');
                 if (!_valid) {
                     event.stopPropagation();
-                    return NotifyTop('danger', "{{ 'error'|text|e }}", "{{ 'u-have-some-form-errors'|text|e }}");
+                    return NotifyTop('danger', `{{ 'error'|text|e }}`, `{{ 'u-have-some-form-errors'|text|e }}`);
                 }
 
                 submitter.growNstop();
@@ -576,9 +576,9 @@
 
                     window.location.reload();
 
-                    NotifyTop(response.type ?? 'success', response.title ?? "{{ 'success'|text|e }}", response.message ?? 'Menu created');
+                    NotifyTop(response.type ?? 'success', response.title ?? `{{ 'success'|text|e }}`, response.message ?? 'Menu created');
                 }).catch(error => {
-                    NotifyTop('danger', "{{ 'error'|text|e }}", error.message);
+                    NotifyTop('danger', `{{ 'error'|text|e }}`, error.message);
                     submitter.growNstop();
                 });
             });
@@ -586,7 +586,7 @@
 
         const formUpdate = document.querySelector('form#menu_update');
         if (!formUpdate) {
-            NotifyTop('danger', "{{ 'error'|text|e }}", 'Form not found!');
+            NotifyTop('danger', `{{ 'error'|text|e }}`, 'Form not found!');
         } else {
             const submitter = document.querySelector('button.update-menu');
             submitter.addEventListener('click', function (e) {
@@ -601,7 +601,7 @@
                 this.classList.add('was-validated');
                 if (!_valid) {
                     event.stopPropagation();
-                    return NotifyTop('danger', "{{ 'error'|text|e }}", "{{ 'u-have-some-form-errors'|text|e }}");
+                    return NotifyTop('danger', `{{ 'error'|text|e }}`, `{{ 'u-have-some-form-errors'|text|e }}`);
                 }
 
                 submitter.growNstop();
@@ -626,9 +626,9 @@
 
                     window.location.reload();
 
-                    NotifyTop(response.type ?? 'success', response.title ?? "{{ 'success'|text|e }}", response.message ?? 'Menu updated');
+                    NotifyTop(response.type ?? 'success', response.title ?? `{{ 'success'|text|e }}`, response.message ?? 'Menu updated');
                 }).catch(error => {
-                    NotifyTop('danger', "{{ 'error'|text|e }}", error.message);
+                    NotifyTop('danger', `{{ 'error'|text|e }}`, error.message);
                     submitter.growNstop();
                 });
             });

@@ -213,14 +213,14 @@
                 configEditor.value = pretty;
             }
         } catch (e) {
-            NotifyTop('danger', "{{ 'error'|text|e }}", e.message);
+            NotifyTop('danger', `{{ 'error'|text|e }}`, e.message);
         }
     };
 
     const onFileInput = function (input) {
         let id = input.id;
         if (!id) {
-            return NotifyTop('warning', "{{ 'error'|text|e }}", 'Please set file input id!');
+            return NotifyTop('warning', `{{ 'error'|text|e }}`, 'Please set file input id!');
         }
 
         if (!input.name) {
@@ -234,7 +234,7 @@
 
         let browse = input.nextElementSibling;
         if (browse) {
-            browse.innerHTML = "{{ 'change'|text|e }}";
+            browse.innerHTML = `{{ 'change'|text|e }}`;
         }
 
         let remove = browse.nextElementSibling;
@@ -269,7 +269,7 @@
 
             let browse = input.nextElementSibling;
             if (browse) {
-                browse.innerHTML = "{{ 'choose'|text|e }}";
+                browse.innerHTML = `{{ 'choose'|text|e }}`;
             }
 
             remove.style.display = 'none';
@@ -286,7 +286,7 @@
 
             let form = this.closest('form');
             if (!form) {
-                return NotifyTop('danger', "{{ 'error'|text|e }}", 'Form not found!');
+                return NotifyTop('danger', `{{ 'error'|text|e }}`, 'Form not found!');
             }
 
             form.requestSubmit();
@@ -301,7 +301,7 @@
             this.classList.add('was-validated');
             if (!_valid) {
                 event.stopPropagation();
-                return NotifyTop('danger', "{{ 'error'|text|e }}", "{{ 'u-have-some-form-errors'|text|e }}");
+                return NotifyTop('danger', `{{ 'error'|text|e }}`, `{{ 'u-have-some-form-errors'|text|e }}`);
             }
 
             submitters.forEach(function (btn) { btn.spinNstop(); });
@@ -324,9 +324,9 @@
                     throw new Error(response.message ? response.message : 'Invalid response!');
                 }
 
-                NotifyTop(response.type ?? 'success', response.title ?? "{{ 'success'|text|e }}", response.message ?? 'Settings updated');
+                NotifyTop(response.type ?? 'success', response.title ?? `{{ 'success'|text|e }}`, response.message ?? 'Settings updated');
             }).catch(error => {
-                NotifyTop('danger', "{{ 'error'|text|e }}", error.message);
+                NotifyTop('danger', `{{ 'error'|text|e }}`, error.message);
             }).finally(() => {
                 submitters.forEach(function (btn) { btn.spinNstop(); });
             });

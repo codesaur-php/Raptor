@@ -149,7 +149,7 @@
     document.addEventListener('DOMContentLoaded', function () {
         const formUpdate = document.querySelector('form#reference_update');
         if (!formUpdate) {
-            NotifyTop('danger', "{{ 'error'|text|e }}", 'Form not found!');
+            NotifyTop('danger', `{{ 'error'|text|e }}`, 'Form not found!');
         } else {
             const submitters = document.querySelectorAll('button.submit-update');
             submitters.forEach(function (button) {
@@ -166,7 +166,7 @@
                 this.classList.add('was-validated');
                 if (!_valid) {
                     event.stopPropagation();
-                    return NotifyTop('danger', "{{ 'error'|text|e }}", "{{ 'u-have-some-form-errors'|text|e }}");
+                    return NotifyTop('danger', `{{ 'error'|text|e }}`, `{{ 'u-have-some-form-errors'|text|e }}`);
                 }
 
                 submitters.forEach(function (btn) { btn.growNstop(); });
@@ -189,11 +189,11 @@
                         throw new Error(response.message ? response.message : 'Invalid response!');
                     }
 
-                    window.location.href = "{{ 'references'|link }}";
+                    window.location.href = `{{ 'references'|link }}`;
 
-                    NotifyTop(response.type ?? 'success', response.title ?? "{{ 'success'|text|e }}", response.message ?? 'Reference updated');
+                    NotifyTop(response.type ?? 'success', response.title ?? `{{ 'success'|text|e }}`, response.message ?? 'Reference updated');
                 }).catch(error => {
-                    NotifyTop('danger', "{{ 'error'|text|e }}", error.message);
+                    NotifyTop('danger', `{{ 'error'|text|e }}`, error.message);
                     submitters.forEach(function (btn) { btn.growNstop(); });
                 });
             });

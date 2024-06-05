@@ -43,7 +43,7 @@
 <script type="text/javascript">
     const formUpdate = document.querySelector('form#text_update');
     if (!formUpdate) {
-        NotifyTop('danger', "{{ 'error'|text|e }}", 'Form not found!');
+        NotifyTop('danger', `{{ 'error'|text|e }}`, 'Form not found!');
     } else {
         const submitter = document.querySelector('button.update-text-submit');
         submitter.addEventListener('click', function (e) {
@@ -58,7 +58,7 @@
             this.classList.add('was-validated');
             if (!_valid) {
                 event.stopPropagation();
-                return NotifyTop('danger', "{{ 'error'|text|e }}", "{{ 'u-have-some-form-errors'|text|e }}");
+                return NotifyTop('danger', `{{ 'error'|text|e }}`, `{{ 'u-have-some-form-errors'|text|e }}`);
             }
 
             submitter.growNstop();
@@ -83,9 +83,9 @@
 
                 window.location.reload();
 
-                NotifyTop(response.type ?? 'success', response.title ?? "{{ 'success'|text|e }}", response.message ?? 'Text updated');
+                NotifyTop(response.type ?? 'success', response.title ?? `{{ 'success'|text|e }}`, response.message ?? 'Text updated');
             }).catch(error => {
-                NotifyTop('danger', "{{ 'error'|text|e }}", error.message);
+                NotifyTop('danger', `{{ 'error'|text|e }}`, error.message);
                 submitter.growNstop();
             });
         });

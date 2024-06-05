@@ -102,7 +102,7 @@
 
                 let thisRow = btn.closest('tr');
                 if (!thisRow) {
-                    return NotifyTop('warning', "{{ 'error'|text|e }}", 'Cannot select row!');
+                    return NotifyTop('warning', `{{ 'error'|text|e }}`, 'Cannot select row!');
                 }
                 
                 let questiondel;
@@ -116,15 +116,15 @@
                 Swal.fire({
                     html: question,
                     showCancelButton: true,
-                    cancelButtonText: '{{ 'cancel'|text|e }}',
-                    confirmButtonText: '<i class="bi bi-trash"></i> {{ 'delete'|text|e }}',
+                    cancelButtonText: `{{ 'cancel'|text|e }}`,
+                    confirmButtonText: `<i class="bi bi-trash"></i> {{ 'delete'|text|e }}`,
                     confirmButtonColor: '#df4759',
                     showLoaderOnConfirm: true,
                     allowOutsideClick: () => !Swal.isLoading(),
                     backdrop: true,
                     preConfirm: () => {
                         return fetch(
-                            "{{ 'reference-delete'|link }}",
+                            `{{ 'reference-delete'|link }}`,
                             {
                                 method: 'DELETE',
                                 headers: {
@@ -148,7 +148,7 @@
                             thisRow.remove();
                             reference.setReady();
 
-                            NotifyTop('success', "{{ 'success'|text|e }}", response.message ?? `Reference ${keyword} deleted`);
+                            NotifyTop('success', `{{ 'success'|text|e }}`, response.message ?? `Reference ${keyword} deleted`);
                         }).catch(error => {
                             Swal.showValidationMessage(error.message);
                         });

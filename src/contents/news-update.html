@@ -128,8 +128,8 @@
             </div>
             <div class="row">
                 <div id="container">
-                    <button class="btn btn-warning shadow-sm" id="pickfiles" type="button">{{ 'select-files'|text }}</button>
-                    <button class="btn btn-secondary shadow-sm" id="uploadfiles" disabled type="button">{{ 'upload-files'|text }}</button>
+                    <button class="btn btn-sm btn-warning shadow-sm" id="pickfiles" type="button">{{ 'select-files'|text }}</button>
+                    <button class="btn btn-sm btn-secondary shadow-sm" id="uploadfiles" disabled type="button">{{ 'upload-files'|text }}</button>
                 </div>
             </div>
             <table class="table table-striped table-hover" id="news_files">
@@ -309,9 +309,9 @@
             runtimes: 'html5,flash,silverlight,html4',
             browse_button: 'pickfiles',
             container: document.getElementById('container'),
-            url: "{{ 'files-post'|link({'input':'file', 'table':'indo_news_files', 'id':record['id'], 'folder':'news'}) }}",
+            url: `{{ 'files-post'|link({'input':'file', 'table':'indo_news_files', 'id':record['id'], 'folder':'news'}) }}`,
             filters: {
-                max_file_size: '{{ max_file_size ?? '8mb' }}',
+                max_file_size: `{{ max_file_size ?? '8mb' }}`,
                 mime_types: [
                     {title: 'Images', extensions: 'jpg,jpeg,jpe,png,gif,ico'},
                     {title: 'Documents', extensions: 'pdf,doc,docx,xls,xlsx,ppt,pptx,pps,ppsx,odt'},
@@ -361,7 +361,7 @@
                         
                         files.append(res);
 
-                        NotifyTop('primary', "{{ 'success'|text }}", `Your file [${file.name}] was uploaded successfully.`);
+                        NotifyTop('primary', `{{ 'success'|text }}`, `Your file [${file.name}] was uploaded successfully.`);
                     } catch (err) {
                         if (err instanceof SyntaxError) {
                             err = 'Invalid request!';
@@ -377,7 +377,7 @@
                             currentFile.getElementsByTagName('em')[0].innerHTML = err;
                             currentFile.classList.add('text-danger');
                         }
-                        NotifyTop('danger', "{{ 'error'|text }}", err);
+                        NotifyTop('danger', `{{ 'error'|text }}`, err);
                     }
 
                     let list = fileList.children;
@@ -406,19 +406,19 @@
                         }
                     }
 
-                    NotifyTop('danger', "{{ 'error'|text }} " + err.code.toString().replace(/\D/g, ''), err.message);
+                    NotifyTop('danger', `{{ 'error'|text }} ${err.code.toString().replace(/\D/g, '')}`, err.message);
                 }
             }
         });
         uploader.init();
         
-        const newsFilesLink = "{{ 'files-modal'|link({'table':'indo_news_files'}) }}";
-        const userCanUpdate = "{{ user.can('system_content_update') ? 'true' : '' }}";
-        const userCanDelete = "{{ user.can('system_content_delete') ? 'true' : '' }}";
+        const newsFilesLink = `{{ 'files-modal'|link({'table':'indo_news_files'}) }}`;
+        const userCanUpdate = `{{ user.can('system_content_update') ? 'true' : '' }}`;
+        const userCanDelete = `{{ user.can('system_content_delete') ? 'true' : '' }}`;
         motable.prototype.append = function (record) {
             let fileIcon;
             let fileName = escape(basename(record['path']));
-            let fileLinkAttr = `target="__blank" onclick="return confirm('Are you sure you want to open this file ['${fileName}]?')"`;
+            let fileLinkAttr = `target="__blank" onclick="return confirm('Are you sure you want to open this file [${fileName}]?')"`;
             let fileAction = ` <a class="btn btn-sm btn-dark ajax-modal" data-bs-target="#static-modal" data-bs-toggle="modal" href="${newsFilesLink}?modal=${record['type']}-tag&id=${record['id']}"><i class="bi bi-code"></i></a>`;
             switch (record['type']) {
                 case 'image':
@@ -529,15 +529,15 @@
                     imageHeight: 64,
                     html: question,
                     showCancelButton: true,
-                    cancelButtonText: '{{ 'cancel'|text|e }}',
-                    confirmButtonText: '<i class="bi bi-trash"></i> {{ 'delete'|text|e }}',
+                    cancelButtonText: `{{ 'cancel'|text|e }}`,
+                    confirmButtonText: `<i class="bi bi-trash"></i> {{ 'delete'|text|e }}`,
                     confirmButtonColor: '#df4759',
                     showLoaderOnConfirm: true,
                     allowOutsideClick: () => !Swal.isLoading(),
                     backdrop: true,
                     preConfirm: () => {
                         return fetch(
-                            "{{ 'files-delete'|link({'table':'indo_news_files'}) }}",
+                            `{{ 'files-delete'|link({'table':'indo_news_files'}) }}`,
                             {
                                 method: 'DELETE',
                                 headers: {
@@ -554,7 +554,7 @@
 
                             Swal.close();
 
-                            NotifyTop('success', "{{ 'success'|text|e }}", response.message ?? `File:${id} deleted`);
+                            NotifyTop('success', `{{ 'success'|text|e }}`, response.message ?? `File:${id} deleted`);
 
                             row.remove();
                             thisTable.setReady();
@@ -568,7 +568,7 @@
     
         const formUpdate = document.querySelector('form#news_update');
         if (!formUpdate) {
-            NotifyTop('danger', "{{ 'error'|text|e }}", 'Form not found!');
+            NotifyTop('danger', `{{ 'error'|text|e }}`, 'Form not found!');
         } else {
             const submitters = document.querySelectorAll('button.submit-update');
             submitters.forEach(function (button) {
@@ -588,7 +588,7 @@
                 if (!_valid) {
                     event.stopPropagation();
                     datetimes?.forEach(input => { input.type = 'datetime-local'; });
-                    return NotifyTop('danger', "{{ 'error'|text|e }}", "{{ 'u-have-some-form-errors'|text|e }}");
+                    return NotifyTop('danger', `{{ 'error'|text|e }}`, `{{ 'u-have-some-form-errors'|text|e }}`);
                 }
 
                 submitters.forEach(function (btn) { btn.growNstop(); });
@@ -611,11 +611,11 @@
                         throw new Error(response.message ? response.message : 'Invalid response!');
                     }
 
-                    window.location.href = "{{ 'news'|link }}";
+                    window.location.href = `{{ 'news'|link }}`;
 
-                    NotifyTop(response.type ?? 'success', response.title ?? "{{ 'success'|text|e }}", response.message ?? 'News updated');
+                    NotifyTop(response.type ?? 'success', response.title ?? `{{ 'success'|text|e }}`, response.message ?? 'News updated');
                 }).catch(error => {
-                    NotifyTop('danger', "{{ 'error'|text|e }}", error.message);
+                    NotifyTop('danger', `{{ 'error'|text|e }}`, error.message);
                     datetimes?.forEach(input => { input.type = 'datetime-local'; });
                     submitters.forEach(function (btn) { btn.growNstop(); });
                 });
@@ -623,7 +623,7 @@
         }
         
         {% for file in files  %}
-        files.append(JSON.parse('{{ file|json_encode|e('js') }}'));
+        files.append(JSON.parse(`{{ file|json_encode|e('js') }}`));
         {% endfor %}
         Fancybox.bind('[file-data-fancybox]', {groupAll: true});
     });

@@ -30,7 +30,7 @@
     document.addEventListener('DOMContentLoaded', function () {
         const pages = new motable('table#pages');
         fetch(
-            "{{ 'pages-list'|link }}"
+            `{{ 'pages-list'|link }}`
         ).then(res => {
             let contentType = res.headers.get('content-type');
             if (contentType.indexOf('application/json') !== -1) {
@@ -43,10 +43,10 @@
             }
 
             let rowsHTML = '';
-            let indexLink = "{{ 'pages'|link }}";
-            let canUpdate = "{{ user.can('system_content_update') ? 'true' : '' }}";
-            let canDelete = "{{ user.can('system_content_delete') ? 'true' : '' }}";
-            let placeholder = 'https://via.placeholder.com/60?text={{ (user.getOrganization()['name'] ?? 'no photo')|upper|url_encode }}';
+            let indexLink = `{{ 'pages'|link }}`;
+            let canUpdate = `{{ user.can('system_content_update') ? 'true' : '' }}`;
+            let canDelete = `{{ user.can('system_content_delete') ? 'true' : '' }}`;
+            let placeholder = `https://via.placeholder.com/60?text={{ (user.getOrganization()['name'] ?? 'no photo')|upper|url_encode }}`;
             let published_text = document.documentElement.lang === 'mn' ? 'нийтэлсэн' : 'published';
             data.list.forEach(page => {
                 let id = page.id;
@@ -105,7 +105,7 @@
 
                 let thisRow = btn.closest('tr');
                 if (!thisRow) {
-                    return NotifyTop('warning', "{{ 'error'|text|e }}", 'Cannot select row!');
+                    return NotifyTop('warning', `{{ 'error'|text|e }}`, 'Cannot select row!');
                 }
                 let id = btn.value;
                 let title = thisRow.children[3].textContent;
@@ -119,22 +119,22 @@
                 ) {
                     src = photo.src;
                 } else {
-                    question = '<i class="bi bi-question-circle text-danger mb-4" style="font-size:3rem"></i><p>' + question + '<p/>';
+                    question = `<i class="bi bi-question-circle text-danger mb-4" style="font-size:3rem"></i><p>${question}<p/>`;
                 }
                 Swal.fire({
                     imageUrl: src,
                     imageHeight: 64,
                     html: question,
                     showCancelButton: true,
-                    cancelButtonText: '{{ 'cancel'|text|e }}',
-                    confirmButtonText: '<i class="bi bi-trash"></i> {{ 'delete'|text|e }}',
+                    cancelButtonText: `{{ 'cancel'|text|e }}`,
+                    confirmButtonText: `<i class="bi bi-trash"></i> {{ 'delete'|text|e }}`,
                     confirmButtonColor: '#df4759',
                     showLoaderOnConfirm: true,
                     allowOutsideClick: () => !Swal.isLoading(),
                     backdrop: true,
                     preConfirm: () => {
                         return fetch(
-                            "{{ 'page-delete'|link }}",
+                            `{{ 'page-delete'|link }}`,
                             {
                                 method: 'DELETE',
                                 headers: {
@@ -154,7 +154,7 @@
                             thisRow.remove();
                             pages.setReady();
 
-                            NotifyTop('success', "{{ 'success'|text|e }}", response.message ?? `Page:${id} deleted`);
+                            NotifyTop('success', `{{ 'success'|text|e }}`, response.message ?? `Page:${id} deleted`);
                         }).catch(error => {
                             Swal.showValidationMessage(error.message);
                         });

@@ -101,7 +101,7 @@
             formData.append('role_id', this.getAttribute('role_id'));
             formData.append('permission_id', this.getAttribute('permission_id'));
             fetch(
-                "{{ 'rbac-set-role-permission'|link({'alias':alias}) }}",
+                `{{ 'rbac-set-role-permission'|link({'alias':alias}) }}`,
                 {
                     method: this.checked ? 'POST' : 'PUT',
                     body: formData
@@ -114,10 +114,10 @@
                 throw new Error("HTTP [{0}]: {1}".format(res.status, res.statusText));
             }).then(response => {
                 let type = response.type ?? 'warning';
-                let title = response.title ?? '{{ 'notice'|text|e }}';
+                let title = response.title ?? `{{ 'notice'|text|e }}`;
                 NotifyTop(type, title, response.message ?? 'Role permission set');
             }).catch(error => {
-                NotifyTop('danger', '{{ 'error'|text }}', error.message);
+                NotifyTop('danger', `{{ 'error'|text }}`, error.message);
             }).finally(() => {
                 if (requesting) {
                     requesting.style.display = 'none';

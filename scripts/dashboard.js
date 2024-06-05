@@ -77,34 +77,31 @@ function NotifyTop(type, title, content, velocity = 5, delay = 2500)
         previous.parentNode.removeChild(previous);
     }
 
-    let style = 'z-index:11500;position:fixed;padding:1rem;color:#fff;';
     let bgColorHex;
     switch (type) {
         case 'primary':
-            bgColorHex = '0d6efd';
+            bgColorHex = '#0d6efd';
             break;
         case 'success':
-            bgColorHex = '15cc1f';
+            bgColorHex = '#15cc1f';
             break;
         case 'warning':
-            bgColorHex = 'ffc107';
+            bgColorHex = '#ffc107';
             break;
         case 'danger':
-            bgColorHex = 'f32750';
+            bgColorHex = '#f32750';
             break;
         default:
-            bgColorHex = '17a2b8';
+            bgColorHex = '#17a2b8';
             break;
     }
-    style += 'background:#' + bgColorHex + ';';
-    style += 'right:0;left:0;top:0';
 
     let h5 = document.createElement('h5');
-    h5.style.cssText = "margin:5px 0 5px 0;text-transform:uppercase;font-weight:300;color:#fff;";
+    h5.style.cssText = 'margin:5px 0 5px 0;text-transform:uppercase;font-weight:300;color:#fff;';
     h5.innerHTML = title;
 
     let closeX = document.createElement('a');
-    closeX.style.cssText = "cursor:pointer;position:absolute;right:0;top:0;color:#fff;padding:10px 15px;font-size:16px;text-decoration:none;";
+    closeX.style.cssText = 'cursor:pointer;position:absolute;right:0;top:0;color:#fff;padding:10px 15px;font-size:16px;text-decoration:none;';
     closeX.innerHTML = 'x';
 
     let contentDiv = document.createElement('div');
@@ -112,7 +109,7 @@ function NotifyTop(type, title, content, velocity = 5, delay = 2500)
 
     let section = document.createElement('section');
     section.classList.add('notifyTop');
-    section.style.cssText = style;
+    section.style.cssText = `z-index:11500;position:fixed;padding:1rem;color:#fff;background:${bgColorHex};right:0;left:0;top:0`;
     section.appendChild(h5);
     section.appendChild(closeX);
     section.appendChild(contentDiv);

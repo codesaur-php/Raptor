@@ -123,7 +123,7 @@
         Swal.fire({
             position: 'top-end',
             icon: 'warning',
-            html: "{{ 'active-account-can-login'|text }}",
+            html: `{{ 'active-account-can-login'|text }}`,
             showConfirmButton: false,
             timer: 1500
         });
@@ -138,7 +138,7 @@
         photoPreview.style.display = 'none';
 
         photoName.value = '';
-        photoBrowse.innerHTML = "{{ 'choose'|text|e }}";
+        photoBrowse.innerHTML = `{{ 'choose'|text|e }}`;
 
         photo.value = '';
         photo.removeAttribute('name');
@@ -152,12 +152,12 @@
         photo.name = 'photo';
         photoName.value = photo.files[0].name;
         
-        photoBrowse.innerHTML = "{{ 'change'|text|e }}";
+        photoBrowse.innerHTML = `{{ 'change'|text|e }}`;
         if (photoBrowse.nextElementSibling?.tagName !== 'BUTTON') {
             let photoClear = document.createElement('button');
             photoClear.classList.add('btn', 'btn-danger');
             photoClear.type = 'button';
-            photoClear.innerHTML = '{{ 'remove'|text }}';
+            photoClear.innerHTML = `{{ 'remove'|text }}`;
             photoClear.addEventListener('click', function (e) {
                 e.preventDefault();
                 fileClear(this);
@@ -191,7 +191,7 @@
 
         const formUpdate = document.querySelector('form#account_update');
         if (!formUpdate) {
-            NotifyTop('danger', "{{ 'error'|text|e }}", 'Form not found!');
+            NotifyTop('danger', `{{ 'error'|text|e }}`, 'Form not found!');
         } else {
             const submitters = document.querySelectorAll('button.submit-update');
             submitters.forEach(function (button) {
@@ -208,7 +208,7 @@
                 this.classList.add('was-validated');
                 if (!_valid) {
                     event.stopPropagation();
-                    return NotifyTop('danger', "{{ 'error'|text|e }}", "{{ 'u-have-some-form-errors'|text|e }}");
+                    return NotifyTop('danger', `{{ 'error'|text|e }}`, `{{ 'u-have-some-form-errors'|text|e }}`);
                 }
 
                 submitters.forEach(function (btn) { btn.growNstop(); });
@@ -231,11 +231,11 @@
                         throw new Error(response.message ? response.message : 'Invalid response!');
                     }
 
-                    window.location.href = "{{ 'accounts'|link }}";
+                    window.location.href = `{{ 'accounts'|link }}`;
 
-                    NotifyTop(response.type ?? 'success', response.title ?? "{{ 'success'|text|e }}", response.message ?? 'Account updated');
+                    NotifyTop(response.type ?? 'success', response.title ?? `{{ 'success'|text|e }}`, response.message ?? 'Account updated');
                 }).catch(error => {
-                    NotifyTop('danger', "{{ 'error'|text|e }}", error.message);
+                    NotifyTop('danger', `{{ 'error'|text|e }}`, error.message);
                     submitters.forEach(function (btn) { btn.growNstop(); });
                 });
             });

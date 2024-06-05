@@ -67,7 +67,7 @@
         localStorage.setItem('data-bs-theme', theme?.value);
 
         const language = document.querySelector('input[type="radio"][name="language"]:checked');
-        if (language?.value !== '{{ current }}') {
+        if (language?.value !== `{{ current }}`) {
             let xhr = new XMLHttpRequest();
             xhr.open('GET', `{{ 'login'|link }}/language/${language.value}`, false);
             xhr.send();

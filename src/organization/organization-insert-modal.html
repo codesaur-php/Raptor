@@ -69,12 +69,12 @@
         logo.name = 'logo';
         logoName.value = logo.files[0].name;
         
-        logoBrowse.innerHTML = "{{ 'change'|text|e }}";
+        logoBrowse.innerHTML = `{{ 'change'|text|e }}`;
         if (logoBrowse.nextElementSibling?.tagName !== 'BUTTON') {
             let logoClear = document.createElement('button');
             logoClear.classList.add('btn', 'btn-danger');
             logoClear.type = 'button';
-            logoClear.innerHTML = '{{ 'remove'|text }}';
+            logoClear.innerHTML = `{{ 'remove'|text }}`;
             logoClear.addEventListener('click', function (e) {
                 e.preventDefault();
 
@@ -82,7 +82,7 @@
                 logoPreview.style.display = 'none';
 
                 logoName.value = '';
-                logoBrowse.innerHTML = "{{ 'choose'|text|e }}";
+                logoBrowse.innerHTML = `{{ 'choose'|text|e }}`;
                 
                 logo.value = '';
                 logo.removeAttribute('name');
@@ -108,7 +108,7 @@
     
     const formInsert = document.querySelector('form#organization_insert');
     if (!formInsert) {
-        NotifyTop('danger', "{{ 'error'|text|e }}", 'Form not found!');
+        NotifyTop('danger', `{{ 'error'|text|e }}`, 'Form not found!');
     } else {
         const submitter = document.querySelector('button.submit-new-organization');
         submitter.addEventListener('click', function (e) {
@@ -123,7 +123,7 @@
             this.classList.add('was-validated');
             if (!_valid) {
                 event.stopPropagation();
-                return NotifyTop('danger', "{{ 'error'|text|e }}", "{{ 'u-have-some-form-errors'|text|e }}");
+                return NotifyTop('danger', `{{ 'error'|text|e }}`, `{{ 'u-have-some-form-errors'|text|e }}`);
             }
 
             submitter.growNstop();
@@ -148,9 +148,9 @@
 
                 window.location.reload();
 
-                NotifyTop(response.type ?? 'success', response.title ?? "{{ 'success'|text|e }}", response.message ?? 'Organization created');
+                NotifyTop(response.type ?? 'success', response.title ?? `{{ 'success'|text|e }}`, response.message ?? 'Organization created');
             }).catch(error => {
-                NotifyTop('danger', "{{ 'error'|text|e }}", error.message);
+                NotifyTop('danger', `{{ 'error'|text|e }}`, error.message);
                 submitter.growNstop();
             });
         });

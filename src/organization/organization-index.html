@@ -26,7 +26,7 @@
     document.addEventListener('DOMContentLoaded', function () {
         const organizations = new motable('table#organizations');
         fetch(
-            "{{ 'organizations-list'|link }}"
+            `{{ 'organizations-list'|link }}`
         ).then(res => {
             let contentType = res.headers.get('content-type');
             if (contentType.indexOf('application/json') !== -1) {
@@ -39,10 +39,10 @@
             }
             
             let rowsHTML = '';
-            let indexLink = "{{ 'organizations'|link }}";
-            let rbacLink = "{{ user.can('system_rbac') ? 'rbac-alias'|link : '' }}";
-            let canUpdate = "{{ user.can('system_organization_update') ? 'true' : '' }}";
-            let canDelete = "{{ user.can('system_organization_delete') ? 'true' : '' }}";
+            let indexLink = `{{ 'organizations'|link }}`;
+            let rbacLink = `{{ user.can('system_rbac') ? 'rbac-alias'|link : '' }}`;
+            let canUpdate = `{{ user.can('system_organization_update') ? 'true' : '' }}`;
+            let canDelete = `{{ user.can('system_organization_delete') ? 'true' : '' }}`;
             data.list.forEach(org => {
                 let logo;
                 if (org.logo) {
@@ -88,7 +88,7 @@
                 
                 let thisRow = btn.closest('tr');
                 if (!thisRow) {
-                    return NotifyTop('warning', "{{ 'error'|text|e }}", 'Cannot select row!');
+                    return NotifyTop('warning', `{{ 'error'|text|e }}`, 'Cannot select row!');
                 }
                 let name = thisRow.children[2].innerHTML;
                 let ask = question.format(name.replace(/<\/?[^>]+(>|$)/g, ''));
@@ -106,15 +106,15 @@
                     html: ask,
                     input: 'text',
                     showCancelButton: true,
-                    cancelButtonText: '{{ 'cancel'|text|e }}',
-                    confirmButtonText: '<i class="bi bi-trash"></i> {{ 'delete'|text|e }}',
+                    cancelButtonText: `{{ 'cancel'|text|e }}`,
+                    confirmButtonText: `<i class="bi bi-trash"></i> {{ 'delete'|text|e }}`,
                     confirmButtonColor: '#df4759',
                     showLoaderOnConfirm: true,
                     allowOutsideClick: () => !Swal.isLoading(),
                     backdrop: true,
                     preConfirm: (reason) => {
                         return fetch(
-                            "{{ 'organization-delete'|link }}",
+                            `{{ 'organization-delete'|link }}`,
                             {
                                 method: 'DELETE',
                                 headers: {
@@ -138,7 +138,7 @@
                             thisRow.remove();
                             organizations.setReady();
 
-                            NotifyTop('success', "{{ 'success'|text|e }}", response.message ?? `Organization (${name}) deleted`);
+                            NotifyTop('success', `{{ 'success'|text|e }}`, response.message ?? `Organization (${name}) deleted`);
                         }).catch(error => {
                             Swal.showValidationMessage(error.message);
                         });

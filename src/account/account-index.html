@@ -28,17 +28,18 @@
             'table#accounts',
             {
                 columns: [
-                    {title: "#"},
-                    {title: "{{ 'photo'|text|e }}"},
-                    {title: "{{ 'user'|text|e }}"},
-                    {title: "{{ 'organization'|text|e }}"},
-                    {title: "{{ 'role2'|text|e }}"},
-                    {title: "{{ 'action'|text|e }}", style: "width:8rem"}
+                    {title: '#'},
+                    {title: `{{ 'photo'|text|e }}`},
+                    {title: `{{ 'user'|text|e }}`},
+                    {title: `{{ 'organization'|text|e }}`},
+                    {title: `{{ 'role2'|text|e }}`},
+                    {title: `{{ 'action'|text|e }}`, style: 'width:8rem'}
                 ]
             }
         );
+        window.accountsTbl = accounts;
         fetch(
-            "{{ 'accounts-list'|link }}"
+            `{{ 'accounts-list'|link }}`
         ).then(res => {
             let contentType = res.headers.get('content-type');
             if (contentType.indexOf('application/json') !== -1) {
@@ -51,13 +52,13 @@
             }
 
             let rowsHTML = '';
-            let indexLink = "{{ 'accounts'|link }}";
-            let orgIndexLink = "{{ 'organizations'|link }}";
-            let canUpdate = "{{ user.can('system_account_update') ? 'true' : '' }}";
-            let canDelete = "{{ user.can('system_account_delete') ? 'true' : '' }}";
-            let orgUserLink = "{{ user.can('system_account_organization_set') ? 'organization-user-set'|link ~ '?account_id=' : '' }}";
-            let userRoleLink = "{{ user.can('system_rbac') ? 'rbac-set-user-role'|link ~ '?id=' : '' }}";
-            let rbacRoleViewLink = "{{ 'rbac-role-view'|link }}";
+            let indexLink = `{{ 'accounts'|link }}`;
+            let orgIndexLink = `{{ 'organizations'|link }}`;
+            let canUpdate = `{{ user.can('system_account_update') ? 'true' : '' }}`;
+            let canDelete = `{{ user.can('system_account_delete') ? 'true' : '' }}`;
+            let orgUserLink = `{{ user.can('system_account_organization_set') ? 'organization-user-set'|link ~ '?account_id=' : '' }}`;
+            let userRoleLink = `{{ user.can('system_rbac') ? 'rbac-set-user-role'|link ~ '?id=' : '' }}`;
+            let rbacRoleViewLink = `{{ 'rbac-role-view'|link }}`;
             let statuses = document.documentElement.lang === 'mn' ? ['идэвхгүй', 'идэвхтэй'] : ['inactive', 'active'];
             data.list.forEach(account => {
                 let photo;
@@ -137,7 +138,7 @@
 
                 let thisRow = btn.closest('tr');
                 if (!thisRow) {
-                    return NotifyTop('warning', "{{ 'error'|text|e }}", 'Cannot select row!');
+                    return NotifyTop('warning', `{{ 'error'|text|e }}`, 'Cannot select row!');
                 }
                 let name = thisRow.children[2].querySelector('strong').innerHTML;
                 let ask = questiondel.format(name.replace(/<\/?[^>]+(>|$)/g, ''));
@@ -155,15 +156,15 @@
                     html: ask,
                     input: 'text',
                     showCancelButton: true,
-                    cancelButtonText: '{{ 'cancel'|text|e }}',
-                    confirmButtonText: '<i class="bi bi-trash"></i> {{ 'delete'|text|e }}',
+                    cancelButtonText: `{{ 'cancel'|text|e }}`,
+                    confirmButtonText: `<i class="bi bi-trash"></i> {{ 'delete'|text|e }}`,
                     confirmButtonColor: '#df4759',
                     showLoaderOnConfirm: true,
                     allowOutsideClick: () => !Swal.isLoading(),
                     backdrop: true,
                     preConfirm: (reason) => {
                         return fetch(
-                            "{{ 'account-delete'|link }}",
+                            `{{ 'account-delete'|link }}`,
                             {
                                 method: 'DELETE',
                                 headers: {
@@ -187,7 +188,7 @@
                             thisRow.remove();
                             accounts.setReady();
 
-                            NotifyTop('success', "{{ 'success'|text|e }}", response.message ?? `Account (${name}) deleted`);
+                            NotifyTop('success', `{{ 'success'|text|e }}`, response.message ?? `Account (${name}) deleted`);
                         }).catch(error => {
                             Swal.showValidationMessage(error.message);
                         });

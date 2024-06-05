@@ -44,7 +44,7 @@
             </form>
         </div>
         <div class="modal-footer">
-            <button class="btn btn-primary update-files-submit">
+            <button class="btn btn-primary update-files-submit" type="button">
                 <i class="bi bi-check"></i> {{ 'save'|text }}
             </button>
             <button class="btn btn-secondary" data-bs-dismiss="modal" id="file_{{ record['id'] }}_close" type="button">
@@ -61,65 +61,63 @@
         }
     });
     
-    document.addEventListener('DOMContentLoaded', function () {
-        const formUpdate = document.querySelector('form#files_update');
-        if (!formUpdate) {
-            NotifyTop('danger', "{{ 'error'|text|e }}", 'Form not found!');
-        } else {
-            const submitter = document.querySelector('button.update-files-submit');
-            submitter.addEventListener('click', function (e) {
-                e.preventDefault();
-                formUpdate.requestSubmit();
-            });
+    const formUpdate = document.querySelector('form#files_update');
+    if (!formUpdate) {
+        NotifyTop('danger', `{{ 'error'|text|e }}`, 'Form not found!');
+    } else {
+        const submitter = document.querySelector('button.update-files-submit');
+        submitter.addEventListener('click', function (e) {
+            e.preventDefault();
+            formUpdate.requestSubmit();
+        });
 
-            formUpdate.addEventListener('submit', function (event) {
-                event.preventDefault();
+        formUpdate.addEventListener('submit', function (event) {
+            event.preventDefault();
 
-                const _valid = this.checkValidity();
-                this.classList.add('was-validated');
-                if (!_valid) {
-                    event.stopPropagation();
-                    return NotifyTop('danger', "{{ 'error'|text|e }}", "{{ 'u-have-some-form-errors'|text|e }}");
+            const _valid = this.checkValidity();
+            this.classList.add('was-validated');
+            if (!_valid) {
+                event.stopPropagation();
+                return NotifyTop('danger', `{{ 'error'|text|e }}`, `{{ 'u-have-some-form-errors'|text|e }}`);
+            }
+
+            submitter.growNstop();
+
+            const data = new FormData(this);
+            fetch(
+                this.action,
+                {
+                    body: data,
+                    method: this.getAttribute('method') ?? 'PUT'
+                }
+            ).then(res => {
+                let contentType = res.headers.get('content-type');
+                if (contentType.indexOf('application/json') !== -1) {
+                    return res.json();
+                }
+                throw new Error("HTTP [{0}]: {1}".format(res.status, res.statusText));
+            }).then(resp => {
+                if (resp.status !== 'success') {
+                    throw new Error(resp.message ? resp.message : 'Invalid response!');
                 }
 
+                if (resp.record === undefined || resp.record.id === undefined) return;
+
+                let row = document.getElementById(`file_${resp.record.id}`);
+                if (!row || row === null) return;
+
+                document.getElementById(`file_${resp.record.id}_close`).click();
+
+                row.children[2].innerHTML = resp.record.description;
+                row.children[3].innerHTML = resp.record.category;
+                row.children[4].innerHTML = resp.record.keyword;
+
+                NotifyTop(resp.type ?? 'success', resp.title ?? `{{ 'success'|text|e }}`, resp.message ?? 'File record successfully updated');
+            }).catch(error => {
+                NotifyTop('danger', `{{ 'error'|text|e }}`, error.message);
+            }).finally(() => {
                 submitter.growNstop();
-
-                const data = new FormData(this);
-                fetch(
-                    this.action,
-                    {
-                        body: data,
-                        method: this.getAttribute('method') ?? 'PUT'
-                    }
-                ).then(res => {
-                    let contentType = res.headers.get('content-type');
-                    if (contentType.indexOf('application/json') !== -1) {
-                        return res.json();
-                    }
-                    throw new Error("HTTP [{0}]: {1}".format(res.status, res.statusText));
-                }).then(resp => {
-                    if (resp.status !== 'success') {
-                        throw new Error(resp.message ? resp.message : 'Invalid response!');
-                    }
-
-                    if (resp.record === undefined || resp.record.id === undefined) return;
-
-                    let row = document.getElementById('file_' + resp.record.id);
-                    if (!row || row === null) return;
-
-                    document.getElementById('file_' + resp.record.id + '_close').click();
-
-                    row.children[2].innerHTML = resp.record.description;
-                    row.children[3].innerHTML = resp.record.category;
-                    row.children[4].innerHTML = resp.record.keyword;
-
-                    NotifyTop(resp.type ?? 'success', resp.title ?? "{{ 'success'|text|e }}", resp.message ?? 'File record successfully updated');
-                }).catch(error => {
-                    NotifyTop('danger', "{{ 'error'|text|e }}", error.message);
-                }).finally(() => {
-                    submitter.growNstop();
-                });
             });
-        }
-    });
+        });
+    }
 </script>
