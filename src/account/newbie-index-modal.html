@@ -40,12 +40,12 @@
                             <td>
                                 {% if row['is_active'] == 1 %}
                                     {% if user.can('system_account_insert') %}
-                                        <button class="approve-account-request btn btn-sm mb-1 btn-success shadow-sm" value="{{ row['id'] }}" type="button">
+                                        <button class="approve-account-request btn btn-sm btn-success mb-1 shadow-sm" value="{{ row['id'] }}" type="button">
                                             <i class="bi bi-person-check"></i> {{ 'accept'|text }}
                                         </button>
                                     {% endif %}
                                     {% if user.can('system_account_delete') %}
-                                        <button class="delete-account-request btn btn-sm btn-danger shadow-sm" value="{{ row['id'] }}" type="button">
+                                        <button class="delete-account-request btn btn-sm btn-danger mb-1 shadow-sm" value="{{ row['id'] }}" type="button">
                                             <i class="bi bi-trash"></i> {{ 'delete'|text }}
                                         </button>
                                     {% endif %}
