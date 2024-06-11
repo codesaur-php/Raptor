@@ -47,7 +47,7 @@ class SettingsMiddleware implements MiddlewareInterface
                 ) {
                     throw new \Exception($response['error']['message'], $response['error']['code']);
                 }
-                $settings = $response[0];
+                $settings = $response[0] ?? [];
                 if (!empty($settings['config'])) {
                     $settings['config'] =  \json_decode($settings['config'], true)
                         ?? ['error' => __CLASS__ . ': Error decoding config!'];
