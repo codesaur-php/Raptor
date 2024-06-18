@@ -78,13 +78,13 @@ class FileController extends DashboardController
         if (\file_exists($uploadpath . $filename)) {
             $number = 1;
             while (true) {
-                if (\file_exists($uploadpath . $name . " ($number)." . $ext)) {
+                if (\file_exists($uploadpath . $name . "_($number)." . $ext)) {
                     $number++;
                 } else {
                     break;
                 }
             }
-            $filename = $name . " ($number)." . $ext;
+            $filename = $name . "_($number)." . $ext;
         }
         
         return $filename;
