@@ -53,7 +53,7 @@ class FileController extends DashboardController
     public function allowCommonTypes()
     {
         $this->allowExtensions([
-            'jpg', 'jpeg', 'jpe', 'png', 'gif', 'ico',
+            'jpg', 'jpeg', 'jpe', 'png', 'gif', 'ico', 'webp',
             'pdf', 'doc', 'docx', 'ppt', 'pptx', 'pps', 'ppsx', 'xls', 'xlsx', 'odt', 'psd',
             'mp3', 'm4a', 'ogg', 'wav',
             'mp4', 'm4v', 'mov', 'wmv', 'avi', 'mpg', 'ogv', '3gp', '3g2',
