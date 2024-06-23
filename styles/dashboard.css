@@ -80,29 +80,3 @@ body {
     border-top: 1px solid;
     opacity: .25;
 }
-.scroll-up {
-    display: inline-block;
-    cursor: pointer;
-    background-color: #7952b3;
-    width: 40px;
-    height: 40px;
-    text-align: center;
-    border-radius: 4px;
-    position: fixed;
-    bottom: 40px;
-    right: 40px;
-    transition: background-color .3s, opacity .5s, visibility .5s;
-    opacity: 0;
-    visibility: hidden;
-    z-index: 1000;
-}
-.scroll-up i {
-    border: solid black;
-    border-width: 0 3px 3px 0;
-    border-color: white;
-    display: inline-block;
-    padding: 3.4px;
-    margin-top: 17px;
-    transform: rotate(-135deg);
-    -webkit-transform: rotate(-135deg);
-}

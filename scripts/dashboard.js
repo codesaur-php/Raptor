@@ -189,14 +189,15 @@ Element.prototype.growNstop = function (block = true) {
 };
 
 const upArrow = document.createElement('i');
+upArrow.style.cssText = 'border:solid black;border-width:0 2px 2px 0;border-color:white;display:inline-block;padding:3.4px;margin-top:11px;transform:rotate(-135deg);-webkit-transform:rotate(-135deg)';
 const btnScroll = document.createElement('a');
-btnScroll.classList.add('scroll-up');
+btnScroll.style.cssText = 'display:inline-block;cursor:pointer;background-color:#7952b3;width:40px;height:25px;text-align:center;-webkit-border-radius:6px 6px 0px 0px;border-radius:6px 6px 0px 0px;position:fixed;right:45%;bottom:0px;transition:background-color .3s, opacity .5s, visibility .5s;opacity:0.75;visibility:hidden;z-index:10000';
 btnScroll.appendChild(upArrow);
 document.body.appendChild(btnScroll);
 window.addEventListener('scroll', function () {
     const windowpos = document.querySelector('html').scrollTop;
     if (windowpos > 200) {
-        btnScroll.style.opacity = 1;
+        btnScroll.style.opacity = 0.75;
         btnScroll.style.visibility = 'visible';
     } else {
         btnScroll.style.opacity = 0;
