@@ -8,6 +8,7 @@ use Indoraptor\Contents\NewsModel;
 
 use Raptor\Dashboard\DashboardController;
 use Raptor\File\FilesController;
+use Raptor\File\FileController;
 
 class NewsController extends DashboardController
 {    
@@ -37,19 +38,15 @@ class NewsController extends DashboardController
                 ['query' => "SHOW TABLES LIKE 'indo_news'"]
             );
             if (!empty($exists)) {
-                $images = $this->getImages();
-                $featured = $this->getFeaturedImages();
                 $files_counts = $this->getFilesCounts();
                 $news_query = 
-                    'SELECT id, title, code, category, type, published, published_date ' .
+                    'SELECT id, photo, title, code, category, type, published, published_date ' .
                     'FROM indo_news WHERE is_active=1';
                 $news = $this->indo('/execute/fetch/all', ['query' => $news_query]);
             }
             $this->respondJSON([
                 'status' => 'success',
                 'list' => $news ?? [],
-                'images' => $images ?? [],
-                'featured' => $featured ?? [],
                 'files_counts' => $files_counts ?? []
             ]);
         } catch (\Throwable $e) {
@@ -92,6 +89,19 @@ class NewsController extends DashboardController
                 $id = $this->indopost('/record?model=' . NewsModel::class, $record);
                 if ($id == false) {
                     throw new \Exception($this->text('record-insert-error'));
+                }
+                
+                $file = new FileController($this->getRequest());
+                $file->setFolder("/news/$id");
+                $file->allowImageOnly();
+                $photo = $file->moveUploaded('photo');
+                if ($photo) {
+                    $payload = [
+                        'record' => ['photo' => $photo['path']],
+                        'condition' => ['WHERE' => "id=$id"]
+                    ];
+                    $context['photo'] = $photo;
+                    $this->indoput('/record?model=' . NewsModel::class, $payload);
                 }
                 
                 $this->respondJSON([
@@ -171,22 +181,9 @@ class NewsController extends DashboardController
                         'ORDER BY' => 'updated_at'
                     ]
                 );
-                $image = null;
-                foreach ($context['files'] as &$file) {
-                    unset($file['file']);
-                    if ($file['type'] == 'image') {
-                        if (!isset($image)) {
-                            $image = $file;
-                        }
-                        if ($file['category'] == 'featured') {
-                            $featured = $file;
-                        }
-                    }
-                }
             } catch (\Throwable $e) {
                 $context['files'] = [];
             }
-            $context['image'] = $featured ?? $image;
             $template = $this->twigTemplate(\dirname(__FILE__) . '/news-read.html');
             foreach ($this->getAttribute('settings', []) as $key => $value) {
                 $template->set($key, $value);
@@ -293,6 +290,36 @@ class NewsController extends DashboardController
                     && !$this->isUserCan('system_content_publish')
                 ) {
                     throw new \Exception($this->text('system-no-permission'), 401);
+                }
+                
+                try {
+                    if (empty($current['photo'])) {
+                        throw new \Exception('Current record had no photo!');
+                    }
+                    $current_photo_file = \basename($current['photo']);
+                } catch (\Throwable $e) {
+                    $current_photo_file = '';
+                }
+                
+                $file = new FileController($this->getRequest());
+                $file->setFolder("/news/$id");
+                $file->allowImageOnly();
+                $photo = $file->moveUploaded('photo');
+                if ($photo) {
+                    $record['photo'] = $photo['path'];
+                }
+                if (!empty($current_photo_file)) {
+                    if ($file->getLastError() == -1) {
+                        $file->tryDeleteFile($current_photo_file);
+                        $record['photo'] = '';
+                    } elseif (isset($record['photo'])
+                        && \basename($record['photo']) != $current_photo_file
+                    ) {
+                        $file->tryDeleteFile($current_photo_file);
+                    }
+                }
+                if (isset($record['photo'])) {
+                    $context['record']['photo'] = $record['photo'];
                 }
                 
                 $updated = $this->indoput('/record?model=' . NewsModel::class,
@@ -403,7 +430,7 @@ class NewsController extends DashboardController
             
             $id = \filter_var($payload['id'], \FILTER_VALIDATE_INT);
             
-            $deleted = $this->indodelete("/record?model=" . NewsModel::class, ['WHERE' => "id=$id"]);
+            $deleted = $this->indodelete('/record?model=' . NewsModel::class, ['WHERE' => "id=$id"]);
             if (empty($deleted)) {
                 throw new \Exception($this->text('no-record-selected'));
             }
@@ -446,55 +473,7 @@ class NewsController extends DashboardController
             }
             return $counts;
         } catch (\Throwable $e) {
-            return [];
-        }
-    }
-    
-    private function getImages(): array
-    {
-        try {
-            $images_query = 
-                'SELECT n.id as id, f.path as image ' .
-                'FROM indo_news as n INNER JOIN indo_news_files as f ON n.id=f.record_id ' .
-                "WHERE n.is_active=1 AND f.is_active=1 AND f.type='image' " .
-                'GROUP BY f.record_id';
-            $result =  $this->indo('/execute/fetch/all', ['query' => $images_query]);
-            $images = [];
-            foreach ($result as $file) {
-                $images[$file['id']] = $file['image'];
-            }
-            return $images;
-        } catch (\Throwable $e) {
-            return [];
-        }
-    }
-    
-    private function getFeaturedImages(): array
-    {
-        try {
-            $featured_query = 
-                'SELECT n.id as id, f.path as image, f.id as file_id ' .
-                'FROM indo_news as n INNER JOIN indo_news_files as f ON n.id=f.record_id ' .
-                "WHERE n.is_active=1 AND f.is_active=1 AND f.type='image' AND f.category='featured' " .
-                'ORDER BY f.updated_at desc';
-            $result = $this->indo('/execute/fetch/all', ['query' => $featured_query]);
-            $featured = [];
-            foreach ($result as $file) {
-                if (isset($featured[$file['id']])) {
-                    try {
-                        $this->indo(
-                            '/files/indo_news_files/update',
-                            ['record' => ['category' => ''], 'condition' => ['WHERE' => "id={$file['file_id']}"]]
-                        );
-                    } catch (\Throwable $e) {
-                        $this->errorLog($e);
-                    }
-                } else {
-                    $featured[$file['id']] = $file['image'];
-                }
-            }
-            return $featured;
-        } catch (\Throwable $e) {
+            $this->errorLog($e);
             return [];
         }
     }

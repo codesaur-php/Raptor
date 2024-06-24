@@ -22,8 +22,8 @@
                 </a>
             </header>
             <h2>{{ record['title'] }}</h2>
-            {% if image is not empty %}
-            <img class="img-fluid mt-1" file-data-fancybox src="{{ image['path'] }}" alt="{{ (image['description'] is not empty ? image['description'] : 'Featured image')|e }}">
+            {% if record['photo'] is not empty %}
+                <img class="img-fluid mt-1" file-data-fancybox src="{{ record['photo'] }}">
             {% endif %}
             <div class="col-12 mt-1">
                 {{ record['full'] }}
@@ -33,7 +33,6 @@
             if (localStorage.getItem('data-bs-theme') === 'dark') {
                 document.body.setAttribute('data-bs-theme', 'dark');
             }
-            
             document.addEventListener('DOMContentLoaded', function () {
                 Fancybox.bind('[file-data-fancybox]', {groupAll: true});
             });

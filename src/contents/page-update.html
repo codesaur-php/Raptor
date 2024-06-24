@@ -130,6 +130,20 @@
                 <textarea class="form-control" name="short">{{ record['short']|e }}</textarea>
             </div>
             <div class="form-group mt-3">
+                <label class="form-label">{{ 'photo'|text }}</label>
+                <div class="input-group">
+                    <input class="form-control" type="text" id="photo_name" disabled value="{{ record['photo']|e }}" placeholder="{{ 'select-an-image'|text|e }}">
+                    <div class="input-group-append">
+                        <div class="btn-group">
+                            <input type="file" name="photo" accept="image/*" maxlength="256" style="display:none;">
+                            <button class="photo-browse btn btn-info" type="button" onclick="this.previousElementSibling.click();">{{ 'choose'|text }}</button>
+                            {% if record['photo'] is not empty %}<button class="btn btn-danger" type="button" onclick="fileClear(this);">{{ 'remove'|text }}</button>{% endif %}
+                        </div>
+                    </div>
+                </div>
+                <img class="img-thumbnail img-fluid" id="photo_preview" src="{{ record['photo']|e }}" style="{% if record['photo'] is empty %}display:none;{% endif %}">
+            </div>
+            <div class="form-group mt-3">
                 <label class="form-label">{{ 'full'|text }}</label>
                 <textarea class="form-control" id="full" name="full" rows="10">{{ record['full']|e }}</textarea>
             </div>
@@ -297,7 +311,57 @@
             category.value = e.target.getAttribute('value');
         }
     });
+    
+    const photoName = document.getElementById('photo_name');
+    const photoBrowse = document.querySelector('button.photo-browse');
+    const photoPreview = document.getElementById('photo_preview');
+    const photo = document.querySelector('input[name="photo"]');
+    const fileClear = function (button) {
+        photoPreview.removeAttribute('src');
+        photoPreview.style.display = 'none';
 
+        photoName.value = '';
+        photoBrowse.innerHTML = `{{ 'choose'|text|e }}`;
+
+        photo.value = '';
+        photo.removeAttribute('name');
+
+        button.remove();
+    };
+    
+    photo.addEventListener('change', function (e) {
+        e.preventDefault();
+        
+        photo.name = 'photo';
+        photoName.value = photo.files[0].name;
+        
+        photoBrowse.innerHTML = `{{ 'change'|text|e }}`;
+        if (photoBrowse.nextElementSibling?.tagName !== 'BUTTON') {
+            let photoClear = document.createElement('button');
+            photoClear.classList.add('btn', 'btn-danger');
+            photoClear.type = 'button';
+            photoClear.innerHTML = `{{ 'remove'|text }}`;
+            photoClear.addEventListener('click', function (e) {
+                e.preventDefault();
+                fileClear(this);
+            });
+            if (photoBrowse.nextSibling) {
+                photoBrowse.parentNode.insertBefore(photoClear, photoBrowse.nextSibling);
+            } else {
+                photoBrowse.parentNode.appendChild(photoClear);
+            }
+        }
+
+        let reader = new FileReader();
+        reader.onload = function (e) {
+            photoPreview.src = e.target.result;
+            if (photoPreview.style.display === 'none') {
+                photoPreview.style.display = 'block';
+            }
+        };
+        reader.readAsDataURL(photo.files[0]);
+    });
+    
     document.addEventListener('DOMContentLoaded', function () {
         let full = document.getElementById('full');
         sceditor.create(full, {

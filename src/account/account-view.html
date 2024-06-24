@@ -36,7 +36,7 @@
     <label class="col-3 col-form-label text-end text-end">{{ 'photo'|text }}</label>
     <div class="col-9">
         {% if record['photo'] is not empty %}
-            <img class="img-fluid img-thumbnail" src="{{ record['photo'] }}" style="max-height:480px;">
+            <img class="img-fluid img-thumbnail" src="{{ record['photo']|e }}" style="max-height:480px;">
         {% else %}
             <i class="bi bi-person-bounding-box text-secondary" style="font-size:2rem"></i>
         {% endif %}

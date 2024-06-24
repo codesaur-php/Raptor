@@ -45,7 +45,7 @@
             let indexLink = `{{ 'news'|link }}`;
             let canUpdate = `{{ user.can('system_content_update') ? 'true' : '' }}`;
             let canDelete = `{{ user.can('system_content_delete') ? 'true' : '' }}`;
-            let placeholder = `https://via.placeholder.com/60?text={{ (user.getOrganization()['name'] ?? 'no photo')|upper|url_encode }}`;
+            let placeholder = `https://via.placeholder.com/60?text=no%20photo`;
             let published_text = document.documentElement.lang === 'mn' ? 'нийтэлсэн' : 'published';
             data.list.forEach(record => {
                 let id = record.id;
@@ -56,7 +56,7 @@
                     flag = `<img src="https://flagcdn.com/20x15/${codeFlag}.png" srcset="https://flagcdn.com/40x30/${codeFlag}.png 2x" width="16" height="12">`;
                 }
                 
-                let image =  `<img style="max-width:60px;max-height:60px" src="${data.featured[id] ?? data.images[id] ?? placeholder}">`;
+                let image =  `<img style="max-width:60px;max-height:60px" src="${!record.photo ? placeholder : record.photo}">`;
                 
                 let category_type = `<span class="badge bg-primary">${record.category}</span>`;
                 category_type += ` <span class="badge bg-danger">${record.type}</span>`;

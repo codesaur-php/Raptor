@@ -219,7 +219,7 @@ class OrganizationController extends DashboardController
                 try {
                     $current_record = $this->indo(
                         '/record?model=' . OrganizationModel::class,
-                        ['id' => $id, 'is_active' => 1]
+                        ['id' => $id]
                     );
                     if (empty($current_record['logo'])) {
                         throw new \Exception('Current record had no logo!');

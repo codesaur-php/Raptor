@@ -22,7 +22,7 @@
                 <div class="col-9">
                     <div class="input-group col-5">
                     {% if record['logo'] is defined and record['logo'] is not empty %}
-                        <img class="img-fluid img-thumbnail" src="{{ record['logo'] }}" style="max-height:240px">
+                        <img class="img-fluid img-thumbnail" src="{{ record['logo']|e }}" style="max-height:240px">
                     {% endif %}
                     </div>
                 </div>
