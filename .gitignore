@@ -20,3 +20,5 @@ composer.lock
 # Энэ файлд системийн нэвтрэх эрх, нууц түлхүүрүүд агуулагддаг тул git-д ОРУУЛЖ БОЛОХГҮЙ.
 .env
 
+# NetBeans private тохиргоо
+/nbproject/private/

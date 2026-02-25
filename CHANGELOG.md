@@ -1,0 +1,267 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/) and this project adheres to [Semantic Versioning](https://semver.org/).
+
+---
+
+## [1.0.0] - 2026-02-25
+
+**`codesaur/raptor` v1.0.0 - Stable Release.** Package renamed from `codesaur/indoraptor` to `codesaur/raptor`.
+
+### Changed
+- **Package renamed** `codesaur/indoraptor` -> `codesaur/raptor`
+- **Environment variables** `INDO_*` prefix -> `RAPTOR_*` prefix
+- **Session name** `indoraptor` -> `raptor`
+- **Default database name** `indoraptor` -> `raptor`
+- `indolog()` method renamed to `log()`
+
+---
+
+## [0.8.0] - 2026-02-24
+
+### Added
+- **Pages** - "Parent page (navigation)" switch in page-insert form to create `type=nav` pages directly
+- **Pages** - `link` field with frontend (JS) and backend (`isValidLink()`) validation; supports URL, local path (`/path`), `mailto:`, `tel:`
+- **Pages** - `PagesController::read()` guards: published check (403), parent check (403), link redirect
+- **Pages** - Auto-reset `is_featured=0`, `comment=0` on parent page when a child is inserted or `parent_id` changes
+- **Sample Data Reset** - Reset button in pages-index, pages-nav, news-index when sample data exists
+  - `PagesController::reset()` and `NewsController::reset()` methods
+  - Routes: `pages-sample-reset`, `news-sample-reset`
+  - Detection: `created_by IS NULL AND created_at = published_at AND category='sample'`
+  - Truncates main table and files table, resets auto-increment to ID=1
+
+### Changed
+- **Pages** - Removed page type wizard from page-insert; all fields (title, description, content, link) visible in a single form
+- **Pages** - Merged Content and Link types into one form; `link` input always visible below content editor
+- **Pages** - Parent pages (pages with children) hide description, content, link, featured, comment fields in page-update
+- **Pages** - page-view shows description/content/link conditionally (only when non-empty), link with `border-info`
+- **Pages / News** - Action buttons in index/nav: link button if `link` is set and not parent, read button if no link and not parent, neither if parent or unpublished
+- **Pages / News** - Seed data uses `category='sample'` instead of `'general'`, `created_by` and `published_by` are `NULL`
+- **News** - news-index layout: "New" button moved from header to filter row (matches pages-index layout)
+
+### Fixed
+- **Pages** - `type="url"` input rejecting local paths like `/contact`; changed to `type="text"`
+
+---
+
+## [0.7.2] - 2026-02-12
+
+### Added
+- **moedit** - `attachFiles` option to enable/disable the Attach File button (`true` by default, `false` disables the button)
+
+### Fixed
+- **moedit** - Header image toolbar group responsive CSS selectors now require `.is-visible` class, preventing hidden elements from displaying incorrectly
+
+---
+
+## [0.7.1] - 2026-02-10
+
+### Fixed
+- **SettingsController** - Settings config save crash when no record exists (empty table)
+  - `LocalizedModel::insert()` requires non-empty content, but Config tab only sends non-localized fields
+  - Now populates empty localized content for each language before insert
+- **SettingsController** - Localized field change detection used swapped indices (`[$field][$code]` instead of `[$code][$field]`)
+- **TextController** - Same swapped localized indices bug in `update()` method
+
+---
+
+## [0.7.0] - 2026-02-09
+
+### Added
+- **Pages Navigation** (`/dashboard/pages/nav`) - Tree-structured page navigation management
+  - Display cards grouped by language
+  - Published/unpublished distinction: blue title + green check icon / eye-slash icon
+  - Display page photo thumbnails
+- **Removed the "System page" concept** - All published pages are now visible in navigation
+- Insert form: automatic position calculation (parent position + 10 for first child, max sibling + 10 for subsequent, max top-level + 100 for same-language)
+- Page view: position field (language, category, position displayed in a single row)
+- **OG meta tags** for page and news: `og:title`, `og:description`, `og:image`, `og:type`, `og:site_name`, logo fallback
+- `<title>` tag: "Record Title | Site Title" format for content pages
+
+### Changed
+- `getNavigation()`: removed `(type='nav' OR parent_id>0)` filter, added `slug` field
+- `getFeaturedPages()`: added `slug` field
+- `getInfos()`: added `position` and `code` fields
+- Web page/news links use `slug` instead of `id` (`/page/{slug}`, `/news/{slug}`)
+
+---
+
+## [0.6.0] - 2026-02-06
+
+Full CMS framework major release. Multi-DB support, DI Container, OpenAI integration, full documentation.
+
+### Added
+- `SQLiteConnectMiddleware` - SQLite database support (on top of MySQL, PostgreSQL)
+- `ContainerMiddleware` - PSR-11 Dependency Injection Container (`codesaur/container`)
+- OpenAI integration - moedit editor AI button (`INDO_OPENAI_API_KEY`)
+- Image optimization via GD extension - `INDO_CONTENT_IMG_MAX_WIDTH`, `INDO_CONTENT_IMG_QUALITY`
+- `ext-gd`, `ext-intl` PHP extension requirements
+- `is_featured` field in Pages module (featured pages for footer)
+- File attachments in Web templates (page.html, news.html)
+- `basename` Twig filter for Web templates
+- Native JS file upload (replaced Plupload external library)
+- Native JS image preview (replaced Fancybox external library)
+- `INDO_JWT_SECRET` auto-generation via Composer post-install script
+- Full MN/EN documentation (`docs/mn/`, `docs/en/`)
+- API Reference (`docs/mn/api.md`, `docs/en/api.md`)
+- `CHANGELOG.md` version history
+
+### Changed
+- `codesaur/http-application` ^5.7 -> **^6.0.0** (breaking)
+- `codesaur/dataobject` ^7.1 -> **^9.0.0** (breaking, `localized` access pattern changed)
+- `codesaur/template` ^1.6 -> **^3.0.0** (breaking)
+- `firebase/php-jwt` >=6.7 -> **^7.0.2** (HS256 key length requirement added)
+- `getImportantMenu()` -> `getFeaturedPages()` refactor
+- `ForgotModel`, `SignupModel` removed - authentication flow simplified
+- `JsonExceptionHandler` removed
+- Full PHPDoc added to all PHP files
+
+### Fixed
+- `localized` access pattern bugs in dashboard templates (DataObject ^9.0 refactor)
+- Web news.html file list incorrect column names
+- Web page.html stray character
+
+---
+
+## [0.5.0] - 2025-09-22
+
+Content modules reorganized into subdirectories. Web layer template system improved. Multi-DB support started.
+
+### Added
+- `Web\Template\` namespace - Web ExceptionHandler, TemplateController
+- `Web\SessionMiddleware`, `Web\LocalizationMiddleware` (separate from Dashboard)
+- `PostgresConnectMiddleware` - PostgreSQL support
+- `SignupModel` (user signup request model)
+
+### Changed
+- `PDOConnectMiddleware` -> `MySQLConnectMiddleware` renamed
+- Content modules moved to subdirectories: `file/`, `news/`, `page/`, `reference/`, `settings/`
+- Localization module separated: `language/`, `text/` subdirectories
+- `UserRequestModel` -> `SignupModel` renamed
+- `codesaur/dataobject` ^5.2 -> ^7.1
+
+---
+
+## [0.4.0] - 2024-09-28
+
+**Full architectural overhaul.** Migrated from library to project/application structure. Two-layer (Dashboard + Web) architecture introduced.
+
+### Added
+- `application/` new directory structure (`raptor/`, `dashboard/`, `web/`)
+- `Raptor\`, `Dashboard\`, `Web\` new namespaces (migrated from `Raptor\`)
+- `public_html/index.php` entry point - automatic Dashboard/Web routing
+- `.env` configuration (`vlucas/phpdotenv`) - all settings in environment file
+- Twig template engine support (`codesaur/template`)
+- `Raptor\Application` - Dashboard middleware pipeline base
+- `Web\Application` - Public website application
+- `Dashboard\Application` - Dashboard application
+- Brevo (SendInBlue) email API (`getbrevo/brevo-php`)
+- `SettingsMiddleware` - system settings middleware
+- `DashboardTrait` - Dashboard UI common functions
+- `TemplateRouter`, `TemplateController` - Dashboard template system
+- `ErrorHandler` - Dashboard template-based error handling
+- PSR-3 `Logger` class (built-in)
+- `Mailer` class (Brevo + PHPMailer)
+- `User` value object (profile, organization, RBAC permissions)
+- `psr/log` ^3.0 direct dependency
+
+### Changed
+- **`Raptor\` -> `Raptor\`** full namespace change
+- **`src/` -> `application/raptor/`** directory structure updated
+- `IndoApplication` -> `Raptor\Application`
+- `IndoController` -> `Raptor\Controller`
+- `codesaur/rbac` -> `Raptor\RBAC\` built-in (separated from external package)
+- `codesaur/logger` -> `Raptor\Log\Logger` built-in
+- `phpmailer/phpmailer` re-added (^6.8)
+- `codesaur/dataobject` ^5.2 re-added (was removed in v5-8)
+
+### Removed
+- `InternalRequest`, `InternalController` classes removed
+- `JsonResponseMiddleware` removed
+- `RecordController`, `StatementController` removed
+- `codesaur/rbac` external dependency removed (built-in)
+- `codesaur/logger` external dependency removed (built-in)
+
+---
+
+## [0.3.0] - 2024-07-30
+
+Simplified to minimal base library. All CMS modules removed, only core classes remain.
+
+### Changed
+- Framework simplified to minimal base (9 PHP files)
+- `codesaur/rbac` ^2.3 -> ^2.5
+- `codesaur/logger` ^1.5 -> ^2.0
+
+### Removed
+- Auth, Localization, Contents, File, Mailer modules fully removed
+- `CountriesController`, `CountriesModel`
+- `LanguageController`, `LanguageModel`
+- `TextController`, `TextModel`, `TextInitial`
+- `FilesController`, `FilesModel`, `FileModel`, `FilesRouter`
+- `NewsModel`, `PagesController`, `PagesModel`
+- `ReferenceController`, `ReferenceModel`, `ReferenceInitial`
+- `SettingsModel`
+- `MailerController`, `MailerModel`, `MailerRouter`
+- `LoggerController`, `LoggerModel`, `LoggerRouter`
+
+---
+
+## [0.2.0] - 2023-07-19
+
+CMS modules added. PHP 8.2.1 requirement. File management, news, pages, references, and settings modules.
+
+### Added
+- `Contents` module: `NewsModel`, `PagesController`, `PagesModel`, `ReferenceController`, `ReferenceModel`, `SettingsModel`
+- `File` module: `FileModel`, `FilesController`, `FilesModel`, `FilesRouter`
+- `Mailer` module: `MailerController`, `MailerModel`, `MailerRouter`
+- `Record` module: `RecordController`, `RecordRouter`
+- `Statement` module: `StatementController`, `StatementRouter`
+- `PDOConnectMiddleware` - DB connection middleware
+- `JsonResponseMiddleware` - JSON response middleware
+- `JsonExceptionHandler` - JSON exception handler
+- `InternalRequest` - Internal API request
+- `ContentsRouter` - CMS routes
+- `codesaur/http-client` dependency added
+
+### Changed
+- PHP >=7.2 -> **PHP 8.2.1** requirement
+- `Account\` -> `Auth\` namespace changed
+- `TranslationController` -> `TextController` renamed
+- `firebase/php-jwt` >=5.2 -> >=6.7
+- `codesaur/http-application` >=1.2 -> >=5.5.2
+- `codesaur/rbac` >=1.4 -> >=2.3.7
+
+### Removed
+- `phpmailer/phpmailer` direct dependency removed
+- `codesaur/dataobject` direct dependency removed
+- `codesaur/localization` direct dependency removed
+- `AccountErrorCode` class removed
+
+---
+
+## [0.1.0] - 2021-04-18
+
+Initial release. REST API-based server framework.
+
+### Features
+- PHP >=7.2 support
+- `IndoApplication` - PSR-15 Application base
+- `IndoController` - Base Controller
+- `IndoExceptionHandler` - Exception handler
+- JWT authentication (`firebase/php-jwt`)
+- Account module: `AuthController`, `AccountController`, `AccountRouter`
+- `OrganizationModel`, `OrganizationUserModel`
+- `ForgotModel` - Password recovery
+- Localization module: `LanguageController`, `CountriesController`, `TranslationController`
+- Logger module: `LoggerController`, `LoggerRouter`
+- RBAC access control (`codesaur/rbac`)
+- PSR-3 logging system (`codesaur/logger`)
+- Email sending (`phpmailer/phpmailer`)
+- `codesaur/http-application` PSR-7/PSR-15 base
+- `codesaur/dataobject` PDO ORM
+- MIT License
+
+[1.0.0]: https://github.com/codesaur-php/Raptor/releases/tag/v1.0.0

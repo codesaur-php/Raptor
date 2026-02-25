@@ -1,0 +1,166 @@
+<!--
+    Файлын keyword, description мэдээллийг засварлах modal.
+    Энэ modal нь files-update route руу PUT хүсэлт илгээж
+    тухайн файлын metadata-г шинэчилнэ.
+-->
+
+<div class="modal-lg modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+        <!--
+            Modal Header -
+            Файлын basename-г илүү ойлгомжтой байдлаар гаргаж харуулна.
+        -->
+        <div class="modal-header">
+            <h3 class="modal-title fs-6 text-uppercase text-primary">
+                <i class="bi bi-hdd"></i> {{ record['path']|basename }}
+            </h3>
+
+            <!-- Modal хаах товч -->
+            <button class="btn-close"
+                    type="button"
+                    data-bs-dismiss="modal"
+                    aria-label="{{ 'close'|text|e }}">
+            </button>
+        </div>
+
+        <!-- Modal Body - metadata засварлах үндсэн форм -->
+        <div class="modal-body">
+            <!--
+                Файлын мэдээллийг PUT хүсэлтээр илгээх form.
+                enctype="multipart/form-data" → ирээдүйд файл солих боломж нээлттэй.
+            -->
+            <form class="needs-validation"
+                  novalidate
+                  id="files_update"
+                  action="{{ 'files-update'|link({'table':table, 'id':record['id']}) }}"
+                  method="PUT"
+                  enctype="multipart/form-data">
+
+                <!-- KEYWORD -->
+                <div class="row mb-3">
+                    <label class="col-3 col-form-label text-end">
+                        {{ 'keyword'|text }}
+                    </label>
+                    <div class="col-9">
+                        <input class="form-control"
+                               name="file_keyword"
+                               type="text"
+                               value="{{ record['keyword']|e }}"
+                               maxlength="32">
+                    </div>
+                </div>
+
+                <!-- DESCRIPTION -->
+                <div class="row">
+                    <label class="col-3 col-form-label text-end">
+                        {{ 'description'|text }}
+                    </label>
+                    <div class="col-9">
+                        <textarea class="form-control"
+                                  name="file_description"
+                                  maxlength="255">{{ record['description']|e }}</textarea>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Modal Footer - хадгалах болон болих товч -->
+        <div class="modal-footer">
+            <button class="btn btn-primary update-files-submit" type="button">
+                <i class="bi bi-check"></i> {{ 'save'|text }}
+            </button>
+
+            <!-- Modal-аа хаах товч (id нь file дугаараар) -->
+            <button class="btn btn-secondary"
+                    data-bs-dismiss="modal"
+                    id="file_{{ record['id'] }}_close"
+                    type="button">
+                {{ 'cancel'|text }}
+            </button>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    /* FORM VALIDATION + SUBMISSION */
+    const formUpdate = document.querySelector('form#files_update');
+
+    if (!formUpdate) {
+        NotifyTop('danger', `{{ 'error'|text|e }}`, 'Form not found!');
+    } else {
+        /* Save товч → form.submit() биш requestSubmit() ашиглана */
+        const submitter = document.querySelector('button.update-files-submit');
+
+        submitter.addEventListener('click', function (e) {
+            e.preventDefault();
+            formUpdate.requestSubmit();
+        });
+
+        /* Form submit handler (PUT AJAX) */
+        formUpdate.addEventListener('submit', function (event) {
+            event.preventDefault();
+
+            /* HTML5 form validation */
+            const _valid = this.checkValidity();
+            this.classList.add('was-validated');
+
+            if (!_valid) {
+                event.stopPropagation();
+                return NotifyTop(
+                    'danger',
+                    `{{ 'error'|text|e }}`,
+                    `{{ 'u-have-some-form-errors'|text|e }}`
+                );
+            }
+
+            /* Save товч дээр grow animation үзүүлэх */
+            submitter.growNstop();
+
+            /* FormData → fetch PUT */
+            const data = new FormData(this);
+
+            fetch(this.action, {
+                body: data,
+                method: this.getAttribute('method') ?? 'PUT'
+            })
+            .then(res => {
+                const contentType = res.headers.get('content-type') || '';
+                if (contentType.includes('application/json')) return res.json();
+                
+                throw new Error(`HTTP [${res.status}]: ${res.statusText}`);
+            })
+            .then(resp => {
+                if (resp.status !== 'success') {
+                    throw new Error(resp.message ? resp.message : 'Invalid response!');
+                }
+
+                /* Сервэрээс ирсэн шинэчилсэн record */
+                if (!resp.record || resp.record.id === undefined) return;
+
+                /* Modal хаах */
+                document.getElementById(`file_${resp.record.id}_close`).click();
+
+                /* UI дээрх мөрийг шинэчлэх */
+                const row = document.getElementById(`file_${resp.record.id}`);
+                if (!row) return;
+
+                row.children[2].innerHTML = resp.record.description;
+                row.children[3].innerHTML = resp.record.keyword;
+
+                /* Амжилттай мэдэгдэл */
+                NotifyTop(
+                    resp.type ?? 'success',
+                    resp.title ?? `{{ 'success'|text|e }}`,
+                    resp.message ?? 'File record successfully updated'
+                );
+            })
+            .catch(error => {
+                /* Алдааны мэдэгдэл */
+                NotifyTop('danger', `{{ 'error'|text|e }}`, error.message);
+            })
+            .finally(() => {
+                submitter.growNstop();
+            });
+        });
+    }
+</script>

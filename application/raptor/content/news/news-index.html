@@ -1,0 +1,372 @@
+<!-- SweetAlert2 сан - устгах үед баталгаажуулах цонх гаргахад ашиглана -->
+<script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<!-- ========== ТОЛГОЙ ХЭСЭГ ========== -->
+<div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 shadow">
+    <h3 class="px-2 my-auto fs-5 text-info text-uppercase">
+        <i class="bi bi-book"></i> {{ 'news'|text }}
+    </h3>
+</div>
+
+<!-- ========== ШҮҮЛТҮҮР + ШИНЭ ТОВЧ ========== -->
+<style>
+.btn-filter {
+    --bs-btn-color: var(--bs-emphasis-color);
+    --bs-btn-border-color: var(--bs-emphasis-color);
+    --bs-btn-hover-color: var(--bs-body-bg);
+    --bs-btn-hover-bg: var(--bs-emphasis-color);
+    --bs-btn-hover-border-color: var(--bs-emphasis-color);
+    --bs-btn-active-color: var(--bs-body-bg);
+    --bs-btn-active-bg: var(--bs-emphasis-color);
+    --bs-btn-active-border-color: var(--bs-emphasis-color);
+}
+.btn-filter.active {
+    color: var(--bs-body-bg);
+    background-color: var(--bs-emphasis-color);
+    border-color: var(--bs-emphasis-color);
+}
+</style>
+<div class="d-flex align-items-center flex-wrap gap-2 mt-3 mb-2">
+    {% if user.can('system_content_insert') %}
+    <a class="btn btn-sm btn-outline-success text-uppercase shadow-sm" href="{{ 'news-insert'|link }}">
+        <i class="bi-plus-circle-dotted"></i> {{ 'new'|text }}
+    </a>
+    {% endif %}
+    <button class="btn btn-sm btn-secondary text-uppercase ms-auto" id="filter_action" type="button">
+        <i class="bi bi-funnel"></i> {{ 'filter'|text }}
+    </button>
+    {% for name,filter in filters %}
+    <div class="dropdown">
+        <button class="btn btn-sm btn-filter dropdown-toggle content-filters" data-bs-toggle="dropdown" data-name="{{ name }}" aria-expanded="false" type="button">
+            {{ filter.title }}
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end shadow">
+            {% for val,label in filter.values %}
+                <li><button class="dropdown-item filter-values-{{ name }}" data-id="{{ val }}" type="button">{{ label }}</button></li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- ========== МЭДЭЭНИЙ ХҮСНЭГТ ========== -->
+<!-- Мэдээний жагсаалтыг харуулах хүснэгт - JavaScript-ээр өгөгдөл дүүргэнэ -->
+<table class="table table-sm table-hover table-striped table-bordered" id="news">
+    <thead>
+        <tr class="text-uppercase">
+            <th scope="col"><span class="text-secondary">ID /</span> {{ 'date'|text }}</th>      <!-- Мэдээний ID болон огноо -->
+            <th scope="col"><i class="bi bi-translate"></i> </th>                                <!-- Хэлний туг -->
+            <th scope="col"><i class="bi bi-image"></i></th>
+            <th scope="col">{{ 'title'|text }}</th>                                              <!-- Гарчиг -->
+            <th scope="col"><i class="bi bi-paperclip"></i></th>
+            <th scope="col">{{ 'type'|text }} / {{ 'category'|text }}</th>
+            <th scope="col">{{ 'publish'|text }}</th>
+            <th scope="col" style="width:10rem">{{ 'action'|text }}</th>                         <!-- Үйлдлийн товчнууд -->
+        </tr>
+    </thead>
+</table>
+
+<!-- ========== JAVASCRIPT ХЭСЭГ ========== -->
+<script type="text/javascript">
+    /* URL-ээс параметрүүдийг унших */
+    const urlParams = new URLSearchParams(window.location.search);
+
+    /* Шүүлтүүрийн товчнуудыг сонгох */
+    const filterAction = document.getElementById('filter_action');
+    const filterBtns = document.querySelectorAll('button.content-filters');
+
+    /* filter_action товчны төлөвийг шинэчлэх
+       3 горим: idle (btn-secondary), changed (btn-success), applied (btn-info) */
+    function onFilterChange()
+    {
+        filterBtns.forEach(f => {
+            f.classList.toggle('active', !!f.dataset.id);
+        });
+
+        /* Одоогийн сонголтыг URL параметртэй харьцуулах */
+        const currentParams = new URLSearchParams();
+        filterBtns.forEach(f => { if (f.dataset.id) currentParams.append(f.dataset.name, f.dataset.id); });
+        const hasFilter = currentParams.size > 0;
+        const matchesUrl = currentParams.toString() === urlParams.toString();
+
+        filterAction.classList.remove('btn-secondary', 'btn-danger', 'btn-dark');
+
+        if (!hasFilter && urlParams.size === 0) {
+            /* Горим 1: Фильтргүй */
+            filterAction.classList.add('btn-secondary');
+            filterAction.innerHTML = '<i class="bi bi-funnel"></i> {{ "filter"|text }}';
+        } else if (hasFilter && matchesUrl) {
+            /* Горим 3: Set хийгдсэн фильтертэй */
+            filterAction.classList.add('btn-dark');
+            filterAction.innerHTML = '<i class="bi bi-funnel-fill"></i> {{ "filter"|text }} <i class="bi bi-x-circle ms-1" data-reset></i>';
+        } else {
+            /* Горим 2: Өөрчлөгдсөн, set хийхэд бэлэн */
+            filterAction.classList.add('btn-danger');
+            filterAction.innerHTML = '<i class="bi bi-funnel-fill"></i> {{ "filter"|text }} <i class="bi bi-x-circle ms-1" data-reset></i>';
+        }
+
+        const resetIcon = filterAction.querySelector('[data-reset]');
+        if (resetIcon) {
+            resetIcon.addEventListener('click', function (e) {
+                e.stopPropagation();
+                window.location.href = window.location.pathname;
+            });
+        }
+    }
+
+    /* ========== ШҮҮЛТҮҮРИЙН DROPDOWN СОНГОЛТУУДАД EVENT LISTENER НЭМЭХ ========== */
+    filterBtns.forEach(filter => {
+        document.querySelectorAll(`.filter-values-${filter.dataset.name}`).forEach(btn => {
+            btn.addEventListener('click', function (e) {
+                e.preventDefault();
+                filter.textContent = e.target.textContent;
+                filter.dataset.id = e.target.dataset?.id;
+                onFilterChange();
+            });
+        });
+    });
+
+    /* ========== ШҮҮЛТҮҮР ХЭРЭГЛЭХ ТОВЧНЫ EVENT ========== */
+    filterAction.addEventListener('click', function (e) {
+        e.preventDefault();
+        /* Фильтргүй үед анхааруулга */
+        if (filterAction.classList.contains('btn-secondary')) {
+            return NotifyTop('warning', `{{ 'warning'|text|e }}`, '{{ localization.code == "mn" ? "Шүүлтүүрээс ядаж нэгийг сонгоорой" : "Select at least one filter" }}');
+        }
+        /* Set хийгдсэн горимд дахин ачаалахгүй */
+        if (filterAction.classList.contains('btn-dark')) return;
+        const params = [];
+        filterBtns.forEach(filter => {
+            if (filter.dataset.id) {
+                params.push(`${filter.dataset.name}=${filter.dataset.id}`);
+            }
+        });
+        if (params.length === 0) return;
+        window.location.href = window.location.pathname + '?' + params.join('&');
+    });
+
+    /* ========== DOM БЭЛЭН БОЛСНЫ ДАРАА АЖИЛЛАХ КОД ========== */
+    document.addEventListener('DOMContentLoaded', function () {
+        /* URL-д параметр байвал шүүлтүүрийн төлвийг сэргээх */
+        if (urlParams?.size > 0) {
+            filterBtns.forEach(filter => {
+                const value = urlParams.get(filter.dataset.name);
+                if (value) {
+                    filter.dataset.id = value;
+                    const selector = `.filter-values-${filter.dataset.name}[data-id="${value}"]`;
+                    const titleElement = document.querySelector(selector);
+                    filter.textContent = titleElement?.textContent || value;
+                    filter.classList.add('active');
+                }
+            });
+            onFilterChange();
+        }
+
+        /* ========== МЭДЭЭНИЙ ХҮСНЭГТИЙГ ЭХЛҮҮЛЭХ ========== */
+        const news = new motable('table#news', { freezeColumns: [0] });
+
+        /* Серверээс мэдээний жагсаалтыг татах */
+        fetch(
+            `{{ 'news-list'|link }}` + window.location.search
+        ).then(res => {
+            /* Хариуны төрлийг шалгах */
+            if (res.headers.get('content-type')?.includes('application/json')) return res.json();
+            throw new Error(`HTTP [${res.status}]: ${res.statusText}`);
+        }).then(data => {
+            /* Хариу буруу бол алдаа шидэх */
+            if (!data.list) {
+                throw new Error(data.message ?? 'Invalid response!');
+            }
+
+            /* ========== ХҮСНЭГТИЙН МӨРҮҮДИЙГ ҮҮСГЭХ ========== */
+            let rowsHTML = '';
+            const indexLink = `{{ 'news'|link }}`;
+
+            /* Хэрэглэгчийн эрхүүдийг шалгах */
+            const canUpdate = {{ user.can('system_content_update') ? 'true' : 'false' }};  /* Засах эрх */
+            const canDelete = {{ user.can('system_content_delete') ? 'true' : 'false' }};  /* Устгах эрх */
+
+            /* Нийтлэгдсэн гэсэн текстийг хэлнээс хамааруулан тохируулах */
+            const published_text = document.documentElement.lang === 'mn' ? 'нийтэлсэн' : 'published';
+
+            /* Мэдээ бүрийг давтаж хүснэгтийн мөр үүсгэх */
+            data.list.forEach(record => {
+                const id = record.id;
+
+                /* Хэлний туг үүсгэх (en -> us туг руу хөрвүүлэх) */
+                let flag = '';
+                if (record.code) {
+                    const codeFlag = record.code === 'en' ? 'us' : record.code;
+                    flag = `<img src="https://flagcdn.com/20x15/${codeFlag}.png" srcset="https://flagcdn.com/40x30/${codeFlag}.png 2x" width="16" height="12">`;
+                }
+
+                /* Зургийг харуулах */
+                let image = '';
+                if (record.photo) {
+                    image = `<img style="max-width:60px;max-height:60px" src="${record.photo}">`;
+                }
+
+                /* Төрөл ба ангиллын badge үүсгэх */
+                let type_category = `<span class="badge bg-primary">${record.type}</span>`;
+                type_category += ` <span class="badge bg-danger">${record.category}</span>`;
+
+                /* Нийтлэгдсэн төлөвийг харуулах */
+                const published = record.published === 1 ? `<i class="bi bi-emoji-heart-eyes-fill text-success"></i> ${published_text}<br/><small>${record['published_at']}</small>` : '<i class="bi bi-eye-slash"></i>';
+
+                /* ========== ҮЙЛДЛИЙН ТОВЧНУУДЫГ ҮҮСГЭХ ========== */
+                const buttons = [`<a class="btn btn-sm btn-warning mt-1 shadow-sm" href="${indexLink}/read/${record.slug}"><i class="bi bi-book"></i></a>`];  /* Унших товч */
+                buttons.push(`<a class="btn btn-sm btn-info mt-1 shadow-sm" href="${indexLink}/view/${record.id}"><i class="bi bi-eye"></i></a>`);          /* Харах товч */
+
+                /* Засах эрхтэй бол засах товч нэмэх */
+                if (canUpdate) {
+                    buttons.push(`<a class="btn btn-sm btn-primary mt-1 shadow-sm" href="${indexLink}/${record.id}"><i class="bi bi-pencil-square"></i></a>`);
+                }
+                /* Устгах эрхтэй бол устгах товч нэмэх */
+                if (canDelete) {
+                    buttons.push(`<button class="deactivate-news btn btn-sm btn-danger mt-1 shadow-sm" type="button" value="${record.id}"><i class="bi bi-trash"></i></button>`);
+                }
+                const actions = `<div class="mb-1">${buttons.join(' ')}</div>`;
+
+                /* Хүснэгтийн мөр үүсгэх */
+                rowsHTML += `<tr><th scope="row"><span class="text-secondary">${id} /</span> ${record['created_date']}</th><td>${flag} <span class="text-secondary fw-lighter">${record.code}</span> </td><td>${image}</td><td>${record.title}</td><td>${data.files_counts[id]?.attach || ''}</td><td>${type_category}</td><td>${published}</td><td>${actions}</td></tr>`;
+            });
+
+            // Жишиг дата байвал reset товч харуулах
+            if (data.is_sample && canDelete) {
+                const resetDiv = document.createElement('div');
+                resetDiv.className = 'alert alert-warning d-flex align-items-center mt-3';
+                resetDiv.innerHTML = `
+                    <i class="bi bi-info-circle me-2 fs-5"></i>
+                    <span class="me-auto">${document.documentElement.lang === 'mn'
+                        ? 'Хүснэгтэд жишиг (sample) дата байна. Production эхлүүлэхийн тулд цэвэрлэж болно.'
+                        : 'Table contains sample data. You can clear it to start production.'}</span>
+                    <button class="btn btn-sm btn-danger ms-3" id="resetSampleBtn" type="button">
+                        <i class="bi bi-arrow-counterclockwise"></i> ${document.documentElement.lang === 'mn' ? 'Reset & Production эхлэх' : 'Reset & Start Production'}
+                    </button>`;
+                news.table.parentNode.insertBefore(resetDiv, news.table);
+                document.getElementById('resetSampleBtn').addEventListener('click', function () {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: document.documentElement.lang === 'mn' ? 'Жишиг дата цэвэрлэх' : 'Clear Sample Data',
+                        html: document.documentElement.lang === 'mn'
+                            ? '<p class="text-danger">Бүх дата устгагдана. Энэ үйлдлийг буцаах боломжгүй!</p>'
+                            : '<p class="text-danger">All sample data will be deleted. This action cannot be undone!</p>',
+                        showCancelButton: true,
+                        cancelButtonText: `{{ 'cancel'|text|e }}`,
+                        confirmButtonText: document.documentElement.lang === 'mn' ? 'Тийм, цэвэрлэх' : 'Yes, clear it',
+                        confirmButtonColor: '#df4759',
+                        showLoaderOnConfirm: true,
+                        allowOutsideClick: () => !Swal.isLoading(),
+                        preConfirm: () => {
+                            return fetch(`{{ 'news-sample-reset'|link }}`, {
+                                method: 'DELETE',
+                                headers: { 'Content-Type': 'application/json' }
+                            }).then(res => res.json()).then(response => {
+                                if (response.status !== 'success') {
+                                    throw new Error(response.message ?? 'Error!');
+                                }
+                                return response;
+                            }).catch(error => {
+                                Swal.showValidationMessage(error.message);
+                            });
+                        }
+                    }).then(result => {
+                        if (result.isConfirmed) {
+                            NotifyTop('success', `{{ 'success'|text|e }}`, result.value.message);
+                            setTimeout(() => window.location.reload(), 1000);
+                        }
+                    });
+                });
+            }
+
+            /* Хүснэгтэд өгөгдөл оруулах */
+            news.setBody(rowsHTML);
+            news.setReady();
+        }).catch(err => {
+            /* Алдаа гарвал хүснэгтэд харуулах */
+            news.error(err);
+        }).finally(() => {
+            /* ========== AJAX MODAL ТОВЧНУУДАД EVENT НЭМЭХ ========== */
+            const modals = news.table.querySelectorAll('.ajax-modal');
+            modals.forEach(a => a.addEventListener('click', function () {
+                ajaxModal(a);
+            }));
+
+            /* ========== МЭДЭЭ ИДЭВХГҮЙ БОЛГОХ (УСТГАХ) ТОВЧНУУДАД EVENT НЭМЭХ ========== */
+            const deactivates = news.table.querySelectorAll('.deactivate-news');
+            deactivates.forEach(btn => btn.addEventListener('click', function (e) {
+                e.preventDefault();
+
+                /* Хүснэгтийн мөрийг олох */
+                const thisRow = btn.closest('tr');
+                if (!thisRow) {
+                    return NotifyTop('warning', `{{ 'error'|text|e }}`, 'Cannot select row!');
+                }
+
+                /* Мэдээний мэдээллийг авах */
+                const id = btn.value;
+                const title = thisRow.children[3].textContent.replace(/<\/?[^>]+(>|$)/g, '');
+
+                /* Баталгаажуулах асуултын текстийг хэлнээс хамааруулан тохируулах */
+                let question = document.documentElement.lang === 'mn'
+                    ? `<p class="text-danger mb-3">Та (${title}) мэдээг идэвхгүй болгохдоо итгэлтэй байна уу?</p>`
+                    : `<p class="text-danger mb-3">Are you sure to deactivate the news (${title})?</p>`;
+
+                /* Зургийг SweetAlert-д харуулах эсэхийг шалгах */
+                let src = '';
+                const photo = thisRow.children[2].querySelector('img');
+                if (photo && photo.src) {
+                    src = photo.src;
+                } else {
+                    question = `<i class="bi bi-question-circle text-danger mb-4" style="font-size:3rem"></i><p>${question}</p>`;
+                }
+
+                /* ========== SWEETALERT БАТАЛГААЖУУЛАХ ЦОНХ ========== */
+                Swal.fire({
+                    imageUrl: src,
+                    imageHeight: 64,
+                    html: question,
+                    showCancelButton: true,
+                    cancelButtonText: `{{ 'cancel'|text|e }}`,
+                    confirmButtonText: `<i class="bi bi-trash"></i> {{ 'delete'|text|e }}`,
+                    confirmButtonColor: '#df4759',
+                    showLoaderOnConfirm: true,
+                    allowOutsideClick: () => !Swal.isLoading(),
+                    backdrop: true,
+                    preConfirm: () => {
+                        /* Сервер рүү устгах хүсэлт илгээх */
+                        return fetch(
+                            `{{ 'news-deactivate'|link }}`,
+                            {
+                                method: 'DELETE',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({id, title})
+                            }
+                        ).then(res => {
+                            return res.json();
+                        }).then(response => {
+                            /* Амжилттай бол хүснэгтээс мөр устгах */
+                            if (response.status !== 'success') {
+                                throw new Error(response.message ?? 'Invalid response!');
+                            }
+
+                            Swal.close();
+
+                            /* Хүснэгтээс мөр устгах */
+                            thisRow.remove();
+                            news.setReady();
+
+                            /* Амжилттай мэдэгдэл харуулах */
+                            NotifyTop('success', `{{ 'success'|text|e }}`, response.message ?? `News:${id} deactivated`);
+                        }).catch(error => {
+                            /* Алдааг SweetAlert-д харуулах */
+                            Swal.showValidationMessage(error.message);
+                        });
+                    }
+                });
+            }));
+        });
+    });
+</script>

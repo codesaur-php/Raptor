@@ -1,0 +1,211 @@
+<!-- Page categories -->
+{% set categories = {
+    'general': { 'mn': 'Ерөнхий' },
+    'info': { 'mn': 'Мэдээллийн' },
+    'service': { 'mn': 'Үйлчилгээ' },
+    'legal': { 'mn': 'Хууль эрх зүй' },
+    'reference': { 'mn': 'Лавлагаа' }
+} %}
+<!-- Mongolian WYSIWYG Editor -->
+<link href="{{ index }}/assets/moedit/moedit.css" rel="stylesheet">
+<link href="{{ index }}/assets/moedit/moedit-icons.css" rel="stylesheet">
+<script defer src="{{ index }}/assets/moedit/moedit.js"></script>
+<script defer src="{{ index }}/assets/moedit/moedit.ui.js"></script>
+<!-- Толгой хэсэг -->
+<div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-2 shadow">
+    <h3 class="px-2 my-auto fs-6 text-info text-uppercase">
+        <i class="bi bi-eye"></i> {{ record['title']|e }}
+    </h3>
+    <div class="ms-auto">
+        <a class="btn btn-sm btn-info shadow-sm back-link" href="{{ 'pages'|link }}">
+            <i class="bi bi-arrow-left"></i> {{ 'pages'|text }}
+        </a>
+    </div>
+</div>
+<!-- Хэл, Ангилал, Байрлал -->
+<div class="row mt-3">
+    <div class="col-4">
+        <label class="form-label">{{ 'language'|text }} <i class="bi bi-translate"></i></label>
+        <span class="form-control">
+            {% set flag = record['code'] == 'en' ? 'us' : record['code'] %}
+            {% set title = (localization.language[record['code']]['title'] ?? record['code'])|e %}
+            <img src="https://flagcdn.com/20x15/{{ flag }}.png" srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x" width="16" height="12" alt="{{ title }}">
+            {{ title }}
+        </span>
+    </div>
+    <div class="col-4">
+        <label class="form-label">{{ 'category'|text }} <i class="bi bi-bookmark"></i></label>
+        <input class="form-control" name="category" readonly type="text" value="{{ (categories[record['category']][localization.code] ?? record['category'])|e }}" maxlength="32">
+    </div>
+    <div class="col-4">
+        <label class="form-label">{{ 'position'|text }} <i class="bi bi-sort-numeric-down"></i></label>
+        <input class="form-control" readonly type="number" value="{{ record['position'] }}">
+    </div>
+</div>
+<!-- Гарчиг -->
+<div class="mt-3">
+    <label class="form-label">{{ 'title'|text }} <i class="bi bi-card-heading"></i></label>
+    <input class="form-control form-control-lg border-primary" name="title" readonly value="{{ record['title']|e }}" maxlength="255" type="text">
+</div>
+<!-- Тайлбар -->
+{% if record['description'] is not empty %}
+<div class="mt-3">
+    <label class="form-label">{{ localization.code == 'mn' ? 'Товч тайлбар' : 'Description' }} <i class="bi bi-card-text"></i></label>
+    <input class="form-control form-control-sm" name="description" readonly value="{{ record['description']|e }}" type="text">
+</div>
+{% endif %}
+<!-- Агуулга -->
+{% if record['content'] is not empty %}
+<div class="mt-3">
+    <textarea name="content" readonly>{{ record['content']|e }}</textarea>
+</div>
+{% endif %}
+<!-- Холбоос -->
+{% if record['link'] is not empty %}
+<div class="mt-3">
+    <label class="form-label">{{ 'link'|text }} <i class="bi bi-link-45deg"></i></label>
+    <input class="form-control border-info" name="link" readonly value="{{ record['link']|e }}" type="url">
+</div>
+{% endif %}
+<!-- Нийтлэх тохиргоо -->
+<div class="rounded border border-success mt-4 p-3">
+    <div class="row">
+        <div class="col-4">
+            <label class="form-label fw-bolder">{{ 'publish'|text }} <i class="bi bi-globe"></i></label>
+            <div class="form-check form-switch">
+                <input class="form-check-input" name="published"{{ record['published'] == 1 ? ' checked' : '' }} disabled type="checkbox" role="switch">
+                {{ localization.code == 'mn' ? 'сайт дээр харагдах' : 'visible on site' }}
+            </div>
+        </div>
+        <div class="col-4">
+            <label class="form-label fw-bolder">{{ localization.code == 'mn' ? 'Онцлох' : 'Featured' }} <i class="bi bi-star"></i></label>
+            <div class="form-check form-switch">
+                <input class="form-check-input" name="is_featured"{{ record['is_featured'] == 1 ? ' checked' : '' }} disabled type="checkbox" role="switch">
+                {{ localization.code == 'mn' ? 'нүүр хуудсанд онцлох' : 'feature on homepage' }}
+            </div>
+        </div>
+        <div class="col-4">
+            <label class="form-label fw-bolder">{{ 'comment'|text }} <i class="bi bi-chat-dots"></i></label>
+            <div class="form-check form-switch">
+                <input class="form-check-input" name="comment"{{ record['comment'] == 1 ? ' checked' : '' }} disabled type="checkbox" role="switch">
+                {{ 'can-comment'|text }}
+            </div>
+        </div>
+    </div>
+</div>
+{% if user.can('system_logger') %}
+<div class="mt-5">
+    <hr>
+    <label class="form-label fw-bolder">
+        {{ 'log'|text }} <i class="bi bi-clock-history"></i>
+    </label>
+    <div class="spinner-grow mt-3" role="status" style="display:none">
+        <span class="visually-hidden">Loading logs...</span>
+    </div>
+    <ul class="list-group logger-protocol" id="logger-{{ table }}" style="max-height:240px; overflow-y:auto">
+    </ul>
+</div>
+{% endif %}
+<script type="text/javascript">
+    document.addEventListener('DOMContentLoaded', function () {
+        const fromPage = new URLSearchParams(window.location.search).get('from');
+        if (fromPage === 'nav') {
+            document.querySelectorAll('a.back-link').forEach(a => { a.href = `{{ 'pages-nav'|link }}`; });
+        }
+        const content = document.querySelector('textarea[name="content"]');
+        if (content) {
+            new moedit(content, {
+                readonly: true,
+                titleSelector: 'input[name="title"]',
+                {% if record['photo'] is not empty %}headerImage: '{{ record['photo']|e }}',{% endif %}
+                attachments: [
+                    {% for file in files %}
+                    JSON.parse(`{{ file|json_encode|e('js') }}`),
+                    {% endfor %}
+                ]
+            });
+        }
+
+        const logger = document.querySelector('ul.logger-protocol');
+        if (logger && logger.tagName === 'UL') {
+            const logsRetrieveLink = `{{ 'logs-retrieve'|link }}`;
+            const logsViewLink = `{{ 'logs-view'|link }}`;
+            let logger_id = logger.id ?? '';
+            let table = logger_id.substring(logger_id.indexOf('-') + 1);
+            if (!table) return;
+
+            logger.style.display = 'none';
+            let spinner = logger.previousElementSibling;
+            spinner.style.display = 'block';
+            fetch(
+                `${logsRetrieveLink}?table=${table}`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        'ORDER BY': 'id Desc',
+                        'CONTEXT': {
+                            'record_id': '{{ record['id'] }}'
+                        },
+                        'LIMIT': 10000
+                    })
+                }
+            ).then(res => {
+                return res.json();
+            }).then(response => {
+                if (response.error) {
+                    throw new Error(response.error ?? `{{ 'something-went-wrong'|text|e }}`);
+                }
+
+                logger.innerHTML = '';
+
+                let logModalLink = `${logsViewLink}?table=${table}&id=`;
+                Object.values(response).forEach(log => {
+                    let log_li = document.createElement('li');
+                    log_li.classList.add('list-group-item', 'list-group-item-action');
+                    switch (log.level) {
+                        case 'notice': log_li.classList.add('list-group-item-light'); break;
+                        case 'info': log_li.classList.add('list-group-item-primary'); break;
+                        case 'error': log_li.classList.add('list-group-item-danger'); break;
+                        case 'warning': log_li.classList.add('list-group-item-warning'); break;
+                        case 'alert': log_li.classList.add('list-group-item-info'); break;
+                        case 'debug': log_li.classList.add('list-group-item-secondary'); break;
+                        default: log_li.classList.add('list-group-item-dark'); break;
+                    }
+
+                    let a_link = document.createElement('a');
+                    a_link.textContent = `${log.created_at} [${log.id}]`;
+                    a_link.href = logModalLink + log.id;
+                    a_link.setAttribute('data-bs-target', '#static-modal');
+                    a_link.setAttribute('data-bs-toggle', 'modal');
+                    a_link.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        ajaxModal(a_link);
+                    });
+                    log_li.appendChild(a_link);
+                    log_li.appendChild(document.createTextNode(' '));
+
+                    let span_msg = document.createElement('span');
+                    span_msg.innerHTML = log.message;
+                    log_li.appendChild(span_msg);
+                    log_li.appendChild(document.createTextNode(' '));
+
+                    let span_user_action = document.createElement('span');
+                    span_user_action.innerHTML = `<span class="text-muted small"><u>${log.context.action ?? ''} by ${log.context.auth_user?.username ?? ''}</u></span>`;
+                    span_user_action.classList.add('text-muted', 'small');
+                    log_li.appendChild(span_user_action);
+
+                    logger.appendChild(log_li);
+                });
+
+            }).catch(error => {
+                console.log(error.message);
+            }).finally(() => {
+                logger.style.display = '';
+                spinner.style.display = 'none';
+            });
+        }
+    });
+</script>

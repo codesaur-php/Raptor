@@ -1,0 +1,788 @@
+<!-- SweetAlert2 сан - файлыг идэвхгүй болгох зэрэг үйлдлийн үед гоёмсог alert харуулахад ашиглана -->
+<script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<!-- Custom image preview overlay CSS (Fancybox-ийн оронд) -->
+<style>
+    .image-preview-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,.85);
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+    }
+    .image-preview-overlay img,
+    .image-preview-overlay video {
+        max-width: 90%;
+        max-height: 85vh;
+        object-fit: contain;
+        cursor: default;
+        border-radius: 4px;
+    }
+    .image-preview-overlay audio {
+        cursor: default;
+        min-width: 320px;
+    }
+    .image-preview-overlay pre {
+        width: 90%;
+        max-height: 85vh;
+        overflow: auto;
+        background: #f8f9fa;
+        color: #212529;
+        padding: 1rem;
+        border-radius: 4px;
+        font-size: .875rem;
+        cursor: default;
+        margin: 0;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+    }
+    .image-preview-overlay iframe {
+        width: 90%;
+        height: 90vh;
+        border: none;
+        border-radius: 4px;
+        background: #fff;
+        cursor: default;
+    }
+    .image-preview-overlay .preview-close {
+        position: absolute;
+        top: 12px;
+        right: 20px;
+        color: #fff;
+        font-size: 2.5rem;
+        cursor: pointer;
+        line-height: 1;
+        z-index: 1;
+    }
+    .image-preview-overlay .preview-caption {
+        color: #ccc;
+        margin-top: 10px;
+        font-size: .95rem;
+        text-align: center;
+        max-width: 80%;
+    }
+</style>
+
+<!-- Файлын статистик -->
+<div class="d-flex flex-wrap align-items-center gap-3 mt-2 mb-2" style="font-size:.875rem">
+    <span class="lang-mn">
+        <i class="bi bi-database-fill text-primary me-1"></i>
+        <strong>{{ total['tables'] }}</strong> хүснэгт,
+        <strong id="stat-total-rows">{{ total['rows'] }}</strong> файл,
+        <strong id="stat-total-size">{{ total['sizes'] }}</strong>
+    </span>
+    <span class="lang-en" hidden>
+        <i class="bi bi-database-fill text-primary me-1"></i>
+        <strong>{{ total['tables'] }}</strong> tables,
+        <strong id="stat-total-rows-en">{{ total['rows'] }}</strong> files,
+        <strong id="stat-total-size-en">{{ total['sizes'] }}</strong>
+    </span>
+    <small class="text-body-tertiary fst-italic ms-auto">
+        <span class="lang-mn">* контентын толгой зураг, агуулгын файл тооцогдоогүй</span>
+        <span class="lang-en" hidden>* excludes header images &amp; inline files</span>
+    </small>
+</div>
+<!-- Хүснэгт сонголт -->
+<div class="d-flex flex-wrap gap-1 mb-3">
+    {% for name,info in tables %}
+    <a class="btn btn-sm rounded-pill {{ name == table ? 'btn-primary' : 'btn-outline-secondary' }}"
+       href="{{ 'files'|link }}?table={{ name|e }}"
+       data-table="{{ name|e }}" data-count="{{ info['count'] }}">
+        {{ name }}{{ name != 'files' ? ' (attachments)' : '' }}
+        <span class="badge rounded-pill ms-1 {{ name == table ? 'text-bg-light' : 'text-bg-secondary' }}">
+            <span class="stat-info">{{ info['count'] }} &middot; {{ info['size'] }}</span>
+        </span>
+    </a>
+    {% else %}
+    <span class="lang-mn text-body-secondary">мэдээлэл олдсонгүй</span>
+    <span class="lang-en text-body-secondary" hidden>no data found</span>
+    {% endfor %}
+</div>
+
+<!--
+    Файл сонгох, upload хийх хэсэг - Native JS file input.
+    Hidden input + товчнууд + сонгосон файлуудын жагсаалт.
+-->
+<div class="row">
+    <div class="col-12">
+        <input type="file" id="fileInput" multiple hidden accept=".jpg,.jpeg,.jpe,.png,.gif,.ico,.webp,.svg,.avif,.bmp,.tif,.tiff,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.pps,.ppsx,.odt,.ods,.odp,.csv,.rtf,.psd,.mp3,.m4a,.ogg,.wav,.aac,.flac,.wma,.mp4,.m4v,.mov,.wmv,.avi,.mpg,.ogv,.3gp,.3g2,.webm,.txt,.xml,.json,.zip,.rar,.7z,.gz,.tar">
+        <button class="btn btn-sm btn-warning shadow-sm" id="pickfiles" type="button">
+            {{ 'select-files'|text }}
+        </button>
+        <button class="btn btn-sm btn-secondary shadow-sm" id="uploadfiles" disabled type="button">
+            {{ 'upload-files'|text }}
+        </button>
+        <label class="form-check form-check-inline form-switch ms-3 mb-0" style="font-size:.875rem">
+            <input class="form-check-input" type="checkbox" id="optimizeCheck">
+            <span class="form-check-label lang-mn">Зураг optimize хийх</span>
+            <span class="form-check-label lang-en" hidden>Optimize images</span>
+        </label>
+    </div>
+</div>
+
+<!-- Сонгосон файлуудын жагсаалт (upload хийхийн өмнө нэр, хэмжээ харуулна) -->
+<div class="row text-danger mb-2">
+    <div class="col-12" id="filelist"></div>
+</div>
+
+<!--
+    Файлын жагсаалтын хүснэгт.
+    JS (motable) дээрээс AJAX-р data авч tbody-г динамикаар үүсгэнэ.
+    Энд зөвхөн хүснэгтийн толгой хэсгийг (thead) өргөнө.
+-->
+<table class="table table-sm table-bordered table-striped table-hover" id="files">
+    <thead>
+        <tr>
+            <!-- Файлын нэр, thumbnail, үйлдлийн товчнууд (link, tag, update, delete) -->
+            <th scope="col">{{ 'file'|text }}</th>
+            <!-- MIME төрөл, хэмжээ зэрэг техникийн шинж чанар -->
+            <th scope="col">{{ 'properties'|text }}</th>
+            <!-- Файлын тайлбар - хэрэглэгчийн оруулсан description -->
+            <th scope="col">{{ 'description'|text }}</th>
+            <!-- Файлыг keyword-оор шүүх, хайхад зориулагдсан түлхүүр үг -->
+            <th scope="col">{{ 'keyword'|text }}</th>
+            <!-- Үүсгэсэн огноо / created_at -->
+            <th scope="col">{{ 'date'|text }}</th>
+        </tr>
+    </thead>
+</table>
+
+<script type="text/javascript">
+    const _mn = document.documentElement.lang === 'mn';
+
+    /* 🧩 HELPER FUNCTIONS
+       ------------------------------------------------------------
+       Файлын нэр салгах, хэмжээ форматлах, HTML escape хийх мэт
+       жижиг туслах функцууд энд байна. */
+
+    /* URL эсвэл path-оос зөвхөн файлын нэрийг салгаж авах */
+    function getBasename(url) {
+        return url.split(/.*[\/|\\]/)[1];
+    }
+
+    /* Байтын хэмжээг kb, mb, gb ... болгон хөрвүүлэх */
+    function formatSizeUnits(bytes) {
+        const thresh = 1024;
+        if (Math.abs(bytes) < thresh) {
+            return `${bytes}b`;
+        }
+
+        const units = ['kb', 'mb', 'gb', 'tb'];
+        let u = -1;
+        const r = 10 ** 1;
+        do {
+            bytes /= thresh;
+            ++u;
+        } while (Math.round(Math.abs(bytes) * r) / r >= thresh && u < units.length - 1);
+
+        return `${bytes.toFixed(1)}${units[u]}`;
+    }
+
+    /* HTML-тэй холбогдох аюулгүй байдлын үүднээс энгийн escape */
+    function escapeStr(s) {
+        const lookup = {
+            '&': "&amp;",
+            '"': "&quot;",
+            "'": "&apos;",
+            '<': "&lt;",
+            '>': "&gt;"
+        };
+        return s.replace(/[&"'<>]/g, c => lookup[c]);
+    }
+
+    /* 🖼 Custom image preview (Fancybox-ийн оронд)
+       ------------------------------------------------------------ */
+    function openFilePreview(src, caption, type) {
+        const overlay = document.createElement('div');
+        overlay.className = 'image-preview-overlay';
+
+        let content = '';
+        if (type === 'video') {
+            content = `<video src="${src}" controls autoplay></video>`;
+        } else if (type === 'audio') {
+            content = `<audio src="${src}" controls autoplay></audio>`;
+        } else if (type === 'pdf') {
+            content = `<iframe src="${src}"></iframe>`;
+        } else if (type === 'text') {
+            content = `<pre>${_mn ? 'Ачаалж байна...' : 'Loading...'}</pre>`;
+        } else {
+            content = `<img src="${src}" alt="">`;
+        }
+
+        overlay.innerHTML = `
+            <span class="preview-close">&times;</span>
+            ${content}
+            ${caption ? `<div class="preview-caption">${caption}</div>` : ''}
+        `;
+
+        document.body.appendChild(overlay);
+        document.body.style.overflow = 'hidden';
+
+        if (type === 'text') {
+            fetch(src)
+                .then(res => res.text())
+                .then(text => {
+                    const pre = overlay.querySelector('pre');
+                    if (pre) pre.textContent = text;
+                })
+                .catch(() => {
+                    const pre = overlay.querySelector('pre');
+                    if (pre) pre.textContent = _mn ? 'Файлын агуулгыг ачаалж чадсангүй.' : 'Failed to load file content.';
+                });
+        }
+
+        const close = () => {
+            overlay.remove();
+            document.body.style.overflow = '';
+        };
+
+        overlay.querySelector('.preview-close').addEventListener('click', close);
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) close();
+        });
+
+        const onKey = (e) => {
+            if (e.key === 'Escape') {
+                close();
+                document.removeEventListener('keydown', onKey);
+            }
+        };
+        document.addEventListener('keydown', onKey);
+    }
+
+    /* 📌 DOMContentLoaded - Бүх JS функциональ эндээс эхэлнэ
+       -------------------------------------------------------------------
+       Энэ дотор:
+         • motable-ийн append override хийх
+         • файлын жагсаалтыг server-ээс fetch хийх
+         • deactivate ажиллагааг тохируулах
+         • native file upload логик
+       ------------------------------------------------------------------- */
+    document.addEventListener('DOMContentLoaded', function () {
+        /* 🌐 Хэлний toggle */
+        if (!_mn) {
+            document.querySelectorAll('.lang-mn').forEach(el => el.hidden = true);
+            document.querySelectorAll('.lang-en').forEach(el => el.hidden = false);
+        }
+
+        /* Файлын modal нээх линк - TWIG-ээс ирнэ */
+        const filesModalLink = `{{ 'files-modal'|link({'table': table}) }}`;
+
+        /* Хэрэглэгч засварлах эрхтэй эсэх */
+        const userCanUpdate = `{{ user.can('system_content_update') ? 'true' : '' }}`;
+
+        /* Хэрэглэгч устгах эрхтэй эсэх */
+        const userCanDelete = `{{ user.can('system_content_delete') ? 'true' : '' }}`;
+
+        /* motable.prototype.append - серверээс ирсэн нэг file object бичлэгийг
+           хүснэгтэд (table) <tr> хэлбэрээр нэмэх функц.
+           -------------------------------------------------------------------
+           Энэ функц:
+             • Файлын thumbnail / icon үүсгэнэ
+             • Modal нээх action товчнууд үүсгэнэ
+             • UPDATE, DELETE эрхүүдийг шалгана
+             • Image preview болон modal холбоосуудыг автоматаар бэхжүүлнэ */
+        motable.prototype.append = function (file) {
+            /* 📌 Файлын төрөлд тохирсон icon/preview тодорхойлох */
+            let fileIcon = '';
+            const fileName = escapeStr(decodeURIComponent(getBasename(file['path'])));
+
+            /* default link attribute - файл нээх үед confirm асууна */
+            let fileLinkAttr =
+                `target="__blank" onclick="return confirm('${_mn ? `Та [${fileName}] файлыг нээхдээ итгэлтэй байна уу?` : `Are you sure you want to open this file [${fileName}]?`}')"`;
+
+
+            /* Файлын төрөлд суурилсан modal action (code tag гэх мэт) */
+            let fileAction = `
+                <a class="btn btn-sm btn-dark ajax-modal"
+                    data-bs-target="#static-modal" data-bs-toggle="modal"
+                    href="${filesModalLink}?modal=${file['type']}-tag&id=${file['id']}">
+                    <i class="bi bi-code"></i>
+                </a>`;
+
+            if (file['type'] === 'image') {
+                /* 📷 IMAGE file preview */
+                fileIcon =
+                    `<img src="${file['path']}" style="max-height:7.5rem; max-width:20rem; height:100%">`;
+
+                const caption = file['description']
+                    ? escapeStr(file['description'])
+                    : fileName;
+                fileLinkAttr = `data-preview="image" data-caption="${caption}"`;
+            } else if (file['type'] === 'video') {
+                /* 🎥 VIDEO preview */
+                fileIcon = `
+                    <video style="max-height:15rem; height:100%; max-width:20rem; width:100%" controls>
+                        <source src="${file['path']}">
+                    </video>`;
+
+                const caption = file['description']
+                    ? escapeStr(file['description'])
+                    : fileName;
+                fileLinkAttr = `data-preview="video" data-caption="${caption}"`;
+            } else if (file['type'] === 'audio') {
+                /* 🎵 AUDIO preview */
+                fileIcon = `
+                    <audio controls>
+                        <source src="${file['path']}" type="${file['mime_content_type']}">
+                    </audio>`;
+
+                const caption = file['description']
+                    ? escapeStr(file['description'])
+                    : fileName;
+                fileLinkAttr = `data-preview="audio" data-caption="${caption}"`;
+            } else {
+                /* 🗄 OTHER file types (doc, zip, pdf...) */
+                fileIcon = '<i class="bi bi-hdd"></i>';
+                fileAction = '';
+
+                const mime = file['mime_content_type'];
+
+                if (mime === 'application/pdf') {
+                    /* PDF файлыг browser-д шууд preview хийх */
+                    fileIcon = '<i class="bi bi-file-earmark-pdf" style="font-size:2rem;color:#dc3545"></i>';
+                    const caption = file['description']
+                        ? escapeStr(file['description'])
+                        : fileName;
+                    fileLinkAttr = `data-preview="pdf" data-caption="${caption}"`;
+                } else if (mime === 'text/plain' || mime === 'application/json' || mime === 'text/xml' || mime === 'application/xml') {
+                    /* Text файлыг fetch хийж overlay дээр харуулах */
+                    fileIcon = '<i class="bi bi-file-earmark-text" style="font-size:2rem"></i>';
+                    const caption = file['description']
+                        ? escapeStr(file['description'])
+                        : fileName;
+                    fileLinkAttr = `data-preview="text" data-caption="${caption}"`;
+                }
+            }
+
+            /* Location modal (path харах / хуулбар авах) */
+            fileAction = `
+                <a class="btn btn-sm btn-info ajax-modal"
+                    data-bs-target="#static-modal" data-bs-toggle="modal"
+                    href="${filesModalLink}?modal=location&id=${file['id']}">
+                    <i class="bi bi-link"></i>
+                </a>
+                ${fileAction}
+            `;
+
+            /* Update modal (засварлах эрхтэй бол) */
+            if (userCanUpdate) {
+                fileAction += `
+                    <a class="btn btn-sm btn-primary shadow-sm ajax-modal"
+                        data-bs-target="#static-modal" data-bs-toggle="modal"
+                        href="${filesModalLink}?modal=files-update&id=${file['id']}">
+                        <i class="bi bi-pencil-square"></i>
+                    </a>`;
+            }
+
+            /* Delete (deactivate) button (устгах эрхтэй бол) */
+            if (userCanDelete) {
+                fileAction += `
+                    <button class="deactivate-file btn btn-sm btn-danger shadow-sm"
+                        value="${file['id']}" type="button">
+                        <i class="bi bi-trash"></i>
+                    </button>`;
+            }
+
+            /* FILE + NAME + ACTIONS ХОЛБОЖ БЛОК ҮҮСГЭХ */
+            let fileFigure = `
+                <a href="${file['path']}" ${fileLinkAttr}>
+                    ${fileIcon}
+                    <span style="display:block">${fileName}</span>
+                </a>
+                ${fileAction}
+            `;
+
+            /* 🧱 <tr> мөр болон <td> нүднүүдийг үүсгэх */
+            const row = document.createElement('tr');
+            row.id = `file_${file['id']}`;
+            row.style.fontSize = '.875rem';
+
+            /* 📌 1-р багана: thumbnail + үйлдлүүд */
+            const cell1 = document.createElement('td');
+            cell1.innerHTML =
+                `<input name="files[]" value="${file['id']}" type="hidden">
+                 ${fileFigure}`;
+            row.appendChild(cell1);
+
+            /* 📌 2-р багана: MIME төрөл + хэмжээ */
+            const cell2 = document.createElement('td');
+            cell2.innerHTML = `
+                <p style="max-width:11.25rem; word-wrap:break-all">
+                    <u>${file['mime_content_type']}</u>
+                </p>
+                ${formatSizeUnits(file['size'])}`;
+            row.appendChild(cell2);
+
+            /* 📌 3-р багана - description */
+            const cell3 = document.createElement('td');
+            cell3.innerHTML = file['description'] ?? '';
+            row.appendChild(cell3);
+
+            /* 📌 4-р багана - keyword */
+            const cell4 = document.createElement('td');
+            cell4.innerHTML = file['keyword'] ?? '';
+            row.appendChild(cell4);
+
+            /* 📌 5-р багана - created_at */
+            const cell5 = document.createElement('td');
+            cell5.innerHTML = file['created_at'] ?? '';
+            row.appendChild(cell5);
+
+            let tBody = this.table.querySelector('tbody');
+            /* 🧩 tbody байхгүй бол үүсгэнэ */
+            if (!tBody) {
+                tBody = document.createElement('tbody');
+                this.table.appendChild(tBody);
+
+                /* motable тохиргоонд tbody-гийн custom style байсан бол ашиглана */
+                if (this.options.style.tbody) {
+                    tBody.style.cssText = this.options.style.tbody;
+                }
+            }
+
+            /* Бэлдсэн file row-г append хийе */
+            tBody.appendChild(row);
+
+            /* 🪟 Modal нээдэг бүх .ajax-modal линк дээр click handler нэмэх */
+            const rowModals = row.querySelectorAll('.ajax-modal');
+            rowModals.forEach(a => a.addEventListener('click', function (e) {
+                e.preventDefault();
+                ajaxModal(a);
+            }));
+
+            /* 🖼 data-preview attribute бүхий зурагт click handler нэмэх */
+            const previewLink = row.querySelector('[data-preview]');
+            if (previewLink) {
+                previewLink.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    openFilePreview(this.href, this.dataset.caption || '', this.dataset.preview);
+                });
+            }
+
+            const thisTable = this; /* motable instance хадгалах */
+
+            /* 🗑 ФАЙЛЫН БИЧЛЭГИЙГ ИДЭВХГҮЙ БОЛГОХ (Soft Delete)
+               -------------------------------------------------------------------
+               Энэ хэсэг deactivate-file товч дээр дарснаар:
+                 • Зургийн thumbnail / icon бүхий баталгаажуулах modal гаргана
+                 • Хэрэглэгч OK дарвал DELETE fetch API уруу хүсэлт илгээнэ
+                 • Амжилттай бол хүснэгтээс тухайн <tr> мөрийг устгана
+                 • motable.setReady() дуудагдана (шинэчилсэн төлөв)
+               ------------------------------------------------------------------- */
+            const deactivateFileBtn = row.querySelector('.deactivate-file');
+            if (deactivateFileBtn) {
+                deactivateFileBtn.addEventListener('click', function (e) {
+                    e.preventDefault();
+
+                    /* 🌐 монгол / англи хэл дээр баталгаажуулах текст */
+                    const questionTemplate = (title) => {
+                        if (document.documentElement.lang === 'mn') {
+                            return `
+                                <p class="text-danger mb-3">
+                                    Та <strong>${escapeStr(title)}</strong> файлын бичлэгийг
+                                    идэвхгүй болгоход итгэлтэй байна уу?<br/><br/>
+                                    Бодит файл нь устахгүй - зөвхөн бичлэг (metadata) л идэвхгүй болно.
+                                </p>`;
+                        }
+                        return `
+                            <p class="text-danger mb-3">
+                                Are you sure you want to deactivate the file record
+                                <strong>${escapeStr(title)}</strong>?
+                            </p>`;
+                    };
+
+                    /* 🆔 Идэвхгүй болгох гэж буй файлын id дугаар */
+                    const id = deactivateFileBtn.value;
+
+                    /* Файлын нэрийг row доторх thumbnail хэсгээс уншиж авна */
+                    const rawTitle = row.children[0].textContent.trim();
+                    let question = questionTemplate(rawTitle);
+
+                    /* 🖼 Хэрэв зураг бол thumbnail харуулна */
+                    const imgNode = row.children[0].querySelector('img');
+                    let imgSrc = '';
+
+                    if (imgNode) {
+                        imgSrc = imgNode.src;
+                    } else {
+                        /* Хэрэв зураг биш бол HDD icon + текст */
+                        question = `
+                            <i class="bi bi-hdd text-danger mb-4" style="font-size:3rem"></i>
+                            ${question}
+                        `;
+                    }
+
+                    /* Хэрэглэгчээр батлуулах */
+                    Swal.fire({
+                        imageUrl: imgSrc,
+                        imageHeight: 64,
+                        html: question,
+                        showCancelButton: true,
+                        cancelButtonText: `{{ 'cancel'|text|e }}`,
+                        confirmButtonText: `<i class="bi bi-trash"></i> {{ 'delete'|text|e }}`,
+                        confirmButtonColor: '#df4759',
+                        showLoaderOnConfirm: true,
+                        allowOutsideClick: () => !Swal.isLoading(),
+                        backdrop: true,
+                        preConfirm: () => {
+                            const url = `{{ 'files-deactivate'|link({'table':table}) }}`;
+                            return fetch(url, {
+                                method: 'DELETE',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({ id })
+                            })
+                            .then(res => res.json())
+                            .then(response => {
+                                if (response.status !== 'success') {
+                                    throw new Error(response.message ?? 'Invalid response!');
+                                }
+
+                                /* success → alert хааж, мэдэгдэл гаргаж, row устгана */
+                                Swal.close();
+                                NotifyTop(
+                                    'success',
+                                    `{{ 'success'|text|e }}`,
+                                    response.message ?? (_mn ? `Файл:${id} идэвхгүй болсон` : `File:${id} deactivated`)
+                                );
+
+                                row.remove();         // <tr> хүснэгтээс устгах
+                                thisTable.setReady(); // motable refresh/update
+                            })
+                            .catch(error => {
+                                Swal.showValidationMessage(error.message);
+                            });
+                        }
+                    });
+                });
+            }
+        };
+
+        /* motable instance үүсгэж байна */
+        const files = new motable(
+            'table#files',
+            { freezeColumns: [0] } /* эхний баганыг наалттай болгох */
+        );
+
+        /* Файлын жагсаалтыг backend-ээс AJAX-р татах */
+        fetch(
+            `{{ 'files-list'|link({'table': table}) }}`
+        ).then(res => {
+            const contentType = res.headers.get('content-type') || '';
+            if (contentType.includes('application/json')) return res.json();
+
+            throw new Error(`HTTP [${res.status}]: ${res.statusText}`);
+        }).then(data => {
+            if (!data.list) {
+                throw new Error(data.message ?? 'Invalid response!');
+            }
+
+            /* Жагсаалтын file бүрийг motable.append() ашиглан хүснэгтэд нэмэх */
+            data.list.forEach(file => { files.append(file); });
+
+            /* motable table-г ажилд бэлэн болгох */
+            files.setReady();
+        }).catch(err => {
+            files.error(err);
+        });
+
+        /* ===================================================================
+           📤 NATIVE FILE UPLOAD
+           -------------------------------------------------------------------
+           Энэ upload логик дараах workflow-г гүйцэтгэнэ:
+              1) Файл сонгох (pickfiles → hidden file input)
+              2) Client-side validation (хэмжээ, extension)
+              3) Сонгосон файлуудыг жагсаалтад харуулах
+              4) Upload товч дармагц fetch API-р файл бүрийг дараалалаар upload
+              5) Per-file status: uploading → success/error
+              6) Амжилттай бол motable.append() + files.setReady()
+           ------------------------------------------------------------------- */
+        const fileInput = document.getElementById('fileInput');
+        const fileList = document.getElementById('filelist');
+        const pickFilesBtn = document.getElementById('pickfiles');
+        const uploadFilesBtn = document.getElementById('uploadfiles');
+
+        /* Upload URL */
+        const uploadUrl = `{{ 'files-post'|link({'table': table}) }}`;
+
+        /* Одоогийн хүснэгтийн badge element */
+        const currentBadge = document.querySelector(`a.badge[data-table="{{ table|e }}"]`);
+        let tableBytes = {{ tables[table]['bytes'] ?? 0 }};
+
+        /* Upload амжилттай бүрд статистик шинэчлэх */
+        function updateStats(fileSize) {
+            if (!currentBadge) return;
+
+            /* Badge count + size шинэчлэх */
+            let count = parseInt(currentBadge.dataset.count) || 0;
+            count++;
+            currentBadge.dataset.count = count;
+            tableBytes += fileSize;
+            const infoEl = currentBadge.querySelector('.stat-info');
+            if (infoEl) infoEl.textContent = `${count} -> ${formatSizeUnits(tableBytes)}`;
+
+            /* Total rows шинэчлэх */
+            ['stat-total-rows', 'stat-total-rows-en'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = parseInt(el.textContent) + 1;
+            });
+
+            /* Total size шинэчлэх */
+            updateStats._totalBytes = (updateStats._totalBytes ?? {{ total['total_bytes'] }}) + fileSize;
+            ['stat-total-size', 'stat-total-size-en'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = formatSizeUnits(updateStats._totalBytes);
+            });
+        }
+
+        /* Хязгаарлалтын тохиргоо */
+        const maxBytes = {{ max_file_size ?? 8388608 }};
+        const allowedExtensions = [
+            'jpg','jpeg','jpe','png','gif','ico','webp','svg','avif','bmp','tif','tiff',
+            'pdf','doc','docx','xls','xlsx','ppt','pptx','pps','ppsx','odt','ods','odp','csv','rtf','psd',
+            'mp3','m4a','ogg','wav','aac','flac','wma',
+            'mp4','m4v','mov','wmv','avi','mpg','ogv','3gp','3g2','webm',
+            'txt','xml','json',
+            'zip','rar','7z','gz','tar'
+        ];
+
+        /* "Select files" товч → hidden file input-г trigger хийх */
+        pickFilesBtn.addEventListener('click', () => fileInput.click());
+
+        /* Файл сонгосон үед → validation + жагсаалтад харуулах */
+        fileInput.addEventListener('change', function () {
+            fileList.innerHTML = '';
+
+            const selectedFiles = Array.from(this.files);
+            if (!selectedFiles.length) return;
+
+            let hasValid = false;
+
+            selectedFiles.forEach((file, i) => {
+                const ext = file.name.split('.').pop().toLowerCase();
+                let status = '';
+                let statusClass = '';
+
+                if (!allowedExtensions.includes(ext)) {
+                    status = `<em class="text-danger">${_mn ? `.${escapeStr(ext)} өргөтгөл зөвшөөрөгдөөгүй` : `extension .${escapeStr(ext)} not allowed`}</em>`;
+                    statusClass = 'text-muted';
+                } else if (file.size > maxBytes) {
+                    status = `<em class="text-danger">${_mn ? `хэмжээ хэтэрсэн (${formatSizeUnits(maxBytes)})` : `exceeds max size ${formatSizeUnits(maxBytes)}`}</em>`;
+                    statusClass = 'text-muted';
+                } else {
+                    hasValid = true;
+                }
+
+                fileList.innerHTML += `
+                    <div id="upload_${i}" class="${statusClass}">
+                        ${escapeStr(file.name)} (${formatSizeUnits(file.size)})
+                        <b>${status}</b>
+                    </div>`;
+            });
+
+            /* Upload товчийг идэвхжүүлэх (хүчинтэй файл байвал) */
+            if (hasValid) {
+                uploadFilesBtn.removeAttribute('disabled');
+                uploadFilesBtn.classList.remove('btn-secondary');
+                uploadFilesBtn.classList.add('btn-info');
+            } else {
+                uploadFilesBtn.setAttribute('disabled', '');
+                uploadFilesBtn.classList.remove('btn-info');
+                uploadFilesBtn.classList.add('btn-secondary');
+            }
+        });
+
+        /* "Upload" товч → файл бүрийг дараалалаар fetch API-р upload хийх */
+        uploadFilesBtn.addEventListener('click', async function () {
+            const selectedFiles = Array.from(fileInput.files);
+            if (!selectedFiles.length) return;
+
+            uploadFilesBtn.setAttribute('disabled', '');
+            pickFilesBtn.setAttribute('disabled', '');
+
+            for (let i = 0; i < selectedFiles.length; i++) {
+                const file = selectedFiles[i];
+                const rowEl = document.getElementById(`upload_${i}`);
+                const ext = file.name.split('.').pop().toLowerCase();
+
+                /* Хүчингүй файлуудыг алгасах */
+                if (!allowedExtensions.includes(ext) || file.size > maxBytes) continue;
+
+                /* Uploading статус */
+                if (rowEl) {
+                    const b = rowEl.querySelector('b');
+                    if (b) b.innerHTML = `<i class="bi bi-upload"></i> ${_mn ? 'илгээж байна...' : 'uploading...'}`;
+                }
+
+                try {
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    if (document.getElementById('optimizeCheck').checked) {
+                        formData.append('optimize', '1');
+                    }
+
+                    const response = await fetch(uploadUrl, {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const res = await response.json();
+
+                    if (res && res.path) {
+                        /* Амжилттай */
+                        if (rowEl) {
+                            const b = rowEl.querySelector('b');
+                            if (b) b.innerHTML = `<i class="bi bi-check"></i> ${_mn ? 'амжилттай' : 'success'}`;
+                            rowEl.classList.add('text-success');
+                        }
+
+                        files.append(res);
+                        files.setReady();
+                        updateStats(res.size || 0);
+
+                        NotifyTop(
+                            'primary',
+                            `{{ 'success'|text }}`,
+                            _mn ? `[${escapeStr(file.name)}] файл амжилттай байршлаа.` : `Your file [${escapeStr(file.name)}] was uploaded successfully.`
+                        );
+                    } else {
+                        /* Сервер алдаа буцаасан */
+                        const errorMessage = (res && res.error && res.error.message)
+                            ? res.error.message
+                            : (_mn ? 'Тодорхойгүй алдаа!' : 'Unknown error!');
+
+                        if (rowEl) {
+                            const b = rowEl.querySelector('b');
+                            if (b) b.innerHTML = `<i class="bi bi-x"></i> ${_mn ? 'алдаа' : 'error'} <em>${escapeStr(errorMessage)}</em>`;
+                            rowEl.classList.add('text-danger');
+                        }
+
+                        NotifyTop('danger', `{{ 'error'|text }}`, errorMessage);
+                    }
+                } catch (err) {
+                    /* Network / parse алдаа */
+                    if (rowEl) {
+                        const b = rowEl.querySelector('b');
+                        if (b) b.innerHTML = `<i class="bi bi-x"></i> ${_mn ? 'амжилтгүй' : 'failed'} <em>${escapeStr(err.message)}</em>`;
+                        rowEl.classList.add('text-danger');
+                    }
+
+                    NotifyTop('danger', `{{ 'error'|text }}`, err.message);
+                }
+            }
+
+            /* Бүх upload дууссан → товчнуудын статус шинэчлэх */
+            pickFilesBtn.removeAttribute('disabled');
+            uploadFilesBtn.classList.remove('btn-info');
+            uploadFilesBtn.classList.add('btn-secondary');
+            uploadFilesBtn.setAttribute('disabled', '');
+            fileInput.value = '';
+        });
+    });
+</script>

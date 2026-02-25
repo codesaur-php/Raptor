@@ -1,0 +1,37 @@
+<div class="container">
+    <h4 class="mb-4 pb-2 border-bottom">
+        <i class="bi bi-newspaper me-2"></i>{{ 'recent-news'|text }}
+    </h4>
+    <div class="row row-cols-1 row-cols-md-2 g-4">
+        {% for news in recent %}
+            {% set href = 'news'|link({ slug: news['slug'] }) %}
+            <div class="col">
+                <div class="card h-100 shadow-sm">
+                    {% if news['photo'] is not empty and news['photo'] is not null %}
+                        <a href="{{ href }}">
+                            <img src="{{ news['photo'] }}" class="card-img-top" alt="{{ news['title']|e }}" style="object-fit:cover;max-height:220px">
+                        </a>
+                    {% endif %}
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <a href="{{ href }}" class="text-decoration-none text-dark">
+                                {{ news['title'] }}
+                            </a>
+                        </h5>
+                        <small class="text-muted d-block mb-2">
+                            <i class="bi bi-calendar3 me-1"></i>{{ news['published_at'] }}
+                        </small>
+                        {% if news['description'] is defined and news['description'] is not empty %}
+                            <p class="card-text text-muted">{{ news['description']|length > 150 ? news['description']|slice(0, 150) ~ '...' : news['description'] }}</p>
+                        {% endif %}
+                    </div>
+                    <div class="card-footer bg-transparent border-top-0 pb-3">
+                        <a href="{{ href }}" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-arrow-right me-1"></i>{{ lang == 'mn' ? 'Дэлгэрэнгүй' : 'Read more' }}
+                        </a>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>

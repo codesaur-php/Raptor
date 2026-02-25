@@ -1,0 +1,286 @@
+{% set lang = localization.code ?? 'en' %}
+<!DOCTYPE html>
+<html lang="{{ record_code ?? lang }}">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1.0, shrink-to-fit=no">
+        <title>{% if record_title is not empty and title is not empty %}{{ record_title ~ ' | ' ~ title }}{% elseif record_title is not empty %}{{ record_title }}{% else %}{{ title }}{% endif %}</title>
+        <meta name="description" content="{{ (record_description ?? description)|e }}">
+        {% if favicon is not empty %}<link rel="icon" href="{{ favicon }}" type="image/x-icon">{% endif %}
+        {% if apple_touch_icon is not empty %}<link rel="apple-touch-icon" href="{{ apple_touch_icon }}">{% endif %}
+        <meta property="og:type" content="{{ record_title is not empty ? 'article' : 'website' }}">
+        <meta property="og:site_name" content="{{ title|e }}">
+        <meta property="og:title" content="{{ (record_title ?? title)|e }}">
+        {% if (record_description ?? description) is not empty %}<meta property="og:description" content="{{ (record_description ?? description)|e }}">{% endif %}
+        {% if record_photo is not empty %}<meta property="og:image" content="{{ record_photo|e }}">{% endif %}
+        {% if logo is not empty and record_photo is empty %}<meta property="og:image" content="{{ logo|e }}">{% endif %}
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-4Q6Gf2aSP4eDXB8Miphtr37CMZZQ5oXLH2yaXMJ2w8e2ZtHTl7GptT4jmndRuHDT" crossorigin="anonymous">
+        <script defer src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js" integrity="sha384-j1CDi7MgGQ12Z7Qab0qlWQ/Qqz24Gc6BM0thvEMVjHnfYGF0rmFCozFSxQBxwHKO" crossorigin="anonymous"></script>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+        <style>
+            :root {
+                --nav-bg: #212529;
+                --footer-bg: #212529;
+                --link-color: #0d6efd;
+                --link-hover: #0a58ca;
+                --card-transition: 0.2s;
+            }
+            body {
+                display: flex;
+                flex-direction: column;
+                min-height: 100vh;
+            }
+            #content {
+                flex: 1;
+            }
+            .navbar-brand img {
+                transition: opacity var(--card-transition);
+            }
+            .navbar-brand img:hover {
+                opacity: 0.85;
+            }
+            .nav-link {
+                transition: color var(--card-transition);
+            }
+            .card {
+                transition: box-shadow var(--card-transition);
+            }
+            .card:hover {
+                box-shadow: 0 .5rem 1rem rgba(0,0,0,.15) !important;
+            }
+            .footer-link {
+                color: rgba(255,255,255,.7);
+                text-decoration: none;
+                transition: color var(--card-transition);
+            }
+            .footer-link:hover {
+                color: #fff;
+            }
+            .social-icon {
+                font-size: 1.4rem;
+                color: rgba(255,255,255,.7);
+                transition: color var(--card-transition);
+                margin-right: .75rem;
+            }
+            .social-icon:hover {
+                color: #fff;
+            }
+        </style>
+    </head>
+    <body>
+        <!-- NAVBAR -->
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top shadow-sm">
+            <div class="container-lg">
+                <a class="navbar-brand" href="{{ 'home'|link }}">
+                    {% if logo is not empty %}
+                        <img src="{{ logo }}" alt="{{ title }}" height="40">
+                    {% else %}
+                        {{ title }}
+                    {% endif %}
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar" aria-controls="mainNavbar" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="mainNavbar">
+                    <!-- Main menu -->
+                    {% macro navMenu(submenu) %}
+                        {% import _self as self %}
+                        {% for item in submenu %}
+                            {% if item['link'] is not empty %}
+                                {% set href = item['link'] %}
+                            {% else %}
+                                {% set href = 'page'|link({'slug':item['slug']}) %}
+                            {% endif %}
+                            {% if item['submenu'] is not empty %}
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        {{ item['title'] }}
+                                    </a>
+                                    <ul class="dropdown-menu">
+                                        {% for sub in item['submenu'] %}
+                                            {% if sub['link'] is not empty %}
+                                                {% set subhref = sub['link'] %}
+                                            {% else %}
+                                                {% set subhref = 'page'|link({'slug':sub['slug']}) %}
+                                            {% endif %}
+                                            <li><a class="dropdown-item" href="{{ subhref }}">{{ sub['title'] }}</a></li>
+                                        {% endfor %}
+                                    </ul>
+                                </li>
+                            {% else %}
+                                <li class="nav-item">
+                                    <a class="nav-link" href="{{ href }}">{{ item['title'] }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                    {% endmacro %}
+                    {% from _self import navMenu %}
+
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                        {% for menu in main_menu %}
+                            {% if menu['link'] is not empty %}
+                                {% set href = menu['link'] %}
+                            {% else %}
+                                {% set href = 'page'|link({'slug':menu['slug']}) %}
+                            {% endif %}
+                            {% if menu['submenu'] is not empty %}
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        {{ menu['title'] }}
+                                    </a>
+                                    <ul class="dropdown-menu">
+                                        {% for sub in menu['submenu'] %}
+                                            {% if sub['link'] is not empty %}
+                                                {% set subhref = sub['link'] %}
+                                            {% else %}
+                                                {% set subhref = 'page'|link({'slug':sub['slug']}) %}
+                                            {% endif %}
+                                            {% if sub['submenu'] is not empty %}
+                                                <li class="dropend">
+                                                    <a class="dropdown-item dropdown-toggle" href="#" data-bs-toggle="dropdown">{{ sub['title'] }}</a>
+                                                    <ul class="dropdown-menu">
+                                                        {% for sub2 in sub['submenu'] %}
+                                                            {% if sub2['link'] is not empty %}
+                                                                {% set sub2href = sub2['link'] %}
+                                                            {% else %}
+                                                                {% set sub2href = 'page'|link({'slug':sub2['slug']}) %}
+                                                            {% endif %}
+                                                            <li><a class="dropdown-item" href="{{ sub2href }}">{{ sub2['title'] }}</a></li>
+                                                        {% endfor %}
+                                                    </ul>
+                                                </li>
+                                            {% else %}
+                                                <li><a class="dropdown-item" href="{{ subhref }}">{{ sub['title'] }}</a></li>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </ul>
+                                </li>
+                            {% else %}
+                                <li class="nav-item">
+                                    <a class="nav-link" href="{{ href }}">{{ menu['title'] }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                    </ul>
+
+                    <!-- Language dropdown (right side) -->
+                    <ul class="navbar-nav">
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" role="button" id="dropdownLanguage" data-bs-toggle="dropdown" aria-expanded="false">
+                                {% set flag = lang == 'en' ? 'us' : lang %}
+                                <img src="https://flagcdn.com/w20/{{ flag }}.png" srcset="https://flagcdn.com/w40/{{ flag }}.png 2x" width="20" alt="Language" style="vertical-align:middle;margin-right:.25rem">
+                                {{ localization.language[lang]['title'] }}
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownLanguage">
+                                {% for code,language in localization.language %}
+                                    {% set flag = code == 'en' ? 'us' : code %}
+                                    <li>
+                                        <a class="dropdown-item{{ code == lang ? ' active' : '' }}" href="{{ 'language'|link({'code': code}) }}">
+                                            <img src="https://flagcdn.com/16x12/{{ flag }}.png" srcset="https://flagcdn.com/32x24/{{ flag }}.png 2x, https://flagcdn.com/48x36/{{ flag }}.png 3x" width="16" height="12" alt="{{ language['title'] }}" style="vertical-align:middle;margin-right:.25rem">
+                                            {{ language['title'] }}
+                                        </a>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Urgent message banner -->
+        {% if urgent is not null and urgent is not empty %}
+            <div class="alert alert-warning alert-dismissible fade show mb-0 rounded-0 py-2 text-center" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                {{ urgent }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endif %}
+
+        <!-- CONTENT -->
+        <div class="container-lg my-4" id="content">
+            {{ content }}
+        </div>
+
+        <!-- FOOTER -->
+        <footer class="bg-dark text-light pt-5 pb-3 mt-auto">
+            <div class="container-lg">
+                <div class="row g-4">
+                    <!-- Contact -->
+                    <div class="col-lg-4 col-md-6">
+                        <h5 class="mb-3 text-uppercase fw-semibold">{{ 'contact-us'|text }}</h5>
+                        <p class="mb-2">
+                            <i class="bi bi-geo-alt me-2"></i>{{ address }}
+                        </p>
+                        <p class="mb-2">
+                            <a class="footer-link" href="tel:{{ phone|e }}"><i class="bi bi-telephone me-2"></i>{{ phone }}</a>
+                        </p>
+                        <p class="mb-2">
+                            <a class="footer-link" href="mailto:{{ email|e }}"><i class="bi bi-envelope me-2"></i>{{ email }}</a>
+                        </p>
+                    </div>
+
+                    <!-- Important links -->
+                    <div class="col-lg-4 col-md-6">
+                        <h5 class="mb-3 text-uppercase fw-semibold">{{ 'usefull-links'|text }}</h5>
+                        <ul class="list-unstyled mb-0">
+                            <li class="mb-2">
+                                <a class="footer-link" href="{{ index }}/dashboard" target="_blank">
+                                    <i class="bi bi-chevron-right me-1"></i> {{ 'dashboard'|text }}
+                                </a>
+                            </li>
+                            <li class="mb-2">
+                                <a class="footer-link" href="{{ 'contact'|link }}">
+                                    <i class="bi bi-chevron-right me-1"></i> {{ 'contact'|text }}
+                                </a>
+                            </li>
+                            {% for item in featured_pages %}
+                                {% if item['link'] is not empty %}
+                                    {% set href = item['link'] %}
+                                {% else %}
+                                    {% set href = 'page'|link({'slug':item['slug']}) %}
+                                {% endif %}
+                                <li class="mb-2">
+                                    <a class="footer-link" href="{{ href }}">
+                                        <i class="bi bi-chevron-right me-1"></i> {{ item['title'] }}
+                                    </a>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+
+                    <!-- Social -->
+                    <div class="col-lg-4 col-md-12">
+                        <h5 class="mb-3 text-uppercase fw-semibold">{{ 'follow-us'|text }}</h5>
+                        <div class="d-flex flex-wrap mb-3">
+                            {% if config['fb']['page']['url'] is not empty %}
+                                <a class="social-icon" href="{{ config['fb']['page']['url'] }}" target="_blank" title="Facebook">
+                                    <i class="bi bi-facebook"></i>
+                                </a>
+                            {% endif %}
+                            {% if config['youtube']['url'] is not empty %}
+                                <a class="social-icon" href="{{ config['youtube']['url'] }}" target="_blank" title="YouTube">
+                                    <i class="bi bi-youtube"></i>
+                                </a>
+                            {% endif %}
+                            <a class="social-icon" href="https://github.com/orgs/codesaur-php/discussions" target="_blank" title="Discussions">
+                                <i class="bi bi-chat-dots"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Copyright -->
+                <div class="border-top border-secondary mt-4 pt-3 text-center">
+                    
+                        {% if logo is not empty %}
+                            <a href="{{ 'home'|link }}">
+                                <img src="{{ logo }}" alt="{{ title }}" height="50" style="opacity:.8">
+                            </a>
+                        {% endif %}
+                    <p class="mb-0 small text-secondary">{{ copyright }}</p>
+                </div>
+            </div>
+        </footer>
+    </body>
+</html>

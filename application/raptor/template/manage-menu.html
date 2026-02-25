@@ -1,0 +1,1005 @@
+<!-- Template Menu Management UI (Dashboard цэс удирдах) -->
+
+{% set user_can = user.can('system_manage_menu') %}
+
+<style>
+    /* Menu list table styles */
+    .menu-table > tbody > tr > th,
+    .menu-table > tbody > tr > td {
+        vertical-align: middle;
+    }
+    .menu-table > tbody > tr {
+        font-size: .85rem;
+    }
+    .menu-table > tbody > tr > th > i {
+        font-size: 1.1rem;
+    }
+    .menu-table > tbody > tr.parent {
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+    .menu-table > tbody > tr.parent > td {
+        color: dimgray;
+    }
+</style>
+
+<script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11" type="text/javascript"></script>
+
+<!-- 🔹 Цэсний жагсаалтын толгой хэсэг (toolbar) -->
+<div class="d-flex flex-wrap justify-content-between align-items-center rounded p-1 mb-2 shadow">
+    <h3 class="px-2 my-auto fs-6 text-warning text-uppercase">
+        <i class="bi bi-menu-button-wide-fill"></i> {{ 'menu'|text }}
+    </h3>
+    <div class="ms-auto">
+        {% if user_can %}
+            <button
+                class="btn btn-sm btn-outline-warning text-uppercase shadow-sm"
+                data-bs-target="#menu-insert-modal"
+                data-bs-toggle="modal"
+                type="button"
+            >
+                <i class="bi bi-plus-circle-dotted"></i> {{ 'new'|text }}
+            </button>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Raptor Admin - Sidebar/Topbar-ийн цэсний мастер жагсаалт -->
+<table class="table table-sm table-hover table-bordered menu-table" id="raptor_menu">
+    <thead>
+        <tr>
+            <th scope="col">Icon</th>
+            {% for language in localization.language %}
+                <th scope="col">Caption ({{ language['title'] }})</th>
+            {% endfor %}
+            <th scope="col">Link</th>
+            <th scope="col">RBAC</th>
+            <th scope="col">Permission</th>
+            <th scope="col">Position</th>
+            <th scope="col">Visiblity</th>
+            <th scope="col" style="width:8rem">Action</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for item in menu %}
+        <!-- data-record дээр тухайн мөрийн бүх мэдээллийг JSON хэлбэрээр хадгална (view/update modal-д ашиглана) -->
+        <tr{% if item['parent_id'] == 0 %} class="parent"{% endif %} data-record="{{ item|json_encode|e }}">
+            <th scope="row">
+                {% if item['icon'] is not empty %}
+                    <i class="{{ item['icon'] }}"></i>
+                {% endif %}
+            </th>
+            {% for code in localization.language|keys %}
+                <td>{{ item['localized'][code]['title'] }}</td>
+            {% endfor %}
+            <td>
+                {% if item['href'] is not empty %}
+                    <a href="{{ item['href'] }}" target="__blank">{{ item['href'] }}</a>
+                {% endif %}
+            </td>
+            <td>{{ item['alias'] }}</td>
+            <td>{{ item['permission'] }}</td>
+            <td>{{ item['position'] }}</td>
+            <td>
+                {% if item['is_visible'] %}
+                    <i class="bi bi-emoji-heart-eyes-fill text-success"></i>
+                {% else %}
+                    <i class="bi bi-eye-slash"></i>
+                {% endif %}
+            </td>
+            <td>
+                {% if user_can %}
+                    <!-- Жагсаалтын мөрийг харах товч -->
+                    <button
+                        class="btn btn-sm btn-info mt-1 shadow-sm"
+                        data-bs-target="#menu-view-modal"
+                        data-bs-toggle="modal"
+                        type="button"
+                    >
+                        <i class="bi bi-eye"></i>
+                    </button>
+
+                    <!-- Жагсаалтын мөрийг засварлах товч -->
+                    <button
+                        class="btn btn-sm btn-primary mt-1 shadow-sm"
+                        value="{{ item['id'] }}"
+                        data-bs-target="#menu-update-modal"
+                        data-bs-toggle="modal"
+                        type="button"
+                    >
+                        <i class="bi bi-pencil-square"></i>
+                    </button>
+
+                    <!-- Жагсаалтын мөрийг идэвхгүй болгох / устгах товч -->
+                    <button
+                        class="deactivate-item btn btn-sm btn-danger mt-1 shadow-sm"
+                        value="{{ item['id'] }}"
+                        type="button"
+                    >
+                        <i class="bi bi-trash"></i>
+                    </button>
+                {% endif %}
+            </td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+<!-- 🔹 MENU INSERT MODAL - Шинэ цэс үүсгэх форм -->
+<div class="modal fade" id="menu-insert-modal" role="dialog" tabindex="-1" aria-hidden="true">
+    <div class="modal-lg modal-dialog modal-dialog-centered modal-dialog-scrollable" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title fs-6 text-uppercase text-success">
+                    <i class="bi bi-plus-circle"></i> {{ 'add-record'|text }}
+                </h3>
+                <button
+                    class="btn-close"
+                    type="button"
+                    data-bs-dismiss="modal"
+                    aria-label="{{ 'close'|text|e }}"
+                ></button>
+            </div>
+            <div class="modal-body">
+                <!-- Шинэ цэс бүртгэх үндсэн форм -->
+                <form
+                    class="needs-validation"
+                    novalidate
+                    id="menu_insert"
+                    action="{{ 'manage-menu-insert'|link }}"
+                    method="POST"
+                    enctype="multipart/form-data"
+                >
+                    <div class="row">
+                        <!-- Эцэг цэс сонгох (parent_id=0 бол үндсэн цэс) -->
+                        <div class="col-6">
+                            <div class="form-floating">
+                                <select class="form-select" name="parent_id">
+                                    <option value="0" selected>- Main menu -</option>
+                                    {% for item in menu %}
+                                        {% if item['parent_id'] == 0 %}
+                                            <option value="{{ item['id'] }}">
+                                                {{ item['localized'][localization.code]['title']|e }}
+                                            </option>
+                                        {% endif %}
+                                    {% endfor %}
+                                </select>
+                                <label>Parent</label>
+                            </div>
+                        </div>
+
+                        <!-- Дэс дугаар / байрлал -->
+                        <div class="col">
+                            <div class="form-floating">
+                                <input
+                                    class="form-control"
+                                    required
+                                    name="position"
+                                    value="100"
+                                    placeholder="Position"
+                                    type="number"
+                                    autocomplete="off"
+                                >
+                                <label>Position</label>
+                                <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
+                            </div>
+                        </div>
+
+                        <!-- Цэс харагдах эсэх (is_visible) -->
+                        <div class="col">
+                            <div class="form-check form-switch mt-3">
+                                <label>Visiblity</label>
+                                <input
+                                    class="form-check-input"
+                                    name="is_visible"
+                                    checked
+                                    type="checkbox"
+                                    role="switch"
+                                >
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Олон хэл дээрх Caption талбарууд -->
+                    {% for code,language in localization.language %}
+                        <div class="form-floating mt-2">
+                            <input
+                                class="form-control"
+                                required
+                                name="title[{{ code }}]"
+                                value=""
+                                id="title_{{ code }}"
+                                maxlength="128"
+                                autocomplete="off"
+                            >
+                            <label for="title_{{ code }}">
+                                Caption ({{ language['title'] }})
+                                {% set flag = code == 'en' ? 'us' : code %}
+                                <img
+                                    src="https://flagcdn.com/20x15/{{ flag }}.png"
+                                    srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x"
+                                    width="16"
+                                    height="12"
+                                    alt="{{ language['title']|e }}"
+                                >
+                            </label>
+                            <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
+                        </div>
+                    {% endfor %}
+
+                    <!-- Icon / Link тохиргоо -->
+                    <div class="row mt-2">
+                        <div class="col">
+                            <div class="form-floating">
+                                <input
+                                    class="form-control"
+                                    name="icon"
+                                    value="bi bi-dot"
+                                    placeholder="icon class"
+                                    type="text"
+                                    maxlength="64"
+                                    autocomplete="off"
+                                >
+                                <label>Icon</label>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="form-floating">
+                                <input
+                                    class="form-control"
+                                    name="href"
+                                    value=""
+                                    placeholder="Link"
+                                    type="text"
+                                    maxlength="255"
+                                    autocomplete="off"
+                                >
+                                <label>Link</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- RBAC alias / Permission сонгох -->
+                    <div class="row mt-2">
+                        <div class="col">
+                            <div class="form-floating">
+                                <select class="form-select" name="alias">
+                                    <option value="" selected></option>
+                                    {% for alias in aliases %}
+                                        <option value="{{ alias|e }}">{{ alias|e }}</option>
+                                    {% endfor %}
+                                </select>
+                                <label>RBAC</label>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="form-floating">
+                                <select class="form-select" name="permission">
+                                    <option value="" selected></option>
+                                    {% for permission in permissions %}
+                                        <option value="{{ permission|e }}">{{ permission|e }}</option>
+                                    {% endfor %}
+                                </select>
+                                <label>Permission</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                {% if user_can %}
+                    <button class="insert-menu btn btn-success shadow-sm">
+                        <i class="bi bi-check"></i> {{ 'submit'|text }}
+                    </button>
+                {% endif %}
+                <button class="btn btn-secondary shadow-sm" data-bs-dismiss="modal" type="button">
+                    {{ 'cancel'|text }}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 🔹 MENU VIEW MODAL - Цэсний мэдээллийг зөвхөн унших горимоор харах -->
+<div class="modal fade" id="menu-view-modal" role="dialog" tabindex="-1" aria-hidden="true">
+    <div class="modal-lg modal-dialog modal-dialog-centered modal-dialog-scrollable" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title fs-6 text-uppercase text-info">
+                    <i class="bi bi-eye"></i> {{ 'view-record'|text }}
+                </h3>
+                <button
+                    class="btn-close"
+                    type="button"
+                    data-bs-dismiss="modal"
+                    aria-label="{{ 'close'|text|e }}"
+                ></button>
+            </div>
+            <div class="modal-body">
+                <!-- View form: бүх талбарууд disabled (зөвхөн харах) -->
+                <form id="menu_view">
+                    <input name="id" value="" type="hidden">
+
+                    <div class="row">
+                        <div class="col-6">
+                            <div class="form-floating">
+                                <select class="form-select" name="parent_id" disabled>
+                                    <option value="0">- Main menu -</option>
+                                    {% for item in menu %}
+                                        {% if item['parent_id'] == 0 %}
+                                            <option value="{{ item['id'] }}">
+                                                {{ item['localized'][localization.code]['title']|e }}
+                                            </option>
+                                        {% endif %}
+                                    {% endfor %}
+                                </select>
+                                <label>Parent</label>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="form-floating">
+                                <input class="form-control" name="position" disabled value="">
+                                <label>Position</label>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="form-check form-switch mt-3">
+                                <label>Visiblity</label>
+                                <input
+                                    class="form-check-input"
+                                    name="is_visible"
+                                    disabled
+                                    checked
+                                    type="checkbox"
+                                    role="switch"
+                                >
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Caption-ууд (унших-only) -->
+                    {% for code,language in localization.language %}
+                        <div class="form-floating mt-2">
+                            <input
+                                class="form-control"
+                                name="title[{{ code }}]"
+                                disabled
+                                value=""
+                                id="title_{{ code }}"
+                            >
+                            <label for="title_{{ code }}">
+                                Caption ({{ language['title'] }})
+                                {% set flag = code == 'en' ? 'us' : code %}
+                                <img
+                                    src="https://flagcdn.com/20x15/{{ flag }}.png"
+                                    srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x"
+                                    width="16"
+                                    height="12"
+                                    alt="{{ language['title']|e }}"
+                                >
+                            </label>
+                        </div>
+                    {% endfor %}
+
+                    <!-- Icon / Link / RBAC / Permission унших хэсэг -->
+                    <div class="row mt-2">
+                        <div class="col">
+                            <div class="form-floating">
+                                <input class="form-control" name="icon" disabled value="">
+                                <label>Icon</label>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="form-floating">
+                                <input class="form-control" name="href" disabled value="">
+                                <label>Link</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-2">
+                        <div class="col">
+                            <div class="form-floating">
+                                <select class="form-select" name="alias" disabled>
+                                    <option value=""></option>
+                                    {% for alias in aliases %}
+                                        <option value="{{ alias|e }}">{{ alias|e }}</option>
+                                    {% endfor %}
+                                </select>
+                                <label>RBAC</label>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="form-floating">
+                                <select class="form-select" name="permission" disabled>
+                                    <option value=""></option>
+                                    {% for permission in permissions %}
+                                        <option value="{{ permission|e }}">{{ permission|e }}</option>
+                                    {% endfor %}
+                                </select>
+                                <label>Permission</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Created/Updated metadata -->
+                    <hr>
+                    <div class="row mt-2">
+                        <label class="col-3 col-form-label text-end">{{ 'date-created'|text }}</label>
+                        <div class="col-9">
+                            <input class="form-control" disabled name="created_at" value="">
+                        </div>
+                    </div>
+                    <div class="row mt-2">
+                        <label class="col-3 col-form-label text-end">{{ 'created-by'|text }}</label>
+                        <div class="col-9">
+                            <input class="form-control" disabled name="created_by" value="">
+                        </div>
+                    </div>
+                    <div class="row mt-2">
+                        <label class="col-3 col-form-label text-end">{{ 'date-modified'|text }}</label>
+                        <div class="col-9">
+                            <input class="form-control" disabled name="updated_at" value="">
+                        </div>
+                    </div>
+                    <div class="row mt-2">
+                        <label class="col-3 col-form-label text-end">{{ 'updated-by'|text }}</label>
+                        <div class="col-9">
+                            <input class="form-control" disabled name="updated_by" value="">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-info shadow-sm" data-bs-dismiss="modal" type="button">
+                    {{ 'close'|text }}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 🔹 MENU UPDATE MODAL - Цэсийг засварлах форм -->
+<div class="modal fade" id="menu-update-modal" role="dialog" tabindex="-1" aria-hidden="true">
+    <div class="modal-lg modal-dialog modal-dialog-centered modal-dialog-scrollable" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title fs-6 text-uppercase text-primary">
+                    <i class="bi bi-pencil-square"></i> {{ 'edit-record'|text }}
+                </h3>
+                <button
+                    class="btn-close"
+                    type="button"
+                    data-bs-dismiss="modal"
+                    aria-label="{{ 'close'|text|e }}"
+                ></button>
+            </div>
+            <div class="modal-body">
+                <!-- Update form: PUT method ашиглана -->
+                <form
+                    class="needs-validation"
+                    novalidate
+                    id="menu_update"
+                    action="{{ 'manage-menu-update'|link }}"
+                    method="PUT"
+                    enctype="multipart/form-data"
+                >
+                    <input name="id" value="" type="hidden">
+
+                    <div class="row">
+                        <div class="col-6">
+                            <div class="form-floating">
+                                <select class="form-select" name="parent_id">
+                                    <option value="0">- Main menu -</option>
+                                    {% for item in menu %}
+                                        {% if item['parent_id'] == 0 %}
+                                            <option value="{{ item['id'] }}">
+                                                {{ item['localized'][localization.code]['title']|e }}
+                                            </option>
+                                        {% endif %}
+                                    {% endfor %}
+                                </select>
+                                <label>Parent</label>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="form-floating">
+                                <input
+                                    class="form-control"
+                                    required
+                                    name="position"
+                                    value=""
+                                    placeholder="Position"
+                                    type="number"
+                                    autocomplete="off"
+                                >
+                                <label>Position</label>
+                                <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="form-check form-switch mt-3">
+                                <label>Visiblity</label>
+                                <input
+                                    class="form-check-input"
+                                    name="is_visible"
+                                    checked
+                                    type="checkbox"
+                                    role="switch"
+                                >
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Олон хэл дээрх Caption талбарууд (editable) -->
+                    {% for code,language in localization.language %}
+                        <div class="form-floating mt-2">
+                            <input
+                                class="form-control"
+                                required
+                                name="title[{{ code }}]"
+                                value=""
+                                id="title_{{ code }}"
+                                maxlength="128"
+                                autocomplete="off"
+                            >
+                            <label for="title_{{ code }}">
+                                Caption ({{ language['title'] }})
+                                {% set flag = code == 'en' ? 'us' : code %}
+                                <img
+                                    src="https://flagcdn.com/20x15/{{ flag }}.png"
+                                    srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x"
+                                    width="16"
+                                    height="12"
+                                    alt="{{ language['title']|e }}"
+                                >
+                            </label>
+                            <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
+                        </div>
+                    {% endfor %}
+
+                    <!-- Icon / Link / RBAC / Permission (editable) -->
+                    <div class="row mt-2">
+                        <div class="col">
+                            <div class="form-floating">
+                                <input
+                                    class="form-control"
+                                    name="icon"
+                                    value=""
+                                    placeholder="icon class"
+                                    type="text"
+                                    maxlength="64"
+                                    autocomplete="off"
+                                >
+                                <label>Icon</label>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="form-floating">
+                                <input
+                                    class="form-control"
+                                    name="href"
+                                    value=""
+                                    placeholder="Link"
+                                    type="text"
+                                    maxlength="255"
+                                    autocomplete="off"
+                                >
+                                <label>Link</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-2">
+                        <div class="col">
+                            <div class="form-floating">
+                                <select class="form-select" name="alias">
+                                    <option value=""></option>
+                                    {% for alias in aliases %}
+                                        <option value="{{ alias|e }}">{{ alias|e }}</option>
+                                    {% endfor %}
+                                </select>
+                                <label>RBAC</label>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="form-floating">
+                                <select class="form-select" name="permission">
+                                    <option value=""></option>
+                                    {% for permission in permissions %}
+                                        <option value="{{ permission|e }}">{{ permission|e }}</option>
+                                    {% endfor %}
+                                </select>
+                                <label>Permission</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                {% if user_can %}
+                    <button class="update-menu btn btn-primary shadow-sm">
+                        <i class="bi bi-check"></i> {{ 'submit'|text }}
+                    </button>
+                {% endif %}
+                <button class="btn btn-secondary shadow-sm" data-bs-dismiss="modal" type="button">
+                    {{ 'cancel'|text }}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if user.can('system_logger') %}
+    <!-- 🔹 Access log - Template menu дээр хийсэн бүх өөрчлөлтийн протокол -->
+    <div class="mt-5">
+        <hr>
+        <label class="form-label fw-bolder">
+            {{ 'log'|text }} <i class="bi bi-clock-history"></i>
+        </label>
+        <div class="spinner-grow mt-3" role="status" style="display:none">
+            <span class="visually-hidden">Loading logs...</span>
+        </div>
+        <ul class="list-group logger-protocol" id="logger-dashboard" style="max-height:240px; overflow-y:auto">
+        </ul>
+    </div>
+{% endif %}
+
+<script type="text/javascript">
+    document.addEventListener('DOMContentLoaded', function () {
+        /* 🔹 motable - Raptor стандарт хүснэгт helper */
+        const menu = new motable('table#raptor_menu');
+        menu.setReady();
+
+        /* 🔹 Цэс идэвхгүй болгох товч (trash icon) дээрх click event */
+        const deactivates = menu.table.querySelectorAll('.deactivate-item');
+        deactivates.forEach(btn => btn.addEventListener('click', function (e) {
+            e.preventDefault();
+
+            const thisRow = btn.closest('tr');
+            if (!thisRow) {
+                return NotifyTop('warning', `{{ 'error'|text|e }}`, 'Cannot select row!');
+            }
+
+            const caption = thisRow.children[1].innerHTML;
+            const cleanCaption = caption.replace(/<\/?[^>]+(>|$)/g, '');
+            let ask =
+                document.documentElement.lang === 'mn'
+                    ? `<p class="text-danger mb-3">Та (${cleanCaption}) цэсийг идэвхгүй болгоход итгэлтэй байна уу?</p><p>Хэрвээ тийм бол шалтгаан тайлбар бичнэ үү</p>`
+                    : `<p class="text-danger mb-3">Are you sure to deactivate the menu (${cleanCaption})?</p><p>If so, please provide a reason</p>`;
+
+            const icon = thisRow.children[0].querySelector('i');
+            if (icon) {
+                ask = `<p>${icon.parentElement.innerHTML}</p>${ask}`;
+            }
+
+            /* SweetAlert2 - Идэвхгүй болгохыг баталгаажуулах dialog */
+            Swal.fire({
+                html: ask,
+                input: 'text',
+                showCancelButton: true,
+                cancelButtonText: `{{ 'cancel'|text|e }}`,
+                confirmButtonText: `<i class="bi bi-trash"></i> {{ 'delete'|text|e }}`,
+                confirmButtonColor: '#df4759',
+                showLoaderOnConfirm: true,
+                allowOutsideClick: () => !Swal.isLoading(),
+                backdrop: true,
+                preConfirm: (reason) => {
+                    return fetch(
+                        `{{ 'manage-menu-deactivate'|link }}`,
+                        {
+                            method: 'DELETE',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                reason,
+                                caption,
+                                id: btn.value
+                            })
+                        }
+                    ).then(res => {
+                        return res.json();
+                    }).then(response => {
+                        if (response.status !== 'success') {
+                            throw new Error(response.message ?? 'Invalid response!');
+                        }
+
+                        Swal.close();
+
+                        /* Тухайн мөрийг хүснэгтээс хасна */
+                        thisRow.remove();
+                        menu.setReady();
+
+                        /* UI-г шинэчлэх (refresh) */
+                        window.location.reload();
+
+                        NotifyTop(
+                            'success',
+                            `{{ 'success'|text|e }}`,
+                            response.message ?? `Menu (${caption}) deactivated`
+                        );
+                    }).catch(error => {
+                        Swal.showValidationMessage(error.message);
+                    });
+                }
+            });
+        }));
+
+        /* 🔹 UPDATE MODAL - Мөр дээрх “Edit” товч дарахад form-ийг populate хийнэ */
+        const updates = menu.table.querySelectorAll('button[data-bs-target="#menu-update-modal"]');
+        updates.forEach(btn => btn.addEventListener('click', function () {
+            const thisRow = btn.closest('tr');
+            const record = JSON.parse(thisRow.dataset.record ?? '{}');
+            if (record.id === undefined) return;
+            
+            const updateModal = document.querySelector('div#menu-update-modal');
+            updateModal.querySelector('input[name="id"]').value = record.id;
+            updateModal.querySelector('select[name="parent_id"]').value = record.parent_id;
+            updateModal.querySelector('input[name="position"]').value = record.position;
+            updateModal.querySelector('input[name="is_visible"]').checked = record.is_visible === 1;
+            updateModal.querySelector('input[name="icon"]').value = record.icon;
+            updateModal.querySelector('input[name="href"]').value = record.href;
+            updateModal.querySelector('select[name="alias"]').value = record.alias;
+            updateModal.querySelector('select[name="permission"]').value = record.permission;
+
+            for (const code in record.localized) {
+                if (record.localized.hasOwnProperty(code)) {
+                    const localizedItem = record.localized[code];
+                    const titleInput = updateModal.querySelector(`input#title_${code}`);
+                    if (titleInput && localizedItem) {
+                        titleInput.value = localizedItem.title || '';
+                    }
+                }
+            }
+        }));
+
+        /* 🔹 VIEW MODAL - Мөр дээрх “View” товч дарахад readonly form-ийг populate хийнэ */
+        const views = menu.table.querySelectorAll('button[data-bs-target="#menu-view-modal"]');
+        views.forEach(btn => btn.addEventListener('click', function () {
+            const thisRow = btn.closest('tr');
+            const record = JSON.parse(thisRow.dataset.record ?? '{}');
+            if (record.id === undefined) return;
+
+            const viewModal = document.querySelector('div#menu-view-modal');
+            viewModal.querySelector('input[name="id"]').value = record.id;
+            viewModal.querySelector('select[name="parent_id"]').value = record.parent_id;
+            viewModal.querySelector('input[name="position"]').value = record.position;
+            viewModal.querySelector('input[name="is_visible"]').checked = record.is_visible === 1;
+            viewModal.querySelector('input[name="icon"]').value = record.icon;
+            viewModal.querySelector('input[name="href"]').value = record.href;
+            viewModal.querySelector('select[name="alias"]').value = record.alias;
+            viewModal.querySelector('select[name="permission"]').value = record.permission;
+
+            for (const code in record.localized) {
+                if (record.localized.hasOwnProperty(code)) {
+                    const localizedItem = record.localized[code];
+                    const titleInput = viewModal.querySelector(`input#title_${code}`);
+                    if (titleInput && localizedItem) {
+                        titleInput.value = localizedItem.title || '';
+                    }
+                }
+            }
+            viewModal.querySelector('input[name="created_at"]').value = record.created_at;
+            viewModal.querySelector('input[name="created_by"]').value = record.created_by;
+            viewModal.querySelector('input[name="updated_at"]').value = record.updated_at;
+            viewModal.querySelector('input[name="updated_by"]').value = record.updated_by;
+        }));
+
+        /* 🔹 MENU INSERT FORM - Шинэ цэс нэмэх submit логик */
+        const formInsert = document.querySelector('form#menu_insert');
+        if (!formInsert) {
+            NotifyTop('danger', `{{ 'error'|text|e }}`, 'Form not found!');
+        } else {
+            const submitter = document.querySelector('button.insert-menu');
+            submitter.addEventListener('click', function (e) {
+                e.preventDefault();
+                formInsert.requestSubmit();
+            });
+
+            formInsert.addEventListener('submit', function (event) {
+                event.preventDefault();
+
+                const _valid = this.checkValidity();
+                this.classList.add('was-validated');
+                if (!_valid) {
+                    event.stopPropagation();
+                    return NotifyTop(
+                        'danger',
+                        `{{ 'error'|text|e }}`,
+                        `{{ 'u-have-some-form-errors'|text|e }}`
+                    );
+                }
+
+                submitter.growNstop();
+
+                const data = new FormData(this);
+                const visible = this.querySelector('input[name="is_visible"]');
+                if (visible) { /* ✅ CHECKBOX NORMALIZE: is_visible → 1/0 */
+                    data.set('is_visible', visible.checked ? '1' : '0');
+                }
+                fetch(
+                    this.action,
+                    {
+                        body: data,
+                        method: this.getAttribute('method') ?? 'POST'
+                    }
+                ).then(res => {
+                    const contentType = res.headers.get('content-type') || '';
+                    if (contentType.includes('application/json')) return res.json();
+                    throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+                }).then(response => {
+                    if (response.status !== 'success') {
+                        throw new Error(response.message ? response.message : 'Invalid response!');
+                    }
+
+                    /* Шинээр нэмэгдсэн цэсийг UI дээр харахын тулд refresh */
+                    window.location.reload();
+
+                    NotifyTop(
+                        response.type ?? 'success',
+                        response.title ?? `{{ 'success'|text|e }}`,
+                        response.message ?? 'Menu created'
+                    );
+                }).catch(error => {
+                    NotifyTop('danger', `{{ 'error'|text|e }}`, error.message);
+                    submitter.growNstop();
+                });
+            });
+        }
+
+        /* 🔹 MENU UPDATE FORM - Цэс засварлах submit логик */
+        const formUpdate = document.querySelector('form#menu_update');
+        if (!formUpdate) {
+            NotifyTop('danger', `{{ 'error'|text|e }}`, 'Form not found!');
+        } else {
+            const submitter = document.querySelector('button.update-menu');
+            submitter.addEventListener('click', function (e) {
+                e.preventDefault();
+                formUpdate.requestSubmit();
+            });
+
+            formUpdate.addEventListener('submit', function (event) {
+                event.preventDefault();
+
+                const _valid = this.checkValidity();
+                this.classList.add('was-validated');
+                if (!_valid) {
+                    event.stopPropagation();
+                    return NotifyTop(
+                        'danger',
+                        `{{ 'error'|text|e }}`,
+                        `{{ 'u-have-some-form-errors'|text|e }}`
+                    );
+                }
+
+                submitter.growNstop();
+
+                const data = new FormData(this);
+                console.log(data);
+                const visible = this.querySelector('input[name="is_visible"]');
+                if (visible) { /* ✅ CHECKBOX NORMALIZE: is_visible → 1/0 */
+                    data.set('is_visible', visible.checked ? '1' : '0');
+                }
+                console.log(data);
+                fetch(
+                    this.action,
+                    {
+                        body: data,
+                        method: this.getAttribute('method') ?? 'PUT'
+                    }
+                ).then(res => {
+                    const contentType = res.headers.get('content-type') || '';
+                    if (contentType.includes('application/json')) return res.json();
+                     throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+                }).then(response => {
+                    if (response.status !== 'success') {
+                        throw new Error(response.message ? response.message : 'Invalid response!');
+                    }
+
+                    /* Засварын дараа UI-г шинэчлэх */
+                    window.location.reload();
+
+                    NotifyTop(
+                        response.type ?? 'success',
+                        response.title ?? `{{ 'success'|text|e }}`,
+                        response.message ?? 'Menu updated'
+                    );
+                }).catch(error => {
+                    NotifyTop('danger', `{{ 'error'|text|e }}`, error.message);
+                    submitter.growNstop();
+                });
+            });
+        }
+
+        /* 🔹 LOGGER - Template Menu-тэй холбоотой бүх үйлдлийн протоколын жагсаалт */
+        const logger = document.querySelector('ul.logger-protocol');
+        if (logger && logger.tagName === 'UL') {
+            const logsRetrieveLink = `{{ 'logs-retrieve'|link }}`;
+            const logsViewLink = `{{ 'logs-view'|link }}`;
+            const logger_id = logger.id ?? '';
+            const table = logger_id.substring(logger_id.indexOf('-') + 1);
+            if (!table) return;
+
+            logger.style.display = 'none';
+            const spinner = logger.previousElementSibling;
+            spinner.style.display = 'block';
+
+            fetch(
+                `${logsRetrieveLink}?table=${table}`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        'ORDER BY': 'id Desc',
+                        'CONTEXT': {
+                            'action': 'template-menu-*'
+                        },
+                        'LIMIT':  10000
+                    })
+                }
+            ).then(res => {
+                return res.json();
+            }).then(response => {
+                if (response.error) {
+                    throw new Error(response.error ?? `{{ 'something-went-wrong'|text|e }}`);
+                }
+
+                logger.innerHTML = '';
+
+                const logModalLink = `${logsViewLink}?table=${table}&id=`;
+                Object.values(response).forEach(log => {
+                    const log_li = document.createElement('li');
+                    log_li.classList.add('list-group-item', 'list-group-item-action');
+
+                    /* Log level-с хамаарч Bootstrap өнгө тохируулах */
+                    switch (log.level) {
+                        case 'notice': log_li.classList.add('list-group-item-light'); break;
+                        case 'info': log_li.classList.add('list-group-item-primary'); break;
+                        case 'error': log_li.classList.add('list-group-item-danger'); break;
+                        case 'warning': log_li.classList.add('list-group-item-warning'); break;
+                        case 'alert': log_li.classList.add('list-group-item-info'); break;
+                        case 'debug': log_li.classList.add('list-group-item-secondary'); break;
+                        default: log_li.classList.add('list-group-item-dark'); break;
+                    }
+
+                    const a_link = document.createElement('a');
+                    a_link.textContent = `${log.created_at} [${log.id}]`;
+                    a_link.href = logModalLink + log.id;
+                    a_link.setAttribute('data-bs-target', '#static-modal');
+                    a_link.setAttribute('data-bs-toggle', 'modal');
+                    a_link.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        ajaxModal(a_link);
+                    });
+                    log_li.appendChild(a_link);
+                    log_li.appendChild(document.createTextNode(' '));
+
+                    const span_msg = document.createElement('span');
+                    span_msg.innerHTML = log.message;
+                    log_li.appendChild(span_msg);
+                    log_li.appendChild(document.createTextNode(' '));
+
+                    const span_user_action = document.createElement('span');
+                    span_user_action.innerHTML =
+                        `<span class="text-muted small"><u>${log.context.action ?? ''} by ${log.context.auth_user?.username ?? ''}</u></span>`;
+                    span_user_action.classList.add('text-muted', 'small');
+                    log_li.appendChild(span_user_action);
+
+                    logger.appendChild(log_li);
+                });
+            }).catch(error => {
+                console.log(error.message);
+            }).finally(() => {
+                logger.style.display = '';
+                spinner.style.display = 'none';
+            });
+        }
+    });
+</script>

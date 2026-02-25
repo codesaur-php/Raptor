@@ -1,0 +1,71 @@
+{
+    "name": "codesaur/raptor",
+    "type": "project",
+    "description": "Цэвэр архитектуртай объект хандалттай веб хөгжүүлэлтийн фреймворк",
+    "keywords": [
+        "raptor", "framework", "фреймворк", "application", "http application", "router", "server request handler", "psr-3", "psr-7", "psr-15", "rbac", "role based access control", "хэрэглэгчийн эрхийн зохицуулалт", "logger", "протокол", "mongol", "mongolia", "монгол", "codesaur", "narankhuu", "coden", "кодзавр", "наранхүү", "коден"
+    ],
+    "homepage": "https://codesaur.net",
+    "authors": [
+        {
+            "name": "Narankhuu (+976 99000287)",
+            "email": "codesaur@gmail.com",
+            "homepage": "https://github.com/codesaur"
+        }
+    ],
+    "require": {
+        "ext-gd": "*",
+        "ext-intl": "*",
+        "psr/log": "^3.0.2",
+        "vlucas/phpdotenv": "^5.6.2",
+        "phpmailer/phpmailer": "^7.0.1",
+        "getbrevo/brevo-php": "^2.0.14",
+        "firebase/php-jwt": "^7.0.2",
+        "codesaur/http-application": "^6.0.0",
+        "codesaur/dataobject": "^9.0.0",
+        "codesaur/http-client": "^2.0.2",
+        "codesaur/template": "^3.0.0",
+        "codesaur/container": "^3.1.1"
+    },
+    "autoload": {
+        "psr-4": {
+            "Web\\": "application/web/",
+            "Web\\Home\\": "application/web/home/",
+            "Web\\Template\\": "application/web/template/",
+
+            "Dashboard\\": "application/dashboard/",
+            "Dashboard\\Home\\": "application/dashboard/home",
+            
+            "Raptor\\": "application/raptor/",
+            "Raptor\\Exception\\": "application/raptor/exception/",
+            "Raptor\\Template\\": "application/raptor/template/",
+            "Raptor\\Authentication\\": "application/raptor/authentication/",
+            "Raptor\\User\\": "application/raptor/user/",
+            "Raptor\\Organization\\": "application/raptor/organization/",
+            "Raptor\\RBAC\\": "application/raptor/rbac/",
+            "Raptor\\Localization\\": [
+                "application/raptor/localization/",
+                "application/raptor/localization/language",
+                "application/raptor/localization/text"
+            ],
+            "Raptor\\Content\\": [
+                "application/raptor/content/",
+                "application/raptor/content/settings",
+                "application/raptor/content/reference",
+                "application/raptor/content/file",
+                "application/raptor/content/news",
+                "application/raptor/content/page"
+            ],
+            "Raptor\\Mail\\": "application/raptor/mail/",
+            "Raptor\\Log\\": "application/raptor/log/"
+        }
+    },
+    "scripts": {
+        "post-root-package-install": [
+            "@php -r \"file_exists('.env') || copy('docs/conf.example/.env.example', '.env');\"",
+            "@php -r \"$envFile='.env';$secret=bin2hex(random_bytes(64));if(file_exists($envFile)){ $content=file_get_contents($envFile);if(preg_match('/^RAPTOR_JWT_SECRET=.*/m',$content)){ $content=preg_replace('/^RAPTOR_JWT_SECRET=.*/m','RAPTOR_JWT_SECRET='.$secret,$content);} else { if(substr($content,-1)!==PHP_EOL)$content.=PHP_EOL;$content.='RAPTOR_JWT_SECRET='.$secret.PHP_EOL;} file_put_contents($envFile,$content);} else { file_put_contents($envFile,'RAPTOR_JWT_SECRET='.$secret.PHP_EOL);} echo '✅ RAPTOR_JWT_SECRET generated: '.$secret.PHP_EOL;\""
+        ]
+    },
+    "license": "MIT",
+    "minimum-stability": "dev"
+}

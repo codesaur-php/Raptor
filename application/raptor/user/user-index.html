@@ -1,0 +1,359 @@
+<!-- SweetAlert2 - confirm dialog, alert харуулахад ашиглагдана -->
+<script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<!-- Choices.js - select box / multiselect-ийг customize хийхэд -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+
+<!-- ============================================
+     Хэрэглэгчдийн жагсаалтын хуудасны header
+     ============================================ -->
+<div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-2 shadow">
+    <!-- Хуудасны гарчиг -->
+    <h3 class="px-2 my-auto fs-6 text-primary text-uppercase">
+        <i class="bi bi-people-fill"></i> {{ 'users'|text }}
+    </h3>
+    
+    <!-- Баруун талын action товчнууд -->
+    <div class="btn-group ms-auto">
+        {% if user.can('system_user_index') %}
+            <!-- Нууц үг сэргээх хүсэлтийн жагсаалт -->
+            <a class="btn btn-sm btn-outline-info btn-users d-none shadow-sm" href="{{ 'user-requests-modal'|link({'table': 'forgot'}) }}" data-bs-target="#static-modal" data-bs-toggle="modal">
+                {{ 'password-reset'|text }}
+            </a>
+            
+            <!-- Шинэ хэрэглэгч бүртгүүлэх хүсэлт -->
+            <a class="btn btn-sm btn-outline-primary btn-users d-none shadow-sm" href="{{ 'user-requests-modal'|link({'table': 'signup'}) }}" data-bs-target="#static-modal" data-bs-toggle="modal">
+                {{ 'request-new-user'|text }}
+            </a>
+        {% endif %}
+        
+        {% if user.can('system_user_insert') %}
+            <!-- Шинэ хэрэглэгч нэмэх -->
+            <a class="btn btn-sm btn-outline-success btn-users d-none shadow-sm" href="{{ 'user-insert'|link }}">
+                <i class="bi bi-person-plus-fill"></i> {{ 'create-new-user'|text }}
+            </a>
+        {% endif %}
+    </div>
+</div>
+
+<!-- ============================================
+     motable.js ашиглан динамик хүснэгт бий болгоно
+     ============================================ -->
+<table class="table table-sm table-hover table-striped table-bordered" id="users"></table>
+
+<script type="text/javascript">
+    document.addEventListener('DOMContentLoaded', function () {
+        /* motable instance үүсгэж хүснэгт, багануудыг тодорхойлох */
+        const users = new motable(
+            'table#users',
+            {
+                columns: [
+                    {title: '#'},
+                    {title: `{{ 'photo'|text|e }}`},
+                    {title: `{{ 'user'|text|e }}`},
+                    {title: `{{ 'organization'|text|e }}`},
+                    {title: `{{ 'role'|text|e }}`},
+                    {title: `{{ 'action'|text|e }}`, style: 'width:10rem'}
+                ],
+                freezeColumns: [2] /* хэрэглэгчийн нэр баганыг наалттай болгох */
+            }
+        );
+    
+        /* Хүснэгтийг бусад JS хэсэг ашиглахын тулд window дээр хадгална */
+        window.usersTbl = users;
+        
+        /* Серверээс хэрэглэгчдийн жагсаалт татах (AJAX fetch) */
+        fetch(
+            `{{ 'users-list'|link }}`
+        ).then(res => {
+            const contentType = res.headers.get('content-type') || '';
+            if (contentType.includes('application/json')) return res.json();
+            /* JSON биш бол алдаа */
+            throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+        }).then(data => {
+            if (!data.list) {
+                throw new Error(data.message ?? 'Invalid response!');
+            }
+            
+            /* Амжилттай JSON ирсэн тул UI-д буулгая */
+            const indexLink = `{{ 'users'|link }}`;
+            const orgIndexLink = `{{ 'organizations'|link }}`;
+            const canUpdate = `{{ user.can('system_user_update') ? 'true' : '' }}`;
+            const canDelete = `{{ user.can('system_user_delete') ? 'true' : '' }}`;
+            const canSetOrg = `{{ user.can('system_user_organization_set') ? 'true' : '' }}`;
+            const canSetRole = `{{ user.can('system_rbac') ? 'true' : '' }}`;
+            const rbacRoleViewLink = `{{ 'rbac-role-view'|link }}`;
+            const authSystemCoder = `{{ user.is('system_coder') ? 'true' : '' }}`;
+            const authUserId = {{ user.profile.id }};
+            
+            /* Монгол/Англи хэл дээр устгагдсан label */
+            const deactivated_title =
+                document.documentElement.lang === 'mn' ? 'устгагдсан' : 'deactivated';
+            
+            /* Хэрэглэгч бүрийн мөрийг үүсгэн нэмье */
+            let rowsHTML = '';
+            data.list.forEach(profile => {
+                
+                /* -------- Хэрэглэгчийн зураг -------- */
+                let photo;
+                if (profile.photo) {
+                    let sizeKB = profile.photo_size ? (profile.photo_size / 1024).toFixed(1) + ' KB' : '';
+                    photo = `
+                        <div class="text-center">
+                            <img class="img-fluid img-thumbnail mb-1" 
+                                 src="${profile.photo}" 
+                                 style="max-width:60px;max-height:60px">
+                            <div style="font-size:0.7rem;" class="text-muted">${sizeKB}</div>
+                        </div>
+                    `;
+                } else {
+                    photo = `
+                        <div class="text-center">
+                            <i class="bi bi-person-bounding-box text-secondary" style="font-size:2rem"></i>
+                        </div>
+                    `;
+                }
+
+                /* -------- Хэрэглэгчийн мэдээлэл -------- */
+                let usernameInfo = `<strong>${profile.username}</strong>`;
+                if (profile.is_active === 0) {
+                    usernameInfo += `<span class="badge bg-danger ms-3">${deactivated_title}</span>`;
+                }
+                const fullName = `${profile.first_name ?? ''} ${profile.last_name ?? ''}`;
+                if (fullName.length > 1) {
+                    usernameInfo += '<br/>';
+                }
+                usernameInfo += fullName;
+                
+                 /* Email + утас */
+                usernameInfo += `
+                    <hr style="margin:0.2rem 0 0 0;">
+                    <div style="font-size:.8rem">
+                        <a class="text-decoration-none" href="mailto:${profile.email}">
+                            <i class="bi bi-envelope-at"></i>
+                        </a> ${profile.email}
+                    </div>`;
+                if (profile.phone) {
+                    usernameInfo += `
+                        <div style="font-size:.8rem;">
+                            <a class="text-decoration-none" href="tel:${profile.phone}">
+                                <i class="bi bi-telephone"></i>
+                            </a> ${profile.phone}
+                        </div>`;
+                }
+
+                /* -------- Байгууллага -------- */
+                const hasSystemCoder = Object.values(profile.roles ?? []).includes('system_coder');
+                
+                /* Байгууллага засах эрхтэй бол button гарна */
+                let orgUserHtml = '';
+                if (canSetOrg && profile.is_active > 0) {
+                    orgUserHtml += `
+                        <a class="ajax-modal btn btn-dark btn-sm shadow-sm mb-1"
+                           style="--bs-btn-font-size:.7rem;"
+                           href="${indexLink}/set/organization/${profile.id}"
+                           data-bs-target="#static-modal" data-bs-toggle="modal">
+                           <i class="bi bi-bank"></i>
+                        </a>`;
+                }
+                
+                /* system_coder → бүх байгууллагын гишүүн мэт */
+                if (hasSystemCoder) {
+                    orgUserHtml += `
+                        <span class="badge bg-secondary fw-normal shadow-sm">
+                            system_coder can enter any organization
+                        </span><br/>`;
+                }
+                
+                /* Байгууллагуудын жагсаалт */
+                profile.organizations?.forEach(org => {
+                    orgUserHtml += `
+                        <a class="ajax-modal badge text-bg-light text-decoration-none
+                                   ${org.alias === 'system' ? '' : 'fw-normal '} shadow-sm"
+                           href="${orgIndexLink}/view/${org.id}"
+                           data-bs-target="#static-modal" data-bs-toggle="modal">
+                           ${org.name}
+                        </a>`;
+                });
+
+                /* -------- RBAC дүрүүд -------- */
+                let rolesHtml = '';
+                if (canSetRole && profile.is_active > 0) {
+                    rolesHtml += `
+                        <a class="ajax-modal btn btn-sm btn-dark shadow-sm mb-1"
+                           style="--bs-btn-font-size:.7rem;"
+                           href="${indexLink}/set/role/${profile.id}"
+                           data-bs-target="#static-modal" data-bs-toggle="modal">
+                           <i class="bi bi-shield-fill-check"></i>
+                        </a>`;
+                }
+                if (hasSystemCoder) {
+                    rolesHtml += `
+                        <span class="badge bg-secondary fw-normal shadow-sm">
+                            system_coder can do all the actions
+                        </span><br/>`;
+                }
+                profile.roles?.forEach(role => {
+                    rolesHtml += `
+                        <a class="ajax-modal badge text-bg-light text-decoration-none
+                                   ${role === 'system_coder' ? '' : 'fw-normal '} shadow-sm"
+                           href="${rbacRoleViewLink}?role=${role}"
+                           data-bs-target="#static-modal" data-bs-toggle="modal">
+                           ${role}
+                        </a>`;
+                });
+                
+                /* -------- Үйлдлийн товчнууд -------- */
+                let buttons = [
+                    `<a class="btn btn-sm btn-info mt-1 shadow-sm" href="${indexLink}/view/${profile.id}">
+                        <i class="bi bi-eye"></i>
+                     </a>`
+                ];
+                
+                if (profile.is_active > 0) {
+                    if (canUpdate) {
+                        buttons.push(`
+                            <a class="btn btn-sm btn-primary mt-1 shadow-sm"
+                               href="${indexLink}/update/${profile.id}">
+                               <i class="bi bi-pencil-square"></i>
+                            </a>`);
+                    }
+
+                    /* Нууц үг солих → зөвхөн өөрийнх эсвэл system_coder эрхтэй бол */
+                    if (profile.id === authUserId || authSystemCoder) {
+                        buttons.push(`
+                            <a class="ajax-modal btn btn-sm btn-dark mt-1 shadow-sm"
+                               href="${indexLink}/set/password/${profile.id}"
+                               data-bs-target="#static-modal" data-bs-toggle="modal">
+                               <i class="bi bi-key-fill"></i>
+                            </a>`);
+                    }
+
+                    /* Устгах */
+                    if (canDelete) {
+                        buttons.push(`
+                            <button class="deactivate-user btn btn-sm btn-danger mt-1 shadow-sm"
+                                    type="button" value="${profile.id}">
+                                    <i class="bi bi-trash"></i>
+                            </button>`);
+                    }
+                }
+                const actions = `<div class="mb-1">${buttons.join(' ')}</div>`;
+
+                /* Нэг мөрийг HTML хэлбэрээр буулгах */
+                rowsHTML += `
+                    <tr>
+                        <th scope="row">${profile.id}</th>
+                        <td>${photo}</td>
+                        <td>${usernameInfo}</td>
+                        <td>${orgUserHtml}</td>
+                        <td>${rolesHtml}</td>
+                        <td>${actions}</td>
+                    </tr>`;
+            });
+            
+            /* motable-д бэлэн HTML-г суулгах */            
+            users.setBody(rowsHTML);
+            
+            /* Хүснэгт ачаалагдсан толгойн хэсгийн баруун талын
+             * action дээрх “d-none” байсан товчнуудыг харагдуулна */
+            document.querySelectorAll('.btn-users.d-none').forEach(btn => {
+                btn.classList.remove('d-none');
+            });
+        }).catch(err => {
+            /* Алдаа гарвал motable-д error харуулах */
+            users.error(err);
+        }).finally(() => {
+            /* motable дээр шинээр нэмэгдсэн мөрүүд дээрх
+             * Modal-уудыг зөв ажиллуулах (ajaxModal()) */
+            const modals = users.table.querySelectorAll('.ajax-modal');
+            modals.forEach(a => a.addEventListener('click', function (e) {
+                e.preventDefault();
+                ajaxModal(a);
+            }));            
+            
+            /* Хэлнээс хамаарсан deactivate баталгаажуулах асуулт */
+            let questionDeletion;
+            if (document.documentElement.lang === 'mn') {
+                questionDeletion = name =>
+                    `<p class="text-danger mb-3">Та (${name}) хэрэглэгчийг устгахдаа (deactivate) итгэлтэй байна уу?</p><p>Хэрвээ тийм бол шалтгаан тайлбар бичнэ үү</p>`;
+            } else {
+                questionDeletion = name =>
+                    `<p class="text-danger mb-3">Are you sure to deactivate this user (${name})?</p><p>If so, please provide a reason</p>`;
+            }
+
+            /* Хэрэглэгчийг deactivate хийх товч */
+            const deactivates = users.table.querySelectorAll('.deactivate-user');
+            deactivates.forEach(btn => btn.addEventListener('click', function (e) {
+                e.preventDefault();
+                
+                const thisRow = btn.closest('tr');
+                if (!thisRow) {
+                    return NotifyTop('warning', `{{ 'error'|text|e }}`, 'Cannot select row!');
+                }
+                
+                /* Устгах гэж буй хэрэглэгчийн нэр */
+                const name = thisRow.children[2]?.querySelector('strong')?.innerHTML;                
+                /* Устгах (deactivate) баталгаажуулах асуулт */
+                let ask = questionDeletion(name);                
+                /* Зураг байвал dialog-д харуулна */
+                let photo = thisRow.children[1].querySelector('img');
+                let src;
+                if (photo) {
+                    src = photo.src;
+                } else {
+                    src = '';
+                    /* Зураг байхгүй үед dialog-д placeholder icon харуулна */
+                    ask = `<p><i class="bi bi-person-x-fill text-danger mb-2" style="font-size:3rem"></i></p>${ask}`;
+                }
+                Swal.fire({
+                    imageUrl: src,
+                    imageHeight: 64,
+                    html: ask,
+                    input: 'text',
+                    showCancelButton: true,
+                    cancelButtonText: `{{ 'cancel'|text|e }}`,
+                    confirmButtonText: `<i class="bi bi-trash"></i> {{ 'delete'|text|e }}`,
+                    confirmButtonColor: '#df4759',
+                    showLoaderOnConfirm: true,
+                    allowOutsideClick: () => !Swal.isLoading(),
+                    backdrop: true,
+                    preConfirm: (reason) => {
+                        /* AJAX → deactivate */
+                        return fetch(
+                            `{{ 'user-deactivate'|link }}`,
+                            {
+                                method: 'DELETE',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    name,
+                                    reason,
+                                    id: btn.value
+                                })
+                            }
+                        ).then(res => {
+                            return res.json();
+                        }).then(response => {
+                            if (response.status !== 'success') {
+                                throw new Error(response.message ?? 'Invalid response!');
+                            }
+
+                            Swal.close();
+
+                            /* UI-с шууд устгана */
+                            thisRow.remove();
+                            users.setReady();
+
+                            NotifyTop('success', `{{ 'success'|text|e }}`, response.message ?? `User (${name}) deactivated`);
+                        }).catch(error => {
+                            Swal.showValidationMessage(error.message);
+                        });
+                    }
+                });
+            }));
+        });
+    });
+</script>

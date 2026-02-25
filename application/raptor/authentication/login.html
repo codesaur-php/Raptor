@@ -1,0 +1,452 @@
+{% set lang = localization.code ?? 'en' %}
+<!doctype html>
+<html lang="{{ lang }}">
+    <head>
+        <meta charset="utf-8">
+        <title>{{ (title is not empty ? title : 'login'|text)|e }}</title>
+        <meta name="robots" content="index,follow">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        {% if description is not empty %}<meta name="description" content="{{ description|e }}">{% endif %}
+        {% if favicon is not empty %}<link rel="icon" href="{{ favicon }}" type="image/x-icon">{% endif %}
+        {% if apple_touch_icon is not empty %}<link rel="apple-touch-icon" href="{{ apple_touch_icon }}">{% endif %}
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-4Q6Gf2aSP4eDXB8Miphtr37CMZZQ5oXLH2yaXMJ2w8e2ZtHTl7GptT4jmndRuHDT" crossorigin="anonymous">
+        <script defer src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js" integrity="sha384-j1CDi7MgGQ12Z7Qab0qlWQ/Qqz24Gc6BM0thvEMVjHnfYGF0rmFCozFSxQBxwHKO" crossorigin="anonymous"></script>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+        <style>
+            /* Login формын үндсэн өргөн */
+            .form-signin {
+                width: 100%;
+                max-width: 420px;
+                padding: 15px;
+                margin: auto;
+            }
+       </style>
+    </head>
+    <body class="text-center">
+         <!-- ============================================================
+             LOGIN FORM MAIN WRAPPER
+             ============================================================ -->
+        <main class="form-signin">
+            <!-- ------------------------
+                 Лого (хэрвээ дамжуулсан бол)
+                 ------------------------ -->
+            {% if logo is not empty %}
+            <div class="text-center mb-4" id="logo">
+                <img class="img-fluid" src="{{ logo }}">
+            </div>
+            {% endif %}
+            
+            <!-- ============================================================
+                 НЭВТРЭХ FORM (#login)
+                 ============================================================ -->
+            <form id="login" action="{{ 'entry'|link }}" method="POST">
+                <div class="form-floating mb-3">
+                    <input class="form-control" autofocus required type="text" name="username" id="username" autocomplete="on" placeholder="{{ 'user'|text|e }}">
+                    <label for="username">{{ 'user'|text }}</label>
+                </div>
+                <div class="form-floating mb-4">
+                    <input class="form-control" required type="password" name="password" id="password" placeholder="{{ 'password'|text|e }}">
+                    <label for="password">{{ 'password'|text }}</label>
+                </div>
+                <button class="w-100 btn btn-lg btn-{{ button|default('primary') }} text-uppercase mb-4" id="login_signin_submit">
+                    <i class="bi-person-check"></i> {{ 'signin'|text }}
+                </button>
+                <!-- Forgot password link -->
+                <a id="forgot_password" href="javascript:;">
+                    <span>{{ 'forgot-password'|text }}</span>
+                </a>
+                
+                {% if content is defined %}<hr>{{ content }}{% endif %}
+                
+                <hr>
+                
+                <!-- Signup -->
+                <div class="text-center">
+                    <span>{{ 'ask-dont-have-user-yet'|text }}</span>
+                    <a href="javascript:;" id="signup">{{ 'signup'|text }}</a>
+                </div>
+                
+                <hr>
+                
+                <!-- Footer © -->
+                <p class="mt-3 mb-3 text-muted text-center">
+                    {% if copyright is not empty %}{{ copyright }}{% else %}{{ 'now'|date('Y') }} &copy; {{ 'dashboard'|text }}{% endif %}
+                </p>
+                
+                <!-- Language Switch -->
+                <div class="text-center">
+                    <span id="language">
+                    {%  if lang != 'en' and localization.language['en'] %}
+                        Click for <a href="{{ 'language'|link({'code': 'en'}) }}">English</a>
+                    {% elseif lang != 'mn' and localization.language['mn'] %}
+                        Системийн хэлийг <a href="{{ 'language'|link({'code': 'mn'}) }}">Монгол</a> болго
+                    {% endif %}
+                    </span>
+                </div>
+            </form>
+            
+            <!-- ============================================================
+                 FORGOT PASSWORD FORM (#forgot)
+                 ============================================================ -->
+            <form class="d-none" id="forgot" action="{{ 'login-forgot'|link }}" method="POST">
+                <h3 class="text-center mb-4">{{ 'password-reset'|text }}</h3>
+                <span>{{ 'enter-email-below'|text }}</span>
+                <div class="form-floating mt-2">
+                    <input class="form-control" type="email" placeholder="{{ 'email'|text|e }}" name="codeForgetEmail" id="codeForgetEmail" autocomplete="off">
+                    <label for="codeForgetEmail">{{ 'email'|text }}</label>
+                </div>
+ 
+                <div class="mt-3">
+                    <button class="btn btn-primary shadow-sm float-start" id="forgot_password_submit">{{ 'request'|text }}</button>
+                    <button class="cancel btn btn-secondary shadow-sm float-end" type="button">{{ 'cancel'|text }}</button>
+                </div>
+            </form>
+
+            <!-- ============================================================
+                 SIGNUP FORM (#register)
+                 ============================================================ -->
+            <form class="d-none" id="register" action="{{ 'signup'|link }}" method="POST">
+                <h3 class="text-center mb-4">{{ 'signup'|text }}</h3>
+                <span>{{ 'enter-personal-details'|text }}</span>
+                <div class="form-floating mt-3 mb-2">
+                    <input class="form-control" type="text" placeholder="{{ 'username'|text|e }}" name="codeUsername" id="codeUsername" autocomplete="new-username">
+                    <label for="codeUsername">{{ 'username'|text }}</label>
+                </div>
+                <div class="form-floating mb-2">
+                    <input class="form-control" type="text" placeholder="{{ 'email'|text|e }}" name="codeEmail" id="codeEmail" autocomplete="new-email">
+                    <label for="codeEmail">{{ 'email'|text }}</label>
+                </div>
+                <div class="form-floating mb-2">
+                    <input class="form-control" type="password" placeholder="{{ 'password'|text|e }}" name="codePassword" id="codePassword" autocomplete="new-password">
+                    <label for="codePassword">{{ 'password'|text }}</label>
+                </div>
+                <div class="form-floating mb-3">
+                    <input class="form-control" type="password" placeholder="{{ 'retype-password'|text|e }}" name="codeRePassword" id="codeRePassword" autocomplete="new-password-retype">
+                    <label for="codeRePassword">{{ 'retype-password'|text }}</label>
+                </div>
+                
+                <hr>
+                
+                <!-- TOS + Privacy Policy -->
+                <div class="text-center mb-2">
+                {% if lang == 'mn' %}
+                    Бүртгүүлэх товчыг дарснаар, та манай <a data-bs-toggle="modal" data-bs-target="#tos" href="javascript:;">системийг хэрэглэх ерөнхий нөхцөл</a>
+                    хүлээн зөвшөөрч, <a data-bs-toggle="modal" data-bs-target="#pp" href="javascript:;">хувийн нууцлалын бодлоготой</a> танилцсан болно.
+                {% else %}
+                    By clicking Sign Up, you agree to our <a data-bs-toggle="modal" data-bs-target="#tos" href="javascript:;">terms and conditions</a>
+                    and have read our <a data-bs-toggle="modal" data-bs-target="#pp" href="javascript:;">privacy policy</a>.
+                {% endif %}
+                </div>
+                <hr>
+                <div class="mt-2">
+                    <button class="btn btn-primary shadow-sm" id="signup_submit">{{ 'signup'|text }}</button>
+                    <button class="cancel btn btn-secondary shadow-sm" type="button">{{ 'cancel'|text }}</button>
+                </div>
+            </form>
+        </main>
+        
+        <!-- ============================================================
+             FRONT-END LOGIC - LOGIN / FORGOT / SIGNUP
+             ============================================================ -->
+        <script type="text/javascript">
+            /* Dark theme auto-apply */
+            if (localStorage.getItem('data-bs-theme') === 'dark') {
+                document.body.setAttribute('data-bs-theme', 'dark');
+            }
+            
+            /* Spinner toggle function */
+            function spinNstop(ele)
+            {
+                const isDisabled = ele.disabled;
+                const hasDisabled = ele.classList.contains('disabled');
+                const attrText = ele.getAttribute('data-innerHTML');
+                if (isDisabled && hasDisabled && attrText) {
+                    ele.disabled = false;
+                    ele.classList.remove('disabled');
+                    ele.innerHTML = attrText;
+                    return;
+                }
+
+                const html = ele.innerHTML;
+                ele.setAttribute('data-innerHTML', html);
+                ele.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+                ele.disabled = true;
+                ele.classList.add('disabled');
+            }
+            
+            /* DOM Loaded - event logic binding */
+            document.addEventListener('DOMContentLoaded', function () {
+                /* Form references */
+                const formLogin = document.querySelector('form#login');
+                const formForgot = document.querySelector('form#forgot');
+                const formSignUp = document.querySelector('form#register');
+                
+                /* Button references */
+                const btnLoginSubmit = document.querySelector('button#login_signin_submit');
+                const btnForgotPassword = document.querySelector('a#forgot_password');
+                const btnForgotPasswordSubmit = document.querySelector('button#forgot_password_submit');
+                const btnSignup = document.querySelector('a#signup');
+                const btnSignupSubmit = document.querySelector('button#signup_submit');
+
+                /* ============================================================
+                   Helper functions
+                   ============================================================ */
+                function showMessage(form, type, msg)
+                {
+                    removeAlert(form);
+                    
+                    const alert = document.createElement('div');
+                    alert.setAttribute('role', 'alert');
+                    alert.className = `alert alert-${type}`;
+                    alert.innerHTML = msg;
+                    form.insertBefore(alert, form.firstChild);
+                };
+                
+                function isBlank(str)
+                {
+                    return !str || /^\s*$/.test(str);
+                }
+                
+                function removeAlert(form)
+                {
+                    const alert = form.querySelector('.alert');
+                    if (alert !== null) {
+                        form.removeChild(alert);
+                    }
+                }
+                
+                function validateEmail(email)
+                {
+                    return String(email)
+                        .toLowerCase()
+                        .match(
+                            /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+                    );
+                };
+
+                function displaySignIn()
+                {
+                    formSignUp.classList.add('d-none');
+                    formForgot.classList.add('d-none');
+
+                    formLogin.classList.remove('d-none');
+                    formLogin.classList.add('animate__animated', 'animate__flipInX');
+                    
+                    removeAlert(formSignUp);
+                    removeAlert(formForgot);
+                }
+
+                /* URL query message support (?message=...&message_type=...) */
+                const urlParams = new URLSearchParams(window.location.search);
+                if (urlParams && urlParams.get('message')) {
+                    showMessage(formLogin, urlParams.get('message_type') ?? 'warning', urlParams.get('message'));
+                    window.history.replaceState({}, document.title, location.protocol + '//' + location.host + location.pathname);
+                }
+                
+                /* Forgot Password Form */
+                btnForgotPassword.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    formLogin.classList.add('d-none');
+                    formSignUp.classList.add('d-none');
+
+                    formForgot.classList.remove('d-none');
+                    formForgot.classList.add('animate__animated', 'animate__flipInX');
+                });
+                
+                /* Signup Form */
+                btnSignup.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    formLogin.classList.add('d-none');
+                    formForgot.classList.add('d-none');
+
+                    formSignUp.classList.remove('d-none');
+                    formSignUp.classList.add('animate__animated', 'animate__flipInX');
+                });
+                
+                /* Cancel buttons → Always return to Login form */
+                document.querySelectorAll('.cancel').forEach(function(link) {
+                    link.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        
+                        displaySignIn();
+                    });
+                });
+
+                /* Login Submit */
+                btnLoginSubmit.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    const username = formLogin.username?.value;
+                    const password = formLogin.password?.value;
+                    if (isBlank(username)) {
+                        return showMessage(formLogin, 'warning', `{{ 'error-username-empty'|text|e }}`);
+                    } else if (isBlank(password)) {
+                        return showMessage(formLogin, 'warning', `{{ 'error-password-empty'|text|e }}`);
+                    }
+                    
+                    spinNstop(this);
+                    fetch(
+                        formLogin.action,
+                        {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                username: username,
+                                password: password
+                            })
+                        }
+                    ).then(res => {
+                        return res.json();
+                    }).then(response => {
+                        if (response.status !== 'success') {
+                            throw new Error(response.message ?? `{{ 'something-went-wrong'|text|e }}`);
+                        }
+                        showMessage(formLogin, 'success', response.message);
+                        window.location.href = `{{ 'home'|link }}`;
+                    }).catch(error => {
+                        showMessage(formLogin, 'danger', error.message);
+                        spinNstop(this);
+                    });
+                });
+                
+                /* Forgot Password Submit */
+                btnForgotPasswordSubmit.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    const email = formForgot.codeForgetEmail?.value;
+                    if (isBlank(email)) {
+                        return showMessage(formForgot, 'warning', `{{ 'enter-email-empty'|text|e }}`);
+                    } else if (!validateEmail(email)) {
+                        return showMessage(formForgot, 'warning', `{{ 'enter-valid-email'|text|e }}`);
+                    }
+                    
+                    spinNstop(this);
+                    fetch(
+                        formForgot.action,
+                        {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({email})
+                        }
+                    ).then(res => {
+                        return res.json();
+                    }).then(response => {
+                        if (response.status !== 'success') {
+                            throw new Error(response.message ?? `{{ 'something-went-wrong'|text|e }}`);
+                        }
+                        
+                        displaySignIn();
+                        showMessage(formLogin, 'success', response.message ?? 'Success');
+                        
+                        formForgot.codeForgetEmail.value = '';
+                    }).catch(error => {
+                        showMessage(formForgot, 'danger', error.message);
+                    }).finally(() => {
+                        spinNstop(this);
+                    });
+                });
+                
+                /* Signup Submit */
+                btnSignupSubmit.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    const username = formSignUp.codeUsername?.value ?? '';
+                    const email = formSignUp.codeEmail?.value ?? '';
+                    const password = formSignUp.codePassword?.value ?? '';
+                    const password_re = formSignUp.codeRePassword?.value ?? '';
+                    if (isBlank(username)) {
+                        return showMessage(formSignUp, 'warning', `{{ 'error-username-empty'|text|e }}`);
+                    } else if (isBlank(email)) {
+                        return showMessage(formSignUp, 'warning', `{{ 'enter-email-empty'|text|e }}`);
+                    } else if (!validateEmail(email)) {
+                        return showMessage(formSignUp, 'warning', `{{ 'enter-valid-email'|text|e }}`);
+                    } else if (isBlank(password)) {
+                        return showMessage(formSignUp, 'warning', `{{ 'error-password-empty'|text|e }}`);
+                    } else if (isBlank(password_re)) {
+                        return showMessage(formSignUp, 'warning', `{{ 'password-must-confirm'|text|e }}`);
+                    } else if (password !== password_re) {
+                        return showMessage(formSignUp, 'warning', `{{ 'password-must-match'|text|e }}`);
+                    }
+                    
+                    spinNstop(this);
+                    fetch(
+                        formSignUp.action,
+                        {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({username, email, password, password_re})
+                        }
+                    ).then(res => {
+                        return res.json();
+                    }).then(response => {
+                        if (response.status !== 'success') {
+                            throw new Error(response.message ?? `{{ 'something-went-wrong'|text|e }}`);
+                        }
+                        
+                        displaySignIn();
+                        showMessage(formLogin, 'success', response.message ?? 'Success');
+                        
+                        /* clear inputs */
+                        formSignUp.codeUsername.value = '';
+                        formSignUp.codeEmail.value = '';
+                        formSignUp.codePassword.value = '';
+                        formSignUp.codeRePassword.value = '';
+                    }).catch(error => {
+                        showMessage(formSignUp, 'danger', error.message);
+                    }).finally(() => {
+                        spinNstop(this);
+                    });
+                });
+            });
+        </script>
+        
+        <!-- ============================================================
+             TOS - Terms of Service Modal
+             ============================================================ -->
+        <div class="modal fade" id="tos" role="dialog" tabindex="-1" aria-hidden="true">
+            <div class="modal-xl modal-dialog modal-dialog-scrollable" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title text-primary text-uppercase">{{ tos['title'] }}</h5>
+                        <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="{{ 'close'|text|e }}"></button>
+                    </div>
+                    <div class="modal-body">
+                        {{ tos['content'] }}
+                    </div>
+                    <div class="modal-footer">
+                         <button class="btn btn-primary shadow-sm" data-bs-dismiss="modal" type="button">{{ 'close'|text }}</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+                    
+        <!-- ============================================================
+             PP - Privacy Policy Modal
+             ============================================================ -->
+        <div class="modal fade" id="pp" role="dialog" tabindex="-1" aria-hidden="true">
+            <div class="modal-xl modal-dialog modal-dialog-scrollable" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title text-primary text-uppercase">{{ pp['title'] }}</h5>
+                        <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="{{ 'close'|text|e }}"></button>
+                    </div>
+                    <div class="modal-body">
+                        {{ pp['content'] }}
+                    </div>
+                    <div class="modal-footer">
+                         <button class="btn btn-primary shadow-sm" data-bs-dismiss="modal" type="button">{{ 'close'|text }}</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>
