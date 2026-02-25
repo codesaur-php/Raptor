@@ -191,10 +191,9 @@ This project is licensed under the MIT License.
 
 ## Author
 
-**Narankhuu**
-
+**Narankhuu**  
 📧 codesaur@gmail.com  
 📱 [+976 99000287](https://wa.me/97699000287)
-🌐 https://github.com/codesaur  
+🌐 https://github.com/codesaur
 
 🦖 **codesaur ecosystem:** https://codesaur.net
