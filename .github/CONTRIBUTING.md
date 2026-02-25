@@ -47,7 +47,7 @@ composer install
 If `.env` was not auto-created, copy it manually:
 
 ```bash
-cp .env.example .env
+cp docs/conf.example/.env.example .env
 ```
 
 4. **Set up database:**
@@ -314,7 +314,7 @@ For security-related issues, please follow the instructions in [SECURITY.md](SEC
 If you have questions or need help:
 
 - Open an issue with the `question` label
-- Check existing documentation ([docs/en/](../docs/en/), [docs/mn/](../docs/mn/))
+- Check existing documentation ([docs/en/](/docs/en/), [docs/mn/](/docs/mn/))
 - Review existing issues and pull requests
 
 ---

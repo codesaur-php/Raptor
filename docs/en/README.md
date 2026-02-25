@@ -74,7 +74,7 @@ The Composer `post-root-package-install` script will:
 1. Auto-copy `.env.example` to `.env` (if not already present)
 2. Auto-generate the `RAPTOR_JWT_SECRET` key
 
-> If `.env` was not created, copy it manually with `cp .env.example .env` and set `RAPTOR_JWT_SECRET` yourself.
+> If `.env` was not created, copy it manually with `cp docs/conf.example/.env.example .env` and set `RAPTOR_JWT_SECRET` yourself.
 
 ### Manual Installation
 
@@ -82,7 +82,7 @@ The Composer `post-root-package-install` script will:
 git clone https://github.com/codesaur-php/Raptor.git my-project
 cd my-project
 composer install
-cp .env.example .env
+cp docs/conf.example/.env.example .env
 ```
 
 ---

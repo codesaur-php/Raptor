@@ -88,7 +88,7 @@ composer create-project codesaur/raptor my-project
 If you used `composer create-project`, the `.env` file is auto-created and `RAPTOR_JWT_SECRET` is auto-generated. If `.env` was not created, copy it manually:
 
 ```bash
-cp .env.example .env
+cp docs/conf.example/.env.example .env
 ```
 
 Server configuration examples / Серверийн тохиргооны жишээ: [`docs/conf.example/`](docs/conf.example/)

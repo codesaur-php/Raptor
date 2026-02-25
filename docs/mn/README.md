@@ -74,7 +74,7 @@ Composer-ийн `post-root-package-install` скрипт нь:
 1. `.env.example` файлыг `.env` руу автоматаар хуулна (байхгүй бол)
 2. `RAPTOR_JWT_SECRET` нууц түлхүүрийг автоматаар үүсгэнэ
 
-> Хэрэв `.env` файл үүсээгүй бол `cp .env.example .env` командаар гараар хуулж, `RAPTOR_JWT_SECRET` утгыг өөрөө тохируулна.
+> Хэрэв `.env` файл үүсээгүй бол `cp docs/conf.example/.env.example .env` командаар гараар хуулж, `RAPTOR_JWT_SECRET` утгыг өөрөө тохируулна.
 
 ### Гараар суулгах
 
@@ -82,7 +82,7 @@ Composer-ийн `post-root-package-install` скрипт нь:
 git clone https://github.com/codesaur-php/Raptor.git my-project
 cd my-project
 composer install
-cp .env.example .env
+cp docs/conf.example/.env.example .env
 ```
 
 ---
