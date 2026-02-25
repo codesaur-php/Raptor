@@ -193,7 +193,7 @@ This project is licensed under the MIT License.
 
 **Narankhuu**  
 📧 codesaur@gmail.com  
-📱 [+976 99000287](https://wa.me/97699000287)
+📱 [+976 99000287](https://wa.me/97699000287)  
 🌐 https://github.com/codesaur
 
 🦖 **codesaur ecosystem:** https://codesaur.net
