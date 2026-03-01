@@ -6,10 +6,6 @@
 /private/*
 !/private/.htaccess
 
-# Database backup хавтас - git-д оруулахгүй
-/databack/*
-!/databack/.htaccess
-
 # Composer vendor - автоматаар татагддаг тул оруулахгүй
 /vendor/
 
