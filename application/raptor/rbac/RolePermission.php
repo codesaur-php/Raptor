@@ -42,7 +42,7 @@ use codesaur\DataObject\Column;
  *                    Permission-г role-д хэн нэмсэн бэ (audit trail)
  *
  *
- * FK 관계 ба Cascade зан төлөв:
+ * FK хамаарал ба Cascade зан төлөв:
  * ---------------------------------------------------------------
  *  role_id -> roles.id
  *      ON DELETE CASCADE  
