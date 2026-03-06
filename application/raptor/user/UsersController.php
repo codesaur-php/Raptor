@@ -26,7 +26,7 @@ use Raptor\Log\Logger;
  * Raptor Dashboard-ийн үндсэн Controller юм.
  *
  * --------------------------------------------------------------
- * 🧩 Архитектур - PDO автоматаар хэрхэн ирдэг вэ?
+ * Архитектур - PDO автоматаар хэрхэн ирдэг вэ?
  * --------------------------------------------------------------
  *  Raptor\Controller нь:
  *
@@ -47,40 +47,40 @@ use Raptor\Log\Logger;
  *
  *  хэлбэрээр автоматаар авч `$this->pdo` болгон тохируулдаг.
  *
- * ✔ Энэ механизмаар бүх Model-классуудыг:
+ * Энэ механизмаар бүх Model-классуудыг:
  *      new UsersModel($this->pdo)
  *      new Roles($this->pdo)
  *      new OrganizationModel($this->pdo)
  *  гэх мэтээр шууд хэрэглэнэ.
  *
  * --------------------------------------------------------------
- * 🧩 Хамааралтай модулиуд
+ * Хамааралтай модулиуд
  * --------------------------------------------------------------
- *  • UsersModel - хэрэглэгчийн үндсэн өгөгдлийн хүснэгт
- *  • RBAC => Roles / UserRole - RBAC дүрийн систем
- *  • OrganizationModel / OrganizationUserModel - байгууллагын хамаарал
- *  • SignupModel / ForgotModel - бүртгүүлэх болон нууц үг сэргээх хүсэлт
- *  • FileController - зураг upload удирдлага (profile photo)
- *  • Logger - үйлдлийн протокол
- *  • DashboardTrait - Twig Dashboard integration
+ *  * UsersModel - хэрэглэгчийн үндсэн өгөгдлийн хүснэгт
+ *  * RBAC => Roles / UserRole - RBAC дүрийн систем
+ *  * OrganizationModel / OrganizationUserModel - байгууллагын хамаарал
+ *  * SignupModel / ForgotModel - бүртгүүлэх болон нууц үг сэргээх хүсэлт
+ *  * FileController - зураг upload удирдлага (profile photo)
+ *  * Logger - үйлдлийн протокол
+ *  * DashboardTrait - Twig Dashboard integration
  *
  * --------------------------------------------------------------
- * 🔐 Аюулгүй байдал ба Permission
+ * Аюулгүй байдал ба Permission
  * --------------------------------------------------------------
- *  • `isUserCan()` функцээр бүх үйлдэл зөвшөөрөл шалгадаг
- *  • Root хэрэглэгчийг хамгаална (id = 1)
- *  • Хэрэглэгч өөрийгөө устгах боломжгүй
- *  • RBAC aliases (common, org1, org2 ...) дагуу role binding
+ *  * `isUserCan()` функцээр бүх үйлдэл зөвшөөрөл шалгадаг
+ *  * Root хэрэглэгчийг хамгаална (id = 1)
+ *  * Хэрэглэгч өөрийгөө устгах боломжгүй
+ *  * RBAC aliases (common, org1, org2 ...) дагуу role binding
  *
  * --------------------------------------------------------------
- * 📡 Response төрөл
+ * Response төрөл
  * --------------------------------------------------------------
- *  • Dashboard UI (twig template)
- *  • JSON (AJAX хүсэлтүүдэд)
- *  • Modal templates
+ *  * Dashboard UI (twig template)
+ *  * JSON (AJAX хүсэлтүүдэд)
+ *  * Modal templates
  *
  * --------------------------------------------------------------
- * 📝 Logging
+ * Logging
  * --------------------------------------------------------------
  *  Бүх томоохон үйлдэл log() руу дараах бүтэцтэйгээр бичигдэнэ:
  *
@@ -92,7 +92,7 @@ use Raptor\Log\Logger;
  *      );
  *
  * --------------------------------------------------------------
- * 📦 File upload
+ * File upload
  * --------------------------------------------------------------
  *  FileController-с удамшдаг тул дараах боломжтой:
  *      $this->setFolder("/users/{$id}");
@@ -100,20 +100,20 @@ use Raptor\Log\Logger;
  *      $photo = $this->moveUploaded('photo');
  *
  * --------------------------------------------------------------
- * ✔ Энэ класст багтах үндсэн үйлдлүүд:
+ * Энэ класст багтах үндсэн үйлдлүүд:
  * --------------------------------------------------------------
- *  • index()               - хэрэглэгчийн Dashboard view
- *  • list()                - хэрэглэгчдийн JSON жагсаалт
- *  • insert()              - шинэ хэрэглэгч үүсгэх
- *  • update($id)           - хэрэглэгчийн мэдээлэл засварлах
- *  • view($id)             - хэрэглэгчийн дэлгэрэнгүй харах
- *  • deactivate()          - хэрэглэгчийг идэвхгүй болгох
- *  • requestsModal()       - signup / forgot хүсэлтүүдийн жагсаалт харах
- *  • signupApprove()       - хэрэглэгч шинээр бүртгүүлэх хүсэлтийг зөвшөөрөх
- *  • signupDeactivate()    - хэрэглэгч шинээр бүртгүүлэх хүсэлтийг устгах
- *  • setPassword($id)      - хэрэглэгчийн нууц үг тохируулах
- *  • setOrganization($id)  - хэрэглэгчийн байгууллага тохируулах
- *  • setRole($id)          - хэрэглэгчийн RBAC дүр тохируулах
+ *  * index()               - хэрэглэгчийн Dashboard view
+ *  * list()                - хэрэглэгчдийн JSON жагсаалт
+ *  * insert()              - шинэ хэрэглэгч үүсгэх
+ *  * update($id)           - хэрэглэгчийн мэдээлэл засварлах
+ *  * view($id)             - хэрэглэгчийн дэлгэрэнгүй харах
+ *  * deactivate()          - хэрэглэгчийг идэвхгүй болгох
+ *  * requestsModal()       - signup / forgot хүсэлтүүдийн жагсаалт харах
+ *  * signupApprove()       - хэрэглэгч шинээр бүртгүүлэх хүсэлтийг зөвшөөрөх
+ *  * signupDeactivate()    - хэрэглэгч шинээр бүртгүүлэх хүсэлтийг устгах
+ *  * setPassword($id)      - хэрэглэгчийн нууц үг тохируулах
+ *  * setOrganization($id)  - хэрэглэгчийн байгууллага тохируулах
+ *  * setRole($id)          - хэрэглэгчийн RBAC дүр тохируулах
  *
  * @package Raptor\User
  */
@@ -125,7 +125,7 @@ class UsersController extends FileController
      * Хэрэглэгчдийн жагсаалтын Dashboard хуудсыг нээх
      *
      * --------------------------------------------------------------
-     * 📌 Үндсэн үүрэг
+     * Үндсэн үүрэг
      * --------------------------------------------------------------
      *  - system_user_index эрхтэй эсэхийг шалгана
      *  - Twig dashboard layout ашиглан user-index.html темплейтийг
@@ -134,7 +134,7 @@ class UsersController extends FileController
      *    хэрэглэгчдэд ойлгомжтой error UI үзүүлнэ
      *
      * --------------------------------------------------------------
-     * 🔐 Permission logic
+     * Permission logic
      * --------------------------------------------------------------
      *  Энэ хуудсыг зөвхөн `system_user_index` эрхтэй хэрэглэгч 
      *  нээх боломжтой. Хэрэв эрхгүй бол:
@@ -142,26 +142,26 @@ class UsersController extends FileController
      *      throw new \Exception($this->text('system-no-permission'), 401);
      *
      * --------------------------------------------------------------
-     * ⚙ Алдаа барих ба лог бичилт
+     * Алдаа барих ба лог бичилт
      * --------------------------------------------------------------
      *  try/catch/finally блок:
      *
-     *  ✔ try - UI-г хэвийн нээнэ  
-     *  ✔ catch - алдаа гарвал Dashboard UI дээр error box харуулна  
-     *  ✔ finally - log() руу протокол тэмдэглэнэ:
-     *      - Амжилттай нээсэн → LogLevel::NOTICE  
-     *      - Алдаатай → LogLevel::ERROR  
+     *  try - UI-г хэвийн нээнэ  
+     *  catch - алдаа гарвал Dashboard UI дээр error box харуулна  
+     *  finally - log() руу протокол тэмдэглэнэ:
+     *      - Амжилттай нээсэн -> LogLevel::NOTICE  
+     *      - Алдаатай -> LogLevel::ERROR  
      *
      *  Логт дараах context орно:
      *      ['action' => 'index', ...]  
      *
      * --------------------------------------------------------------
-     * 📡 Response
+     * Response
      * --------------------------------------------------------------
      *  - UI response (Twig Dashboard)
      *
      * --------------------------------------------------------------
-     * 🧩 Ашиглагдах template:
+     * Ашиглагдах template:
      * --------------------------------------------------------------
      *  /application/raptor/user/user-index.html
      *
@@ -718,8 +718,8 @@ class UsersController extends FileController
      *
      * Үйл ажиллагааны дараалал:
      *   1) Эрхийн шалгалт - зөвхөн:
-     *        • system_user_index эрхтэй хэрэглэгч
-     *        • эсвэл өөрийн профайлыг үзэж буй хэрэглэгч
+     *        * system_user_index эрхтэй хэрэглэгч
+     *        * эсвэл өөрийн профайлыг үзэж буй хэрэглэгч
      *   2) UsersModel-оос үндсэн profile мэдээллийг авах
      *   3) created_by / updated_by талбаруудын мэдээллийг 
      *      retrieveUsersDetail() ашиглан дэлгэрэнгүй болгох
@@ -729,8 +729,8 @@ class UsersController extends FileController
      *
      * @param int $id - Дэлгэрэнгүй харах хэрэглэгчийн дугаар
      * @throws Exception Хэрэв:
-     *          • Хэрэглэгч эрхгүй бол
-     *          • Бүртгэл олдохгүй бол
+     *          * Хэрэглэгч эрхгүй бол
+     *          * Бүртгэл олдохгүй бол
      * @return void
      */
     public function view(int $id)
@@ -740,8 +740,8 @@ class UsersController extends FileController
             // RBAC - эрхийн шалгалт
             // ---------------------------------------------------------
             // Зөвхөн дараах хүмүүс нэвтэрч болно:
-            //   • system_user_index эрхтэй хэрэглэгч
-            //   • эсвэл өөрийн профайлаа үзэж буй хэрэглэгч
+            //   * system_user_index эрхтэй хэрэглэгч
+            //   * эсвэл өөрийн профайлаа үзэж буй хэрэглэгч
             if (!$this->isUserAuthorized()
                 || (!$this->isUserCan('system_user_index')
                 && $this->getUserId() != $id)
@@ -758,7 +758,7 @@ class UsersController extends FileController
                 throw new \Exception($this->text('no-record-selected'));
             }
             
-            // created_by / updated_by ID → нэр, имэйл, утас гэх мэт
+            // created_by / updated_by ID -> нэр, имэйл, утас гэх мэт
             $record['rbac_users'] =
                 $this->retrieveUsersDetail(
                     $record['created_by'],
@@ -829,9 +829,9 @@ class UsersController extends FileController
      * зөвхөн is_active=0 болгож идэвхгүй төлөвт шилжүүлдэг.
      *
      * Гол зорилго:
-     *   • Хэрэглэгчийг систем ашиглах боломжгүй болгох
-     *   • Лог түүх хадгалагдана
-     *   • Физик устгал хийгдэхгүй (soft delete)
+     *   * Хэрэглэгчийг систем ашиглах боломжгүй болгох
+     *   * Лог түүх хадгалагдана
+     *   * Физик устгал хийгдэхгүй (soft delete)
      *
      * Аюулгүй ажиллагааны шалгалтууд:
      *   1) Зөвхөн system_user_delete эрхтэй хэрэглэгч ажиллуулна
@@ -849,7 +849,7 @@ class UsersController extends FileController
                 throw new \Exception('No permission for an action [delete]!', 401);
             }
             
-            // Request body (JSON) → payload авах
+            // Request body (JSON) -> payload авах
             $payload = $this->getParsedBody();
             
             // id (дугаар) заавал int байх ёстой
@@ -872,10 +872,10 @@ class UsersController extends FileController
             // Soft delete - хэрэглэгчийн бичлэгийг is_active = 0 болгож идэвхгүй болгоно.
             //
             // Анхаарах зүйл:
-            //   • Энэ горимд хэрэглэгчийн profile photo файлыг серверээс устгахгүй.
-            //   • Учир нь тухайн хэрэглэгчийг ирээдүйд дахин идэвхжүүлэх (reactivate)
+            //   * Энэ горимд хэрэглэгчийн profile photo файлыг серверээс устгахгүй.
+            //   * Учир нь тухайн хэрэглэгчийг ирээдүйд дахин идэвхжүүлэх (reactivate)
             //     боломж нээлттэй тул зураг болон мэдээллүүдийг хадгалж үлдээх шаардлагатай.
-            //   • Хэрэв бүрэн устгах (hard delete) үйлдэл бол photo файлыг бас устгах хэрэгтэй.
+            //   * Хэрэв бүрэн устгах (hard delete) үйлдэл бол photo файлыг бас устгах хэрэгтэй.
             //
             $model = new UsersModel($this->pdo);
             $deactivated = $model->deactivateById(
@@ -889,14 +889,14 @@ class UsersController extends FileController
                 throw new \Exception($this->text('no-record-selected'));
             }
             
-            // Амжилттай хариу → JSON рендерлэнэ
+            // Амжилттай хариу -> JSON рендерлэнэ
             $this->respondJSON([
                 'status'  => 'success',
                 'title'   => $this->text('success'),
                 'message' => $this->text('record-successfully-deleted')
             ]);
         } catch (\Throwable $err) {
-            // Специфик алдаа → JSON рендерлэнэ
+            // Специфик алдаа -> JSON рендерлэнэ
             $this->respondJSON([
                 'status'  => 'error',
                 'title'   => $this->text('error'),
@@ -924,9 +924,9 @@ class UsersController extends FileController
      * ----------------------------------------------------------------------
      * Энэхүү функц нь AJAX-аар дуудагддаг бөгөөд:
      *
-     *   • forgot / signup хүсэлтүүдийн жагсаалтыг татаж modal-д харуулна
-     *   • Хүсэлтүүд нь тусдаа хүснэгтүүд (forgot, signup) дээр хадгалагддаг
-     *   • is_active хамаарахгүй бүхий л бичлэгүүдийг унших
+     *   * forgot / signup хүсэлтүүдийн жагсаалтыг татаж modal-д харуулна
+     *   * Хүсэлтүүд нь тусдаа хүснэгтүүд (forgot, signup) дээр хадгалагддаг
+     *   * is_active хамаарахгүй бүхий л бичлэгүүдийг унших
      *
      * URL:
      *   GET /users/requests-modal/{table}
@@ -989,7 +989,7 @@ class UsersController extends FileController
             }
             
             // Хүснэгтээс хүсэлтүүдийг хамгийн сүүлд орсноор нь sort хийж авах
-            //  • is_active хамаарахгүй бүхий л бичлэгүүдийг унших
+            //  * is_active хамаарахгүй бүхий л бичлэгүүдийг унших
             $rows = $model->getRows(['ORDER BY' => 'created_at Desc']);
             
             // Dashboard рендерлэнэ
@@ -1047,7 +1047,7 @@ class UsersController extends FileController
                 throw new \Exception('No permission for an action [approval]!', 401);
             }
             
-            // Request body → id авах, integer эсэхийг шалгах
+            // Request body -> id авах, integer эсэхийг шалгах
             $parsedBody = $this->getParsedBody();
             if (empty($parsedBody['id'])
                 || !\filter_var($parsedBody['id'], \FILTER_VALIDATE_INT)
@@ -1080,7 +1080,7 @@ class UsersController extends FileController
                 );
             }
             
-            // UsersModel.insert() → Жинхэнэ хэрэглэгч үүсгэх
+            // UsersModel.insert() -> Жинхэнэ хэрэглэгч үүсгэх
             $record = $model->insert([
                 'username' => $signup['username'],
                 'password' => $signup['password'],
@@ -1138,7 +1138,7 @@ class UsersController extends FileController
             // approve-new-user template-ийг дуудна
             $template = $templateService->getByKeyword('approve-new-user', $signup['code']);
             if (!empty($template) && !empty($template['content'])) {
-                // MemoryTemplate → placeholder орлуулах
+                // MemoryTemplate -> placeholder орлуулах
                 $memtemplate = new MemoryTemplate();
                 $memtemplate->source($template['content']);
                 $memtemplate->set('email', $signup['email']);
@@ -1155,7 +1155,7 @@ class UsersController extends FileController
                     )->send();
             }
         } catch (\Throwable $err) {
-            // Алдаа → JSON рендерлэнэ
+            // Алдаа -> JSON рендерлэнэ
             $this->respondJSON([
                 'status'  => 'error',
                 'title'   => $this->text('error'),
@@ -1214,7 +1214,7 @@ class UsersController extends FileController
             // Хүчинтэй integer болгох
             $id = (int) $payload['id'];
             
-            // SignupModel → тухайн бичлэгийг deactivateById() ашиглан идэвхгүй болгох
+            // SignupModel -> тухайн бичлэгийг deactivateById() ашиглан идэвхгүй болгох
             $deactivated = (new SignupModel($this->pdo))->deactivateById(
                 $id,
                 [
@@ -1263,20 +1263,20 @@ class UsersController extends FileController
      * Тухайн хэрэглэгчийн нууц үгийг солих функц.
      *
      * Хэн ашиглах вэ?
-     *   ✔ Хэрэглэгч өөрийн нууц үгийг солих
-     *   ✔ system_coder эрхтэй хэрэглэгч бусдын нууц үгийг солих
+     *   Хэрэглэгч өөрийн нууц үгийг солих
+     *   system_coder эрхтэй хэрэглэгч бусдын нууц үгийг солих
      *      - Гэхдээ system_coder байсан ч:
      *         if ($id == 1 && $this->getUserId() != 1)
-     *         → хориглоно (root password-г зөвхөн root өөрөө солино)
+     *         -> хориглоно (root password-г зөвхөн root өөрөө солино)
      *
      * Алгоритм:
      *   1) Хэрэглэгч эрхтэй эсэхийг шалгах
      *   2) Хэрэв POST бол:
      *       - password + password_retype ижил эсэхийг баталгаажуулах
-     *       - password_hash → updateById
+     *       - password_hash -> updateById
      *       - JSON success рендерлэх
      *   3) Хэрэв GET бол modal HTML-г зурах
-     *   4) finally → users лог дээр үйлдлийг бүртгэх
+     *   4) finally -> users лог дээр үйлдлийг бүртгэх
      *
      * @param int $id  Нууц үг өөрчлөх хэрэглэгчийн дугаар
      * @return void JSON хэвлэх эсвэл rendered modal буцаана
@@ -1314,7 +1314,7 @@ class UsersController extends FileController
 
             if ($this->getRequest()->getMethod() == 'POST') {
                 // ---------------------------------------------------------
-                // POST → нууц үг солих
+                // POST -> нууц үг солих
                 // ---------------------------------------------------------
                 $parsedBody = $this->getParsedBody();
                 $password = $parsedBody['password'] ?? null;            
@@ -1341,7 +1341,7 @@ class UsersController extends FileController
                 ]);
             } else {
                 // ---------------------------------------------------------
-                // GET → modal form рендерлэнэ
+                // GET -> modal form рендерлэнэ
                 // ---------------------------------------------------------
                 $this->twigTemplate(
                     __DIR__ . '/user-set-password-modal.html',
@@ -1390,13 +1390,13 @@ class UsersController extends FileController
      * өөрчлөх, нэмэх, хасах боломжийг олгоно.
      *
      * Хэн ашиглах вэ?
-     *   ✔ system_user_organization_set эрхтэй админ хэрэглэгч
+     *   system_user_organization_set эрхтэй админ хэрэглэгч
      *
      * Ажиллах зарчим:
      *   1) Хэрэглэгчийг шалгах (id таарч байна уу, is_active=1 уу)
-     *   2) GET → popup modal харуулах (user-set-organization-modal.html)
-     *   3) POST → шинэчилсэн байгууллагуудыг configureOrgs() ашиглан update хийх
-     *   4) Root user (id=1) → үргэлж organization_id=1 дотор байх ёстой!
+     *   2) GET -> popup modal харуулах (user-set-organization-modal.html)
+     *   3) POST -> шинэчилсэн байгууллагуудыг configureOrgs() ашиглан update хийх
+     *   4) Root user (id=1) -> үргэлж organization_id=1 дотор байх ёстой!
      *   5) Амжилттай POST бол JSON рендерлэнэ
      *
      * @param int $id  Байгууллагыг тохируулах гэж буй хэрэглэгчийн id
@@ -1420,7 +1420,7 @@ class UsersController extends FileController
                 throw new \Exception($this->text('no-record-selected'));
             }
             
-            // Хэрэв POST хүсэлт → Update хийх
+            // Хэрэв POST хүсэлт -> Update хийх
             if ($this->getRequest()->getMethod() == 'POST') {
                  // Ирсэн байгууллагуудын массивыг integer filter-тэйгээр цэвэрлэх
                 $post_organizations =
@@ -1434,7 +1434,7 @@ class UsersController extends FileController
                     // Root user бол үргэлж organization_id=1 -т харьяалагдсан байх ёстой
                     throw new \Exception('Root user must belong to a system organization', 503);
                 }
-                // configureOrgs() → нэмэх/хасах үйлдлүүдийг автоматаар гүйцэтгээд амжилттай бол true
+                // configureOrgs() -> нэмэх/хасах үйлдлүүдийг автоматаар гүйцэтгээд амжилттай бол true
                 if (!$this->configureOrgs($id, $post_organizations)) {
                     throw new \Exception('No updates');
                 }
@@ -1457,7 +1457,7 @@ class UsersController extends FileController
                     $current_organizations[] = $org['id'];
                 }
                 
-                // GET хүсэлт → popup modal HTML-ийг render хийе
+                // GET хүсэлт -> popup modal HTML-ийг render хийе
                 $this->twigTemplate(
                     __DIR__ . '/user-set-organization-modal.html',
                     [
@@ -1468,7 +1468,7 @@ class UsersController extends FileController
                 )->render();
             }
         } catch (\Throwable $err) {
-            // Алдаа гарсан үед → POST=JSON / GET=Modal хэлбэрээр хариулна
+            // Алдаа гарсан үед -> POST=JSON / GET=Modal хэлбэрээр хариулна
             if ($this->getRequest()->getMethod() == 'POST') {
                 $this->respondJSON([
                     'status'  => 'error',
@@ -1506,22 +1506,22 @@ class UsersController extends FileController
      * ------------------------------------------------------------------------------------------
      * Энэ private function нь setOrganization() дотроос дуудагддаг бөгөөд:
      *
-     *   • Одоогийн байгууллагуудыг DB-с уншина
-     *   • POST ирсэн байгууллагуудтай харьцуулна
-     *   • Шинээр нэмэгдэх байгууллагуудыг insert хийнэ
-     *   • Хасагдах байгууллагуудыг delete хийнэ
-     *   • Үйлдэл бүрийг users table-ийн logger руу бичнэ
+     *   * Одоогийн байгууллагуудыг DB-с уншина
+     *   * POST ирсэн байгууллагуудтай харьцуулна
+     *   * Шинээр нэмэгдэх байгууллагуудыг insert хийнэ
+     *   * Хасагдах байгууллагуудыг delete хийнэ
+     *   * Үйлдэл бүрийг users table-ийн logger руу бичнэ
      *
      * Анхаарах зүйлс:
-     *   ✔ root user (id=1) → organization_id = 1-ийг хэзээ ч устгаж болохгүй  
-     *   ✔ root user түүнээс organization_id=1-ийг хасахыг оролдвол пропуск хийнэ  
-     *   ✔ logger → LogLevel::ALERT түвшинд бүртгэнэ  
-     *   ✔ Мэдээлэл өгөгдсөнөөс хамааран "+" эсвэл "−" өөрчлөлт тодорхойлогдоно  
+     *   root user (id=1) -> organization_id = 1-ийг хэзээ ч устгаж болохгүй  
+     *   root user түүнээс organization_id=1-ийг хасахыг оролдвол пропуск хийнэ  
+     *   logger -> LogLevel::ALERT түвшинд бүртгэнэ  
+     *   Мэдээлэл өгөгдсөнөөс хамааран "+" эсвэл "−" өөрчлөлт тодорхойлогдоно  
      *
      * @param int   $id        Харьяалал өөрчлөх хэрэглэгчийн ID
      * @param array $orgSets   POST-оор ирсэн organization_id массив
      *
-     * @return bool  Тохируулалт амжилттай хийгдсэн эсэх (нэг ч өөрчлөлт байхгүй → false)
+     * @return bool  Тохируулалт амжилттай хийгдсэн эсэх (нэг ч өөрчлөлт байхгүй -> false)
      */
     private function configureOrgs(int $id, array $orgSets): bool
     {
@@ -1554,16 +1554,16 @@ class UsersController extends FileController
                 "WHERE t1.user_id=$id AND t2.is_active=1 AND t3.is_active=1";
             $userOrgs = $this->query($sql)->fetchAll();
             
-            // POST ирсэн шинэ байгууллагуудыг key→value болгон map хийх
-            //   Жишээ: [3,5,7] → ['3'=>true,'5'=>true,'7'=>true]
+            // POST ирсэн шинэ байгууллагуудыг key->value болгон map хийх
+            //   Жишээ: [3,5,7] -> ['3'=>true,'5'=>true,'7'=>true]
             //          Энэ нь алгоритмд хурдтай ажиллана
             $organizationIds = \array_flip($orgSets);
             foreach ($userOrgs as $row) {
                 if (isset($organizationIds[$row['organization_id']])) {
-                    // Хэрэв одоо байгаа байгууллага POST-д бас байвал → хасахгүй/нэмэхгүй/өөрчлөлт хийхгүй
+                    // Хэрэв одоо байгаа байгууллага POST-д бас байвал -> хасахгүй/нэмэхгүй/өөрчлөлт хийхгүй
                     unset($organizationIds[$row['organization_id']]);
                 } elseif ($row['organization_id'] == 1 && $id == 1) {
-                    // ROOT USER → organization_id = 1-ийг хэзээ ч хасахгүй!
+                    // ROOT USER -> organization_id = 1-ийг хэзээ ч хасахгүй!
                     // can't strip root user from system organization!
                 } elseif ($orgUserModel->deleteById($row['id'])) { 
                     // Байгууллагаас хаслаа
@@ -1592,7 +1592,7 @@ class UsersController extends FileController
                 }
             }
         } catch (\Throwable) {
-            // 🤫 ямар нэгэн exception гарвал зүгээр л false буцаана
+            // ямар нэгэн exception гарвал зүгээр л false буцаана
             // setOrganization() тал дээр алдааг барьдаг - энэ function silent mode
         }
         return $configured;
@@ -1602,20 +1602,20 @@ class UsersController extends FileController
      * Хэрэглэгчийн RBAC дүрийг тохируулах action.
      * -----------------------------------------------------------
      * Энэхүү method нь:
-     *   ✔ Хэрэглэгч дээр шинэ дүр нэмэх
-     *   ✔ Хэрэглэгчээс дүр хасах
-     *   ✔ Super-admin (coder) дүртэй холбоотой тусгай хамгаалалтын логик
-     *   ✔ Дүр өөрчлөлтийн log протокол бүртгэх
-     *   ✔ GET → Modal form ачаалж харуулах
-     *   ✔ POST → Дүр солих update-г баталгаажуулах
+     *   Хэрэглэгч дээр шинэ дүр нэмэх
+     *   Хэрэглэгчээс дүр хасах
+     *   Super-admin (coder) дүртэй холбоотой тусгай хамгаалалтын логик
+     *   Дүр өөрчлөлтийн log протокол бүртгэх
+     *   GET -> Modal form ачаалж харуулах
+     *   POST -> Дүр солих update-г баталгаажуулах
      *
      * Хэн ашиглах вэ?
-     *   ✔ system_rbac эрхтэй хэрэглэгч
+     *   system_rbac эрхтэй хэрэглэгч
      *
      * Онцгой нөхцөлүүд (system_coder дүрийн):
-     *   • id=1 хэрэглэгч (root) → coder дүрийг хасах/нэмэх эрх зөвхөн root coder-т байдаг
-     *   • Root хэрэглэгчээс coder дүрийг хасахыг хэзээ ч зөвшөөрөхгүй
-     *   • Root биш хэрэглэгч coder дүр нэмэхийг хориглоно
+     *   * id=1 хэрэглэгч (root) -> coder дүрийг хасах/нэмэх эрх зөвхөн root coder-т байдаг
+     *   * Root хэрэглэгчээс coder дүрийг хасахыг хэзээ ч зөвшөөрөхгүй
+     *   * Root биш хэрэглэгч coder дүр нэмэхийг хориглоно
      *
      * @param int $id  RBAC дүр солих гэж буй хэрэглэгчийн primary key
      * @return void
@@ -1638,7 +1638,7 @@ class UsersController extends FileController
             }
             
             // -----------------------------------------------------------
-            // POST → Дүр солих UPDATE логик
+            // POST -> Дүр солих UPDATE логик
             // -----------------------------------------------------------
             if ($this->getRequest()->getMethod() == 'POST') {                
                 // UI-аас ирсэн role_id массивыг integer array болгон normalize хийнэ
@@ -1648,7 +1648,7 @@ class UsersController extends FileController
                     \FILTER_REQUIRE_ARRAY
                 );
                  
-                // ✨ ROOT хэрэглэгч → заавал system coder дүртэй байх ёстой
+                // ROOT хэрэглэгч -> заавал system coder дүртэй байх ёстой
                 if (($id == 1) &&
                     (empty($post_roles) || !\in_array(1, $post_roles))
                 ) {
@@ -1670,7 +1670,7 @@ class UsersController extends FileController
                 ]);
             } else {
                 // -----------------------------------------------------------
-                // GET → Modal render (Дүр өөрчлөх UI)
+                // GET -> Modal render (Дүр өөрчлөх UI)
                 // -----------------------------------------------------------                
                 $vars = ['profile' => $record];
                 
@@ -1762,15 +1762,15 @@ class UsersController extends FileController
      * Энэхүү method нь хэрэглэгчийн хуучин дүрүүд болон UI-аас ирсэн
      * шинэ roles array-г харьцуулж:
      *
-     *   ✔ Шинээр нэмэгдэх дүрүүдийг олох
-     *   ✔ Хэрэглэгчээс хасагдах дүрүүдийг олох
-     *   ✔ Root болон Coder дүртэй холбоотой тусгай хамгаалалтуудыг баримтлах
-     *   ✔ Дүрийн өөрчлөлт бүрт системийн log үлдээх
+     *   Шинээр нэмэгдэх дүрүүдийг олох
+     *   Хэрэглэгчээс хасагдах дүрүүдийг олох
+     *   Root болон Coder дүртэй холбоотой тусгай хамгаалалтуудыг баримтлах
+     *   Дүрийн өөрчлөлт бүрт системийн log үлдээх
      *
      * Аюулгүй байдлын гол зарчмууд:
-     *   • id = 1 хэрэглэгч → coder дүрийг хэзээ ч хасахгүй
-     *   • coder роль (role_id = 1) → зөвхөн root coder өөрчилнө
-     *   • Жирийн хэрэглэгч coder role хасах/нэмэх боломжгүй
+     *   * id = 1 хэрэглэгч -> coder дүрийг хэзээ ч хасахгүй
+     *   * coder роль (role_id = 1) -> зөвхөн root coder өөрчилнө
+     *   * Жирийн хэрэглэгч coder role хасах/нэмэх боломжгүй
      *
      * @param int   $id        Дүр солигдож буй хэрэглэгчийн ID
      * @param array $roleSets  UI-аас ирсэн сонгосон role_id[] жагсаалт
@@ -1806,21 +1806,21 @@ class UsersController extends FileController
             $userRoleModel = new UserRole($this->pdo);
             $user_role = $userRoleModel->fetchAllRolesByUser($id);
             
-            // Одоогийн дүрүүдийг шинээр ирсэнтэй харьцуулж “хасах” жагсаалт гаргах
+            // Одоогийн дүрүүдийг шинээр ирсэнтэй харьцуулж "хасах" жагсаалт гаргах
             foreach ($user_role as $row) {
-                // roleSets-д байвал → keep, remove candidates-оос хасна
+                // roleSets-д байвал -> keep, remove candidates-оос хасна
                 if (isset($roles[$row['role_id']])) {
                     unset($roles[$row['role_id']]);
                     continue;
                 }
                 
-                // ✔ Root хэрэглэгчийн coder role хэзээ ч хасагдахгүй
+                // Root хэрэглэгчийн coder role хэзээ ч хасагдахгүй
                 if ($row['role_id'] == 1 && $id == 1) {
                     // can't delete root user's coder role!
                     continue;
                 }
                 
-                // ✔ coder role-ийг зөвхөн system_coder л хасч чадна
+                // coder role-ийг зөвхөн system_coder л хасч чадна
                 if ($row['role_id'] == 1 && !$this->isUser('system_coder')) {
                     // only coder can strip another coder role
                     continue;
@@ -1839,12 +1839,12 @@ class UsersController extends FileController
                 }
             }
             
-            // Шинэ ирсэн roles array-д үлдсэн key-үүд → нэмэх шаардлагатай дүрүүд
+            // Шинэ ирсэн roles array-д үлдсэн key-үүд -> нэмэх шаардлагатай дүрүүд
             foreach (\array_keys($roles) as $role_id) {
                 if ($role_id == 1 && (
                     !$this->isUser('system_coder') || $this->getUserId() != 1)
                 ) {
-                    // ✔ system_coder role-г зөвхөн root coder нэмж чадна
+                    // system_coder role-г зөвхөн root coder нэмж чадна
                     // only root coder can add another coder role
                     continue;
                 }

@@ -44,10 +44,10 @@ class Mailer extends \codesaur\Http\Client\Mail
      * Mailer constructor.
      *
      * @param \PDO      $pdo           Database connection - илгээх протокол лог бичихэд ашиглагдана.
-     * @param string|null $from        Илгээгчийн и-мэйл (хоосон бол .env → RAPTOR_MAIL_FROM)
-     * @param string|null $fromName    Илгээгчийн нэр (.env → RAPTOR_MAIL_FROM_NAME)
-     * @param string|null $replyTo     Хариу хүлээж авах хаяг (.env → RAPTOR_MAIL_REPLY_TO)
-     * @param string|null $replyToName Хариу авах нэр (.env → RAPTOR_MAIL_REPLY_TO_NAME)
+     * @param string|null $from        Илгээгчийн и-мэйл (хоосон бол .env -> RAPTOR_MAIL_FROM)
+     * @param string|null $fromName    Илгээгчийн нэр (.env -> RAPTOR_MAIL_FROM_NAME)
+     * @param string|null $replyTo     Хариу хүлээж авах хаяг (.env -> RAPTOR_MAIL_REPLY_TO)
+     * @param string|null $replyToName Хариу авах нэр (.env -> RAPTOR_MAIL_REPLY_TO_NAME)
      *
      * @throws Exception Илгээгчийн хаяг тодорхойгүй бол.
      */
@@ -109,7 +109,7 @@ class Mailer extends \codesaur\Http\Client\Mail
      *
      * Алхамууд:
      * -------------------------
-     * 1) .env → RAPTOR_MAIL_BREVO_APIKEY шалгана
+     * 1) .env -> RAPTOR_MAIL_BREVO_APIKEY шалгана
      * 2) Brevo API ашиглан transactional e-mail илгээнэ
      * 3) Амжилттай эсвэл алдаа гарсан нөхцөл бүхэнд logger бичнэ
      *
@@ -239,7 +239,7 @@ class Mailer extends \codesaur\Http\Client\Mail
     /**
      * Brevo Transactional Email API ашиглаж илгээх.
      *
-     * @param string $apiKey Brevo API key (.env → RAPTOR_MAIL_BREVO_APIKEY)
+     * @param string $apiKey Brevo API key (.env -> RAPTOR_MAIL_BREVO_APIKEY)
      *
      * @return array API response
      * @throws Exception Brevo local file attachment дэмждэггүй

@@ -141,7 +141,7 @@ class PagesModel extends Model
                 . '</ul>'
         ]);
 
-        // Бидний тухай (nav → dropdown menu жишээ)
+        // Бидний тухай (nav -> dropdown menu жишээ)
         $mnAbout = $this->insert($seed + [
             'code' => 'mn',
             'title' => 'Бидний тухай',
@@ -168,7 +168,7 @@ class PagesModel extends Model
                 . '<p><img src="' . $assets . '/team.jpg" alt="Баг" class="img-fluid rounded shadow-sm"></p>'
         ]);
 
-        // Динозаврууд (nav → dropdown menu жишээ)
+        // Динозаврууд (nav -> dropdown menu жишээ)
         $mnDino = $this->insert($seed + [
             'code' => 'mn',
             'title' => 'Динозаврууд',
@@ -229,7 +229,7 @@ class PagesModel extends Model
                 . '</ul>'
         ]);
 
-        // About Us (nav → dropdown menu example)
+        // About Us (nav -> dropdown menu example)
         $enAbout = $this->insert($seed + [
             'code' => 'en',
             'title' => 'About Us',
@@ -256,7 +256,7 @@ class PagesModel extends Model
                 . '<p><img src="' . $assets . '/team.jpg" alt="Team" class="img-fluid rounded shadow-sm"></p>'
         ]);
 
-        // Dinosaurs (nav → dropdown menu example)
+        // Dinosaurs (nav -> dropdown menu example)
         $enDino = $this->insert($seed + [
             'code' => 'en',
             'title' => 'Dinosaurs',
@@ -393,7 +393,7 @@ class PagesModel extends Model
      * Хуудсуудыг parent_id-р мод бүтэцтэй навигаци болгон буцаана.
      *
      * Бүх нийтлэгдсэн, идэвхтэй хуудсуудаас навигацийн бүтэц буцаана.
-     * parent → child → submenu хэлбэрээр бүтэцлэнэ (type ялгаагүй).
+     * parent -> child -> submenu хэлбэрээр бүтэцлэнэ (type ялгаагүй).
      *
      * @param string $code Хэлний код (mn, en...)
      * @return array Олон түвшний submenu бүтэцтэй навигацийн массив
@@ -420,7 +420,7 @@ class PagesModel extends Model
     /**
      * Хуудсуудын жагсаалтаас parent_id дагаж олон түвшний мод бүтэц үүсгэх.
      *
-     * Рекурсив байдлаар parent → children → submenu бүтэцлэнэ.
+     * Рекурсив байдлаар parent -> children -> submenu бүтэцлэнэ.
      *
      * @param array $pages    id => row бүтэцтэй хуудсуудын массив
      * @param int   $parentId Эхлэх parent ID (0 = root)

@@ -15,8 +15,8 @@ use Psr\Http\Server\RequestHandlerInterface;
  * write-lock удирдах зэргийг хариуцна.
  *
  * Үндсэн зорилго:
- * ───────────────────────────────────────────────────────────────
- * 1) Session нэрийг “raptor” болгон тогтмолжуулах
+ * ---------------------------------------------------------------
+ * 1) Session нэрийг "raptor" болгон тогтмолжуулах
  *
  * 2) Session идэвхгүй байвал нээх
  *      - Cookie lifetime = 30 хоног
@@ -30,22 +30,22 @@ use Psr\Http\Server\RequestHandlerInterface;
  *          \session_write_close();
  *
  *      - Ингэснээр:
- *          • request concurrency сайжирна
- *          • PHP session file lock deadlock-оос сэргийлнэ
- *          • API болон dashboard хүсэлтүүд хоорондоо бөглөрөхгүй
+ *          * request concurrency сайжирна
+ *          * PHP session file lock deadlock-оос сэргийлнэ
+ *          * API болон dashboard хүсэлтүүд хоорондоо бөглөрөхгүй
  *
- * 4) request attributes → unchanged
+ * 4) request attributes -> unchanged
  *      Middleware нь зөвхөн session layer-т нөлөөлнө,
  *      authentication, localization, router-д нөлөөлөхгүй.
  *
  * Security онцлогууд:
- * ───────────────────────────────────────────────────────────────
+ * ---------------------------------------------------------------
  * - Session-г зөвхөн login хуудсан дээр write-lock хийж нээлттэй үлдээдэг.
  * - Бусад бүх route дээр write-lock-ийг эрт сулладаг (read-only болгож).
  * - Энэ нь session fixation болон session blocking халдлагыг багасгана.
  *
  * Performance онцлогууд:
- * ───────────────────────────────────────────────────────────────
+ * ---------------------------------------------------------------
  * - PHP session file lock нь нэг request-г дараагийн request-ээс
  *   түгждэг (blocking behavior).
  * - session_write_close() нь үүнийг шийдэж, өндөр ачаалалтай системд
@@ -83,8 +83,8 @@ class SessionMiddleware implements MiddlewareInterface
                 $path = '/' . \ltrim($path, '/');
             }
 
-            // 🔒 Session-г зөвхөн "/login" route дээр write-open байлгана
-            // 🟢 Бусад route дээр даруй write-lock → close → concurrency сайжирна
+            // Session-г зөвхөн "/login" route дээр write-open байлгана
+            // Бусад route дээр даруй write-lock -> close -> concurrency сайжирна
             if (!\str_contains($path, '/login')) {
                 \session_write_close();
             }

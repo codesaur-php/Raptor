@@ -2,11 +2,11 @@
     RBAC - Permission нэмэх modal
 
     Энэ modal нь дараах зорилготой:
-      • Модулийн нэр (module/group) → сонгох эсвэл шууд бичих
-      • Permission name
-      • Permission description
-      • POST ашиглан server рүү permission үүсгэх
-      • Нэмэлт тохиргоо: dropdown-с module сонгох боломжтой
+      * Модулийн нэр (module/group) -> сонгох эсвэл шууд бичих
+      * Permission name
+      * Permission description
+      * POST ашиглан server рүү permission үүсгэх
+      * Нэмэлт тохиргоо: dropdown-с module сонгох боломжтой
 
     Гол хувьсагчид:
       - alias  : RBAC-ийн хүрээ (system, news, organization гэх мэт)
@@ -81,7 +81,7 @@
                         <label class="col-3 form-label text-end">{{ 'group'|text }}</label>
                         <div class="col-9">
 
-                            <!-- Input + dropdown → module сонгох буюу бичих -->
+                            <!-- Input + dropdown -> module сонгох буюу бичих -->
                             <div class="input-group">
 
                                 <!-- Module input -->
@@ -173,7 +173,7 @@
         NotifyTop('danger', `{{ 'error'|text|e }}`, 'Form not found!');
     } else {
         /*
-            MODULE dropdown → module input-д утга хийх
+            MODULE dropdown -> module input-д утга хийх
             --------------------------------------------------
             Жишээ:
               - 'news' module дээр permission нэмэх үед dropdown-с сонговол
@@ -196,10 +196,10 @@
         /*
             FORM submit handler
             -----------------------------------------------------
-              • HTML5 validation
-              • Хэрвээ алдаа байвал NotifyTop()
-              • fetch() → server рүү POST хүсэлт
-              • Success → хуудсыг refresh
+              * HTML5 validation
+              * Хэрвээ алдаа байвал NotifyTop()
+              * fetch() -> server рүү POST хүсэлт
+              * Success -> хуудсыг refresh
         */
         formInsert.addEventListener('submit', function (event) {
             event.preventDefault();
@@ -238,7 +238,7 @@
                     throw new Error(response.message ? response.message : 'Invalid response!');
                 }
 
-                /* Permission үүссэн → refresh */
+                /* Permission үүссэн -> refresh */
                 window.location.reload();
 
                 NotifyTop(

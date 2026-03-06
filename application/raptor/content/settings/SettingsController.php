@@ -32,10 +32,10 @@ class SettingsController extends FileController
      * Тохиргооны нүүр хуудас (settings.html)-г харуулах.
      *
      * - Хэрэглэгч system_content_settings эрхтэй эсэхийг шалгана.
-     * - SettingsModel → retrieve() ашиглан идэвхтэй тохиргоог авна.
+     * - SettingsModel -> retrieve() ашиглан идэвхтэй тохиргоог авна.
      * - Хэрэв тохиргоонд зураг (logo, faviconn, apple-touch-icon) байгаа бол
      *      физик файл нь public/settings хавтсанд байвал
-     *      файлын хэмжээг bytes → KB/MB форматад хөрвүүлж record массивт inject хийнэ.
+     *      файлын хэмжээг bytes -> KB/MB форматад хөрвүүлж record массивт inject хийнэ.
      *
      * - Twig dashboard template рүү дамжуулж render хийнэ.
      * - Нэвтрүүлэлтийн лог (log) үлдээнэ.
@@ -53,7 +53,7 @@ class SettingsController extends FileController
         $record = (new SettingsModel($this->pdo))->retrieve();
 
         /*
-         * Хэрэв тохиргоо бичлэг байгаа бол файлуудын absolute path → size шалгана.
+         * Хэрэв тохиргоо бичлэг байгаа бол файлуудын absolute path -> size шалгана.
          * DB нь зөвхөн public URL (= relative path) хадгалдаг тул,
          * FileController доторх $this->local ашиглан физик path бүтээж шалгана.
          */
@@ -101,8 +101,8 @@ class SettingsController extends FileController
      *
      * - Хэрэглэгч system_content_settings эрхтэй эсэхийг шалгана.
      * - Request body-г уншиж payload болон content болгон хоёр хуваана:
-     *        payload → үндсэн хүснэгт
-     *        content → localized хүснэгт
+     *        payload -> үндсэн хүснэгт
+     *        content -> localized хүснэгт
      *
      * - Хэрвээ ямар ч өөрчлөлтгүй бол алдаа шиднэ.
      * - config талбар JSON эсэхийг шалгана.

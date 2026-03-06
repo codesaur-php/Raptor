@@ -1,4 +1,4 @@
-# 🦖 Raptor Framework - Бүрэн танилцуулга
+# Raptor Framework - Бүрэн танилцуулга
 
 [![PHP Version](https://img.shields.io/badge/php-%5E8.2.1-777BB4.svg?logo=php)](https://www.php.net/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](../../LICENSE)
@@ -27,19 +27,21 @@
 
 `codesaur/raptor` нь **Web** (нийтийн вебсайт) болон **Dashboard** (админ панель) гэсэн хоёр давхаргат бүтэцтэй, PSR-7/PSR-15 middleware суурьтай PHP фреймворк юм.
 
+> **Тэмдэглэл:** Энэ package нь `codesaur/indodaptor` (500+ install) package-ийн залгамжлагч бөгөөд Packagist-ээс устгагдсан. "Indoraptor" нэр нь Universal Pictures-ийн trademark тул `codesaur/raptor` нэрээр шинээр үүсгэж, кодыг бүрэн refactor хийсэн.
+
 ### Гол боломжууд
 
-- ✔ **PSR-7/PSR-15** middleware суурьтай архитектур
-- ✔ **JWT + Session** нэвтрэлт баталгаажуулалт
-- ✔ **RBAC** (Role-Based Access Control) эрхийн удирдлага
-- ✔ **Олон хэл** дэмжлэг (Localization)
-- ✔ CMS модулиуд: Мэдээ, Хуудас, Файл, Лавлах, Тохиргоо
-- ✔ MySQL / PostgreSQL / SQLite дэмжлэг
-- ✔ **Twig** template engine
-- ✔ **OpenAI** интеграци (moedit editor)
-- ✔ Зураг optimize хийх (GD)
-- ✔ PSR-3 лог систем
-- ✔ **Brevo** API и-мэйл илгээх
+- **PSR-7/PSR-15** middleware суурьтай архитектур
+- **JWT + Session** нэвтрэлт баталгаажуулалт
+- **RBAC** (Role-Based Access Control) эрхийн удирдлага
+- **Олон хэл** дэмжлэг (Localization)
+- CMS модулиуд: Мэдээ, Хуудас, Файл, Лавлах, Тохиргоо
+- MySQL / PostgreSQL / SQLite дэмжлэг
+- **Twig** template engine
+- **OpenAI** интеграци (moedit editor)
+- Зураг optimize хийх (GD)
+- PSR-3 лог систем
+- **Brevo** API и-мэйл илгээх
 
 ### codesaur экосистем
 
@@ -181,90 +183,90 @@ Apache болон Nginx серверийн жишээ тохиргоонууд [
 
 ```
 public_html/index.php (Entry point)
-│
-├── /dashboard/* → Dashboard\Application (Админ панель)
-│    ├── Middleware: ErrorHandler → MySQL → Session → JWT → Container → Localization → Settings
-│    ├── Routers: Login, Users, Organization, RBAC, Localization, Contents, Logs, Template
-│    └── Controllers → Twig Templates → HTML Response
-│
-└── /* → Web\Application (Нийтийн вэб сайт)
-     ├── Middleware: ExceptionHandler → MySQL → Container → Session → Localization → Settings
-     ├── Router: HomeRouter (/, /page/{id}, /news/{id}, /contact, /language/{code})
-     └── TemplateController → Twig Templates → HTML Response
+|
+|-- /dashboard/* -> Dashboard\Application (Админ панель)
+|    |-- Middleware: ErrorHandler -> MySQL -> Session -> JWT -> Container -> Localization -> Settings
+|    |-- Routers: Login, Users, Organization, RBAC, Localization, Contents, Logs, Template
+|    \-- Controllers -> Twig Templates -> HTML Response
+|
+\-- /* -> Web\Application (Нийтийн вэб сайт)
+     |-- Middleware: ExceptionHandler -> MySQL -> Container -> Session -> Localization -> Settings
+     |-- Router: HomeRouter (/, /page/{id}, /news/{id}, /contact, /language/{code})
+     \-- TemplateController -> Twig Templates -> HTML Response
 ```
 
 ### Request-ийн дамжих урсгал
 
 ```
-Browser → index.php → .env → ServerRequest
-  → Application сонгох (URL path-аар)
-    → Middleware chain (дарааллаар)
-      → Router match
-        → Controller::action()
-          → Model (DB)
-          → TwigTemplate → render()
-            → HTML Response → Browser
+Browser -> index.php -> .env -> ServerRequest
+  -> Application сонгох (URL path-аар)
+    -> Middleware chain (дарааллаар)
+      -> Router match
+        -> Controller::action()
+          -> Model (DB)
+          -> TwigTemplate -> render()
+            -> HTML Response -> Browser
 ```
 
 ### Директорийн бүтэц
 
 ```
 raptor/
-├── application/
-│   ├── raptor/                    # Суурь framework (Dashboard + shared)
-│   │   ├── Application.php        # Dashboard Application суурь
-│   │   ├── Controller.php         # Бүх Controller-ийн суурь анги
-│   │   ├── MySQLConnectMiddleware.php
-│   │   ├── PostgresConnectMiddleware.php
-│   │   ├── SQLiteConnectMiddleware.php
-│   │   ├── ContainerMiddleware.php
-│   │   ├── authentication/        # Login, JWT, Session
-│   │   ├── content/               # CMS модулиуд
-│   │   │   ├── file/              # Файлын менежмент
-│   │   │   ├── news/              # Мэдээ
-│   │   │   ├── page/              # Хуудас
-│   │   │   ├── reference/         # Лавлагаа
-│   │   │   └── settings/          # Системийн тохиргоо
-│   │   ├── localization/          # Хэл, орчуулга
-│   │   ├── organization/          # Байгууллага
-│   │   ├── rbac/                  # Эрхийн удирдлага
-│   │   ├── user/                  # Хэрэглэгч
-│   │   ├── template/              # Dashboard UI template
-│   │   ├── log/                   # PSR-3 лог
-│   │   ├── mail/                  # И-мэйл
-│   │   └── exception/             # Алдаа барих
-│   ├── dashboard/                 # Dashboard Application
-│   │   ├── Application.php
-│   │   └── home/                  # Dashboard Home Router
-│   └── web/                       # Web Application
-│       ├── Application.php
-│       ├── SessionMiddleware.php
-│       ├── LocalizationMiddleware.php
-│       ├── home/                  # Public page controllers + templates
-│       │   ├── HomeRouter.php
-│       │   ├── HomeController.php
-│       │   ├── home.html
-│       │   ├── page.html
-│       │   └── news.html
-│       └── template/              # Web layout
-│           ├── TemplateController.php
-│           ├── ExceptionHandler.php
-│           └── index.html
-├── public_html/
-│   ├── index.php                  # Entry point
-│   ├── .htaccess                  # Apache URL rewrite
-│   └── assets/                    # CSS, JS (dashboard, moedit, motable)
-├── docs/
-│   ├── conf.example/              # Серверийн тохиргооны жишээ
-│   │   ├── .env.example           # Орчны тохиргоо
-│   │   ├── .htaccess.example      # Apache rewrite дүрмүүд
-│   │   └── .nginx.conf.example    # Nginx серверийн тохиргоо
-│   ├── en/                        # Англи баримтжуулалт
-│   └── mn/                        # Монгол баримтжуулалт
-├── logs/                          # Алдааны лог файлууд
-├── private/                       # Хамгаалагдсан файлууд
-├── composer.json
-└── LICENSE
+|-- application/
+|   |-- raptor/                    # Суурь framework (Dashboard + shared)
+|   |   |-- Application.php        # Dashboard Application суурь
+|   |   |-- Controller.php         # Бүх Controller-ийн суурь анги
+|   |   |-- MySQLConnectMiddleware.php
+|   |   |-- PostgresConnectMiddleware.php
+|   |   |-- SQLiteConnectMiddleware.php
+|   |   |-- ContainerMiddleware.php
+|   |   |-- authentication/        # Login, JWT, Session
+|   |   |-- content/               # CMS модулиуд
+|   |   |   |-- file/              # Файлын менежмент
+|   |   |   |-- news/              # Мэдээ
+|   |   |   |-- page/              # Хуудас
+|   |   |   |-- reference/         # Лавлагаа
+|   |   |   \-- settings/          # Системийн тохиргоо
+|   |   |-- localization/          # Хэл, орчуулга
+|   |   |-- organization/          # Байгууллага
+|   |   |-- rbac/                  # Эрхийн удирдлага
+|   |   |-- user/                  # Хэрэглэгч
+|   |   |-- template/              # Dashboard UI template
+|   |   |-- log/                   # PSR-3 лог
+|   |   |-- mail/                  # И-мэйл
+|   |   \-- exception/             # Алдаа барих
+|   |-- dashboard/                 # Dashboard Application
+|   |   |-- Application.php
+|   |   \-- home/                  # Dashboard Home Router
+|   \-- web/                       # Web Application
+|       |-- Application.php
+|       |-- SessionMiddleware.php
+|       |-- LocalizationMiddleware.php
+|       |-- home/                  # Public page controllers + templates
+|       |   |-- HomeRouter.php
+|       |   |-- HomeController.php
+|       |   |-- home.html
+|       |   |-- page.html
+|       |   \-- news.html
+|       \-- template/              # Web layout
+|           |-- TemplateController.php
+|           |-- ExceptionHandler.php
+|           \-- index.html
+|-- public_html/
+|   |-- index.php                  # Entry point
+|   |-- .htaccess                  # Apache URL rewrite
+|   \-- assets/                    # CSS, JS (dashboard, moedit, motable)
+|-- docs/
+|   |-- conf.example/              # Серверийн тохиргооны жишээ
+|   |   |-- .env.example           # Орчны тохиргоо
+|   |   |-- .htaccess.example      # Apache rewrite дүрмүүд
+|   |   \-- .nginx.conf.example    # Nginx серверийн тохиргоо
+|   |-- en/                        # Англи баримтжуулалт
+|   \-- mn/                        # Монгол баримтжуулалт
+|-- logs/                          # Алдааны лог файлууд
+|-- private/                       # Хамгаалагдсан файлууд
+|-- composer.json
+\-- LICENSE
 ```
 
 ---
@@ -422,7 +424,7 @@ $this->isUserCan('news_edit');
 **Классууд:** `LocalizationRouter`, `LocalizationController`, `LanguageModel`, `TextModel`, `LocalizationMiddleware`
 
 - Хэл нэмэх / засах / устгах
-- Орчуулгын текст удирдах (key → value)
+- Орчуулгын текст удирдах (key -> value)
 - Session дээр суурилсан хэл сонголт
 - Twig template дотор `{{ 'key'|text }}` ашиглах
 
@@ -795,6 +797,6 @@ $this->use(new \Raptor\SQLiteConnectMiddleware());
 
 ## Дараагийн алхмууд
 
-- 📚 [API тайлбар](api.md) - Бүх класс, методуудын дэлгэрэнгүй API reference
-- 💬 [Хэлэлцүүлэг](https://github.com/orgs/codesaur-php/discussions) - Асуулт асуух, санал хуваалцах, тусламж авах
-- 🦖 [codesaur ecosystem](https://github.com/codesaur-php) - Бусад packages
+- [API тайлбар](api.md) - Бүх класс, методуудын дэлгэрэнгүй API reference
+- [Хэлэлцүүлэг](https://github.com/orgs/codesaur-php/discussions) - Асуулт асуух, санал хуваалцах, тусламж авах
+- [codesaur ecosystem](https://github.com/codesaur-php) - Бусад packages

@@ -158,7 +158,7 @@ class JWTAuthMiddleware implements MiddlewareInterface
 
     /**
      * Redirect хийх универсал PSR-7 арга.
-     * ResponseFactory → Response → header()  гэсэн 3 шаттай fallback.
+     * ResponseFactory -> Response -> header()  гэсэн 3 шаттай fallback.
      *
      * @param ServerRequestInterface $request
      * @param string $location
@@ -197,7 +197,7 @@ class JWTAuthMiddleware implements MiddlewareInterface
      * 5) RBAC эрхүүдийг ачаалж 'User' объект үүсгэнэ
      * 6) Request attributes дотор user-г хадгалаад дараагийн middleware рүү дамжина
      *
-     * Хэрвээ JWT асуудалтай бол → login руу redirect хийнэ.
+     * Хэрвээ JWT асуудалтай бол -> login руу redirect хийнэ.
      *
      * @param ServerRequestInterface $request
      * @param RequestHandlerInterface $handler

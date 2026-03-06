@@ -7,22 +7,22 @@ namespace Raptor\RBAC;
  * ачаалах, шалгах зориулалттай lightweight объект.
  *
  * RBAC архитектур дахь энэ классын байр суурь:
- * ───────────────────────────────────────────────────────────────
+ * ---------------------------------------------------------------
  *  - Database: RolePermission + Permissions хүснэгтээс уншина.
- *  - Runtime: Controller → RBAC.php → User → Role
+ *  - Runtime: Controller -> RBAC.php -> User -> Role
  *  - Purpose: hasPermission() ашиглан тухайн role тодорхой эрхтэй эсэхийг
  *              маш хурдан, DB query хийлгүйгээр шалгах.
  *
  * Permission keys:
- * ───────────────────────────────────────────────────────────────
+ * ---------------------------------------------------------------
  * Permission бүр дараах хэлбэрээр массивт хадгалагдана:
  *
  *      "{alias}_{name}"  => true
  *
  * Жишээ:
- *      system_logger              → системийн лог харах
- *      system_user_insert         → хэрэглэгч нэмэх эрх
- *      system_content_publish     → контент нийтлэх эрх
+ *      system_logger              -> системийн лог харах
+ *      system_user_insert         -> хэрэглэгч нэмэх эрх
+ *      system_content_publish     -> контент нийтлэх эрх
  *
  * Энэ формат нь:
  *    - alias (module/category)
@@ -35,8 +35,8 @@ class Role
 {
     /**
      * Рольд харьяалагдах бүх permission-үүд
-     *  → key: "{alias}_{name}"
-     *  → value: true
+     *  -> key: "{alias}_{name}"
+     *  -> value: true
      *
      * @var array<string,bool>
      */
@@ -47,7 +47,7 @@ class Role
      * бүх permission-үүдийг уншиж, дотоод массивт хадгална.
      *
      * SQL Query:
-     * ───────────────────────────────────────────────────────────────
+     * ---------------------------------------------------------------
      * SELECT t2.name, t2.alias
      *   FROM rbac_role_permission t1
      *   INNER JOIN rbac_permissions t2 ON t1.permission_id = t2.id
@@ -57,7 +57,7 @@ class Role
      *   permissions["{$alias}_{$name}"] = true
      *
      * Давуу тал:
-     *   - 1 удаагийн query → олон удаагийн hasPermission() шалгалт DB-гүй
+     *   - 1 удаагийн query -> олон удаагийн hasPermission() шалгалт DB-гүй
      *   - Memory-д кешлэгдсэн тул permission шалгах хурд O(1)
      *
      * @param \PDO $pdo
@@ -91,11 +91,11 @@ class Role
      * Тухайн рольд тодорхой permission байгаа эсэхийг шалгах.
      *
      * Хамгийн хурдан permission шалгалт:
-     *   → memory-based array lookup
-     *   → DB query огт хийгдэхгүй
+     *   -> memory-based array lookup
+     *   -> DB query огт хийгдэхгүй
      *
      * Ашиглах жишээ:
-     * ───────────────────────────────────────────────────────────────
+     * ---------------------------------------------------------------
      *   $role->hasPermission("content_news_insert");
      *
      * @param string $permissionName "{alias}_{name}" форматтай permission key

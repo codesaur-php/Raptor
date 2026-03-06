@@ -8,7 +8,7 @@ use codesaur\Http\Application\ExceptionHandlerInterface;
 /**
  * Class JsonExceptionHandler
  * ---------------------------------------------------------
- * ⚡ Raptor Framework - JSON хэлбэрээр алдаа буцаах тусгай
+ * Raptor Framework - JSON хэлбэрээр алдаа буцаах тусгай
  * Exception Handler.
  *
  * Энэ класс нь REST API, AJAX request, mobile client зэрэг
@@ -16,15 +16,15 @@ use codesaur\Http\Application\ExceptionHandlerInterface;
  * үүссэн бүх төрлийн Exception/Error-ийг JSON бүтэцтэйгээр
  * клиент рүү буцаана.
  *
- * ➤ Үндсэн боломжууд:
+ * > Үндсэн боломжууд:
  * -----------------------------------------
- * ✔ Алдааны HTTP статус кодыг автоматаар таньж тохируулах  
- * ✔ JSON Content-Type header илгээх  
- * ✔ JSON бүтэцтэй стандарт error формат гаргах  
- * ✔ Хөгжүүлэлтийн горимд (CODESAUR_DEVELOPMENT) →  
+ * Алдааны HTTP статус кодыг автоматаар таньж тохируулах  
+ * JSON Content-Type header илгээх  
+ * JSON бүтэцтэй стандарт error формат гаргах  
+ * Хөгжүүлэлтийн горимд (CODESAUR_DEVELOPMENT) ->  
  *     Stack trace бүрэн харуулна  
  *
- * ➤ JSON бүтэц:
+ * > JSON бүтэц:
  * -----------------------------------------
  * {
  *    "error": {
@@ -35,7 +35,7 @@ use codesaur\Http\Application\ExceptionHandlerInterface;
  *    }
  * }
  *
- * ➤ Хөгжүүлэгч өөрийн Exception Handler-г ашиглах боломжтой
+ * > Хөгжүүлэгч өөрийн Exception Handler-г ашиглах боломжтой
  * ---------------------------------------------------------
  * Энэ JSON handler-г Application-д дараах байдлаар идэвхжүүлнэ:
  *
@@ -44,7 +44,7 @@ use codesaur\Http\Application\ExceptionHandlerInterface;
  * Хэрэв хөгжүүлэгч өөрийн custom ExceptionHandler бичвэл  
  * мөн адил `Application->use()` ашиглан override хийж болно.
  *
- * ➤ HTTP статус кодын тохиргоо:
+ * > HTTP статус кодын тохиргоо:
  * -----------------------------------------
  * Throwable код нь 0 биш бол ReasonPrhase классыг ашиглан
  * тохирох HTTP статус кодыг автоматаар тохируулна:

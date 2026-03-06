@@ -1,13 +1,13 @@
 <!--
-    📌 Video Tag Embed Code Modal
+    Video Tag Embed Code Modal
     ------------------------------------------------------------
     Энэ modal нь видео файлыг HTML-д байрлуулахад шаардлагатай
     <video> tag-ийг автоматаар үүсгэн харуулдаг.
 
-    • Relative embed   → зөвхөн файл руу харьцангуй зам
-    • Absolute embed   → бүрэн URL (host + path)
+    * Relative embed   -> зөвхөн файл руу харьцангуй зам
+    * Absolute embed   -> бүрэн URL (host + path)
 
-    copy товч → copyContent(id) функцээр тухайн <pre> блокийн
+    copy товч -> copyContent(id) функцээр тухайн <pre> блокийн
     текстийг clipboard руу хуулахад ашиглана.
 -->
 
@@ -43,7 +43,7 @@
             <!-- ABSOLUTE VIDEO EMBED CODE -->
             <strong>Absolute:</strong>
             <a class="btn btn-sm btn-dark" onclick="copyContent('absolute');">copy</a>
-            <!-- host + path → бүрэн URL бүхий embed код (vanilla HTML) -->
+            <!-- host + path -> бүрэн URL бүхий embed код (vanilla HTML) -->
             <pre class="border border-dark bg-secondary text-light"
                  id="absolute"
                  style="white-space:pre-wrap">{{ ('<video src="' ~ host ~ record['path'] ~ '" controls style="max-width: 100%;"></video>')|e }}</pre>

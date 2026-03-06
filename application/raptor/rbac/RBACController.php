@@ -9,33 +9,33 @@ use Psr\Log\LogLevel;
  * UI болон API-д зориулсан үндсэн контроллер.
  *
  * Үндсэн үүрэг:
- * ───────────────────────────────────────────────────────────────
+ * ---------------------------------------------------------------
  *  - RBAC alias бүрийн роль, зөвшөөрлийн (permission) жагсаалт харуулах
  *  - Role үүсгэх (GET: form, POST: insert)
  *  - Permission үүсгэх (GET: form, POST: insert)
- *  - Role ↔ Permission холболт хийх, устгах
+ *  - Role <-> Permission холболт хийх, устгах
  *  - Тухайн рольд хамаарах дэлгэрэнгүйг харах (modal)
  *
  * Security:
- * ───────────────────────────────────────────────────────────────
+ * ---------------------------------------------------------------
  *  - Бүх RBAC удирдлагын үйлдэлд "system_rbac" permission заавал шалгана.
  *  - Permission-гүй хэрэглэгчдэд DashboardTrait ашиглан
  *    "no permission" alert/modal үзүүлнэ.
  *
  * UI Rendering Pipeline:
- * ───────────────────────────────────────────────────────────────
+ * ---------------------------------------------------------------
  *  - DashboardTrait::twigDashboard() ашиглан sidebar + content бүхий layout
  *  - twigTemplate() ашиглан modal/forms рендерлэх
  *
  * Logging (audit trail):
- * ───────────────────────────────────────────────────────────────
+ * ---------------------------------------------------------------
  *  - log() ашиглан dashboard_log хүснэгтэд бүх үйлдлийг бүртгэнэ.
  *  - Амжилттай/алдаатай аль ч тохиолдолд finally дотор лог бичигдэнэ.
  *
  * RBACController нь:
- *    → RBACRouter-оор дамжин бүх RBAC админ интерфэйс рүү ханддаг
- *    → Roles, Permissions, RolePermission модельтэй шууд ажиллана
- *    → RBAC UI-г бүрдүүлдэг хамгийн гол контроллер юм.
+ *    -> RBACRouter-оор дамжин бүх RBAC админ интерфэйс рүү ханддаг
+ *    -> Roles, Permissions, RolePermission модельтэй шууд ажиллана
+ *    -> RBAC UI-г бүрдүүлдэг хамгийн гол контроллер юм.
  */
 class RBACController extends \Raptor\Controller
 {
@@ -48,7 +48,7 @@ class RBACController extends \Raptor\Controller
      *   /dashboard/organizations/rbac/alias?alias=user&title=User+RBAC
      *
      * Workflow:
-     * ───────────────────────────────────────────────────────────────
+     * ---------------------------------------------------------------
      * 1) "system_rbac" permission шалгах
      * 2) Query параметрээс alias болон title авах
      * 3) Roles (coder-role-оос бусад)-ийг alias-аар шүүх
@@ -148,14 +148,14 @@ class RBACController extends \Raptor\Controller
      *   POST /dashboard/organizations/rbac/{alias}/insert/role
      *
      * POST Workflow:
-     * ───────────────────────────────────────────────────────────────
+     * ---------------------------------------------------------------
      * 1) Permission шалгах (system_rbac)
      * 2) Request payload баталгаажуулах
      * 3) New Role insert (alias + created_by)
      * 4) JSON success response буцаах
      *
      * GET Workflow:
-     * ───────────────────────────────────────────────────────────────
+     * ---------------------------------------------------------------
      * 1) Modal form (rbac-insert-role-modal.html) рендерлэх
      *
      * @param string $alias RBAC бүлгийн alias (system, user, content ...)
@@ -365,10 +365,10 @@ class RBACController extends \Raptor\Controller
     }
 
     /**
-     * Роль → Зөвшөөрөл (permission) холболт хийх/устгах.
+     * Роль -> Зөвшөөрөл (permission) холболт хийх/устгах.
      *
-     * POST   → холбох  
-     * DELETE → салгах
+     * POST   -> холбох  
+     * DELETE -> салгах
      *
      * Payload шаардлага:
      *   - alias
@@ -431,12 +431,12 @@ class RBACController extends \Raptor\Controller
             $context = ['action' => 'rbac-set-role-permission', 'alias' => $alias];
             if (isset($err)) {
                 $level = LogLevel::ERROR;
-                $message = 'Role → Permission тохируулах үед алдаа гарлаа';
+                $message = 'Role -> Permission тохируулах үед алдаа гарлаа';
                 $context += ['error' => ['code'=>$err->getCode(),'message'=>$err->getMessage()]];
             } else {
                 $level = LogLevel::INFO;
                 $context += $payload;
-                $message = 'Role → Permission ' . ($method === 'DELETE'
+                $message = 'Role -> Permission ' . ($method === 'DELETE'
                     ? 'устгагдлаа'
                     : 'заагдлаа');
             }

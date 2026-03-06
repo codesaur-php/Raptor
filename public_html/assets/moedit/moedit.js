@@ -178,7 +178,7 @@ class moedit {
         title: isMn ? 'YouTube видео оруулах' : 'Insert YouTube Video',
         urlLabel: isMn ? 'YouTube URL эсвэл Embed код' : 'YouTube URL or Embed code',
         placeholder: 'https://www.youtube.com/watch?v=... эсвэл <iframe>...</iframe>',
-        hint: isMn ? 'YouTube дээр Share → Embed дарж кодыг хуулна уу, эсвэл видеоны URL хуулна уу' : 'Click Share → Embed on YouTube and copy the code, or paste the video URL',
+        hint: isMn ? 'YouTube дээр Share -> Embed дарж кодыг хуулна уу, эсвэл видеоны URL хуулна уу' : 'Click Share -> Embed on YouTube and copy the code, or paste the video URL',
         invalidUrl: isMn ? 'YouTube видео ID олдсонгүй. URL эсвэл embed код зөв эсэхийг шалгана уу.' : 'YouTube video ID not found. Please check the URL or embed code.',
         cancelText: isMn ? 'Болих' : 'Cancel',
         okText: isMn ? 'Оруулах' : 'Insert'
@@ -188,7 +188,7 @@ class moedit {
         title: isMn ? 'Facebook видео оруулах' : 'Insert Facebook Video',
         urlLabel: isMn ? 'Facebook URL эсвэл Embed код' : 'Facebook URL or Embed code',
         placeholder: 'https://www.facebook.com/... эсвэл <iframe>...</iframe>',
-        hint: isMn ? 'Facebook видео дээр ... → Embed дарж кодыг хуулна уу, эсвэл видеоны URL хуулна уу' : 'Click ... → Embed on Facebook video and copy the code, or paste the video URL',
+        hint: isMn ? 'Facebook видео дээр ... -> Embed дарж кодыг хуулна уу, эсвэл видеоны URL хуулна уу' : 'Click ... -> Embed on Facebook video and copy the code, or paste the video URL',
         cancelText: isMn ? 'Болих' : 'Cancel',
         okText: isMn ? 'Оруулах' : 'Insert'
       },
@@ -197,7 +197,7 @@ class moedit {
         title: isMn ? 'Twitter/X пост оруулах' : 'Insert Twitter/X Post',
         urlLabel: isMn ? 'Twitter/X URL' : 'Twitter/X URL',
         placeholder: 'https://x.com/username/status/...',
-        hint: isMn ? 'Tweet/пост дээр Share → Copy link дарж URL хуулна уу' : 'Click Share → Copy link on the tweet/post',
+        hint: isMn ? 'Tweet/пост дээр Share -> Copy link дарж URL хуулна уу' : 'Click Share -> Copy link on the tweet/post',
         invalidUrl: isMn ? 'Twitter/X пост олдсонгүй. URL зөв эсэхийг шалгана уу.' : 'Twitter/X post not found. Please check the URL.',
         cancelText: isMn ? 'Болих' : 'Cancel',
         okText: isMn ? 'Оруулах' : 'Insert'
@@ -207,8 +207,8 @@ class moedit {
         title: isMn ? 'Google Maps оруулах' : 'Insert Google Maps',
         urlLabel: isMn ? 'Google Maps URL эсвэл Embed код' : 'Google Maps URL or Embed code',
         placeholder: 'https://www.google.com/maps/... эсвэл <iframe>...</iframe>',
-        hint: isMn ? 'Google Maps дээр Share → Embed a map дарж кодыг хуулна уу' : 'On Google Maps click Share → Embed a map and copy the code',
-        invalidUrl: isMn ? 'Google Maps URL буруу байна. Share → Embed a map ашиглана уу.' : 'Invalid Google Maps URL. Please use Share → Embed a map.',
+        hint: isMn ? 'Google Maps дээр Share -> Embed a map дарж кодыг хуулна уу' : 'On Google Maps click Share -> Embed a map and copy the code',
+        invalidUrl: isMn ? 'Google Maps URL буруу байна. Share -> Embed a map ашиглана уу.' : 'Invalid Google Maps URL. Please use Share -> Embed a map.',
         cancelText: isMn ? 'Болих' : 'Cancel',
         okText: isMn ? 'Оруулах' : 'Insert'
       },
@@ -227,13 +227,13 @@ class moedit {
 
 Заавар:
 1. Контентын бүтэц, агуулгыг шинжилж, тохирох Bootstrap 5 компонент болго:
-   - Жагсаалт мэдээлэл → card эсвэл list-group
-   - Харьцуулалт, олон багана мэдээлэл → table (table-striped table-hover table-bordered)
-   - Асуулт-хариулт, FAQ → accordion
-   - Алхам алхмаар заавар → list-group эсвэл card
-   - Онцлох мэдээлэл → alert эсвэл callout
-   - Холбоотой зүйлсийн жагсаалт → row/col grid
-2. img → class="img-fluid rounded"
+   - Жагсаалт мэдээлэл -> card эсвэл list-group
+   - Харьцуулалт, олон багана мэдээлэл -> table (table-striped table-hover table-bordered)
+   - Асуулт-хариулт, FAQ -> accordion
+   - Алхам алхмаар заавар -> list-group эсвэл card
+   - Онцлох мэдээлэл -> alert эсвэл callout
+   - Холбоотой зүйлсийн жагсаалт -> row/col grid
+2. img -> class="img-fluid rounded"
 3. Текст агуулгыг ӨӨРЧЛӨХГҮЙ, зөвхөн HTML бүтцийг сайжруул
 4. Хэт их биш, зөвхөн тохирох хэсэгт компонент ашигла
 5. Хэрэв контент энгийн текст бол хүний нүдээр уншихад эвтэйхэн болгон форматлах
@@ -241,13 +241,13 @@ class moedit {
 
 Instructions:
 1. Analyze content structure and convert to appropriate Bootstrap components:
-   - List information → card or list-group
-   - Comparisons, multi-column data → table (table-striped table-hover table-bordered)
-   - Q&A, FAQ → accordion
-   - Step-by-step instructions → list-group or card
-   - Highlighted information → alert or callout
-   - Related items list → row/col grid
-2. img → class="img-fluid rounded"
+   - List information -> card or list-group
+   - Comparisons, multi-column data -> table (table-striped table-hover table-bordered)
+   - Q&A, FAQ -> accordion
+   - Step-by-step instructions -> list-group or card
+   - Highlighted information -> alert or callout
+   - Related items list -> row/col grid
+2. img -> class="img-fluid rounded"
 3. DO NOT change text content, only improve HTML structure
 4. Use components sparingly, only where appropriate
 5. If content is plain text, format it for easy reading
@@ -282,7 +282,7 @@ Instructions:
       },
       /* PDF modal */
       pdfModal: {
-        title: 'PDF → HTML',
+        title: 'PDF -> HTML',
         description: isMn ? 'PDF файлыг AI ашиглан HTML болгож editor-д оруулна.' : 'Converts PDF to HTML using AI.',
         placeholder: isMn ? 'PDF файл сонгоно уу...' : 'Select PDF file...',
         browseText: isMn ? 'Сонгох' : 'Browse',
@@ -1233,7 +1233,7 @@ Instructions:
         <button type="button" class="moedit-btn" data-action="twitter" title="${isMn ? 'Twitter/X пост оруулах' : 'Insert Twitter/X Post'}"><i class="mi-twitter-x"></i></button>
         <button type="button" class="moedit-btn" data-action="map" title="${isMn ? 'Google Maps оруулах' : 'Insert Google Maps'}"><i class="mi-geo-alt"></i></button>
         <button type="button" class="moedit-btn mo-info" data-action="ocr" title="${isMn ? 'AI OCR - Зургийг HTML болгох' : 'AI OCR - Convert Image to HTML'}"><i class="mi-file-text"></i></button>
-        <button type="button" class="moedit-btn mo-danger" data-action="pdf" title="PDF → HTML"><i class="mi-file-earmark-pdf"></i></button>
+        <button type="button" class="moedit-btn mo-danger" data-action="pdf" title="PDF -> HTML"><i class="mi-file-earmark-pdf"></i></button>
         <button type="button" class="moedit-btn mo-warning" data-action="shine" title="${isMn ? 'AI Shine - Bootstrap 5 гоёжуулах' : 'AI Shine - Beautify with Bootstrap 5'}"><i class="mi-stars"></i></button>
       </div>
       <div class="moedit-sep"></div>

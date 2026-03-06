@@ -42,7 +42,7 @@ use codesaur\DataObject\Column;
  *  - updated_by (bigint) - Шинэчлэсэн хэрэглэгчийн ID
  *
  * Хүснэгт ашиглалт:
- *  - Мэдээ → Хэрэглэгч (published_by, created_by, updated_by)
+ *  - Мэдээ -> Хэрэглэгч (published_by, created_by, updated_by)
  *
  * @package Raptor\Content
  */
@@ -54,28 +54,28 @@ class NewsModel extends Model
      * PDO instance-г оноож, мэдээний хүснэгтийн бүх багануудыг тодорхойлно.
      * Хүснэгтийн нэрийг 'news' гэж тохируулна.
      *
-     * ⚡ **PDO Injection тухай тэмдэглэл**
+     * **PDO Injection тухай тэмдэглэл**
      * --------------------------------------------------------------
      * Raptor Framework нь PDO instance-ийг дараах дарааллаар inject хийдэг:
      *
      *   1) MySQLConnectMiddleware / PostgresConnectMiddleware
-     *      → Application-ийн ServerRequestInterface дотор PDO instance үүсгэнэ
-     *      → $request->withAttribute('pdo', $pdo) хэлбэрээр хадгална
+     *      -> Application-ийн ServerRequestInterface дотор PDO instance үүсгэнэ
+     *      -> $request->withAttribute('pdo', $pdo) хэлбэрээр хадгална
      *
      *   2) Controller constructor
-     *      → ServerRequest-аас PDO-г авч $this->pdo хувьсагчид онооно
-     *      → $this->pdo = $request->getAttribute('pdo')
+     *      -> ServerRequest-аас PDO-г авч $this->pdo хувьсагчид онооно
+     *      -> $this->pdo = $request->getAttribute('pdo')
      *
      *   3) Model constructor (энэ функц)
-     *      → Controller-ийн байгуулагчаар дамжуулан PDO instance ирнэ
-     *      → new NewsModel($this->pdo) хэлбэрээр дуудагдана
+     *      -> Controller-ийн байгуулагчаар дамжуулан PDO instance ирнэ
+     *      -> new NewsModel($this->pdo) хэлбэрээр дуудагдана
      *
      * Иймээс энэхүү `$pdo` нь *middleware injection-ээр дамжсан баталгаатай
      * холболт* бөгөөд Model анги зөвхөн өгөгдөлтэй ажиллахад анхаарна.
      *
-     * ✔ Framework-ийн request-scope injection механизм ашигладаг
-     * ✔ Нэг request дотор нэг л PDO instance ажиллана
-     * ✔ DatabaseMiddleware нь PDO-г автоматаар үүсгэж inject хийнэ
+     * Framework-ийн request-scope injection механизм ашигладаг
+     * Нэг request дотор нэг л PDO instance ажиллана
+     * DatabaseMiddleware нь PDO-г автоматаар үүсгэж inject хийнэ
      *
      * @param \PDO $pdo Database connection instance.
      *                  Application-ийн ServerRequestInterface дотор inject хийгдсэн
@@ -117,9 +117,9 @@ class NewsModel extends Model
      *
      * Хүснэгт анх үүсэх үед foreign key constraint-уудыг автоматаар үүсгэнэ.
      * Энэ функц нь:
-     *  - published_by → users(id) foreign key
-     *  - created_by → users(id) foreign key
-     *  - updated_by → users(id) foreign key
+     *  - published_by -> users(id) foreign key
+     *  - created_by -> users(id) foreign key
+     *  - updated_by -> users(id) foreign key
      *
      * Бүх foreign key-ууд ON DELETE SET NULL, ON UPDATE CASCADE бүтэцтэй.
      *

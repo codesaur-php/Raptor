@@ -27,7 +27,7 @@
         <div class="modal-body">
             <!--
                 Файлын мэдээллийг PUT хүсэлтээр илгээх form.
-                enctype="multipart/form-data" → ирээдүйд файл солих боломж нээлттэй.
+                enctype="multipart/form-data" -> ирээдүйд файл солих боломж нээлттэй.
             -->
             <form class="needs-validation"
                   novalidate
@@ -88,7 +88,7 @@
     if (!formUpdate) {
         NotifyTop('danger', `{{ 'error'|text|e }}`, 'Form not found!');
     } else {
-        /* Save товч → form.submit() биш requestSubmit() ашиглана */
+        /* Save товч -> form.submit() биш requestSubmit() ашиглана */
         const submitter = document.querySelector('button.update-files-submit');
 
         submitter.addEventListener('click', function (e) {
@@ -116,7 +116,7 @@
             /* Save товч дээр grow animation үзүүлэх */
             submitter.growNstop();
 
-            /* FormData → fetch PUT */
+            /* FormData -> fetch PUT */
             const data = new FormData(this);
 
             fetch(this.action, {

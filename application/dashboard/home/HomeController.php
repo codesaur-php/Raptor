@@ -10,7 +10,7 @@ use Psr\Log\LogLevel;
  * Dashboard module-ийн үндсэн Controller.
  *
  * Энэ контроллер нь системд логин хийж орсон хэрэглэгчдэд
- * харагдах “Нүүр хуудас / Overview” хэсгийг рендерлэх
+ * харагдах "Нүүр хуудас / Overview" хэсгийг рендерлэх
  * үндсэн entry point юм.
  *
  * Одоогийн функц:
@@ -20,18 +20,18 @@ use Psr\Log\LogLevel;
  * Хөгжүүлэгчид зориулсан өргөтгөх боломж:
  * ------------------------------------------------------------------
  * HomeController бол Dashboard-ийн хамгийн эхний харагдах хэсэг учир:
- *   ✔ Статистик widget-үүд
- *   ✔ Шинэ мэдэгдэл, системийн төлөв байдлын мэдээлэл
- *   ✔ Chart.js / ApexCharts график
- *   ✔ Хэрэглэгчийн role-д тохирсон overview data
- *   ✔ Сүүлийн үйлдлүүдийн log-ууд
- *   ✔ Custom dashboard cards
+ *   Статистик widget-үүд
+ *   Шинэ мэдэгдэл, системийн төлөв байдлын мэдээлэл
+ *   Chart.js / ApexCharts график
+ *   Хэрэглэгчийн role-д тохирсон overview data
+ *   Сүүлийн үйлдлүүдийн log-ууд
+ *   Custom dashboard cards
  * зэргийг энд нэмэн хөгжүүлэх боломжтой.
  *
  * Framework-ийн бүтцийн хувьд:
- *   - twigDashboard() → Dashboard layout ашиглан контент ачаана
- *   - home.html → зөвхөн контент хэсэгт байрлах view
- *   - log() → системийн үйлдлийн лог бичих стандарт функц
+ *   - twigDashboard() -> Dashboard layout ашиглан контент ачаана
+ *   - home.html -> зөвхөн контент хэсэгт байрлах view
+ *   - log() -> системийн үйлдлийн лог бичих стандарт функц
  *
  * @package Dashboard\Home
  */
@@ -43,7 +43,7 @@ class HomeController extends \Raptor\Controller
      * Dashboard-ийн үндсэн нүүр хуудас руу хандах функц.
      * ------------------------------------------------------------------
      * 1) home.html template-г Dashboard layout-той хамт render хийнэ
-     * 2) Хэрэглэгчийн үйлдлийг “dashboard” лог хүснэгтэд NOTICE түвшинд бичиж байна
+     * 2) Хэрэглэгчийн үйлдлийг "dashboard" лог хүснэгтэд NOTICE түвшинд бичиж байна
      *
      * @return void
      */

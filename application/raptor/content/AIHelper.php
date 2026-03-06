@@ -11,7 +11,7 @@ use codesaur\Http\Client\JSONClient;
  * OpenAI GPT-4o болон GPT-4o-mini моделиудыг ашиглана.
  *
  * Тохиргоо (.env файлд):
- * ─────────────────────────────────────────────────────────────────────────────
+ * -----------------------------------------------------------------------------
  *   RAPTOR_OPENAI_API_KEY=sk-proj-...    # OpenAI API түлхүүр (заавал)
  *
  * @package    Raptor\Content
@@ -28,7 +28,7 @@ class AIHelper extends \Raptor\Controller
      *   2. Vision mode (mode='vision') - Зураг дээрх текстийг таниж HTML болгох (OCR)
      *
      * Хүсэлт (HTML mode):
-     * ─────────────────────────────────────────────────────────────────────────────
+     * -----------------------------------------------------------------------------
      *   POST /dashboard/moedit/ai
      *   Content-Type: application/json
      *   Body: {
@@ -38,7 +38,7 @@ class AIHelper extends \Raptor\Controller
      *   }
      *
      * Хүсэлт (Vision/OCR mode):
-     * ─────────────────────────────────────────────────────────────────────────────
+     * -----------------------------------------------------------------------------
      *   POST /dashboard/moedit/ai
      *   Content-Type: application/json
      *   Body: {
@@ -48,7 +48,7 @@ class AIHelper extends \Raptor\Controller
      *   }
      *
      * Хариу:
-     * ─────────────────────────────────────────────────────────────────────────────
+     * -----------------------------------------------------------------------------
      *   Амжилттай: { "status": "success", "html": "<div class='card'>..." }
      *   Алдаа:     { "status": "error", "message": "Алдааны тайлбар" }
      *

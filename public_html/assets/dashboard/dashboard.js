@@ -1,17 +1,17 @@
 /**
  * ================================================================
- * 📌 Raptor Dashboard - JavaScript Utilities
+ * Raptor Dashboard - JavaScript Utilities
  * ================================================================
  *
  * Энэ файл нь Dashboard UI-ийн нийтлэг функцуудыг нэгтгэсэн сан юм.
  *  Доорх функцууд нь: *
- *  ✔ AJAX Modal Loader
- *  ✔ Sidebar link activation
- *  ✔ Top Notification (NotifyTop)
- *  ✔ Button Spinner (spinNstop / growNstop)
- *  ✔ Scroll-To-Top Button
- *  ✔ copyContent() - текст copy хийх
- *  ✔ Dark mode auto-apply
+ *  AJAX Modal Loader
+ *  Sidebar link activation
+ *  Top Notification (NotifyTop)
+ *  Button Spinner (spinNstop / growNstop)
+ *  Scroll-To-Top Button
+ *  copyContent() - текст copy хийх
+ *  Dark mode auto-apply
  *
  * Raptor Dashboard бүхэн энэ файлыг залгаж ашиглана.
  *
@@ -19,25 +19,25 @@
  * өөрийн функцүүдийг ч нэмэх боломжтой.
  *
  * ---------------------------------------------------------------
- * ⚠️ Анхаарах зүйлс:
+ * Анхаарах зүйлс:
  * ---------------------------------------------------------------
- *  • Bootstrap modal механизм ашигладаг
- *  • <a data-bs-toggle="modal" data-bs-target="#static-modal"> 
+ *  * Bootstrap modal механизм ашигладаг
+ *  * <a data-bs-toggle="modal" data-bs-target="#static-modal"> 
  *      гэсэн линкүүд дээр AJAX ачаалалт ажиллана
- *  • Inline болон external <script> tag-уудыг response дотороос 
+ *  * Inline болон external <script> tag-уудыг response дотороос 
  *      автоматаар execution хийнэ
- *  • NotifyTop() нь системийн бүх popup notification-ийг орлодог
- *  • Button-ууд дээр .spinNstop() ашиглахад илүү амар
+ *  * NotifyTop() нь системийн бүх popup notification-ийг орлодог
+ *  * Button-ууд дээр .spinNstop() ашиглахад илүү амар
  * ================================================================
  */
 
-/* 🌙 DARK MODE ИДЭВХЖҮҮЛЭХ */
+/* DARK MODE ИДЭВХЖҮҮЛЭХ */
 if (localStorage.getItem('data-bs-theme') === 'dark') {
     document.body.setAttribute('data-bs-theme', 'dark');
 }
 
 /**
- * 📌 ajaxModal(link)
+ * ajaxModal(link)
  * -- Modal-ийн агуулгыг AJAX-аар ачаалж харуулна
  *
  * @description
@@ -109,7 +109,7 @@ function ajaxModal(link)
 }
 
 /**
- * 📌 activateLink(href)
+ * activateLink(href)
  * -- Sidebar-ийн идэвхтэй линк тодруулах
  * 
  * @param {string} href - Document link */
@@ -126,7 +126,7 @@ function activateLink(href)
 }
 
 /** 
- * 📣 NotifyTop(type, title, content)
+ * NotifyTop(type, title, content)
  * -- Дээд notification popup
  *
  * @param {string} type - success, danger, warning, primary
@@ -171,7 +171,7 @@ function NotifyTop(type, title, content, velocity = 5, delay = 2500)
     section.append(h5, closeX, contentDiv);
     document.body.appendChild(section);
 
-    /* анимэйшн … */
+    /* анимэйшн ... */
     const notifyHeight = section.offsetHeight;
     section.style.top = -notifyHeight + 'px';
 
@@ -199,7 +199,7 @@ function NotifyTop(type, title, content, velocity = 5, delay = 2500)
 }
 
 /**
- * 🔄 Button Spinner - spinNstop(), growNstop()
+ * Button Spinner - spinNstop(), growNstop()
  * 
  * @description
  *  Button дээр loader spinner тавиад, disable болгох.
@@ -300,7 +300,7 @@ function initScrollToTop(options = {}) {
 }
 
 /** 
- * 📋 copyContent(elementId)
+ * copyContent(elementId)
  * @description
  *  DOM текстийг clipboard руу хуулна
  *  
@@ -323,7 +323,7 @@ function copyContent(elem)
 }
 
 /**
- * 🚀 DOMContentLoaded:
+ * DOMContentLoaded:
  * -- Sidebar activate
  * -- static-modal reset
  * -- AJAX modal binding */

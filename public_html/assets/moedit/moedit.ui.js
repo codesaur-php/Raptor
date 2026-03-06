@@ -46,25 +46,26 @@ moedit.prototype._handlePaste = function(e) {
   const clipboardData = e.clipboardData || window.clipboardData;
   if (!clipboardData) return;
 
-  /* Зураг байгаа эсэхийг шалгах */
-  const items = clipboardData.items;
-  if (items) {
-    for (let i = 0; i < items.length; i++) {
-      if (items[i].type.indexOf('image') !== -1) {
-        /* Зургийг clipboard-аас авч upload хийх */
-        e.preventDefault();
-        const file = items[i].getAsFile();
-        if (file) {
-          this._uploadAndInsertImage(file);
+  /* HTML болон plain text контент авах */
+  const html = clipboardData.getData('text/html');
+  const plainText = clipboardData.getData('text/plain');
+
+  /* Зураг шалгах: зөвхөн HTML контент байхгүй үед (screenshot, copy image) */
+  if (!html || !html.trim()) {
+    const items = clipboardData.items;
+    if (items) {
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type.indexOf('image') !== -1) {
+          e.preventDefault();
+          const file = items[i].getAsFile();
+          if (file) {
+            this._uploadAndInsertImage(file);
+          }
+          return;
         }
-        return;
       }
     }
   }
-
-  /* HTML контент авах */
-  const html = clipboardData.getData('text/html');
-  const plainText = clipboardData.getData('text/plain');
 
   /* HTML байвал цэвэрлэж оруулах */
   if (html && html.trim()) {
@@ -82,37 +83,9 @@ moedit.prototype._handlePaste = function(e) {
         this._isMn ? 'Текст амжилттай орлоо. Гэхдээ Word доторх зураг хуулагдахгүй. Зургийг тусад нь хуулж оруулна уу.' : 'Text pasted successfully. However, images from Word cannot be copied. Please insert images separately.');
     }
 
-    /* Selection-д оруулах */
-    const selection = window.getSelection();
-    if (selection.rangeCount > 0) {
-      const range = selection.getRangeAt(0);
-      range.deleteContents();
-
-      /* Цэвэрлэсэн HTML оруулах */
-      const tempDiv = document.createElement('div');
-      tempDiv.innerHTML = cleanedHtml;
-
-      const fragment = document.createDocumentFragment();
-      let lastNode = null;
-      while (tempDiv.firstChild) {
-        lastNode = fragment.appendChild(tempDiv.firstChild);
-      }
-
-      range.insertNode(fragment);
-
-      /* Cursor-ийг төгсгөлд байрлуулах */
-      if (lastNode) {
-        const newRange = document.createRange();
-        newRange.setStartAfter(lastNode);
-        newRange.collapse(true);
-        selection.removeAllRanges();
-        selection.addRange(newRange);
-      }
-
-      /* onChange дуудах */
-      if (typeof this.opts.onChange === 'function') {
-        this.opts.onChange(this.getHTML());
-      }
+    /* Цэвэрлэсэн контент оруулах */
+    if (cleanedHtml) {
+      this._insertHtmlAtCursor(cleanedHtml);
     }
     return;
   }
@@ -126,43 +99,49 @@ moedit.prototype._handlePaste = function(e) {
     let resultHtml = '';
 
     if (lines.length === 1) {
-      /* Нэг мөр бол text node болгох */
       resultHtml = this._escapeHtml(lines[0]);
     } else {
-      /* Олон мөр бол paragraph болгох */
       resultHtml = lines.map(line => `<p>${this._escapeHtml(line)}</p>`).join('');
     }
 
-    /* Selection-д оруулах */
-    const selection = window.getSelection();
-    if (selection.rangeCount > 0) {
-      const range = selection.getRangeAt(0);
-      range.deleteContents();
-
-      const tempDiv = document.createElement('div');
-      tempDiv.innerHTML = resultHtml;
-
-      const fragment = document.createDocumentFragment();
-      let lastNode = null;
-      while (tempDiv.firstChild) {
-        lastNode = fragment.appendChild(tempDiv.firstChild);
-      }
-
-      range.insertNode(fragment);
-
-      if (lastNode) {
-        const newRange = document.createRange();
-        newRange.setStartAfter(lastNode);
-        newRange.collapse(true);
-        selection.removeAllRanges();
-        selection.addRange(newRange);
-      }
-
-      if (typeof this.opts.onChange === 'function') {
-        this.opts.onChange(this.getHTML());
-      }
+    if (resultHtml) {
+      this._insertHtmlAtCursor(resultHtml);
     }
   }
+};
+
+/**
+ * Cursor байрлалд HTML оруулах
+ * @param {string} html - Оруулах HTML
+ */
+moedit.prototype._insertHtmlAtCursor = function(html) {
+  const selection = window.getSelection();
+  if (!selection.rangeCount) return;
+
+  const range = selection.getRangeAt(0);
+  range.deleteContents();
+
+  const tempDiv = document.createElement('div');
+  tempDiv.innerHTML = html;
+
+  const fragment = document.createDocumentFragment();
+  let lastNode = null;
+  while (tempDiv.firstChild) {
+    lastNode = fragment.appendChild(tempDiv.firstChild);
+  }
+
+  range.insertNode(fragment);
+
+  /* Cursor-ийг төгсгөлд байрлуулах */
+  if (lastNode) {
+    const newRange = document.createRange();
+    newRange.setStartAfter(lastNode);
+    newRange.collapse(true);
+    selection.removeAllRanges();
+    selection.addRange(newRange);
+  }
+
+  this._emitChange();
 };
 
 /* ============================================
@@ -2351,7 +2330,7 @@ moedit.prototype._cleanToVanillaHTML = function(html) {
 };
 
 /* ============================================
-   AI OCR Dialog (Зураг сонгох → HTML)
+   AI OCR Dialog (Зураг сонгох -> HTML)
    ============================================ */
 
 moedit.prototype._ocr = async function() {
@@ -3868,14 +3847,14 @@ moedit.prototype._insertMap = function() {
       return input;
     }
 
-    /* Place URL → embed болгох */
+    /* Place URL -> embed болгох */
     const placeMatch = input.match(/google\.com\/maps\/place\/([^\/\?]+)/);
     if (placeMatch) {
       const place = placeMatch[1];
       return `https://www.google.com/maps/embed/v1/place?key=&q=${encodeURIComponent(place.replace(/\+/g, ' '))}`;
     }
 
-    /* Search URL → embed болгох */
+    /* Search URL -> embed болгох */
     const searchMatch = input.match(/google\.com\/maps\?q=([^&]+)/);
     if (searchMatch) {
       return `https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d10000!2d0!3d0!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sen!2s!4v1!5m2!1sen!2s&q=${searchMatch[1]}`;
@@ -4506,7 +4485,7 @@ moedit.prototype._insertPdf = async function() {
         throw new Error(this._isMn ? 'AI OCR текст олдсонгүй.' : 'AI OCR found no text.');
       }
 
-      infoEl.querySelector('small').textContent += ` • ${pageCount} ${config.pageText} (AI OCR)`;
+      infoEl.querySelector('small').textContent += ` \u2022 ${pageCount} ${config.pageText} (AI OCR)`;
 
       resultEl.innerHTML = newHtml;
       resultEl.style.display = 'block';

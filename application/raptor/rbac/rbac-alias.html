@@ -2,18 +2,18 @@
     RBAC - Role / Permission Matrix UI
 
     Энэ хуудас нь тухайн байгууллагын (alias) хүрээнд:
-      • Дүрүүдийн (roles) жагсаалт
-      • Зөвшөөрлүүд (permissions)
-      • Role -> Permission харьцааны матриц
-      • Тухайн матриц дээрх checkbox-ийг AJAX-оор хадгалах
-      • Холбогдох RBAC лог (dashboard_log) жагсаалтыг харуулах
+      * Дүрүүдийн (roles) жагсаалт
+      * Зөвшөөрлүүд (permissions)
+      * Role -> Permission харьцааны матриц
+      * Тухайн матриц дээрх checkbox-ийг AJAX-оор хадгалах
+      * Холбогдох RBAC лог (dashboard_log) жагсаалтыг харуулах
 
     Гол хувьсагчид:
       - alias       : RBAC тохируулах тухайн модулийн alias (жишээ: system, news г.м.)
       - title       : Нэмэлт гарчиг (жишээ: Organization name)
       - roles       : RBAC-ийн дүрүүдийн массив
       - permissions : Зөвшөөрлүүдийн массив
-      - role_permission[role_id][permission_id] : тухайн Role → Permission заалт байгаа эсэх
+      - role_permission[role_id][permission_id] : тухайн Role -> Permission заалт байгаа эсэх
       - user        : Нэвтэрсэн хэрэглэгчийн объект (Raptor\Authentication\User)
 -->
 
@@ -80,8 +80,8 @@
 
 <!--
     Дээд хэсгийн толгой мөр:
-      • Гарчиг: RBAC / alias / title
-      • Баруун талд: Role нэмэх / Permission нэмэх товчлуурууд
+      * Гарчиг: RBAC / alias / title
+      * Баруун талд: Role нэмэх / Permission нэмэх товчлуурууд
       Эдгээр нь modal (static-modal) онгойлгож, RBACController дахь
       insertRole() / insertPermission() action руу чиглэнэ.
 -->
@@ -164,7 +164,7 @@
                         <td class="text-center">
                             <!--
                                 role_permission[role_id][permission_id] is defined
-                                бол өөрөөр хэлбэл тухайн Role → Permission харьцаа
+                                бол өөрөөр хэлбэл тухайн Role -> Permission харьцаа
                                 өмнө нь бүртгэгдсэн бол checkbox CHECKED байна.
                             -->
                             <input
@@ -231,18 +231,18 @@
     document.addEventListener('DOMContentLoaded', function () {        
         /* RBAC матриц хүснэгтэд motable инициализаци хийе
            --------------------------------------------------------------
-           • #rbac_{alias} → тухайн RBAC модульд харгалзах хүснэгт
-           • freezeColumns: [0] → эхний баганыг (ROLE нэрс) наалдацтай болгоно */
+           * #rbac_{alias} -> тухайн RBAC модульд харгалзах хүснэгт
+           * freezeColumns: [0] -> эхний баганыг (ROLE нэрс) наалдацтай болгоно */
         const curriculumTable = new motable('#rbac_{{ alias }}', {freezeColumns: [0]});
         
         /**
          * RolePermission toggle handler
          *
          * Тухайн checkbox дарагдмагц:
-         *   • request overlay-г асаана
-         *   • role_id, permission_id-тай FormData үүсгэнэ
-         *   • checked бол POST, uncheck бол DELETE хүсэлт явуулна
-         *   • Амжилт/алдааны мэдээг NotifyTop() ашиглан харуулна
+         *   * request overlay-г асаана
+         *   * role_id, permission_id-тай FormData үүсгэнэ
+         *   * checked бол POST, uncheck бол DELETE хүсэлт явуулна
+         *   * Амжилт/алдааны мэдээг NotifyTop() ашиглан харуулна
          */
         const setRolePermission = function () {
             const requesting = document.querySelector('div.requesting');
@@ -283,15 +283,15 @@
         /**
          * RBAC Logger хэсэг:
          *   - Зөвхөн logger UL элемент байвал ажиллана
-         *   - logs-retrieve → RBAC холбоотой log жагсаалт татна
-         *   - logs-view → нэг log-ийг modal-оор дэлгэрэнгүй үзүүлэхэд ашиглана
+         *   - logs-retrieve -> RBAC холбоотой log жагсаалт татна
+         *   - logs-view -> нэг log-ийг modal-оор дэлгэрэнгүй үзүүлэхэд ашиглана
          */
         const logger = document.querySelector('ul.logger-protocol');
         if (logger && logger.tagName === 'UL') {
             const logsRetrieveLink = `{{ 'logs-retrieve'|link }}`;
             const logsViewLink = `{{ 'logs-view'|link }}`;
 
-            /* logger-dashboard → "dashboard" хэсгийг table parameter болгон ашиглана */
+            /* logger-dashboard -> "dashboard" хэсгийг table parameter болгон ашиглана */
             const logger_id = logger.id ?? '';
             const table = logger_id.substring(logger_id.indexOf('-') + 1);
             if (!table) return;

@@ -26,8 +26,8 @@ class Application extends \Raptor\Application
      * Dashboard модуль ажиллаж эхлэхэд хамгийн түрүүнд ачаалагдана.
      *
      * Процесс:
-     *  1) parent::__construct() → Raptor Framework-ийн үндсэн engine асаана
-     *  2) $this->use(Home\HomeRouter::class) → Dashboard-ийн үндсэн router-ийг бүртгэнэ
+     *  1) parent::__construct() -> Raptor Framework-ийн үндсэн engine асаана
+     *  2) $this->use(Home\HomeRouter::class) -> Dashboard-ийн үндсэн router-ийг бүртгэнэ
      *
      * Нэмэх боломж:
      *  - Хэрэв дараа нь SettingsRouter, UserRouter гэх мэт нэмэх бол

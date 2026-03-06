@@ -12,17 +12,17 @@ use codesaur\DataObject\Column;
  * нэр, alias, module, тайлбар зэрэг мета мэдээллийн хамт хадгалдаг.
  *
  * RBAC архитектур дахь үүрэг:
- * ───────────────────────────────────────────────────────────────
- *  - Permission: “юу хийх эрхтэй вэ?” (жишээ: user_insert, content_delete)
+ * ---------------------------------------------------------------
+ *  - Permission: "юу хийх эрхтэй вэ?" (жишээ: user_insert, content_delete)
  *  - Role: Permission-үүдийн багц (жишээ: admin, editor, viewer)
- *  - UserRole: хэрэглэгч → role холболт
+ *  - UserRole: хэрэглэгч -> role холболт
  *
  * Permissions хүснэгт нь системд ажиллах бүх эрхийн
  * жагсаалтын authoritative source болно.
  *
  *
  * Баганууд:
- * ───────────────────────────────────────────────────────────────
+ * ---------------------------------------------------------------
  * id            - bigint, primary key
  *
  * name          - string (128)  
@@ -41,12 +41,12 @@ use codesaur\DataObject\Column;
  *                 Жишээ: "system", "general"
  *
  * created_at    - datetime  
- * created_by    - FK → users.id  
+ * created_by    - FK -> users.id  
  *                 Permission-г үүсгэсэн хэрэглэгч.  
  *
  *
  * __initial(): анхны Permission seed үүсгэнэ
- * ───────────────────────────────────────────────────────────────
+ * ---------------------------------------------------------------
  * Модель анх үүссэн үед (хүснэгт шинээр үүсэх үед) default permission-үүдийг
  * систем автоматаар бүртгэнэ.
  *
@@ -63,9 +63,9 @@ use codesaur\DataObject\Column;
  *
  *
  * Security онцлогууд:
- * ───────────────────────────────────────────────────────────────
- *  - Permission name нь unique → давхардлаас хамгаалсан
- *  - created_by → users.id FK → audit trail
+ * ---------------------------------------------------------------
+ *  - Permission name нь unique -> давхардлаас хамгаалсан
+ *  - created_by -> users.id FK -> audit trail
  *  - Seed permission-үүдийг хэтрүүлэн өөрчлөхөөс model хамгаална
  *  - Permissions хүснэгт нь хэрэглэгчидтэй шууд холбогдохгүй,
  *    role дээр дамжуулж хэрэглэгдэнэ
@@ -99,7 +99,7 @@ class Permissions extends Model
      * __initial() - Permission хүснэгт шинээр үүсэх үед FK болон анхны өгөгдөл үүсгэх hook.
      *
      * FK:
-     *   rbac_permissions.created_by → users.id
+     *   rbac_permissions.created_by -> users.id
      *       ON DELETE SET NULL
      *       ON UPDATE CASCADE
      *

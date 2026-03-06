@@ -1,4 +1,4 @@
-<!-- ✅ Хэрэглэгч шинээр үүсгэх формын толгой хэсэг -->
+<!-- Хэрэглэгч шинээр үүсгэх формын толгой хэсэг -->
 <div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-2 shadow">
     <h3 class="px-2 my-auto fs-6 text-success">
         <i class="bi bi-person-plus-fill"></i> {{ 'create-new-user'|text }}
@@ -16,7 +16,7 @@
     </div>
 </div>
 
-<!-- ✅ Tab цэс: Хувийн мэдээлэл / Зураг / Байгууллага -->
+<!-- Tab цэс: Хувийн мэдээлэл / Зураг / Байгууллага -->
 <ul class="nav nav-tabs" role="tablist">
     <li class="nav-item">
         <a class="nav-link active show" data-bs-toggle="tab" href="#tab-personal">
@@ -35,10 +35,10 @@
     </li>
 </ul>
 
-<!-- ✅ Хэрэглэгч шинээр үүсгэх үндсэн FORM -->
+<!-- Хэрэглэгч шинээр үүсгэх үндсэн FORM -->
 <form class="needs-validation pt-3" novalidate id="user_insert" action="{{ 'user-insert'|link }}" method="POST" enctype="multipart/form-data">
     <div class="tab-content">
-        <!-- 🧷 1-р tab: Хувийн мэдээлэл -->
+        <!-- 1-р tab: Хувийн мэдээлэл -->
         <div class="tab-pane active show" id="tab-personal" role="tabpanel">
             <div class="mb-3">
                 <label class="form-label">{{ 'login'|text }}</label>
@@ -75,7 +75,7 @@
             </div>
         </div>
 
-        <!-- 🧷 2-р tab: Хэрэглэгчийн зураг -->
+        <!-- 2-р tab: Хэрэглэгчийн зураг -->
         <div class="tab-pane" id="tab-picture" role="tabpanel">
             <div class="input-group">
                 <!-- Зураг сонгоход харагдах файлын нэр -->
@@ -95,7 +95,7 @@
             <img class="img-thumbnail img-fluid" id="photo_preview" src="" style="display:none;">
         </div>
 
-        <!-- 🧷 3-р tab: Байгууллага сонгох хэсэг -->
+        <!-- 3-р tab: Байгууллага сонгох хэсэг -->
         <div class="tab-pane" id="tab-organization" role="tabpanel">
             <label class="form-label">{{ 'organization'|text }}</label>
             <select class="form-control" name="organization">
@@ -109,7 +109,7 @@
     </div>
 </form>
 
-<!-- ✅ Доод хэсгийн Submit / Буцах товчнууд (дээрхтэй ижил функцтэй) -->
+<!-- Доод хэсгийн Submit / Буцах товчнууд (дээрхтэй ижил функцтэй) -->
 <div class="rounded p-2 mt-3 shadow">
     {% if user.can('system_user_insert') %}
         <button class="submit-insert btn btn-success text-uppercase shadow-sm">
@@ -148,7 +148,7 @@
             photoName.value = '';
         }
 
-        /* "Сонгох" → "Өөрчлөх" */
+        /* "Сонгох" -> "Өөрчлөх" */
         photoBrowse.innerHTML = `{{ 'change'|text|e }}`;
 
         /* Хэрэв дараагийн sibling нь BUTTON биш бол "Устгах" товч шинээр үүсгэнэ */
@@ -254,7 +254,7 @@
 
             /* ----------------------------------------------
              *  Fetch API ашиглан backend рүү хүсэлт илгээх
-             *  - this.action → form action URL
+             *  - this.action -> form action URL
              *  - method атрибут байвал ашиглана, үгүй бол POST
              * ---------------------------------------------- */
             fetch(this.action, {

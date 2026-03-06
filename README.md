@@ -22,21 +22,21 @@ Clean architecture object-oriented web development framework
 
 ### Гол боломжууд
 
-- ✔ PSR-7/PSR-15 middleware суурьтай архитектур
-- ✔ JWT + Session нэвтрэлт баталгаажуулалт
-- ✔ RBAC (Role-Based Access Control) эрхийн удирдлага
-- ✔ Олон хэл дэмжлэг (Localization)
-- ✔ CMS модулиуд: Мэдээ, Хуудас, Файл, Лавлах, Тохиргоо
-- ✔ MySQL / PostgreSQL / SQLite дэмжлэг
-- ✔ Twig template engine
-- ✔ OpenAI интеграци (moedit editor)
-- ✔ Зураг optimize хийх (GD)
-- ✔ PSR-3 лог систем
+- PSR-7/PSR-15 middleware суурьтай архитектур
+- JWT + Session нэвтрэлт баталгаажуулалт
+- RBAC (Role-Based Access Control) эрхийн удирдлага
+- Олон хэл дэмжлэг (Localization)
+- CMS модулиуд: Мэдээ, Хуудас, Файл, Лавлах, Тохиргоо
+- MySQL / PostgreSQL / SQLite дэмжлэг
+- Twig template engine
+- OpenAI интеграци (moedit editor)
+- Зураг optimize хийх (GD)
+- PSR-3 лог систем
 
 ### Дэлгэрэнгүй мэдээлэл
 
-- 📖 [Бүрэн танилцуулга](docs/mn/README.md) - Суулгах, тохируулах, архитектур, хэрэглээ
-- 📚 [API тайлбар](docs/mn/api.md) - Бүх модуль, класс, методуудын дэлгэрэнгүй
+- [Бүрэн танилцуулга](docs/mn/README.md) - Суулгах, тохируулах, архитектур, хэрэглээ
+- [API тайлбар](docs/mn/api.md) - Бүх модуль, класс, методуудын дэлгэрэнгүй
 
 ---
 
@@ -48,21 +48,21 @@ The framework operates in two layers - **Web** (public website) and **Dashboard*
 
 ### Key Features
 
-- ✔ PSR-7/PSR-15 middleware-based architecture
-- ✔ JWT + Session authentication
-- ✔ RBAC (Role-Based Access Control)
-- ✔ Multi-language support (Localization)
-- ✔ CMS modules: News, Pages, Files, References, Settings
-- ✔ MySQL / PostgreSQL / SQLite support
-- ✔ Twig template engine
-- ✔ OpenAI integration (moedit editor)
-- ✔ Image optimization (GD)
-- ✔ PSR-3 logging system
+- PSR-7/PSR-15 middleware-based architecture
+- JWT + Session authentication
+- RBAC (Role-Based Access Control)
+- Multi-language support (Localization)
+- CMS modules: News, Pages, Files, References, Settings
+- MySQL / PostgreSQL / SQLite support
+- Twig template engine
+- OpenAI integration (moedit editor)
+- Image optimization (GD)
+- PSR-3 logging system
 
 ### Documentation
 
-- 📖 [Full Documentation](docs/en/README.md) - Installation, configuration, architecture, usage
-- 📚 [API Reference](docs/en/api.md) - All modules, classes, and methods
+- [Full Documentation](docs/en/README.md) - Installation, configuration, architecture, usage
+- [API Reference](docs/en/api.md) - All modules, classes, and methods
 
 ---
 
@@ -114,49 +114,55 @@ RAPTOR_JWT_LIFETIME=2592000
 
 ```
 public_html/index.php
- ├── /dashboard/* → Dashboard\Application (Admin Panel)
- │    ├── Middleware stack (Session, JWT, RBAC, Localization, Settings)
- │    ├── Routers (Login, Users, Organization, RBAC, Content, Logs)
- │    └── Controllers → Twig Templates
- │
- └── /* → Web\Application (Public Website)
-      ├── Middleware stack (Session, Localization, Settings)
-      ├── HomeRouter (/, /page/{id}, /news/{id}, /contact, /language/{code})
-      └── TemplateController → Twig Templates
+ |-- /dashboard/* -> Dashboard\Application (Admin Panel)
+ |    |-- Middleware stack (Session, JWT, RBAC, Localization, Settings)
+ |    |-- Routers (Login, Users, Organization, RBAC, Content, Logs)
+ |    \-- Controllers -> Twig Templates
+ |
+ \-- /* -> Web\Application (Public Website)
+      |-- Middleware stack (Session, Localization, Settings)
+      |-- HomeRouter (/, /page/{id}, /news/{id}, /contact, /language/{code})
+      \-- TemplateController -> Twig Templates
 ```
 
-**Request Flow:** index.php → Application → Middleware chain → Router match → Controller → Response
+**Request Flow:** index.php -> Application -> Middleware chain -> Router match -> Controller -> Response
 
 ### Directory Structure
 
 ```
 raptor/
-├── application/
-│   ├── raptor/              # Core framework (Controllers, Models, Middleware)
-│   │   ├── authentication/  # Login, JWT, Session
-│   │   ├── content/         # CMS (files, news, pages, references, settings)
-│   │   ├── localization/    # Languages & translations
-│   │   ├── organization/    # Organization management
-│   │   ├── rbac/            # Roles & permissions
-│   │   ├── user/            # User management
-│   │   ├── template/        # Dashboard UI
-│   │   ├── log/             # Logging
-│   │   └── mail/            # Email
-│   ├── dashboard/           # Dashboard application
-│   └── web/                 # Public website application
-├── public_html/             # Document root
-│   ├── index.php            # Entry point
-│   ├── .htaccess            # Apache URL rewrite
-│   └── assets/              # CSS, JS (dashboard, moedit, motable)
-├── docs/
-│   ├── conf.example/        # Server configuration examples
-│   ├── en/                  # English documentation
-│   └── mn/                  # Mongolian documentation
-├── logs/                    # Error logs
-├── private/                 # Protected files
-├── composer.json            # Dependencies
-└── LICENSE                  # MIT License
+|-- application/
+|   |-- raptor/              # Core framework (Controllers, Models, Middleware)
+|   |   |-- authentication/  # Login, JWT, Session
+|   |   |-- content/         # CMS (files, news, pages, references, settings)
+|   |   |-- localization/    # Languages & translations
+|   |   |-- organization/    # Organization management
+|   |   |-- rbac/            # Roles & permissions
+|   |   |-- user/            # User management
+|   |   |-- template/        # Dashboard UI
+|   |   |-- log/             # Logging
+|   |   \-- mail/            # Email
+|   |-- dashboard/           # Dashboard application
+|   \-- web/                 # Public website application
+|-- public_html/             # Document root
+|   |-- index.php            # Entry point
+|   |-- .htaccess            # Apache URL rewrite
+|   \-- assets/              # CSS, JS (dashboard, moedit, motable)
+|-- docs/
+|   |-- conf.example/        # Server configuration examples
+|   |-- en/                  # English documentation
+|   \-- mn/                  # Mongolian documentation
+|-- logs/                    # Error logs
+|-- private/                 # Protected files
+|-- composer.json            # Dependencies
+\-- LICENSE                  # MIT License
 ```
+
+---
+
+## History
+
+> **Note:** This package is the successor of `codesaur/indodaptor` (500+ installs), which has been removed from Packagist. A new package `codesaur/raptor` was created with a full code refactor, as the name "Indoraptor" is a trademark of Universal Pictures.
 
 ---
 
@@ -174,16 +180,16 @@ This framework was developed with the sponsorship of [**Gerege Systems LLC**](ht
 
 ## Changelog
 
-- 📝 [CHANGELOG.md](CHANGELOG.md) - Version history
+- [CHANGELOG.md](CHANGELOG.md) - Version history
 
 ## Community
 
-- 💬 [Discussions](https://github.com/orgs/codesaur-php/discussions) - Ask questions, share ideas, get help
+- [Discussions](https://github.com/orgs/codesaur-php/discussions) - Ask questions, share ideas, get help
 
 ## Contributing & Security
 
-- 🤝 [Contributing Guide](.github/CONTRIBUTING.md)
-- 🔐 [Security Policy](.github/SECURITY.md)
+- [Contributing Guide](.github/CONTRIBUTING.md)
+- [Security Policy](.github/SECURITY.md)
 
 ## License
 
@@ -192,8 +198,8 @@ This project is licensed under the MIT License.
 ## Author
 
 **Narankhuu**  
-📧 codesaur@gmail.com  
-📱 [+976 99000287](https://wa.me/97699000287)  
-🌐 https://github.com/codesaur
+Email: codesaur@gmail.com  
+Phone: [+976 99000287](https://wa.me/97699000287)  
+Web: https://github.com/codesaur
 
-🦖 **codesaur ecosystem:** https://codesaur.net
+**codesaur ecosystem:** https://codesaur.net

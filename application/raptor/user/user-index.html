@@ -158,7 +158,7 @@
                         </a>`;
                 }
                 
-                /* system_coder → бүх байгууллагын гишүүн мэт */
+                /* system_coder -> бүх байгууллагын гишүүн мэт */
                 if (hasSystemCoder) {
                     orgUserHtml += `
                         <span class="badge bg-secondary fw-normal shadow-sm">
@@ -220,7 +220,7 @@
                             </a>`);
                     }
 
-                    /* Нууц үг солих → зөвхөн өөрийнх эсвэл system_coder эрхтэй бол */
+                    /* Нууц үг солих -> зөвхөн өөрийнх эсвэл system_coder эрхтэй бол */
                     if (profile.id === authUserId || authSystemCoder) {
                         buttons.push(`
                             <a class="ajax-modal btn btn-sm btn-dark mt-1 shadow-sm"
@@ -257,7 +257,7 @@
             users.setBody(rowsHTML);
             
             /* Хүснэгт ачаалагдсан толгойн хэсгийн баруун талын
-             * action дээрх “d-none” байсан товчнуудыг харагдуулна */
+             * action дээрх "d-none" байсан товчнуудыг харагдуулна */
             document.querySelectorAll('.btn-users.d-none').forEach(btn => {
                 btn.classList.remove('d-none');
             });
@@ -320,7 +320,7 @@
                     allowOutsideClick: () => !Swal.isLoading(),
                     backdrop: true,
                     preConfirm: (reason) => {
-                        /* AJAX → deactivate */
+                        /* AJAX -> deactivate */
                         return fetch(
                             `{{ 'user-deactivate'|link }}`,
                             {

@@ -5,21 +5,21 @@ namespace Web;
 /**
  * Class Application
  * ---------------------------------------------------------
- * 🌐 Raptor Framework - Веб давхаргын үндсэн Application класс.
+ * Raptor Framework - Веб давхаргын үндсэн Application класс.
  *
- * Энэ класс нь таны веб системийн “үндсэн эхлэл” бөгөөд
+ * Энэ класс нь таны веб системийн "үндсэн эхлэл" бөгөөд
  * HTTP Layer дээр хэрэгжих бүх Middleware болон Router-ийг
  * зөв дарааллаар бүртгэж ажиллуулдаг.
  *
- * ✔ Middleware-үүдийг дарааллаар бүртгэн идэвхжүүлнэ  
- * ✔ Template хөдөлгүүрийн Exception Handler ашиглана  
- * ✔ Өгөгдлийн сангийн холболтыг автоматаар үүсгэнэ  
- * ✔ Session, Localization, Settings зэрэг системийн суурь
+ * Middleware-үүдийг дарааллаар бүртгэн идэвхжүүлнэ  
+ * Template хөдөлгүүрийн Exception Handler ашиглана  
+ * Өгөгдлийн сангийн холболтыг автоматаар үүсгэнэ  
+ * Session, Localization, Settings зэрэг системийн суурь
  *   давхаргыг идэвхжүүлнэ  
- * ✔ Эцэст нь вебийн үндсэн маршрутыг бүртгэнэ
+ * Эцэст нь вебийн үндсэн маршрутыг бүртгэнэ
  *
  * ---------------------------------------------------------
- * 🧩 Middleware-ийн дарааллын тайлбар
+ * Middleware-ийн дарааллын тайлбар
  * ---------------------------------------------------------
  * 1) **Template\ExceptionHandler**  
  *    - Template ашиглан error page рендерлэх  
@@ -47,10 +47,10 @@ namespace Web;
  *    - Хуудсуудад дамжуулах болно  
  *
  * ---------------------------------------------------------
- * 🚦 Router бүртгэх
+ * Router бүртгэх
  * ---------------------------------------------------------
- * ✔ `HomeRouter` - вэбийн үндсэн хуудсуудын маршрут  
- *    / → /home, contact, language гэх мэт  
+ * `HomeRouter` - вэбийн үндсэн хуудсуудын маршрут  
+ *    / -> /home, contact, language гэх мэт  
  *
  * Хэрвээ та өөр Router нэмэх бол:
  *
@@ -61,11 +61,11 @@ namespace Web;
  * гэх мэтээр нэмж болно.
  *
  * ---------------------------------------------------------
- * 🧑‍💻 Хөгжүүлэгчид зориулсан тэмдэглэл
+ * Хөгжүүлэгчид зориулсан тэмдэглэл
  * ---------------------------------------------------------
- * ✔ Application нь Middleware-үүдийг **өргөтгөх боломжтой**  
- * ✔ Router-уудыг хүссэнээрээ бүлэглэн зохион байгуулж болно  
- * ✔ Custom exception handler бичээд Application->use() ашиглан  
+ * Application нь Middleware-үүдийг **өргөтгөх боломжтой**  
+ * Router-уудыг хүссэнээрээ бүлэглэн зохион байгуулж болно  
+ * Custom exception handler бичээд Application->use() ашиглан  
  *   override хийж бүртгэж болно  
  *
  * @package Web
@@ -76,35 +76,35 @@ class Application extends \codesaur\Http\Application\Application
     {
         parent::__construct();
         
-        // 🎭 Template тулгуурласан Error Handler
+        // Template тулгуурласан Error Handler
         $this->use(new Template\ExceptionHandler());
         
-        // 🗄️ Database connection (MySQL, PostgreSQL, эсвэл SQLite)
+        // Database connection (MySQL, PostgreSQL, эсвэл SQLite)
         $this->use(new \Raptor\MySQLConnectMiddleware()); 
-        // → Хэрэв PostgreSQL ашиглавал:
+        // -> Хэрэв PostgreSQL ашиглавал:
         // $this->use(new \Raptor\PostgresConnectMiddleware());
-        // → Хэрэв SQLite ашиглавал:
+        // -> Хэрэв SQLite ашиглавал:
         // $this->use(new \Raptor\SQLiteConnectMiddleware());
         //
-        // ⚠️  Анхаарах зүйлс:
+        //  Анхаарах зүйлс:
         //     - Зөвхөн НЭГ database middleware ашиглах ёстой
         //     - SQLite ашиглах тохиолдолд Model классуудын __initial дээрх FK constraint-ууд
         //       автоматаар алгасах болно (SQLite дээр ALTER TABLE ... ADD CONSTRAINT
         //       дэмжихгүй тул)
 
-        // 📦 Container middleware (PDO шаардлагатай тул Database-ийн дараа)
+        // Container middleware (PDO шаардлагатай тул Database-ийн дараа)
         $this->use(new \Raptor\ContainerMiddleware());
 
-        // 🔐 Session middleware
+        // Session middleware
         $this->use(new SessionMiddleware());
 
-        // 🌍 Localization middleware (mn/en ...)
+        // Localization middleware (mn/en ...)
         $this->use(new LocalizationMiddleware());
 
-        // ⚙️ System settings middleware (branding, favicon, footer...)
+        // System settings middleware (branding, favicon, footer...)
         $this->use(new \Raptor\Content\SettingsMiddleware());
 
-        // 🏠 Вебийн үндсэн маршрут
+        // Вебийн үндсэн маршрут
         $this->use(new Home\HomeRouter());
     }
 }

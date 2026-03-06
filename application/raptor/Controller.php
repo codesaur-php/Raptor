@@ -19,24 +19,24 @@ use Raptor\Log\Logger;
  *
  * Энэ анги нь дараах чухал боломжуудыг нийтлэг байдлаар хангана:
  *
- *  ────────────────────────────────────────────────────────────────
- *  ✔ PDO холболт (DB access)
- *  ✔ Нэвтэрсэн хэрэглэгчийн мэдээлэл (User объект)
- *  ✔ RBAC эрх шалгах (isUser / isUserCan гэх мэт)
- *  ✔ Route линк үүсгэх (generateRouteLink)
- *  ✔ Localization (text(), getLanguageCode())
- *  ✔ Twig template рендерлэх тусгай wrapper (twigTemplate)
- *  ✔ JSON response (respondJSON)
- *  ✔ Redirect хийх (redirectTo)
- *  ✔ Рапторлог (raptorlog) - системийн протокол хөтлөх
- *  ✔ Алдаа логлох (errorLog)
- *  ────────────────────────────────────────────────────────────────
+ *  ----------------------------------------------------------------
+ *  PDO холболт (DB access)
+ *  Нэвтэрсэн хэрэглэгчийн мэдээлэл (User объект)
+ *  RBAC эрх шалгах (isUser / isUserCan гэх мэт)
+ *  Route линк үүсгэх (generateRouteLink)
+ *  Localization (text(), getLanguageCode())
+ *  Twig template рендерлэх тусгай wrapper (twigTemplate)
+ *  JSON response (respondJSON)
+ *  Redirect хийх (redirectTo)
+ *  Рапторлог (raptorlog) - системийн протокол хөтлөх
+ *  Алдаа логлох (errorLog)
+ *  ----------------------------------------------------------------
  *
  * Raptor-ийн бүх Controller-ууд энэ ангийг өргөтгөснөөр
  * дээрх боломжуудыг нэг мөр ашиглах боломжтой болдог.
  *
  * --------------------------------------------------------------
- * ⚙ PDO холболт хэрхэн ирдэг вэ?
+ * PDO холболт хэрхэн ирдэг вэ?
  * --------------------------------------------------------------
  *  Raptor\Controller нь:
  *
@@ -57,7 +57,7 @@ use Raptor\Log\Logger;
  *
  *  хэлбэрээр автоматаар авч `$this->pdo` болгон тохируулдаг.
  *
- * ✔ Үүний ачаар энэ Controller-оос удамшсан бүх контроллер дотор Model-классуудыг:
+ * Үүний ачаар энэ Controller-оос удамшсан бүх контроллер дотор Model-классуудыг:
  *      new UsersModel($this->pdo)
  *      new Roles($this->pdo)
  *      new OrganizationModel($this->pdo)
@@ -253,12 +253,12 @@ abstract class Controller extends \codesaur\Http\Application\Controller
      * Localization key-г орчуулаад буцаах.
      *
      * Анхаар: LocalizationMiddleware нь орчуулгын текстүүдийг
-     * request attributes → ['localization']['text'] массивт inject хийгээгүй бол
+     * request attributes -> ['localization']['text'] массивт inject хийгээгүй бол
      * тухайн текст олдохгүй бөгөөд:
-     *   → $default утга эсвэл {key} форматаар буцна
+     *   -> $default утга эсвэл {key} форматаар буцна
      *
      *   - Хөгжүүлэлтийн горимд (CODESAUR_DEVELOPMENT = true)
-     *       → "TEXT NOT FOUND: key" гэж system лог руу бичнэ
+     *       -> "TEXT NOT FOUND: key" гэж system лог руу бичнэ
      *
      * @param string $key       Орчуулгын түлхүүр
      * @param mixed  $default   Түлхүүр олдохгүй үед буцах утга
@@ -283,10 +283,10 @@ abstract class Controller extends \codesaur\Http\Application\Controller
      * Энэ функц нь TwigTemplate объектыг үүсгээд түүнд нийтлэг хувьсагчдыг
      * автоматаар дамжуулна. Үүнд:
      *
-     *   - user             → Нэвтэрсэн хэрэглэгчийн объект (User)
-     *   - index            → Системийн суурин зам (script path)
-     *   - localization     → Хэл / орчуулгын мэдээлэл
-     *   - request          → Одоогийн хүсэлтийн URL зам
+     *   - user             -> Нэвтэрсэн хэрэглэгчийн объект (User)
+     *   - index            -> Системийн суурин зам (script path)
+     *   - localization     -> Хэл / орчуулгын мэдээлэл
+     *   - request          -> Одоогийн хүсэлтийн URL зам
      *
      * Эдгээр бүх өгөгдөл нь PSR-7 стандартын дагуу
      * ServerRequestInterface::getAttribute() API-г ашиглан
@@ -294,8 +294,8 @@ abstract class Controller extends \codesaur\Http\Application\Controller
      * request attributes дээр inject хийгдсэн байдаг.
      *
      * Мөн дараах Twig filter-үүдийг бүртгэж өгнө:
-     *   - {{ 'key'|text }}     → Localization орчуулга
-     *   - {{ 'route'|link() }} → Route name ашиглан URL үүсгэх
+     *   - {{ 'key'|text }}     -> Localization орчуулга
+     *   - {{ 'route'|link() }} -> Route name ашиглан URL үүсгэх
      *
      * @param string $template  Рендерлэх template файл
      * @param array  $vars      Template-д дамжуулах нэмэлт хувьсагчид
@@ -330,31 +330,31 @@ abstract class Controller extends \codesaur\Http\Application\Controller
      * ----------------------------------------------------------------------------
      * Энэ функц нь API болон AJAX хариултыг стандартаар нэг хэлбэрээр өгөх/хэвлэх зорилготой.
      *
-     *  ✔ HTTP Response Code-г динамикаар тохируулна
-     *  ✔ Content-Type: application/json header-ыг зөв тохируулна
-     *  ✔ headers_sent() → Apache/Nginx/CLI дээр header аль хэдийн илгээгдсэн эсэхийг шалгана
-     *  ✔ json_encode алдаа өгсөн тохиолдолд хоосон JSON `{}` дамжуулна (алдаанаас сэргийлнэ)
+     *  HTTP Response Code-г динамикаар тохируулна
+     *  Content-Type: application/json header-ыг зөв тохируулна
+     *  headers_sent() -> Apache/Nginx/CLI дээр header аль хэдийн илгээгдсэн эсэхийг шалгана
+     *  json_encode алдаа өгсөн тохиолдолд хоосон JSON `{}` дамжуулна (алдаанаас сэргийлнэ)
      *
      * Хэн ашиглах вэ?
-     *  - Controller-уудаас AJAX/FETCH хариу өгөх үед (Users, RBAC, Menu…)
+     *  - Controller-уудаас AJAX/FETCH хариу өгөх үед (Users, RBAC, Menu...)
      *  - Modal / API endpoint-ууд
-     *  - Форм submit → JSON хариу
+     *  - Форм submit -> JSON хариу
      *
-     * ⚠ `$code` параметр нь int|string гэж заасан шалтгаан:
+     * `$code` параметр нь int|string гэж заасан шалтгаан:
      * ----------------------------------------------------
      *  Controller доторх Exception-уудын `$e->getCode()` нь заримдаа:
-     *    • int (жишээ нь: 400, 401, 500)
-     *    • string (жишээ: 'invalid-email', 'duplication', 'DB-ERR')
+     *    * int (жишээ нь: 400, 401, 500)
+     *    * string (жишээ: 'invalid-email', 'duplication', 'DB-ERR')
      * байдлаар ирдэг.
      *
      * PHP алдааны код string байх боломжтой учраас method signature-г
-     *   → `int|string $code`
+     *   -> `int|string $code`
      * гэж тодорхойлох нь зөв.
      *
      * Гэхдээ:
-     *   ✔ HTTP статус код зөвхөн integer байх ёстой
-     *   ✔ string кодыг HTTP code болгон ашиглах боломжгүй
-     *   ✔ Тиймээс string байвал status code-д ямар ч нөлөө үзүүлэхгүй (IGNORE)
+     *   HTTP статус код зөвхөн integer байх ёстой
+     *   string кодыг HTTP code болгон ашиглах боломжгүй
+     *   Тиймээс string байвал status code-д ямар ч нөлөө үзүүлэхгүй (IGNORE)
      *
      * @param array      $response  Клиентэд буцаагдах JSON structure
      * @param int|string $code      HTTP status code. 
@@ -368,13 +368,13 @@ abstract class Controller extends \codesaur\Http\Application\Controller
             // HTTP статус кодыг зөв оноох
             // 
             // Асуудал:
-            //  - $code 0 бол → default 200 OK
+            //  - $code 0 бол -> default 200 OK
             //  - $code int биш бол алгасна
-            //  - STATUS_XXX гэж ReasonPhrase class доторх тогтмол байвал → HTTP code-ыг онооно
+            //  - STATUS_XXX гэж ReasonPhrase class доторх тогтмол байвал -> HTTP code-ыг онооно
             //
             // Example:
-            //  - respondJSON([..], 403) → HTTP 403 Forbidden
-            //  - respondJSON([..], 200) → HTTP 200 OK
+            //  - respondJSON([..], 403) -> HTTP 403 Forbidden
+            //  - respondJSON([..], 200) -> HTTP 200 OK
             if (!empty($code)
                 && \is_int($code)
                 && $code != 200

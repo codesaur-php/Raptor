@@ -212,7 +212,7 @@ const btnBack = document.querySelector('.modal-footer #back');
 const btnContinue = document.querySelector('.modal-footer #continue');
 const btnConfirm = document.querySelector('.modal-footer #confirm');
 
-/* Live update for CODE → FLAG */
+/* Live update for CODE -> FLAG */
 codeInput.addEventListener('input', function () {
     const confirmFlag = document.querySelector('#confirmPanel p.lang_flag');
     const confirmCode = document.querySelector('#confirmPanel input[name="code"]');
@@ -232,22 +232,22 @@ codeInput.addEventListener('input', function () {
     }
 });
 
-/* Mirror locale → confirm panel */
+/* Mirror locale -> confirm panel */
 localeInput.addEventListener('input', function () {
     document.querySelector('#confirmPanel input[name="locale"]').value = this.value;
 });
 
-/* Mirror name → confirm panel */
+/* Mirror name -> confirm panel */
 nameInput.addEventListener('input', function () {
     document.querySelector('#confirmPanel input[name="title"]').value = this.value;
 });
 
-/* Mirror description → confirm panel */
+/* Mirror description -> confirm panel */
 descriprionInput.addEventListener('input', function () {
     document.querySelector('#confirmPanel input[name="description"]').value = this.value;
 });
 
-/* Select mother language → update flag + code */
+/* Select mother language -> update flag + code */
 copySelect.onchange = function () {
     const copyFlag = document.querySelector('#settingsPanel p.copy_flag');
     const copyCode = document.querySelector('#settingsPanel input.copy_code');
@@ -310,7 +310,7 @@ headConfirm.addEventListener('click', function () {
 
 headGeneral.click(); /* Initialize first tab */
 
-/* CONFIRM → AJAX POST */
+/* CONFIRM -> AJAX POST */
 btnConfirm.addEventListener('click', function (e) {
     e.preventDefault();
 
@@ -340,7 +340,7 @@ btnConfirm.addEventListener('click', function (e) {
             throw new Error(response.message ?? 'Invalid response!');
         }
 
-        /* Success → reload localization page */
+        /* Success -> reload localization page */
         window.location.reload();
 
         NotifyTop(

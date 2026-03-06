@@ -1,13 +1,13 @@
 <!--
-    📌 Image Tag Embed Code Modal
+    Image Tag Embed Code Modal
     ------------------------------------------------------------
     Энэ modal нь тухайн зураг файлыг HTML-д embed хийхэд
     зориулсан <img> tag-ийг (relative болон absolute path хэлбэрээр)
     автоматаар үүсгэж харуулдаг.
 
-    • record['path'] → public URL эсвэл private redirect URL
-    • record['description'] → <img alt="..."> утгад ашиглагдана
-    • host → бүрэн absolute URL угсрахад хэрэглэнэ
+    * record['path'] -> public URL эсвэл private redirect URL
+    * record['description'] -> <img alt="..."> утгад ашиглагдана
+    * host -> бүрэн absolute URL угсрахад хэрэглэнэ
 -->
 
 <div class="modal-lg modal-dialog modal-dialog-centered">
@@ -43,7 +43,7 @@
             <strong>Absolute:</strong>
             <!-- Copy button - copyContent(id) нь тухайн <pre>-ийн text-г clipboard рүү хуулна -->
             <a class="btn btn-sm btn-primary" onclick="copyContent('absolute');">copy</a>
-            <!-- Генерацлагдсан <img> tag - бүрэн absolute URL → host + path (vanilla HTML) -->
+            <!-- Генерацлагдсан <img> tag - бүрэн absolute URL -> host + path (vanilla HTML) -->
             <pre class="border border-primary bg-dark text-light"
                  id="absolute"
                  style="white-space:pre-wrap">{{ ('<img src="' ~ host ~ record['path'] ~ '" alt="' ~ (record['description']|e) ~ '" style="max-width: 100%; height: auto;">')|e }}</pre>

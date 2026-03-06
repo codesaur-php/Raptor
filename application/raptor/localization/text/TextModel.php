@@ -15,8 +15,8 @@ use codesaur\DataObject\LocalizedModel;
  * гэсэн хоёр түвшний өгөгдөлтэй ажиллана.
  *
  * Жишээ хүснэгт:
- *    localization_text_user         → parent
- *    localization_text_user_content → content
+ *    localization_text_user         -> parent
+ *    localization_text_user_content -> content
  *
  * Гол зориулалт:
  *    - Тухайн модульд хамаарах keyword-уудыг хадгалах
@@ -93,7 +93,7 @@ class TextModel extends LocalizedModel
      * @param string|null $code Хэлний код (null бол бүх хэлээр авна)
      * @return array
      *
-     * Бүх keyword → хэл → орчуулга бүтэцтэй массив буцаана:
+     * Бүх keyword -> хэл -> орчуулга бүтэцтэй массив буцаана:
      *
      *    [
      *       "homepage" => [
@@ -120,7 +120,7 @@ class TextModel extends LocalizedModel
                 "p.keyword as keyword, c.code as code, c.text as text",
                 ['WHERE' => 'p.is_active=1', 'ORDER BY' => 'p.keyword']
             );
-            // keyword → code → text
+            // keyword -> code -> text
             while ($row = $stmt->fetch()) {
                 $text[$row['keyword']][$row['code']] = $row['text'];
             }

@@ -66,7 +66,7 @@
         /* Форм олдоогүй бол алдаа харуулна */
         NotifyTop('danger', `{{ 'error'|text|e }}`, 'Form not found!');
     } else {
-        /* Илгээх товч → form.requestSubmit() хийх */
+        /* Илгээх товч -> form.requestSubmit() хийх */
         const submitter = document.querySelector('button.new-text-submit');
         submitter.addEventListener('click', function (e) {
             e.preventDefault();
@@ -88,7 +88,7 @@
                 );
             }
 
-            /* Submit товч дээр анимаци эхлүүлэх (growNstop → custom plugin) */
+            /* Submit товч дээр анимаци эхлүүлэх (growNstop -> custom plugin) */
             submitter.growNstop();
 
             /* FormData ашиглан backend руу request илгээнэ */
@@ -105,12 +105,12 @@
                 throw new Error(`HTTP [${res.status}]: ${res.statusText}`);
             })
             .then(response => {
-                /* Backend-аас ирсэн response.status → success эсэхээ шалгана */
+                /* Backend-аас ирсэн response.status -> success эсэхээ шалгана */
                 if (response.status !== 'success') {
                     throw new Error(response.message ? response.message : 'Invalid response!');
                 }
 
-                /* Амжилттай → localization dashboard хуудсыг refresh хийнэ */
+                /* Амжилттай -> localization dashboard хуудсыг refresh хийнэ */
                 window.location.reload();
 
                 NotifyTop(

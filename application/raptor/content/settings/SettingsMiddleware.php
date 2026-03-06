@@ -15,11 +15,11 @@ use Psr\Http\Server\RequestHandlerInterface;
  *
  * Энэхүү middleware нь дараах үүрэгтэй:
  * ----------------------------------------------------
- * ✔ LocalizationMiddleware-ээс ирсэн хэлний кодоор тохирох контентыг авах  
- * ✔ SettingsModel-ийг ашиглан p (primary) + c (content) хүснэгтийг JOIN хийх  
- * ✔ is_active=1 тохиргооноос зөвхөн НЭГ мөрийг (хамгийн идэвхтэйг) унших  
- * ✔ config талбар JSON бол автоматаар decode хийх  
- * ✔ Request объектод 'settings' аттрибутаар дамжуулж өгөх  
+ * LocalizationMiddleware-ээс ирсэн хэлний кодоор тохирох контентыг авах  
+ * SettingsModel-ийг ашиглан p (primary) + c (content) хүснэгтийг JOIN хийх  
+ * is_active=1 тохиргооноос зөвхөн НЭГ мөрийг (хамгийн идэвхтэйг) унших  
+ * config талбар JSON бол автоматаар decode хийх  
+ * Request объектод 'settings' аттрибутаар дамжуулж өгөх  
  *
  * Ашиглагдах газар:
  * ----------------------------------------------------
@@ -84,7 +84,7 @@ class SettingsMiddleware implements MiddlewareInterface
             }
         }
 
-        // Request attributes → 'settings' дараагийн middleware руу дамжуулах
+        // Request attributes -> 'settings' дараагийн middleware руу дамжуулах
         return $handler->handle(
             $request->withAttribute('settings', $settings ?? [])
         );

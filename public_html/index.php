@@ -28,7 +28,7 @@
  *  @license    MIT
  *  @since      1.0.0
  *
- *  ⚠️  СЕРВЕРИЙН ТОХИРГООНЫ ТАЙЛБАР:
+ *   СЕРВЕРИЙН ТОХИРГООНЫ ТАЙЛБАР:
  *  -----------------------------------
  *  Энэ index.php файл нь Apache серверийн .htaccess тохиргоотой
  *  зөв ажиллаж байна. Гэхдээ Apache сервер биш, nginx сервертэй 
@@ -189,8 +189,8 @@ if (($lngth = \strlen(\dirname($request->getServerParams()['SCRIPT_NAME']))) > 1
  * URL path-аас хамааран Application instance үүсгэх
  * 
  * Routing логик:
- *   - /dashboard/... → Dashboard\Application (Admin panel)
- *   - Бусад бүх зам → Web\Application (Public website)
+ *   - /dashboard/... -> Dashboard\Application (Admin panel)
+ *   - Бусад бүх зам -> Web\Application (Public website)
  * 
  * @var \Dashboard\Application|\Web\Application $application 
  *      Path-аас хамааран сонгогдсон Application instance

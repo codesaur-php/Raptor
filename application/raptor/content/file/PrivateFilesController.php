@@ -6,7 +6,7 @@ namespace Raptor\Content;
  * Class PrivateFilesController
  *
  * --------------------------------------------------------------
- * 🔐 Private Files - Secure File Access Controller
+ * Private Files - Secure File Access Controller
  * --------------------------------------------------------------
  * Энэ controller нь серверийн public/ (HTTP-ээр шууд харагддаг)
  * сангаас ялгаатайгаар:
@@ -15,23 +15,23 @@ namespace Raptor\Content;
  *
  * хавтсанд байрлах файлуудыг зөвхөн:
  *
- *   ✔ нэвтэрсэн хэрэглэгчдэд (authenticated)
- *   ✔ permission-тэй үйлдлүүдээр
+ *   нэвтэрсэн хэрэглэгчдэд (authenticated)
+ *   permission-тэй үйлдлүүдээр
  *
  * үзүүлэх зориулалттай security-focused controller юм.
  *
  * --------------------------------------------------------------
- * 📌 Яагаад энэ controller хэрэгтэй вэ?
+ * Яагаад энэ controller хэрэгтэй вэ?
  * --------------------------------------------------------------
  * PHP-ийн public фолдерт байрласан файлуудыг хэн ч URL-ээр шууд авч чадна.
  *
  * Харин private дотор байрлах файлууд:
  *
- *   ❌ шууд URL-аар татагдахгүй  
- *   ✔ зөвхөн read() function-аар дамжин гарч ирнэ  
- *   ✔ authentication шалгана  
- *   ✔ MIME type тохируулж файл дамжуулна  
- *   ✔ лог бүртгэнэ  
+ *   шууд URL-аар татагдахгүй  
+ *   зөвхөн read() function-аар дамжин гарч ирнэ  
+ *   authentication шалгана  
+ *   MIME type тохируулж файл дамжуулна  
+ *   лог бүртгэнэ  
  *
  * Энэ нь:
  *   - гэрээ, хувийн PDF  
@@ -42,7 +42,7 @@ namespace Raptor\Content;
  * гэх мэт sensitive файлд зориулагдсан.
  *
  * --------------------------------------------------------------
- * 📌 FilesController-ийг удамшуулдаг (extends)
+ * FilesController-ийг удамшуулдаг (extends)
  * --------------------------------------------------------------
  *  Тиймээс:
  *   - moveUploaded()
@@ -61,11 +61,11 @@ class PrivateFilesController extends FilesController
      * Private folder-д зориулсан фолдерын замыг тогтооно.
      *
      * ----------------------------------------------------------
-     * ✔ /private/{folder} → серверийн доторх бодит зам (local)
-     * ✔ /private/file?name={folder}/{file} → клиентэд харагдах public URL
+     * /private/{folder} -> серверийн доторх бодит зам (local)
+     * /private/file?name={folder}/{file} -> клиентэд харагдах public URL
      *
-     * ⚠ private файлуудыг public URL-аар шууд гаргахгүй!
-     *   → зөвхөн read() function-аар дамжина.
+     * private файлуудыг public URL-аар шууд гаргахгүй!
+     *   -> зөвхөн read() function-аар дамжина.
      *
      * @param string $folder     Файл хадгалах хавтас
      */
@@ -90,28 +90,28 @@ class PrivateFilesController extends FilesController
      * Private хавтас доторх файлыг хэрэглэгчид securely дамжуулах.
      *
      * ----------------------------------------------------------
-     * ✔ Authentication шалгана  
-     * ✔ Query string-оор ирсэн name параметрийг шалгана  
-     * ✔ Файл үнэхээр private фолдерт байгаа эсэхийг шалгана  
-     * ✔ MIME төрлийг mime_content_type() ашиглан тодорхойлно  
-     * ✔ Файлыг readfile() ашиглан дамжуулна  
+     * Authentication шалгана  
+     * Query string-оор ирсэн name параметрийг шалгана  
+     * Файл үнэхээр private фолдерт байгаа эсэхийг шалгана  
+     * MIME төрлийг mime_content_type() ашиглан тодорхойлно  
+     * Файлыг readfile() ашиглан дамжуулна  
      *
-     * ⚠ HTTP header-ийг зөв тохируулж өгөхгүй бол файл буруу харагдана.
+     * HTTP header-ийг зөв тохируулж өгөхгүй бол файл буруу харагдана.
      *
      * ----------------------------------------------------------
-     * 🔐 Security Notes
+     * Security Notes
      * ----------------------------------------------------------
      *  - Private файлуудыг шууд /uploads/ гэх мэт замаар өгдөггүй  
-     *  - Зөвхөн read() → authentication → файлыг унших → буцаах  
+     *  - Зөвхөн read() -> authentication -> файлыг унших -> буцаах  
      *  - Directory traversal халдлагаас хамгаална
      *
      *      ../ болон бусад тэмдэгтүүдийг getDocumentPath() автоматаар цэвэрлэдэг.
      *
      * ----------------------------------------------------------
      * @throws Exception:
-     *      401 → Unauthorized  
-     *      404 → File not found  
-     *      204 → Mime type тодорхойлогдоогүй  
+     *      401 -> Unauthorized  
+     *      404 -> File not found  
+     *      204 -> Mime type тодорхойлогдоогүй  
      *
      * @return void
      */

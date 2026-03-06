@@ -12,8 +12,8 @@ use codesaur\DataObject\LocalizedModel;
  *
  * - `raptor_settings` хүснэгт дээр ажиллана
  * - LocalizedModel ашиглаж байгаа тул:
- *   - `setColumns()` → үндсэн хүснэгтийн баганууд
- *   - `setContentColumns()` → хэл тус бүрийн контент (title, description, address г.м)
+ *   - `setColumns()` -> үндсэн хүснэгтийн баганууд
+ *   - `setContentColumns()` -> хэл тус бүрийн контент (title, description, address г.м)
  *
  * Гол хэрэглээ:
  * - Админы удирдлагын хэсэгт:
@@ -38,10 +38,10 @@ class SettingsModel extends LocalizedModel
      *      - PDOTrait-ээр дамжин кеш, driver name, FK toggle г.м ашиглагдана.
      *
      * Хийж буй ажил:
-     *  - `$this->setInstance($pdo)` → LocalizedModel-д PDO-г суулгах
-     *  - `$this->setColumns([...])` → үндсэн хүснэгтийн бүтэц тодорхойлох
-     *  - `$this->setContentColumns([...])` → хэл тус бүрийн контент тодорхойлох
-     *  - `$this->setTable('raptor_settings')` → үндсэн хүснэгтийн нэр оноох
+     *  - `$this->setInstance($pdo)` -> LocalizedModel-д PDO-г суулгах
+     *  - `$this->setColumns([...])` -> үндсэн хүснэгтийн бүтэц тодорхойлох
+     *  - `$this->setContentColumns([...])` -> хэл тус бүрийн контент тодорхойлох
+     *  - `$this->setTable('raptor_settings')` -> үндсэн хүснэгтийн нэр оноох
      */
     public function __construct(\PDO $pdo)
     {
@@ -86,8 +86,8 @@ class SettingsModel extends LocalizedModel
      * - Зарим DB specific тохиргоонуудыг хийх зорилготой.
      *
      * Энд:
-     *  - `created_by` → users.id рүү FK
-     *  - `updated_by` → users.id рүү FK
+     *  - `created_by` -> users.id рүү FK
+     *  - `updated_by` -> users.id рүү FK
      *  - FK fail болохоос сэргийлж түр хугацаанд foreign_key_checks-ийг унтраана.
      *
      * @return void

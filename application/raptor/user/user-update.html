@@ -53,7 +53,7 @@
 </ul>
 
 <!-- Хэрэглэгчийн мэдээлэл шинэчлэх FORM
-     method="PUT" → fetch ашиглан илгээгдэх -->
+     method="PUT" -> fetch ашиглан илгээгдэх -->
 <form class="needs-validation pt-3"
       novalidate
       id="user_update"
@@ -271,7 +271,7 @@
 </div>
 
 <script type="text/javascript">
-/* Зураг сонгох үед ажиллах event handler → fileInput.id = "photo" */
+/* Зураг сонгох үед ажиллах event handler -> fileInput.id = "photo" */
 const onFileInput = function (fileInput) {
     /* file input-д id байх ёстой */
     const id = fileInput?.id;
@@ -283,13 +283,13 @@ const onFileInput = function (fileInput) {
     const file = fileInput.files?.[0];
     if (!file) return;
 
-    /* Файлын нэрийг input-д оруулах → photo_name */
+    /* Файлын нэрийг input-д оруулах -> photo_name */
     const nameInput = document.getElementById(`${id}_name`);
     if (nameInput) {
         nameInput.value = file.name;
     }
 
-    /* Browse → Change */
+    /* Browse -> Change */
     const browseBtn = fileInput.nextElementSibling;
     if (browseBtn) {
         browseBtn.textContent = `{{ 'change'|text|e }}`;
@@ -301,7 +301,7 @@ const onFileInput = function (fileInput) {
         removeBtn.style.display = 'block';
     }
 
-    /* photo_removed = 0 → зураг устгагдаагүй */
+    /* photo_removed = 0 -> зураг устгагдаагүй */
     const fileDeletedInput = removeBtn?.nextElementSibling;
     if (fileDeletedInput) {
         fileDeletedInput.value = 0;
@@ -315,7 +315,7 @@ const onFileInput = function (fileInput) {
         info.style.display = 'block';
     }
 
-    /* Урьдчилсан харагдац зураг үзүүлэх → photo_preview */
+    /* Урьдчилсан харагдац зураг үзүүлэх -> photo_preview */
     const reader = new FileReader();
     reader.onload = function (e) {
         const previewImg = document.getElementById(`${id}_preview`);
@@ -330,7 +330,7 @@ const onFileInput = function (fileInput) {
 
 /* Зураг устгах функц */
 const onFileClear = function (removeBtn) {
-    /* removeBtn → browseBtn → fileInput */
+    /* removeBtn -> browseBtn -> fileInput */
     const browseBtn = removeBtn?.previousElementSibling;
     const fileInput = browseBtn?.previousElementSibling;
 
@@ -362,7 +362,7 @@ const onFileClear = function (removeBtn) {
     /* file input-г reset хийх */
     fileInput.value = '';
 
-    /* Backend-д илгээх → зураг устгасан төлөв */
+    /* Backend-д илгээх -> зураг устгасан төлөв */
     const fileDeletedInput = removeBtn.nextElementSibling;
     if (fileDeletedInput) {
         fileDeletedInput.value = 1;
@@ -440,7 +440,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 throw new Error(response.message || 'Invalid response!');
             }
 
-            /* update амжилттай → redirect */
+            /* update амжилттай -> redirect */
             {% if user.can('system_user_index') %}
                 window.location.href = `{{ 'users'|link }}`;
             {% else %}

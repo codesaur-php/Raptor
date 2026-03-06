@@ -30,8 +30,8 @@ class LanguageController extends \Raptor\Controller
     /**
      * Хэл шинээр бүртгэх.
      *
-     * GET → language-insert-modal.html (modal form)
-     * POST → өгөгдөл шалгаад хэл үүсгэнэ
+     * GET -> language-insert-modal.html (modal form)
+     * POST -> өгөгдөл шалгаад хэл үүсгэнэ
      *
      * Шаардлага:
      *  - Хэрэглэгч system_localization_insert эрхтэй байх
@@ -53,7 +53,7 @@ class LanguageController extends \Raptor\Controller
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
 
-            // POST → өгөгдөл боловсруулах
+            // POST -> өгөгдөл боловсруулах
             if ($this->getRequest()->getMethod() == 'POST') {
                 $payload = $this->getParsedBody();
                 // Оролт шалгах
@@ -111,11 +111,11 @@ class LanguageController extends \Raptor\Controller
                 // Амжилттай үүссэн хэлний хувьд localized content мөрүүдийг хуулж үүсгэх
                 $copied = $this->copyLocalizedContent($mother['code'], $payload['code']);
             } else {
-                // GET → modal form рендерлэх
+                // GET -> modal form рендерлэх
                 $this->twigTemplate(__DIR__ . '/language-insert-modal.html')->render();
             }
         } catch (\Throwable $err) {
-            // Алдааг POST → JSON, GET → modal хэлбэрээр
+            // Алдааг POST -> JSON, GET -> modal хэлбэрээр
             if ($this->getRequest()->getMethod() == 'POST') {
                 $this->respondJSON(['message' => $err->getMessage()], $err->getCode());
             } else {
@@ -152,11 +152,11 @@ class LanguageController extends \Raptor\Controller
      * Шаардлага:
      *  - Хэрэглэгч system_localization_index эрхтэй байх
      *
-     * GET → language-retrieve-modal.html рендерлэнэ  
+     * GET -> language-retrieve-modal.html рендерлэнэ  
      *
      * Лог бүртгэл:
-     *  - Амжилттай → NOTICE
-     *  - Алдаа → ERROR
+     *  - Амжилттай -> NOTICE
+     *  - Алдаа -> ERROR
      */
     public function view(int $id)
     {
@@ -201,8 +201,8 @@ class LanguageController extends \Raptor\Controller
      *
      * @param int $id Засварлах хэлний дугаар
      *
-     * GET → update modal  
-     * PUT → шинэчлэл хийх
+     * GET -> update modal  
+     * PUT -> шинэчлэл хийх
      *
      * Шаардлага:
      *  - system_localization_update эрхтэй байх
@@ -212,9 +212,9 @@ class LanguageController extends \Raptor\Controller
      * Default хэлний статус өөрчлөгдвөл бусад өмнө байсан дугаар хэлийг буулгана.
      *
      * Лог:
-     *  - PUT → INFO
-     *  - GET → NOTICE
-     *  - Алдаа → ERROR
+     *  - PUT -> INFO
+     *  - GET -> NOTICE
+     *  - Алдаа -> ERROR
      */
     public function update(int $id)
     {
@@ -312,15 +312,15 @@ class LanguageController extends \Raptor\Controller
     /**
      * Хэл идэвхгүй болгох (зөөлөн устгал).
      *
-     * POST / DELETE → JSON хариутай ажиллана
+     * POST / DELETE -> JSON хариутай ажиллана
      *
      * Шаардлага:
      *  - Хэрэглэгч system_localization_delete эрхтэй байх
      *  - Default хэл устгахыг хориглоно
      *
      * Лог:
-     *  - Амжилттай → ALERT
-     *  - Алдаа → ERROR
+     *  - Амжилттай -> ALERT
+     *  - Алдаа -> ERROR
      *
      * @return void JSON
      */

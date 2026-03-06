@@ -123,7 +123,7 @@ class LanguageModel extends Model
 
             $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
 
-            /* created_by → users(id) холбоос */
+            /* created_by -> users(id) холбоос */
             $this->exec(
                 "ALTER TABLE $table 
                  ADD CONSTRAINT {$table}_fk_created_by 
@@ -131,7 +131,7 @@ class LanguageModel extends Model
                  ON DELETE SET NULL ON UPDATE CASCADE"
             );
 
-            /* updated_by → users(id) холбоос */
+            /* updated_by -> users(id) холбоос */
             $this->exec(
                 "ALTER TABLE $table 
                  ADD CONSTRAINT {$table}_fk_updated_by 

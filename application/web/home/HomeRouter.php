@@ -7,31 +7,31 @@ use codesaur\Router\Router;
 /**
  * Class HomeRouter
  * -------------------------------------------------------------
- * 🌐 Raptor Framework - Web Layer Public Router
+ * Raptor Framework - Web Layer Public Router
  *
  * Энэ класс нь тухайн веб сайтын **public-facing** (зочдод харагдах)
  * үндсэн маршрутуудыг (routes) тодорхойлдог.
  *
- * ✨ Агуулга:
+ * Агуулга:
  * -------------------------------------------------------------
- * ✔ Нүүр хуудас (/)  
- * ✔ /home - нүүр хуудасны alias  
- * ✔ Хэл солих - /language/{code}  
- * ✔ Статик/динамик Page - /page/{slug}
- * ✔ News - /news/{slug}  
- * ✔ Холбоо барих - /contact  
+ * Нүүр хуудас (/)  
+ * /home - нүүр хуудасны alias  
+ * Хэл солих - /language/{code}  
+ * Статик/динамик Page - /page/{slug}
+ * News - /news/{slug}  
+ * Холбоо барих - /contact  
  *
- * ⚡ Router-ийн онцлог:
+ * Router-ийн онцлог:
  * -------------------------------------------------------------
  * Raptor-ийн Router нь:
- *   • Автомат параметр шалгах (type hint: uint:id)  
- *   • route name → `link()` helper-тэй бүрэн нийцтэй  
- *   • Middleware chain-тэй зохицон ажилладаг  
+ *   * Автомат параметр шалгах (type hint: uint:id)  
+ *   * route name -> `link()` helper-тэй бүрэн нийцтэй  
+ *   * Middleware chain-тэй зохицон ажилладаг  
  *
  * Web Layer-н философи:
- *   🔹 Dashboard-аас ялгаатай нь public веб нь  
+ *   Dashboard-аас ялгаатай нь public веб нь  
  *   хэрэглэгчийн эрх, RBAC шалгалт шаардахгүй  
- *   → Зөвхөн localization + settings middleware-үүд ажиллана.
+ *   -> Зөвхөн localization + settings middleware-үүд ажиллана.
  *
  * @package Web\Home
  */
@@ -47,7 +47,7 @@ class HomeRouter extends Router
         // Нүүр хуудас
         $this->GET('/', [HomeController::class, 'index'])->name('home');
 
-        // /home → индекс рүү дамжуулах alias
+        // /home -> индекс рүү дамжуулах alias
         $this->GET('/home', [HomeController::class, 'index']);
 
         // Системийн хэл солих

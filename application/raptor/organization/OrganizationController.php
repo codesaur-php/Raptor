@@ -116,7 +116,7 @@ class OrganizationController extends FileController
 
             $model = new OrganizationModel($this->pdo);
 
-            // POST → Шинэ байгууллага үүсгэх
+            // POST -> Шинэ байгууллага үүсгэх
             if ($this->getRequest()->getMethod() == 'POST') {
                 $payload = $this->getParsedBody();
                 if (empty($payload['alias']) || empty($payload['name'])) {
@@ -148,7 +148,7 @@ class OrganizationController extends FileController
                     'message' => $this->text('record-insert-success')
                 ]);
             } else {
-                // GET → Modal form render
+                // GET -> Modal form render
                 $this->twigTemplate(
                     __DIR__ . '/organization-insert-modal.html',
                     ['parents' => $model->fetchAllPotentialParents()]
@@ -214,7 +214,7 @@ class OrganizationController extends FileController
                 throw new \Exception($this->text('no-record-selected'));
             }
 
-            // created_by, updated_by → хэрэглэгчийн дэлгэрэнгүй
+            // created_by, updated_by -> хэрэглэгчийн дэлгэрэнгүй
             $record['rbac_users'] = $this->retrieveUsersDetail(
                 $record['created_by'],
                 $record['updated_by']
@@ -285,14 +285,14 @@ class OrganizationController extends FileController
             }
 
             if ($this->getRequest()->getMethod() == 'PUT') {
-                // PUT → Update submission
+                // PUT -> Update submission
 
                 $payload = $this->getParsedBody();
                 if (empty($payload['alias']) || empty($payload['name'])) {
                     throw new \InvalidArgumentException($this->text('invalid-request'), 400);
                 }
 
-                // alias → зөвшөөрөгдөх тэмдэгт үлдээх
+                // alias -> зөвшөөрөгдөх тэмдэгт үлдээх
                 $payload['alias'] = \preg_replace('/[^A-Za-z0-9_-]/', '', $payload['alias']);
 
                 // Лого устгах
@@ -353,7 +353,7 @@ class OrganizationController extends FileController
                     'message' => $this->text('record-update-success')
                 ]);
             } else {
-                // GET → Update form modal
+                // GET -> Update form modal
                 $this->twigTemplate(
                     __DIR__ . '/organization-update-modal.html',
                     [
@@ -363,7 +363,7 @@ class OrganizationController extends FileController
                 )->render();
             }
         } catch (\Throwable $err) {
-            // Алдаа гарсан үед → PUT=JSON / GET=Modal хэлбэрээр хариулна
+            // Алдаа гарсан үед -> PUT=JSON / GET=Modal хэлбэрээр хариулна
             if ($this->getRequest()->getMethod() == 'PUT') {
                 $this->respondJSON(['message' => $err->getMessage()], $err->getCode());
             } else {
@@ -415,7 +415,7 @@ class OrganizationController extends FileController
             }
             $id = (int) $payload['id'];
 
-            // id=1 → системийн байгууллага тул устгахгүй
+            // id=1 -> системийн байгууллага тул устгахгүй
             if ($id == 1) {
                 throw new \Exception('Cannot remove first organization!', 403);
             }
@@ -429,10 +429,10 @@ class OrganizationController extends FileController
             // Soft delete - байгууллагын бичлэгийг is_active = 0 болгож идэвхгүй болгоно.
             //
             // Анхаарах зүйл:
-            //   • Энэ горимд байгууллагын logo файлыг серверээс устгахгүй.
-            //   • Учир нь тухайн байгууллагыг ирээдүйд дахин идэвхжүүлэх (reactivate)
+            //   * Энэ горимд байгууллагын logo файлыг серверээс устгахгүй.
+            //   * Учир нь тухайн байгууллагыг ирээдүйд дахин идэвхжүүлэх (reactivate)
             //     боломж нээлттэй тул зураг болон мэдээллүүдийг хадгалж үлдээх шаардлагатай.
-            //   • Хэрэв бүрэн устгах (hard delete) үйлдэл бол logo файлыг бас устгах хэрэгтэй.
+            //   * Хэрэв бүрэн устгах (hard delete) үйлдэл бол logo файлыг бас устгах хэрэгтэй.
             //
             $model = new OrganizationModel($this->pdo);
             $deactivated = $model->deactivateById(

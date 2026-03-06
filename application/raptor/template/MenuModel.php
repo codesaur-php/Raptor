@@ -64,8 +64,8 @@ class MenuModel extends LocalizedModel
      * Энэ функц нь:
      *   - FK хамаарлуудыг зурж өгнө
      *   - Dashboard-д харагдах үндсэн меню, дэд менюг автоматаар seed хийнэ:
-     *        Contents → Pages / News / Files / Localization / Reference tables / Settings / Website
-     *        System → Users / Organizations / Logs
+     *        Contents -> Pages / News / Files / Localization / Reference tables / Settings / Website
+     *        System -> Users / Organizations / Logs
      *
      * @return void
      */
@@ -79,7 +79,7 @@ class MenuModel extends LocalizedModel
             $this->setForeignKeyChecks(false);
 
             $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
-            // created_by / updated_by → Users FK
+            // created_by / updated_by -> Users FK
             $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_created_by 
                          FOREIGN KEY (created_by) REFERENCES $users(id) 
                          ON DELETE SET NULL ON UPDATE CASCADE");

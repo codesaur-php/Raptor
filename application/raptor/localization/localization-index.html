@@ -7,7 +7,7 @@
 <!-- Локализацийн үндсэн хуудасны Header хэсэг -->
 <div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-2 shadow">
     <h3 class="px-1 my-auto fs-6 text-danger text-uppercase">
-        <!-- Дэлхийн бөмбөрцөг икон → Локализаци модулийг илэрхийлнэ -->
+        <!-- Дэлхийн бөмбөрцөг икон -> Локализаци модулийг илэрхийлнэ -->
         <i class="bi bi-globe"></i> {{ 'localization'|text }}
     </h3>
     <div class="ms-auto">
@@ -71,7 +71,7 @@
                         <th scope="row">{{ language['code'] }}</th>
 
                         <td>
-                            <!-- Тухайн хэлний тугны код. en тохиолдолд → us болгон хувиргана. -->
+                            <!-- Тухайн хэлний тугны код. en тохиолдолд -> us болгон хувиргана. -->
                             {% set flag = language['code'] == 'en' ? 'us' : language['code'] %}
 
                             <!-- Хэлний дүрс (flagcdn.com) -->
@@ -173,7 +173,7 @@
                                 <td>{{ row['localized'][code]['text'] }}</td>
                             {% endfor %}
 
-                            <!-- Текстийн төрөл (plain, html…) -->
+                            <!-- Текстийн төрөл (plain, html...) -->
                             <td>{{ row['type'] }}</td>
 
                             <!-- Үйлдлүүд -->
@@ -326,7 +326,7 @@
                     allowOutsideClick: () => !Swal.isLoading(),
                     backdrop: true,
 
-                    /* preConfirm → сервер рүү DELETE хүсэлт илгээнэ */
+                    /* preConfirm -> сервер рүү DELETE хүсэлт илгээнэ */
                     preConfirm: (reason) => {
                         return fetch(
                             `{{ 'language-deactivate'|link }}`,
@@ -416,7 +416,7 @@
                         showLoaderOnConfirm: true,
                         allowOutsideClick: () => !Swal.isLoading(),
                         backdrop: true,
-                        /* preConfirm → сервер рүү DELETE хүсэлт илгээнэ */
+                        /* preConfirm -> сервер рүү DELETE хүсэлт илгээнэ */
                         preConfirm: () => {
                             return fetch(
                                 `{{ 'text-deactivate'|link }}`,

@@ -13,22 +13,22 @@ use Raptor\User\UsersModel;
  * функциональ байдлыг Controller-д ашиглуулах зориулалттай trait.
  *
  * Үндсэн үүрэг:
- * ───────────────────────────────────────────────────────────────
+ * ---------------------------------------------------------------
  *  - twigDashboard()  
- *      → Dashboard layout (dashboard.html) дотор контент оруулах
+ *      -> Dashboard layout (dashboard.html) дотор контент оруулах
  *
  *  - dashboardProhibited()  
- *      → Хэрэглэгч эрхгүй үед dashboard орчинд permission alert үзүүлэх
+ *      -> Хэрэглэгч эрхгүй үед dashboard орчинд permission alert үзүүлэх
  *
  *  - modalProhibited()  
- *      → Modal орчинд permission alert үзүүлэх
+ *      -> Modal орчинд permission alert үзүүлэх
  *
  *  - retrieveUsersDetail()  
- *      → Audit log, organization mapping зэрэг UI-д хэрэглэгчийн
+ *      -> Audit log, organization mapping зэрэг UI-д хэрэглэгчийн
  *         товч мэдээллийн жагсаалтыг авах
  *
  *  - getUserMenu()  
- *      → Permission, is_active, is_visible, organization alias
+ *      -> Permission, is_active, is_visible, organization alias
  *         зэрэг нөхцөлүүдээр хэрэглэгчийн sidemenu-г бүрдүүлэх
  *
  * Энэ trait нь Raptor\Controller-тэй цуг ажиллаж,
@@ -44,14 +44,14 @@ trait DashboardTrait
      * бүгдийг энд төвлөрүүлж, динамикаар бүрдүүлдэг.
      *
      * Процесс:
-     * ───────────────────────────────────────────────────────────────
+     * ---------------------------------------------------------------
      * 1) `dashboard.html` мастер layout-ийг twigTemplate() ашиглан ачаална.
      *
      * 2) Хэрэглэгчийн зөвшөөрөлд (RBAC) тулгуурлан харагдах ёстой
-     *    sidemenu-г getUserMenu() функцээр тооцож → `sidemenu` хувьсагчид онооно.
+     *    sidemenu-г getUserMenu() функцээр тооцож -> `sidemenu` хувьсагчид онооно.
      *
      * 3) Контент хэсэгт харуулах тухайн хуудасны template-г
-     *    twigTemplate($template, $vars) дуудаж → `content` болгон оруулна.
+     *    twigTemplate($template, $vars) дуудаж -> `content` болгон оруулна.
      *    (Жич: Контент template нь зөвхөн `<main>` хэсэг дотор байрлана.)
      *
      * 4) Системийн тохируулгууд (`settings` аттрибут) - тухайлбал:
@@ -59,9 +59,9 @@ trait DashboardTrait
      *    layout түвшинд хэрэгтэй бүх өгөгдлийг `$dashboard->set()` ашиглан нэг нэгээр нь оруулна.
      *
      * Товчхондоо:
-     * ───────────────────────────────────────────────────────────────
-     *  ➤ Dashboard layout + Dynamic sidebar + Dynamic content + System settings 
-     *  → нэг TwigTemplate объект болж буцна.
+     * ---------------------------------------------------------------
+     *  > Dashboard layout + Dynamic sidebar + Dynamic content + System settings 
+     *  -> нэг TwigTemplate объект болж буцна.
      *
      * @param string $template  Контент template-ийн файл зам
      * @param array  $vars      Контент template-д дамжуулах хувьсагчид
@@ -130,7 +130,7 @@ trait DashboardTrait
      * Оролт:
      *   - Хэдэн ч user_id дамжуулж болно.
      *   - user_id = null эсвэл ямар ч ID дамжуулаагүй бол:
-     *         → users хүснэгт дэх **бүх хэрэглэгчийн** мэдээллийг авна.
+     *         -> users хүснэгт дэх **бүх хэрэглэгчийн** мэдээллийг авна.
      *
      * Гаралт:
      *   [
@@ -180,17 +180,17 @@ trait DashboardTrait
      * Хэрэглэгчийн sidemenu-г динамикаар үүсгэх.
      *
      * Filter-лэгдэх нөхцөлүүд:
-     * ───────────────────────────────────────────────────────────────
-     *  - p.is_active = 1  → идэвхтэй меню
-     *  - p.is_visible = 1 → харагдах боломжтой
+     * ---------------------------------------------------------------
+     *  - p.is_active = 1  -> идэвхтэй меню
+     *  - p.is_visible = 1 -> харагдах боломжтой
      *  - Organization alias тохирох эсэх:
-     *        menu.alias != current_user.organization.alias → skip
+     *        menu.alias != current_user.organization.alias -> skip
      *  - Permission заасан бол:
-     *        !isUserCan(menu.permission) → skip
+     *        !isUserCan(menu.permission) -> skip
      *  - Localization: title нь тухайн хэл дээр байх ёстой
      *
      * Menu бүтэц:
-     * ───────────────────────────────────────────────────────────────
+     * ---------------------------------------------------------------
      *  [
      *      parent_menu_id => [
      *          'title' => '...',

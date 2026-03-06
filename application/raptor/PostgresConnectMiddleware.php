@@ -63,7 +63,7 @@ class PostgresConnectMiddleware implements MiddlewareInterface
         // ---------------------------------------------------------------------
         // 2. PostgreSQL серверт холбогдох
         //
-        // client_encoding=UTF8 → Postgres-д charset-г DSN-р зааж өгдөг.
+        // client_encoding=UTF8 -> Postgres-д charset-г DSN-р зааж өгдөг.
         // ---------------------------------------------------------------------
         $dsn = "pgsql:host=$host;dbname=$database;client_encoding=UTF8";
         $pdo = new \PDO($dsn, $username, $password, $options);

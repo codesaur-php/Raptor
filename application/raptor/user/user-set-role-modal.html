@@ -1,5 +1,5 @@
 <!-- Хэрэглэгчийн ROLE (Дүр) тохируулах Modal
-     Admin → User access / permission update -->
+     Admin -> User access / permission update -->
 <div class="modal-lg modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content">
 
@@ -101,7 +101,7 @@ if (!userRolesForm) {
     /* "Save" товч */
     const submitter = document.querySelector('button.submit-user-role');
 
-    /* Save товч → form.requestSubmit() */
+    /* Save товч -> form.requestSubmit() */
     submitter.addEventListener('click', function (e) {
         e.preventDefault();
         userRolesForm.requestSubmit();
@@ -130,7 +130,7 @@ if (!userRolesForm) {
         /* FormData бэлдэх */
         const data = new FormData(this);
 
-        /* fetch API → backend рүү илгээх */
+        /* fetch API -> backend рүү илгээх */
         fetch(this.action, {
             body: data,
             method: this.getAttribute('method') ?? 'POST'
@@ -140,7 +140,7 @@ if (!userRolesForm) {
             /* JSON хариу хүлээх */
             if (contentType.includes('application/json')) return res.json();
 
-            /* JSON биш → алдаа */
+            /* JSON биш -> алдаа */
             throw new Error(`HTTP [${res.status}]: ${res.statusText}`);
         })
         .then(response => {
@@ -149,7 +149,7 @@ if (!userRolesForm) {
                 throw new Error(response.message || 'Invalid response!');
             }
 
-            /* Амжилттай → Хуудсыг refresh хийх */
+            /* Амжилттай -> Хуудсыг refresh хийх */
             window.location.reload();
 
             NotifyTop(

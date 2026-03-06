@@ -190,7 +190,7 @@
             /* Форм олдохгүй үед алдаа мэдэгдэнэ */
             NotifyTop('danger', `{{ 'error'|text|e }}`, 'Form not found!');
         } else {
-            /* Submit товч → form.requestSubmit() */
+            /* Submit товч -> form.requestSubmit() */
             const submitters = document.querySelectorAll('button.submit-update');
             submitters.forEach(function (button) {
                 button.addEventListener('click', function (e) {
@@ -217,7 +217,7 @@
                 /* Save button-ууд дээр grow animation */
                 submitters.forEach(btn => btn.growNstop());
 
-                /* FormData → сервер рүү илгээх payload */
+                /* FormData -> сервер рүү илгээх payload */
                 const data = new FormData(this);
                 /* FETCH PUT REQUEST */
                 fetch(
@@ -267,12 +267,12 @@
             const logsRetrieveLink = `{{ 'logs-retrieve'|link }}`;
             const logsViewLink = `{{ 'logs-view'|link }}`;
 
-            /* logger-content → UL.ID-аас хүснэгтийн нэрийг салгаж авах */
+            /* logger-content -> UL.ID-аас хүснэгтийн нэрийг салгаж авах */
             let logger_id = logger.id ?? '';
             let table = logger_id.substring(logger_id.indexOf('-') + 1);
             if (!table) return;
 
-            /* Loading Spinner → эхэнд гарч ирнэ */
+            /* Loading Spinner -> эхэнд гарч ирнэ */
             logger.style.display = 'none';
             let spinner = logger.previousElementSibling;
             spinner.style.display = 'block';

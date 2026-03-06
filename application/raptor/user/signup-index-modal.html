@@ -1,8 +1,8 @@
-<!-- 🧩 Шинээр хэрэглэгч болох хүсэлтүүдийн Modal (signup requests) -->
+<!-- Шинээр хэрэглэгч болох хүсэлтүүдийн Modal (signup requests) -->
 <div class="modal-xl modal-dialog modal-dialog-scrollable" role="document">
     <div class="modal-content">
 
-        <!-- 🔵 Modal Header -->
+        <!-- Modal Header -->
         <div class="modal-header">
             <h3 class="modal-title fs-6 text-uppercase text-primary">
                 <!-- Шинэ хэрэглэгч хүсэлт icon -->
@@ -12,10 +12,10 @@
             <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="{{ 'close'|text|e }}"></button>
         </div>
 
-        <!-- 🟩 Modal Body -->
+        <!-- Modal Body -->
         <div class="modal-body">
 
-            <!-- 📋 Signup хүсэлтүүдийн хүснэгт -->
+            <!-- Signup хүсэлтүүдийн хүснэгт -->
             <table class="table table-hover table-striped-columns table-bordered" id="signup">
                 <thead>
                     <tr>
@@ -30,7 +30,7 @@
                 </thead>
                 <tbody>
 
-                    <!-- 🔁 Backend-аас ирсэн signup хүсэлтүүдийг давтаж харуулж байна -->
+                    <!-- Backend-аас ирсэн signup хүсэлтүүдийг давтаж харуулж байна -->
                     {% for row in rows %}
                         <tr>
 
@@ -40,9 +40,9 @@
                             <!-- Email -->
                             <td>{{ row['email'] }}</td>
 
-                            <!-- 🌐 Хэл → flag дүрс -->
+                            <!-- Хэл -> flag дүрс -->
                             <td>
-                                {# EN бол → US flag, бусад хэл → өөрийн code #}
+                                {# EN бол -> US flag, бусад хэл -> өөрийн code #}
                                 {% set flag =  row['code'] == 'en' ? 'us' :  row['code'] %}
                                 <img src="https://flagcdn.com/20x15/{{ flag }}.png"
                                      srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x"
@@ -52,7 +52,7 @@
                             <!-- Огноо -->
                             <td>{{ row['created_at'] }}</td>
 
-                            <!-- 📌 Хүсэлтийн төлөв -->
+                            <!-- Хүсэлтийн төлөв -->
                             <td>
                                 {% if row['is_active'] == 2 %}
                                     <span class="badge bg-info">approved</span>
@@ -63,7 +63,7 @@
                                 {% endif %}
                             </td>
 
-                            <!-- ✨ Үйлдэлүүд - зөвхөн waiting төлөвт харагдана -->
+                            <!-- Үйлдэлүүд - зөвхөн waiting төлөвт харагдана -->
                             <td>
                                 {% if row['is_active'] == 1 %}
                                     {% if user.can('system_user_insert') %}
@@ -89,7 +89,7 @@
             </table>
         </div>
 
-        <!-- 🟥 Modal Footer -->
+        <!-- Modal Footer -->
         <div class="modal-footer">
             <button class="btn btn-primary shadow-sm" data-bs-dismiss="modal" type="button">
                 {{ 'close'|text }}
@@ -117,7 +117,7 @@
     /* motable - хүснэгтийн UI helper */
     const newbies = new motable('table#signup');
 
-    /* ✅ "Accept" button → шинэ хэрэглэгчийг батлах */
+    /* "Accept" button -> шинэ хэрэглэгчийг батлах */
     const requestWaits = newbies.table.querySelectorAll('.approve-user-request');
     requestWaits.forEach(btn =>
         btn.addEventListener('click', function (e) {
@@ -133,7 +133,7 @@
             /* Username => email */
             const name = `${thisRow.children[0].innerText} => ${thisRow.children[1].innerText}`;
 
-            /* 🪪 Баталгаажуулах SweetAlert */
+            /* Баталгаажуулах SweetAlert */
             Swal.fire({
                 html:
                    `<i class="bi bi-person-plus text-info mb-2" style="font-size:3rem"></i>
@@ -147,7 +147,7 @@
                 allowOutsideClick: () => !Swal.isLoading(),
                 backdrop: true,
 
-                /* 🔄 Зөвшөөрөх үед API руу POST хийнэ */
+                /* Зөвшөөрөх үед API руу POST хийнэ */
                 preConfirm: () => {
                     return fetch(
                         `{{ 'user-signup-approve'|link }}`,
@@ -168,8 +168,8 @@
                         NotifyTop('success', `{{ 'success'|text|e }}`, response.message ?? 'User accepted');
                         
                         /* UI Update:
-                         * 1) Status → approved
-                         * 2) Action column → clear */
+                         * 1) Status -> approved
+                         * 2) Action column -> clear */
                         thisRow.children[4].innerHTML =
                             '<span class="badge bg-info">approved</span>';
                         thisRow.children[5].innerHTML = '';
@@ -183,7 +183,7 @@
                                 const modal = bootstrap.Modal.getInstance(modalEl);
                                 modal.hide();
                             }
-                            /* 🔄 Full reload → Users table дээр шинэ user-г харах */
+                            /* Full reload -> Users table дээр шинэ user-г харах */
                             setTimeout(() => location.reload(), 400);
                         }, 1000);
                     })
@@ -193,7 +193,7 @@
         })
     );
 
-    /* ❌ "Delete" button → хүсэлтийг идэвхгүй болгох */
+    /* "Delete" button -> хүсэлтийг идэвхгүй болгох */
     const requestDeactivates = newbies.table.querySelectorAll('.deactivate-user-request');
     requestDeactivates.forEach(btn =>
         btn.addEventListener('click', function (e) {
@@ -207,7 +207,7 @@
 
             const name = `${thisRow.children[0].innerText} => ${thisRow.children[1].innerText}`;
 
-            /* 🗑 Deactivate хийх SweetAlert */
+            /* Deactivate хийх SweetAlert */
             Swal.fire({
                 html:
                    `<i class="bi bi-person-x-fill text-danger mb-2" style="font-size:3rem"></i>

@@ -6,59 +6,59 @@ use codesaur\DataObject\Model;
 use codesaur\DataObject\Column;
 
 /**
- * RolePermission - RBAC системийн “роль ↔ эрх (permission)” холболтын модель.
+ * RolePermission - RBAC системийн "роль <-> эрх (permission)" холболтын модель.
  *
  * RBAC архитектур дахь байр суурь:
- * ───────────────────────────────────────────────────────────────
+ * ---------------------------------------------------------------
  *  - Permission  = Нэгж үйлдлийн эрх (жишээ: user_insert)
  *  - Role        = Permission багцууд (жишээ: admin)
- *  - UserRole    = Хэрэглэгч → Role холболт
- *  - RolePermission = Role → Permission холболт (энэ файл)
+ *  - UserRole    = Хэрэглэгч -> Role холболт
+ *  - RolePermission = Role -> Permission холболт (энэ файл)
  *
  * RolePermission хүснэгт нь:
- *    → Аль role ямар permission-тэй вэ?
- *    → Нэг role-д хэдэн permission байх боломжтой?
- *    → Permission-г role-оор дамжуулж хэрэглэгчид оноох
+ *    -> Аль role ямар permission-тэй вэ?
+ *    -> Нэг role-д хэдэн permission байх боломжтой?
+ *    -> Permission-г role-оор дамжуулж хэрэглэгчид оноох
  *
  * Үүнийг тодорхойлдог гол хүснэгт юм.
  *
  *
  * Хүснэгтийн баганууд:
- * ───────────────────────────────────────────────────────────────
+ * ---------------------------------------------------------------
  * id              - bigint, primary key
  *
- * role_id         - FK → rbac_roles.id  
+ * role_id         - FK -> rbac_roles.id  
  *                    Role (эрхийн багц)
  *
- * permission_id   - FK → rbac_permissions.id  
+ * permission_id   - FK -> rbac_permissions.id  
  *                    Permission (нэгж эрх)
  *
  * alias           - varchar(64), not null  
  *                    Role дотор энэ permission ямар ангилалд багтахыг илэрхийлнэ.
- *                    (Жишээ: “system”, “general”, “content”, “user” гэх мэт)
+ *                    (Жишээ: "system", "general", "content", "user" гэх мэт)
  *
  * created_at      - datetime  
- * created_by      - FK → users.id  
+ * created_by      - FK -> users.id  
  *                    Permission-г role-д хэн нэмсэн бэ (audit trail)
  *
  *
  * FK 관계 ба Cascade зан төлөв:
- * ───────────────────────────────────────────────────────────────
- *  role_id → roles.id
+ * ---------------------------------------------------------------
+ *  role_id -> roles.id
  *      ON DELETE CASCADE  
- *      → Role уствал түүнд хамаарах бүх permission холбоос устгана.
+ *      -> Role уствал түүнд хамаарах бүх permission холбоос устгана.
  *
- *  permission_id → permissions.id
+ *  permission_id -> permissions.id
  *      ON DELETE CASCADE  
- *      → Permission уствал түүнд хамаарах бүх role mapping устгана.
+ *      -> Permission уствал түүнд хамаарах бүх role mapping устгана.
  *
- *  created_by → users.id
+ *  created_by -> users.id
  *      ON DELETE SET NULL  
- *      → Permission-г role-д хэн нэмсэнийг устгасан ч лог үлдэнэ.
+ *      -> Permission-г role-д хэн нэмсэнийг устгасан ч лог үлдэнэ.
  *
  *
  * __initial() hook:
- * ───────────────────────────────────────────────────────────────
+ * ---------------------------------------------------------------
  * Модель анх бий болох үед FK constraint-үүдийг үүсгэнэ:
  *   - role_id FK
  *   - permission_id FK
@@ -69,7 +69,7 @@ use codesaur\DataObject\Column;
  *
  *
  * Security:
- * ───────────────────────────────────────────────────────────────
+ * ---------------------------------------------------------------
  *  - RBAC зөв ажиллахын тулд энэ хүснэгт integrity маш өндөр байх ёстой
  *  - Cascade delete нь orphan mapping үүсэхээс хамгаална
  *  - created_by талбар нь audit trail үүрэгтэй
@@ -105,17 +105,17 @@ class RolePermission extends Model
      *
      * FK:
      *   rbac_role_permission.role_id
-     *       → rbac_roles.id
+     *       -> rbac_roles.id
      *       ON DELETE CASCADE
      *       ON UPDATE CASCADE
      *
      *   rbac_role_permission.permission_id
-     *       → rbac_permissions.id
+     *       -> rbac_permissions.id
      *       ON DELETE CASCADE
      *       ON UPDATE CASCADE
      *
      *   rbac_role_permission.created_by
-     *       → users.id
+     *       -> users.id
      *       ON DELETE SET NULL
      *       ON UPDATE CASCADE
      *

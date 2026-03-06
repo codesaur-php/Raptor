@@ -43,7 +43,7 @@ class TemplateController extends \Raptor\Controller
      * Шалгах зүйлс:
      *   - Хэрэглэгч system_manage_menu permission-тэй эсэх
      *   - raptor_menu хүснэгтээс бүх идэвхтэй menu-г авах
-     *   - created_by / updated_by → хэрэглэгчийн нэр, имэйл болгон хөрвүүлэх
+     *   - created_by / updated_by -> хэрэглэгчийн нэр, имэйл болгон хөрвүүлэх
      *   - Байгууллагын alias-уудыг цуглуулах (common + active organizations)
      *   - RBAC permissions жагсаалт үүсгэх (alias_name форматтай)
      *
@@ -200,7 +200,7 @@ class TemplateController extends \Raptor\Controller
      *
      * Шалгалт:
      *   - id заавал байх
-     *   - is_visible → checkbox → 1/0
+     *   - is_visible -> checkbox -> 1/0
      *   - Localized контент өөрчлөгдсөн эсэхийг шалгана
      *
      * @return void
@@ -300,7 +300,7 @@ class TemplateController extends \Raptor\Controller
      * Цэсийг идэвхгүй болгох (soft delete).
      *
      * Анхаарах зүйл:
-     *   - “system_manage_menu” permission шаардлагатай
+     *   - "system_manage_menu" permission шаардлагатай
      *   - Идэвхтэй цэс дээр л идэвхгүй болгох боломжтой
      *
      * @return void

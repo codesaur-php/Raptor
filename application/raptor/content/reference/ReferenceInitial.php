@@ -23,11 +23,11 @@ namespace Raptor\Content;
  *
  * Жишээ:
  * ------
- * - reference_templates() → reference_templates хүснэгтэд:
- *      • Веб ашиглах ерөнхий нөхцөл (TOS)
- *      • Нууцлалын бодлого (Privacy Policy)
- *      • Нууц үг сэргээх имэйл template
- *      • Шинэ хэрэглэгчийн хүсэлт / баталгаажуулалтын имэйл template
+ * - reference_templates() -> reference_templates хүснэгтэд:
+ *      * Веб ашиглах ерөнхий нөхцөл (TOS)
+ *      * Нууцлалын бодлого (Privacy Policy)
+ *      * Нууц үг сэргээх имэйл template
+ *      * Шинэ хэрэглэгчийн хүсэлт / баталгаажуулалтын имэйл template
  *   гэх мэт системийн стандарт HTML агуулгуудыг Монгол / Англи хэлээр урьдчилан
  *   бүртгэж өгч байна.
  *
@@ -43,7 +43,7 @@ class ReferenceInitial
      *
      * Энэ функц нь ReferenceModel::__initial() дотор:
      *  - $table = 'reference_templates' үед
-     *  - method_exists(ReferenceInitial::class, 'reference_templates') → true
+     *  - method_exists(ReferenceInitial::class, 'reference_templates') -> true
      *  болсон нөхцөлд автоматаар дуудагдана.
      *
      * Хийгдэх ажлууд:

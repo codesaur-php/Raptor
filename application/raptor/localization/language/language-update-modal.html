@@ -79,7 +79,7 @@
     codeInput.addEventListener('input', function () {
         const langFlag = document.querySelector('#language_update p.lang_flag');
         if (this.value.length === 2) {
-            /* en → us flag */
+            /* en -> us flag */
             const flagstr = this.value === 'en' ? 'us' : this.value;
             langFlag.innerHTML =
                 `<img src="https://flagcdn.com/40x30/${flagstr}.png" 
@@ -97,7 +97,7 @@
     } else {
         const submitter = document.querySelector('button.submit-language');
 
-        /* Submit товч → form.requestSubmit() */
+        /* Submit товч -> form.requestSubmit() */
         submitter.addEventListener('click', function (e) {
             e.preventDefault();
             formUpdate.requestSubmit();
@@ -148,7 +148,7 @@
                     throw new Error(response.message ?? 'Invalid response!');
                 }
                 
-                /* Амжилттай → reload localization dashboard */
+                /* Амжилттай -> reload localization dashboard */
                 window.location.reload();
 
                 NotifyTop(

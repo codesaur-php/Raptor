@@ -1,20 +1,20 @@
 /**
  * ================================================================
- * 🎨 Raptor Dashboard - CSS Stylesheet
+ * Raptor Dashboard - CSS Stylesheet
  * ================================================================
  *
  * Энэ stylesheet нь Dashboard UI-ийн үндсэн харагдац, sidebar,
  * navigation, typography болон responsive тохиргоонуудыг тодорхойлдог.
  *
- * ✔ Sidebar - байрлал, өнгө, hover, active төлөв
- * ✔ Navbar brand - лого хэмжээ, байрлал
- * ✔ Responsive layout - desktop үед sidebar fixed болно
- * ✔ Color scheme - сайтын бүхий л dashboard элементүүдийн өнгө
+ * Sidebar - байрлал, өнгө, hover, active төлөв
+ * Navbar brand - лого хэмжээ, байрлал
+ * Responsive layout - desktop үед sidebar fixed болно
+ * Color scheme - сайтын бүхий л dashboard элементүүдийн өнгө
  *
  * Хөгжүүлэгч хүсвэл:
- *   • Theme-тэй холбож өөрчлөх
- *   • Sidebar-г өргөтгөх
- *   • Light/Dark mode override хийх боломжтой.
+ *   * Theme-тэй холбож өөрчлөх
+ *   * Sidebar-г өргөтгөх
+ *   * Light/Dark mode override хийх боломжтой.
  *
  * ---------------------------------------------------------------
  * Агуулга:

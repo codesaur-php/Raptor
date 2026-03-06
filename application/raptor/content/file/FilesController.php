@@ -14,15 +14,15 @@ use Psr\Log\LogLevel;
  * үйлдлийг нэг дороос гүйцэтгэнэ.
  *
  * Ашигласан:
- *  - FileController → файлын үндсэн upload/move логик
- *  - DashboardTrait → dashboard-ийн template rendering
+ *  - FileController -> файлын үндсэн upload/move логик
+ *  - DashboardTrait -> dashboard-ийн template rendering
  *
  * Онцлог:
  *  - Бүх файлуудыг `{table}_files` нэртэй динамик хүснэгтэд хадгална
  *  - PostgreSQL/MySQL/SQLite ажиллана
  *  - JSON response + Dashboard HTML response хосолсон
  *  - Access control (permission) бүрэн тусгагдсан
- *  - log() → үйлдэл бүрийг лог файл руу бичдэг
+ *  - log() -> үйлдэл бүрийг лог файл руу бичдэг
  *
  * @package Raptor\Content
  */
@@ -230,34 +230,34 @@ class FilesController extends FileController
      * олон төрлийн хүснэгттэй холбох боломжийг олгодог.
      *
      * -----------------------------------------
-     * 📌 Үндсэн ажиллагаа:
+     * Үндсэн ажиллагаа:
      * -----------------------------------------
      *  1) Файлыг upload хийж сервер дээр хадгална
-     *     - moveUploaded($input) → upload хийгээд file/path/size/type... мэдээлэл үүсгэнэ
+     *     - moveUploaded($input) -> upload хийгээд file/path/size/type... мэдээлэл үүсгэнэ
      *
      *  2) Хадгалах фолдерыг автоматаар тохируулна
      *       /{table}/{record_id}/{uploaded_file}
      *     Жишээ:
-     *       /pages/10/header.jpg        → pages хүснэгтийн 10-р бичлэгийн файл
-     *       /files/brandbook.pdf        → content-той холбогдоогүй ерөнхий файл
+     *       /pages/10/header.jpg        -> pages хүснэгтийн 10-р бичлэгийн файл
+     *       /files/brandbook.pdf        -> content-той холбогдоогүй ерөнхий файл
      *
      *  3) FilesModel ашиглан `{table}_files` хүснэгтэд DB-р бүртгэнэ
      *     Мөр бүр дараах бүтэцтэй:
      *       id, record_id, file, path, size, type, mime_content_type,
-     *       category, keyword, description, created_by, created_at …
+     *       category, keyword, description, created_by, created_at ...
      *
      *  4) Амжилттай бол insert хийгдсэн мөрийн бүх мэдээллийг JSON-оор буцаана
      *
      * -----------------------------------------
-     * 📌 `$id` параметрын утга - record_id талбарын жинхэнэ утга
+     * `$id` параметрын утга - record_id талбарын жинхэнэ утга
      * -----------------------------------------
      * `$id` нь файлыг аль контент мөртэй холбож байгааг заана.
      *
      * Жишээ 1:
-     *   pages хүснэгтэд “About Us” нэртэй бичлэг байлаа гэж бодъё
+     *   pages хүснэгтэд "About Us" нэртэй бичлэг байлаа гэж бодъё
      *
      *   pages:
-     *     id = 10   → “About Us” page
+     *     id = 10   -> "About Us" page
      *
      *   Энэ page дээр 3 файл upload хийвэл:
      *      pages_files хүснэгтэд:
@@ -270,21 +270,21 @@ class FilesController extends FileController
      *
      * Жишээ 2:
      *   `$record_id = 0` бол файл ямар ч контент мөртэй холбогдохгүй.
-     *   Энэ нь “ерөнхий upload”, эсвэл түр хадгалах файл гэсэн утгатай.
+     *   Энэ нь "ерөнхий upload", эсвэл түр хадгалах файл гэсэн утгатай.
      *
      * -----------------------------------------
-     * 📌 Файлын бүтэц динамик байдаг - хүснэгт бүрийн өөрийн files table
+     * Файлын бүтэц динамик байдаг - хүснэгт бүрийн өөрийн files table
      * -----------------------------------------
-     *   pages      → pages_files
-     *   news       → news_files
-     *   products   → products_files
-     *   files      → files_files (ерөнхий файл)
+     *   pages      -> pages_files
+     *   news       -> news_files
+     *   products   -> products_files
+     *   files      -> files_files (ерөнхий файл)
      *
      * Энэ архитектур нь нэг content дээр олон файл хавсаргах боломжийг
      * бүрэн тайван шийддэг.
      *
      * -----------------------------------------
-     * ⚠️ Permission
+     * Permission
      * -----------------------------------------
      *  Хэрэглэгч заавал **authentication** хийгдсэн байх ёстой.
      *
@@ -294,8 +294,8 @@ class FilesController extends FileController
      *
      * @param int $record_id
      *     Хамаарах контент бичлэгийн ID дугаар.
-     *     - 0 → ерөнхий файл, контент мөртэй холбогдохгүй
-     *     - >0 → тухайн content-ийн attachments (record_id)
+     *     - 0 -> ерөнхий файл, контент мөртэй холбогдохгүй
+     *     - >0 -> тухайн content-ийн attachments (record_id)
      *
      * @return void
      */
@@ -312,7 +312,7 @@ class FilesController extends FileController
             $this->setFolder($folder);
             $this->allowCommonTypes();
 
-            // Upload → Move (optimize=1 бол зургийг автоматаар optimize хийнэ)
+            // Upload -> Move (optimize=1 бол зургийг автоматаар optimize хийнэ)
             $body = $this->getParsedBody();
             $optimize = ($body['optimize'] ?? '0') === '1';
             $uploaded = $this->moveUploaded('file', $optimize);
@@ -445,7 +445,7 @@ class FilesController extends FileController
     /**
      * Файлын мэдээллийг засварлах.
      *
-     * - form submit → parsed body → бүх `file_` prefix-ийг цэвэрлэнэ
+     * - form submit -> parsed body -> бүх `file_` prefix-ийг цэвэрлэнэ
      * - updateById() ашиглан мөрийг шинэчилнэ
      * - JSON success response буцаана
      *
@@ -469,7 +469,7 @@ class FilesController extends FileController
                 throw new \InvalidArgumentException($this->text('invalid-request'), 400);
             }
 
-            // Payload боловсруулах (file_ → арилга)
+            // Payload боловсруулах (file_ -> арилга)
             $payload = [];
             foreach ($parsedBody as $k => $v) {
                 if (\str_starts_with($k, 'file_')) {
@@ -542,7 +542,7 @@ class FilesController extends FileController
      *
      * Үйл явц:
      *  - id шалгана
-     *  - files_model → deactivateById()
+     *  - files_model -> deactivateById()
      *  - JSON success response
      *  - Лог бичнэ
      *

@@ -77,9 +77,9 @@ class ForgotModel extends Model
             
             // Энд гадаад түлхүүр (FOREIGN KEY)-ийн холбоосыг UsersModel-ийн хүснэгттэй үүсгэнэ.
             // users хүснэгтийн нэрийг UsersModel::getName() ашиглан динамикаар авна. Ирээдүйд refactor хийхэд бэлэн байна.
-            // user_id → {UsersModel::getName()}(id)
-            // ON DELETE SET NULL → Хэрэглэгч устсан тохиолдолд user_id null болно.
-            // ON UPDATE CASCADE → Хэрэглэгчийн id өөрчлөгдвөл автоматаар шинэчлэгдэнэ.
+            // user_id -> {UsersModel::getName()}(id)
+            // ON DELETE SET NULL -> Хэрэглэгч устсан тохиолдолд user_id null болно.
+            // ON UPDATE CASCADE -> Хэрэглэгчийн id өөрчлөгдвөл автоматаар шинэчлэгдэнэ.
             $users = (new \Raptor\User\UsersModel($this->pdo))->getName();            
             $this->exec("
                 ALTER TABLE $table 
@@ -101,7 +101,7 @@ class ForgotModel extends Model
      * created_at талбарыг заагаагүй бол автоматаар одоогийн огноо тавина.
      *
      * @param array $record
-     *      Мэдээллийн массив (username, email, code, remote_addr, …)
+     *      Мэдээллийн массив (username, email, code, remote_addr, ...)
      *
      * @return array|false
      *      Амжилттай бол оруулсан бичлэг, алдаа гарвал false

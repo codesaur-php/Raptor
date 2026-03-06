@@ -15,7 +15,7 @@ use Psr\Log\LogLevel;
  * 1) DB доторх "localization_text_*_content" хүснэгтүүдийг автоматаар илрүүлнэ.
  * 2) TextInitial классын seed method-уудыг илрүүлж table нэрийг жагсаалтад нэмнэ.
  *    Ингэхдээ хүснэгтүүд DB-д байхгүй байсан ч:
- *       TextModel::setTable() → __initial() автоматаар ажиллаж
+ *       TextModel::setTable() -> __initial() автоматаар ажиллаж
  *       тухайн хүснэгтүүдийг шинээр үүсгэнэ.
  *    Дараа нь TextInitial::$table() seed өгөгдлийг populate хийнэ.
  * 3) TextModel ашиглан бүх текстүүдийг уншиж бүртгэл болгон дамжуулна.
@@ -65,7 +65,7 @@ class LocalizationController extends \Raptor\Controller
     public function index()
     {        
         try {
-            // Хэрэглэгч эрхгүй бол → алдаа
+            // Хэрэглэгч эрхгүй бол -> алдаа
             if (!$this->isUserCan('system_localization_index')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
@@ -89,7 +89,7 @@ class LocalizationController extends \Raptor\Controller
             $text_tables = [];
 
             // DB-д байгаа орчуулгын хүснэгтийн нэрийг боловсруулах
-            // localization_text_{name}_content → {name}
+            // localization_text_{name}_content -> {name}
             foreach ($text_content_tables as $result) {
                 $text_tables[] = \substr(
                     reset($result),

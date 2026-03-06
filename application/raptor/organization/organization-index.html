@@ -81,7 +81,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         </span>`;
                 }
 
-                /* RBAC alias → system_rbac эрхтэй бол линк, эсрэг тохиолдолд текст хэлбэрээр */
+                /* RBAC alias -> system_rbac эрхтэй бол линк, эсрэг тохиолдолд текст хэлбэрээр */
                 let aliasLink = !rbacLink
                     ? org.alias
                     : `<a href="${rbacLink}?alias=${org.alias}&title=${encodeURIComponent(org.name)}">${org.alias}</a>`;

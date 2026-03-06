@@ -7,8 +7,8 @@
 <div class="card">
     <div class="card-header">
         <!-- Reference хүснэгтүүдийн таб навигаци
-             tables|keys → templates, questions ... гэх мэт жагсаалт
-             loop.first → эхний табыг идэвхтэй сонгоно -->
+             tables|keys -> templates, questions ... гэх мэт жагсаалт
+             loop.first -> эхний табыг идэвхтэй сонгоно -->
         <ul class="nav nav-tabs card-header-tabs" id="referenceTab" role="tablist">
             {% for name in tables|keys %}
                 <li class="nav-item">
@@ -35,7 +35,7 @@
              role="tabpanel"
              aria-labelledby="{{ table }}-tab">
 
-            <!-- Хэрэв хэрэглэгч шинэ бичлэг үүсгэх эрхтэй бол “New” action -->
+            <!-- Хэрэв хэрэглэгч шинэ бичлэг үүсгэх эрхтэй бол "New" action -->
             {% if can_insert %}
                 <a class="btn btn-sm btn-outline-success text-uppercase shadow-sm"
                    href="{{ 'reference-insert'|link({'table':table}) }}">

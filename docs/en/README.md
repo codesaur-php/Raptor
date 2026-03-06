@@ -1,4 +1,4 @@
-# 🦖 Raptor Framework - Full Documentation
+# Raptor Framework - Full Documentation
 
 [![PHP Version](https://img.shields.io/badge/php-%5E8.2.1-777BB4.svg?logo=php)](https://www.php.net/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](../../LICENSE)
@@ -27,19 +27,21 @@
 
 `codesaur/raptor` is a PHP framework with a two-layer architecture: **Web** (public site) and **Dashboard** (admin panel), built on PSR-7/PSR-15 middleware standards.
 
+> **Note:** This package is the successor of `codesaur/indodaptor` (500+ installs), which has been removed from Packagist. A new package `codesaur/raptor` was created with a full code refactor, as the name "Indoraptor" is a trademark of Universal Pictures.
+
 ### Key Features
 
-- ✔ **PSR-7/PSR-15** middleware-based architecture
-- ✔ **JWT + Session** authentication
-- ✔ **RBAC** (Role-Based Access Control)
-- ✔ **Multi-language** support (Localization)
-- ✔ CMS modules: News, Pages, Files, References, Settings
-- ✔ MySQL / PostgreSQL / SQLite support
-- ✔ **Twig** template engine
-- ✔ **OpenAI** integration (moedit editor)
-- ✔ Image optimization (GD)
-- ✔ PSR-3 logging system
-- ✔ **Brevo** API email delivery
+- **PSR-7/PSR-15** middleware-based architecture
+- **JWT + Session** authentication
+- **RBAC** (Role-Based Access Control)
+- **Multi-language** support (Localization)
+- CMS modules: News, Pages, Files, References, Settings
+- MySQL / PostgreSQL / SQLite support
+- **Twig** template engine
+- **OpenAI** integration (moedit editor)
+- Image optimization (GD)
+- PSR-3 logging system
+- **Brevo** API email delivery
 
 ### codesaur Ecosystem
 
@@ -181,90 +183,90 @@ Example configuration files for Apache and Nginx are available in [`docs/conf.ex
 
 ```
 public_html/index.php (Entry point)
-│
-├── /dashboard/* → Dashboard\Application (Admin Panel)
-│    ├── Middleware: ErrorHandler → MySQL → Session → JWT → Container → Localization → Settings
-│    ├── Routers: Login, Users, Organization, RBAC, Localization, Contents, Logs, Template
-│    └── Controllers → Twig Templates → HTML Response
-│
-└── /* → Web\Application (Public Website)
-     ├── Middleware: ExceptionHandler → MySQL → Container → Session → Localization → Settings
-     ├── Router: HomeRouter (/, /page/{id}, /news/{id}, /contact, /language/{code})
-     └── TemplateController → Twig Templates → HTML Response
+|
+|-- /dashboard/* -> Dashboard\Application (Admin Panel)
+|    |-- Middleware: ErrorHandler -> MySQL -> Session -> JWT -> Container -> Localization -> Settings
+|    |-- Routers: Login, Users, Organization, RBAC, Localization, Contents, Logs, Template
+|    \-- Controllers -> Twig Templates -> HTML Response
+|
+\-- /* -> Web\Application (Public Website)
+     |-- Middleware: ExceptionHandler -> MySQL -> Container -> Session -> Localization -> Settings
+     |-- Router: HomeRouter (/, /page/{id}, /news/{id}, /contact, /language/{code})
+     \-- TemplateController -> Twig Templates -> HTML Response
 ```
 
 ### Request Flow
 
 ```
-Browser → index.php → .env → ServerRequest
-  → Application selection (by URL path)
-    → Middleware chain (in order)
-      → Router match
-        → Controller::action()
-          → Model (DB)
-          → TwigTemplate → render()
-            → HTML Response → Browser
+Browser -> index.php -> .env -> ServerRequest
+  -> Application selection (by URL path)
+    -> Middleware chain (in order)
+      -> Router match
+        -> Controller::action()
+          -> Model (DB)
+          -> TwigTemplate -> render()
+            -> HTML Response -> Browser
 ```
 
 ### Directory Structure
 
 ```
 raptor/
-├── application/
-│   ├── raptor/                    # Core framework (Dashboard + shared)
-│   │   ├── Application.php        # Dashboard Application base
-│   │   ├── Controller.php         # Base Controller for all controllers
-│   │   ├── MySQLConnectMiddleware.php
-│   │   ├── PostgresConnectMiddleware.php
-│   │   ├── SQLiteConnectMiddleware.php
-│   │   ├── ContainerMiddleware.php
-│   │   ├── authentication/        # Login, JWT, Session
-│   │   ├── content/               # CMS modules
-│   │   │   ├── file/              # File management
-│   │   │   ├── news/              # News
-│   │   │   ├── page/              # Pages
-│   │   │   ├── reference/         # References
-│   │   │   └── settings/          # System settings
-│   │   ├── localization/          # Languages & translations
-│   │   ├── organization/          # Organization management
-│   │   ├── rbac/                  # Access control
-│   │   ├── user/                  # User management
-│   │   ├── template/              # Dashboard UI template
-│   │   ├── log/                   # PSR-3 logging
-│   │   ├── mail/                  # Email
-│   │   └── exception/             # Error handling
-│   ├── dashboard/                 # Dashboard Application
-│   │   ├── Application.php
-│   │   └── home/                  # Dashboard Home Router
-│   └── web/                       # Web Application
-│       ├── Application.php
-│       ├── SessionMiddleware.php
-│       ├── LocalizationMiddleware.php
-│       ├── home/                  # Public page controllers + templates
-│       │   ├── HomeRouter.php
-│       │   ├── HomeController.php
-│       │   ├── home.html
-│       │   ├── page.html
-│       │   └── news.html
-│       └── template/              # Web layout
-│           ├── TemplateController.php
-│           ├── ExceptionHandler.php
-│           └── index.html
-├── public_html/
-│   ├── index.php                  # Entry point
-│   ├── .htaccess                  # Apache URL rewrite
-│   └── assets/                    # CSS, JS (dashboard, moedit, motable)
-├── docs/
-│   ├── conf.example/              # Server configuration examples
-│   │   ├── .env.example           # Environment variables
-│   │   ├── .htaccess.example      # Apache rewrite rules
-│   │   └── .nginx.conf.example    # Nginx server config
-│   ├── en/                        # English documentation
-│   └── mn/                        # Mongolian documentation
-├── logs/                          # Error log files
-├── private/                       # Protected files
-├── composer.json
-└── LICENSE
+|-- application/
+|   |-- raptor/                    # Core framework (Dashboard + shared)
+|   |   |-- Application.php        # Dashboard Application base
+|   |   |-- Controller.php         # Base Controller for all controllers
+|   |   |-- MySQLConnectMiddleware.php
+|   |   |-- PostgresConnectMiddleware.php
+|   |   |-- SQLiteConnectMiddleware.php
+|   |   |-- ContainerMiddleware.php
+|   |   |-- authentication/        # Login, JWT, Session
+|   |   |-- content/               # CMS modules
+|   |   |   |-- file/              # File management
+|   |   |   |-- news/              # News
+|   |   |   |-- page/              # Pages
+|   |   |   |-- reference/         # References
+|   |   |   \-- settings/          # System settings
+|   |   |-- localization/          # Languages & translations
+|   |   |-- organization/          # Organization management
+|   |   |-- rbac/                  # Access control
+|   |   |-- user/                  # User management
+|   |   |-- template/              # Dashboard UI template
+|   |   |-- log/                   # PSR-3 logging
+|   |   |-- mail/                  # Email
+|   |   \-- exception/             # Error handling
+|   |-- dashboard/                 # Dashboard Application
+|   |   |-- Application.php
+|   |   \-- home/                  # Dashboard Home Router
+|   \-- web/                       # Web Application
+|       |-- Application.php
+|       |-- SessionMiddleware.php
+|       |-- LocalizationMiddleware.php
+|       |-- home/                  # Public page controllers + templates
+|       |   |-- HomeRouter.php
+|       |   |-- HomeController.php
+|       |   |-- home.html
+|       |   |-- page.html
+|       |   \-- news.html
+|       \-- template/              # Web layout
+|           |-- TemplateController.php
+|           |-- ExceptionHandler.php
+|           \-- index.html
+|-- public_html/
+|   |-- index.php                  # Entry point
+|   |-- .htaccess                  # Apache URL rewrite
+|   \-- assets/                    # CSS, JS (dashboard, moedit, motable)
+|-- docs/
+|   |-- conf.example/              # Server configuration examples
+|   |   |-- .env.example           # Environment variables
+|   |   |-- .htaccess.example      # Apache rewrite rules
+|   |   \-- .nginx.conf.example    # Nginx server config
+|   |-- en/                        # English documentation
+|   \-- mn/                        # Mongolian documentation
+|-- logs/                          # Error log files
+|-- private/                       # Protected files
+|-- composer.json
+\-- LICENSE
 ```
 
 ---
@@ -422,7 +424,7 @@ $this->isUserCan('news_edit');
 **Classes:** `LocalizationRouter`, `LocalizationController`, `LanguageModel`, `TextModel`, `LocalizationMiddleware`
 
 - Add / edit / remove languages
-- Translation text management (key → value)
+- Translation text management (key -> value)
 - Session-based language selection
 - Use in Twig templates: `{{ 'key'|text }}`
 
@@ -796,6 +798,6 @@ $this->use(new \Raptor\SQLiteConnectMiddleware());
 
 ## Next Steps
 
-- 📚 [API Reference](api.md) - Detailed API reference for all classes and methods
-- 💬 [Discussions](https://github.com/orgs/codesaur-php/discussions) - Ask questions, share ideas, get help
-- 🦖 [codesaur ecosystem](https://github.com/codesaur-php) - Other packages
+- [API Reference](api.md) - Detailed API reference for all classes and methods
+- [Discussions](https://github.com/orgs/codesaur-php/discussions) - Ask questions, share ideas, get help
+- [codesaur ecosystem](https://github.com/codesaur-php) - Other packages

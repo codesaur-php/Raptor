@@ -1,12 +1,12 @@
 <!-- 
     LOG VIEW MODAL (Дэлгэрэнгүй Log үзэх modal)
-    ───────────────────────────────────────────────────────────────
-    Энэ modal нь тухайн логийн бүх мэдээллийг key → value хэлбэрээр
+    ---------------------------------------------------------------
+    Энэ modal нь тухайн логийн бүх мэдээллийг key -> value хэлбэрээр
     хүснэгтийн мөр болгон харуулдаг.
     
     formGroupRow() macro:
-        - Хэрэв content нь array байвал → nested key/value-уудыг автоматаар жагсааж харуулна
-        - Хэрэв нэг утга бол → нэг мөрөнд label + content харуулна
+        - Хэрэв content нь array байвал -> nested key/value-уудыг автоматаар жагсааж харуулна
+        - Хэрэв нэг утга бол -> нэг мөрөнд label + content харуулна
 
     Энэ файл нь зөвхөн UI харуулах log viewer тул:
         - Backend-аас ирсэн logdata-г loop ашиглан мөрөөр харуулдаг
@@ -36,8 +36,8 @@
     <div class="modal-content">
         <!-- Modal Header -->
         <div class="modal-header text-bg-secondary">
-            <!-- log_caption нь “Лог” эсвэл Localization-аас ирдэг -->
-            <!-- table/id → log-оос ямар id-г харуулж байгааг тодорхой харуулна -->
+            <!-- log_caption нь "Лог" эсвэл Localization-аас ирдэг -->
+            <!-- table/id -> log-оос ямар id-г харуулж байгааг тодорхой харуулна -->
             <h3 class="modal-title fs-6 text-uppercase">
                 {{ log_caption }} ({{ table }}/{{ id }})
             </h3>

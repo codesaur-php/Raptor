@@ -14,7 +14,7 @@
         </div>
 
         <div class="modal-body">
-            <!-- Текст засварлах үндсэн form → fetch ашиглан PUT хүсэлт илгээнэ -->
+            <!-- Текст засварлах үндсэн form -> fetch ашиглан PUT хүсэлт илгээнэ -->
             <form class="needs-validation"
                   novalidate
                   id="text_update"
@@ -41,7 +41,7 @@
                 <div class="row{{ loop.last ? '' : ' mb-2' }}">
                     <label class="col-3 col-form-label text-end">
                         {{ 'title'|text }} ({{ language['title'] }}
-                        <!-- Далбааны зураг → хэлний ойлгомжтой тэмдэглэгээ -->
+                        <!-- Далбааны зураг -> хэлний ойлгомжтой тэмдэглэгээ -->
                         {% set flag = code == 'en' ? 'us' : code %}
                         <img src="https://flagcdn.com/20x15/{{ flag }}.png"
                              srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x"
@@ -87,7 +87,7 @@
         NotifyTop('danger', `{{ 'error'|text|e }}`, 'Form not found!');
     } else {
         /* Submit товч дарсан үед form.requestSubmit() дуудагдана.
-         * Энэ нь submit event → validation-г ажиллуулдаг. */
+         * Энэ нь submit event -> validation-г ажиллуулдаг. */
         const submitter = document.querySelector('button.update-text-submit');
         submitter.addEventListener('click', function (e) {
             e.preventDefault();
@@ -111,10 +111,10 @@
                 );
             }
 
-            /* Button grow animation → "saving..." */
+            /* Button grow animation -> "saving..." */
             submitter.growNstop();
 
-            /* FormData → PUT хүсэлтэд илгээгдэнэ */
+            /* FormData -> PUT хүсэлтэд илгээгдэнэ */
             const data = new FormData(this);
             
             fetch(
@@ -131,12 +131,12 @@
                 throw new Error(`HTTP [${res.status}]: ${res.statusText}`);
             })
             .then(response => {
-                /* Backend-ээс success бус ирвэл → exception */
+                /* Backend-ээс success бус ирвэл -> exception */
                 if (response.status !== 'success') {
                     throw new Error(response.message ? response.message : 'Invalid response!');
                 }
 
-                /* Амжилттай → localization dashboard хуудсыг дахин ачаална */
+                /* Амжилттай -> localization dashboard хуудсыг дахин ачаална */
                 window.location.reload();
 
                 NotifyTop(

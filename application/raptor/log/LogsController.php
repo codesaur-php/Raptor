@@ -10,19 +10,19 @@ use codesaur\Template\TwigTemplate;
  * Raptor Framework-ийн Log module-ийн үндсэн Controller.
  * 
  * Логтой холбоотой дараах 3 үндсэн үйлдлийг хариуцна:
- * ───────────────────────────────────────────────────────────────
+ * ---------------------------------------------------------------
  * 1) index()   
- *      → Логийн бүх _log хүснэгтийн жагсаалтыг харуулах
+ *      -> Логийн бүх _log хүснэгтийн жагсаалтыг харуулах
  * 
  * 2) view()    
- *      → Нэг логийн дэлгэрэнгүйг modal-аар үзүүлэх
+ *      -> Нэг логийн дэлгэрэнгүйг modal-аар үзүүлэх
  * 
  * 3) retrieve()
- *      → Логийн өгөгдлийг AJAX-р шүүх, хайх, ORDER BY, LIMIT хийх  
- *         (UI-ийн JS fetch() → JSON response)
+ *      -> Логийн өгөгдлийг AJAX-р шүүх, хайх, ORDER BY, LIMIT хийх  
+ *         (UI-ийн JS fetch() -> JSON response)
  * 
  * Аюулгүй байдлын нөхцөл:
- *      → Хэрэглэгч 'system_logger' эрхтэй байх ёстой.
+ *      -> Хэрэглэгч 'system_logger' эрхтэй байх ёстой.
  * 
  * @package Raptor\Log
  */
@@ -34,7 +34,7 @@ class LogsController extends \Raptor\Controller
      * Логийн бүх хүснэгтийн жагсаалтыг харуулах Dashboard хуудас.
      *
      * Процесс:
-     * ───────────────────────────────────────────────────────────────
+     * ---------------------------------------------------------------
      * 1) Хэрэглэгч log харах эрхтэй эсэхийг шалгана.
      * 2) MySQL / PostgreSQL аль ч тохиолдолд *_log нэртэй хүснэгтүүдийг олно.
      * 3) Тэдгээрийг dashboard template-д дамжуулж харуулна.
@@ -63,7 +63,7 @@ class LogsController extends \Raptor\Controller
             $log_tables = [];
             $pdostmt = $this->prepare($query);
             if ($pdostmt->execute()) {
-                // Жишээ: dashboard_log → dashboard
+                // Жишээ: dashboard_log -> dashboard
                 while ($row = $pdostmt->fetch()) {
                     $log_tables[] = \substr(\current($row), 0, -\strlen('_log'));
                 }
@@ -83,14 +83,14 @@ class LogsController extends \Raptor\Controller
      * Нэг логийн бичлэгийг modal-аар харуулах.
      *
      * Query params:
-     * ────────────────────────────────────────
+     * ----------------------------------------
      * ?id=123
      * ?table=dashboard
      *
      * Процесс:
      * 1) Параметр шалгах (id тоон байх, хүснэгт зөв байх)
-     * 2) Logger model → setTable()
-     * 3) getLogById(id) → log data
+     * 2) Logger model -> setTable()
+     * 3) getLogById(id) -> log data
      * 4) retrieve-log-modal.html template-д дамжуулж render хийх
      *
      * @return void
@@ -146,7 +146,7 @@ class LogsController extends \Raptor\Controller
      * бүгдийг хариуцдаг.
      *
      * Request format:
-     * ─────────────────────────────────────────────
+     * ---------------------------------------------
      * POST /dashboard/logs/retrieve?table=dashboard
      * Body (JSON):
      * {
@@ -191,7 +191,7 @@ class LogsController extends \Raptor\Controller
                 $keys = \explode('.', $field);
 
                 if ($this->getDriverName() == 'pgsql') {
-                    // PostgreSQL JSONB → a->'b'->>'c'
+                    // PostgreSQL JSONB -> a->'b'->>'c'
                     $expr = '(context::jsonb)';
                     $lastKey = \array_pop($keys);
                     foreach ($keys as $k) {

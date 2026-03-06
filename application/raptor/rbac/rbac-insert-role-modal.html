@@ -2,9 +2,9 @@
     RBAC - Add Role Modal
 
     Зорилго:
-      • Шинэ RBAC Role үүсгэх (жишээ: editor, manager, accountant…)
-      • Role → зөвхөн тухайн alias (system, news, org…) дотор хүчинтэй
-      • POST хүсэлтээр сервер рүү илгээнэ
+      * Шинэ RBAC Role үүсгэх (жишээ: editor, manager, accountant...)
+      * Role -> зөвхөн тухайн alias (system, news, org...) дотор хүчинтэй
+      * POST хүсэлтээр сервер рүү илгээнэ
 
     Гол хувьсагчид:
       - alias : RBAC системийн хүрээ
@@ -87,10 +87,10 @@
        RBAC Role Insert Form Controller (JavaScript)
        ---------------------------------------------
        Гол үйлдлүүд:
-         • HTML5 validation
-         • Submit → fetch() ашиглан POST хийх
-         • Success → хуудсыг refresh
-         • Error → NotifyTop() ашиглан мэдэгдэл өгөх
+         * HTML5 validation
+         * Submit -> fetch() ашиглан POST хийх
+         * Success -> хуудсыг refresh
+         * Error -> NotifyTop() ашиглан мэдэгдэл өгөх
     */
 
     const formInsert = document.querySelector('form#rbac_role_insert');
@@ -98,7 +98,7 @@
         /* Form олдохгүй бол хэрэглэгчид мэдэгдэнэ */
         NotifyTop('danger', `{{ 'error'|text|e }}`, 'Form not found!');
     } else {
-        /* Submit товч → requestSubmit() ашиглана */
+        /* Submit товч -> requestSubmit() ашиглана */
         const submitter = document.querySelector('button.submit-new-role');
         submitter.addEventListener('click', function (e) {
             e.preventDefault();
@@ -121,11 +121,11 @@
                 );
             }
 
-            /* Button animation (growNstop → custom function) */
+            /* Button animation (growNstop -> custom function) */
             submitter.growNstop();
 
             const data = new FormData(this);
-            /* AJAX POST → сервер лүү илгээх */
+            /* AJAX POST -> сервер лүү илгээх */
             fetch(
                 this.action,
                 {
@@ -144,7 +144,7 @@
                     throw new Error(response.message ? response.message : 'Invalid response!');
                 }
 
-                /* Role амжилттай бүртгэгдсэн → хуудсыг refresh */
+                /* Role амжилттай бүртгэгдсэн -> хуудсыг refresh */
                 window.location.reload();
 
                 NotifyTop(

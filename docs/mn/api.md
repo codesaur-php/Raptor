@@ -1,4 +1,4 @@
-# 📚 Raptor API Reference (MN)
+# Raptor API Reference (MN)
 
 > Бүх модуль, класс, методуудын дэлгэрэнгүй тайлбар.
 
@@ -500,10 +500,10 @@ Settings-г DB-с уншиж `settings` нэрийн request attribute-д inject
 **Файл:** `application/raptor/localization/text/TextModel.php`
 **Extends:** `codesaur\DataObject\Model`
 
-Орчуулгын текстүүд (key → value).
+Орчуулгын текстүүд (key -> value).
 
 #### `retrieve(array $languageCodes): array`
-Бүх орчуулгыг хэлний код → key → value бүтцээр буцаана.
+Бүх орчуулгыг хэлний код -> key -> value бүтцээр буцаана.
 
 ### LocalizationMiddleware
 
@@ -597,7 +597,7 @@ PSR-11 DI Container-г request-д inject хийнэ. PDO болон User ID-г c
 **Extends:** `codesaur\Http\Application\Application`
 
 Public вэб сайтын Application. Middleware pipeline:
-ExceptionHandler → MySQL → Container → Session → Localization → Settings → HomeRouter
+ExceptionHandler -> MySQL -> Container -> Session -> Localization -> Settings -> HomeRouter
 
 ### HomeRouter
 

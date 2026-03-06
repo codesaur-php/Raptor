@@ -6,6 +6,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 
 ---
 
+## [1.1.0] - 2026-03-06
+
+Codebase-wide cleanup enforcing old-school coding style. Codesaur dependency patch versions bumped.
+
+### Changed
+- **Old-school coding style** - Removed all emoji and decorative Unicode characters from every project file (MD, PHP, HTML, CSS, JS, conf)
+  - Unicode arrows (->), box-drawing characters (|, \, -), smart quotes, ellipsis, bullets, NBSP, ZWJ, BOM all replaced with plain ASCII equivalents
+  - Only Mongolian Cyrillic text and ASCII characters remain throughout the project
+- **codesaur/http-application** ^6.0.0 -> ^6.0.1
+- **codesaur/dataobject** ^9.0.0 -> ^9.0.2
+- **codesaur/http-client** ^2.0.0 -> ^2.0.4
+- **codesaur/template** ^3.0.0 -> ^3.0.1
+- **codesaur/container** ^3.1.0 -> ^3.1.3
+
+### Fixed
+- **moedit** - Internal copy/paste not working: pasting content copied from within the editor produced no result. Root cause was the image detection check intercepting paste events when clipboard contained both image and HTML data. Restructured `_handlePaste` to check HTML content before image detection. Added `_insertHtmlAtCursor()` helper with proper `_emitChange()` sync.
+- **composer.json** - Removed stray emoji from post-install script output
+
+---
+
 ## [1.0.0] - 2026-02-25
 
 **`codesaur/raptor` v1.0.0 - Stable Release.** Package renamed from `codesaur/indoraptor` to `codesaur/raptor`.

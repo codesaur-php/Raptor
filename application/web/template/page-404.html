@@ -1,21 +1,21 @@
 <!--
 ===========================================================================
-📄 PAGE: page-404.html
+PAGE: page-404.html
 ---------------------------------------------------------------------------
 
 Энэ файл нь Web layer-д зориулсан **friendly error page** юм.
 Raptor Framework-ийн Web\ExceptionHandler нь ямар ч алдаа (404, 500, 
-Exception, Error…) гарсан үед энэ template-г рендерлэдэг.
+Exception, Error...) гарсан үед энэ template-г рендерлэдэг.
 
-⚙ Template-д дамжуулагддаг хувьсагчууд:
-    • title   - Алдааны төрөл (Exception гэх мэт)
-    • code    - HTTP / Exception код (404, 500 …)
-    • message - Хэрэглэгчид харагдах HTML мессеж
+Template-д дамжуулагддаг хувьсагчууд:
+    * title   - Алдааны төрөл (Exception гэх мэт)
+    * code    - HTTP / Exception код (404, 500 ...)
+    * message - Хэрэглэгчид харагдах HTML мессеж
 
-🎯 Зориулалт:
-    ✔ Олон нийтэд харагдах сайтын алдааг "зөөлөн" байдлаар харуулах
-    ✔ Минимал дизайнтай
-    ✔ Development mode үед stack trace харагддаг
+Зориулалт:
+    Олон нийтэд харагдах сайтын алдааг "зөөлөн" байдлаар харуулах
+    Минимал дизайнтай
+    Development mode үед stack trace харагддаг
 
 Хэрэв хөгжүүлэгч өөрийн error page загвар ашиглахыг хүсвэл
 `page-404.html`-ийг өөрчилж болно - ExceptionHandler автоматаар ашиглана.
@@ -29,17 +29,17 @@ Exception, Error…) гарсан үед энэ template-г рендерлэдэ
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        <!-- 🌐 Tab title (алдааны нэр + код) -->
+        <!-- Tab title (алдааны нэр + код) -->
         <title>{{ title }} {{ code }}</title>
     </head>
 
     <body>
-        <!-- 📌 Main container -->
+        <!-- Main container -->
         <main style="width:50rem;margin-top:.75rem;margin-bottom:.75rem;">
-            <!-- 🔸 Error Title -->
+            <!-- Error Title -->
             <h1>{{ title }} {{ code }}!</h1>
 
-            <!-- 🔸 Error Message Content -->
+            <!-- Error Message Content -->
             <div>{{ message }}</div>
         </main>
     </body>

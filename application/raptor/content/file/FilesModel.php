@@ -9,31 +9,31 @@ use codesaur\DataObject\Column;
  * Class FilesModel
  *
  * --------------------------------------------------------------
- * 📌 FilesModel гэж юу вэ?
+ * FilesModel гэж юу вэ?
  * --------------------------------------------------------------
  *  Энэ модел нь Raptor Framework дахь бүх контент хүснэгт дээр
- *  хавсаргасан файлуудыг хадгалах зориулалттай “дагалдах хүснэгт” юм.
+ *  хавсаргасан файлуудыг хадгалах зориулалттай "дагалдах хүснэгт" юм.
  *
  *  Хүснэгтийн нэр нь үргэлж:
  *      {table}_files
  *
  *  Жишээ:
- *      pages  → pages_files
- *      news   → news_files
- *      files  → files_files
+ *      pages  -> pages_files
+ *      news   -> news_files
+ *      files  -> files_files
  *
  * --------------------------------------------------------------
- * 📌 record_id талбарын утга
+ * record_id талбарын утга
  * --------------------------------------------------------------
  *  record_id нь тухайн файлыг аль үндсэн контент бичлэгтэй холбож
  *  байгааг заадаг FK (foreign key) талбар.
  *
- *  ✔ Нэг контент олон файлтай холбогдож болно.
- *  ✔ record_id = гол хүснэгтийн id.
+ *  Нэг контент олон файлтай холбогдож болно.
+ *  record_id = гол хүснэгтийн id.
  *
- *  🔍 Жишээ:
+ *  Жишээ:
  *      pages хүснэгт:
- *          id = 10  → "About Us" page
+ *          id = 10  -> "About Us" page
  *
  *      pages_files хүснэгт:
  *          record_id = 10 бүхий олон мөр (олон файл) байж болно.
@@ -42,13 +42,13 @@ use codesaur\DataObject\Column;
  *
  *          SELECT * FROM pages_files WHERE record_id = 10 AND is_active=1;
  *
- *  ➤ Үүнийг Content module бүхэлдээ ашигладаг:
+ *  > Үүнийг Content module бүхэлдээ ашигладаг:
  *      - FilesController::post()
  *      - FilesController::list()
  *      - PagesController / NewsController  гэх мэтчилэн
  *
  * --------------------------------------------------------------
- * 📌 `$id = 0` тохиолдол
+ * `$id = 0` тохиолдол
  * --------------------------------------------------------------
  *  Хэрэв record_id = 0 бол файл нь ямар ч контент мөртэй
  *  холбогдоогүй "ерөнхий upload" гэсэн үг.
@@ -56,24 +56,24 @@ use codesaur\DataObject\Column;
  *      /files/logo.png
  *
  *  Энэ нь:
- *    • ерөнхий файл  
- *    • түр хадгалсан файл  
- *    • контент сонгоогүй upload  
+ *    * ерөнхий файл  
+ *    * түр хадгалсан файл  
+ *    * контент сонгоогүй upload  
  *  зэрэг нөхцөлд ашиглагдана.
  *
  * --------------------------------------------------------------
- * 🧩 FilesModel-ийн онцлог
+ * FilesModel-ийн онцлог
  * --------------------------------------------------------------
- *  • Хүснэгтийн нэрийг setTable("pages") → "pages_files" болгон автоматаар хувиргана  
- *  • created_by / updated_by баганууд users(id) руу FK холбоос үүсгэнэ  
- *  • record_id → parent_table(id) FK (cascade update / set null delete)  
- *  • insert/update үед created_at / updated_at талбарууд автоматаар бөглөгдөнө  
- *  • FileController-тай шууд нийцэн ажилладаг:
+ *  * Хүснэгтийн нэрийг setTable("pages") -> "pages_files" болгон автоматаар хувиргана  
+ *  * created_by / updated_by баганууд users(id) руу FK холбоос үүсгэнэ  
+ *  * record_id -> parent_table(id) FK (cascade update / set null delete)  
+ *  * insert/update үед created_at / updated_at талбарууд автоматаар бөглөгдөнө  
+ *  * FileController-тай шууд нийцэн ажилладаг:
  *        - moveUploaded()
  *        - formatSizeUnits()
  *
  * --------------------------------------------------------------
- * 🔗 Middleware ба PDO injection
+ * Middleware ба PDO injection
  * --------------------------------------------------------------
  *  Raptor\Controller нь PDOTrait ашигладаг тул PDO instance нь:
  *      $request->getAttribute('pdo')
@@ -91,22 +91,22 @@ class FilesModel extends Model
      * FilesModel constructor.
      *
      * @param \PDO $pdo
-     *      Middleware → ServerRequest → attribute('pdo') хэлбэрээр
+     *      Middleware -> ServerRequest -> attribute('pdo') хэлбэрээр
      *      автоматаар ирдэг PDO instance.
      *
      * ----------------------------------------------------------
-     * 📌 Багануудын бүтэц
+     * Багануудын бүтэц
      * ----------------------------------------------------------
      *  id                 - Мөрийн ID (primary key)
      *  record_id          - Үндсэн хүснэгтийн бичлэгийн id дугаар (FK)
      *  file               - Сервер доторх локал физик файл (absolute path)
      *  path               - Хэрэглэгч харах public file URL
      *  size               - Файлын хэмжээ (byte)
-     *  type               - Файлын төрөл (image, audio, video, application…)
+     *  type               - Файлын төрөл (image, audio, video, application...)
      *  mime_content_type  - MIME type (image/png гэх мэт)
      *  keyword            - Түлхүүр үг (optional)
      *  description        - Тайлбар (optional)
-     *  is_active          - 1 → идэвхтэй / 0 → soft delete хийгдсэн
+     *  is_active          - 1 -> идэвхтэй / 0 -> soft delete хийгдсэн
      *  created_at         - Үүссэн огноо
      *  created_by         - Үүсгэсэн хэрэглэгч (users.id)
      *  updated_at         - Зассан огноо
@@ -141,7 +141,7 @@ class FilesModel extends Model
      *
      * @throws Exception Хэрэв хүснэгтийн нэр хоосон эсвэл буруу бол.
      *
-     * setTable("news") → "news_files"
+     * setTable("news") -> "news_files"
      */
     public function setTable(string $name)
     {
@@ -157,7 +157,7 @@ class FilesModel extends Model
      * FilesModel-ийн үндсэн parent хүснэгтийн нэрийг буцаана.
      *
      * Жишээ:
-     *   files table → news_files  → parent = "news"
+     *   files table -> news_files  -> parent = "news"
      *
      * @return string
      */
@@ -169,9 +169,9 @@ class FilesModel extends Model
      /**
      * FilesModel үүсэх үед шаардлагатай FK constraint-уудыг автоматаар үүсгэнэ.
      *
-     * 1) created_by → users(id)
-     * 2) updated_by → users(id)
-     * 3) record_id  → parent_table(id)
+     * 1) created_by -> users(id)
+     * 2) updated_by -> users(id)
+     * 3) record_id  -> parent_table(id)
      *
      * Хэрэв parent хүснэгт байхгүй бол 3-р FK үүсгэхгүй.
      *

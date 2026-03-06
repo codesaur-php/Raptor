@@ -21,11 +21,11 @@
         "phpmailer/phpmailer": "^7.0.1",
         "getbrevo/brevo-php": "^2.0.14",
         "firebase/php-jwt": "^7.0.2",
-        "codesaur/http-application": "^6.0.0",
-        "codesaur/dataobject": "^9.0.0",
-        "codesaur/http-client": "^2.0.2",
-        "codesaur/template": "^3.0.0",
-        "codesaur/container": "^3.1.1"
+        "codesaur/http-application": "^6.0.1",
+        "codesaur/dataobject": "^9.0.2",
+        "codesaur/http-client": "^2.0.4",
+        "codesaur/template": "^3.0.1",
+        "codesaur/container": "^3.1.3"
     },
     "autoload": {
         "psr-4": {
@@ -63,7 +63,7 @@
     "scripts": {
         "post-root-package-install": [
             "@php -r \"file_exists('.env') || copy('docs/conf.example/.env.example', '.env');\"",
-            "@php -r \"$envFile='.env';$secret=bin2hex(random_bytes(64));if(file_exists($envFile)){ $content=file_get_contents($envFile);if(preg_match('/^RAPTOR_JWT_SECRET=.*/m',$content)){ $content=preg_replace('/^RAPTOR_JWT_SECRET=.*/m','RAPTOR_JWT_SECRET='.$secret,$content);} else { if(substr($content,-1)!==PHP_EOL)$content.=PHP_EOL;$content.='RAPTOR_JWT_SECRET='.$secret.PHP_EOL;} file_put_contents($envFile,$content);} else { file_put_contents($envFile,'RAPTOR_JWT_SECRET='.$secret.PHP_EOL);} echo '✅ RAPTOR_JWT_SECRET generated: '.$secret.PHP_EOL;\""
+            "@php -r \"$envFile='.env';$secret=bin2hex(random_bytes(64));if(file_exists($envFile)){ $content=file_get_contents($envFile);if(preg_match('/^RAPTOR_JWT_SECRET=.*/m',$content)){ $content=preg_replace('/^RAPTOR_JWT_SECRET=.*/m','RAPTOR_JWT_SECRET='.$secret,$content);} else { if(substr($content,-1)!==PHP_EOL)$content.=PHP_EOL;$content.='RAPTOR_JWT_SECRET='.$secret.PHP_EOL;} file_put_contents($envFile,$content);} else { file_put_contents($envFile,'RAPTOR_JWT_SECRET='.$secret.PHP_EOL);} echo 'RAPTOR_JWT_SECRET generated: '.$secret.PHP_EOL;\""
         ]
     },
     "license": "MIT",

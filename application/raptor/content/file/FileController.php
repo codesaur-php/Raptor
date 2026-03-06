@@ -11,16 +11,16 @@ use Psr\Http\Message\UploadedFileInterface;
  * төвлөрүүлсэн Raptor Controller-ийн дэд класс.
  *
  * --------------------------------------------------------------
- * 📌 Үндсэн боломжууд
+ * Үндсэн боломжууд
  * --------------------------------------------------------------
- *  • setFolder() → upload root (local) & public URL зохицуулна  
- *  • allowExtensions(), allowImageOnly(), allowCommonTypes()  
- *  • setSizeLimit(), setOverwrite()  
- *  • moveUploaded() → файлыг аюулгүй байршуулах гол функц  
- *  • renameTo() → файл сервер дотор байр солих  
- *  • optimizeImage() -> зургийн файлыг web-д зориулж optimize хийх
- *  • MIME type илрүүлэх, filename collision хамгаалах  
- *  • upload_max_filesize / POST max size → format + convert bytes  
+ *  * setFolder() -> upload root (local) & public URL зохицуулна  
+ *  * allowExtensions(), allowImageOnly(), allowCommonTypes()  
+ *  * setSizeLimit(), setOverwrite()  
+ *  * moveUploaded() -> файлыг аюулгүй байршуулах гол функц  
+ *  * renameTo() -> файл сервер дотор байр солих  
+ *  * optimizeImage() -> зургийн файлыг web-д зориулж optimize хийх
+ *  * MIME type илрүүлэх, filename collision хамгаалах  
+ *  * upload_max_filesize / POST max size -> format + convert bytes  
  *
  * @package Raptor\Content
  */
@@ -43,8 +43,8 @@ class FileController extends \Raptor\Controller
      *
      * @param string $folder  /users/1, /pages/22, /settings зэрэг харьцангуй path
      *
-     * $this->local  → физик (document root дотор)
-     * $this->public → браузер дээр харагдах public URL
+     * $this->local  -> физик (document root дотор)
+     * $this->public -> браузер дээр харагдах public URL
      */
     public function setFolder(string $folder)
     {
@@ -124,8 +124,8 @@ class FileController extends \Raptor\Controller
      * Файл давхардах үед overwrite хийх эсэхийг тохируулна.
      *
      * @param bool $overwrite
-     *      true  → Нэг нэртэй файл байвал шууд дарж бичнэ
-     *      false → Давхцах нэртэй бол uniqueName() ашиглан шинэ нэр үүсгэнэ
+     *      true  -> Нэг нэртэй файл байвал шууд дарж бичнэ
+     *      false -> Давхцах нэртэй бол uniqueName() ашиглан шинэ нэр үүсгэнэ
      *
      * Анхдагч утга нь `false`.
      *
@@ -143,7 +143,7 @@ class FileController extends \Raptor\Controller
      * Жишээ:
      *   avatar.jpg (байгаа)
      *   avatar_(1).jpg (байгаа)
-     *   avatar_(2).jpg (шинэ → сонгоно)
+     *   avatar_(2).jpg (шинэ -> сонгоно)
      *
      * @param string $uploadpath   Файлыг хадгалах физик абсолют path ("/var/www/.../")
      * @param string $name         Файлын нэр (өргөтгөлгүй)
@@ -173,12 +173,12 @@ class FileController extends \Raptor\Controller
      * Upload хийгдсэн файлыг баталгаажуулж server дээр байршуулна.
      *
      * Validate:
-     *   • file exists  
-     *   • error == UPLOAD_ERR_OK  
-     *   • size < size_limit  
-     *   • extension allowed  
+     *   * file exists  
+     *   * error == UPLOAD_ERR_OK  
+     *   * size < size_limit  
+     *   * extension allowed  
      *
-     * Хэрвээ overwrite=false → давхар filename collision-оос автоматаар хамгаална.
+     * Хэрвээ overwrite=false -> давхар filename collision-оос автоматаар хамгаална.
      *
      * @param string|UploadedFileInterface $uploadedFile
      * @param bool $optimize  Зураг optimize хийх эсэх         
@@ -472,9 +472,9 @@ class FileController extends \Raptor\Controller
      *          UPLOAD_ERR_INI_SIZE
      *          UPLOAD_ERR_FORM_SIZE
      *          UPLOAD_ERR_NO_FILE
-     *          … гэх мэт
+     *          ... гэх мэт
      *
-     * moveUploaded() → false буцаасан тохиолдолд
+     * moveUploaded() -> false буцаасан тохиолдолд
      * ямар шалтгаанаар upload амжилтгүй болсон гэдгийг
      * яг энэ функцээр шалгана.
      */
@@ -486,12 +486,12 @@ class FileController extends \Raptor\Controller
     /**
      * PHP тохиргоонд зөвшөөрөгдөх хамгийн их upload хэмжээ
      * (post_max_size, upload_max_filesize) хоёрын хамгийн бага утгыг
-     * хүн ойлгох форматаар (10mb, 512kb…) буцаана.
+     * хүн ойлгох форматаар (10mb, 512kb...) буцаана.
      *
      * Жишээ:
      *   ini: post_max_size = 32M
      *        upload_max_filesize = 8M
-     *   → буцах утга: "8mb"
+     *   -> буцах утга: "8mb"
      *
      * @return int  Byte хэмжээ
      */
@@ -504,7 +504,7 @@ class FileController extends \Raptor\Controller
     }
     
     /**
-     * php.ini доторх “2M”, “128M”, “1G” зэрэг утгыг byte болгон хөрвүүлэх.
+     * php.ini доторх "2M", "128M", "1G" зэрэг утгыг byte болгон хөрвүүлэх.
      *
      * @param string|int $sSize
      *      php.ini хэмжээ (120M, 2G, 500K, 4096 гэх мэт)
@@ -536,8 +536,8 @@ class FileController extends \Raptor\Controller
 
     /**
      * Byte утгыг хүн уншихад ээлтэй формат руу хөрвүүлнэ:
-     *   1024    → "1kb"
-     *   1048576 → "1mb"
+     *   1024    -> "1kb"
+     *   1048576 -> "1mb"
      *
      * @param int|null $bytes
      * @return string

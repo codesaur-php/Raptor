@@ -14,24 +14,24 @@ use codesaur\DataObject\Column;
  *  (нэвтрэх нэр, имэйл, овог нэр, утас, профайл зураг, идэвхтэй эсэх,
  *  мөн бүртгэл болон шинэчлэлийн мета өгөгдөл)-ийг удирдана.
  *
- *  ✔ DataObject\Model дээр суурилсан  
- *  ✔ MySQL/PostgreSQL аль алинд нь ажиллахад бэлэн  
- *  ✔ created_at автоматаар populate хийнэ  
- *  ✔ Анхны админыг __initial() үед үүсгэнэ  
+ *  DataObject\Model дээр суурилсан  
+ *  MySQL/PostgreSQL аль алинд нь ажиллахад бэлэн  
+ *  created_at автоматаар populate хийнэ  
+ *  Анхны админыг __initial() үед үүсгэнэ  
  * 
- *  * ⚡ **PDO Injection тухай тэмдэглэл**
+ *  * **PDO Injection тухай тэмдэглэл**
  * --------------------------------------------------------------
  * Raptor Framework нь PDO instance-ийг дараах дарааллаар inject хийдэг:
  *
- *   Middleware  →  ServerRequest::withAttribute('pdo')  
- *                 → Controller::$pdo  
- *                 → Model::__construct(\PDO $pdo)
+ *   Middleware  ->  ServerRequest::withAttribute('pdo')  
+ *                 -> Controller::$pdo  
+ *                 -> Model::__construct(\PDO $pdo)
  *
  * Иймээс энэхүү `$pdo` нь *middleware injection-ээр дамжсан баталгаатай
  * холболт* бөгөөд Model анги зөвхөн өгөгдөлтэй ажиллахад анхаарна.
  *
- * ✔ Framework-ийн DI container ашигладаггүй, request-scope injection юм  
- * ✔ Нэг request дотор нэг л PDO instance ажиллана  
+ * Framework-ийн DI container ашигладаггүй, request-scope injection юм  
+ * Нэг request дотор нэг л PDO instance ажиллана  
  *
  * @package Raptor\User
  */
@@ -41,13 +41,13 @@ class UsersModel extends Model
      * UsersModel constructor.
      *
      * @param \PDO $pdo
-     *      Middleware → ServerRequest → Controller-аас дамжиж ирсэн
+     *      Middleware -> ServerRequest -> Controller-аас дамжиж ирсэн
      *      **баталгаатай PDO instance**.
      *
      *      Энэхүү constructor нь:
-     *        • хүснэгтийн бүх багануудыг тодорхойлно  
-     *        • primary / unique constraint-уудыг тохируулна  
-     *        • model-тэй холбоно 
+     *        * хүснэгтийн бүх багануудыг тодорхойлно  
+     *        * primary / unique constraint-уудыг тохируулна  
+     *        * model-тэй холбоно 
      */
     public function __construct(\PDO $pdo)
     {
@@ -110,7 +110,7 @@ class UsersModel extends Model
     // </editor-fold>
 
     // =====================================================================
-    //  🟦 CRUD override - created_at автоматаар бөглөх
+    //  CRUD override - created_at автоматаар бөглөх
     // =====================================================================
     /**
      * insert()

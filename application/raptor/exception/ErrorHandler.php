@@ -10,16 +10,16 @@ use codesaur\Http\Application\ExceptionHandlerInterface;
 /**
  * Class ErrorHandler
  * -----------------------------------------------
- * ⚠️ Raptor Framework-ийн default алдаа баригч (Exception Handler).
+ * Raptor Framework-ийн default алдаа баригч (Exception Handler).
  *
  * Энэ класс нь систем дотор гарсан бүх төрлийн Exception болон Error-ийг
  * нэг цэгээс барьж, хэрэглэгчид харагдах энгийн error хуудас руу рендерлэнэ.
  *
- * ✔ Хэрэв `/error.html` template байгаа бол → HTML алдааны хуудас руу рендерлэнэ  
- * ✔ Хэрэв template байхгүй эсвэл Template engine ачаалагдаагүй бол →  
+ * Хэрэв `/error.html` template байгаа бол -> HTML алдааны хуудас руу рендерлэнэ  
+ * Хэрэв template байхгүй эсвэл Template engine ачаалагдаагүй бол ->  
  *   `codesaur\Http\Application\ExceptionHandler` үндсэн fallback ашиглана  
  *
- * ⚙ **Хөгжүүлэгч override хийх боломжтой**
+ * **Хөгжүүлэгч override хийх боломжтой**
  * ---------------------------------------------  
  * Хэрэв developer өөрийн custom Exception Handler бичихийг хүсвэл  
  * `Application->use(new CustomExceptionHandler())` гэж ашиглан бүртгэж болно.  
@@ -31,7 +31,7 @@ use codesaur\Http\Application\ExceptionHandlerInterface;
  *   4) error.html template рендерлэх
  *
  * Хөгжүүлэлтийн горимд (CODESAUR_DEVELOPMENT):
- *   → Stack trace дэлгэц дээр JSON форматтай харуулна.
+ *   -> Stack trace дэлгэц дээр JSON форматтай харуулна.
  *
  * Тemplate-д дамжуулах хувьсагчууд:
  *   ● title     - Алдааны гарчиг (Exception 404 гэх мэт)
@@ -75,7 +75,7 @@ class ErrorHandler implements ExceptionHandlerInterface
                 $status = "STATUS_$code";
                 $reasonPhrase = ReasonPrhase::class;
 
-                // Status constant байвал → HTTP статус илгээх
+                // Status constant байвал -> HTTP статус илгээх
                 if (\defined("$reasonPhrase::$status") && !\headers_sent()) {
                     \http_response_code($code);
                 }

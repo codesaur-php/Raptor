@@ -51,17 +51,17 @@ use Psr\Log\LogLevel;
  *
  * Архитектурын онцлог:
  * ---------------------
- * • Нэг keyword олон хэлний тексттэй байх бөгөөд тэдгээр нь
+ * * Нэг keyword олон хэлний тексттэй байх бөгөөд тэдгээр нь
  *   TextModel => LocalizedModel механизмаар хадгалагдана.
  *
- * • TextInitial доторх seed функцүүд нь хоосон байсан ч,
+ * * TextInitial доторх seed функцүүд нь хоосон байсан ч,
  *   тэдгээрийн нэр (localization_text_xxx) нь орчуулгын модуль
  *   системд оршин буй гэсэн утгатай тул localization dashboard UI-д харагдана.
  *
- * • CRUD бүх ажиллагаа нь log() ашиглан localization протоколд
+ * * CRUD бүх ажиллагаа нь log() ашиглан localization протоколд
  *   бичигдэх бөгөөд аудит болон лог хөтлөлтийн бүрэн дэмжлэгтэй.
  *
- * • Permission шалгалт нь Raptor RBAC системийн system_localization_* эрхүүдийг ашиглана.
+ * * Permission шалгалт нь Raptor RBAC системийн system_localization_* эрхүүдийг ашиглана.
  *
  * Энэ контроллер нь Raptor CMS-ийн бүх модулиудын орчуулгын
  * текстийг цэгцтэй, өргөтгөх боломжтой байдлаар удирдах төв цэг
@@ -85,17 +85,17 @@ class TextController extends \Raptor\Controller
      *      - Формаас ирсэн өгөгдлийг payload (гол мэдээлэл) ба content (олон хэлний текст) хэлбэрээр ялгана.
      *      - $table хүснэгт системд хүчинтэй эсэхийг шалгана.
      *      - keyword бусад бүх localization_text_* хүснэгтэд давхцаж буй эсэхийг findByKeyword() ашиглан шалгана.
-     *      - TextModel→setTable() дуудаж тухайн хүснэгтийг онооно.
+     *      - TextModel->setTable() дуудаж тухайн хүснэгтийг онооно.
      *      - insert() ажиллуулж шинэ текст бүртгэнэ.
      *      - Амжилттай тохиолдолд JSON хариу хэвлэнэ.
      * 3. Хэрэв GET хүсэлт бол text-insert-modal.html template руу өгөгдөл дамжуулна.
      *
      * Алдаа:
      * ------
-     * • Зөвшөөрөлгүй бол 401
-     * • invalid-request бол 400
-     * • keyword давхцсан бол Exception
-     * • insert амжилтгүй бол record-insert-error
+     * * Зөвшөөрөлгүй бол 401
+     * * invalid-request бол 400
+     * * keyword давхцсан бол Exception
+     * * insert амжилтгүй бол record-insert-error
      *
      * Лог:
      * ----
@@ -196,13 +196,13 @@ class TextController extends \Raptor\Controller
      *      - өгөгдлийн сангийн хүснэгтүүд болон
      *      - TextInitial дотор байгаа seed функцүүдийн нэртэй таарч буй эсэхийг
      *        getTextTableNames() ашиглан тодорхойлно.
-     * 3. TextModel→setTable() → getRowWhere() ашиглаж тухайн id-тэй бичлэгийг уншина.
+     * 3. TextModel->setTable() -> getRowWhere() ашиглаж тухайн id-тэй бичлэгийг уншина.
      * 4. Олдвол text-retrieve-modal.html template рүү дамжуулан modal хэлбэрээр харуулна.
      *
      * Алдаа:
      * -------
-     * • table хүчинтэй биш → invalid-request
-     * • бичлэг олдоогүй → no-record-selected
+     * * table хүчинтэй биш -> invalid-request
+     * * бичлэг олдоогүй -> no-record-selected
      *
      */
     public function view(string $table, int $id)
@@ -264,7 +264,7 @@ class TextController extends \Raptor\Controller
      * ----------------
      * 1. Хэрэглэгчийн update эрх (system_localization_update) шалгана.
      * 2. $table хүчинтэй эсэхийг getTextTableNames() ашиглан нотолно.
-     * 3. TextModel→setTable(), getRowWhere() ашиглан одоогийн бичлэгийг уншина.
+     * 3. TextModel->setTable(), getRowWhere() ашиглан одоогийн бичлэгийг уншина.
      * 4. Хэрэв PUT хүсэлт бол:
      *      - payload ба content-г ялган ангилна.
      *      - Өөрчлөгдсөн талбаруудыг (updates[]) жагсаана.
@@ -275,11 +275,11 @@ class TextController extends \Raptor\Controller
      *
      * Алдаа:
      * -------
-     * • Хэрэглэгч update эрхгүй бол → 401
-     * • table хүчинтэй биш бол → invalid-request
-     * • бичлэг олдоогүй бол → no-record-selected
-     * • өөрчлөлт хийгдээгүй бол → Exception("No update!")
-     * • keyword өөр хүснэгтэд давхцсан бол → keyword-existing-in
+     * * Хэрэглэгч update эрхгүй бол -> 401
+     * * table хүчинтэй биш бол -> invalid-request
+     * * бичлэг олдоогүй бол -> no-record-selected
+     * * өөрчлөлт хийгдээгүй бол -> Exception("No update!")
+     * * keyword өөр хүснэгтэд давхцсан бол -> keyword-existing-in
      *
      * Лог:
      * ----
@@ -404,7 +404,7 @@ class TextController extends \Raptor\Controller
      * 1. Хэрэглэгч delete эрхтэй эсэхийг шалгана (system_localization_delete).
      * 2. table нэр хүчинтэй эсэхийг getTextTableNames() ашиглан шалгана.
      * 3. id дугаар хүчинтэй тоо эсэхийг FILTER_VALIDATE_INT ашиглан баталгаажуулна.
-     * 4. TextModel→setTable() → deactivateById() ашиглаж тухайн бичлэгийг:
+     * 4. TextModel->setTable() -> deactivateById() ашиглаж тухайн бичлэгийг:
      *        is_active = 0
      *        updated_by = current_user
      *        updated_at = now()
@@ -413,9 +413,9 @@ class TextController extends \Raptor\Controller
      *
      * Алдаа:
      * -------
-     * • Эрхгүй → 401
-     * • invalid-request → table эсвэл id буруу
-     * • deactivation амжилтгүй → no-record-selected
+     * * Эрхгүй -> 401
+     * * invalid-request -> table эсвэл id буруу
+     * * deactivation амжилтгүй -> no-record-selected
      *
      * Лог:
      * ----
@@ -485,7 +485,7 @@ class TextController extends \Raptor\Controller
      * Ажиллах зарчим:
      * ----------------
      * 1. Өгөгдлийн сан дахь бүх localization_text_*_content хүснэгтийг илрүүлнэ.
-     * 2. Таblename-аа “localization_text_” болон “_content” хэсгийг тайруулж модуль нэр гаргана.
+     * 2. Таblename-аа "localization_text_" болон "_content" хэсгийг тайруулж модуль нэр гаргана.
      * 3. TextInitial::class доторх бүх static функцийн нэрсийг уншина:
      *      localization_text_user
      *      localization_text_default
@@ -494,12 +494,12 @@ class TextController extends \Raptor\Controller
      *      Эдгээр нь seed хоосон байсан ч системд оршин буй модуль гэж үзнэ.
      * 4. Хэрэв TextInitial дотор байгаа нэр өгөгдлийн санд байхгүй бол:
      *      - нэрсийн жагсаалтад нэмнэ
-     *      - мөн TextModel→setTable() дуудаж хүснэгтийн structure бэлэн эсэхийг хангана.
+     *      - мөн TextModel->setTable() дуудаж хүснэгтийн structure бэлэн эсэхийг хангана.
      *
      * Давуу тал:
      * ----------
-     * • Орчуулгын модуль нэмж хөгжүүлэхэд schema migration шаарддаггүй.
-     * • Seed function бий болгосноор UI-д автоматаар харагдана.
+     * * Орчуулгын модуль нэмж хөгжүүлэхэд schema migration шаарддаггүй.
+     * * Seed function бий болгосноор UI-д автоматаар харагдана.
      *
      * @return array
      *      Бүх орчуулгын хүснэгтийн нэрс.
@@ -538,7 +538,7 @@ class TextController extends \Raptor\Controller
      * Системийн бүх орчуулгын хүснэгт дундаас keyword давхцаж буй эсэхийг шалгана.
      *
      * @param array $from
-     *      getTextTableNames() → ['default', 'dashboard', 'user', ...]
+     *      getTextTableNames() -> ['default', 'dashboard', 'user', ...]
      *
      * @param string $keyword
      *      Шалгах түлхүүр үг.
@@ -553,8 +553,8 @@ class TextController extends \Raptor\Controller
      *
      * Ашиглах зорилго:
      * ----------------
-     * • Нэг keyword-г өөр өөр модулиудад давхар ашиглахгүй байх
-     * • INSERT/UPDATE үед системийн түвшний нэр давхцахгүй байхыг баталгаажуулах
+     * * Нэг keyword-г өөр өөр модулиудад давхар ашиглахгүй байх
+     * * INSERT/UPDATE үед системийн түвшний нэр давхцахгүй байхыг баталгаажуулах
      *
      * @return array|false
      *      Давхцсан бичлэг олдвол мэдээлэлтэй массив, олдохгүй бол false.

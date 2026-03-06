@@ -8,7 +8,7 @@ use codesaur\DataObject\Column;
 /**
  * Class OrganizationUserModel
  *
- * Байгууллага ↔ Хэрэглэгчийн холболтын хүснэгт (`organizations_users`)
+ * Байгууллага <-> Хэрэглэгчийн холболтын хүснэгт (`organizations_users`)
  * дээр ажилладаг өгөгдлийн загвар (Model) класс.
  *
  * Энэ хүснэгт нь олон-тоо холбоос (many-to-many) хэлбэртэй бөгөөд:
@@ -89,14 +89,14 @@ class OrganizationUserModel extends Model
      * Анхны тохиргоо (__initial):
      *
      * - relation хүснэгтийн FK-үүдийг үүсгэнэ:
-     *      user_id          → users(id)
-     *      organization_id  → organizations(id)
-     *      created_by       → users(id)
+     *      user_id          -> users(id)
+     *      organization_id  -> organizations(id)
+     *      created_by       -> users(id)
      *
      * - FK шалгалтыг түр унтрааж (setForeignKeyChecks(false)),
      *   тохиргоо хийсний дараа буцааж асаана
      *
-     * - Анхны өгөгдөл: хэрэглэгч 1 → байгууллага 1 гэсэн харьяаллыг үүсгэнэ.
+     * - Анхны өгөгдөл: хэрэглэгч 1 -> байгууллага 1 гэсэн харьяаллыг үүсгэнэ.
      *   Энэ нь системийн default холбоос бөгөөд супер админ байгууллагадаа багтах нөхцөл
      *
      * @return void
@@ -116,7 +116,7 @@ class OrganizationUserModel extends Model
             $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
             $organizations = (new OrganizationModel($this->pdo))->getName();
 
-            // user_id → FK
+            // user_id -> FK
             $this->exec(
                 "ALTER TABLE $table 
                  ADD CONSTRAINT {$table}_fk_user_id 
@@ -126,7 +126,7 @@ class OrganizationUserModel extends Model
                  ON UPDATE CASCADE"
             );
 
-            // organization_id → FK
+            // organization_id -> FK
             $this->exec(
                 "ALTER TABLE $table 
                  ADD CONSTRAINT {$table}_fk_organization_id 
@@ -136,7 +136,7 @@ class OrganizationUserModel extends Model
                  ON UPDATE CASCADE"
             );
 
-            // created_by → FK
+            // created_by -> FK
             $this->exec(
                 "ALTER TABLE $table 
                  ADD CONSTRAINT {$table}_fk_created_by 
@@ -150,7 +150,7 @@ class OrganizationUserModel extends Model
             $this->setForeignKeyChecks(true);
         }
 
-        // Анхны өгөгдөл - Super Admin → System Organization
+        // Анхны өгөгдөл - Super Admin -> System Organization
         $nowdate = \date('Y-m-d H:i:s');
         $this->exec(
             "INSERT INTO $table(created_at, user_id, organization_id) 

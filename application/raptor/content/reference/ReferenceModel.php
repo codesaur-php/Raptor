@@ -14,11 +14,11 @@ use codesaur\DataObject\LocalizedModel;
  *
  * Онцлог:
  * -------
- * • Хүснэгтийн нэр нь динамик - setTable("questions") → reference_questions
- * • Контент нь олон хэл дээр хадгалагдана (title, content)
- * • Гол талбарууд: keyword, category, created_by, updated_by гэх мэт
- * • __initial() функц нь анхны бүтэц болон гадаад түлхүүрийг автоматаар үүсгэнэ
- * • Хэрэв ReferenceInitial::$table() seed арга байвал анхны өгөгдөл нэмж өгнө
+ * * Хүснэгтийн нэр нь динамик - setTable("questions") -> reference_questions
+ * * Контент нь олон хэл дээр хадгалагдана (title, content)
+ * * Гол талбарууд: keyword, category, created_by, updated_by гэх мэт
+ * * __initial() функц нь анхны бүтэц болон гадаад түлхүүрийг автоматаар үүсгэнэ
+ * * Хэрэв ReferenceInitial::$table() seed арга байвал анхны өгөгдөл нэмж өгнө
  *
  * Энэ модель нь:
  *   - FAQ
@@ -65,7 +65,7 @@ class ReferenceModel extends LocalizedModel
      * Ашиглах хүснэгтийн нэрийг тохируулна.
      *
      * Жишээ:
-     *    setTable("questions") → reference_questions
+     *    setTable("questions") -> reference_questions
      *
      * Хүснэгтийн нэр зөвхөн латин үсэг, тоо, _ болон - тэмдэгтүүдийг зөвшөөрнө.
      *

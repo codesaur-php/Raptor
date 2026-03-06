@@ -10,49 +10,49 @@ use codesaur\Http\Application\ExceptionHandlerInterface;
 /**
  * Class ExceptionHandler
  * -------------------------------------------------------------
- * 🌐 Web Layer Exception Handler (Raptor Web Template Module)
+ * Web Layer Exception Handler (Raptor Web Template Module)
  *
  * Энэ класс нь **Public Website (Frontend Web)** хэсгийн алдааг барьж,
  * хэрэглэгчид харагдах зориулалтын зөөлөн (friendly) error page
  * руу рендерлэдэг.
  *
  * Dashboard талын ExceptionHandler-тай харьцуулахад:
- *    ✔ Илүү энгийн, минимал view ашиглана  
- *    ✔ Debug mode-д stack trace харуулна  
- *    ✔ template html файл байхгүй тохиолдолд codesaur-ын үндсэн ExceptionHandler руу fallback хийнэ  
+ *    Илүү энгийн, минимал view ашиглана  
+ *    Debug mode-д stack trace харуулна  
+ *    template html файл байхгүй тохиолдолд codesaur-ын үндсэн ExceptionHandler руу fallback хийнэ  
  *
  * -------------------------------------------------------------
- * 📄 Ашиглагдах template:
+ * Ашиглагдах template:
  *      /Web/Template/page-404.html
  *
  * Хэрэв дээрх файл байхгүй бол:
- *      → `codesaur\Http\Application\ExceptionHandler` fallback ажиллана.
+ *      -> `codesaur\Http\Application\ExceptionHandler` fallback ажиллана.
  *
  * -------------------------------------------------------------
- * ⚙ Алдаа боловсруулах үе шат:
+ * Алдаа боловсруулах үе шат:
  * -------------------------------------------------------------
- * 1) Throwable → код, мессеж, төрөл (Exception/Error) унших  
+ * 1) Throwable -> код, мессеж, төрөл (Exception/Error) унших  
  * 2) HTTP статус кодыг ReasonPhrase ашиглан тохируулах  
  * 3) `error_log()` ашиглан системийн лог дээр бичих  
  * 4) `page-404.html` темплейтэд дараах хувьсагчдыг дамжуулах:  
  *
- *      • title   - Алдааны гарчиг  
- *      • code    - HTTP / Exception код  
- *      • message - Хэрэглэгчид зориулсан HTML message  
+ *      * title   - Алдааны гарчиг  
+ *      * code    - HTTP / Exception код  
+ *      * message - Хэрэглэгчид зориулсан HTML message  
  *
  * 5) Хөгжүүлэлтийн горим (CODESAUR_DEVELOPMENT=true) үед:
- *      → JSON pretty trace-г дэлгэцэн дээр хэвлэж өгнө  
+ *      -> JSON pretty trace-г дэлгэцэн дээр хэвлэж өгнө  
  *
  * -------------------------------------------------------------
- * 💡 Хөгжүүлэгчдэд зориулсан зөвлөгөө
+ * Хөгжүүлэгчдэд зориулсан зөвлөгөө
  * -------------------------------------------------------------
- * • Web layer нь ихэвчлэн олон нийтэд харагдах контент тул  
+ * * Web layer нь ихэвчлэн олон нийтэд харагдах контент тул  
  *   нарийн debugging мэдээллийг зөвхөн DEV горимд л харуулна.
  *
- * • Хэрэв сайтын алдааны дизайн / UX өөрчлөх бол:
- *      → зөвхөн `page-404.html` файлыг өөрчлөхөд хангалттай.
+ * * Хэрэв сайтын алдааны дизайн / UX өөрчлөх бол:
+ *      -> зөвхөн `page-404.html` файлыг өөрчлөхөд хангалттай.
  *
- * • Хэрэв өөр custom Web exception handler үүсгэн ашиглах бол,
+ * * Хэрэв өөр custom Web exception handler үүсгэн ашиглах бол,
  *   Application::__construct() дотор:
  *
  *      $this->use(new MyCustomExceptionHandler());

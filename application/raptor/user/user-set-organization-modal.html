@@ -1,4 +1,4 @@
-<!-- Байгууллага тохируулах Modal (Хэрэглэгч → Байгууллага олон сонголттой)
+<!-- Байгууллага тохируулах Modal (Хэрэглэгч -> Байгууллага олон сонголттой)
      Modal-lg / modal-centered = төвд том харуулах -->
 <div class="modal-lg modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content">
@@ -89,7 +89,7 @@ if (!userOrgsForm) {
     /* Хадгалах товч */
     const submitter = document.querySelector('button.submit-set-organization');
 
-    /* Save товч → form.requestSubmit()  */
+    /* Save товч -> form.requestSubmit()  */
     submitter.addEventListener('click', function (e) {
         e.preventDefault();
         userOrgsForm.requestSubmit();
@@ -136,7 +136,7 @@ if (!userOrgsForm) {
                 throw new Error(response.message || 'Invalid response!');
             }
 
-            /* Амжилттай → Page refresh */
+            /* Амжилттай -> Page refresh */
             window.location.reload();
 
             NotifyTop(

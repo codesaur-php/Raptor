@@ -10,20 +10,20 @@ use codesaur\Router\Router;
  * Энэ router нь UsersController-ийн бүх CRUD болон RBAC холбоотой үйлдлүүдийг
  * dashboard хэсэгт зориулан HTTP замтай холбож өгөх үүрэгтэй.
  *
- *  ✔ Хэрэглэгчийн жагсаалт (index, list)
- *  ✔ Шинэ хэрэглэгч үүсгэх / мэдээлэл засварлах / харах
- *  ✔ Идэвхгүй болгох
- *  ✔ Байгууллага холбох
- *  ✔ RBAC дүр холбох
- *  ✔ Нууц үг солих
- *  ✔ Forgot/Signup хүсэлтүүдийн modal жагсаалт
- *  ✔ Signup хүсэлт approve/deactivate
+ *  Хэрэглэгчийн жагсаалт (index, list)
+ *  Шинэ хэрэглэгч үүсгэх / мэдээлэл засварлах / харах
+ *  Идэвхгүй болгох
+ *  Байгууллага холбох
+ *  RBAC дүр холбох
+ *  Нууц үг солих
+ *  Forgot/Signup хүсэлтүүдийн modal жагсаалт
+ *  Signup хүсэлт approve/deactivate
  *
  *  Маршрут бүр нь:
  *      - URL хаяг
  *      - HTTP method (GET, POST, PUT, DELETE)
  *      - Ямар Controller::method руу очих
- *      - name() → system дотор замыг нэрээр дуудаж ашиглах
+ *      - name() -> system дотор замыг нэрээр дуудаж ашиглах
  *
  * @package Raptor\User
  */
@@ -87,7 +87,7 @@ class UsersRouter extends Router
          * PASSWORD RESET
          * ----------------------------------------------------------
          */
-        // Хэрэглэгчийн нууц үг солих (өөрийнхөө эсвэл system_coder → бусдын)
+        // Хэрэглэгчийн нууц үг солих (өөрийнхөө эсвэл system_coder -> бусдын)
         $this->GET_POST('/dashboard/users/set/password/{uint:id}', [UsersController::class, 'setPassword'])->name('user-set-password');
 
         /**
@@ -103,7 +103,7 @@ class UsersRouter extends Router
          * SIGNUP APPROVAL / DEACTIVATION
          * ----------------------------------------------------------
          */
-        // Signup хүсэлтийг батлах → хэрэглэгч болгож insert хийх
+        // Signup хүсэлтийг батлах -> хэрэглэгч болгож insert хийх
         $this->POST('/dashboard/users/signup/approve', [UsersController::class, 'signupApprove'])->name('user-signup-approve');
 
         // Signup хүсэлтийг идэвхгүй болгох

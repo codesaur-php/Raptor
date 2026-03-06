@@ -19,9 +19,9 @@
     ТАБ МЕНЮ  
     ----------------------------------------------------
     Settings нь 3 үндсэн бүлэгтэй:
-        1) Meta  → гарчиг, тайлбар, хаяг, холбоо барих
-        2) Logo  → сайтын logo, faviconn, apple-touch-icon
-        3) Config → JSON тохиргоо
+        1) Meta  -> гарчиг, тайлбар, хаяг, холбоо барих
+        2) Logo  -> сайтын logo, faviconn, apple-touch-icon
+        3) Config -> JSON тохиргоо
 -->
 <ul class="nav nav-tabs mt-1" role="tablist">    
     <!-- Meta таб - анхдагч идэвхтэй -->
@@ -66,9 +66,9 @@
         <!-- 
             МЭТА МЭДЭЭЛЭЛ ОРУУЛАХ ФОРМ
             ----------------------------------------------------
-            - POST request → settings route
-            - multipart/form-data → file upload хэрэгтэй байж магадгүй
-            - validation → Bootstrap-ийн needs-validation
+            - POST request -> settings route
+            - multipart/form-data -> file upload хэрэгтэй байж магадгүй
+            - validation -> Bootstrap-ийн needs-validation
         -->
         <form class="needs-validation pt-1" novalidate action="{{ 'settings'|link }}" method="POST" enctype="multipart/form-data">
             <!-- 
@@ -328,10 +328,10 @@
                             LOGO FILE INPUT ГРУПП
                             ----------------------------------------------------
                             - Зураг сонгоход file input нууцлагдсан
-                            - Текст input → зөвхөн файл нэрийг харуулах зориулалттай
-                            - Choose → browse file
-                            - Remove → upload-ыг цэвэрлэх
-                            - Preview → сонгосон зураг харагдах
+                            - Текст input -> зөвхөн файл нэрийг харуулах зориулалттай
+                            - Choose -> browse file
+                            - Remove -> upload-ыг цэвэрлэх
+                            - Preview -> сонгосон зураг харагдах
                         -->
                         <div class="input-group">
                             <!-- Зураг нэрийг харуулах текст input -->
@@ -397,8 +397,8 @@
                 <!-- 
                     БАРУУН ТАЛЫН БАГАНА
                     ----------------------------------------------------
-                    • Favico upload
-                    • Apple Touch Icon upload
+                    * Favico upload
+                    * Apple Touch Icon upload
                 -->
                 <div class="col">
                     <!-- FAVICO -->
@@ -542,7 +542,7 @@
         <!-- 
             CONFIG FORM
             ----------------------------------------------------
-            - action = settings → үндсэн тохиргоо хадгалах endpoint
+            - action = settings -> үндсэн тохиргоо хадгалах endpoint
             - enctype="multipart/form-data" зайлшгүй биш боловч бусад tab-тай unified байлгах зорилготой
         -->
         <form class="needs-validation"
@@ -599,9 +599,9 @@
     ------------------------------------------------------------
     Энэ хэсэг нь Settings-тэй холбоотой системийн log-уудыг харуулдаг.
     Жишээ нь:
-        • settings updated
-        • logo changed
-        • config modified
+        * settings updated
+        * logo changed
+        * config modified
     гэх мэт.
 -->
 {% if user.can('system_logger') %}
@@ -627,8 +627,8 @@
         LOG LIST CONTAINER
         ----------------------------------------------------
         Энэ UL элементэд settings-* холбоотой лог мэдээлэл append хийгдэнэ.
-        - max-height: 240px → scrollbar-тай болно
-        - logger-protocol class → лог төрөл тус бүр өөр өөр өнгөтэй харагдана
+        - max-height: 240px -> scrollbar-тай болно
+        - logger-protocol class -> лог төрөл тус бүр өөр өөр өнгөтэй харагдана
     -->
     <ul class="list-group logger-protocol"
         id="logger-content"
@@ -642,7 +642,7 @@
         JSON Pretty Print 
         -------------------------
         - config textarea-г олно
-        - JSON parse → stringify(4 space indent)
+        - JSON parse -> stringify(4 space indent)
         - Алдааны үед NotifyTop хэрэглэнэ
     */
     const prettyPrint = function () {
@@ -667,7 +667,7 @@
         Файл upload хийх үед ажилладаг функц
         ------------------------------------------------------
         - Файлын нэрийг input-д харуулна
-        - "Choose" → "Change"
+        - "Choose" -> "Change"
         - Remove товчийг харуулна
         - Preview зураг update хийнэ
         - File size талбар шинэчилнэ
@@ -692,7 +692,7 @@
             sizeInput.value = `${kb} KB`;
         }
 
-        /* "Choose" → "Change" */
+        /* "Choose" -> "Change" */
         const browseBtn = fileInput.nextElementSibling;
         if (browseBtn) {
             browseBtn.textContent = `{{ 'change'|text|e }}`;
@@ -776,7 +776,7 @@
     };
 
     /* 
-        SAVE BUTTON → requestSubmit()
+        SAVE BUTTON -> requestSubmit()
         ------------------------------------------------------
         - HTML form submit-ийг зөв trigger хийх
     */
@@ -799,7 +799,7 @@
         FORM SUBMIT (AJAX FETCH)
         ------------------------------------------------------
         - Form validation
-        - FormData → fetch
+        - FormData -> fetch
         - JSON response шалгах
         - Амжилттай бол reload()
     */
@@ -852,7 +852,7 @@
     /* 
         LOGGER SECTION (system_logger) 
         ------------------------------------------------------
-        - Logs retrieve → UL-д append хийнэ
+        - Logs retrieve -> UL-д append хийнэ
         - Modal-д log харуулах
     */
     document.addEventListener('DOMContentLoaded', function () {

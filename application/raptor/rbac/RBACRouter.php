@@ -9,7 +9,7 @@ use codesaur\Router\Router;
  * болон HTTP endpoint-уудыг бүртгэх зориулалттай Router класс.
  *
  * RBAC архитектур дахь Router-ийн үүрэг:
- * ───────────────────────────────────────────────────────────────
+ * ---------------------------------------------------------------
  *  - RBACController руу чиглэгдсэн бүх UI/API замыг энд тодорхойлно.
  *  - Роль, permission, role-permission mapping зэрэг RBAC удирдлагын
  *    үндсэн CRUD болон тохиргооны endpoint-уудыг бүртгэнэ.
@@ -26,25 +26,25 @@ use codesaur\Router\Router;
  * RBAC UI-ийн форм submit болон AJAX үйлдлүүдийг илүү уян хатан болгодог.
  *
  * Бүртгэгдсэн маршрутүүд:
- * ───────────────────────────────────────────────────────────────
+ * ---------------------------------------------------------------
  * 1) /dashboard/organizations/rbac/alias
- *      → RBAC бүлгүүдийн alias жагсаалт авах
+ *      -> RBAC бүлгүүдийн alias жагсаалт авах
  *
  * 2) /dashboard/organizations/rbac/role/view
- *      → Сонгосон alias бүлгийн role-ууд болон тэдгээрийн permission-г харах
+ *      -> Сонгосон alias бүлгийн role-ууд болон тэдгээрийн permission-г харах
  *
  * 3) /dashboard/organizations/rbac/{alias}/insert/role
- *      → Role шинээр нэмэх (GET: form / POST: insert)
+ *      -> Role шинээр нэмэх (GET: form / POST: insert)
  *
  * 4) /dashboard/organizations/rbac/{alias}/insert/permission
- *      → Permission шинээр нэмэх (GET: form / POST: insert)
+ *      -> Permission шинээр нэмэх (GET: form / POST: insert)
  *
  * 5) /dashboard/organizations/rbac/{alias}/role/permission
- *      → Role ↔ Permission холболт (mapping) hiikh
- *      → POST: assign / DELETE: revoke
+ *      -> Role <-> Permission холболт (mapping) hiikh
+ *      -> POST: assign / DELETE: revoke
  *
  * Security:
- * ───────────────────────────────────────────────────────────────
+ * ---------------------------------------------------------------
  *  - RBACController дотор RBAC эрх шалгалт хийгдэнэ.
  *  - Энэ Router зөвхөн маршрут map хийх бөгөөд security-ийн шат middleware-д байна.
  *
@@ -78,7 +78,7 @@ class RBACRouter extends Router
             [RBACController::class, 'insertPermission']
         )->name('rbac-insert-permission');
 
-        // Role ↔ Permission modifier
+        // Role <-> Permission modifier
         $this->POST_DELETE(
             '/dashboard/organizations/rbac/{alias}/role/permission',
             [RBACController::class, 'setRolePermission']

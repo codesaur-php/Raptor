@@ -2,14 +2,14 @@
  * motable v2.5
  * ------------------------------------------------------------------
  * Энэ script нь ямар ч HTML <table>-ийг дэвшилтэт боломжтой болгож өгнө:
- *  ✔ Sticky header (толгой мөр гацдаг)
- *  ✔ Horizontal scroll илүү зөөлөн болгох
- *  ✔ Аль ч баганыг freeze/sticky position болгох
- *  ✔ Client-side search / filter
- *  ✔ Client-side sort (үсгийн болон тоон эрэмбэлэлт)
- *  ✔ Responsive scroll indicator + fade effect
- *  ✔ Монгол / Англи хэлний label-тэй
- *  ✔ lightweight ба external dependencyгүй.
+ *  Sticky header (толгой мөр гацдаг)
+ *  Horizontal scroll илүү зөөлөн болгох
+ *  Аль ч баганыг freeze/sticky position болгох
+ *  Client-side search / filter
+ *  Client-side sort (үсгийн болон тоон эрэмбэлэлт)
+ *  Responsive scroll indicator + fade effect
+ *  Монгол / Англи хэлний label-тэй
+ *  lightweight ба external dependencyгүй.
  */
 
 /**
@@ -56,7 +56,7 @@ function motable(
     searchInput.placeholder = options.label.search;
     if (options.style.search) searchInput.style.cssText = options.style.search;
 
-    /* 🔎 Хайлт хийх event */
+    /* Хайлт хийх event */
     searchInput.addEventListener('input', function () {
         const rows = table.querySelector('tbody')?.getElementsByTagName('tr');
         const total = rows?.length ?? 0;

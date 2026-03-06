@@ -9,18 +9,18 @@ use codesaur\DataObject\Column;
  * SignupModel - Шинэ хэрэглэгч үүсгэх хүсэлтийн (pending signup requests) модель.
  *
  * Энэ хүснэгт нь хэрэглэгчийн бүртгэлийн мэдээллийг
- * шууд UsersModel рүү оруулахын өмнөх “үргэлжлүүлэн баталгаажуулах шаардлагатай”
+ * шууд UsersModel рүү оруулахын өмнөх "үргэлжлүүлэн баталгаажуулах шаардлагатай"
  * завсрын шатны хүсэлт хэлбэрээр хадгалдаг.
  *
  * Яагаад тусдаа хүснэгт хэрэгтэй вэ?
- * ───────────────────────────────────────────────────────────────
+ * ---------------------------------------------------------------
  * - Шинэ хэрэглэгч шууд идэвхжих ёсгүй (security requirement)
  * - Admin баталгаажуулалт хийх боломжтой
  * - Давхардсан имэйл/нэртэй олон оролдлогыг хянах боломжтой
  * - Бүртгэлийн урьдчилсан мэдээллийг audit trail хэлбэрээр хадгалдаг
  *
  * Хүснэгтийн бүтэц:
- * ───────────────────────────────────────────────────────────────
+ * ---------------------------------------------------------------
  * id            - bigint, primary key
  * user_id       - UsersModel.id рүү FK (approve хийсний дараа холбогдоно)
  * username      - хүсэлт гаргагчийн нэр
@@ -30,15 +30,15 @@ use codesaur\DataObject\Column;
  * is_active     - хүсэлт идэвхтэй эсэх
  * created_at    - үүсгэсэн огноо
  * updated_at    - шинэчилсэн огноо
- * updated_by    - өөрчилсөн хэрэглэгчийн id (FK → users.id)
+ * updated_by    - өөрчилсөн хэрэглэгчийн id (FK -> users.id)
  *
  * ForeignKey холбоосууд:
- * ───────────────────────────────────────────────────────────────
- * - signup.user_id       → users.id
+ * ---------------------------------------------------------------
+ * - signup.user_id       -> users.id
  *       ON DELETE CASCADE
  *       ON UPDATE CASCADE
  *
- * - signup.updated_by    → users.id
+ * - signup.updated_by    -> users.id
  *       ON DELETE SET NULL
  *       ON UPDATE CASCADE
  *
@@ -80,11 +80,11 @@ class SignupModel extends Model
      * үүсэх үед автоматаар дуудагддаг (IF NOT EXISTS).
      *
      * Foreign key холбоос:
-     *   signup.user_id → users.id
+     *   signup.user_id -> users.id
      *       ON DELETE SET NULL
      *       ON UPDATE CASCADE
      *
-     *   signup.updated_by → users.id
+     *   signup.updated_by -> users.id
      *       ON DELETE SET NULL
      *       ON UPDATE CASCADE
      *

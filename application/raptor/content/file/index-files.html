@@ -154,7 +154,7 @@
 <script type="text/javascript">
     const _mn = document.documentElement.lang === 'mn';
 
-    /* 🧩 HELPER FUNCTIONS
+    /* HELPER FUNCTIONS
        ------------------------------------------------------------
        Файлын нэр салгах, хэмжээ форматлах, HTML escape хийх мэт
        жижиг туслах функцууд энд байна. */
@@ -194,7 +194,7 @@
         return s.replace(/[&"'<>]/g, c => lookup[c]);
     }
 
-    /* 🖼 Custom image preview (Fancybox-ийн оронд)
+    /* Custom image preview (Fancybox-ийн оронд)
        ------------------------------------------------------------ */
     function openFilePreview(src, caption, type) {
         const overlay = document.createElement('div');
@@ -254,16 +254,16 @@
         document.addEventListener('keydown', onKey);
     }
 
-    /* 📌 DOMContentLoaded - Бүх JS функциональ эндээс эхэлнэ
+    /* DOMContentLoaded - Бүх JS функциональ эндээс эхэлнэ
        -------------------------------------------------------------------
        Энэ дотор:
-         • motable-ийн append override хийх
-         • файлын жагсаалтыг server-ээс fetch хийх
-         • deactivate ажиллагааг тохируулах
-         • native file upload логик
+         * motable-ийн append override хийх
+         * файлын жагсаалтыг server-ээс fetch хийх
+         * deactivate ажиллагааг тохируулах
+         * native file upload логик
        ------------------------------------------------------------------- */
     document.addEventListener('DOMContentLoaded', function () {
-        /* 🌐 Хэлний toggle */
+        /* Хэлний toggle */
         if (!_mn) {
             document.querySelectorAll('.lang-mn').forEach(el => el.hidden = true);
             document.querySelectorAll('.lang-en').forEach(el => el.hidden = false);
@@ -282,12 +282,12 @@
            хүснэгтэд (table) <tr> хэлбэрээр нэмэх функц.
            -------------------------------------------------------------------
            Энэ функц:
-             • Файлын thumbnail / icon үүсгэнэ
-             • Modal нээх action товчнууд үүсгэнэ
-             • UPDATE, DELETE эрхүүдийг шалгана
-             • Image preview болон modal холбоосуудыг автоматаар бэхжүүлнэ */
+             * Файлын thumbnail / icon үүсгэнэ
+             * Modal нээх action товчнууд үүсгэнэ
+             * UPDATE, DELETE эрхүүдийг шалгана
+             * Image preview болон modal холбоосуудыг автоматаар бэхжүүлнэ */
         motable.prototype.append = function (file) {
-            /* 📌 Файлын төрөлд тохирсон icon/preview тодорхойлох */
+            /* Файлын төрөлд тохирсон icon/preview тодорхойлох */
             let fileIcon = '';
             const fileName = escapeStr(decodeURIComponent(getBasename(file['path'])));
 
@@ -305,7 +305,7 @@
                 </a>`;
 
             if (file['type'] === 'image') {
-                /* 📷 IMAGE file preview */
+                /* IMAGE file preview */
                 fileIcon =
                     `<img src="${file['path']}" style="max-height:7.5rem; max-width:20rem; height:100%">`;
 
@@ -314,7 +314,7 @@
                     : fileName;
                 fileLinkAttr = `data-preview="image" data-caption="${caption}"`;
             } else if (file['type'] === 'video') {
-                /* 🎥 VIDEO preview */
+                /* VIDEO preview */
                 fileIcon = `
                     <video style="max-height:15rem; height:100%; max-width:20rem; width:100%" controls>
                         <source src="${file['path']}">
@@ -325,7 +325,7 @@
                     : fileName;
                 fileLinkAttr = `data-preview="video" data-caption="${caption}"`;
             } else if (file['type'] === 'audio') {
-                /* 🎵 AUDIO preview */
+                /* AUDIO preview */
                 fileIcon = `
                     <audio controls>
                         <source src="${file['path']}" type="${file['mime_content_type']}">
@@ -336,7 +336,7 @@
                     : fileName;
                 fileLinkAttr = `data-preview="audio" data-caption="${caption}"`;
             } else {
-                /* 🗄 OTHER file types (doc, zip, pdf...) */
+                /* OTHER file types (doc, zip, pdf...) */
                 fileIcon = '<i class="bi bi-hdd"></i>';
                 fileAction = '';
 
@@ -397,19 +397,19 @@
                 ${fileAction}
             `;
 
-            /* 🧱 <tr> мөр болон <td> нүднүүдийг үүсгэх */
+            /* <tr> мөр болон <td> нүднүүдийг үүсгэх */
             const row = document.createElement('tr');
             row.id = `file_${file['id']}`;
             row.style.fontSize = '.875rem';
 
-            /* 📌 1-р багана: thumbnail + үйлдлүүд */
+            /* 1-р багана: thumbnail + үйлдлүүд */
             const cell1 = document.createElement('td');
             cell1.innerHTML =
                 `<input name="files[]" value="${file['id']}" type="hidden">
                  ${fileFigure}`;
             row.appendChild(cell1);
 
-            /* 📌 2-р багана: MIME төрөл + хэмжээ */
+            /* 2-р багана: MIME төрөл + хэмжээ */
             const cell2 = document.createElement('td');
             cell2.innerHTML = `
                 <p style="max-width:11.25rem; word-wrap:break-all">
@@ -418,23 +418,23 @@
                 ${formatSizeUnits(file['size'])}`;
             row.appendChild(cell2);
 
-            /* 📌 3-р багана - description */
+            /* 3-р багана - description */
             const cell3 = document.createElement('td');
             cell3.innerHTML = file['description'] ?? '';
             row.appendChild(cell3);
 
-            /* 📌 4-р багана - keyword */
+            /* 4-р багана - keyword */
             const cell4 = document.createElement('td');
             cell4.innerHTML = file['keyword'] ?? '';
             row.appendChild(cell4);
 
-            /* 📌 5-р багана - created_at */
+            /* 5-р багана - created_at */
             const cell5 = document.createElement('td');
             cell5.innerHTML = file['created_at'] ?? '';
             row.appendChild(cell5);
 
             let tBody = this.table.querySelector('tbody');
-            /* 🧩 tbody байхгүй бол үүсгэнэ */
+            /* tbody байхгүй бол үүсгэнэ */
             if (!tBody) {
                 tBody = document.createElement('tbody');
                 this.table.appendChild(tBody);
@@ -448,14 +448,14 @@
             /* Бэлдсэн file row-г append хийе */
             tBody.appendChild(row);
 
-            /* 🪟 Modal нээдэг бүх .ajax-modal линк дээр click handler нэмэх */
+            /* Modal нээдэг бүх .ajax-modal линк дээр click handler нэмэх */
             const rowModals = row.querySelectorAll('.ajax-modal');
             rowModals.forEach(a => a.addEventListener('click', function (e) {
                 e.preventDefault();
                 ajaxModal(a);
             }));
 
-            /* 🖼 data-preview attribute бүхий зурагт click handler нэмэх */
+            /* data-preview attribute бүхий зурагт click handler нэмэх */
             const previewLink = row.querySelector('[data-preview]');
             if (previewLink) {
                 previewLink.addEventListener('click', function (e) {
@@ -466,20 +466,20 @@
 
             const thisTable = this; /* motable instance хадгалах */
 
-            /* 🗑 ФАЙЛЫН БИЧЛЭГИЙГ ИДЭВХГҮЙ БОЛГОХ (Soft Delete)
+            /* ФАЙЛЫН БИЧЛЭГИЙГ ИДЭВХГҮЙ БОЛГОХ (Soft Delete)
                -------------------------------------------------------------------
                Энэ хэсэг deactivate-file товч дээр дарснаар:
-                 • Зургийн thumbnail / icon бүхий баталгаажуулах modal гаргана
-                 • Хэрэглэгч OK дарвал DELETE fetch API уруу хүсэлт илгээнэ
-                 • Амжилттай бол хүснэгтээс тухайн <tr> мөрийг устгана
-                 • motable.setReady() дуудагдана (шинэчилсэн төлөв)
+                 * Зургийн thumbnail / icon бүхий баталгаажуулах modal гаргана
+                 * Хэрэглэгч OK дарвал DELETE fetch API уруу хүсэлт илгээнэ
+                 * Амжилттай бол хүснэгтээс тухайн <tr> мөрийг устгана
+                 * motable.setReady() дуудагдана (шинэчилсэн төлөв)
                ------------------------------------------------------------------- */
             const deactivateFileBtn = row.querySelector('.deactivate-file');
             if (deactivateFileBtn) {
                 deactivateFileBtn.addEventListener('click', function (e) {
                     e.preventDefault();
 
-                    /* 🌐 монгол / англи хэл дээр баталгаажуулах текст */
+                    /* монгол / англи хэл дээр баталгаажуулах текст */
                     const questionTemplate = (title) => {
                         if (document.documentElement.lang === 'mn') {
                             return `
@@ -496,14 +496,14 @@
                             </p>`;
                     };
 
-                    /* 🆔 Идэвхгүй болгох гэж буй файлын id дугаар */
+                    /* Идэвхгүй болгох гэж буй файлын id дугаар */
                     const id = deactivateFileBtn.value;
 
                     /* Файлын нэрийг row доторх thumbnail хэсгээс уншиж авна */
                     const rawTitle = row.children[0].textContent.trim();
                     let question = questionTemplate(rawTitle);
 
-                    /* 🖼 Хэрэв зураг бол thumbnail харуулна */
+                    /* Хэрэв зураг бол thumbnail харуулна */
                     const imgNode = row.children[0].querySelector('img');
                     let imgSrc = '';
 
@@ -544,7 +544,7 @@
                                     throw new Error(response.message ?? 'Invalid response!');
                                 }
 
-                                /* success → alert хааж, мэдэгдэл гаргаж, row устгана */
+                                /* success -> alert хааж, мэдэгдэл гаргаж, row устгана */
                                 Swal.close();
                                 NotifyTop(
                                     'success',
@@ -593,14 +593,14 @@
         });
 
         /* ===================================================================
-           📤 NATIVE FILE UPLOAD
+           NATIVE FILE UPLOAD
            -------------------------------------------------------------------
            Энэ upload логик дараах workflow-г гүйцэтгэнэ:
-              1) Файл сонгох (pickfiles → hidden file input)
+              1) Файл сонгох (pickfiles -> hidden file input)
               2) Client-side validation (хэмжээ, extension)
               3) Сонгосон файлуудыг жагсаалтад харуулах
               4) Upload товч дармагц fetch API-р файл бүрийг дараалалаар upload
-              5) Per-file status: uploading → success/error
+              5) Per-file status: uploading -> success/error
               6) Амжилттай бол motable.append() + files.setReady()
            ------------------------------------------------------------------- */
         const fileInput = document.getElementById('fileInput');
@@ -652,10 +652,10 @@
             'zip','rar','7z','gz','tar'
         ];
 
-        /* "Select files" товч → hidden file input-г trigger хийх */
+        /* "Select files" товч -> hidden file input-г trigger хийх */
         pickFilesBtn.addEventListener('click', () => fileInput.click());
 
-        /* Файл сонгосон үед → validation + жагсаалтад харуулах */
+        /* Файл сонгосон үед -> validation + жагсаалтад харуулах */
         fileInput.addEventListener('change', function () {
             fileList.innerHTML = '';
 
@@ -698,7 +698,7 @@
             }
         });
 
-        /* "Upload" товч → файл бүрийг дараалалаар fetch API-р upload хийх */
+        /* "Upload" товч -> файл бүрийг дараалалаар fetch API-р upload хийх */
         uploadFilesBtn.addEventListener('click', async function () {
             const selectedFiles = Array.from(fileInput.files);
             if (!selectedFiles.length) return;
@@ -777,7 +777,7 @@
                 }
             }
 
-            /* Бүх upload дууссан → товчнуудын статус шинэчлэх */
+            /* Бүх upload дууссан -> товчнуудын статус шинэчлэх */
             pickFilesBtn.removeAttribute('disabled');
             uploadFilesBtn.classList.remove('btn-info');
             uploadFilesBtn.classList.add('btn-secondary');

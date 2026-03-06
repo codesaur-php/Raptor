@@ -19,7 +19,7 @@ use Psr\Log\LogLevel;
  * ---------------
  * 1) reference_* болон reference_*_content хүснэгтүүдийг илрүүлж, жагсаана
  * 2) ReferenceInitial дахь seed функцуудыг ашиглан хүснэгт байхгүй бол
- *      ReferenceModel::__initial() → хүснэгт үүсгэнэ → seed өгөгдөл оруулна
+ *      ReferenceModel::__initial() -> хүснэгт үүсгэнэ -> seed өгөгдөл оруулна
  * 3) Лавлах контентуудыг жагсаах, харах, үүсгэх, шинэчлэх, идэвхгүй болгох
  * 4) Бүх үйлдлийг log() ашиглан системийн лог-д тэмдэглэнэ
  *
@@ -103,7 +103,7 @@ class ReferencesController extends \Raptor\Controller
      * 1) POST бол:
      *      - payload + олон хэлний контентийг задлаж ангилна
      *      - хүснэгт баазад (DB) байгаа эсэх/эсвэл ReferenceInitial дотор method байдгийг шалгана
-     *      - ReferenceModel::insert() → бичлэг хадгална
+     *      - ReferenceModel::insert() -> бичлэг хадгална
      *      - JSON хариу буцаана
      *
      * 2) GET бол:
@@ -112,7 +112,7 @@ class ReferencesController extends \Raptor\Controller
      * Анхаарах онцлогууд:
      * ------------------
      * - reference_{table} хүснэгт баазад байхгүй байж болно!
-     *   Энэ тохиолдолд ReferenceModel → __initial() → хүснэгт үүсгэнэ.
+     *   Энэ тохиолдолд ReferenceModel -> __initial() -> хүснэгт үүсгэнэ.
      *
      * @param string $table  reference_ дараах хүснэгтийн нэр
      * @return void

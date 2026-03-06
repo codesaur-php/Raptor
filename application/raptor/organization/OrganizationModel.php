@@ -14,14 +14,14 @@ use codesaur\DataObject\Column;
  * уялдаа холбоо үүсгэх үүрэгтэй.
  *
  * Үндсэн боломжууд:
- *  - Байгууллагын хүснэгтийн багануудыг тодорхойлох (id, parent_id, name, logo …)
+ *  - Байгууллагын хүснэгтийн багануудыг тодорхойлох (id, parent_id, name, logo ...)
  *  - FK constraint-уудыг анхны тохиргоонд үүсгэх
  *  - Байгууллагын боломжит эцэг байгууллагуудын жагсаалт авах
  *  - Шинэ бичлэг үүсгэх үед created_at талбарыг автоматаар бөглөх
  *
  * Хүснэгт ашиглалт:
- *  - Байгууллага → Байгууллага (parent_id)
- *  - Байгууллага → Хэрэглэгч (created_by, updated_by)
+ *  - Байгууллага -> Байгууллага (parent_id)
+ *  - Байгууллага -> Хэрэглэгч (created_by, updated_by)
  *
  * @package Raptor\Organization
  */
@@ -65,7 +65,7 @@ class OrganizationModel extends Model
      * Байгууллагын боломжит эцэг байгууллагуудын жагсаалтыг авах.
      *
      * parent_id нь NULL эсвэл 0 бол тухайн байгууллагыг "эцэг байгууллага" гэж үзнэ.
-     * is_active = 1 → зөвхөн идэвхтэй байгууллагууд
+     * is_active = 1 -> зөвхөн идэвхтэй байгууллагууд
      *
      * @return array Эцэг байгууллагуудын мөрүүдийн жагсаалт
      */
@@ -102,7 +102,7 @@ class OrganizationModel extends Model
             // users хүснэгтийн нэрийг UsersModel::getName() ашиглан динамикаар авна. Ирээдүйд refactor хийхэд бэлэн байна.
             $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
 
-            // created_by → users.id FK
+            // created_by -> users.id FK
             $this->exec(
                 "ALTER TABLE $table 
                  ADD CONSTRAINT {$table}_fk_created_by 
@@ -112,7 +112,7 @@ class OrganizationModel extends Model
                  ON UPDATE CASCADE"
             );
 
-            // updated_by → users.id FK
+            // updated_by -> users.id FK
             $this->exec(
                 "ALTER TABLE $table 
                  ADD CONSTRAINT {$table}_fk_updated_by 

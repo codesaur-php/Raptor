@@ -16,7 +16,7 @@ use Psr\Http\Server\RequestHandlerInterface;
  *   1) .env файл дахь RAPTOR_DB_* тохиргоонуудыг уншина
  *   2) MySQL серверт холбогдож PDO объект үүсгэнэ
  *   3) Localhost орчинд (127.0.0.1 / ::1) ажиллаж байвал
- *        → database-г байхгүй үед автоматаар үүсгэнэ (CREATE DATABASE IF NOT EXISTS)
+ *        -> database-г байхгүй үед автоматаар үүсгэнэ (CREATE DATABASE IF NOT EXISTS)
  *   4) Зөв charset / collation тохиргоог идэвхжүүлнэ
  *   5) PDO instance-ийг PSR-7 request attributes-д `pdo` нэрээр inject хийнэ
  *   6) Дараагийн middleware / Controller рүү үргэлжлүүлэн дамжуулна

@@ -9,18 +9,18 @@ use Raptor\Content\PagesModel;
 /**
  * Class TemplateController
  * ---------------------------------------------------------------
- * 🌐 Raptor Framework - Web UI Template Controller
+ * Raptor Framework - Web UI Template Controller
  *
  * Энэ контроллер нь вэб сайтын бүх үндсэн layout (index.html) болон
  * динамик контентуудыг TwigTemplate ашиглан нэгтгэж рендерлэх үүрэгтэй.
  *
- * ✨ Үндсэн боломжууд:
+ * Үндсэн боломжууд:
  * ---------------------------------------------------------------
- * ✔ Вэб хуудсын үндсэн загвар (`index.html`)-ийг ачаалах  
- * ✔ Контент template-ийг index layout дотор оруулж нэгтгэх  
- * ✔ System settings → footer, SEO, branding гэх мэт template хувьсагчид  
- * ✔ Олон түвшинтэй Main Menu (dynamic page tree) үүсгэх  
- * ✔ Featured Pages (footer-ийн онцлох холбоосууд) үүсгэх
+ * Вэб хуудсын үндсэн загвар (`index.html`)-ийг ачаалах  
+ * Контент template-ийг index layout дотор оруулж нэгтгэх  
+ * System settings -> footer, SEO, branding гэх мэт template хувьсагчид  
+ * Олон түвшинтэй Main Menu (dynamic page tree) үүсгэх  
+ * Featured Pages (footer-ийн онцлох холбоосууд) үүсгэх
  *
  * Тухайн сайт нь олон хэл дээр ажиллах ба `PagesModel` дээр суурилсан
  * харагдах, нийтлэгдсэн контентуудыг navigation болгон хувиргана.
@@ -35,7 +35,7 @@ class TemplateController extends \Raptor\Controller
      * Ажиллах дараалал:
      * 1) index.html layout-г ачаална  
      * 2) content template-г ачааж index layout дотор `{{ content }}` хувьсагчид суулгана  
-     * 3) System settings (favicon, title, description…) дамжуулна  
+     * 3) System settings (favicon, title, description...) дамжуулна  
      * 4) Main Menu болон Featured Pages-г тухайн хэл дээр динамик байдлаар үүсгэнэ
      *
      * @param string $template Контентын Twig template файл (жишээ: page.html)
@@ -50,7 +50,7 @@ class TemplateController extends \Raptor\Controller
         $content->addFilter(new TwigFilter('basename', fn(string $path): string => \rawurldecode(\basename($path))));
         $index->set('content', $content);
 
-        // System settings (favicon, SEO, branding…)
+        // System settings (favicon, SEO, branding...)
         foreach ($this->getAttribute('settings', []) as $key => $value) {
             $index->set($key, $value);
         }
@@ -66,7 +66,7 @@ class TemplateController extends \Raptor\Controller
     /**
      * Вэб сайтын Main Menu-г олон түвшний бүтэцтэйгээр үүсгэнэ.
      *
-     * PagesModel::getNavigation() ашиглан parent → child бүтэцтэй
+     * PagesModel::getNavigation() ашиглан parent -> child бүтэцтэй
      * навигацийн менюг буцаана.
      *
      * @param string $code Тухайн хэлний код (mn, en...)

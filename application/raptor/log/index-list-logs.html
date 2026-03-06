@@ -28,8 +28,8 @@
 <div class="tab-content mt-3">
 {% for table in log_tables %}
     <!--
-        id="log_table"  → тухайн логийн хүснэгтийн таб pane
-        inline style → өндөр, scroll хийх боломжийг хянаж байна
+        id="log_table"  -> тухайн логийн хүснэгтийн таб pane
+        inline style -> өндөр, scroll хийх боломжийг хянаж байна
     -->
     <div class="tab-pane{% if table == 'dashboard' %} active{% endif %}"
          id="log_{{ table }}"
@@ -44,14 +44,14 @@
 
         <!--
             Жинхэнэ логийн мөрүүдийг `<li>` элемент болгон append хийх list-group
-            id="logger-table" → хүснэгт тус бүр өөр өөр UL-тэй байна
+            id="logger-table" -> хүснэгт тус бүр өөр өөр UL-тэй байна
         -->
         <ul class="list-group logger-protocol" id="logger-{{ table }}" style="padding-bottom:1rem;"></ul>
 
         <!--
             Infinite scroll-ийн sentinel элемент
             IntersectionObserver энэ div элемент рүү ойртоход дараагийн batch логийг татана.
-            height:1px; → харагдахгүй, зөвхөн scroll-ын доод хэсэгт байрлах тэмдэглэгээ.
+            height:1px; -> харагдахгүй, зөвхөн scroll-ын доод хэсэгт байрлах тэмдэглэгээ.
         -->
         <div class="log-sentinel" data-table="{{ table }}" style="height:1px;"></div>
 
@@ -186,7 +186,7 @@ document.addEventListener('DOMContentLoaded', function () {
             /* Тухайн хүснэгтийн логийг массив хэлбэрт хөрвүүлэх (backend JSON structure-оос үл хамаарах) */
             const items = Array.isArray(data) ? data : Object.values(data);
 
-            /* Хэрэв буцаасан логийн бүртгэл байхгүй бол → done төлөв рүү оруулна */
+            /* Хэрэв буцаасан логийн бүртгэл байхгүй бол -> done төлөв рүү оруулна */
             if (items.length === 0) {
                 state.done = true;
                 noMore.style.display = 'block'; /* "Цааш лог байхгүй" гэсэн мессежийг харуулна */
@@ -198,7 +198,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 /* OFFSET-ийг нэмэгдүүлж дараагийн request-аас шилжих мөрийг заана */
                 state.offset += items.length;
 
-                /* Хэрэв буцаасан мөрийн тоо LIMIT-ээс бага байвал → цааш лог байхгүй гэж үзнэ */
+                /* Хэрэв буцаасан мөрийн тоо LIMIT-ээс бага байвал -> цааш лог байхгүй гэж үзнэ */
                 if (items.length < limit) {
                     state.done = true;
                     noMore.style.display = 'block';
@@ -254,7 +254,7 @@ document.addEventListener('DOMContentLoaded', function () {
                           (e.target.getAttribute('href') || '').replace('#log_', '');
             if (!table) return;
 
-            /* Хэрэв өмнө нь ачаалаагүй бөгөөд done болоогүй бол → анхны batch-ыг татна */
+            /* Хэрэв өмнө нь ачаалаагүй бөгөөд done болоогүй бол -> анхны batch-ыг татна */
             if (!logState[table].initialized && !logState[table].done) {
                 fetchLogsForTable(table);
             }

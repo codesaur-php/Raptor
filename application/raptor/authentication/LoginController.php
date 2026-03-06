@@ -17,23 +17,23 @@ use Raptor\Organization\OrganizationUserModel;
  * үндсэн Controller. Энэ контроллер нь хэрэглэгчийн бүх authentication
  * урсгалыг нэг дор удирдана:
  *
- *   - index()                → Login хуудас руу орох
- *   - entry()                → Нэвтрэх оролдлого (username/password)
- *   - logout()               → Системээс гарах
- *   - signup()               → Шинэ хэрэглэгч бүртгүүлэх хүсэлт
- *   - forgot()               → Нууц үг сэргээх хүсэлт илгээх
- *   - forgotPassword()       → Хэрэглэгч нууц үг сэргээх link дээр дарсан үеийн UI
- *   - setPassword()          → Шинэ нууц үг тохируулах
- *   - selectOrganization()   → Хэрэглэгчийн ажиллах байгууллагыг сонгох
- *   - language()             → Login интерфейсийн хэлийг солих
+ *   - index()                -> Login хуудас руу орох
+ *   - entry()                -> Нэвтрэх оролдлого (username/password)
+ *   - logout()               -> Системээс гарах
+ *   - signup()               -> Шинэ хэрэглэгч бүртгүүлэх хүсэлт
+ *   - forgot()               -> Нууц үг сэргээх хүсэлт илгээх
+ *   - forgotPassword()       -> Хэрэглэгч нууц үг сэргээх link дээр дарсан үеийн UI
+ *   - setPassword()          -> Шинэ нууц үг тохируулах
+ *   - selectOrganization()   -> Хэрэглэгчийн ажиллах байгууллагыг сонгох
+ *   - language()             -> Login интерфейсийн хэлийг солих
  *
  * Тус Controller нь:
- *   ✔ UsersModel, OrganizationModel, ForgotModel гэх мэт мэдээллийн сангийн
+ *   UsersModel, OrganizationModel, ForgotModel гэх мэт мэдээллийн сангийн
  *     загваруудыг ашиглана
- *   ✔ JWTAuthMiddleware-ийг ашиглан нэвтрэх токен үүсгэнэ
- *   ✔ MemoryTemplate / TwigTemplate ашиглан template рендерлэнэ
- *   ✔ PSR-3 стандартын LogLevel ашиглан бүх үйлдлийг системийн лог руу бичнэ
- *   ✔ LocalizationMiddleware-аар дамжсан хэл, орчуулгын мэдээллийг
+ *   JWTAuthMiddleware-ийг ашиглан нэвтрэх токен үүсгэнэ
+ *   MemoryTemplate / TwigTemplate ашиглан template рендерлэнэ
+ *   PSR-3 стандартын LogLevel ашиглан бүх үйлдлийг системийн лог руу бичнэ
+ *   LocalizationMiddleware-аар дамжсан хэл, орчуулгын мэдээллийг
  *     автоматаар хэрэглэнэ
  *
  * Энэ бол Raptor Dashboard-ын authentication pipeline-ийн "зүрх".
@@ -46,24 +46,24 @@ class LoginController extends \Raptor\Controller
      * Энэ функц дараах 3 нөхцөл дээр ажиллана:
      *
      *  1) URL дээр "forgot={token}" параметр байвал:
-     *         → forgotPassword() руу шилжиж,
+     *         -> forgotPassword() руу шилжиж,
      *           хэрэглэгчийн нууц үг тааруулах UI-г харуулна.
      *
      *  2) Хэрэв хэрэглэгч аль хэдийн нэвтэрсэн бол:
-     *         → 'home' route руу redirect хийнэ.
+     *         -> 'home' route руу redirect хийнэ.
      *
      *  3) Эс бөгөөс:
-     *         → Login template-г (login.html) ачаалж рендерлэнэ.
+     *         -> Login template-г (login.html) ачаалж рендерлэнэ.
      *
      * Template-т дамжуулах өгөгдөл:
      *   - settings middleware-ээр inject хийгдсэн бүх системийн тохиргоо
      *   - "tos" (Terms of Service) болон "pp" (Privacy Policy)
-     *        орчуулгын контентууд (ReferenceModel → templates хүснэгтээс)
+     *        орчуулгын контентууд (ReferenceModel -> templates хүснэгтээс)
      *
      * Анхаар:
      *   - LocalizationMiddleware ажиллаагүй бол хэлний орчуулга байхгүй байж болно
      *   - SettingsMiddleware ажиллаагүй бол settings хувьсагч template-д дамжихгүй
-     *   - Query параметр "forgot" → password reset workflow-г автоматаар эхлүүлнэ
+     *   - Query параметр "forgot" -> password reset workflow-г автоматаар эхлүүлнэ
      *
      * @return void Redirect эсвэл template render хийх
      */
@@ -83,7 +83,7 @@ class LoginController extends \Raptor\Controller
         // 3) Login template-г ачаалах
         $login = $this->twigTemplate(__DIR__ . '/login.html');
 
-        // SettingsMiddleware → request attributes → 'settings'
+        // SettingsMiddleware -> request attributes -> 'settings'
         foreach ($this->getAttribute('settings', []) as $key => $value) {
             $login->set($key, $value);
         }
@@ -104,24 +104,24 @@ class LoginController extends \Raptor\Controller
      *
      * Workflow (алхам алхмаар):
      *
-     * ───────────────────────────────────────────────────────────────
+     * ---------------------------------------------------------------
      * 1) Payload шалгах
-     *    - Хэрэглэгч аль хэдийн нэвтэрсэн бол → алдаа (invalid-request)
-     *    - username болон password хоосон бол → алдаа (400)
+     *    - Хэрэглэгч аль хэдийн нэвтэрсэн бол -> алдаа (invalid-request)
+     *    - username болон password хоосон бол -> алдаа (400)
      *
      * 2) Хэрэглэгчийг мэдээллийн сангаас хайх
      *    - username эсвэл email-ээр нэг мөр хайна
-     *    - олдохгүй бол → алдаа (401)
+     *    - олдохгүй бол -> алдаа (401)
      *
      * 3) Нууц үг шалгах
-     *    - password_verify() → буруу бол алдаа (401)
+     *    - password_verify() -> буруу бол алдаа (401)
      *
-     * 4) is_active = 0 → идэвхгүй төлөвтэй хэрэглэгч → алдаа (403)
+     * 4) is_active = 0 -> идэвхгүй төлөвтэй хэрэглэгч -> алдаа (403)
      *
      * 5) Байгууллага (organization) тодорхойлох
-     *    - Хамгийн сүүлд нэвтэрсэн байгууллага байгаа бол → шууд ашиглана
-     *    - Үгүй бол → хэрэглэгчийн харьяа байгууллагыг OrganizationUserModel дээрээс сонгоно
-     *    - Байгууллага байхгүй бол → алдаа (406)
+     *    - Хамгийн сүүлд нэвтэрсэн байгууллага байгаа бол -> шууд ашиглана
+     *    - Үгүй бол -> хэрэглэгчийн харьяа байгууллагыг OrganizationUserModel дээрээс сонгоно
+     *    - Байгууллага байхгүй бол -> алдаа (406)
      *
      * 6) JWT токен үүсгэх
      *    - payload: user_id + organization_id
@@ -133,8 +133,8 @@ class LoginController extends \Raptor\Controller
      *        "message": "Хэрэглэгч Наранхүү системд нэвтрэв"
      *    }
      *
-     * 8) Хэрэв хэрэглэгчийн хэл (user.code) тодорхойлогдоогүй бол → системийн сонгосон хэлээр update хийнэ
-     *    Хэрэв хэрэглэгчийн код өөр хэлтэй таарвал → RAPTOR_LANGUAGE_CODE-г session-д онооно
+     * 8) Хэрэв хэрэглэгчийн хэл (user.code) тодорхойлогдоогүй бол -> системийн сонгосон хэлээр update хийнэ
+     *    Хэрэв хэрэглэгчийн код өөр хэлтэй таарвал -> RAPTOR_LANGUAGE_CODE-г session-д онооно
      *
      * 9) finally хэсэг:
      *    - Нэвтрэлт амжилттай болсон бол LogLevel::INFO лог бичнэ
@@ -258,9 +258,9 @@ class LoginController extends \Raptor\Controller
      * Хэрэглэгчийн гарах (logout) үйлдлийг боловсруулах action.
      *
      * Workflow:
-     * ───────────────────────────────────────────────────────────────
+     * ---------------------------------------------------------------
      * 1) Session дотор хадгалсан JWT (RAPTOR_JWT)-г устгана.
-     *    → Ингэснээр хэрэглэгч хүчингүй болсон токен ашиглан
+     *    -> Ингэснээр хэрэглэгч хүчингүй болсон токен ашиглан
      *      дахин үйлдэл хийх боломжгүй болно.
      *
      * 2) Лог бичих (log):
@@ -303,35 +303,35 @@ class LoginController extends \Raptor\Controller
      * баталгаажуулалт шаардана.
      *
      * Workflow (алхам алхмаар):
-     * ───────────────────────────────────────────────────────────────
+     * ---------------------------------------------------------------
      *
      * 1) Payload шалгах
      *    - password болон password_re давхцаж байгаа эсэх
      *    - email болон username хоосон биш эсэх
      *    - email хүчинтэй эсэх
-     *    - Буруу бол → InvalidArgumentException (400)
+     *    - Буруу бол -> InvalidArgumentException (400)
      *
      * 2) Email template татах
-     *    ReferenceModel → templates хүснэгтээс
+     *    ReferenceModel -> templates хүснэгтээс
      *       p.keyword='request-new-user'
      *       c.code = одоогийн хэл
      *       is_active=1
-     *    - Template байхгүй бол → алдаа (500)
+     *    - Template байхгүй бол -> алдаа (500)
      *
      * 3) Дата давхардал (unique constraints) шалгах
-     *    - UsersModel: email давхардсан бол → алдаа (403)
-     *    - UsersModel: username давхардсан бол → алдаа (403)
+     *    - UsersModel: email давхардсан бол -> алдаа (403)
+     *    - UsersModel: username давхардсан бол -> алдаа (403)
      *    - SignupModel: өмнө нь signup хүсэлт өгсөн эсэхийг шалгана
-     *         (username/email-ын аль нэг нь таарвал → алдаа 403)
+     *         (username/email-ын аль нэг нь таарвал -> алдаа 403)
      *
-     * 4) SignupModel → хүсэлт мэдээллийн санд insert хийх
-     *    - Алдаа гарвал → Exception (500)
+     * 4) SignupModel -> хүсэлт мэдээллийн санд insert хийх
+     *    - Алдаа гарвал -> Exception (500)
      *
      * 5) Email илгээх
      *    - MemoryTemplate ашиглан төвлөрсөн email HTML үүсгэнэ
      *    - Mailer классыг ашиглан хэрэглэгчийн имэйл рүү шинэ хэрэглэгчийн
      *      хүсэлт хүлээн авсны notification илгээнэ
-     *    - Илгээгдсэн эсэхээс үл хамааран JSON “success” буцаана
+     *    - Илгээгдсэн эсэхээс үл хамааран JSON "success" буцаана
      *
      * 6) finally{} блок дээр системийн лог бичнэ
      *    - Амжилттай бол LogLevel::ALERT
@@ -342,8 +342,8 @@ class LoginController extends \Raptor\Controller
      *
      * Аюулгүй байдлын онцлог:
      *   - Нууц үг үргэлж bcrypt ашиглан hash хийгдэнэ
-     *   - Signup хүсэлтүүдийг тусдаа хүснэгтэд хадгалдаг → fake request шалгах боломжтой
-     *   - Direct user creation биш → Admin баталгаажуулалт шаардлагатай
+     *   - Signup хүсэлтүүдийг тусдаа хүснэгтэд хадгалдаг -> fake request шалгах боломжтой
+     *   - Direct user creation биш -> Admin баталгаажуулалт шаардлагатай
      *   - Username/email enumeration-ээс хамгаалах зорилгоор ганцхан төрлийн мессеж ашигладаг
      *
      * @return void  JSON хариу хэвлэнэ
@@ -480,25 +480,25 @@ class LoginController extends \Raptor\Controller
      * хүсэлт илгээх үед ажиллана.
      *
      * Workflow (алхам алхмаар):
-     * ───────────────────────────────────────────────────────────────
+     * ---------------------------------------------------------------
      *
      * 1) Payload шалгах
-     *    - email хоосон эсвэл буруу форматтай → алдаа (400)
-     *    - payload['code'] байхгүй бол → одоогийн хэлний code-г онооно
+     *    - email хоосон эсвэл буруу форматтай -> алдаа (400)
+     *    - payload['code'] байхгүй бол -> одоогийн хэлний code-г онооно
      *
      * 2) Нууц үг сэргээх email template татах
-     *    ReferenceModel → templates хүснэгтээс:
+     *    ReferenceModel -> templates хүснэгтээс:
      *        keyword='forgotten-password-reset'
      *        code = сонгосон хэл
      *        is_active=1
-     *    - Template байхгүй бол → алдаа (500)
+     *    - Template байхгүй бол -> алдаа (500)
      *
      * 3) Хэрэглэгчийг шалгах
      *    - Email-ээр хайна
-     *    - Олдохгүй бол → 404
-     *    - is_active=0 бол → 403
+     *    - Олдохгүй бол -> 404
+     *    - is_active=0 бол -> 403
      *
-     * 4) ForgotModel → хүсэлт DB-д insert хийх
+     * 4) ForgotModel -> хүсэлт DB-д insert хийх
      *    Талбарууд:
      *       - forgot_password   (uniqid)
      *       - user_id, email, username
@@ -506,12 +506,12 @@ class LoginController extends \Raptor\Controller
      *       - remote_addr
      *       - code (хэлний код)
      *
-     *    - Insert амжилтгүй бол → 500
+     *    - Insert амжилтгүй бол -> 500
      *
      * 5) Reset email илгээх
      *    - MemoryTemplate ашиглан email HTML content боловсруулна
      *    - Mailer ашиглан имэйл илгээнэ
-     *    - Амжилттай эсэхээс үл хамааран JSON “success” буцаана
+     *    - Амжилттай эсэхээс үл хамааран JSON "success" буцаана
      *
      * 6) finally{} сарьцах хэсэг
      *    - Хүсэлт үүссэн бол LogLevel::INFO
@@ -524,7 +524,7 @@ class LoginController extends \Raptor\Controller
      *
      * Аюулгүй байдлын онцлог:
      *   - Бүртгэлгүй имэйл дээр reset хийх оролдлогыг системд log хийнэ
-     *   - ForgotModel.allow multi-attempts → бүртгэлийн түүх хадгална
+     *   - ForgotModel.allow multi-attempts -> бүртгэлийн түүх хадгална
      *   - Template эх бэлтгэл localization-т суурилдаг
      *
      * @return void JSON хариу хэвлэнэ
@@ -570,7 +570,7 @@ class LoginController extends \Raptor\Controller
                 );
             }
 
-            // 4) ForgotModel → DB insert
+            // 4) ForgotModel -> DB insert
             $forgot = new ForgotModel($this->pdo);
             $request = $forgot->insert([
                 'forgot_password' => \uniqid('forgot'),
@@ -661,24 +661,24 @@ class LoginController extends \Raptor\Controller
      *   - Амжилттай бол reset form-т шаардлагатай мэдээлэл дамжуулах
      *
      * Workflow (алхам алхмаар):
-     * ───────────────────────────────────────────────────────────────
+     * ---------------------------------------------------------------
      *
-     * 1) ForgotModel → "forgot_password" токен шалгах
+     * 1) ForgotModel -> "forgot_password" токен шалгах
      *    - is_active=1 байх ёстой
      *    - user_id, username, email зэрэг мэдээлэл олдоно
-     *    - Олдохгүй бол → алдаа (403)
+     *    - Олдохгүй бол -> алдаа (403)
      *
      * 2) Token-д тохирох хэл (code) шалгах
      *    - Хэрэв токенийх код ≠ одоогийн localization code бол:
-     *        → $_SESSION['RAPTOR_LANGUAGE_CODE'] = token.code
-     *        → login form руу redirect хийх (token-г хадгалсаар)
+     *        -> $_SESSION['RAPTOR_LANGUAGE_CODE'] = token.code
+     *        -> login form руу redirect хийх (token-г хадгалсаар)
      *
      * 3) Token хугацаа дууссан эсэхийг шалгах
      *    - created_at-аас хойш:
-     *        - өдрөөр, сараар, жилээр өөрчлөгдсөн бол → дууссан
-     *        - цаг ≥ 1 бол (тохиолдолд) → дууссан
-     *        - минут ≥ CODESAUR_PASSWORD_RESET_MINUTES бол → дууссан
-     *    - Хугацаа дууссан бол → алдаа (403)
+     *        - өдрөөр, сараар, жилээр өөрчлөгдсөн бол -> дууссан
+     *        - цаг ≥ 1 бол (тохиолдолд) -> дууссан
+     *        - минут ≥ CODESAUR_PASSWORD_RESET_MINUTES бол -> дууссан
+     *    - Хугацаа дууссан бол -> алдаа (403)
      *
      * 4) Template рүү өгөгдөл дамжуулах
      *    - forgot token-ийн бүх өгөгдөл
@@ -686,9 +686,9 @@ class LoginController extends \Raptor\Controller
      *
      * 5) log() ашиглан үйлдлийг лог бичих
      *    - Token хүчинтэй бол LogLevel::ALERT
-     *         → “Нууц үг шинээр тааруулж эхэллээ”
+     *         -> "Нууц үг шинээр тааруулж эхэллээ"
      *    - Token буруу бол LogLevel::ERROR
-     *         → error.message логжино
+     *         -> error.message логжино
      *
      * Аюулгүй байдлын онцлог:
      *   - Token-ийг ашигласан эсэхийг ForgotModel дээр is_active талбараар хянадаг
@@ -789,34 +789,34 @@ class LoginController extends \Raptor\Controller
      * хэрэглэгчийн мэдээлэл таарч байвал шинэ нууц үгийг хадгална.
      *
      * Workflow (алхам алхмаар):
-     * ───────────────────────────────────────────────────────────────
+     * ---------------------------------------------------------------
      *
      * 1) Payload шалгах
      *    - user_id INTEGER эсэх
      *    - forgot_password токен ирсэн эсэх
      *    - password_new / password_retype хоорондоо тохирох эсэх
-     *    - Хүчингүй бол → Exception (400 эсвэл 403)
+     *    - Хүчингүй бол -> Exception (400 эсвэл 403)
      *
-     * 2) ForgotModel → токеныг шалгах
+     * 2) ForgotModel -> токеныг шалгах
      *    - is_active=1 байх ёстой
      *    - user_id таарч байх ёстой
      *    - remote_addr таарч байх ёстой (security measure)
-     *    - Олдохгүй бол → 403
+     *    - Олдохгүй бол -> 403
      *
      * 3) Token хугацаа дууссан эсэхийг шалгах
-     *    - created_at → NOW() хүртэлх зөрүү
-     *    - минут ≥ CODESAUR_PASSWORD_RESET_MINUTES бол → expired
-     *    - Алдаа → 403
+     *    - created_at -> NOW() хүртэлх зөрүү
+     *    - минут ≥ CODESAUR_PASSWORD_RESET_MINUTES бол -> expired
+     *    - Алдаа -> 403
      *
      * 4) Хэрэглэгчийг шалгах
      *    - user_id таарах ёстой
      *    - is_active=1 байх ёстой
-     *    - Олдохгүй → 404
+     *    - Олдохгүй -> 404
      *
      * 5) Password шинэчлэх
      *    - \password_hash(PASSWORD_BCRYPT) ашиглана
      *    - updated_by, updated_at талбаруудыг шинэчилнэ
-     *    - updateById() амжилтгүй бол → 500
+     *    - updateById() амжилтгүй бол -> 500
      *
      * 6) ForgotModel токеныг идэвхгүй болгох
      *    - deactivateById()
@@ -825,8 +825,8 @@ class LoginController extends \Raptor\Controller
      *    - success эсвэл error дагуу login-reset-password.html template
      *
      * 8) Лог бичих (log)
-     *    - Success → LogLevel::INFO (“Нууц үгээ шинээр тохируулав”)
-     *    - Failure → LogLevel::ERROR
+     *    - Success -> LogLevel::INFO ("Нууц үгээ шинээр тохируулав")
+     *    - Failure -> LogLevel::ERROR
      *    - Context дотор:
      *         auth_user
      *         server_request (remote_addr)
@@ -871,7 +871,7 @@ class LoginController extends \Raptor\Controller
                 );
             }
 
-            // 2) ForgotModel → токеныг шалгах
+            // 2) ForgotModel -> токеныг шалгах
             $model = new ForgotModel($this->pdo);
             $forgot = $model->getRowWhere([
                 'is_active'       => 1,
@@ -979,21 +979,21 @@ class LoginController extends \Raptor\Controller
      * шилжих үед ажиллана.
      *
      * Workflow (алхам алхмаар):
-     * ───────────────────────────────────────────────────────────────
+     * ---------------------------------------------------------------
      *
      * 1) Хэрэглэгч нэвтэрсэн эсэхийг шалгах
-     *    - Authorization байхгүй → Exception (401)
+     *    - Authorization байхгүй -> Exception (401)
      *
      * 2) Одоогийн байгууллагын ID-г тодорхойлох
-     *    - Хэрэв сонгож буй байгууллага одоогийнхоороо таарч байвал → 400
+     *    - Хэрэв сонгож буй байгууллага одоогийнхоороо таарч байвал -> 400
      *
      * 3) Сонгосон байгууллага (organization) хүчинтэй эсэхийг шалгах
      *    - id таарах, is_active=1 байх ёстой
-     *    - Олдохгүй бол → Exception (403)
+     *    - Олдохгүй бол -> Exception (403)
      *
      * 4) Хэрэглэгч сонгосон байгууллагад харьяалагддаг эсэхийг шалгах
-     *    - OrganizationUserModel → retrieve(id, user_id)
-     *    - Олдохгүй бол → 406 (User does not belong to organization)
+     *    - OrganizationUserModel -> retrieve(id, user_id)
+     *    - Олдохгүй бол -> 406 (User does not belong to organization)
      *
      * 5) Онцгой эрх: system_coder role
      *    - Хэрэглэгч system_coder бол тухайн байгууллагад шууд нэмнэ
@@ -1004,14 +1004,14 @@ class LoginController extends \Raptor\Controller
      *    - Session-д RAPTOR_JWT шинэчилнэ
      *
      * 7) Лог бичих (log)
-     *    - Success → LogLevel::NOTICE
-     *         “Хэрэглэгч ... байгууллага [id:x] сонгов”
-     *    - Error → LogLevel::ERROR
-     *         “... алдаа илэрлээ”
+     *    - Success -> LogLevel::NOTICE
+     *         "Хэрэглэгч ... байгууллага [id:x] сонгов"
+     *    - Error -> LogLevel::ERROR
+     *         "... алдаа илэрлээ"
      *
      * 8) Redirect хийх
-     *    - Referer байгаа бол → түүн рүү буцаана
-     *    - Байхгүй бол → home маршрут руу буцаана
+     *    - Referer байгаа бол -> түүн рүү буцаана
+     *    - Байхгүй бол -> home маршрут руу буцаана
      *
      * Security онцлогууд:
      *   - Хэрэглэгч зөвхөн өөрийн харьяалагдсан байгууллага руу л орж чадна
@@ -1051,7 +1051,7 @@ class LoginController extends \Raptor\Controller
             $org_user_model = new OrganizationUserModel($this->pdo);
             $org_user = $org_user_model->retrieve($id, $user_id);
             if (empty($org_user)) {
-                // 5) Онцгой эрх: system_coder → байгууллагад автоматаар нэмнэ
+                // 5) Онцгой эрх: system_coder -> байгууллагад автоматаар нэмнэ
                 if (!$this->isUser('system_coder')) {
                     throw new \Exception('User does not belong to an organization', 406);
                 }
@@ -1118,26 +1118,26 @@ class LoginController extends \Raptor\Controller
      * $_SESSION['RAPTOR_LANGUAGE_CODE'] утгаар тодорхойлдог.
      *
      * Workflow (алхам алхмаар):
-     * ───────────────────────────────────────────────────────────────
+     * ---------------------------------------------------------------
      *
      * 1) Одоогийн хэлний code-г ($from) авах
      *
      * 2) language() параметр (өөрөөр хэлбэл URL-аар дамжиж ирсэн хэлний code)
      *    системд бүртгэлтэй хэл мөн эсэхийг шалгах
-     *      → $this->getLanguages() дотроос хайна
-     *      → Хэрэв байхгүй бол юу ч хийхгүй, шууд redirect
+     *      -> $this->getLanguages() дотроос хайна
+     *      -> Хэрэв байхгүй бол юу ч хийхгүй, шууд redirect
      *
      * 3) code өөр байвал хэлний сонголтыг session-д хадгална:
      *       $_SESSION['RAPTOR_LANGUAGE_CODE'] = $code
      *
      * 4) Хэрвээ хэрэглэгч нэвтэрсэн бол:
-     *       - UsersModel → хэрэглэгчийн profile дахь 'code' талбарыг update хийнэ
+     *       - UsersModel -> хэрэглэгчийн profile дахь 'code' талбарыг update хийнэ
      *       - Лог бичнэ (LogLevel::NOTICE)
-     *         “Хэрэглэгч ... системд ажиллах хэлийг {from}-с {code} болгон өөрчиллөө”
+     *         "Хэрэглэгч ... системд ажиллах хэлийг {from}-с {code} болгон өөрчиллөө"
      *
      * 5) Redirect хийх:
-     *       - HTTP_REFERER байгаа бол → буцааж хэвийн байршил руу
-     *       - Байхгүй бол → системийн root руу
+     *       - HTTP_REFERER байгаа бол -> буцааж хэвийн байршил руу
+     *       - Байхгүй бол -> системийн root руу
      *
      * Аюулгүй байдлын онцлог:
      *   - Хэл солих нь зөвхөн session-д нөлөөлнө, authentication-д нөлөөлөхгүй
@@ -1156,10 +1156,10 @@ class LoginController extends \Raptor\Controller
 
         // 2) Хэл бүртгэлтэй эсэх, мөн өөр хэл байгаа эсэхийг шалгах
         if (isset($language[$code]) && $code != $from) {
-            // 3) Session-д хадгалах → LocalizationMiddleware уншиж хэрэглэнэ
+            // 3) Session-д хадгалах -> LocalizationMiddleware уншиж хэрэглэнэ
             $_SESSION['RAPTOR_LANGUAGE_CODE'] = $code;
 
-            // 4) Хэрэглэгч нэвтэрсэн бол → profile update + log
+            // 4) Хэрэглэгч нэвтэрсэн бол -> profile update + log
             if ($this->isUserAuthorized()) {
                 $user = $this->getUser()->profile;
                 (new UsersModel($this->pdo))->updateById($user['id'], ['code' => $code]);
@@ -1207,15 +1207,15 @@ class LoginController extends \Raptor\Controller
      *   - user тухайн байгууллагад бүртгэлтэй (organization_user)
      *
      * Энэ өгөгдөл нь хэрэглэгч дараагийн удаа login хийх үед
-     * “default organization”-г автоматаар сонгоход хэрэглэгддэг.
+     * "default organization"-г автоматаар сонгоход хэрэглэгддэг.
      *
      * Workflow (алхам алхмаар):
-     * ───────────────────────────────────────────────────────────────
+     * ---------------------------------------------------------------
      *
      * 1) Database driver (MySQL / PostgreSQL)-ийг тодорхойлно.
      *    Учир нь JSON талбарын query dialect нь өөр:
-     *      - PostgreSQL → JSONB операторууд (::jsonb, ->>, →)
-     *      - MySQL      → JSON_EXTRACT, JSON_UNQUOTE
+     *      - PostgreSQL -> JSONB операторууд (::jsonb, ->>, ->)
+     *      - MySQL      -> JSON_EXTRACT, JSON_UNQUOTE
      *
      * 2) dashboard_log хүснэгтээс хамгийн сүүлийн:
      *        action='login-to-organization'
@@ -1224,10 +1224,10 @@ class LoginController extends \Raptor\Controller
      *      гэсэн мөрийг хайна.
      *
      * 3) Хэрэв лог бичлэг олдвол:
-     *      context JSON → array decode → ['id'] талбарыг буцаана
+     *      context JSON -> array decode -> ['id'] талбарыг буцаана
      *
      * 4) Хэрэв алдаа гарвал (query error, log not found гэх мэт):
-     *      → false буцаана.
+     *      -> false буцаана.
      *
      * Security онцлогууд:
      *   - Лог дээр тулгуурлан default organization тодорхойлдог тул
@@ -1299,11 +1299,11 @@ class LoginController extends \Raptor\Controller
             $result = $this->query($sql)->fetch();
 
             if (empty($result)) {
-                // Лог олдоогүй → false
+                // Лог олдоогүй -> false
                 throw new \Exception('No log');
             }
 
-            // context JSON → decode
+            // context JSON -> decode
             return \json_decode($result['context'], true)['id'];
         } catch (\Throwable) {
             return false;

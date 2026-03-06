@@ -1,4 +1,4 @@
-# 📚 Raptor API Reference (EN)
+# Raptor API Reference (EN)
 
 > Detailed reference for all modules, classes, and methods.
 
@@ -500,10 +500,10 @@ Language registration table.
 **File:** `application/raptor/localization/text/TextModel.php`
 **Extends:** `codesaur\DataObject\Model`
 
-Translation texts (key → value).
+Translation texts (key -> value).
 
 #### `retrieve(array $languageCodes): array`
-Returns all translations structured as language code → key → value.
+Returns all translations structured as language code -> key -> value.
 
 ### LocalizationMiddleware
 
@@ -597,7 +597,7 @@ Injects PSR-11 DI Container into request. Registers PDO and User ID in the conta
 **Extends:** `codesaur\Http\Application\Application`
 
 Public website Application. Middleware pipeline:
-ExceptionHandler → MySQL → Container → Session → Localization → Settings → HomeRouter
+ExceptionHandler -> MySQL -> Container -> Session -> Localization -> Settings -> HomeRouter
 
 ### HomeRouter
 

@@ -19,8 +19,8 @@ use Psr\Log\LogLevel;
  *    хүссэн байгууллагаа идэвхжүүлж ажиллах боломжоор хангана
  * 
  * Permission levels:
- *  - isUserAuthorized() → Нийтлэг эрх шалгалт
- *  - system_coder → бүх байгууллагыг харах тусгай эрх
+ *  - isUserAuthorized() -> Нийтлэг эрх шалгалт
+ *  - system_coder -> бүх байгууллагыг харах тусгай эрх
  *
  * log() лог бүртгэлийн системээр үйлдэл бүрийг журналдана.
  *
@@ -36,10 +36,10 @@ class OrganizationUserController extends \Raptor\Controller
      * Route: GET /dashboard/organization/user/list
      *
      * Хэрэв хэрэглэгч system_coder бол:
-     *    → бүх идэвхтэй байгууллагыг харуулна.
+     *    -> бүх идэвхтэй байгууллагыг харуулна.
      *
      * Харин жирийн хэрэглэгч бол:
-     *    → зөвхөн өөрийн харьяалагддаг байгууллагуудыг INNER JOIN ашиглан авч харуулна.
+     *    -> зөвхөн өөрийн харьяалагддаг байгууллагуудыг INNER JOIN ашиглан авч харуулна.
      *
      * @return void
      */
@@ -61,7 +61,7 @@ class OrganizationUserController extends \Raptor\Controller
             if ($this->isUser('system_coder')) {
                 $select_org = "SELECT * FROM $org_table WHERE is_active=1";
             } else {
-                // Жирийн хэрэглэгч → зөвхөн өөрийн байгууллагууд
+                // Жирийн хэрэглэгч -> зөвхөн өөрийн байгууллагууд
                 $select_org =
                     "SELECT t2.* 
                      FROM $org_users_table AS t1 

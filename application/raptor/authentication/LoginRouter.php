@@ -26,7 +26,7 @@ class LoginRouter extends Router
      * LoginRouter constructor.
      *
      * Энд authentication-тэй холбоотой маршрут бүрийг тодорхойлно.
-     * Бүх зам “/dashboard/login…” хэлбэртэй бөгөөд LoginController-ийн
+     * Бүх зам "/dashboard/login..." хэлбэртэй бөгөөд LoginController-ийн
      * харгалзах action-уудтай шууд холбогдоно.
      */
     public function __construct()
@@ -59,7 +59,7 @@ class LoginRouter extends Router
          * ---------------------------------------------------------------
          * 4. Нууц үг сэргээх (POST)
          * ---------------------------------------------------------------
-         * Хэрэглэгч email/username оруулж “Forgot password” хүсэлт үүсгэнэ.
+         * Хэрэглэгч email/username оруулж "Forgot password" хүсэлт үүсгэнэ.
          */
         $this->POST('/dashboard/login/forgot', [LoginController::class, 'forgot'])->name('login-forgot');
 
@@ -96,7 +96,7 @@ class LoginRouter extends Router
          * нэвтэрсэн үедээ аль байгууллагаар ажиллахаа сонгох алхам.
          *
          * Dynamic parameter:
-         *    {uint:id} → зөвхөн unsigned integer
+         *    {uint:id} -> зөвхөн unsigned integer
          *
          * Жишээ: GET /dashboard/login/organization/12
          */

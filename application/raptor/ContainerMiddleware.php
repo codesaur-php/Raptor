@@ -19,9 +19,9 @@ use codesaur\Container\Container;
  * request attributes-д inject хийнэ. Хөгжүүлэгчид өөрсдийн service-уудыг
  * registerServices() method-д бүртгэж ашиглах боломжтой.
  *
- * ════════════════════════════════════════════════════════════════
- * 📚 Хөгжүүлэгчдэд зориулсан заавар
- * ════════════════════════════════════════════════════════════════
+ * ================================================================
+ * Хөгжүүлэгчдэд зориулсан заавар
+ * ================================================================
  *
  * Service бүртгэх:
  * - ContainerMiddleware-г өргөтгөж registerServices() method-д service-уудыг нэмнэ
@@ -112,9 +112,9 @@ class ContainerMiddleware implements MiddlewareInterface
      *
      * Хөгжүүлэгчид энэ method-г өргөтгөж өөрсдийн service-уудыг бүртгэж болно.
      *
-     * ════════════════════════════════════════════════════════════════
-     * 📝 Жишээ: Service бүртгэх
-     * ════════════════════════════════════════════════════════════════
+     * ================================================================
+     * Жишээ: Service бүртгэх
+     * ================================================================
      *
      * ```php
      * protected function registerServices(
@@ -148,33 +148,33 @@ class ContainerMiddleware implements MiddlewareInterface
      * }
      * ```
      *
-     * ════════════════════════════════════════════════════════════════
-     * 💡 Зөвлөмж
-     * ════════════════════════════════════════════════════════════════
+     * ================================================================
+     * Зөвлөмж
+     * ================================================================
      *
      * 1. Request-ээс dependency авах
-     *    → $pdo = $request->getAttribute('pdo');
-     *    → $user = $request->getAttribute('user');
+     *    -> $pdo = $request->getAttribute('pdo');
+     *    -> $user = $request->getAttribute('user');
      *
      * 2. Lazy loading ашиглах (Зөвлөмж)
-     *    → Service-г factory function ашиглан бүртгэнэ
-     *    → Service-г шаардлагатай үед л үүсгэдэг (performance сайжирна)
-     *    → $container->set('mailer', function(ContainerInterface $c) use ($request) {
+     *    -> Service-г factory function ашиглан бүртгэнэ
+     *    -> Service-г шаардлагатай үед л үүсгэдэг (performance сайжирна)
+     *    -> $container->set('mailer', function(ContainerInterface $c) use ($request) {
      *          $pdo = $request->getAttribute('pdo');
      *          return new \Raptor\Mail\Mailer($pdo);
      *      });
      *
      * 3. Factory function-д use ($request) ашиглах
-     *    → Closure дотор request-г ашиглахын тулд use keyword заавал ашиглана
+     *    -> Closure дотор request-г ашиглахын тулд use keyword заавал ашиглана
      *
      * 4. Service ID-г тодорхой, уншигдахуйц нэр өгөх
-     *    ✅ 'mailer', 'cache', 'email_notification'
-     *    ❌ 'm', 'c', 'e'
+     *    'mailer', 'cache', 'email_notification'
+     *    'm', 'c', 'e'
      *
      * 5. Container-аас өөр service авч ашиглах
-     *    → $mailer = $c->get('mailer');  // Container-аас service авах
-     *    → Factory function-д ContainerInterface $c параметр ашиглана
-     *    → use ($request) шаардлагагүй, учир нь зөвхөн container-аас service авч байна
+     *    -> $mailer = $c->get('mailer');  // Container-аас service авах
+     *    -> Factory function-д ContainerInterface $c параметр ашиглана
+     *    -> use ($request) шаардлагагүй, учир нь зөвхөн container-аас service авч байна
      *
      * @param ContainerInterface $container Container instance
      * @param ServerRequestInterface $request Server request (PDO, User зэрэг dependency-ууд агуулна)

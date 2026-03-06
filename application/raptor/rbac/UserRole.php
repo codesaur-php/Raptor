@@ -6,40 +6,40 @@ use codesaur\DataObject\Model;
 use codesaur\DataObject\Column;
 
 /**
- * UserRole - RBAC системийн "Хэрэглэгч ↔ Роль" (Many-to-Many) холболтын модель.
+ * UserRole - RBAC системийн "Хэрэглэгч <-> Роль" (Many-to-Many) холболтын модель.
  *
  * RBAC архитектур дахь байр суурь:
- * ───────────────────────────────────────────────────────────────
+ * ---------------------------------------------------------------
  *  - Permission     = нэгж эрх
  *  - Role           = эрхийн багц
- *  - RolePermission = Role → Permission холболт
- *  - UserRole       = Хэрэглэгч → Role холболт  ← (энэ хүснэгт)
+ *  - RolePermission = Role -> Permission холболт
+ *  - UserRole       = Хэрэглэгч -> Role холболт  <- (энэ хүснэгт)
  *
  * Энэхүү хүснэгт нь:
- *    → Хэрэглэгч ямар рольтой вэ?
- *    → Нэг хэрэглэгч хэд хэдэн рольтой байж болох уу? (Тийм)
- *    → Роль уствал холбогдох бүх хэрэглэгчийн холболт устах уу? (Тийм)
+ *    -> Хэрэглэгч ямар рольтой вэ?
+ *    -> Нэг хэрэглэгч хэд хэдэн рольтой байж болох уу? (Тийм)
+ *    -> Роль уствал холбогдох бүх хэрэглэгчийн холболт устах уу? (Тийм)
  *
  * Хүснэгтийн баганууд:
- * ───────────────────────────────────────────────────────────────
+ * ---------------------------------------------------------------
  * id           - bigint, primary key
  *
- * user_id      - FK → users.id  
+ * user_id      - FK -> users.id  
  *                Хэрэглэгчийн дугаар
  *
- * role_id      - FK → rbac_roles.id  
+ * role_id      - FK -> rbac_roles.id  
  *                Хэрэглэгчид оноосон роль
  *
  * created_at   - datetime  
- * created_by   - FK → users.id  
+ * created_by   - FK -> users.id  
  *                Энэ холболтыг хэн үүсгэсэн бэ (audit trail)
  *
  *
  * __initial(): Анхны seed өгөгдөл
- * ───────────────────────────────────────────────────────────────
+ * ---------------------------------------------------------------
  * Framework анх ажиллах үед:
- *   → user_id = 1 хэрэглэгч
- *   → role_id = 1 (coder - super admin role)
+ *   -> user_id = 1 хэрэглэгч
+ *   -> role_id = 1 (coder - super admin role)
  *
  * Автоматаар холбогдоно.
  *
@@ -52,25 +52,25 @@ use codesaur\DataObject\Column;
  *
  *
  * Cascade rules:
- * ───────────────────────────────────────────────────────────────
- * user_id → users.id  
+ * ---------------------------------------------------------------
+ * user_id -> users.id  
  *    ON DELETE CASCADE  
- *    → Хэрэглэгч уствал түүний бүх role mapping устна.
+ *    -> Хэрэглэгч уствал түүний бүх role mapping устна.
  *
- * role_id → rbac_roles.id  
+ * role_id -> rbac_roles.id  
  *    ON DELETE CASCADE  
- *    → Роль уствал түүнийг авсан бүх хэрэглэгчдийн холболт устна.
+ *    -> Роль уствал түүнийг авсан бүх хэрэглэгчдийн холболт устна.
  *
- * created_by → users.id  
+ * created_by -> users.id  
  *    ON DELETE SET NULL  
- *    → Audit лог хадгалах зорилгоор created_by null болно.
+ *    -> Audit лог хадгалах зорилгоор created_by null болно.
  *
  *
  * Security онцлог:
- * ───────────────────────────────────────────────────────────────
- * - Нэг хэрэглэгч олон роль авна → олон permission inherit хийнэ
+ * ---------------------------------------------------------------
+ * - Нэг хэрэглэгч олон роль авна -> олон permission inherit хийнэ
  * - RolePermission + UserRole нийлж хэрэглэгчийн full permission list бүрддэг
- * - Initial seed → super admin заавал байх ёстой
+ * - Initial seed -> super admin заавал байх ёстой
  *
  */
 class UserRole extends Model
@@ -123,7 +123,7 @@ class UserRole extends Model
 
     /**
      * __initial() - Хүснэгт шинээр үүсэх үед FK constraint-үүд болон анхны
-     * супер админ холболтыг (user_id=1 → role_id=1) үүсгэнэ.
+     * супер админ холболтыг (user_id=1 -> role_id=1) үүсгэнэ.
      *
      * Анхны seed:
      *   user_id = 1
@@ -144,7 +144,7 @@ class UserRole extends Model
             // Ирээдүйд хүснэгтийн нэр өөрчлөгдвөл Model класс дахь setTable() засах хангалттай.
             $roles = (new Roles($this->pdo))->getName();
             $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
-            // FK: user_id → users.id
+            // FK: user_id -> users.id
             $this->exec("
                 ALTER TABLE $table
                 ADD CONSTRAINT {$table}_fk_user_id
@@ -153,7 +153,7 @@ class UserRole extends Model
                 ON DELETE CASCADE
                 ON UPDATE CASCADE
             ");
-            // FK: role_id → rbac_roles.id
+            // FK: role_id -> rbac_roles.id
             $this->exec("
                 ALTER TABLE $table
                 ADD CONSTRAINT {$table}_fk_role_id
@@ -162,7 +162,7 @@ class UserRole extends Model
                 ON DELETE CASCADE
                 ON UPDATE CASCADE
             ");
-            // FK: created_by → users.id
+            // FK: created_by -> users.id
             $this->exec("
                 ALTER TABLE $table
                 ADD CONSTRAINT {$table}_fk_created_by
