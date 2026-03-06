@@ -34,9 +34,9 @@ use codesaur\Http\Application\ExceptionHandlerInterface;
  *   -> Stack trace дэлгэц дээр JSON форматтай харуулна.
  *
  * Тemplate-д дамжуулах хувьсагчууд:
- *   ● title     - Алдааны гарчиг (Exception 404 гэх мэт)
- *   ● message   - Хэрэглэгчид үзэгдэх аюулгүй алдааны текст
- *   ● return    - Буцах линк тэмдэглэгээ
+ *   - title     - Алдааны гарчиг (Exception 404 гэх мэт)
+ *   - message   - Хэрэглэгчид үзэгдэх аюулгүй алдааны текст
+ *   - return    - Буцах линк тэмдэглэгээ
  *
  * @package Raptor\Exception
  */
