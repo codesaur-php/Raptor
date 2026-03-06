@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 ---
 
 ## [1.1.0] - 2026-03-06
+[1.1.0]: https://github.com/codesaur-php/Raptor/compare/v1.0.0...v1.1.0
 
 Codebase-wide cleanup enforcing old-school coding style. Codesaur dependency patch versions bumped.
 
