@@ -10,8 +10,18 @@ use Raptor\Content\FilesModel;
 
 /**
  * Class ProductsController
- *
+ * ---------------------------------------------------------------
  * Бүтээгдэхүүн (Products) контент удирдах controller.
+ *
+ * Энэ controller нь:
+ *   - Бүтээгдэхүүний жагсаалт харуулах (index, list)
+ *   - Шинэ бүтээгдэхүүн үүсгэх (insert)
+ *   - Бүтээгдэхүүн шинэчлэх (update)
+ *   - Бүтээгдэхүүн унших (read)
+ *   - Бүтээгдэхүүний дэлгэрэнгүй харуулах (view)
+ *   - Бүтээгдэхүүнийг идэвхгүй болгох (deactivate)
+ *   - Жишиг дата цэвэрлэх (reset)
+ *   зэрэг үйлдлүүдийг гүйцэтгэнэ.
  *
  * @package Dashboard\Shop
  */
@@ -19,6 +29,15 @@ class ProductsController extends FileController
 {
     use \Raptor\Template\DashboardTrait;
 
+    /**
+     * Бүтээгдэхүүний жагсаалтын dashboard хуудсыг харуулах.
+     *
+     * Хэл, төрөл, ангилал, статус зэрэг шүүлтийн сонголтуудыг бэлтгэнэ.
+     *
+     * Permission: system_content_index
+     *
+     * @return void
+     */
     public function index()
     {
         if (!$this->isUserCan('system_content_index')) {
@@ -66,6 +85,16 @@ class ProductsController extends FileController
         $this->log($table, LogLevel::NOTICE, 'Бүтээгдэхүүний жагсаалтыг үзэж байна', ['action' => 'index']);
     }
 
+    /**
+     * Бүтээгдэхүүний жагсаалтыг JSON хэлбэрээр буцаах.
+     *
+     * Query parameter-уудаас шүүлтийн нөхцөлүүдийг авч,
+     * жагсаалтыг бүртгэлийн огноогоор буурахаар эрэмбэлнэ.
+     *
+     * Permission: system_content_index
+     *
+     * @return void JSON response буцаана
+     */
     public function list()
     {
         try {
@@ -115,6 +144,16 @@ class ProductsController extends FileController
         }
     }
 
+    /**
+     * Шинэ бүтээгдэхүүн үүсгэх.
+     *
+     * GET: Форм хуудсыг харуулна
+     * POST: Шинэ бүтээгдэхүүнийг үүсгэнэ
+     *
+     * Permission: system_content_insert, system_content_publish
+     *
+     * @return void
+     */
     public function insert()
     {
         try {
@@ -203,6 +242,17 @@ class ProductsController extends FileController
         }
     }
 
+    /**
+     * Бүтээгдэхүүний бичлэгийг шинэчлэх.
+     *
+     * GET: Шинэчлэх форм хуудсыг харуулна
+     * PUT: Бүтээгдэхүүнийг шинэчлэнэ
+     *
+     * Permission: system_content_update, system_content_publish
+     *
+     * @param int $id Шинэчлэх бүтээгдэхүүний ID
+     * @return void
+     */
     public function update(int $id)
     {
         try {
@@ -332,6 +382,14 @@ class ProductsController extends FileController
         }
     }
 
+    /**
+     * Бүтээгдэхүүний бичлэгийг унших.
+     *
+     * Permission: system_content_index
+     *
+     * @param string $slug Бүтээгдэхүүний slug
+     * @return void
+     */
     public function read(string $slug)
     {
         try {
@@ -378,6 +436,14 @@ class ProductsController extends FileController
         }
     }
 
+    /**
+     * Бүтээгдэхүүний дэлгэрэнгүй мэдээллийг dashboard-д харуулах.
+     *
+     * Permission: system_content_index
+     *
+     * @param int $id Үзэх бүтээгдэхүүний ID
+     * @return void
+     */
     public function view(int $id)
     {
         try {
@@ -419,6 +485,17 @@ class ProductsController extends FileController
         }
     }
 
+    /**
+     * Файлуудыг нэгдсэн аргаар боловсруулах.
+     *
+     * Frontend-ээс ирсэн files JSON-г parse хийж header image,
+     * content media, attachment файлуудыг хадгалах/устгах.
+     *
+     * @param array $record Бичлэг
+     * @param array $files Frontend-ээс ирсэн файлуудын мэдээлэл
+     * @param bool $fromTemp Insert үйлдэл эсэх (temp folder-оос зөөх)
+     * @return array Файлуудын өөрчлөлтүүдийн жагсаалт
+     */
     private function processFiles(array $record, array $files, bool $fromTemp = false): array
     {
         $changes = [];
@@ -550,6 +627,13 @@ class ProductsController extends FileController
         return $changes;
     }
 
+    /**
+     * Бүтээгдэхүүний бичлэгийг идэвхгүй болгох.
+     *
+     * Permission: system_content_delete
+     *
+     * @return void JSON response буцаана
+     */
     public function deactivate()
     {
         try {
@@ -606,6 +690,13 @@ class ProductsController extends FileController
         }
     }
 
+    /**
+     * Жишиг датаг цэвэрлэж production эхлүүлэх.
+     *
+     * Permission: system_content_delete
+     *
+     * @return void
+     */
     public function reset()
     {
         try {
@@ -660,6 +751,12 @@ class ProductsController extends FileController
         }
     }
 
+    /**
+     * Бүтээгдэхүүн бүрийн хавсралт файлын тоог тоолох.
+     *
+     * @param string $table Хүснэгтийн нэр
+     * @return array Бүтээгдэхүүний ID => {attach} бүтэцтэй массив
+     */
     private function getFilesCounts(string $table): array
     {
         try {

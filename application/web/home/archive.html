@@ -3,7 +3,7 @@
         <i class="bi bi-archive me-2"></i>{{ 'news-archive'|text }}
     </h4>
 
-    {# --- Year tabs --- #}
+    <!-- --- Year tabs --- -->
     {% if years is not empty %}
         <ul class="nav nav-pills mb-4">
             {% for year in years %}
@@ -17,7 +17,7 @@
         </ul>
     {% endif %}
 
-    {# --- News by month --- #}
+    <!-- --- News by month --- -->
     {% set month_names_mn = { 1:'1-р сар', 2:'2-р сар', 3:'3-р сар', 4:'4-р сар', 5:'5-р сар', 6:'6-р сар',
         7:'7-р сар', 8:'8-р сар', 9:'9-р сар', 10:'10-р сар', 11:'11-р сар', 12:'12-р сар' } %}
     {% set month_names_en = { 1:'January', 2:'February', 3:'March', 4:'April', 5:'May', 6:'June',

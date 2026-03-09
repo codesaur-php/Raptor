@@ -6,6 +6,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 
 ---
 
+## [1.2.1] - 2026-03-09
+[1.2.1]: https://github.com/codesaur-php/Raptor/compare/v1.2.0...v1.2.1
+
+Comprehensive PHPDoc documentation and HTML comment security cleanup.
+
+### Added
+- **PHPDoc** - Full Mongolian PHPDoc comments for all Web layer PHP files
+  - `HomeRouter`, `HomeController`, `PageController`, `NewsController`, `ShopController`, `SeoController`
+  - Class-level docs with route listings, method-level docs with `@param`, `@return`, `@throws`
+- **PHPDoc** - Full Mongolian PHPDoc comments for all Dashboard Shop PHP files
+  - `ProductsModel`, `ProductsController`, `OrdersModel`, `OrdersController`
+- **PHPDoc** - Expanded PHPDoc for Raptor module files
+  - `DiscordNotifier` - All 6 notification methods documented
+  - `DevResponseModel` - All 3 methods documented
+- **Spam protection docs** - Detailed Mongolian comments in `ShopController::order()` explaining honeypot field, HMAC token, and timestamp mechanism
+
+### Changed
+- **HTML comment security** - Removed all `<!-- -->` doc comments from public Web templates to prevent information disclosure
+  - Affected: `index.html`, `home.html`, `page.html`, `news.html`, `news-type.html`, `archive.html`, `search.html`, `sitemap.html`, `products.html`, `product.html`, `order.html`, `order-success.html`, `page-404.html`
+- **Honeypot comment removal** - Removed honeypot-identifying comments from HTML templates (`order.html`, `login.html`) to prevent bot detection bypass; moved explanations to PHP controller code
+- **Twig to HTML comments** - Converted all remaining Twig `{# #}` inline comments to vanilla `<!-- -->` in `sitemap.html` and `archive.html` section markers
+- **Dashboard HTML** - Removed internal architecture doc comments from Dashboard Shop templates (`products-index`, `products-insert`, `products-update`, `products-view`, `products-read`, `orders-index`, `orders-view`)
+
+---
+
 ## [1.2.0] - 2026-03-09
 [1.2.0]: https://github.com/codesaur-php/Raptor/compare/v1.1.0...v1.2.0
 

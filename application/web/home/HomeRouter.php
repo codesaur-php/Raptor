@@ -4,6 +4,32 @@ namespace Web\Home;
 
 use codesaur\Router\Router;
 
+/**
+ * Class HomeRouter
+ * ---------------------------------------------------------------
+ * Web Layer-ийн үндсэн маршрут тодорхойлогч класс.
+ *
+ * Энэ Router нь олон нийтэд харагдах вэб сайтын бүх хуудсуудын
+ * HTTP маршрутуудыг бүртгэнэ.
+ *
+ * Бүртгэгдсэн маршрутууд:
+ *   - / , /home             -> Нүүр хуудас
+ *   - /language/{code}      -> Хэл солих
+ *   - /page/{id|slug}       -> Динамик хуудас (ID эсвэл slug-аар)
+ *   - /contact              -> Холбоо барих хуудас
+ *   - /news/{id|slug}       -> Мэдээ (ID эсвэл slug-аар)
+ *   - /news/type/{type}     -> Мэдээний төрлөөр жагсаалт
+ *   - /archive              -> Мэдээний архив
+ *   - /products             -> Бүтээгдэхүүний жагсаалт
+ *   - /product/{id|slug}    -> Бүтээгдэхүүн (ID эсвэл slug-аар)
+ *   - /order                -> Захиалгын форм (GET/POST)
+ *   - /search               -> Хайлт
+ *   - /sitemap              -> HTML Sitemap
+ *   - /sitemap.xml          -> XML Sitemap (SEO)
+ *   - /rss                  -> RSS Feed
+ *
+ * @package Web\Home
+ */
 class HomeRouter extends Router
 {
     public function __construct()

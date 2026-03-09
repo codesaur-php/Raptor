@@ -1,14 +1,14 @@
-{#
- # home.html
- # ------------------------------------------------------------------
- # Dashboard-ийн нүүр хуудас - мэндчилгээ, вэб статистик, системийн лог статистик.
- #
- # Controller: Dashboard\Home\HomeController
- # Routes:
- #   GET /dashboard          -> index()
- #   GET /dashboard/stats    -> stats()       (web_log)
- #   GET /dashboard/log-stats -> logStats()   (system *_log)
- #}
+<!--
+    home.html
+    ------------------------------------------------------------------
+    Dashboard-ийн нүүр хуудас - мэндчилгээ, вэб статистик, системийн лог статистик.
+
+    Controller: Dashboard\Home\HomeController
+    Routes:
+      GET /dashboard          -> index()
+      GET /dashboard/stats    -> stats()       (web_log)
+      GET /dashboard/log-stats -> logStats()   (system *_log)
+-->
 <div id="hello" class="mb-3"></div>
 <div id="statsLoading" class="text-center py-4">
     <span class="spinner-border spinner-border-sm me-1"></span> {{ 'loading-statistics'|text }}

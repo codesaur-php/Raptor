@@ -175,7 +175,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 NotifyTop('danger', `{{ 'error'|text|e }}`, error.message);
             }).finally(() => {
                 statusBtn.disabled = false;
-                statusBtn.innerHTML = '<i class="bi bi-check-circle"></i> {{ "update"|text }} {{ "status"|text }}';
+                statusBtn.innerHTML = '<i class="bi bi-check-circle"></i> {{ "update"|text }}';
             });
         });
     }

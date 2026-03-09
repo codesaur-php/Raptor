@@ -17,6 +17,14 @@ use codesaur\DataObject\Column;
  */
 class DevResponseModel extends Model
 {
+    /**
+     * DevResponseModel constructor.
+     *
+     * PDO instance-г оноож, хариултын хүснэгтийн бүх багануудыг тодорхойлно.
+     * Хүснэгтийн нэрийг 'dev_request_responses' гэж тохируулна.
+     *
+     * @param \PDO $pdo Database connection instance
+     */
     public function __construct(\PDO $pdo)
     {
         $this->setInstance($pdo);
@@ -33,6 +41,17 @@ class DevResponseModel extends Model
         $this->setTable('dev_request_responses');
     }
 
+    /**
+     * Анхны тохиргоо (initial setup).
+     *
+     * Хүснэгт анх үүсэх үед foreign key constraint-уудыг үүсгэнэ:
+     *   - request_id -> dev_requests(id) ON DELETE CASCADE
+     *   - created_by -> users(id) ON DELETE SET NULL
+     *
+     * Мөн request_id дээр index үүсгэнэ.
+     *
+     * @return void
+     */
     protected function __initial()
     {
         $table = $this->getName();
@@ -52,6 +71,15 @@ class DevResponseModel extends Model
         $this->exec("CREATE INDEX {$table}_idx_request_id ON $table (request_id)");
     }
 
+    /**
+     * Шинэ хариулт үүсгэх.
+     *
+     * Хариултын бичлэг үүсгэх үед created_at талбарыг
+     * автоматаар бөглөнө (хэрэв өгөгдөөгүй бол).
+     *
+     * @param array $record Хариултын мэдээлэл
+     * @return array|false Амжилттай бол үүссэн бичлэгийн массив, бусад тохиолдолд false
+     */
     public function insert(array $record): array|false
     {
         $record['created_at'] ??= \date('Y-m-d H:i:s');

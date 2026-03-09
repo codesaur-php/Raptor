@@ -7,13 +7,39 @@ use codesaur\DataObject\Column;
 
 /**
  * Class OrdersModel
- *
+ * ---------------------------------------------------------------
  * Захиалгын (`orders`) хүснэгттэй ажиллах өгөгдлийн загвар (Model) класс.
+ *
+ * Үндсэн боломжууд:
+ *   - Захиалгын хүснэгтийн багануудыг тодорхойлох
+ *   - FK constraint-уудыг анхны тохиргоонд үүсгэх (users, products)
+ *   - Шинэ захиалга үүсгэх үед created_at талбарыг автоматаар бөглөх
+ *
+ * Хүснэгтийн талбарууд:
+ *   - id (bigint, primary) - Захиалгын өвөрмөц дугаар
+ *   - product_id (bigint) - Бүтээгдэхүүний ID (FK -> products)
+ *   - product_title (varchar 255) - Бүтээгдэхүүний нэр
+ *   - customer_name (varchar 128) - Захиалагчийн нэр
+ *   - customer_email (varchar 128) - Захиалагчийн имэйл
+ *   - customer_phone (varchar 32) - Захиалагчийн утас
+ *   - message (text) - Захиалагчийн тэмдэглэл
+ *   - quantity (int, default: 1) - Тоо ширхэг
+ *   - code (varchar 2) - Хэлний код
+ *   - status (varchar 32, default: 'new') - Захиалгын төлөв
+ *   - is_active (tinyint, default: 1) - Идэвхтэй эсэх
  *
  * @package Dashboard\Shop
  */
 class OrdersModel extends Model
 {
+    /**
+     * OrdersModel constructor.
+     *
+     * PDO instance-г оноож, захиалгын хүснэгтийн бүх багануудыг тодорхойлно.
+     * Хүснэгтийн нэрийг 'orders' гэж тохируулна.
+     *
+     * @param \PDO $pdo Database connection instance
+     */
     public function __construct(\PDO $pdo)
     {
         $this->setInstance($pdo);
@@ -39,6 +65,15 @@ class OrdersModel extends Model
         $this->setTable('orders');
     }
 
+    /**
+     * Анхны тохиргоо (initial setup).
+     *
+     * Хүснэгт анх үүсэх үед foreign key constraint-уудыг автоматаар үүсгэнэ:
+     *   - created_by, updated_by -> users(id)
+     *   - product_id -> products(id)
+     *
+     * @return void
+     */
     protected function __initial()
     {
         $table = $this->getName();
@@ -80,6 +115,14 @@ class OrdersModel extends Model
         $this->exec("CREATE INDEX {$table}_idx_active_status ON $table (is_active, status)");
     }
 
+    /**
+     * Шинэ захиалга үүсгэх.
+     *
+     * Захиалгын бичлэг үүсгэх үед created_at талбарыг автоматаар бөглөнө.
+     *
+     * @param array $record Захиалгын мэдээлэл
+     * @return array|false Амжилттай бол үүссэн бичлэгийн массив, бусад тохиолдолд false
+     */
     public function insert(array $record): array|false
     {
         $record['created_at'] ??= \date('Y-m-d H:i:s');

@@ -8,8 +8,27 @@ use Web\Template\TemplateController;
 
 use Raptor\Content\NewsModel;
 
+/**
+ * Class HomeController
+ * ---------------------------------------------------------------
+ * Вэб сайтын нүүр хуудас болон хэл солих үйлдлүүдийн контроллер.
+ *
+ * Энэ контроллер нь:
+ *   - Нүүр хуудас (index) рендерлэх - сүүлийн 20 мэдээтэй
+ *   - Хэл солих (language) - session-д хэлний кодыг хадгалах
+ *
+ * @package Web\Home
+ */
 class HomeController extends TemplateController
 {
+    /**
+     * Нүүр хуудсыг харуулах.
+     *
+     * Сүүлийн 20 нийтлэгдсэн мэдээг сонгосон хэл дээр татаж,
+     * home.html template-ээр рендерлэнэ.
+     *
+     * @return void
+     */
     public function index()
     {
         $code = $this->getLanguageCode();
@@ -37,6 +56,15 @@ class HomeController extends TemplateController
         );
     }
 
+    /**
+     * Вэб сайтын хэлийг солих.
+     *
+     * Хэрэглэгчийн сонгосон хэлний кодыг session-д хадгалж,
+     * нүүр хуудас руу redirect хийнэ.
+     *
+     * @param string $code Хэлний код (жишээ: 'mn', 'en')
+     * @return void
+     */
     public function language(string $code)
     {
         $from = $this->getLanguageCode();

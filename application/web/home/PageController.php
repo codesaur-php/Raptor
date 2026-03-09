@@ -9,8 +9,30 @@ use Web\Template\TemplateController;
 use Raptor\Content\PagesModel;
 use Raptor\Content\FilesModel;
 
+/**
+ * Class PageController
+ * ---------------------------------------------------------------
+ * Вэб сайтын динамик хуудсуудыг харуулах контроллер.
+ *
+ * Энэ контроллер нь:
+ *   - Хуудсыг slug-аар харуулах (page)
+ *   - Хуудсыг ID-аар хайж slug руу чиглүүлэх (pageById)
+ *   - Холбоо барих хуудсыг олж харуулах (contact)
+ *   - Уншсан тоолуурыг (read_count) нэмэгдүүлэх
+ *   - Хавсаргасан файлуудыг хамт харуулах
+ *
+ * @package Web\Home
+ */
 class PageController extends TemplateController
 {
+    /**
+     * Холбоо барих хуудсыг харуулах.
+     *
+     * link талбарт '/contact' агуулсан нийтлэгдсэн хуудсыг
+     * хайж олоод page() method руу чиглүүлнэ.
+     *
+     * @return void
+     */
     public function contact()
     {
         $pages_table = (new PagesModel($this->pdo))->getName();
@@ -29,6 +51,13 @@ class PageController extends TemplateController
         return $this->page($contact['slug'] ?? '');
     }
 
+    /**
+     * ID-аар хуудас хайж slug-аар чиглүүлэх.
+     *
+     * @param int $id Хуудасны ID дугаар
+     * @return void
+     * @throws \Error Хуудас олдохгүй бол 404 алдаа шидэнэ
+     */
     public function pageById(int $id)
     {
         $model = new PagesModel($this->pdo);
@@ -43,6 +72,16 @@ class PageController extends TemplateController
         return $this->page($row['slug']);
     }
 
+    /**
+     * Slug-аар хуудсыг харуулах.
+     *
+     * Хуудсын бүрэн мэдээлэл, хавсаргасан файлуудыг авч,
+     * page.html template-ээр рендерлэнэ. Уншсан тоог нэмэгдүүлнэ.
+     *
+     * @param string $slug Хуудасны slug
+     * @return void
+     * @throws \Error Хуудас олдохгүй бол 404 алдаа шидэнэ
+     */
     public function page(string $slug)
     {
         $model = new PagesModel($this->pdo);

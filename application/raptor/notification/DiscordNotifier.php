@@ -5,15 +5,33 @@ namespace Raptor\Notification;
 use codesaur\Http\Client\CurlClient;
 
 /**
+ * Class DiscordNotifier
+ * ------------------------------------------------------------------
  * Discord Webhook ашиглан dashboard-ийн чухал үйл явдлуудыг мэдэгдэх.
+ *
+ * Энэ класс нь Discord-ийн Webhook API руу embed мэдэгдэл илгээх
+ * зориулалттай бөгөөд дараах үйл явдлуудыг мэдэгдэх боломжтой:
+ *
+ *   - Хэрэглэгчийн бүртгэлийн хүсэлт (userSignupRequest)
+ *   - Хэрэглэгч баталгаажсан (userApproved)
+ *   - Шинэ захиалга (newOrder)
+ *   - Захиалгын статус өөрчлөгдсөн (orderStatusChanged)
+ *   - Контент үйлдэл: үүсгэх, шинэчлэх, устгах, нийтлэх (contentAction)
  *
  * .env дотор RAPTOR_DISCORD_WEBHOOK_URL тохируулсан байх шаардлагатай.
  * URL хоосон бол мэдэгдэл илгээхгүй (silent skip).
+ *
+ * @package Raptor\Notification
  */
 class DiscordNotifier
 {
     private string $webhookUrl;
 
+    /**
+     * DiscordNotifier constructor.
+     *
+     * .env файлаас RAPTOR_DISCORD_WEBHOOK_URL утгыг авч тохируулна.
+     */
     public function __construct()
     {
         $this->webhookUrl = $_ENV['RAPTOR_DISCORD_WEBHOOK_URL'] ?? '';
@@ -60,16 +78,20 @@ class DiscordNotifier
         }
     }
 
-    // ── Түгээмэл өнгөнүүд ──
-
+    // -- Түгээмэл өнгөнүүд --
     const COLOR_SUCCESS = 0x2ecc71; // ногоон
     const COLOR_INFO    = 0x3498db; // цэнхэр
     const COLOR_WARNING = 0xf39c12; // шар
     const COLOR_DANGER  = 0xe74c3c; // улаан
     const COLOR_PURPLE  = 0x9b59b6; // нил ягаан
 
-    // ── Тусгай мэдэгдлүүд ──
-
+    /**
+     * Шинэ хэрэглэгч бүртгүүлэх хүсэлт ирсэн тухай мэдэгдэл.
+     *
+     * @param string $username Хэрэглэгчийн нэр
+     * @param string $email    Хэрэглэгчийн имэйл
+     * @return void
+     */
     public function userSignupRequest(string $username, string $email): void
     {
         $this->send(
@@ -83,6 +105,14 @@ class DiscordNotifier
         );
     }
 
+    /**
+     * Хэрэглэгч баталгаажсан тухай мэдэгдэл.
+     *
+     * @param string $username Хэрэглэгчийн нэр
+     * @param string $email    Хэрэглэгчийн имэйл
+     * @param string $admin    Баталгаажуулсан админы нэр
+     * @return void
+     */
     public function userApproved(string $username, string $email, string $admin = ''): void
     {
         $fields = [
@@ -101,6 +131,16 @@ class DiscordNotifier
         );
     }
 
+    /**
+     * Шинэ захиалга ирсэн тухай мэдэгдэл.
+     *
+     * @param int    $orderId  Захиалгын ID
+     * @param string $customer Захиалагчийн нэр
+     * @param string $email    Захиалагчийн имэйл
+     * @param string $product  Бүтээгдэхүүний нэр
+     * @param int    $quantity Тоо ширхэг
+     * @return void
+     */
     public function newOrder(int $orderId, string $customer, string $email, string $product, int $quantity): void
     {
         $this->send(
@@ -116,6 +156,16 @@ class DiscordNotifier
         );
     }
 
+    /**
+     * Захиалгын статус өөрчлөгдсөн тухай мэдэгдэл.
+     *
+     * @param int    $orderId   Захиалгын ID
+     * @param string $customer  Захиалагчийн нэр
+     * @param string $oldStatus Хуучин статус
+     * @param string $newStatus Шинэ статус
+     * @param string $admin     Өөрчилсөн админы нэр
+     * @return void
+     */
     public function orderStatusChanged(int $orderId, string $customer, string $oldStatus, string $newStatus, string $admin = ''): void
     {
         $fields = [
@@ -134,6 +184,19 @@ class DiscordNotifier
         );
     }
 
+    /**
+     * Контент дээр үйлдэл хийсэн тухай мэдэгдэл.
+     *
+     * Дэмжигдэх үйлдлүүд: insert, update, delete, publish.
+     * Контентын төрөл: news, page, product гэх мэт.
+     *
+     * @param string   $type   Контентын төрөл (news, page, product...)
+     * @param string   $action Үйлдлийн нэр (insert, update, delete, publish)
+     * @param string   $title  Контентын гарчиг
+     * @param int|null $id     Контентын ID (байхгүй байж болно)
+     * @param string   $admin  Үйлдэл хийсэн админы нэр
+     * @return void
+     */
     public function contentAction(string $type, string $action, string $title, ?int $id = null, string $admin = ''): void
     {
         $icons = [

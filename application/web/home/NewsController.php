@@ -9,8 +9,29 @@ use Web\Template\TemplateController;
 use Raptor\Content\NewsModel;
 use Raptor\Content\FilesModel;
 
+/**
+ * Class NewsController
+ * ---------------------------------------------------------------
+ * Вэб сайтын мэдээний хуудсуудыг харуулах контроллер.
+ *
+ * Энэ контроллер нь:
+ *   - Мэдээг slug эсвэл ID-аар харуулах
+ *   - Мэдээний төрлөөр жагсаалт харуулах (newsType)
+ *   - Мэдээний архив (жил, сараар бүлэглэсэн) харуулах
+ *   - Уншсан тоолуурыг (read_count) нэмэгдүүлэх
+ *   - Хавсаргасан файлуудыг хамт харуулах
+ *
+ * @package Web\Home
+ */
 class NewsController extends TemplateController
 {
+    /**
+     * ID-аар мэдээ хайж slug-аар чиглүүлэх.
+     *
+     * @param int $id Мэдээний ID дугаар
+     * @return void
+     * @throws \Error Мэдээ олдохгүй бол 404 алдаа шидэнэ
+     */
     public function newsById(int $id)
     {
         $model = new NewsModel($this->pdo);
@@ -25,6 +46,16 @@ class NewsController extends TemplateController
         return $this->news($row['slug']);
     }
 
+    /**
+     * Slug-аар мэдээг харуулах.
+     *
+     * Мэдээний бүрэн мэдээлэл, хавсаргасан файлуудыг авч,
+     * news.html template-ээр рендерлэнэ. Уншсан тоог нэмэгдүүлнэ.
+     *
+     * @param string $slug Мэдээний slug
+     * @return void
+     * @throws \Error Мэдээ олдохгүй бол 404 алдаа шидэнэ
+     */
     public function news(string $slug)
     {
         $model = new NewsModel($this->pdo);
@@ -67,6 +98,16 @@ class NewsController extends TemplateController
         );
     }
 
+    /**
+     * Мэдээний төрлөөр жагсаалт харуулах.
+     *
+     * Тухайн төрлийн нийтлэгдсэн бүх мэдээг огноогоор буурахаар
+     * эрэмбэлж харуулна.
+     *
+     * @param string $type Мэдээний төрөл
+     * @return void
+     * @throws \Error Мэдээ олдохгүй бол 404 алдаа шидэнэ
+     */
     public function newsType(string $type)
     {
         $code = $this->getLanguageCode();
@@ -99,6 +140,14 @@ class NewsController extends TemplateController
         );
     }
 
+    /**
+     * Мэдээний архив хуудсыг харуулах.
+     *
+     * Жилүүдийн жагсаалтыг харуулж, сонгосон жилийн мэдээнүүдийг
+     * сараар бүлэглэж харуулна.
+     *
+     * @return void
+     */
     public function archive()
     {
         $code = $this->getLanguageCode();

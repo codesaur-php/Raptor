@@ -11,8 +11,39 @@ use Dashboard\Shop\OrdersModel;
 use Raptor\Content\FilesModel;
 use codesaur\Template\MemoryTemplate;
 
+/**
+ * Class ShopController
+ * ---------------------------------------------------------------
+ * Вэб сайтын дэлгүүр (Shop) модулийн контроллер.
+ *
+ * Энэ контроллер нь:
+ *   - Бүтээгдэхүүний жагсаалт харуулах (products)
+ *   - Бүтээгдэхүүнийг slug эсвэл ID-аар харуулах
+ *   - Захиалгын форм харуулах (order)
+ *   - Захиалга илгээх (orderSubmit) - spam хамгаалалттай
+ *   - Захиалга амжилттай болсон тухай имэйл илгээх
+ *
+ * ---------------------------------------------------------------
+ * Spam хамгаалалтын механизм (orderSubmit)
+ * ---------------------------------------------------------------
+ *   1) Honeypot талбар - бот бөглөвөл хаяна
+ *   2) HMAC token - хуурамч form илрүүлэх
+ *   3) Хугацааны шалгалт - 3 секундээс хурдан бөглөвөл бот
+ *   4) 1 цагаас хэтэрсэн form хүчингүй
+ *   5) Session rate limit - 10 секундэд 1 захиалга
+ *
+ * @package Web\Home
+ */
 class ShopController extends TemplateController
 {
+    /**
+     * Бүтээгдэхүүний жагсаалтыг харуулах.
+     *
+     * Сонгосон хэл дээрх нийтлэгдсэн бүх бүтээгдэхүүнийг
+     * огноогоор буурахаар эрэмбэлж харуулна.
+     *
+     * @return void
+     */
     public function products()
     {
         $code = $this->getLanguageCode();
@@ -32,6 +63,13 @@ class ShopController extends TemplateController
         $this->log('web', LogLevel::NOTICE, '[{server_request.code}] Бүтээгдэхүүний жагсаалтыг уншиж байна', ['action' => 'products']);
     }
 
+    /**
+     * ID-аар бүтээгдэхүүн хайж slug-аар чиглүүлэх.
+     *
+     * @param int $id Бүтээгдэхүүний ID дугаар
+     * @return void
+     * @throws \Error Бүтээгдэхүүн олдохгүй бол 404 алдаа шидэнэ
+     */
     public function productById(int $id)
     {
         $model = new ProductsModel($this->pdo);
@@ -46,6 +84,16 @@ class ShopController extends TemplateController
         return $this->product($row['slug']);
     }
 
+    /**
+     * Slug-аар бүтээгдэхүүнийг харуулах.
+     *
+     * Бүтээгдэхүүний бүрэн мэдээлэл, хавсаргасан файлуудыг авч,
+     * product.html template-ээр рендерлэнэ. Уншсан тоог нэмэгдүүлнэ.
+     *
+     * @param string $slug Бүтээгдэхүүний slug
+     * @return void
+     * @throws \Error Бүтээгдэхүүн олдохгүй бол 404 алдаа шидэнэ
+     */
     public function product(string $slug)
     {
         $model = new ProductsModel($this->pdo);
@@ -86,6 +134,15 @@ class ShopController extends TemplateController
         );
     }
 
+    /**
+     * Захиалгын формыг харуулах.
+     *
+     * Spam хамгаалалтын timestamp болон HMAC token-г бэлтгэж
+     * template-д дамжуулна. product_id query parameter-аар
+     * бүтээгдэхүүний мэдээллийг урьдчилан дуудна.
+     *
+     * @return void
+     */
     public function order()
     {
         $code = $this->getLanguageCode();
@@ -106,7 +163,11 @@ class ShopController extends TemplateController
             }
         }
 
-        // Spam хамгаалалтын timestamp + token
+        // Spam хамгаалалтын бүрдэл:
+        //  - order.html дотор нуугдмал honeypot талбар (name="website") байрлуулсан
+        //    -> бот автоматаар бөглөдөг, хэрэглэгч харахгүй
+        //    -> orderSubmit() дотор шалгаж хаядаг
+        //  - timestamp + HMAC token
         $ts = \time();
         $secret = $_ENV['RAPTOR_JWT_SECRET'] ?? 'raptor-form-secret';
         $vars['spam_ts'] = $ts;
@@ -117,6 +178,15 @@ class ShopController extends TemplateController
         $template->render();
     }
 
+    /**
+     * Захиалга илгээх.
+     *
+     * Spam хамгаалалтын 5 шатлалтай шалгалт хийсний дараа
+     * захиалгыг DB-д хадгалж, имэйл болон Discord мэдэгдэл илгээнэ.
+     *
+     * @return void
+     * @throws \Error Spam илэрвэл эсвэл validation алдаа
+     */
     public function orderSubmit()
     {
         $payload = $this->getParsedBody();
@@ -232,6 +302,18 @@ class ShopController extends TemplateController
 
     /**
      * Захиалга амжилттай үүссэн тухай имэйл илгээх.
+     *
+     * Reference template service-ээс 'order-confirmation' template-г
+     * тухайн хэл дээр хайж, MemoryTemplate ашиглан рендерлээд
+     * mailer service-ээр захиалагчид илгээнэ.
+     *
+     * @param int    $orderId      Захиалгын ID
+     * @param string $customerName Захиалагчийн нэр
+     * @param string $customerEmail Захиалагчийн имэйл
+     * @param string $productTitle Бүтээгдэхүүний нэр
+     * @param int    $quantity     Тоо ширхэг
+     * @param string $code         Хэлний код
+     * @return void
      */
     private function sendOrderConfirmation(
         int $orderId,

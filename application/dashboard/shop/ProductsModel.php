@@ -14,6 +14,14 @@ use codesaur\DataObject\Column;
  */
 class ProductsModel extends Model
 {
+    /**
+     * ProductsModel constructor.
+     *
+     * PDO instance-г оноож, бүтээгдэхүүний хүснэгтийн бүх багануудыг тодорхойлно.
+     * Хүснэгтийн нэрийг 'products' гэж тохируулна.
+     *
+     * @param \PDO $pdo Database connection instance
+     */
     public function __construct(\PDO $pdo)
     {
         $this->setInstance($pdo);
@@ -52,6 +60,14 @@ class ProductsModel extends Model
         $this->setTable('products');
     }
 
+    /**
+     * Анхны тохиргоо (initial setup).
+     *
+     * Хүснэгт анх үүсэх үед foreign key constraint-уудыг автоматаар үүсгэнэ.
+     * Мөн жишиг (sample) бүтээгдэхүүнүүдийг MN/EN хэл дээр үүсгэнэ.
+     *
+     * @return void
+     */
     protected function __initial()
     {
         $table = $this->getName();
@@ -141,6 +157,15 @@ class ProductsModel extends Model
         ]);
     }
 
+    /**
+     * Шинэ бүтээгдэхүүн үүсгэх.
+     *
+     * Бүтээгдэхүүний бичлэг үүсгэх үед created_at болон slug талбаруудыг
+     * автоматаар бөглөнө (хэрэв өгөгдөөгүй бол).
+     *
+     * @param array $record Бүтээгдэхүүний мэдээлэл
+     * @return array|false Амжилттай бол үүссэн бичлэгийн массив, бусад тохиолдолд false
+     */
     public function insert(array $record): array|false
     {
         $record['created_at'] ??= \date('Y-m-d H:i:s');
@@ -159,6 +184,16 @@ class ProductsModel extends Model
         return parent::insert($record);
     }
 
+    /**
+     * Гарчигаас SEO-friendly slug үүсгэх.
+     *
+     * Кирилл үсгийг латин руу хөрвүүлж, тусгай тэмдэгтүүдийг
+     * хасаж, зөвхөн үсэг, тоо, зураас үлдээнэ.
+     * Давхардсан slug байвал дугаар нэмнэ (жишээ: my-slug-2).
+     *
+     * @param string $title Бүтээгдэхүүний гарчиг
+     * @return string SEO-friendly slug
+     */
     public function generateSlug(string $title): string
     {
         $mongolian = [
@@ -193,11 +228,26 @@ class ProductsModel extends Model
         return $slug;
     }
 
+    /**
+     * Slug-аар бүтээгдэхүүн хайх.
+     *
+     * @param string $slug Бүтээгдэхүүний slug
+     * @return array|null Бүтээгдэхүүн эсвэл null
+     */
     public function getBySlug(string $slug): array|null
     {
         return $this->getRowWhere(['slug' => $slug]);
     }
 
+    /**
+     * Content-оос товч тайлбар (excerpt) үүсгэх.
+     *
+     * HTML tag-уудыг хасаж, эхний $length тэмдэгтийг буцаана.
+     *
+     * @param string $content Бүтээгдэхүүний агуулга (HTML)
+     * @param int $length Тэмдэгтийн урт (default: 200)
+     * @return string Товч тайлбар
+     */
     public function getExcerpt(string $content, int $length = 200): string
     {
         $text = \strip_tags($content);

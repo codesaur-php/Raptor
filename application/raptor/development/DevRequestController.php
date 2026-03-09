@@ -96,7 +96,7 @@ class DevRequestController extends FileController
             $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
             $sql =
                 "SELECT t.id, t.title, t.status, t.created_at, t.created_by, " .
-                "CONCAT(u.last_name, ' ', u.first_name) as created_user " .
+                "CONCAT(u.first_name, ' ', u.last_name) as created_user " .
                 "FROM $table t LEFT JOIN $users u ON t.created_by = u.id " .
                 "WHERE $where ORDER BY t.created_at DESC";
             $stmt = $this->prepare($sql);
@@ -235,7 +235,7 @@ class DevRequestController extends FileController
             $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
 
             $sql =
-                "SELECT t.*, CONCAT(u.last_name, ' ', u.first_name) as created_user " .
+                "SELECT t.*, CONCAT(u.first_name, ' ', u.last_name) as created_user " .
                 "FROM $table t LEFT JOIN $users u ON t.created_by = u.id " .
                 "WHERE t.id = :id AND t.is_active = 1";
             $stmt = $this->prepare($sql);
@@ -268,7 +268,7 @@ class DevRequestController extends FileController
             $responseModel = new DevResponseModel($this->pdo);
             $respTable = $responseModel->getName();
             $respSql =
-                "SELECT r.*, CONCAT(u.last_name, ' ', u.first_name) as author_name " .
+                "SELECT r.*, CONCAT(u.first_name, ' ', u.last_name) as author_name " .
                 "FROM $respTable r LEFT JOIN $users u ON r.created_by = u.id " .
                 "WHERE r.request_id = :request_id ORDER BY r.created_at ASC";
             $respStmt = $this->prepare($respSql);
@@ -529,7 +529,7 @@ class DevRequestController extends FileController
             }
 
             $user = $this->getUser();
-            $authorName = ($user->getProfile()['first_name'] ?? '') . ' ' . ($user->getProfile()['last_name'] ?? '');
+            $authorName = ($user->profile['first_name'] ?? '') . ' ' . ($user->profile['last_name'] ?? '');
             $link = $this->generateRouteLink('dev-requests-view', ['id' => $requestId], true);
 
             $memtemplate = new MemoryTemplate();
@@ -621,7 +621,7 @@ class DevRequestController extends FileController
             }
 
             $user = $this->getUser();
-            $authorName = ($user->getProfile()['first_name'] ?? '') . ' ' . ($user->getProfile()['last_name'] ?? '');
+            $authorName = ($user->profile['first_name'] ?? '') . ' ' . ($user->profile['last_name'] ?? '');
             $link = $this->generateRouteLink('dev-requests-view', ['id' => $requestId], true);
 
             $memtemplate = new MemoryTemplate();

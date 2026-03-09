@@ -8,8 +8,30 @@ use Raptor\Content\NewsModel;
 use Raptor\Content\PagesModel;
 use Dashboard\Shop\ProductsModel;
 
+/**
+ * Class SeoController
+ * ---------------------------------------------------------------
+ * SEO (Search Engine Optimization) болон хайлтын контроллер.
+ *
+ * Энэ контроллер нь:
+ *   - Хайлтын хуудас (search) - pages, news, products-оос хайлт хийнэ
+ *   - HTML Sitemap (sitemap) - хэрэглэгчдэд зориулсан сайтын бүтэц
+ *   - XML Sitemap (sitemapXml) - хайлтын системд зориулсан sitemap
+ *   - RSS Feed (rss) - мэдээ болон бүтээгдэхүүний RSS feed
+ *
+ * @package Web\Home
+ */
 class SeoController extends TemplateController
 {
+    /**
+     * Хайлтын хуудсыг харуулах.
+     *
+     * Pages, News, Products хүснэгтүүдээс LIKE хайлт хийж,
+     * нийт үр дүнг нэгтгэж харуулна. Хамгийн багадаа 2 тэмдэгт
+     * оруулах шаардлагатай.
+     *
+     * @return void
+     */
     public function search()
     {
         $code = $this->getLanguageCode();
@@ -85,6 +107,14 @@ class SeoController extends TemplateController
         $template->render();
     }
 
+    /**
+     * HTML Sitemap хуудсыг харуулах.
+     *
+     * Хуудсуудыг parent-child бүтэцтэйгээр, мэдээнүүдийг төрлөөр нь
+     * бүлэглэж, бүтээгдэхүүнүүдийг жагсааж харуулна.
+     *
+     * @return void
+     */
     public function sitemap()
     {
         $code = $this->getLanguageCode();
@@ -167,6 +197,14 @@ class SeoController extends TemplateController
         $template->render();
     }
 
+    /**
+     * XML Sitemap үүсгэх (SEO зориулалттай).
+     *
+     * Бүх хэл дээрх хуудас, мэдээ, бүтээгдэхүүнүүдийг sitemaps.org
+     * стандартын дагуу XML форматаар буцаана.
+     *
+     * @return void
+     */
     public function sitemapXml()
     {
         $baseUrl = (string)$this->getRequest()->getUri()->withPath($this->getScriptPath());
@@ -256,6 +294,14 @@ class SeoController extends TemplateController
         echo '</urlset>';
     }
 
+    /**
+     * RSS Feed үүсгэх.
+     *
+     * Сүүлийн 20 мэдээ болон 20 бүтээгдэхүүнийг RSS 2.0 стандартаар
+     * буцаана. Atom namespace ашиглана.
+     *
+     * @return void
+     */
     public function rss()
     {
         $code = $this->getLanguageCode();

@@ -7,8 +7,21 @@ use codesaur\Template\MemoryTemplate;
 
 /**
  * Class OrdersController
- *
+ * ---------------------------------------------------------------
  * Захиалга (Orders) удирдах controller.
+ *
+ * Энэ controller нь:
+ *   - Захиалгын жагсаалт харуулах (index, list)
+ *   - Захиалгын дэлгэрэнгүй мэдээлэл харуулах (view)
+ *   - Захиалгын статус шинэчлэх (updateStatus)
+ *   - Захиалгыг идэвхгүй болгох (deactivate)
+ *   - Статус өөрчлөгдсөн тухай имэйл илгээх
+ *   - Discord мэдэгдэл илгээх
+ *   зэрэг үйлдлүүдийг гүйцэтгэнэ.
+ *
+ * Боломжит статусууд:
+ *   new -> processing -> confirmed -> shipped -> completed
+ *                                            -> cancelled
  *
  * @package Dashboard\Shop
  */
@@ -16,6 +29,13 @@ class OrdersController extends \Raptor\Controller
 {
     use \Raptor\Template\DashboardTrait;
 
+    /**
+     * Захиалгын жагсаалтын dashboard хуудсыг харуулах.
+     *
+     * Permission: system_content_index
+     *
+     * @return void
+     */
     public function index()
     {
         if (!$this->isUserCan('system_content_index')) {
@@ -47,6 +67,13 @@ class OrdersController extends \Raptor\Controller
         $this->log($table, LogLevel::NOTICE, 'Захиалгын жагсаалтыг үзэж байна', ['action' => 'index']);
     }
 
+    /**
+     * Захиалгын жагсаалтыг JSON хэлбэрээр буцаах.
+     *
+     * Permission: system_content_index
+     *
+     * @return void JSON response буцаана
+     */
     public function list()
     {
         try {
@@ -88,6 +115,14 @@ class OrdersController extends \Raptor\Controller
         }
     }
 
+    /**
+     * Захиалгын дэлгэрэнгүй мэдээллийг dashboard-д харуулах.
+     *
+     * Permission: system_content_index
+     *
+     * @param int $id Үзэх захиалгын ID
+     * @return void
+     */
     public function view(int $id)
     {
         try {
@@ -126,6 +161,17 @@ class OrdersController extends \Raptor\Controller
         }
     }
 
+    /**
+     * Захиалгын статусыг шинэчлэх.
+     *
+     * Боломжит статусууд: new, processing, confirmed, shipped, completed, cancelled.
+     * Статус өөрчлөгдсөн тухай захиалагчид имэйл, Discord мэдэгдэл илгээнэ.
+     *
+     * Permission: system_content_update
+     *
+     * @param int $id Захиалгын ID
+     * @return void
+     */
     public function updateStatus(int $id)
     {
         try {
@@ -195,6 +241,13 @@ class OrdersController extends \Raptor\Controller
         }
     }
 
+    /**
+     * Захиалгыг идэвхгүй болгох (soft delete).
+     *
+     * Permission: system_content_delete
+     *
+     * @return void JSON response буцаана
+     */
     public function deactivate()
     {
         try {
@@ -250,6 +303,14 @@ class OrdersController extends \Raptor\Controller
 
     /**
      * Захиалгын төлөв өөрчлөгдсөн тухай захиалагчид имэйл илгээх.
+     *
+     * Reference template service-ээс 'order-status-update' template-г
+     * тухайн хэл дээр хайж, MemoryTemplate ашиглан рендерлээд
+     * mailer service-ээр захиалагчид илгээнэ.
+     *
+     * @param array  $order     Захиалгын бичлэг
+     * @param string $newStatus Шинэ статус
+     * @return void
      */
     private function sendStatusNotification(array $order, string $newStatus)
     {

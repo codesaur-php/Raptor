@@ -3,7 +3,7 @@
         <i class="bi bi-diagram-3 me-2"></i>{{ 'sitemap'|text }}
     </h4>
 
-    {# --- Pages (tree) --- #}
+    <!-- --- Pages (tree) --- -->
     {% macro render_tree(nodes) %}
         <ul class="list-unstyled ms-3">
             {% for node in nodes %}
@@ -26,7 +26,7 @@
         {{ _self.render_tree(page_tree) }}
     {% endif %}
 
-    {# --- News by type --- #}
+    <!-- --- News by type --- -->
     {% if news_by_type is not empty %}
         <h5 class="mt-4 mb-3">
             <i class="bi bi-newspaper me-1"></i>{{ 'news'|text }}
@@ -56,7 +56,7 @@
         {% endfor %}
     {% endif %}
 
-    {# --- Products --- #}
+    <!-- --- Products --- -->
     {% if products is not empty %}
         <h5 class="mt-4 mb-3">
             <i class="bi bi-box2-heart me-1"></i>{{ 'products'|text }}
@@ -73,7 +73,7 @@
         </ul>
     {% endif %}
 
-    {# --- Utility links --- #}
+    <!-- --- Utility links --- -->
     <h5 class="mt-4 mb-3">
         <i class="bi bi-link-45deg me-1"></i>{{ 'other'|text }}
     </h5>
