@@ -131,7 +131,7 @@
         e.preventDefault();
         /* Фильтргүй үед анхааруулга */
         if (filterAction.classList.contains('btn-secondary')) {
-            return NotifyTop('warning', `{{ 'warning'|text|e }}`, '{{ localization.code == "mn" ? "Шүүлтүүрээс ядаж нэгийг сонгоорой" : "Select at least one filter" }}');
+            return NotifyTop('warning', `{{ 'warning'|text|e }}`, `{{ 'select-at-least-one-filter'|text|e('js') }}`);
         }
         /* Set хийгдсэн горимд дахин ачаалахгүй */
         if (filterAction.classList.contains('btn-dark')) return;
@@ -187,7 +187,7 @@
             const canDelete = {{ user.can('system_content_delete') ? 'true' : 'false' }};  /* Устгах эрх */
 
             /* Нийтлэгдсэн гэсэн текстийг хэлнээс хамааруулан тохируулах */
-            const published_text = document.documentElement.lang === 'mn' ? 'нийтэлсэн' : 'published';
+            const published_text = `{{ 'published'|text|e('js') }}`;
 
             /* Мэдээ бүрийг давтаж хүснэгтийн мөр үүсгэх */
             data.list.forEach(record => {
@@ -237,23 +237,19 @@
                 resetDiv.className = 'alert alert-warning d-flex align-items-center mt-3';
                 resetDiv.innerHTML = `
                     <i class="bi bi-info-circle me-2 fs-5"></i>
-                    <span class="me-auto">${document.documentElement.lang === 'mn'
-                        ? 'Хүснэгтэд жишиг (sample) дата байна. Production эхлүүлэхийн тулд цэвэрлэж болно.'
-                        : 'Table contains sample data. You can clear it to start production.'}</span>
+                    <span class="me-auto">{{ 'sample-data-info'|text|e('js') }}</span>
                     <button class="btn btn-sm btn-danger ms-3" id="resetSampleBtn" type="button">
-                        <i class="bi bi-arrow-counterclockwise"></i> ${document.documentElement.lang === 'mn' ? 'Reset & Production эхлэх' : 'Reset & Start Production'}
+                        <i class="bi bi-arrow-counterclockwise"></i> {{ 'reset-and-start-production'|text|e('js') }}
                     </button>`;
                 news.table.parentNode.insertBefore(resetDiv, news.table);
                 document.getElementById('resetSampleBtn').addEventListener('click', function () {
                     Swal.fire({
                         icon: 'warning',
-                        title: document.documentElement.lang === 'mn' ? 'Жишиг дата цэвэрлэх' : 'Clear Sample Data',
-                        html: document.documentElement.lang === 'mn'
-                            ? '<p class="text-danger">Бүх дата устгагдана. Энэ үйлдлийг буцаах боломжгүй!</p>'
-                            : '<p class="text-danger">All sample data will be deleted. This action cannot be undone!</p>',
+                        title: `{{ 'clear-sample-data'|text|e('js') }}`,
+                        html: `<p class="text-danger">{{ 'data-delete-cannot-undo'|text|e('js') }}</p>`,
                         showCancelButton: true,
                         cancelButtonText: `{{ 'cancel'|text|e }}`,
-                        confirmButtonText: document.documentElement.lang === 'mn' ? 'Тийм, цэвэрлэх' : 'Yes, clear it',
+                        confirmButtonText: `{{ 'yes-clear-it'|text|e('js') }}`,
                         confirmButtonColor: '#df4759',
                         showLoaderOnConfirm: true,
                         allowOutsideClick: () => !Swal.isLoading(),
@@ -308,9 +304,7 @@
                 const title = thisRow.children[3].textContent.replace(/<\/?[^>]+(>|$)/g, '');
 
                 /* Баталгаажуулах асуултын текстийг хэлнээс хамааруулан тохируулах */
-                let question = document.documentElement.lang === 'mn'
-                    ? `<p class="text-danger mb-3">Та (${title}) мэдээг идэвхгүй болгохдоо итгэлтэй байна уу?</p>`
-                    : `<p class="text-danger mb-3">Are you sure to deactivate the news (${title})?</p>`;
+                let question = `<p class="text-danger mb-3">{{ 'confirm-deactivate'|text|e('js') }}: (${title})?</p>`;
 
                 /* Зургийг SweetAlert-д харуулах эсэхийг шалгах */
                 let src = '';

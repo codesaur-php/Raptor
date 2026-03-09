@@ -92,6 +92,7 @@ class NewsModel extends Model
             new Column('title', 'varchar', 255),
             new Column('description', 'varchar', 255),
             new Column('content', 'mediumtext'),
+            new Column('source', 'varchar', 255),
             new Column('photo', 'varchar', 255),
             new Column('code', 'varchar', 2),
            (new Column('type', 'varchar', 32))->default('article'),
@@ -157,6 +158,9 @@ class NewsModel extends Model
             $this->setForeignKeyChecks(true);
         }
 
+        // Нийтлэгдсэн мэдээний шүүлтийн гүйцэтгэлийг сайжруулах индекс
+        $this->exec("CREATE INDEX {$table}_idx_active_published ON $table (is_active, published)");
+
         $now = \date('Y-m-d H:i:s');
         $path = \dirname($_SERVER['SCRIPT_NAME'] ?? '/');
         if ($path == '\\' || $path == '/' || $path == '.') {
@@ -174,6 +178,7 @@ class NewsModel extends Model
         $this->insert($seed + [
             'code' => 'mn',
             'title' => 'Raptor Framework суулгагдлаа',
+            'source' => 'codesaur.net, packagist.org, github.com',
             'photo' => $path . '/assets/images/code.jpg',
             'content' => '<p><a href="https://github.com/codesaur-php/Raptor" target="_blank">Raptor Framework</a> амжилттай суулгагдлаа. '
                 . 'Та одоо <a href="' . $path . '/dashboard">хянах самбар</a>аас контент удирдах боломжтой.</p>'
@@ -208,6 +213,7 @@ class NewsModel extends Model
         $this->insert($seed + [
             'code' => 'en',
             'title' => 'Raptor Framework Installed',
+            'source' => 'codesaur.net, packagist.org, github.com',
             'photo' => $path . '/assets/images/code.jpg',
             'content' => '<p><a href="https://github.com/codesaur-php/Raptor" target="_blank">Raptor Framework</a> has been successfully installed. '
                 . 'You can now manage content from the <a href="' . $path . '/dashboard">admin dashboard</a>.</p>'

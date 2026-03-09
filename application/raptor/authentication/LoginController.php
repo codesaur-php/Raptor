@@ -41,6 +41,52 @@ use Raptor\Organization\OrganizationUserModel;
 class LoginController extends \Raptor\Controller
 {
     /**
+     * Spam хамгаалалт шалгах.
+     *
+     * Honeypot, HMAC token, хурд, хугацаа, rate limit шалгана.
+     *
+     * @param string $sessionKey  Rate limit session түлхүүр
+     * @param int    $rateSeconds Rate limit хугацаа (секунд)
+     */
+    private function spamCheck(string $sessionKey = '_last_login_at', int $rateSeconds = 3)
+    {
+        $payload = $this->getParsedBody();
+
+        // 1) Honeypot
+        if (!empty($payload['website'])) {
+            throw new \Exception('Invalid request', 400);
+        }
+
+        // 2) HMAC token шалгалт
+        $ts = (int)($payload['_ts'] ?? 0);
+        $token = $payload['_token'] ?? '';
+        $secret = $_ENV['RAPTOR_JWT_SECRET'] ?? 'raptor-form-secret';
+        $expected = \hash_hmac('sha256', "login-form-$ts", $secret);
+        if (!\hash_equals($expected, $token)) {
+            throw new \Exception('Invalid request', 403);
+        }
+
+        // 3) 2 секундээс хурдан бол бот
+        $elapsed = \time() - $ts;
+        if ($elapsed < 2) {
+            throw new \Exception('Invalid request', 429);
+        }
+
+        // 4) 1 цагаас хэтэрсэн form хүчингүй
+        if ($elapsed > 3600) {
+            throw new \Exception($this->text('invalid-request'), 400);
+        }
+
+        // 5) Rate limit
+        $now = \time();
+        $last = $_SESSION[$sessionKey] ?? 0;
+        if ($now - $last < $rateSeconds) {
+            throw new \Exception($this->text('invalid-request'), 429);
+        }
+        $_SESSION[$sessionKey] = $now;
+    }
+
+    /**
      * Login хуудасны үндсэн view-г рендерлэх controller action.
      *
      * Энэ функц дараах 3 нөхцөл дээр ажиллана:
@@ -82,6 +128,12 @@ class LoginController extends \Raptor\Controller
 
         // 3) Login template-г ачаалах
         $login = $this->twigTemplate(__DIR__ . '/login.html');
+
+        // Spam хамгаалалтын timestamp + token
+        $ts = \time();
+        $secret = $_ENV['RAPTOR_JWT_SECRET'] ?? 'raptor-form-secret';
+        $login->set('spam_ts', $ts);
+        $login->set('spam_token', \hash_hmac('sha256', "login-form-$ts", $secret));
 
         // SettingsMiddleware -> request attributes -> 'settings'
         foreach ($this->getAttribute('settings', []) as $key => $value) {
@@ -150,6 +202,8 @@ class LoginController extends \Raptor\Controller
     public function entry()
     {
         try {
+            $this->spamCheck('_last_login_at', 3);
+
             // 1) Payload шалгах
             $payload = $this->getParsedBody();
             if ($this->isUserAuthorized()
@@ -351,6 +405,8 @@ class LoginController extends \Raptor\Controller
     public function signup()
     {
         try {
+            $this->spamCheck('_last_signup_at', 5);
+
             $code = $this->getLanguageCode();
             $payload = $this->getParsedBody();
 
@@ -441,6 +497,10 @@ class LoginController extends \Raptor\Controller
                     'message' => 'Хэрэглэгчээр бүртгүүлэх хүсэлтийг хүлээн авлаа!'
                 ]);
             }
+
+            $this->getService('discord')?->userSignupRequest(
+                $profile['username'], $profile['email']
+            );
         } catch (\Throwable $e) {
             // Error хэвлэнэ
             $this->respondJSON(
@@ -532,6 +592,8 @@ class LoginController extends \Raptor\Controller
     public function forgot()
     {
         try {
+            $this->spamCheck('_last_forgot_at', 10);
+
             // 1) Payload validation
             $code    = $this->getLanguageCode();
             $payload = $this->getParsedBody();
@@ -669,15 +731,15 @@ class LoginController extends \Raptor\Controller
      *    - Олдохгүй бол -> алдаа (403)
      *
      * 2) Token-д тохирох хэл (code) шалгах
-     *    - Хэрэв токенийх код ≠ одоогийн localization code бол:
+     *    - Хэрэв токенийх код != одоогийн localization code бол:
      *        -> $_SESSION['RAPTOR_LANGUAGE_CODE'] = token.code
      *        -> login form руу redirect хийх (token-г хадгалсаар)
      *
      * 3) Token хугацаа дууссан эсэхийг шалгах
      *    - created_at-аас хойш:
      *        - өдрөөр, сараар, жилээр өөрчлөгдсөн бол -> дууссан
-     *        - цаг ≥ 1 бол (тохиолдолд) -> дууссан
-     *        - минут ≥ CODESAUR_PASSWORD_RESET_MINUTES бол -> дууссан
+     *        - цаг >= 1 бол (тохиолдолд) -> дууссан
+     *        - минут >= CODESAUR_PASSWORD_RESET_MINUTES бол -> дууссан
      *    - Хугацаа дууссан бол -> алдаа (403)
      *
      * 4) Template рүү өгөгдөл дамжуулах
@@ -805,7 +867,7 @@ class LoginController extends \Raptor\Controller
      *
      * 3) Token хугацаа дууссан эсэхийг шалгах
      *    - created_at -> NOW() хүртэлх зөрүү
-     *    - минут ≥ CODESAUR_PASSWORD_RESET_MINUTES бол -> expired
+     *    - минут >= CODESAUR_PASSWORD_RESET_MINUTES бол -> expired
      *    - Алдаа -> 403
      *
      * 4) Хэрэглэгчийг шалгах

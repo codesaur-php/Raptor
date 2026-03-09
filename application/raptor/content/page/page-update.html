@@ -19,7 +19,7 @@
     <h3 class="px-2 my-auto fs-6 text-primary text-uppercase">
         <i class="bi bi-pencil-square"></i> {{ record['title']|e }}
         {% if has_children %}
-            <span class="badge bg-secondary"><i class="bi bi-diagram-3"></i> {{ localization.code == 'mn' ? 'Эцэг хуудас' : 'Parent page' }}</span>
+            <span class="badge bg-secondary"><i class="bi bi-diagram-3"></i> {{ 'parent-page'|text }}</span>
         {% endif %}
     </h3>
     <div class="ms-auto">
@@ -98,17 +98,22 @@
     {% if not has_children %}
     <!-- Тайлбар -->
     <div class="mt-3">
-        <label class="form-label">{{ localization.code == 'mn' ? 'Товч тайлбар' : 'Description' }} <i class="bi bi-card-text"></i></label>
-        <input class="form-control form-control-sm" name="description" value="{{ record['description']|e }}" maxlength="255" type="text" autocomplete="off" placeholder="{{ localization.code == 'mn' ? 'Хоосон үлдээвэл агуулгаас автоматаар үүсгэнэ' : 'Leave empty to auto-generate from content' }}">
+        <label class="form-label">{{ 'short-description'|text }} <i class="bi bi-card-text"></i></label>
+        <input class="form-control form-control-sm" name="description" value="{{ record['description']|e }}" maxlength="255" type="text" autocomplete="off" placeholder="{{ 'auto-generate-from-content'|text }}">
     </div>
     <!-- Агуулга -->
     <div class="mt-3">
         <textarea name="content">{{ record['content']|e }}</textarea>
     </div>
+    <!-- Эх сурвалж -->
+    <div class="mt-3">
+        <label class="form-label">{{ 'source'|text }} <i class="bi bi-quote"></i></label>
+        <textarea class="form-control form-control-sm" name="source" rows="2" maxlength="255" placeholder="{{ 'optional'|text }}">{{ record['source']|default('')|e }}</textarea>
+    </div>
     <!-- Холбоос -->
     <div class="mt-3">
         <label class="form-label">{{ 'link'|text }} <i class="bi bi-link-45deg"></i></label>
-        <input class="form-control border-info" name="link" type="text" value="{{ record['link']|e }}" maxlength="255" placeholder="{{ localization.code == 'mn' ? 'Хоосон үлдээж болно' : 'Optional' }}">
+        <input class="form-control border-info" name="link" type="text" value="{{ record['link']|e }}" maxlength="255" placeholder="{{ 'optional'|text }}">
     </div>
     {% endif %}
     <!-- Нийтлэх тохиргоо -->
@@ -119,15 +124,15 @@
                 <label class="form-label fw-bolder">{{ 'publish'|text }} <i class="bi bi-globe"></i></label>
                 <div class="form-check form-switch">
                     <input class="form-check-input" name="published"{{ record['published'] == 1 ? ' checked' : '' }} type="checkbox" role="switch">
-                    {{ localization.code == 'mn' ? 'сайт дээр харагдах' : 'visible on site' }}
+                    {{ 'visible-on-site'|text }}
                 </div>
             </div>
             {% if not has_children %}
             <div class="col-4">
-                <label class="form-label fw-bolder">{{ localization.code == 'mn' ? 'Онцлох' : 'Featured' }} <i class="bi bi-star"></i></label>
+                <label class="form-label fw-bolder">{{ 'featured'|text }} <i class="bi bi-star"></i></label>
                 <div class="form-check form-switch">
                     <input class="form-check-input" name="is_featured"{{ record['is_featured'] == 1 ? ' checked' : '' }} type="checkbox" role="switch">
-                    {{ localization.code == 'mn' ? 'нүүр хуудсанд онцлох' : 'feature on homepage' }}
+                    {{ 'feature-on-homepage'|text }}
                 </div>
             </div>
             <div class="col-4">
@@ -244,7 +249,7 @@
                 if (linkVal && !linkVal.match(/^(\/|https?:\/\/|\/\/|mailto:|tel:)/i)) {
                     datetimes?.forEach(input => { input.type = 'datetime-local'; });
                     this.querySelector('input[name="link"]').focus();
-                    return NotifyTop('warning', `{{ 'warning'|text|e }}`, `{{ localization.code == 'mn' ? 'Холбоос нь URL (http://...) эсвэл локал зам (/path) байх ёстой' : 'Link must be a URL (http://...) or a local path (/path)' }}`);
+                    return NotifyTop('warning', `{{ 'warning'|text|e }}`, `{{ 'link-must-be-url'|text|e }}`);
                 }
 
                 submitters.forEach(function (btn) { btn.growNstop(); });

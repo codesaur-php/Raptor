@@ -1,0 +1,317 @@
+<!-- Бүтээгдэхүүний төрлүүдийн тодорхойлолт -->
+{% set types = {
+    'product': { 'mn': 'Бүтээгдэхүүн' },
+    'service': { 'mn': 'Үйлчилгээ' },
+    'digital': { 'mn': 'Дижитал' },
+    'subscription': { 'mn': 'Захиалга' }
+} %}
+<!-- Бүтээгдэхүүний ангиллын тодорхойлолт -->
+{% set categories = {
+    'general': { 'mn': 'Ерөнхий' },
+    'electronics': { 'mn': 'Электроник' },
+    'clothing': { 'mn': 'Хувцас' },
+    'food': { 'mn': 'Хүнс' },
+    'software': { 'mn': 'Программ хангамж' }
+} %}
+<!-- Mongolian WYSIWYG Editor - текст editor -->
+<link href="{{ index }}/assets/moedit/moedit.css" rel="stylesheet">
+<link href="{{ index }}/assets/moedit/moedit-icons.css" rel="stylesheet">
+<script defer src="{{ index }}/assets/moedit/moedit.js"></script>
+<script defer src="{{ index }}/assets/moedit/moedit.ui.js"></script>
+<!-- Хуудасны толгой хэсэг -->
+<div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-2 shadow">
+    <h3 class="px-2 my-auto fs-6 text-success">
+        <i class="bi bi-box-seam"></i> {{ 'add-record'|text }} (products)
+    </h3>
+    <div class="ms-auto">
+        <!-- Хэрэв хэрэглэгч бүтээгдэхүүн нэмэх эрхтэй бол хадгалах товч харуулах -->
+        {% if user.can('system_content_insert') %}
+            <button class="submit-insert btn btn-sm btn-success text-uppercase shadow-sm">
+                <i class="bi bi-check-lg"></i> {{ 'save'|text }}
+            </button>
+        {% endif %}
+        <!-- Жагсаалт руу буцах товч -->
+        <a class="btn btn-sm btn-secondary shadow-sm" href="{{ 'products'|link }}">
+            <i class="bi bi-arrow-left"></i> {{ 'list'|text }}
+        </a>
+    </div>
+</div>
+<!-- Бүтээгдэхүүн нэмэх форм -->
+<form class="needs-validation" id="product_insert" action="{{ 'product-insert'|link }}" method="POST" enctype="multipart/form-data" novalidate>
+    <!-- Эхний мөр: Хэл, Төрөл, Ангилал сонгох талбарууд -->
+    <div class="row mt-3">
+        <!-- Хэл сонгох талбар -->
+        <div class="col-4">
+            <label class="form-label">{{ 'language'|text }} <i class="bi bi-translate"></i></label>
+            {% set first_code = localization.language|keys|first %}
+            {% set first_flag = first_code == 'en' ? 'us' : first_code %}
+            <div class="input-group">
+                <span class="input-group-text" id="lang_flag">
+                    <img src="https://flagcdn.com/20x15/{{ first_flag }}.png"
+                         srcset="https://flagcdn.com/40x30/{{ first_flag }}.png 2x"
+                         width="20" height="15" alt="{{ first_code }}">
+                </span>
+                <input class="form-control" name="code" type="text" value="{{ first_code|e }}" readonly>
+                <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"></button>
+                <ul class="dropdown-menu dropdown-menu-end" id="lang_list">
+                    {% for code,language in localization.language %}
+                        {% set flag = code == 'en' ? 'us' : code %}
+                        <li class="dropdown-item" value="{{ code|e }}">
+                            <img src="https://flagcdn.com/16x12/{{ flag }}.png"
+                                 srcset="https://flagcdn.com/32x24/{{ flag }}.png 2x"
+                                 width="16" height="12" alt="{{ code }}"
+                                 style="vertical-align:middle;margin-right:.35rem">{{ language['title']|e }}
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        <!-- Бүтээгдэхүүний төрөл сонгох талбар (dropdown) -->
+        <div class="col-4">
+            <label class="form-label">{{ 'type'|text }} <i class="bi bi-tag"></i></label>
+            <div class="input-group">
+                <input class="form-control" name="type" type="text" value="{{ types|keys|first|e }}" maxlength="32">
+                <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"></button>
+                <ul class="dropdown-menu dropdown-menu-end" id="type_list">
+                    {% for value,name in types %}
+                        <li class="dropdown-item" value="{{ value|e }}">{{ name[localization.code] ?? value|capitalize }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        <!-- Бүтээгдэхүүний ангилал сонгох талбар (dropdown) -->
+        <div class="col-4">
+            <label class="form-label">{{ 'category'|text }} <i class="bi bi-bookmark"></i></label>
+            <div class="input-group">
+                <input class="form-control" name="category" type="text" value="{{ categories|keys|first|e }}" maxlength="32">
+                <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"></button>
+                <ul class="dropdown-menu dropdown-menu-end" id="category_list">
+                    {% for value,name in categories %}
+                        <li class="dropdown-item" value="{{ value|e }}">{{ name[localization.code] ?? value|capitalize }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+    <!-- Бүтээгдэхүүний гарчиг -->
+    <div class="mt-3">
+        <label class="form-label">{{ 'title'|text }} <i class="bi bi-card-heading"></i></label>
+        <input class="form-control form-control-lg" name="title" required value="" maxlength="255" type="text" autocomplete="off">
+        <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
+    </div>
+    <!-- Үнэ, Хямдралтай үнэ, Нөөц -->
+    <div class="row mt-3">
+        <div class="col-md-4 mb-3">
+            <label class="form-label">{{ 'price'|text }} <i class="bi bi-currency-exchange"></i></label>
+            <input class="form-control" name="price" type="number" value="0" min="0" step="0.01">
+        </div>
+        <div class="col-md-4 mb-3">
+            <label class="form-label">{{ 'sale-price'|text }} <i class="bi bi-tag"></i></label>
+            <input class="form-control" name="sale_price" type="number" value="" min="0" step="0.01" placeholder="{{ 'optional'|text }}">
+        </div>
+        <div class="col-md-4 mb-3">
+            <label class="form-label">{{ 'stock'|text }} <i class="bi bi-box-seam"></i></label>
+            <input class="form-control" name="stock" type="number" value="0" min="0">
+        </div>
+    </div>
+    <!-- Хэмжээ, Өнгө, SKU, Баркод -->
+    <div class="row">
+        <div class="col-md-3 col-sm-6 mb-3">
+            <label class="form-label">{{ 'sizes'|text }} <i class="bi bi-rulers"></i></label>
+            <input class="form-control" name="sizes" type="text" value="" placeholder="S, M, L, XL">
+        </div>
+        <div class="col-md-3 col-sm-6 mb-3">
+            <label class="form-label">{{ 'colors'|text }} <i class="bi bi-palette"></i></label>
+            <input class="form-control" name="colors" type="text" value="" placeholder="Red, Black, White">
+        </div>
+        <div class="col-md-3 col-sm-6 mb-3">
+            <label class="form-label">SKU <i class="bi bi-upc"></i></label>
+            <input class="form-control" name="sku" type="text" value="" maxlength="64" placeholder="{{ 'optional'|text }}">
+        </div>
+        <div class="col-md-3 col-sm-6 mb-3">
+            <label class="form-label">{{ 'barcode'|text }} <i class="bi bi-upc-scan"></i></label>
+            <input class="form-control" name="barcode" type="text" value="" maxlength="64" placeholder="{{ 'optional'|text }}">
+        </div>
+    </div>
+    <!-- Товч тайлбар (description) - хоосон үлдээвэл агуулгаас автоматаар үүсгэнэ -->
+    <div class="mt-3">
+        <label class="form-label">{{ 'short-description'|text }} <i class="bi bi-card-text"></i></label>
+        <input class="form-control form-control-sm" name="description" value="" maxlength="255" type="text" autocomplete="off" placeholder="{{ 'auto-generate-from-content'|text }}">
+    </div>
+    <!-- Агуулга -->
+    <div class="mt-3">
+        <textarea name="content"></textarea>
+    </div>
+    <!-- Холбоос -->
+    <div class="mt-3">
+        <label class="form-label">{{ 'link'|text }} <i class="bi bi-link-45deg"></i></label>
+        <input class="form-control" name="link" type="url" value="" maxlength="255" placeholder="{{ 'optional'|text }}">
+    </div>
+    <!-- Хэрэв хэрэглэгч нийтлэх эрхтэй бол нийтлэх болон сэтгэгдэл авах тохиргоо харуулах -->
+    {% if user.can('system_content_publish') %}
+    <div class="rounded border border-success mt-3 p-3">
+        <div class="row">
+            <!-- Нийтлэх эсэх сонголт -->
+            <div class="col-4">
+                <label class="form-label fw-bolder">{{ 'publish'|text }} <i class="bi bi-globe"></i></label>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" name="published" type="checkbox" role="switch">
+                    {{ 'visible-on-site'|text }}
+                </div>
+            </div>
+            <!-- Онцлох бүтээгдэхүүн эсэх сонголт -->
+            <div class="col-4">
+                <label class="form-label fw-bolder">{{ 'featured'|text }} <i class="bi bi-star"></i></label>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" name="is_featured" type="checkbox" role="switch">
+                    {{ 'feature-on-homepage'|text }}
+                </div>
+            </div>
+            <!-- Сэтгэгдэл авах эсэх сонголт -->
+            <div class="col-4">
+                <label class="form-label fw-bolder">{{ 'comment'|text }} <i class="bi bi-chat-dots"></i></label>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" name="comment" type="checkbox" role="switch">
+                    {{ 'can-comment'|text }}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</form>
+<!-- Формын доорх үйлдлийн товчнууд -->
+<div class="rounded p-2 mt-4 shadow">
+    {% if user.can('system_content_insert') %}
+        <button class="submit-insert btn btn-success text-uppercase shadow-sm">
+            <i class="bi bi-check2"></i> {{ 'save'|text }}
+        </button>
+    {% endif %}
+    <a class="btn btn-secondary text-uppercase shadow-sm" href="{{ 'products'|link }}">
+        <i class="bi bi-arrow-left"></i> {{ 'list'|text }}
+    </a>
+</div>
+<script type="text/javascript">
+    /* Бүтээгдэхүүний төрөл сонгох үед editor-ийн горимыг өөрчлөх */
+    const content = document.querySelector('textarea[name="content"]');
+    const type = document.querySelector('input[name="type"]');
+
+    document.getElementById('type_list').addEventListener('click', function (e) {
+        if (e.target && e.target.nodeName === 'LI') {
+            type.value = e.target.getAttribute('value');
+            content._moedit?.toggleSource(type.value === 'embed');
+        }
+    });
+
+    /* Хэл сонгох event listener */
+    const langInput = document.querySelector('input[name="code"]');
+    const langFlag = document.getElementById('lang_flag');
+    document.getElementById('lang_list').addEventListener('click', function (e) {
+        const li = e.target.closest('li.dropdown-item');
+        if (li) {
+            const code = li.getAttribute('value');
+            langInput.value = code;
+            const flag = code === 'en' ? 'us' : code;
+            langFlag.innerHTML = `<img src="https://flagcdn.com/20x15/${flag}.png" srcset="https://flagcdn.com/40x30/${flag}.png 2x" width="20" height="15" alt="${code}">`;
+        }
+    });
+
+    /* Бүтээгдэхүүний ангилал сонгох event listener */
+    const category = document.querySelector('input[name="category"]');
+    document.getElementById('category_list').addEventListener('click', function (e) {
+        if (e.target && e.target.nodeName === 'LI') {
+            category.value = e.target.getAttribute('value');
+        }
+    });
+
+    /* DOM ачаалагдсаны дараа */
+    document.addEventListener('DOMContentLoaded', function () {
+        /* moedit (WYSIWYG текст засварлагч) идэвхжүүлэх */
+        new moedit(content, {
+            upload: {
+                url: `{{ 'files-upload'|link }}`,
+                folder: 'products/temp/{{ user.profile['id'] }}',
+                maxFileSize: {{ max_file_size }}
+            },
+            titleSelector: 'input[name="title"]',
+            ai_helper: `{{ 'moedit-ai'|link }}`,
+            sourceMode: type.value === 'embed'
+        });
+
+        /* Форм илгээх функц */
+        const formInsert = document.querySelector('form#product_insert');
+        if (!formInsert) {
+            NotifyTop('danger', `{{ 'error'|text|e }}`, 'Form not found!');
+        } else {
+            /* Хадгалах товчнууд дээр дарахад форм илгээх */
+            const submitters = document.querySelectorAll('button.submit-insert');
+            submitters.forEach(function (btn) {
+                btn.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    formInsert.requestSubmit();
+                });
+            });
+
+            /* Форм submit хийхэд */
+            formInsert.addEventListener('submit', function (event) {
+                event.preventDefault();
+
+                /* Формын баталгаажуулалт */
+                const _valid = this.checkValidity();
+                this.classList.add('was-validated');
+                if (!_valid) {
+                    event.stopPropagation();
+                    return NotifyTop('danger', `{{ 'error'|text|e }}`, `{{ 'u-have-some-form-errors'|text|e }}`);
+                }
+
+                /* Товчнуудыг disable хийх (spinner харуулах) */
+                submitters.forEach(function (btn) { btn.growNstop(); });
+
+                /* FormData үүсгэж сервер рүү илгээх */
+                const data = new FormData(this);
+
+                /* Checkbox-уудыг normalize хийх (checked = 1, unchecked = 0) */
+                const publishedCheckbox = this.querySelector('input[name="published"]');
+                if (publishedCheckbox) {
+                    data.set('published', publishedCheckbox.checked ? '1' : '0');
+                }
+                const isFeaturedCheckbox = this.querySelector('input[name="is_featured"]');
+                if (isFeaturedCheckbox) {
+                    data.set('is_featured', isFeaturedCheckbox.checked ? '1' : '0');
+                }
+                const commentCheckbox = this.querySelector('input[name="comment"]');
+                if (commentCheckbox) {
+                    data.set('comment', commentCheckbox.checked ? '1' : '0');
+                }
+
+                /* Бүх файлуудын мэдээллийг JSON хэлбэрээр илгээх */
+                if (content._moedit) {
+                    data.append('files', JSON.stringify(content._moedit.getFiles()));
+                }
+
+                fetch(
+                    this.action,
+                    {
+                        body: data,
+                        method: this.getAttribute('method') ?? 'POST'
+                    }
+                ).then(res => {
+                    if (res.headers.get('content-type')?.includes('application/json')) return res.json();
+                    throw new Error(`HTTP [${res.status}]: ${res.statusText}`);
+                }).then(response => {
+                    if (response.status !== 'success') {
+                        throw new Error(response.message ? response.message : 'Invalid response!');
+                    }
+
+                    /* Амжилттай бол бүтээгдэхүүний жагсаалт руу шилжих */
+                    window.location.href = `{{ 'products'|link }}`;
+
+                    NotifyTop(response.type ?? 'success', response.title ?? `{{ 'success'|text|e }}`, response.message ?? 'Product created');
+                }).catch(error => {
+                    /* Алдаа гарсан тохиолдолд */
+                    NotifyTop('danger', `{{ 'error'|text|e }}`, error.message);
+                    submitters.forEach(function (btn) { btn.growNstop();});
+                });
+            });
+        }
+    });
+</script>

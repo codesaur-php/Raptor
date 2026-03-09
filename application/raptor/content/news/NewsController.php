@@ -219,6 +219,10 @@ class NewsController extends FileController
                     'status' => 'success',
                     'message' => $this->text('record-insert-success')
                 ]);
+
+                $action = !empty($payload['published']) ? 'publish' : 'insert';
+                $adminName = \trim(($this->getUser()->profile['first_name'] ?? '') . ' ' . ($this->getUser()->profile['last_name'] ?? ''));
+                $this->getService('discord')?->contentAction('news', $action, $payload['title'] ?? '', $id, $adminName);
             } else {
                 $dashboard = $this->twigDashboard(
                     __DIR__ . '/news-insert.html',
@@ -364,6 +368,12 @@ class NewsController extends FileController
                     'type' => 'primary',
                     'message' => $this->text('record-update-success')
                 ]);
+
+                $wasPublished = !empty($record['published']);
+                $nowPublished = !empty($payload['published']);
+                $action = (!$wasPublished && $nowPublished) ? 'publish' : 'update';
+                $adminName = \trim(($this->getUser()->profile['first_name'] ?? '') . ' ' . ($this->getUser()->profile['last_name'] ?? ''));
+                $this->getService('discord')?->contentAction('news', $action, $payload['title'] ?? $record['title'] ?? '', $id, $adminName);
             } else {
                 $files = $filesModel->getRows(['WHERE' => "record_id=$id AND is_active=1"]);
                 $dashboard = $this->twigDashboard(
@@ -717,6 +727,9 @@ class NewsController extends FileController
                 'title'   => $this->text('success'),
                 'message' => $this->text('record-successfully-deleted')
             ]);
+
+            $adminName = \trim(($this->getUser()->profile['first_name'] ?? '') . ' ' . ($this->getUser()->profile['last_name'] ?? ''));
+            $this->getService('discord')?->contentAction('news', 'delete', $payload['title'] ?? "#{$id}", $id, $adminName);
         } catch (\Throwable $err) {
             $this->respondJSON([
                 'status'  => 'error',
@@ -763,9 +776,7 @@ class NewsController extends FileController
             )->fetch();
             if ((int)$check['sample'] === 0) {
                 throw new \Exception(
-                    $this->getLanguageCode() === 'mn'
-                        ? 'Зөвхөн жишиг дата байгаа үед reset хийх боломжтой'
-                        : 'Reset is only available when only sample data exists',
+                    $this->text('reset-only-sample-data'),
                     400
                 );
             }
@@ -785,9 +796,7 @@ class NewsController extends FileController
 
             $this->respondJSON([
                 'status' => 'success',
-                'message' => $this->getLanguageCode() === 'mn'
-                    ? 'Жишиг дата амжилттай цэвэрлэгдлээ. Production эхэлж байна!'
-                    : 'Sample data cleared. Production started!'
+                'message' => $this->text('sample-data-cleared')
             ]);
         } catch (\Throwable $err) {
             $this->respondJSON(['message' => $err->getMessage()], $err->getCode());

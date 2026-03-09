@@ -1,7 +1,7 @@
 <!-- ========== ТОЛГОЙ ХЭСЭГ ========== -->
 <div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 shadow">
     <h3 class="px-2 my-auto fs-5 text-primary text-uppercase">
-        <i class="bi bi-diagram-3"></i> {{ localization.code == 'mn' ? 'Хуудасны навигац' : 'Pages Navigation' }}
+        <i class="bi bi-diagram-3"></i> {{ 'pages-navigation'|text }}
     </h3>
     <div class="ms-auto">
         <a class="btn btn-outline-secondary text-uppercase shadow-sm" href="{{ 'pages'|link }}">
@@ -260,6 +260,20 @@ document.addEventListener('DOMContentLoaded', function () {
         errorEl.textContent = err.message;
     });
 
+    // HTML attribute-д аюулгүй болгох
+    function escAttr(str) {
+        const div = document.createElement('div');
+        div.appendChild(document.createTextNode(str));
+        return div.innerHTML;
+    }
+
+    // HTML tag хасаж цэвэр текст авах
+    function stripTags(str) {
+        const div = document.createElement('div');
+        div.innerHTML = str;
+        return div.textContent || div.innerText || '';
+    }
+
     // Recursive render
     function renderTree(items, childrenMap, depth, langCode) {
         if (!items || items.length === 0) return '<div class="text-muted ps-3 small">-</div>';
@@ -300,7 +314,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 actions += ` <a class="btn btn-sm btn-primary py-0 px-1" href="${indexLink}/${id}?from=nav" title="Edit"><i class="bi bi-pencil-square"></i></a>`;
             }
             if (canDelete) {
-                actions += ` <button class="deactivate-page btn btn-sm btn-danger py-0 px-1" type="button" value="${id}" data-title="${page.title}"${page.photo ? ` data-photo="${page.photo}"` : ''} title="Delete"><i class="bi bi-trash"></i></button>`;
+                actions += ` <button class="deactivate-page btn btn-sm btn-danger py-0 px-1" type="button" value="${id}" data-title="${escAttr(stripTags(page.title))}"${page.photo ? ` data-photo="${page.photo}"` : ''} title="Delete"><i class="bi bi-trash"></i></button>`;
             }
 
             // Toggle / leaf icon

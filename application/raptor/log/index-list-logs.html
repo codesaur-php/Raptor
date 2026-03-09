@@ -60,7 +60,7 @@
             JS дээрээс .style.display = 'block' болгож идэвхжүүлнэ.
         -->
         <div class="text-center mt-2 mb-2 no-more-rows text-muted" style="display:none;">
-            {{ localization.code == 'mn' ? 'Цааш лог байхгүй' : 'No more logs' }}
+            {{ 'no-more-logs'|text }}
         </div>
     </div>
 {% endfor %}

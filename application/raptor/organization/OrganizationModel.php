@@ -126,6 +126,9 @@ class OrganizationModel extends Model
             $this->setForeignKeyChecks(true);
         }
 
+        // Мод бүтцийн хайлтын гүйцэтгэлийг сайжруулах индекс
+        $this->exec("CREATE INDEX {$table}_idx_parent_id ON $table (parent_id)");
+
         // Анхны өгөгдөл: System байгууллага үүсгэх
         $nowdate = \date('Y-m-d H:i:s');
         $this->exec("INSERT INTO $table(created_at, name, alias) 

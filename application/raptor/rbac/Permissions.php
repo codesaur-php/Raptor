@@ -142,29 +142,35 @@ class Permissions extends Model
         $query =
             "INSERT INTO $table(created_at,alias,module,name,description)
             VALUES
-            ('$nowdate','system','log','logger',''),
-            ('$nowdate','system','user','rbac',''),
-            ('$nowdate','system','user','user_index',''),
-            ('$nowdate','system','user','user_insert',''),
-            ('$nowdate','system','user','user_update',''),
-            ('$nowdate','system','user','user_delete',''),
-            ('$nowdate','system','user','user_organization_set',''),
+            ('$nowdate','system','log','logger','View system access logs and activity history'),
+            ('$nowdate','system','user','rbac','Manage roles and assign permissions to users'),
+            ('$nowdate','system','user','user_index','View the list of registered users'),
+            ('$nowdate','system','user','user_insert','Create new user accounts'),
+            ('$nowdate','system','user','user_update','Edit existing user profiles and settings'),
+            ('$nowdate','system','user','user_delete','Delete user accounts from the system'),
+            ('$nowdate','system','user','user_organization_set','Assign or change a user organization'),
 
-            ('$nowdate','system','organization','organization_index',''),
-            ('$nowdate','system','organization','organization_insert',''),
-            ('$nowdate','system','organization','organization_update',''),
-            ('$nowdate','system','organization','organization_delete',''),
+            ('$nowdate','system','organization','organization_index','View the list of organizations'),
+            ('$nowdate','system','organization','organization_insert','Create new organizations'),
+            ('$nowdate','system','organization','organization_update','Edit existing organization details'),
+            ('$nowdate','system','organization','organization_delete','Delete organizations from the system'),
 
-            ('$nowdate','system','content','content_settings',''),
-            ('$nowdate','system','content','content_index',''),
-            ('$nowdate','system','content','content_insert',''),
-            ('$nowdate','system','content','content_publish',''),
-            ('$nowdate','system','content','content_delete',''),
+            ('$nowdate','system','content','content_settings','Manage site content settings and configuration'),
+            ('$nowdate','system','content','content_index','View the list of content pages news and files'),
+            ('$nowdate','system','content','content_insert','Create new content entries'),
+            ('$nowdate','system','content','content_update','Edit existing content entries'),
+            ('$nowdate','system','content','content_publish','Publish or unpublish content'),
+            ('$nowdate','system','content','content_delete','Delete content entries'),
 
-            ('$nowdate','system','localization','localization_index',''),
-            ('$nowdate','system','localization','localization_insert',''),
-            ('$nowdate','system','localization','localization_update',''),
-            ('$nowdate','system','localization','localization_delete','')
+            ('$nowdate','system','localization','localization_index','View localization and translation entries'),
+            ('$nowdate','system','localization','localization_insert','Add new translation entries'),
+            ('$nowdate','system','localization','localization_update','Edit existing translation entries'),
+            ('$nowdate','system','localization','localization_delete','Delete translation entries'),
+
+            ('$nowdate','system','template','templates_index','View and manage reference tables'),
+            ('$nowdate','system','template','manage_menu','Manage dashboard sidebar menu structure'),
+
+            ('$nowdate','system','development','development','Manage all development requests and respond to others')
         ";
         $this->exec($query);
     }

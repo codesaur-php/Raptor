@@ -35,6 +35,7 @@
 
             "Dashboard\\": "application/dashboard/",
             "Dashboard\\Home\\": "application/dashboard/home",
+            "Dashboard\\Shop\\": "application/dashboard/shop",
             
             "Raptor\\": "application/raptor/",
             "Raptor\\Exception\\": "application/raptor/exception/",
@@ -56,8 +57,10 @@
                 "application/raptor/content/news",
                 "application/raptor/content/page"
             ],
+            "Raptor\\Notification\\": "application/raptor/notification/",
             "Raptor\\Mail\\": "application/raptor/mail/",
-            "Raptor\\Log\\": "application/raptor/log/"
+            "Raptor\\Log\\": "application/raptor/log/",
+            "Raptor\\Development\\": "application/raptor/development/"
         }
     },
     "scripts": {

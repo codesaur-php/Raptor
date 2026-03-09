@@ -27,6 +27,7 @@ Clean architecture object-oriented web development framework
 - RBAC (Role-Based Access Control) эрхийн удирдлага
 - Олон хэл дэмжлэг (Localization)
 - CMS модулиуд: Мэдээ, Хуудас, Файл, Лавлах, Тохиргоо
+- Дэлгүүр модуль: Бүтээгдэхүүн, Захиалга (e-commerce)
 - MySQL / PostgreSQL / SQLite дэмжлэг
 - Twig template engine
 - OpenAI интеграци (moedit editor)
@@ -53,6 +54,7 @@ The framework operates in two layers - **Web** (public website) and **Dashboard*
 - RBAC (Role-Based Access Control)
 - Multi-language support (Localization)
 - CMS modules: News, Pages, Files, References, Settings
+- Shop module: Products, Orders (e-commerce)
 - MySQL / PostgreSQL / SQLite support
 - Twig template engine
 - OpenAI integration (moedit editor)
@@ -141,15 +143,21 @@ raptor/
 |   |   |-- user/            # User management
 |   |   |-- template/        # Dashboard UI
 |   |   |-- log/             # Logging
-|   |   \-- mail/            # Email
+|   |   |-- mail/            # Email
+|   |   |-- notification/    # Discord webhook notifications
+|   |   \-- development/     # Dev tools (SQL terminal, file manager, error log)
 |   |-- dashboard/           # Dashboard application
+|   |   |-- home/            # Dashboard home
+|   |   \-- shop/            # Shop module (Products, Orders)
 |   \-- web/                 # Public website application
+|       \-- home/            # Web controllers (Home, Page, News, Shop, SEO)
 |-- public_html/             # Document root
 |   |-- index.php            # Entry point
 |   |-- .htaccess            # Apache URL rewrite
-|   \-- assets/              # CSS, JS (dashboard, moedit, motable)
+|   |-- robots.txt           # Search engine bot rules
+|   \-- assets/              # CSS, JS (dashboard, moedit, motable etc)
 |-- docs/
-|   |-- conf.example/        # Server configuration examples
+|   |-- conf.example/        # Server config examples + cPanel deploy
 |   |-- en/                  # English documentation
 |   \-- mn/                  # Mongolian documentation
 |-- logs/                    # Error logs

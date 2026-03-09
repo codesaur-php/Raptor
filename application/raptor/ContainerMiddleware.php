@@ -196,6 +196,11 @@ class ContainerMiddleware implements MiddlewareInterface
             return new \Raptor\Content\TemplateService($pdo);
         });
         
+        // Discord webhook notification service
+        $container->set('discord', function(ContainerInterface $c) {
+            return new \Raptor\Notification\DiscordNotifier();
+        });
+
         // ============================================================
         // Хөгжүүлэгч энд өөрийн service-уудыг нэмж бүртгэнэ
         // ============================================================

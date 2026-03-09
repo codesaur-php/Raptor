@@ -66,21 +66,14 @@
 
 <!-- Файлын статистик -->
 <div class="d-flex flex-wrap align-items-center gap-3 mt-2 mb-2" style="font-size:.875rem">
-    <span class="lang-mn">
+    <span>
         <i class="bi bi-database-fill text-primary me-1"></i>
-        <strong>{{ total['tables'] }}</strong> хүснэгт,
-        <strong>{{ total['rows'] }}</strong> файл,
-        <strong>{{ total['sizes'] }}</strong>
-    </span>
-    <span class="lang-en" hidden>
-        <i class="bi bi-database-fill text-primary me-1"></i>
-        <strong>{{ total['tables'] }}</strong> tables,
-        <strong>{{ total['rows'] }}</strong> files,
+        <strong>{{ total['tables'] }}</strong> {{ 'tables'|text }},
+        <strong>{{ total['rows'] }}</strong> {{ 'files'|text }},
         <strong>{{ total['sizes'] }}</strong>
     </span>
     <small class="text-body-tertiary fst-italic ms-auto">
-        <span class="lang-mn">* контентын толгой зураг, агуулгын файл тооцогдоогүй</span>
-        <span class="lang-en" hidden>* excludes header images &amp; inline files</span>
+        * {{ 'files-excludes-note'|text }}
     </small>
 </div>
 <!-- Хүснэгт сонголт -->
@@ -94,8 +87,7 @@
         </span>
     </a>
     {% else %}
-    <span class="lang-mn text-body-secondary">мэдээлэл олдсонгүй</span>
-    <span class="lang-en text-body-secondary" hidden>no data found</span>
+    <span class="text-body-secondary">{{ 'no-data-found'|text }}</span>
     {% endfor %}
 </div>
 
@@ -116,7 +108,11 @@
 </table>
 
 <script type="text/javascript">
-    const _mn = document.documentElement.lang === 'mn';
+    const _t = {
+        loading: `{{ 'loading'|text|e('js') }}`,
+        fileLoadFailed: `{{ 'file-load-failed'|text|e('js') }}`,
+        confirmOpenFile: `{{ 'confirm-open-file'|text|e('js') }}`
+    };
 
     /* ---------------------------------------------------------------
        ФАЙЛЫН ТУСЛАХ ФУНКЦҮҮД
@@ -175,7 +171,7 @@
         } else if (type === 'pdf') {
             content = `<iframe src="${src}"></iframe>`;
         } else if (type === 'text') {
-            content = `<pre>${_mn ? 'Ачаалж байна...' : 'Loading...'}</pre>`;
+            content = `<pre>${_t.loading}...</pre>`;
         } else {
             content = `<img src="${src}" alt="">`;
         }
@@ -198,7 +194,7 @@
                 })
                 .catch(() => {
                     const pre = overlay.querySelector('pre');
-                    if (pre) pre.textContent = _mn ? 'Файлын агуулгыг ачаалж чадсангүй.' : 'Failed to load file content.';
+                    if (pre) pre.textContent = _t.fileLoadFailed;
                 });
         }
 
@@ -225,12 +221,6 @@
        DOCUMENT READY - JS ажиллагаа эндээс эхэлнэ
        --------------------------------------------------------------- */
     document.addEventListener('DOMContentLoaded', function () {
-        /* Хэлний toggle */
-        if (!_mn) {
-            document.querySelectorAll('.lang-mn').forEach(el => el.hidden = true);
-            document.querySelectorAll('.lang-en').forEach(el => el.hidden = false);
-        }
-
         /* Modal нээхэд ашиглагдах files-link */
         const filesLink = `{{ 'files-modal'|link({'table': table}) }}`;
 
@@ -244,7 +234,7 @@
 
             /* Файл нээх үед харагдах default behaviour */
             let fileLinkAttr =
-                `target="__blank" onclick="return confirm('${_mn ? `Та [${fileName}] файлыг нээхдээ итгэлтэй байна уу?` : `Are you sure you want to open this file [${fileName}]?`}')"`;
+                `target="__blank" onclick="return confirm('${_t.confirmOpenFile}: [${fileName}]')"`;
 
 
             /* Modal -> code tag хэсэг рүү илгээх линк */

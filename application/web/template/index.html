@@ -8,6 +8,7 @@
         <meta name="description" content="{{ (record_description ?? description)|e }}">
         {% if favicon is not empty %}<link rel="icon" href="{{ favicon }}" type="image/x-icon">{% endif %}
         {% if apple_touch_icon is not empty %}<link rel="apple-touch-icon" href="{{ apple_touch_icon }}">{% endif %}
+        <link rel="alternate" type="application/rss+xml" title="{{ title }} RSS" href="{{ 'rss'|link }}">
         <meta property="og:type" content="{{ record_title is not empty ? 'article' : 'website' }}">
         <meta property="og:site_name" content="{{ title|e }}">
         <meta property="og:title" content="{{ (record_title ?? title)|e }}">
@@ -94,7 +95,7 @@
                             {% if item['submenu'] is not empty %}
                                 <li class="nav-item dropdown">
                                     <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                        {{ item['title'] }}
+                                        {{ item['title']|raw }}
                                     </a>
                                     <ul class="dropdown-menu">
                                         {% for sub in item['submenu'] %}
@@ -103,13 +104,13 @@
                                             {% else %}
                                                 {% set subhref = 'page'|link({'slug':sub['slug']}) %}
                                             {% endif %}
-                                            <li><a class="dropdown-item" href="{{ subhref }}">{{ sub['title'] }}</a></li>
+                                            <li><a class="dropdown-item" href="{{ subhref }}">{{ sub['title']|raw }}</a></li>
                                         {% endfor %}
                                     </ul>
                                 </li>
                             {% else %}
                                 <li class="nav-item">
-                                    <a class="nav-link" href="{{ href }}">{{ item['title'] }}</a>
+                                    <a class="nav-link" href="{{ href }}">{{ item['title']|raw }}</a>
                                 </li>
                             {% endif %}
                         {% endfor %}
@@ -126,7 +127,7 @@
                             {% if menu['submenu'] is not empty %}
                                 <li class="nav-item dropdown">
                                     <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                        {{ menu['title'] }}
+                                        {{ menu['title']|raw }}
                                     </a>
                                     <ul class="dropdown-menu">
                                         {% for sub in menu['submenu'] %}
@@ -137,7 +138,7 @@
                                             {% endif %}
                                             {% if sub['submenu'] is not empty %}
                                                 <li class="dropend">
-                                                    <a class="dropdown-item dropdown-toggle" href="#" data-bs-toggle="dropdown">{{ sub['title'] }}</a>
+                                                    <a class="dropdown-item dropdown-toggle" href="#" data-bs-toggle="dropdown">{{ sub['title']|raw }}</a>
                                                     <ul class="dropdown-menu">
                                                         {% for sub2 in sub['submenu'] %}
                                                             {% if sub2['link'] is not empty %}
@@ -145,25 +146,33 @@
                                                             {% else %}
                                                                 {% set sub2href = 'page'|link({'slug':sub2['slug']}) %}
                                                             {% endif %}
-                                                            <li><a class="dropdown-item" href="{{ sub2href }}">{{ sub2['title'] }}</a></li>
+                                                            <li><a class="dropdown-item" href="{{ sub2href }}">{{ sub2['title']|raw }}</a></li>
                                                         {% endfor %}
                                                     </ul>
                                                 </li>
                                             {% else %}
-                                                <li><a class="dropdown-item" href="{{ subhref }}">{{ sub['title'] }}</a></li>
+                                                <li><a class="dropdown-item" href="{{ subhref }}">{{ sub['title']|raw }}</a></li>
                                             {% endif %}
                                         {% endfor %}
                                     </ul>
                                 </li>
                             {% else %}
                                 <li class="nav-item">
-                                    <a class="nav-link" href="{{ href }}">{{ menu['title'] }}</a>
+                                    <a class="nav-link" href="{{ href }}">{{ menu['title']|raw }}</a>
                                 </li>
                             {% endif %}
                         {% endfor %}
                     </ul>
 
-                    <!-- Language dropdown (right side) -->
+                    <!-- Search (right side) -->
+                    <form class="d-flex me-2" method="GET" action="{{ 'search'|link }}">
+                        <div class="input-group input-group-sm">
+                            <input type="text" name="q" class="form-control" placeholder="{{ 'search'|text }}..." minlength="2" required>
+                            <button class="btn btn-outline-light" type="submit"><i class="bi bi-search"></i></button>
+                        </div>
+                    </form>
+
+                    <!-- Language dropdown -->
                     <ul class="navbar-nav">
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" role="button" id="dropdownLanguage" data-bs-toggle="dropdown" aria-expanded="false">
@@ -242,10 +251,25 @@
                                 {% endif %}
                                 <li class="mb-2">
                                     <a class="footer-link" href="{{ href }}">
-                                        <i class="bi bi-chevron-right me-1"></i> {{ item['title'] }}
+                                        <i class="bi bi-chevron-right me-1"></i> {{ item['title']|raw }}
                                     </a>
                                 </li>
                             {% endfor %}
+                            <li class="mb-2">
+                                <a class="footer-link" href="{{ 'archive'|link }}">
+                                    <i class="bi bi-chevron-right me-1"></i> {{ 'archive'|text }}
+                                </a>
+                            </li>
+                            <li class="mb-2">
+                                <a class="footer-link" href="{{ 'sitemap'|link }}">
+                                    <i class="bi bi-chevron-right me-1"></i> {{ 'sitemap'|text }}
+                                </a>
+                            </li>
+                            <li class="mb-2">
+                                <a class="footer-link" href="{{ 'rss'|link }}">
+                                    <i class="bi bi-rss me-1"></i> RSS
+                                </a>
+                            </li>
                         </ul>
                     </div>
 

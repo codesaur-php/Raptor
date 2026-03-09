@@ -1,0 +1,64 @@
+# ======================================================================
+# GitHub Actions -> cPanel FTP Deploy
+# ======================================================================
+#
+# main branch-руу push хийхэд cPanel сервер рүү FTP-ээр автомат deploy хийнэ.
+#
+# Тохируулах:
+#   GitHub repo -> Settings -> Secrets and variables -> Actions:
+#     FTP_HOST      - cPanel серверийн FTP хаяг (жишээ: ftp.example.com)
+#     FTP_USERNAME  - cPanel FTP хэрэглэгчийн нэр
+#     FTP_PASSWORD  - cPanel FTP нууц үг
+#     FTP_SERVER_DIR - Серверийн зорьсон хавтас (жишээ: /home/user/)
+#
+# Хэрэглээ:
+#   1. Энэ файлыг .github/workflows/deploy.yml руу хуулна
+#   2. GitHub Secrets-д FTP мэдээллээ оруулна
+#   3. main branch руу push хийхэд автоматаар deploy хийгдэнэ
+#
+# Тэмдэглэл:
+#   - .env файл серверт гараар үүсгэж тохируулна (deploy хийгдэхгүй)
+#   - logs/ хавтас серверт автомат үүсдэг, deploy хийх шаардлагагүй
+#   - vendor/ хавтас серверт composer install хийж үүсгэнэ
+#     эсвэл локалаар --no-dev горимоор build хийж deploy хийнэ
+# ======================================================================
+
+name: Deploy to cPanel
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup PHP 8.2
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: gd, intl, pdo_mysql
+
+      - name: Install production dependencies
+        run: composer install --no-dev --optimize-autoloader --no-interaction
+
+      - name: Deploy to cPanel via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          server-dir: ${{ secrets.FTP_SERVER_DIR }}
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/.github/**
+            **/.claude/**
+            **/docs/**
+            **/.env*
+            **/logs/**
+            **/private/**

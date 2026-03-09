@@ -195,6 +195,9 @@ class FilesModel extends Model
             }
             $this->setForeignKeyChecks(true);
         }
+
+        // Файл хайлтын гүйцэтгэлийг сайжруулах индекс
+        $this->exec("CREATE INDEX {$my_name}_idx_record_id ON $my_name (record_id, is_active)");
     }
     
     /**

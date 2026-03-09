@@ -6,6 +6,79 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 
 ---
 
+## [1.2.0] - 2026-03-09
+[1.2.0]: https://github.com/codesaur-php/Raptor/compare/v1.1.0...v1.2.0
+
+E-commerce shop module, spam protection, Discord notifications, SEO features, development tools, dashboard statistics, and Web layer refactor.
+
+### Added
+- **Shop Module** - Full e-commerce with products and orders
+  - `ProductsModel` - Product catalog with slug generation, excerpt, price/sale_price, SKU, barcode, sizes, colors, stock, photo, category, featured
+  - `OrdersModel` - Customer orders with product reference, customer info, quantity, status tracking
+  - `ProductsController`, `ProductsRouter` - Dashboard CRUD for products
+  - `OrdersController`, `OrdersRouter` - Dashboard CRUD for orders
+  - Sample product data seeded on first run
+- **Notification Module** - Discord webhook integration (`Raptor\Notification\DiscordNotifier`)
+  - Notification types: user signup request, user approval, new order, order status change, content actions (insert/update/delete/publish)
+  - Color-coded embeds (SUCCESS, INFO, WARNING, DANGER, PURPLE)
+  - Graceful skip when webhook URL is not configured
+  - `RAPTOR_DISCORD_WEBHOOK_URL` env variable added to `.env.example`
+- **Development Module** - Admin development tools (`Raptor\Development\DevelopmentRouter`)
+  - Dev Requests - Development request tracking system (`DevRequestController`, `DevRequestModel`, `DevResponseModel`)
+  - SQL Terminal - Database query interface (`SqlTerminalController`)
+  - Error Log viewer
+  - File Manager (`FileManagerController`)
+  - New RBAC permission: `development:development`
+- **SEO & Content Discovery** (Web layer)
+  - `SeoController` - Search across pages, news, and products (min 2 chars)
+  - Sitemap page (`/sitemap`) - Hierarchical page tree with news/product counts
+  - XML sitemap (`/sitemap.xml`) - For search engines with lastmod, changefreq, priority
+  - RSS 2.0 feed (`/rss`) - Latest 20 news and 20 products
+  - Search form added to web navbar
+  - Footer links: Archive, Sitemap, RSS
+  - RSS `<link>` tag in web layout `<head>`
+- **News Archive** - `/archive` route with year/month filtering and grouping
+- **News by Type** - `/news/type/{type}` route for category-based news listing
+- **Spam Protection** - Comprehensive anti-spam on login, signup, forgot, and order forms
+  - Honeypot hidden field (`website` input)
+  - HMAC token validation with timestamp
+  - Rate limiting (login 3s, signup 5s, forgot 10s)
+  - Form expiration check (1 hour max)
+  - Minimum fill speed check (2 seconds)
+- **Web Controllers** - Separated `HomeController` logic into dedicated controllers
+  - `PageController` - Page and contact display (`pageById`, `page`, `contact`)
+  - `NewsController` - News display (`newsById`, `news`, `newsType`, `archive`)
+  - `ShopController` - Product listing, product detail, order form/submit, order confirmation email
+  - `SeoController` - Search, sitemap, XML sitemap, RSS feed
+- **Web Routes** - New public routes
+  - `/page/{uint:id}` and `/news/{uint:id}` - Access by ID (redirect to slug)
+  - `/products`, `/product/{uint:id}`, `/product/{slug}` - Product pages
+  - `/order` (GET+POST) - Order form and submission
+  - `/search`, `/sitemap`, `/sitemap.xml`, `/rss` - SEO routes
+- **Localization** - 100+ new i18n text entries (MN/EN) for shop, archive, search, newsletter, and UI labels
+- **Database Indexes** - Performance optimization
+  - `files` table: `idx_record_id (record_id, is_active)`
+  - `logger` tables: `idx_created_at (created_at)`
+  - `products` table: `idx_active_published (is_active, published)`
+  - `orders` table: `idx_active_status (is_active, status)`
+- **Dashboard Statistics** - `HomeController::stats()`, `logStats()`, `refreshCache()` JSON endpoints for web traffic and log statistics
+- **RBAC** - Detailed descriptions added to all system permissions; new permissions for template and development modules
+- **cPanel Deploy** - GitHub Actions workflow example (`docs/conf.example/cpanel.deploy.yml`) for automated FTP deployment to cPanel on push to `main`
+
+### Changed
+- **Web HomeController** - Refactored: page, news, contact methods moved to `PageController`, `NewsController`; simplified to basic news listing
+- **Web HomeRouter** - Completely restructured with all new routes for shop, SEO, archive, news type
+- **Web templates** - All hardcoded MN/EN text replaced with i18n `|text` filter (`'read-more'|text`, `'attachments'|text`, `'file'|text`, `'size'|text`, `'type'|text`, `'source'|text`, `'deactivated'|text`)
+- **Web index.html** - Menu titles rendered with `|raw` filter (allows HTML); search form in navbar; RSS feed link in head
+- **Controller** - Now logs `HTTP_USER_AGENT` alongside `REMOTE_ADDR` in action logs
+- **ContainerMiddleware** - Registers `DiscordNotifier` service in DI Container
+- **Application** - Registers `ProductsRouter`, `OrdersRouter`, `DevelopmentRouter`
+- **Login templates** - Terms & conditions text now uses i18n keys instead of hardcoded bilingual text
+- **UsersController** - Sends Discord notification when admin approves a new user
+- **composer.json** - New autoloader namespaces: `Dashboard\Shop\`, `Raptor\Notification\`, `Raptor\Development\`
+
+---
+
 ## [1.1.0] - 2026-03-06
 [1.1.0]: https://github.com/codesaur-php/Raptor/compare/v1.0.0...v1.1.0
 

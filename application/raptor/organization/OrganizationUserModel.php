@@ -150,6 +150,9 @@ class OrganizationUserModel extends Model
             $this->setForeignKeyChecks(true);
         }
 
+        // JOIN хайлтын гүйцэтгэлийг сайжруулах индекс
+        $this->exec("CREATE INDEX {$table}_idx_user_org ON $table (user_id, organization_id)");
+
         // Анхны өгөгдөл - Super Admin -> System Organization
         $nowdate = \date('Y-m-d H:i:s');
         $this->exec(

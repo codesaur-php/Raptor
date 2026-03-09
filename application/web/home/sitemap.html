@@ -1,0 +1,107 @@
+<div class="container mt-4">
+    <h4 class="mb-4 pb-2 border-bottom">
+        <i class="bi bi-diagram-3 me-2"></i>{{ 'sitemap'|text }}
+    </h4>
+
+    {# --- Pages (tree) --- #}
+    {% macro render_tree(nodes) %}
+        <ul class="list-unstyled ms-3">
+            {% for node in nodes %}
+                <li class="mb-1">
+                    <a href="{{ 'page'|link({ slug: node.slug }) }}" class="text-decoration-none">
+                        <i class="bi bi-file-earmark-text me-1 text-primary"></i>{{ node.title }}
+                    </a>
+                    {% if node.children is not empty %}
+                        {{ _self.render_tree(node.children) }}
+                    {% endif %}
+                </li>
+            {% endfor %}
+        </ul>
+    {% endmacro %}
+
+    {% if page_tree is not empty %}
+        <h5 class="mb-3">
+            <i class="bi bi-files me-1"></i>{{ 'pages'|text }}
+        </h5>
+        {{ _self.render_tree(page_tree) }}
+    {% endif %}
+
+    {# --- News by type --- #}
+    {% if news_by_type is not empty %}
+        <h5 class="mt-4 mb-3">
+            <i class="bi bi-newspaper me-1"></i>{{ 'news'|text }}
+        </h5>
+        {% for type, data in news_by_type %}
+            <h6 class="ms-2 mt-3 mb-2 text-muted">
+                <i class="bi bi-tag me-1"></i>{{ type }}
+                <small>({{ data.total }})</small>
+            </h6>
+            <ul class="list-unstyled ms-4">
+                {% for item in data.items %}
+                    <li class="mb-1">
+                        <a href="{{ 'news'|link({ slug: item.slug }) }}" class="text-decoration-none">
+                            <i class="bi bi-newspaper me-1 text-success"></i>{{ item.title }}
+                        </a>
+                        <small class="text-muted ms-1">{{ item.published_at|date('Y-m-d') }}</small>
+                    </li>
+                {% endfor %}
+                {% if data.total > 50 %}
+                    <li class="mt-2">
+                        <a href="{{ 'news-type'|link({ type: type }) }}" class="text-decoration-none fw-bold">
+                            <i class="bi bi-arrow-right-circle me-1 text-primary"></i>{{ 'view-all'|text }} ({{ data.total }})
+                        </a>
+                    </li>
+                {% endif %}
+            </ul>
+        {% endfor %}
+    {% endif %}
+
+    {# --- Products --- #}
+    {% if products is not empty %}
+        <h5 class="mt-4 mb-3">
+            <i class="bi bi-box2-heart me-1"></i>{{ 'products'|text }}
+        </h5>
+        <ul class="list-unstyled ms-3">
+            {% for item in products %}
+                <li class="mb-1">
+                    <a href="{{ 'product'|link({ slug: item.slug }) }}" class="text-decoration-none">
+                        <i class="bi bi-box2 me-1 text-info"></i>{{ item.title }}
+                    </a>
+                    <small class="text-muted ms-1">{{ item.published_at|date('Y-m-d') }}</small>
+                </li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+    {# --- Utility links --- #}
+    <h5 class="mt-4 mb-3">
+        <i class="bi bi-link-45deg me-1"></i>{{ 'other'|text }}
+    </h5>
+    <ul class="list-unstyled ms-3">
+        <li class="mb-1">
+            <a href="{{ 'home'|link }}" class="text-decoration-none">
+                <i class="bi bi-house me-1 text-primary"></i>{{ 'home'|text }}
+            </a>
+        </li>
+        <li class="mb-1">
+            <a href="{{ 'contact'|link }}" class="text-decoration-none">
+                <i class="bi bi-envelope me-1 text-primary"></i>{{ 'contact'|text }}
+            </a>
+        </li>
+        <li class="mb-1">
+            <a href="{{ 'archive'|link }}" class="text-decoration-none">
+                <i class="bi bi-archive me-1 text-primary"></i>{{ 'archive'|text }}
+            </a>
+        </li>
+        <li class="mb-1">
+            <a href="{{ 'search'|link }}" class="text-decoration-none">
+                <i class="bi bi-search me-1 text-primary"></i>{{ 'search'|text }}
+            </a>
+        </li>
+        <li class="mb-1">
+            <a href="{{ 'rss'|link }}" class="text-decoration-none">
+                <i class="bi bi-rss me-1 text-warning"></i>RSS Feed
+            </a>
+        </li>
+    </ul>
+</div>

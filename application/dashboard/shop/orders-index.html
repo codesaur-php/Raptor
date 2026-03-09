@@ -1,0 +1,271 @@
+<!-- SweetAlert2 - захиалга устгах баталгаажуулах цонхонд ашиглана -->
+<script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<!-- ========== ТОЛГОЙ ХЭСЭГ ========== -->
+<div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 shadow">
+    <h3 class="px-2 my-auto fs-5 text-info text-uppercase">
+        <i class="bi bi-cart3"></i> {{ 'orders'|text }}
+    </h3>
+</div>
+
+<!-- ========== ШҮҮЛТҮҮР ========== -->
+<style>
+.btn-filter {
+    --bs-btn-color: var(--bs-emphasis-color);
+    --bs-btn-border-color: var(--bs-emphasis-color);
+    --bs-btn-hover-color: var(--bs-body-bg);
+    --bs-btn-hover-bg: var(--bs-emphasis-color);
+    --bs-btn-hover-border-color: var(--bs-emphasis-color);
+    --bs-btn-active-color: var(--bs-body-bg);
+    --bs-btn-active-bg: var(--bs-emphasis-color);
+    --bs-btn-active-border-color: var(--bs-emphasis-color);
+}
+.btn-filter.active {
+    color: var(--bs-body-bg);
+    background-color: var(--bs-emphasis-color);
+    border-color: var(--bs-emphasis-color);
+}
+</style>
+<div class="d-flex align-items-center flex-wrap gap-2 mt-3 mb-2">
+    <button class="btn btn-sm btn-secondary text-uppercase ms-auto" id="filter_action" type="button">
+        <i class="bi bi-funnel"></i> {{ 'filter'|text }}
+    </button>
+    {% for name,filter in filters %}
+    <div class="dropdown">
+        <button class="btn btn-sm btn-filter dropdown-toggle content-filters" data-bs-toggle="dropdown" data-name="{{ name }}" aria-expanded="false" type="button">
+            {{ filter.title }}
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end shadow">
+            {% for val,label in filter.values %}
+                <li><button class="dropdown-item filter-values-{{ name }}" data-id="{{ val }}" type="button">{{ label }}</button></li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- ========== ЗАХИАЛГЫН ХҮСНЭГТ ========== -->
+<table class="table table-sm table-hover table-striped table-bordered" id="orders">
+    <thead>
+        <tr class="text-uppercase">
+            <th scope="col"><span class="text-secondary">ID /</span> {{ 'date'|text }}</th>
+            <th scope="col"><i class="bi bi-translate"></i></th>
+            <th scope="col">{{ 'customer'|text }}</th>
+            <th scope="col">{{ 'product'|text }}</th>
+            <th scope="col">{{ 'quantity'|text }}</th>
+            <th scope="col">{{ 'status'|text }}</th>
+            <th scope="col" style="width:8rem">{{ 'action'|text }}</th>
+        </tr>
+    </thead>
+</table>
+
+<!-- ========== JAVASCRIPT ХЭСЭГ ========== -->
+<script type="text/javascript">
+    /* URL-ээс параметрүүдийг унших */
+    const urlParams = new URLSearchParams(window.location.search);
+
+    /* Шүүлтүүрийн товчнуудыг сонгох */
+    const filterAction = document.getElementById('filter_action');
+    const filterBtns = document.querySelectorAll('button.content-filters');
+
+    /* filter_action товчны төлөвийг шинэчлэх */
+    function onFilterChange()
+    {
+        filterBtns.forEach(f => {
+            f.classList.toggle('active', !!f.dataset.id);
+        });
+
+        const currentParams = new URLSearchParams();
+        filterBtns.forEach(f => { if (f.dataset.id) currentParams.append(f.dataset.name, f.dataset.id); });
+        const hasFilter = currentParams.size > 0;
+        const matchesUrl = currentParams.toString() === urlParams.toString();
+
+        filterAction.classList.remove('btn-secondary', 'btn-danger', 'btn-dark');
+
+        if (!hasFilter && urlParams.size === 0) {
+            filterAction.classList.add('btn-secondary');
+            filterAction.innerHTML = '<i class="bi bi-funnel"></i> {{ "filter"|text }}';
+        } else if (hasFilter && matchesUrl) {
+            filterAction.classList.add('btn-dark');
+            filterAction.innerHTML = '<i class="bi bi-funnel-fill"></i> {{ "filter"|text }} <i class="bi bi-x-circle ms-1" data-reset></i>';
+        } else {
+            filterAction.classList.add('btn-danger');
+            filterAction.innerHTML = '<i class="bi bi-funnel-fill"></i> {{ "filter"|text }} <i class="bi bi-x-circle ms-1" data-reset></i>';
+        }
+
+        const resetIcon = filterAction.querySelector('[data-reset]');
+        if (resetIcon) {
+            resetIcon.addEventListener('click', function (e) {
+                e.stopPropagation();
+                window.location.href = window.location.pathname;
+            });
+        }
+    }
+
+    /* ========== ШҮҮЛТҮҮРИЙН DROPDOWN СОНГОЛТУУДАД EVENT LISTENER НЭМЭХ ========== */
+    filterBtns.forEach(filter => {
+        document.querySelectorAll(`.filter-values-${filter.dataset.name}`).forEach(btn => {
+            btn.addEventListener('click', function (e) {
+                e.preventDefault();
+                filter.textContent = e.target.textContent;
+                filter.dataset.id = e.target.dataset?.id;
+                onFilterChange();
+            });
+        });
+    });
+
+    /* ========== ШҮҮЛТҮҮР ХЭРЭГЛЭХ ТОВЧНЫ EVENT ========== */
+    filterAction.addEventListener('click', function (e) {
+        e.preventDefault();
+        if (filterAction.classList.contains('btn-secondary')) {
+            return NotifyTop('warning', `{{ 'warning'|text|e }}`, '{{ localization.code == "mn" ? "Шүүлтүүрээс ядаж нэгийг сонгоорой" : "Select at least one filter" }}');
+        }
+        if (filterAction.classList.contains('btn-dark')) return;
+        const params = [];
+        filterBtns.forEach(filter => {
+            if (filter.dataset.id) {
+                params.push(`${filter.dataset.name}=${filter.dataset.id}`);
+            }
+        });
+        if (params.length === 0) return;
+        window.location.href = window.location.pathname + '?' + params.join('&');
+    });
+
+    /* Статус badge өнгөний функц */
+    function statusBadge(s) {
+        const colors = {new:'primary', processing:'warning', confirmed:'info', shipped:'secondary', completed:'success', cancelled:'danger'};
+        return `<span class="badge bg-${colors[s] || 'dark'}">${s}</span>`;
+    }
+
+    /* ========== DOM БЭЛЭН БОЛСНЫ ДАРАА АЖИЛЛАХ КОД ========== */
+    document.addEventListener('DOMContentLoaded', function () {
+        /* URL-д параметр байвал шүүлтүүрийн төлвийг сэргээх */
+        if (urlParams?.size > 0) {
+            filterBtns.forEach(filter => {
+                const value = urlParams.get(filter.dataset.name);
+                if (value) {
+                    filter.dataset.id = value;
+                    const selector = `.filter-values-${filter.dataset.name}[data-id="${value}"]`;
+                    const titleElement = document.querySelector(selector);
+                    filter.textContent = titleElement?.textContent || value;
+                    filter.classList.add('active');
+                }
+            });
+            onFilterChange();
+        }
+
+        /* ========== ЗАХИАЛГЫН ХҮСНЭГТИЙГ ЭХЛҮҮЛЭХ ========== */
+        const orders = new motable('table#orders', { freezeColumns: [0] });
+
+        /* Серверээс захиалгын жагсаалтыг татах */
+        fetch(
+            `{{ 'orders-list'|link }}` + window.location.search
+        ).then(res => {
+            if (res.headers.get('content-type')?.includes('application/json')) return res.json();
+            throw new Error(`HTTP [${res.status}]: ${res.statusText}`);
+        }).then(data => {
+            if (!data.list) {
+                throw new Error(data.message ?? 'Invalid response!');
+            }
+
+            /* ========== ХҮСНЭГТИЙН МӨРҮҮДИЙГ ҮҮСГЭХ ========== */
+            let rowsHTML = '';
+            const indexLink = `{{ 'orders'|link }}`;
+
+            const canDelete = {{ user.can('system_content_delete') ? 'true' : 'false' }};
+
+            data.list.forEach(record => {
+                const id = record.id;
+
+                /* Хэлний туг */
+                let flag = '';
+                if (record.code) {
+                    const codeFlag = record.code === 'en' ? 'us' : record.code;
+                    flag = `<img src="https://flagcdn.com/20x15/${codeFlag}.png" srcset="https://flagcdn.com/40x30/${codeFlag}.png 2x" width="16" height="12">`;
+                }
+
+                /* Хэрэглэгчийн мэдээлэл */
+                let customer = `<strong>${record.customer_name}</strong>`;
+                if (record.customer_email) {
+                    customer += `<br><small class="text-muted">${record.customer_email}</small>`;
+                }
+
+                /* ========== ҮЙЛДЛИЙН ТОВЧНУУДЫГ ҮҮСГЭХ ========== */
+                const buttons = [];
+                buttons.push(`<a class="btn btn-sm btn-info mt-1 shadow-sm" href="${indexLink}/view/${id}"><i class="bi bi-eye"></i></a>`);
+
+                if (canDelete) {
+                    buttons.push(`<button class="deactivate-order btn btn-sm btn-danger mt-1 shadow-sm" type="button" value="${id}"><i class="bi bi-trash"></i></button>`);
+                }
+                const actions = `<div class="mb-1">${buttons.join(' ')}</div>`;
+
+                /* Хүснэгтийн мөр үүсгэх */
+                rowsHTML += `<tr><th scope="row"><span class="text-secondary">${id} /</span> ${record['created_date']}</th><td>${flag} <span class="text-secondary fw-lighter">${record.code}</span></td><td>${customer}</td><td>${record.product_title}</td><td>${record.quantity}</td><td>${statusBadge(record.status)}</td><td>${actions}</td></tr>`;
+            });
+
+            /* Хүснэгтэд өгөгдөл оруулах */
+            orders.setBody(rowsHTML);
+            orders.setReady();
+        }).catch(err => {
+            orders.error(err);
+        }).finally(() => {
+            /* ========== ЗАХИАЛГА ИДЭВХГҮЙ БОЛГОХ (УСТГАХ) ТОВЧНУУДАД EVENT НЭМЭХ ========== */
+            const deactivates = orders.table.querySelectorAll('.deactivate-order');
+            deactivates.forEach(btn => btn.addEventListener('click', function (e) {
+                e.preventDefault();
+
+                const thisRow = btn.closest('tr');
+                if (!thisRow) {
+                    return NotifyTop('warning', `{{ 'error'|text|e }}`, 'Cannot select row!');
+                }
+
+                const id = btn.value;
+                const customer = thisRow.children[2].textContent.trim();
+
+                let question = document.documentElement.lang === 'mn'
+                    ? `<p class="text-danger mb-3">Та (${customer}) захиалгыг идэвхгүй болгохдоо итгэлтэй байна уу?</p>`
+                    : `<p class="text-danger mb-3">Are you sure to deactivate the order #${id} (${customer})?</p>`;
+
+                question = `<i class="bi bi-question-circle text-danger mb-4" style="font-size:3rem"></i><p>${question}</p>`;
+
+                Swal.fire({
+                    html: question,
+                    showCancelButton: true,
+                    cancelButtonText: `{{ 'cancel'|text|e }}`,
+                    confirmButtonText: `<i class="bi bi-trash"></i> {{ 'delete'|text|e }}`,
+                    confirmButtonColor: '#df4759',
+                    showLoaderOnConfirm: true,
+                    allowOutsideClick: () => !Swal.isLoading(),
+                    backdrop: true,
+                    preConfirm: () => {
+                        return fetch(
+                            `{{ 'order-deactivate'|link }}`,
+                            {
+                                method: 'DELETE',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({id})
+                            }
+                        ).then(res => {
+                            return res.json();
+                        }).then(response => {
+                            if (response.status !== 'success') {
+                                throw new Error(response.message ?? 'Invalid response!');
+                            }
+
+                            Swal.close();
+
+                            thisRow.remove();
+                            orders.setReady();
+
+                            NotifyTop('success', `{{ 'success'|text|e }}`, response.message ?? `Order:${id} deactivated`);
+                        }).catch(error => {
+                            Swal.showValidationMessage(error.message);
+                        });
+                    }
+                });
+            }));
+        });
+    });
+</script>

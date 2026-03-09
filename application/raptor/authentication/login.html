@@ -41,6 +41,10 @@
                  НЭВТРЭХ FORM (#login)
                  ============================================================ -->
             <form id="login" action="{{ 'entry'|link }}" method="POST">
+                {# Honeypot - бот л бөглөдөг нуугдмал талбар #}
+                <div style="position:absolute;left:-9999px" aria-hidden="true">
+                    <input type="text" name="website" id="hp_field" tabindex="-1" autocomplete="off">
+                </div>
                 <div class="form-floating mb-3">
                     <input class="form-control" autofocus required type="text" name="username" id="username" autocomplete="on" placeholder="{{ 'user'|text|e }}">
                     <label for="username">{{ 'user'|text }}</label>
@@ -78,9 +82,9 @@
                 <div class="text-center">
                     <span id="language">
                     {%  if lang != 'en' and localization.language['en'] %}
-                        Click for <a href="{{ 'language'|link({'code': 'en'}) }}">English</a>
+                        <a href="{{ 'language'|link({'code': 'en'}) }}">English</a>
                     {% elseif lang != 'mn' and localization.language['mn'] %}
-                        Системийн хэлийг <a href="{{ 'language'|link({'code': 'mn'}) }}">Монгол</a> болго
+                        <a href="{{ 'language'|link({'code': 'mn'}) }}">Монгол</a>
                     {% endif %}
                     </span>
                 </div>
@@ -130,13 +134,10 @@
                 
                 <!-- TOS + Privacy Policy -->
                 <div class="text-center mb-2">
-                {% if lang == 'mn' %}
-                    Бүртгүүлэх товчыг дарснаар, та манай <a data-bs-toggle="modal" data-bs-target="#tos" href="javascript:;">системийг хэрэглэх ерөнхий нөхцөл</a>
-                    хүлээн зөвшөөрч, <a data-bs-toggle="modal" data-bs-target="#pp" href="javascript:;">хувийн нууцлалын бодлоготой</a> танилцсан болно.
-                {% else %}
-                    By clicking Sign Up, you agree to our <a data-bs-toggle="modal" data-bs-target="#tos" href="javascript:;">terms and conditions</a>
-                    and have read our <a data-bs-toggle="modal" data-bs-target="#pp" href="javascript:;">privacy policy</a>.
-                {% endif %}
+                {{ 'signup-agree-prefix'|text }}
+                <a data-bs-toggle="modal" data-bs-target="#tos" href="javascript:;">{{ 'terms-and-conditions'|text }}</a>
+                {{ 'signup-agree-middle'|text }}
+                <a data-bs-toggle="modal" data-bs-target="#pp" href="javascript:;">{{ 'privacy-policy'|text }}</a>.
                 </div>
                 <hr>
                 <div class="mt-2">
@@ -150,6 +151,10 @@
              FRONT-END LOGIC - LOGIN / FORGOT / SIGNUP
              ============================================================ -->
         <script type="text/javascript">
+            /* Spam хамгаалалтын утгууд */
+            const _spam_ts = '{{ spam_ts }}';
+            const _spam_token = '{{ spam_token }}';
+
             /* Dark theme auto-apply */
             if (localStorage.getItem('data-bs-theme') === 'dark') {
                 document.body.setAttribute('data-bs-theme', 'dark');
@@ -216,6 +221,14 @@
                     }
                 }
                 
+                function parseJSON(res)
+                {
+                    if (!res.ok || !res.headers.get('content-type')?.includes('application/json')) {
+                        throw new Error(`{{ 'something-went-wrong'|text|e }} (HTTP ${res.status})`);
+                    }
+                    return res.json();
+                }
+
                 function validateEmail(email)
                 {
                     return String(email)
@@ -297,12 +310,13 @@
                             },
                             body: JSON.stringify({
                                 username: username,
-                                password: password
+                                password: password,
+                                website: document.getElementById('hp_field').value,
+                                _ts: _spam_ts,
+                                _token: _spam_token
                             })
                         }
-                    ).then(res => {
-                        return res.json();
-                    }).then(response => {
+                    ).then(parseJSON).then(response => {
                         if (response.status !== 'success') {
                             throw new Error(response.message ?? `{{ 'something-went-wrong'|text|e }}`);
                         }
@@ -333,11 +347,14 @@
                             headers: {
                                 'Content-Type': 'application/json'
                             },
-                            body: JSON.stringify({email})
+                            body: JSON.stringify({
+                                email,
+                                website: document.getElementById('hp_field').value,
+                                _ts: _spam_ts,
+                                _token: _spam_token
+                            })
                         }
-                    ).then(res => {
-                        return res.json();
-                    }).then(response => {
+                    ).then(parseJSON).then(response => {
                         if (response.status !== 'success') {
                             throw new Error(response.message ?? `{{ 'something-went-wrong'|text|e }}`);
                         }
@@ -383,11 +400,14 @@
                             headers: {
                                 'Content-Type': 'application/json'
                             },
-                            body: JSON.stringify({username, email, password, password_re})
+                            body: JSON.stringify({
+                                username, email, password, password_re,
+                                website: document.getElementById('hp_field').value,
+                                _ts: _spam_ts,
+                                _token: _spam_token
+                            })
                         }
-                    ).then(res => {
-                        return res.json();
-                    }).then(response => {
+                    ).then(parseJSON).then(response => {
                         if (response.status !== 'success') {
                             throw new Error(response.message ?? `{{ 'something-went-wrong'|text|e }}`);
                         }

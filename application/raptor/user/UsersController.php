@@ -1132,7 +1132,12 @@ class UsersController extends FileController
                 'message' => $this->text('record-insert-success'),
                 'record' => $record
             ]);
-            
+
+            $adminName = \trim(($this->getUser()->profile['first_name'] ?? '') . ' ' . ($this->getUser()->profile['last_name'] ?? ''));
+            $this->getService('discord')?->userApproved(
+                $signup['username'], $signup['email'], $adminName
+            );
+
             // Баталгаажуулалтын и-мэйл загвар авах (templates хүснэгтээс)
             $templateService = $this->getService('template_service');
             // approve-new-user template-ийг дуудна
@@ -1516,7 +1521,7 @@ class UsersController extends FileController
      *   root user (id=1) -> organization_id = 1-ийг хэзээ ч устгаж болохгүй  
      *   root user түүнээс organization_id=1-ийг хасахыг оролдвол пропуск хийнэ  
      *   logger -> LogLevel::ALERT түвшинд бүртгэнэ  
-     *   Мэдээлэл өгөгдсөнөөс хамааран "+" эсвэл "−" өөрчлөлт тодорхойлогдоно  
+     *   Мэдээлэл өгөгдсөнөөс хамааран "+" эсвэл "-" өөрчлөлт тодорхойлогдоно
      *
      * @param int   $id        Харьяалал өөрчлөх хэрэглэгчийн ID
      * @param array $orgSets   POST-оор ирсэн organization_id массив

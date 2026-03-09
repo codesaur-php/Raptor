@@ -1,0 +1,60 @@
+<?php
+
+namespace Raptor\Development;
+
+use codesaur\DataObject\Model;
+use codesaur\DataObject\Column;
+
+/**
+ * Class DevResponseModel
+ * ------------------------------------------------------------------
+ * Хөгжүүлэлтийн хүсэлтийн хариултуудын (thread) модель.
+ *
+ * Нэг хүсэлтэд олон хариулт бичигдэх боломжтой.
+ * Хариулт бүр хэн, хэзээ бичсэн мэдээлэлтэй.
+ *
+ * @package Raptor\Development
+ */
+class DevResponseModel extends Model
+{
+    public function __construct(\PDO $pdo)
+    {
+        $this->setInstance($pdo);
+
+        $this->setColumns([
+           (new Column('id', 'bigint'))->primary(),
+           (new Column('request_id', 'bigint'))->notNull(),
+            new Column('content', 'text'),
+           (new Column('status', 'varchar', 16))->default(''),
+            new Column('created_at', 'datetime'),
+            new Column('created_by', 'bigint')
+        ]);
+
+        $this->setTable('dev_request_responses');
+    }
+
+    protected function __initial()
+    {
+        $table = $this->getName();
+
+        if ($this->getDriverName() != 'sqlite') {
+            $this->setForeignKeyChecks(false);
+
+            $requests = (new DevRequestModel($this->pdo))->getName();
+            $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
+
+            $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_request_id FOREIGN KEY (request_id) REFERENCES $requests(id) ON DELETE CASCADE ON UPDATE CASCADE");
+            $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_created_by FOREIGN KEY (created_by) REFERENCES $users(id) ON DELETE SET NULL ON UPDATE CASCADE");
+
+            $this->setForeignKeyChecks(true);
+        }
+
+        $this->exec("CREATE INDEX {$table}_idx_request_id ON $table (request_id)");
+    }
+
+    public function insert(array $record): array|false
+    {
+        $record['created_at'] ??= \date('Y-m-d H:i:s');
+        return parent::insert($record);
+    }
+}

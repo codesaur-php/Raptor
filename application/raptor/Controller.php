@@ -451,9 +451,12 @@ abstract class Controller extends \codesaur\Http\Application\Controller
                     'method' => $this->getRequest()->getMethod(),
                     'target' => $this->getRequest()->getRequestTarget(),
                 ];
-                if (isset($this->getRequest()->getServerParams()['REMOTE_ADDR'])) {
-                    $server_request['remote_addr'] =
-                        $this->getRequest()->getServerParams()['REMOTE_ADDR'];
+                $serverParams = $this->getRequest()->getServerParams();
+                if (isset($serverParams['REMOTE_ADDR'])) {
+                    $server_request['remote_addr'] = $serverParams['REMOTE_ADDR'];
+                }
+                if (isset($serverParams['HTTP_USER_AGENT'])) {
+                    $server_request['user_agent'] = $serverParams['HTTP_USER_AGENT'];
                 }
                 if (!empty($this->getRequest()->getParsedBody())) {
                     $server_request['body'] = $this->getRequest()->getParsedBody();

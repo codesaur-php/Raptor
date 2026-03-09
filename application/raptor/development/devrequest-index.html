@@ -1,0 +1,259 @@
+{#
+ # devrequest-index.html
+ # ------------------------------------------------------------------
+ # Хөгжүүлэлтийн хүсэлтүүдийн жагсаалтын хуудас (Dashboard).
+ #
+ # Controller: Dashboard\DevRequest\DevRequestController::index()
+ # Route: GET /dashboard/dev-requests
+ #
+ # JS сангууд: SweetAlert2, motable
+ #}
+<script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+
+<!-- ========== ТОЛГОЙ ХЭСЭГ ========== -->
+<div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 shadow">
+    <h3 class="px-2 my-auto fs-5 text-info text-uppercase">
+        <i class="bi bi-code-slash"></i> {{ 'dev-requests'|text }}
+    </h3>
+    <div class="ms-auto">
+        <a class="btn btn-sm btn-primary shadow-sm" href="{{ 'dev-requests-create'|link }}">
+            <i class="bi bi-plus-lg"></i> {{ 'new-request'|text }}
+        </a>
+    </div>
+</div>
+
+<!-- ========== ШҮҮЛТҮҮР ========== -->
+<style>
+.btn-filter {
+    --bs-btn-color: var(--bs-emphasis-color);
+    --bs-btn-border-color: var(--bs-emphasis-color);
+    --bs-btn-hover-color: var(--bs-body-bg);
+    --bs-btn-hover-bg: var(--bs-emphasis-color);
+    --bs-btn-hover-border-color: var(--bs-emphasis-color);
+    --bs-btn-active-color: var(--bs-body-bg);
+    --bs-btn-active-bg: var(--bs-emphasis-color);
+    --bs-btn-active-border-color: var(--bs-emphasis-color);
+}
+.btn-filter.active {
+    color: var(--bs-body-bg);
+    background-color: var(--bs-emphasis-color);
+    border-color: var(--bs-emphasis-color);
+}
+</style>
+<div class="d-flex align-items-center flex-wrap gap-2 mt-3 mb-2">
+    <button class="btn btn-sm btn-secondary text-uppercase" id="filter_action" type="button">
+        <i class="bi bi-funnel"></i> {{ 'filter'|text }}
+    </button>
+    <div class="dropdown">
+        <button class="btn btn-sm btn-filter dropdown-toggle content-filters" data-bs-toggle="dropdown" data-name="status" aria-expanded="false" type="button">
+            {{ 'status'|text }}
+        </button>
+        <ul class="dropdown-menu shadow">
+            <li><button class="dropdown-item filter-values-status" data-id="pending" type="button">{{ 'pending'|text }}</button></li>
+            <li><button class="dropdown-item filter-values-status" data-id="in_progress" type="button">{{ 'in-progress'|text }}</button></li>
+            <li><button class="dropdown-item filter-values-status" data-id="resolved" type="button">{{ 'resolved'|text }}</button></li>
+            <li><button class="dropdown-item filter-values-status" data-id="closed" type="button">{{ 'closed'|text }}</button></li>
+        </ul>
+    </div>
+</div>
+
+<!-- ========== ХҮСНЭГТ ========== -->
+<table class="table table-sm table-hover table-striped table-bordered" id="dev-requests">
+    <thead>
+        <tr class="text-uppercase">
+            <th scope="col">ID</th>
+            <th scope="col">{{ 'date'|text }}</th>
+            <th scope="col">{{ 'title'|text }}</th>
+            <th scope="col">{{ 'sent-by'|text }}</th>
+            <th scope="col">{{ 'status'|text }}</th>
+            <th scope="col"><i class="bi bi-paperclip"></i></th>
+            <th scope="col" style="width:7rem">{{ 'action'|text }}</th>
+        </tr>
+    </thead>
+</table>
+
+<!-- ========== JAVASCRIPT ========== -->
+<script type="text/javascript">
+    const urlParams = new URLSearchParams(window.location.search);
+    const filterAction = document.getElementById('filter_action');
+    const filterBtns = document.querySelectorAll('button.content-filters');
+
+    function onFilterChange()
+    {
+        filterBtns.forEach(f => {
+            f.classList.toggle('active', !!f.dataset.id);
+        });
+        const currentParams = new URLSearchParams();
+        filterBtns.forEach(f => { if (f.dataset.id) currentParams.append(f.dataset.name, f.dataset.id); });
+        const hasFilter = currentParams.size > 0;
+        const matchesUrl = currentParams.toString() === urlParams.toString();
+
+        filterAction.classList.remove('btn-secondary', 'btn-danger', 'btn-dark');
+
+        if (!hasFilter && urlParams.size === 0) {
+            filterAction.classList.add('btn-secondary');
+            filterAction.innerHTML = '<i class="bi bi-funnel"></i> {{ "filter"|text }}';
+        } else if (hasFilter && matchesUrl) {
+            filterAction.classList.add('btn-dark');
+            filterAction.innerHTML = '<i class="bi bi-funnel-fill"></i> {{ "filter"|text }} <i class="bi bi-x-circle ms-1" data-reset></i>';
+        } else {
+            filterAction.classList.add('btn-danger');
+            filterAction.innerHTML = '<i class="bi bi-funnel-fill"></i> {{ "filter"|text }} <i class="bi bi-x-circle ms-1" data-reset></i>';
+        }
+
+        const resetIcon = filterAction.querySelector('[data-reset]');
+        if (resetIcon) {
+            resetIcon.addEventListener('click', function (e) {
+                e.stopPropagation();
+                window.location.href = window.location.pathname;
+            });
+        }
+    }
+
+    filterBtns.forEach(filter => {
+        document.querySelectorAll(`.filter-values-${filter.dataset.name}`).forEach(btn => {
+            btn.addEventListener('click', function (e) {
+                e.preventDefault();
+                filter.textContent = e.target.textContent;
+                filter.dataset.id = e.target.dataset?.id;
+                onFilterChange();
+            });
+        });
+    });
+
+    filterAction.addEventListener('click', function (e) {
+        e.preventDefault();
+        if (filterAction.classList.contains('btn-secondary')) {
+            return NotifyTop('warning', `{{ 'warning'|text|e }}`, `{{ 'select-at-least-one-filter'|text|e('js') }}`);
+        }
+        if (filterAction.classList.contains('btn-dark')) return;
+        const params = [];
+        filterBtns.forEach(filter => {
+            if (filter.dataset.id) {
+                params.push(`${filter.dataset.name}=${filter.dataset.id}`);
+            }
+        });
+        if (params.length === 0) return;
+        window.location.href = window.location.pathname + '?' + params.join('&');
+    });
+
+    const statusLabels = {
+        'pending': `<span class="badge bg-warning text-dark">{{ 'pending'|text|e('js') }}</span>`,
+        'in_progress': `<span class="badge bg-info">{{ 'in-progress'|text|e('js') }}</span>`,
+        'resolved': `<span class="badge bg-success">{{ 'resolved'|text|e('js') }}</span>`,
+        'closed': `<span class="badge bg-secondary">{{ 'closed'|text|e('js') }}</span>`
+    };
+
+    document.addEventListener('DOMContentLoaded', function () {
+        if (urlParams?.size > 0) {
+            filterBtns.forEach(filter => {
+                const value = urlParams.get(filter.dataset.name);
+                if (value) {
+                    filter.dataset.id = value;
+                    const selector = `.filter-values-${filter.dataset.name}[data-id="${value}"]`;
+                    const titleElement = document.querySelector(selector);
+                    filter.textContent = titleElement?.textContent || value;
+                    filter.classList.add('active');
+                }
+            });
+            onFilterChange();
+        }
+
+        const devRequests = new motable('table#dev-requests', { freezeColumns: [0] });
+        const indexLink = `{{ 'dev-requests'|link }}`;
+
+        fetch(
+            `{{ 'dev-requests-list'|link }}` + window.location.search
+        ).then(res => {
+            if (res.headers.get('content-type')?.includes('application/json')) return res.json();
+            throw new Error(`HTTP [${res.status}]: ${res.statusText}`);
+        }).then(data => {
+            if (!data.list) {
+                throw new Error(data.message ?? 'Invalid response!');
+            }
+
+            let rowsHTML = '';
+            data.list.forEach(record => {
+                const id = record.id;
+                const createdAt = record.created_at ? record.created_at.substring(0, 16) : '';
+                const statusBadge = statusLabels[record.status] || `<span class="badge bg-light text-dark">${record.status}</span>`;
+
+                let attachCount = '';
+                if (record.attachments) {
+                    try {
+                        const att = JSON.parse(record.attachments);
+                        if (Array.isArray(att) && att.length > 0) {
+                            attachCount = `<span class="badge bg-secondary">${att.length}</span>`;
+                        }
+                    } catch(e) {}
+                }
+
+                const buttons = [
+                    `<a class="btn btn-sm btn-info mt-1 shadow-sm" href="${indexLink}/view/${id}"><i class="bi bi-eye"></i></a>`,
+                    `<button class="deactivate-request btn btn-sm btn-danger mt-1 shadow-sm" type="button" value="${id}"><i class="bi bi-trash"></i></button>`
+                ];
+                const actions = `<div class="mb-1">${buttons.join(' ')}</div>`;
+
+                rowsHTML += `<tr>` +
+                    `<th scope="row">${id}</th>` +
+                    `<td>${createdAt}</td>` +
+                    `<td>${record.title || ''}</td>` +
+                    `<td>${record.created_user || ''}</td>` +
+                    `<td>${statusBadge}</td>` +
+                    `<td>${attachCount}</td>` +
+                    `<td>${actions}</td>` +
+                    `</tr>`;
+            });
+
+            devRequests.setBody(rowsHTML);
+            devRequests.setReady();
+        }).catch(err => {
+            devRequests.error(err);
+        }).finally(() => {
+            const deactivates = devRequests.table.querySelectorAll('.deactivate-request');
+            deactivates.forEach(btn => btn.addEventListener('click', function (e) {
+                e.preventDefault();
+                const thisRow = btn.closest('tr');
+                if (!thisRow) {
+                    return NotifyTop('warning', `{{ 'error'|text|e }}`, 'Cannot select row!');
+                }
+
+                const id = btn.value;
+                const title = thisRow.children[2].textContent;
+
+                Swal.fire({
+                    html: `<i class="bi bi-question-circle text-danger mb-4" style="font-size:3rem"></i><p class="text-danger mb-3">{{ 'confirm-delete-request'|text|e('js') }}: "${title}"?</p>`,
+                    showCancelButton: true,
+                    cancelButtonText: `{{ 'cancel'|text|e }}`,
+                    confirmButtonText: `<i class="bi bi-trash"></i> {{ 'delete'|text|e }}`,
+                    confirmButtonColor: '#df4759',
+                    showLoaderOnConfirm: true,
+                    allowOutsideClick: () => !Swal.isLoading(),
+                    backdrop: true,
+                    preConfirm: () => {
+                        return fetch(
+                            `{{ 'dev-requests-deactivate'|link }}`,
+                            {
+                                method: 'DELETE',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ id })
+                            }
+                        ).then(res => {
+                            return res.json();
+                        }).then(response => {
+                            if (response.status !== 'success') {
+                                throw new Error(response.message ?? 'Invalid response!');
+                            }
+                            Swal.close();
+                            thisRow.remove();
+                            devRequests.setReady();
+                            NotifyTop('success', `{{ 'success'|text|e }}`, response.message ?? `Request:${id} deactivated`);
+                        }).catch(error => {
+                            Swal.showValidationMessage(error.message);
+                        });
+                    }
+                });
+            }));
+        });
+    });
+</script>

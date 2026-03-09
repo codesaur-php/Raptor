@@ -1,0 +1,58 @@
+<div class="container mt-4">
+    <h4 class="mb-4 pb-2 border-bottom">
+        <i class="bi bi-search me-2"></i>{{ 'search'|text }}
+    </h4>
+
+    <form method="GET" action="{{ 'search'|link }}" class="mb-4">
+        <div class="input-group input-group-lg">
+            <input type="text" name="q" class="form-control"
+                   placeholder="{{ 'enter-search-terms'|text }}"
+                   value="{{ q|e }}" minlength="2" required>
+            <button class="btn btn-primary" type="submit">
+                <i class="bi bi-search"></i>
+            </button>
+        </div>
+    </form>
+
+    {% if q is not empty %}
+        <p class="text-muted mb-3">
+            "{{ q }}" - {{ results|length }} {{ 'result-count'|text }}
+        </p>
+
+        {% if results|length > 0 %}
+            <div class="list-group">
+                {% for item in results %}
+                    {% if item.type == 'product' %}
+                        {% set href = 'product'|link({ slug: item.slug }) %}
+                    {% elseif item.type == 'page' %}
+                        {% set href = 'page'|link({ slug: item.slug }) %}
+                    {% else %}
+                        {% set href = 'news'|link({ slug: item.slug }) %}
+                    {% endif %}
+                    <a href="{{ href }}" class="list-group-item list-group-item-action">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="mb-1">{{ item.title }}</h6>
+                                {% if item.description is not empty %}
+                                    <p class="mb-0 text-muted small">{{ item.description|length > 200 ? item.description|slice(0, 200) ~ '...' : item.description }}</p>
+                                {% endif %}
+                            </div>
+                            {% if item.type == 'product' %}
+                                <span class="badge bg-warning text-dark ms-2">{{ 'product'|text }}</span>
+                            {% elseif item.type == 'page' %}
+                                <span class="badge bg-primary ms-2">{{ 'page'|text }}</span>
+                            {% else %}
+                                <span class="badge bg-success ms-2">{{ 'news'|text }}</span>
+                            {% endif %}
+                        </div>
+                    </a>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="text-center text-muted py-5">
+                <i class="bi bi-search fs-1 d-block mb-2"></i>
+                {{ 'no-results-found'|text }}
+            </div>
+        {% endif %}
+    {% endif %}
+</div>

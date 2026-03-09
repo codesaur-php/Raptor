@@ -14,7 +14,7 @@
 3. [Configuration (.env)](#3-configuration)
 4. [Architecture](#4-architecture)
 5. [Middleware Pipeline](#5-middleware-pipeline)
-6. [Modules](#6-modules)
+6. [Modules](#6-modules) (6.1-6.13 Core | 6.14-6.18 New: Shop, Notification, Development, SEO, Spam Protection)
 7. [Twig Template System](#7-twig-template-system)
 8. [Routing](#8-routing)
 9. [Controller](#9-controller)
@@ -36,12 +36,16 @@
 - **RBAC** (Role-Based Access Control)
 - **Multi-language** support (Localization)
 - CMS modules: News, Pages, Files, References, Settings
+- **Shop** module (Products, Orders)
 - MySQL / PostgreSQL / SQLite support
 - **Twig** template engine
 - **OpenAI** integration (moedit editor)
 - Image optimization (GD)
 - PSR-3 logging system
 - **Brevo** API email delivery
+- **Discord** webhook notifications
+- SEO: Search, Sitemap, XML Sitemap, RSS feed
+- Spam protection (honeypot, HMAC token, rate limiting)
 
 ### codesaur Ecosystem
 
@@ -165,6 +169,15 @@ RAPTOR_CONTENT_IMG_QUALITY=90
 
 - CMS image uploads are optimized using the GD extension
 
+### Discord Notifications
+
+```env
+#RAPTOR_DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/...
+```
+
+- Optional: If empty or not set, no notifications are sent
+- Used by `DiscordNotifier` service for system event notifications
+
 ### Server Configuration
 
 Example configuration files for Apache and Nginx are available in [`docs/conf.example/`](../conf.example/):
@@ -174,6 +187,39 @@ Example configuration files for Apache and Nginx are available in [`docs/conf.ex
 | `.env.example` | Environment variables reference |
 | `.htaccess.example` | Apache URL rewrite and HTTPS redirect |
 | `.nginx.conf.example` | Nginx server block (HTTP, HTTPS, PHP-FPM) |
+| `cpanel.deploy.yml` | GitHub Actions cPanel FTP deploy workflow |
+
+### Deploying to cPanel
+
+The included `deploy.yml` is a GitHub Actions workflow that automatically deploys to a cPanel server via FTP when you push to the `main` branch.
+
+#### Setup
+
+1. Copy the workflow file:
+
+```bash
+mkdir -p .github/workflows
+cp docs/conf.example/cpanel.deploy.yml .github/workflows/deploy.yml
+```
+
+2. Add the following secrets in your GitHub repository (**Settings -> Secrets and variables -> Actions**):
+
+| Secret | Description | Example |
+|--------|-------------|---------|
+| `FTP_HOST` | cPanel FTP server address | `ftp.example.com` |
+| `FTP_USERNAME` | cPanel FTP username | `user@example.com` |
+| `FTP_PASSWORD` | cPanel FTP password | |
+| `FTP_SERVER_DIR` | Target directory on server | `/public_html/` |
+
+3. Push to `main` branch - deployment runs automatically.
+
+#### Important Notes
+
+- **`.env`** - Create and configure manually on the server (never deployed)
+- **`logs/`** - Created automatically by the application, not deployed
+- **`private/`** - Contains sensitive files (SQLite DB, uploads), not deployed
+- **`docs/`** - Documentation only, not deployed
+- **`vendor/`** - Built during the workflow with `composer install --no-dev`
 
 ---
 
@@ -186,13 +232,13 @@ public_html/index.php (Entry point)
 |
 |-- /dashboard/* -> Dashboard\Application (Admin Panel)
 |    |-- Middleware: ErrorHandler -> MySQL -> Session -> JWT -> Container -> Localization -> Settings
-|    |-- Routers: Login, Users, Organization, RBAC, Localization, Contents, Logs, Template
+|    |-- Routers: Login, Users, Organization, RBAC, Localization, Contents, Logs, Template, Shop, Development
 |    \-- Controllers -> Twig Templates -> HTML Response
 |
 \-- /* -> Web\Application (Public Website)
      |-- Middleware: ExceptionHandler -> MySQL -> Container -> Session -> Localization -> Settings
-     |-- Router: HomeRouter (/, /page/{id}, /news/{id}, /contact, /language/{code})
-     \-- TemplateController -> Twig Templates -> HTML Response
+     |-- Router: HomeRouter (/, /page, /news, /contact, /products, /order, /search, /sitemap, /rss, ...)
+     \-- Controllers -> Twig Templates -> HTML Response
 ```
 
 ### Request Flow
@@ -234,10 +280,13 @@ raptor/
 |   |   |-- template/              # Dashboard UI template
 |   |   |-- log/                   # PSR-3 logging
 |   |   |-- mail/                  # Email
+|   |   |-- notification/          # Discord webhook notifications
+|   |   |-- development/           # Dev tools (SQL terminal, file manager, error log)
 |   |   \-- exception/             # Error handling
 |   |-- dashboard/                 # Dashboard Application
 |   |   |-- Application.php
-|   |   \-- home/                  # Dashboard Home Router
+|   |   |-- home/                  # Dashboard Home Router
+|   |   \-- shop/                  # Shop module (Products, Orders)
 |   \-- web/                       # Web Application
 |       |-- Application.php
 |       |-- SessionMiddleware.php
@@ -245,9 +294,15 @@ raptor/
 |       |-- home/                  # Public page controllers + templates
 |       |   |-- HomeRouter.php
 |       |   |-- HomeController.php
-|       |   |-- home.html
-|       |   |-- page.html
-|       |   \-- news.html
+|       |   |-- PageController.php
+|       |   |-- NewsController.php
+|       |   |-- ShopController.php
+|       |   |-- SeoController.php
+|       |   |-- home.html, page.html, news.html
+|       |   |-- products.html, product.html
+|       |   |-- order.html, order-success.html
+|       |   |-- search.html, sitemap.html
+|       |   \-- archive.html, news-type.html
 |       \-- template/              # Web layout
 |           |-- TemplateController.php
 |           |-- ExceptionHandler.php
@@ -255,12 +310,14 @@ raptor/
 |-- public_html/
 |   |-- index.php                  # Entry point
 |   |-- .htaccess                  # Apache URL rewrite
+|   |-- robots.txt                 # Search engine bot rules
 |   \-- assets/                    # CSS, JS (dashboard, moedit, motable)
 |-- docs/
 |   |-- conf.example/              # Server configuration examples
 |   |   |-- .env.example           # Environment variables
 |   |   |-- .htaccess.example      # Apache rewrite rules
-|   |   \-- .nginx.conf.example    # Nginx server config
+|   |   |-- .nginx.conf.example    # Nginx server config
+|   |   \-- cpanel.deploy.yml      # GitHub Actions cPanel FTP deploy
 |   |-- en/                        # English documentation
 |   \-- mn/                        # Mongolian documentation
 |-- logs/                          # Error log files
@@ -452,6 +509,69 @@ $this->isUserCan('news_edit');
 - Dashboard layout (sidebar, header, content area)
 - SweetAlert2, motable, moedit JS components
 - Responsive Bootstrap 5 design
+
+### 6.14 Shop (E-Commerce)
+
+**Classes:** `ProductsController`, `ProductsRouter`, `ProductsModel`, `OrdersController`, `OrdersRouter`, `OrdersModel`
+
+- Product CRUD with slug generation, excerpt extraction
+- Product fields: price, sale_price, SKU, barcode, sizes, colors, stock, category, featured
+- Order management with customer info and status tracking
+- Sample product data seeded on first run
+- Discord notifications for new orders and status changes
+
+### 6.15 Notification
+
+**Classes:** `DiscordNotifier`
+
+- Discord webhook integration for system events
+- Notification types: user signup, user approval, new order, order status change, content actions
+- Color-coded embed messages
+- Configured via `RAPTOR_DISCORD_WEBHOOK_URL` env variable
+- Gracefully skips if webhook URL is not set
+
+### 6.16 Development Tools
+
+**Classes:** `DevelopmentRouter`, `DevRequestController`, `DevRequestModel`, `DevResponseModel`, `SqlTerminalController`, `FileManagerController`
+
+- Development request tracking system
+- SQL Terminal for database queries
+- Error log viewer
+- File manager
+- Protected by `development:development` RBAC permission
+
+### 6.17 SEO & Content Discovery (Web)
+
+**Classes:** `SeoController`
+
+- Full-text search across pages, news, and products
+- Human-readable sitemap with hierarchical page tree
+- XML sitemap (`/sitemap.xml`) for search engines
+- RSS 2.0 feed (`/rss`) with latest news and products
+- `robots.txt` - Search engine bot instructions included in `public_html/`
+
+#### robots.txt
+
+A pre-configured `robots.txt` is included at `public_html/robots.txt`. It controls which bots can access your site:
+
+- **Allowed:** Googlebot, Bingbot, YandexBot, Baiduspider
+- **Blocked:** SEO scrapers (MJ12bot, SemrushBot, AhrefsBot, DotBot, Bytespider, PetalBot)
+- **AI bots:** Allowed by default (GPTBot, ClaudeBot, etc.). Uncomment lines to block
+- **Dashboard:** `/dashboard/` is disallowed for all bots
+- **Sitemap:** Update the `Sitemap:` line with your actual domain
+
+```
+Sitemap: https://example.com/sitemap.xml
+```
+
+### 6.18 Spam Protection
+
+- Honeypot hidden field detection
+- HMAC token validation with timestamp
+- Rate limiting per action (login 3s, signup 5s, forgot 10s)
+- Form expiration (1 hour max)
+- Minimum fill speed check (2 seconds)
+- Applied to login, signup, forgot password, and order forms
 
 ---
 

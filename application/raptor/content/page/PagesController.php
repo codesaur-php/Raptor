@@ -97,7 +97,7 @@ class PagesController extends FileController
 
         $table = (new PagesModel($this->pdo))->getName();
         $dashboard = $this->twigDashboard(__DIR__ . '/pages-nav.html');
-        $dashboard->set('title', $this->getLanguageCode() === 'mn' ? 'Хуудасны навигац' : 'Pages Navigation');
+        $dashboard->set('title', $this->text('pages-navigation'));
         $dashboard->render();
 
         $this->log($table, LogLevel::NOTICE, 'Хуудасны навигацийн модыг үзэж байна', ['action' => 'nav']);
@@ -189,9 +189,7 @@ class PagesController extends FileController
             )->fetch();
             if ((int)$check['sample'] === 0) {
                 throw new \Exception(
-                    $this->getLanguageCode() === 'mn'
-                        ? 'Зөвхөн жишиг дата байгаа үед reset хийх боломжтой'
-                        : 'Reset is only available when only sample data exists',
+                    $this->text('reset-only-sample-data'),
                     400
                 );
             }
@@ -211,9 +209,7 @@ class PagesController extends FileController
 
             $this->respondJSON([
                 'status' => 'success',
-                'message' => $this->getLanguageCode() === 'mn'
-                    ? 'Жишиг дата амжилттай цэвэрлэгдлээ. Production эхэлж байна!'
-                    : 'Sample data cleared. Production started!'
+                'message' => $this->text('sample-data-cleared')
             ]);
         } catch (\Throwable $err) {
             $this->respondJSON(['message' => $err->getMessage()], $err->getCode());
@@ -285,9 +281,7 @@ class PagesController extends FileController
                 $link = \trim($payload['link'] ?? '');
                 if (!$this->isValidLink($link)) {
                     throw new \InvalidArgumentException(
-                        $this->getLanguageCode() === 'mn'
-                            ? 'Холбоос нь URL (http://...) эсвэл локал зам (/path) байх ёстой'
-                            : 'Link must be a URL (http://...) or a local path (/path)',
+                        $this->text('link-must-be-url'),
                         400
                     );
                 }
@@ -321,6 +315,10 @@ class PagesController extends FileController
                     'status' => 'success',
                     'message' => $this->text('record-insert-success')
                 ]);
+
+                $action = !empty($payload['published']) ? 'publish' : 'insert';
+                $adminName = \trim(($this->getUser()->profile['first_name'] ?? '') . ' ' . ($this->getUser()->profile['last_name'] ?? ''));
+                $this->getService('discord')?->contentAction('page', $action, $payload['title'] ?? '', $id, $adminName);
             } else {
                 $dashboard = $this->twigDashboard(
                     __DIR__ . '/page-insert.html',
@@ -550,9 +548,7 @@ class PagesController extends FileController
                 $link = \trim($payload['link'] ?? '');
                 if (!$this->isValidLink($link)) {
                     throw new \InvalidArgumentException(
-                        $this->getLanguageCode() === 'mn'
-                            ? 'Холбоос нь URL (http://...) эсвэл локал зам (/path) байх ёстой'
-                            : 'Link must be a URL (http://...) or a local path (/path)',
+                        $this->text('link-must-be-url'),
                         400
                     );
                 }
@@ -619,6 +615,12 @@ class PagesController extends FileController
                     'type' => 'primary',
                     'message' => $this->text('record-update-success')
                 ]);
+
+                $wasPublished = !empty($record['published']);
+                $nowPublished = !empty($payload['published']);
+                $action = (!$wasPublished && $nowPublished) ? 'publish' : 'update';
+                $adminName = \trim(($this->getUser()->profile['first_name'] ?? '') . ' ' . ($this->getUser()->profile['last_name'] ?? ''));
+                $this->getService('discord')?->contentAction('page', $action, $payload['title'] ?? $record['title'] ?? '', $id, $adminName);
             } else {
                 $infos = $this->getInfos($table, "id!=$id AND (parent_id IS NULL OR parent_id!=$id)");
                 $files = $filesModel->getRows(['WHERE' => "record_id=$id AND is_active=1"]);
@@ -702,6 +704,9 @@ class PagesController extends FileController
                 'title'   => $this->text('success'),
                 'message' => $this->text('record-successfully-deleted')
             ]);
+
+            $adminName = \trim(($this->getUser()->profile['first_name'] ?? '') . ' ' . ($this->getUser()->profile['last_name'] ?? ''));
+            $this->getService('discord')?->contentAction('page', 'delete', $payload['title'] ?? "#{$id}", $id, $adminName);
         } catch (\Throwable $err) {
             $this->respondJSON([
                 'status'  => 'error',

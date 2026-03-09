@@ -1,0 +1,184 @@
+<!--
+    SQL Terminal - MySQL query гүйцэтгэх хуудас
+    ---------------------------------------------------------
+    Зөвхөн system_coder (id=1) хэрэглэгчид хандах боломжтой.
+    SELECT, SHOW, DESCRIBE зэрэг унших query-г шууд,
+    INSERT, UPDATE, DELETE зэрэг бичих query-г зөвшөөрөл идэвхжүүлсэн
+    тохиолдолд л ажиллуулна.
+-->
+
+<div class="container-fluid py-3">
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-body-tertiary d-flex align-items-center justify-content-between">
+                    <div>
+                        <i class="bi bi-terminal-fill me-2"></i>
+                        <strong>{{ 'sql-terminal'|text }}</strong>
+                    </div>
+                    <div class="form-check form-switch mb-0">
+                        <input class="form-check-input" type="checkbox" id="allowWrite">
+                        <label class="form-check-label text-warning small" for="allowWrite">{{ 'allow-write'|text }}</label>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="p-3">
+                        <textarea id="sqlQuery" class="form-control font-monospace bg-body-secondary text-body" rows="6"
+                            placeholder="{{ 'sql-query-placeholder'|text|e }}"
+                            style="resize:vertical;"></textarea>
+                        <div class="mt-2 d-flex gap-2">
+                            <button id="btnExecute" class="btn btn-primary">
+                                <i class="bi bi-play-fill me-1"></i>{{ 'execute'|text }}
+                            </button>
+                            <button id="btnClear" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle me-1"></i>{{ 'clear'|text }}
+                            </button>
+                            <span id="queryStatus" class="align-self-center small text-muted ms-2"></span>
+                        </div>
+                    </div>
+
+                    <!-- Үр дүн -->
+                    <div id="resultArea" class="d-none border-top border-secondary-subtle">
+                        <div id="resultInfo" class="px-3 py-2 bg-body-tertiary text-body-secondary small"></div>
+                        <div id="resultTable" class="table-responsive bg-body" style="max-height:500px; overflow:auto;"></div>
+                        <div id="resultMessage" class="px-3 py-2"></div>
+                    </div>
+
+                    <!-- Алдаа -->
+                    <div id="errorArea" class="d-none border-top border-secondary-subtle px-3 py-2">
+                        <div class="alert alert-danger mb-0" id="errorMessage"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+(function() {
+    const _t = {
+        running: `{{ 'running'|text|e('js') }}`,
+        errorOccurred: `{{ 'error-occurred'|text|e('js') }}`,
+        success: `{{ 'success'|text|e('js') }}`,
+        rowsFound: `{{ 'rows-found'|text|e('js') }}`,
+        emptyResult: `{{ 'empty-result'|text|e('js') }}`,
+        networkError: `{{ 'network-error'|text|e('js') }}`,
+        error: `{{ 'error'|text|e('js') }}`,
+        execute: `{{ 'execute'|text|e('js') }}`,
+        send: `{{ 'send'|text|e('js') }}`
+    };
+
+    const sqlQuery = document.getElementById('sqlQuery');
+    const btnExecute = document.getElementById('btnExecute');
+    const btnClear = document.getElementById('btnClear');
+    const allowWrite = document.getElementById('allowWrite');
+    const queryStatus = document.getElementById('queryStatus');
+    const resultArea = document.getElementById('resultArea');
+    const resultInfo = document.getElementById('resultInfo');
+    const resultTable = document.getElementById('resultTable');
+    const resultMessage = document.getElementById('resultMessage');
+    const errorArea = document.getElementById('errorArea');
+    const errorMessage = document.getElementById('errorMessage');
+
+    /* Ctrl+Enter дарахад query ажиллуулах */
+    sqlQuery.addEventListener('keydown', function(e) {
+        if (e.ctrlKey && e.key === 'Enter') {
+            e.preventDefault();
+            executeQuery();
+        }
+    });
+
+    btnExecute.addEventListener('click', executeQuery);
+
+    btnClear.addEventListener('click', function() {
+        sqlQuery.value = '';
+        resultArea.classList.add('d-none');
+        errorArea.classList.add('d-none');
+        queryStatus.textContent = '';
+        sqlQuery.focus();
+    });
+
+    function executeQuery() {
+        const query = sqlQuery.value.trim();
+        if (!query) {
+            sqlQuery.focus();
+            return;
+        }
+
+        btnExecute.disabled = true;
+        queryStatus.textContent = _t.running + '...';
+        resultArea.classList.add('d-none');
+        errorArea.classList.add('d-none');
+
+        const formData = new FormData();
+        formData.append('query', query);
+        if (allowWrite.checked) {
+            formData.append('allow_write', '1');
+        }
+
+        fetch('{{ 'sql-terminal-execute'|link }}', {
+            method: 'POST',
+            body: formData
+        })
+        .then(function(response) { return response.json(); })
+        .then(function(data) {
+            btnExecute.disabled = false;
+
+            if (data.status === 'error') {
+                errorMessage.textContent = data.message;
+                errorArea.classList.remove('d-none');
+                queryStatus.textContent = _t.errorOccurred;
+                return;
+            }
+
+            resultArea.classList.remove('d-none');
+            queryStatus.innerHTML = '<span class="text-success">' + _t.success + '</span> &mdash; ' + data.duration + 'ms';
+
+            if (data.rows !== undefined) {
+                /* SELECT төрлийн query */
+                resultInfo.textContent = data.row_count + ' ' + _t.rowsFound + ' (' + data.duration + 'ms)';
+                resultMessage.innerHTML = '';
+
+                if (data.rows.length === 0) {
+                    resultTable.innerHTML = '<div class="px-3 py-2 text-muted">' + _t.emptyResult + '</div>';
+                } else {
+                    var html = '<table class="table table-sm table-bordered table-hover mb-0 small text-body">';
+                    html += '<thead class="table-secondary"><tr>';
+                    for (var i = 0; i < data.columns.length; i++) {
+                        html += '<th class="text-nowrap">' + escapeHtml(data.columns[i]) + '</th>';
+                    }
+                    html += '</tr></thead><tbody>';
+                    for (var r = 0; r < data.rows.length; r++) {
+                        html += '<tr>';
+                        for (var c = 0; c < data.columns.length; c++) {
+                            var val = data.rows[r][data.columns[c]];
+                            var display = val === null ? '<span class="text-muted fst-italic">NULL</span>' : escapeHtml(String(val));
+                            html += '<td>' + display + '</td>';
+                        }
+                        html += '</tr>';
+                    }
+                    html += '</tbody></table>';
+                    resultTable.innerHTML = html;
+                }
+            } else {
+                /* INSERT/UPDATE/DELETE төрлийн query */
+                resultInfo.textContent = '';
+                resultTable.innerHTML = '';
+                resultMessage.innerHTML = '<div class="alert alert-success mb-0">' + escapeHtml(data.message) + '</div>';
+            }
+        })
+        .catch(function(err) {
+            btnExecute.disabled = false;
+            errorMessage.textContent = _t.networkError + ': ' + err.message;
+            errorArea.classList.remove('d-none');
+            queryStatus.textContent = _t.error;
+        });
+    }
+
+    function escapeHtml(text) {
+        var div = document.createElement('div');
+        div.appendChild(document.createTextNode(text));
+        return div.innerHTML;
+    }
+})();
+</script>

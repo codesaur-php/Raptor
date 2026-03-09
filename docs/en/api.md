@@ -22,6 +22,9 @@
 14. [Mail](#mail)
 15. [Database Middleware](#database-middleware)
 16. [Web Layer](#web-layer)
+17. [Shop](#shop)
+18. [Notification](#notification)
+19. [Development](#development)
 
 ---
 
@@ -119,7 +122,7 @@ Base for the Dashboard Application. Registers the middleware pipeline and router
 5. `ContainerMiddleware` - DI Container
 6. `LocalizationMiddleware` - Multi-language
 7. `SettingsMiddleware` - System settings
-8. `LoginRouter`, `UsersRouter`, `OrganizationRouter`, `RBACRouter`, `LocalizationRouter`, `ContentsRouter`, `LogsRouter`, `TemplateRouter`
+8. `LoginRouter`, `UsersRouter`, `OrganizationRouter`, `RBACRouter`, `LocalizationRouter`, `ContentsRouter`, `LogsRouter`, `TemplateRouter`, `ProductsRouter`, `OrdersRouter`, `DevelopmentRouter`
 
 ---
 
@@ -585,7 +588,7 @@ SQLite variant. DB file: `private/database.sqlite`
 
 **File:** `application/raptor/ContainerMiddleware.php`
 
-Injects PSR-11 DI Container into request. Registers PDO and User ID in the container.
+Injects PSR-11 DI Container into request. Registers PDO, User ID, and `DiscordNotifier` service in the container.
 
 ---
 
@@ -608,9 +611,22 @@ ExceptionHandler -> MySQL -> Container -> Session -> Localization -> Settings ->
 | `/` | GET | `home` | Home page |
 | `/home` | GET | - | Home alias |
 | `/language/{code}` | GET | `language` | Switch language |
+| `/page/{uint:id}` | GET | `page-by-id` | Page by ID (redirect to slug) |
 | `/page/{slug}` | GET | `page` | View page |
-| `/news/{slug}` | GET | `news` | View news |
 | `/contact` | GET | `contact` | Contact page |
+| `/news/{uint:id}` | GET | `news-by-id` | News by ID (redirect to slug) |
+| `/news/{slug}` | GET | `news` | View news |
+| `/news/type/{type}` | GET | `news-type` | News by type/category |
+| `/archive` | GET | `archive` | News archive |
+| `/products` | GET | `products` | Product listing |
+| `/product/{uint:id}` | GET | `product-by-id` | Product by ID (redirect to slug) |
+| `/product/{slug}` | GET | `product` | View product |
+| `/order` | GET | `order` | Order form |
+| `/order` | POST | `order-submit` | Submit order |
+| `/search` | GET | `search` | Search |
+| `/sitemap` | GET | `sitemap` | Sitemap page |
+| `/sitemap.xml` | GET | `sitemap-xml` | XML sitemap |
+| `/rss` | GET | `rss` | RSS feed |
 
 ### HomeController
 
@@ -619,11 +635,56 @@ ExceptionHandler -> MySQL -> Container -> Session -> Localization -> Settings ->
 
 | Method | Description |
 |--------|-------------|
-| `index()` | Home page (latest 20 news) |
-| `page(string $slug)` | Display page + files + read_count + OG meta |
-| `news(string $slug)` | Display news + files + read_count + OG meta |
-| `contact()` | Contact page (link LIKE '%/contact') |
+| `index()` | Home page (latest news) |
 | `language(string $code)` | Switch language + redirect |
+
+### PageController
+
+**File:** `application/web/home/PageController.php`
+**Extends:** `TemplateController`
+
+| Method | Description |
+|--------|-------------|
+| `contact()` | Contact page (link LIKE '%/contact') |
+| `pageById(int $id)` | Redirect page by ID to slug URL |
+| `page(string $slug)` | Display page + files + read_count + OG meta |
+
+### NewsController (Web)
+
+**File:** `application/web/home/NewsController.php`
+**Extends:** `TemplateController`
+
+| Method | Description |
+|--------|-------------|
+| `newsById(int $id)` | Redirect news by ID to slug URL |
+| `news(string $slug)` | Display news + files + read_count + OG meta |
+| `newsType(string $type)` | List news by type/category |
+| `archive()` | News archive with year/month filtering |
+
+### ShopController
+
+**File:** `application/web/home/ShopController.php`
+**Extends:** `TemplateController`
+
+| Method | Description |
+|--------|-------------|
+| `products()` | List all published products |
+| `productById(int $id)` | Redirect product by ID to slug URL |
+| `product(string $slug)` | Display product + files + read_count + OG meta |
+| `order()` | Display order form |
+| `orderSubmit()` | Process order (spam check, validate, DB insert, email, Discord) |
+
+### SeoController
+
+**File:** `application/web/home/SeoController.php`
+**Extends:** `TemplateController`
+
+| Method | Description |
+|--------|-------------|
+| `search()` | Search across pages, news, products (min 2 chars) |
+| `sitemap()` | Human-readable sitemap with page tree |
+| `sitemapXml()` | XML sitemap for search engines |
+| `rss()` | RSS 2.0 feed (latest 20 news + 20 products) |
 
 ### TemplateController
 
@@ -650,3 +711,143 @@ OpenAI API proxy for the moedit editor's AI button.
 **File:** `application/raptor/content/ContentsRouter.php`
 
 Central router that registers all content module routes: Files, News, Pages, References, Settings, Moedit AI.
+
+---
+
+## Shop
+
+### ProductsModel
+
+**File:** `application/dashboard/shop/ProductsModel.php`
+**Extends:** `codesaur\DataObject\Model`
+
+**Table:** `products`
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | bigint (PK) | Auto-increment |
+| `slug` | varchar(255) | SEO-friendly URL slug |
+| `title` | varchar(255) | Product title |
+| `description` | text | Short description |
+| `content` | longtext | HTML content |
+| `price` | decimal(10,2) | Price |
+| `sale_price` | decimal(10,2) | Sale price |
+| `sku` | varchar(50) | SKU code |
+| `barcode` | varchar(50) | Barcode |
+| `sizes` | varchar(255) | Available sizes |
+| `colors` | varchar(255) | Available colors |
+| `stock` | int | Stock quantity |
+| `link` | varchar(255) | External link |
+| `photo` | varchar(255) | Cover image |
+| `code` | varchar(6) | Language code |
+| `type` | varchar(50) | Product type |
+| `category` | varchar(50) | Category |
+| `is_featured` | tinyint | Featured product |
+| `comment` | tinyint | Comments enabled |
+| `read_count` | int | View count |
+| `is_active` | tinyint | Active status |
+| `published` | tinyint | Published status |
+| `published_at` | datetime | Published date |
+| `published_by` | bigint | Published by user |
+| `created_at` | datetime | Created date |
+| `created_by` | bigint | Created by user |
+| `updated_at` | datetime | Updated date |
+| `updated_by` | bigint | Updated by user |
+
+#### `generateSlug(string $title): string`
+Generates an SEO-friendly slug. Supports Mongolian Cyrillic transliteration.
+
+#### `getExcerpt(string $content, int $length = 150): string`
+Extracts a plain-text excerpt from HTML content.
+
+### OrdersModel
+
+**File:** `application/dashboard/shop/OrdersModel.php`
+**Extends:** `codesaur\DataObject\Model`
+
+**Table:** `orders`
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | bigint (PK) | Auto-increment |
+| `product_id` | bigint | Product reference |
+| `product_title` | varchar(255) | Product title snapshot |
+| `customer_name` | varchar(255) | Customer name |
+| `customer_email` | varchar(100) | Customer email |
+| `customer_phone` | varchar(50) | Customer phone |
+| `message` | text | Customer message |
+| `quantity` | int | Quantity |
+| `code` | varchar(6) | Language code |
+| `status` | varchar(50) | Order status |
+| `is_active` | tinyint | Active status |
+| `created_at` | datetime | Created date |
+| `created_by` | bigint | Created by user |
+| `updated_at` | datetime | Updated date |
+| `updated_by` | bigint | Updated by user |
+
+### ProductsRouter
+
+**File:** `application/dashboard/shop/ProductsRouter.php`
+
+Dashboard product management routes.
+
+### OrdersRouter
+
+**File:** `application/dashboard/shop/OrdersRouter.php`
+
+Dashboard order management routes.
+
+---
+
+## Notification
+
+### DiscordNotifier
+
+**File:** `application/raptor/notification/DiscordNotifier.php`
+
+Discord webhook integration service. Registered in DI Container as `discord`.
+
+#### `send(string $title, string $description, int $color, array $fields = []): void`
+Sends a generic Discord embed message.
+
+#### `userSignupRequest(string $username, string $email): void`
+Notification for new user signup request.
+
+#### `userApproved(string $username, string $email, string $admin): void`
+Notification when admin approves a user.
+
+#### `newOrder(int $orderId, string $customer, string $email, string $product, int $quantity): void`
+Notification for new order submission.
+
+#### `orderStatusChanged(int $orderId, string $customer, string $oldStatus, string $newStatus, string $admin): void`
+Notification when order status changes.
+
+#### `contentAction(string $type, string $action, string $title, int $id, string $admin): void`
+Notification for content management actions (insert, update, delete, publish).
+
+#### Color Constants
+
+| Constant | Value | Usage |
+|----------|-------|-------|
+| `SUCCESS` | Green | Approval, completion |
+| `INFO` | Blue | Informational |
+| `WARNING` | Yellow | Warnings |
+| `DANGER` | Red | Errors, deletions |
+| `PURPLE` | Purple | Special actions |
+
+---
+
+## Development
+
+### DevelopmentRouter
+
+**File:** `application/raptor/development/DevelopmentRouter.php`
+
+| Route | Method | Description |
+|-------|--------|-------------|
+| `/dashboard/dev-requests/*` | CRUD | Development request tracking |
+| `/dashboard/sql-terminal/*` | GET+POST | SQL query interface |
+| `/dashboard/error-log/*` | GET | Error log viewer |
+| `/dashboard/file-manager/*` | GET | File manager |
+
+All routes protected by `development:development` RBAC permission.

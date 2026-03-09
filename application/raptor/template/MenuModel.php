@@ -90,6 +90,9 @@ class MenuModel extends LocalizedModel
             $this->setForeignKeyChecks(true);
         }
 
+        // Цэсний мод бүтэц, эрэмбэлэлтийн гүйцэтгэлийг сайжруулах индекс
+        $this->exec("CREATE INDEX {$table}_idx_parent_id ON $table (parent_id)");
+
         // --- Base URL (subfolder дотор суусан тохиолдолд зөв линк үүсгэх) ---
         $path = \dirname($_SERVER['SCRIPT_NAME'] ?? '/');
         if ($path == '\\' || $path == '/' || $path == '.') {
@@ -193,7 +196,43 @@ class MenuModel extends LocalizedModel
 
         /**
          * ----------------------------------------
-         * 2. SYSTEM үндсэн хэсэг
+         * 2. ХУДАЛДАА (Products & Orders)
+         * ----------------------------------------
+         */
+        $shop = $this->insert(
+            ['position' => '240'],
+            ['mn' => ['title' => 'Дэлгүүр'], 'en' => ['title' => 'Shop']]
+        );
+        if (isset($shop['id'])) {
+            // Бүтээгдэхүүнүүд
+            $this->insert(
+                [
+                    'parent_id' => $shop['id'],
+                    'position' => '242',
+                    'alias' => 'system',
+                    'permission' => 'system_content_index',
+                    'icon' => 'bi bi-box2-heart',
+                    'href' => "$path/dashboard/products"
+                ],
+                ['mn' => ['title' => 'Бүтээгдэхүүнүүд'], 'en' => ['title' => 'Products']]
+            );
+            // Захиалгууд
+            $this->insert(
+                [
+                    'parent_id' => $shop['id'],
+                    'position' => '244',
+                    'alias' => 'system',
+                    'permission' => 'system_content_index',
+                    'icon' => 'bi bi-cart3',
+                    'href' => "$path/dashboard/orders"
+                ],
+                ['mn' => ['title' => 'Захиалгууд'], 'en' => ['title' => 'Orders']]
+            );
+        }
+
+        /**
+         * ----------------------------------------
+         * 3. SYSTEM үндсэн хэсэг
          * ----------------------------------------
          */
         $system = $this->insert(
@@ -233,6 +272,29 @@ class MenuModel extends LocalizedModel
                     'href' => "$path/dashboard/logs"
                 ],
                 ['mn' => ['title' => 'Хандалтын протокол'], 'en' => ['title' => 'Access logs']]
+            );
+            // Хөгжүүлэлтийн хүсэлт (нэвтэрсэн бүх хэрэглэгчид харагдана)
+            $this->insert(
+                [
+                    'parent_id' => $system['id'],
+                    'position' => '345',
+                    'alias' => 'system',
+                    'icon' => 'bi bi-code-slash',
+                    'href' => "$path/dashboard/dev-requests"
+                ],
+                ['mn' => ['title' => 'Хөгжүүлэлтийн хүсэлт'], 'en' => ['title' => 'Dev Requests']]
+            );
+            // Цэс удирдах
+            $this->insert(
+                [
+                    'parent_id' => $system['id'],
+                    'position' => '350',
+                    'alias' => 'system',
+                    'permission' => 'system_manage_menu',
+                    'icon' => 'bi bi-menu-button-wide-fill',
+                    'href' => "$path/dashboard/manage/menu"
+                ],
+                ['mn' => ['title' => 'Цэс удирдах'], 'en' => ['title' => 'Manage Menu']]
             );
         }
     }

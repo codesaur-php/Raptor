@@ -50,6 +50,7 @@ class PagesModel extends Model
         new Column('title', 'varchar', 255),
         new Column('description', 'varchar', 255),
         new Column('content', 'mediumtext'),
+        new Column('source', 'varchar', 255),
         new Column('photo', 'varchar', 255),
         new Column('code', 'varchar', 2),
        (new Column('type', 'varchar', 32))->default('content'),
@@ -108,6 +109,10 @@ class PagesModel extends Model
 
             $this->setForeignKeyChecks(true);
         }
+
+        // Хайлт, шүүлтийн гүйцэтгэлийг сайжруулах индексүүд
+        $this->exec("CREATE INDEX {$table}_idx_parent_id ON $table (parent_id)");
+        $this->exec("CREATE INDEX {$table}_idx_active_published ON $table (is_active, published)");
 
         $now = \date('Y-m-d H:i:s');
         $path = \dirname($_SERVER['SCRIPT_NAME'] ?? '/');
@@ -182,6 +187,7 @@ class PagesModel extends Model
             'type' => 'content',
             'position' => 31,
             'is_featured' => 1,
+            'source' => 'Википедиа',
             'photo' => $assets . '/velociraptor.jpg',
             'content' => '<p><strong>Velociraptor</strong> (/vɪˈlɒsɪræptər/) - Латинаар "хурдан баригч" гэсэн утгатай.</p>'
                 . '<p>Cretaceous галавын сүүл үе буюу ойролцоогоор 75-71 сая жилийн өмнө амьдарч байсан dromaeosaurid theropod үлэг гүрвэл юм. '
@@ -198,6 +204,15 @@ class PagesModel extends Model
             'content' => '<p><strong>Tarbosaurus</strong> - Монголоос олдсон хамгийн алдартай махан идэшт динозавр.</p>'
                 . '<p>Tyrannosaurus Rex-ийн хамгийн ойрын төрөл бөгөөд ойролцоогоор 70 сая жилийн өмнө Азид амьдарч байжээ. '
                 . 'Монгол палеонтологийн нэн чухал олдвор юм.</p>'
+        ]);
+
+        // Бүтээгдэхүүнүүд (link type - /products руу чиглүүлэх жишээ)
+        $this->insert($seed + [
+            'code' => 'mn',
+            'title' => '<i class="bi bi-box2-heart"></i> Бүтээгдэхүүнүүд',
+            'type' => 'link',
+            'position' => 35,
+            'link' => $path . '/products'
         ]);
 
         // Холбоо барих
@@ -270,6 +285,7 @@ class PagesModel extends Model
             'type' => 'content',
             'position' => 71,
             'is_featured' => 1,
+            'source' => 'Wikipedia',
             'photo' => $assets . '/velociraptor.jpg',
             'content' => '<p><strong>Velociraptor</strong> (/vɪˈlɒsɪræptər/) - Latin for "swift seizer".</p>'
                 . '<p>A dromaeosaurid theropod dinosaur that lived approximately 75 to 71 million years ago during the Late Cretaceous period. '
@@ -286,6 +302,15 @@ class PagesModel extends Model
             'content' => '<p><strong>Tarbosaurus</strong> - The most famous carnivorous dinosaur discovered in Mongolia.</p>'
                 . '<p>The closest relative of Tyrannosaurus Rex, it lived approximately 70 million years ago in Asia. '
                 . 'One of the most important finds in Mongolian paleontology.</p>'
+        ]);
+
+        // Products (link type - redirect to /products example)
+        $this->insert($seed + [
+            'code' => 'en',
+            'title' => '<i class="bi bi-box2-heart"></i> Products',
+            'type' => 'link',
+            'position' => 75,
+            'link' => $path . '/products'
         ]);
 
         // Contact

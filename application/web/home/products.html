@@ -1,0 +1,43 @@
+<div class="container mt-4">
+    <div class="text-center mb-4">
+        <h2>{{ 'products'|text }}</h2>
+    </div>
+
+    {% if products is defined and products is not empty %}
+    <div class="row">
+        {% for product in products %}
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                {% if product.photo %}
+                <img src="{{ product.photo }}" class="card-img-top" alt="{{ product.title|e }}" style="height:200px;object-fit:cover">
+                {% endif %}
+                <div class="card-body d-flex flex-column">
+                    <h5 class="card-title">{{ product.title|e }}</h5>
+                    {% if product.description %}
+                    <p class="card-text text-muted small">{{ product.description|e }}</p>
+                    {% endif %}
+                    {% if product.price %}
+                    <p class="fw-bold mt-auto mb-2">
+                        {% if product.sale_price is defined and product.sale_price is not empty and product.sale_price > 0 %}
+                            <del class="text-muted fw-normal">{{ product.price|number_format(2) }}</del>
+                            <span class="text-danger ms-1">{{ product.sale_price|number_format(2) }}</span>
+                        {% else %}
+                            <span class="text-success">{{ product.price|number_format(2) }}</span>
+                        {% endif %}
+                    </p>
+                    {% endif %}
+                    <a href="{{ 'product'|link({ slug: product.slug }) }}" class="btn btn-outline-primary btn-sm">
+                        {{ 'read-more'|text }} <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-5">
+        <i class="bi bi-box-seam text-muted" style="font-size:3rem"></i>
+        <p class="text-muted mt-3">{{ 'no-products-found'|text }}</p>
+    </div>
+    {% endif %}
+</div>

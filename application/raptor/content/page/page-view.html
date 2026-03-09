@@ -50,7 +50,7 @@
 <!-- Тайлбар -->
 {% if record['description'] is not empty %}
 <div class="mt-3">
-    <label class="form-label">{{ localization.code == 'mn' ? 'Товч тайлбар' : 'Description' }} <i class="bi bi-card-text"></i></label>
+    <label class="form-label">{{ 'short-description'|text }} <i class="bi bi-card-text"></i></label>
     <input class="form-control form-control-sm" name="description" readonly value="{{ record['description']|e }}" type="text">
 </div>
 {% endif %}
@@ -74,14 +74,14 @@
             <label class="form-label fw-bolder">{{ 'publish'|text }} <i class="bi bi-globe"></i></label>
             <div class="form-check form-switch">
                 <input class="form-check-input" name="published"{{ record['published'] == 1 ? ' checked' : '' }} disabled type="checkbox" role="switch">
-                {{ localization.code == 'mn' ? 'сайт дээр харагдах' : 'visible on site' }}
+                {{ 'visible-on-site'|text }}
             </div>
         </div>
         <div class="col-4">
-            <label class="form-label fw-bolder">{{ localization.code == 'mn' ? 'Онцлох' : 'Featured' }} <i class="bi bi-star"></i></label>
+            <label class="form-label fw-bolder">{{ 'featured'|text }} <i class="bi bi-star"></i></label>
             <div class="form-check form-switch">
                 <input class="form-check-input" name="is_featured"{{ record['is_featured'] == 1 ? ' checked' : '' }} disabled type="checkbox" role="switch">
-                {{ localization.code == 'mn' ? 'нүүр хуудсанд онцлох' : 'feature on homepage' }}
+                {{ 'feature-on-homepage'|text }}
             </div>
         </div>
         <div class="col-4">

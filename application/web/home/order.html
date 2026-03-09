@@ -1,0 +1,58 @@
+<div class="container mt-4" style="max-width:600px">
+    <div class="text-center mb-4">
+        <h2>{{ 'order-product'|text }}</h2>
+    </div>
+
+    {% if product is defined %}
+    <div class="card mb-4 border-success">
+        <div class="card-body d-flex align-items-center">
+            {% if product.photo %}<img src="{{ product.photo }}" class="rounded me-3" style="width:80px;height:80px;object-fit:cover">{% endif %}
+            <div>
+                <h5 class="mb-1">{{ product.title|e }}</h5>
+                {% if product.price %}<span class="badge bg-success">{{ product.price|e }}</span>{% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <form id="order_form" action="{{ 'order-submit'|link }}" method="POST">
+        <input type="hidden" name="product_id" value="{{ product is defined ? product.id : '' }}">
+        <input type="hidden" name="product_title" value="{{ product is defined ? product.title|e : '' }}">
+        <input type="hidden" name="_ts" value="{{ spam_ts }}">
+        <input type="hidden" name="_token" value="{{ spam_token }}">
+
+        {# Honeypot - бот л бөглөдөг нуугдмал талбар #}
+        <div style="position:absolute;left:-9999px" aria-hidden="true">
+            <input type="text" name="website" tabindex="-1" autocomplete="off">
+        </div>
+
+        <div class="mb-3">
+            <label for="customer_name" class="form-label">{{ 'name'|text }} <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="customer_name" name="customer_name" required maxlength="128">
+        </div>
+
+        <div class="mb-3">
+            <label for="customer_email" class="form-label">{{ 'email'|text }} <span class="text-danger">*</span></label>
+            <input type="email" class="form-control" id="customer_email" name="customer_email" required maxlength="128">
+        </div>
+
+        <div class="mb-3">
+            <label for="customer_phone" class="form-label">{{ 'phone'|text }}</label>
+            <input type="text" class="form-control" id="customer_phone" name="customer_phone" maxlength="32">
+        </div>
+
+        <div class="mb-3">
+            <label for="quantity" class="form-label">{{ 'quantity'|text }}</label>
+            <input type="number" class="form-control" id="quantity" name="quantity" min="1" value="1">
+        </div>
+
+        <div class="mb-3">
+            <label for="message" class="form-label">{{ 'additional-info'|text }}</label>
+            <textarea class="form-control" id="message" name="message" rows="3" maxlength="1000"></textarea>
+        </div>
+
+        <button class="btn btn-success w-100" type="submit">
+            <i class="bi bi-cart-check me-1"></i>{{ 'submit-order'|text }}
+        </button>
+    </form>
+</div>

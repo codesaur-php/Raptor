@@ -1,0 +1,103 @@
+{#
+ # devrequest-create.html
+ # ------------------------------------------------------------------
+ # Шинэ хөгжүүлэлтийн хүсэлт бүртгэх форм (Dashboard).
+ #
+ # Controller: Dashboard\DevRequest\DevRequestController::create()
+ # Route: GET /dashboard/dev-requests/create
+ #
+ # Twig хувьсагчууд:
+ #   {{ max_file_size }}            - PHP upload_max_filesize (байтаар)
+ #   {{ 'dev-requests-store'|link }} - Хүсэлт хадгалах API endpoint
+ #   {{ 'dev-requests'|link }}       - Жагсаалт руу буцах маршрут
+ #
+ # JS сангууд: SweetAlert2
+ #}
+<script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+
+<!-- ========== ТОЛГОЙ ХЭСЭГ ========== -->
+<div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-3 shadow">
+    <h3 class="px-2 my-auto fs-5 text-info text-uppercase">
+        <i class="bi bi-plus-circle"></i> {{ 'new-request'|text }}
+    </h3>
+    <div class="ms-auto">
+        <a class="btn btn-sm btn-info shadow-sm" href="{{ 'dev-requests'|link }}">
+            <i class="bi bi-arrow-left"></i> {{ 'list'|text }}
+        </a>
+    </div>
+</div>
+
+<!-- ========== ФОРМ ========== -->
+<form id="devrequest-form" enctype="multipart/form-data">
+    <div class="mb-3">
+        <label for="title" class="form-label fw-bolder">{{ 'title'|text }} <span class="text-danger">*</span></label>
+        <input type="text" class="form-control" id="title" name="title" required maxlength="255" placeholder="{{ 'title'|text|e }}">
+    </div>
+
+    <div class="mb-3">
+        <label for="content" class="form-label fw-bolder">{{ 'detailed-description'|text }} <span class="text-danger">*</span></label>
+        <textarea class="form-control" id="content" name="content" rows="6" required placeholder="{{ 'detailed-description'|text|e }}"></textarea>
+    </div>
+
+    <div class="mb-3">
+        <label for="attachments" class="form-label fw-bolder"><i class="bi bi-paperclip"></i> {{ 'attachments'|text }}</label>
+        <input type="file" class="form-control" id="attachments" name="attachments[]" multiple>
+        <div class="form-text">Max: {{ (max_file_size / 1048576)|round(1) }}MB. {{ 'multiple-files-allowed'|text }}.</div>
+    </div>
+
+    <div class="d-flex justify-content-end gap-2">
+        <a class="btn btn-secondary" href="{{ 'dev-requests'|link }}">{{ 'cancel'|text }}</a>
+        <button type="submit" class="btn btn-primary" id="submit-btn">
+            <i class="bi bi-send"></i> {{ 'send'|text }}
+        </button>
+    </div>
+</form>
+
+<!-- ========== JAVASCRIPT ========== -->
+<script type="text/javascript">
+    document.addEventListener('DOMContentLoaded', function () {
+        const form = document.getElementById('devrequest-form');
+        const submitBtn = document.getElementById('submit-btn');
+
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const title = form.querySelector('#title').value.trim();
+            const content = form.querySelector('#content').value.trim();
+            if (!title || !content) {
+                return NotifyTop('warning', `{{ 'warning'|text|e }}`, `{{ 'title-and-description-required'|text|e('js') }}`);
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span> {{ 'sending'|text|e('js') }}...`;
+
+            const formData = new FormData(form);
+
+            fetch(`{{ 'dev-requests-store'|link }}`, {
+                method: 'POST',
+                body: formData
+            }).then(res => {
+                if (res.headers.get('content-type')?.includes('application/json')) return res.json();
+                throw new Error(`HTTP [${res.status}]: ${res.statusText}`);
+            }).then(data => {
+                if (data.status === 'success') {
+                    Swal.fire({
+                        icon: 'success',
+                        title: `{{ 'success'|text|e('js') }}`,
+                        text: data.message || `{{ 'request-registered-success'|text|e('js') }}`,
+                        confirmButtonText: 'OK'
+                    }).then(() => {
+                        window.location.href = `{{ 'dev-requests'|link }}`;
+                    });
+                } else {
+                    throw new Error(data.message || `{{ 'error-occurred'|text|e('js') }}`);
+                }
+            }).catch(err => {
+                NotifyTop('error', `{{ 'error'|text|e }}`, err.message);
+            }).finally(() => {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = `<i class="bi bi-send"></i> {{ 'send'|text|e('js') }}`;
+            });
+        });
+    });
+</script>

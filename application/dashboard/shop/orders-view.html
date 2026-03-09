@@ -1,0 +1,266 @@
+<!-- ========== ТОЛГОЙ ХЭСЭГ ========== -->
+<div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-2 shadow">
+    <h3 class="px-2 my-auto fs-6 text-info text-uppercase">
+        <i class="bi bi-cart3"></i> {{ 'orders'|text }} #{{ record['id'] }}
+    </h3>
+    <div class="ms-auto">
+        <a class="btn btn-sm btn-info shadow-sm" href="{{ 'orders'|link }}">
+            <i class="bi bi-arrow-left"></i> {{ 'list'|text }}
+        </a>
+    </div>
+</div>
+
+<!-- ========== ЗАХИАЛГЫН ДЭЛГЭРЭНГҮЙ КАРТ ========== -->
+<div class="card shadow border-info mt-3">
+    <div class="card-body">
+        <!-- Бүтээгдэхүүний мэдээлэл -->
+        <div class="row mb-3">
+            <div class="col-12">
+                <label class="form-label fw-bolder">{{ 'product'|text }} <i class="bi bi-box-seam"></i></label>
+                {% if record['product_id'] %}
+                <div class="form-control bg-light">
+                    <a href="{{ 'products'|link }}/view/{{ record['product_id'] }}" class="text-decoration-none">
+                        <i class="bi bi-link-45deg"></i> {{ record['product_title']|e }}
+                    </a>
+                </div>
+                {% else %}
+                <input class="form-control" readonly value="{{ record['product_title']|e }}" type="text">
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Хэрэглэгчийн мэдээлэл -->
+        <div class="row mb-3">
+            <div class="col-4">
+                <label class="form-label fw-bolder">{{ 'customer'|text }} <i class="bi bi-person"></i></label>
+                <input class="form-control" readonly value="{{ record['customer_name']|e }}" type="text">
+            </div>
+            <div class="col-4">
+                <label class="form-label fw-bolder">{{ 'email'|text }} <i class="bi bi-envelope"></i></label>
+                <div class="form-control bg-light">
+                    <a href="mailto:{{ record['customer_email']|e }}" class="text-decoration-none">
+                        {{ record['customer_email']|e }}
+                    </a>
+                </div>
+            </div>
+            <div class="col-4">
+                <label class="form-label fw-bolder">{{ 'phone'|text }} <i class="bi bi-telephone"></i></label>
+                <div class="form-control bg-light">
+                    {% if record['customer_phone'] %}
+                    <a href="tel:{{ record['customer_phone']|e }}" class="text-decoration-none">
+                        {{ record['customer_phone']|e }}
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Мессеж -->
+        <div class="row mb-3">
+            <div class="col-12">
+                <label class="form-label fw-bolder">{{ 'message'|text }} <i class="bi bi-chat-left-text"></i></label>
+                <textarea class="form-control" readonly rows="4">{{ record['message']|e }}</textarea>
+            </div>
+        </div>
+
+        <!-- Тоо ширхэг ба Статус -->
+        <div class="row mb-3">
+            <div class="col-6">
+                <label class="form-label fw-bolder">{{ 'quantity'|text }} <i class="bi bi-hash"></i></label>
+                <input class="form-control" readonly value="{{ record['quantity'] }}" type="text">
+            </div>
+            <div class="col-6">
+                <label class="form-label fw-bolder">{{ 'status'|text }} <i class="bi bi-flag"></i></label>
+                <div class="form-control bg-light">
+                    {% set status_colors = {new:'primary', processing:'warning', confirmed:'info', shipped:'secondary', completed:'success', cancelled:'danger'} %}
+                    <span class="badge bg-{{ status_colors[record['status']] ?? 'dark' }}" id="current-status-badge">{{ record['status'] }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Огноо -->
+        <div class="row mb-3">
+            <div class="col-6">
+                <label class="form-label">{{ 'created-at'|text }} <i class="bi bi-calendar-plus"></i></label>
+                <input class="form-control form-control-sm" readonly value="{{ record['created_at'] }}" type="text">
+            </div>
+            <div class="col-6">
+                <label class="form-label">{{ 'updated-at'|text }} <i class="bi bi-calendar-check"></i></label>
+                <input class="form-control form-control-sm" readonly value="{{ record['updated_at'] }}" type="text">
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== СТАТУС ШИНЭЧЛЭХ ХЭСЭГ ========== -->
+    {% if user.can('system_content_update') %}
+    <div class="card-footer">
+        <div class="row align-items-end">
+            <div class="col-8">
+                <label class="form-label fw-bolder">{{ 'status'|text }} <i class="bi bi-arrow-repeat"></i></label>
+                <select class="form-select" id="status-select">
+                    <option value="new"{% if record['status'] == 'new' %} selected{% endif %}>new</option>
+                    <option value="processing"{% if record['status'] == 'processing' %} selected{% endif %}>processing</option>
+                    <option value="confirmed"{% if record['status'] == 'confirmed' %} selected{% endif %}>confirmed</option>
+                    <option value="shipped"{% if record['status'] == 'shipped' %} selected{% endif %}>shipped</option>
+                    <option value="completed"{% if record['status'] == 'completed' %} selected{% endif %}>completed</option>
+                    <option value="cancelled"{% if record['status'] == 'cancelled' %} selected{% endif %}>cancelled</option>
+                </select>
+            </div>
+            <div class="col-4 d-grid">
+                <button class="btn btn-primary shadow-sm" id="update-status-btn" type="button">
+                    <i class="bi bi-check-circle"></i> {{ 'update'|text }}
+                </button>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- ========== ЛОГ ХАРАХ ХЭСЭГ ========== -->
+{% if user.can('system_logger') %}
+<div class="mt-5">
+    <hr>
+    <label class="form-label fw-bolder">
+        {{ 'log'|text }} <i class="bi bi-clock-history"></i>
+    </label>
+    <div class="spinner-grow mt-3" role="status" style="display:none">
+        <span class="visually-hidden">Loading logs...</span>
+    </div>
+    <ul class="list-group logger-protocol" id="logger-{{ table }}" style="max-height:240px; overflow-y:auto">
+    </ul>
+</div>
+{% endif %}
+
+<script type="text/javascript">
+document.addEventListener('DOMContentLoaded', function () {
+    /* ========== СТАТУС ШИНЭЧЛЭХ ========== */
+    const statusBtn = document.getElementById('update-status-btn');
+    const statusSelect = document.getElementById('status-select');
+    if (statusBtn && statusSelect) {
+        const statusColors = {new:'primary', processing:'warning', confirmed:'info', shipped:'secondary', completed:'success', cancelled:'danger'};
+
+        statusBtn.addEventListener('click', function (e) {
+            e.preventDefault();
+            const newStatus = statusSelect.value;
+
+            statusBtn.disabled = true;
+            statusBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+
+            fetch(
+                `{{ 'order-status'|link({id: record['id']}) }}`,
+                {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ status: newStatus })
+                }
+            ).then(res => {
+                if (res.headers.get('content-type')?.includes('application/json')) return res.json();
+                throw new Error(`HTTP [${res.status}]: ${res.statusText}`);
+            }).then(response => {
+                if (response.status !== 'success') {
+                    throw new Error(response.message ?? 'Invalid response!');
+                }
+
+                /* Badge шинэчлэх */
+                const badge = document.getElementById('current-status-badge');
+                if (badge) {
+                    badge.className = `badge bg-${statusColors[newStatus] || 'dark'}`;
+                    badge.textContent = newStatus;
+                }
+
+                NotifyTop('success', `{{ 'success'|text|e }}`, response.message ?? 'Status updated');
+            }).catch(error => {
+                NotifyTop('danger', `{{ 'error'|text|e }}`, error.message);
+            }).finally(() => {
+                statusBtn.disabled = false;
+                statusBtn.innerHTML = '<i class="bi bi-check-circle"></i> {{ "update"|text }} {{ "status"|text }}';
+            });
+        });
+    }
+
+    /* ========== ЛОГ ТАТАЖ ҮЗҮҮЛЭХ ========== */
+    const logger = document.querySelector('ul.logger-protocol');
+    if (logger && logger.tagName === 'UL') {
+        const logsRetrieveLink = `{{ 'logs-retrieve'|link }}`;
+        const logsViewLink = `{{ 'logs-view'|link }}`;
+        let logger_id = logger.id ?? '';
+        let table = logger_id.substring(logger_id.indexOf('-') + 1);
+        if (!table) return;
+
+        logger.style.display = 'none';
+        let spinner = logger.previousElementSibling;
+        spinner.style.display = 'block';
+
+        fetch(
+            `${logsRetrieveLink}?table=${table}`,
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    'ORDER BY': 'id Desc',
+                    'CONTEXT': {
+                        'record_id': '{{ record['id'] }}'
+                    },
+                    'LIMIT': 10000
+                })
+            }
+        ).then(res => {
+            return res.json();
+        }).then(response => {
+            if (response.error) {
+                throw new Error(response.error ?? `{{ 'something-went-wrong'|text|e }}`);
+            }
+
+            logger.innerHTML = '';
+
+            let logModalLink = `${logsViewLink}?table=${table}&id=`;
+            Object.values(response).forEach(log => {
+                let log_li = document.createElement('li');
+                log_li.classList.add('list-group-item', 'list-group-item-action');
+                switch (log.level) {
+                    case 'notice': log_li.classList.add('list-group-item-light'); break;
+                    case 'info': log_li.classList.add('list-group-item-primary'); break;
+                    case 'error': log_li.classList.add('list-group-item-danger'); break;
+                    case 'warning': log_li.classList.add('list-group-item-warning'); break;
+                    case 'alert': log_li.classList.add('list-group-item-info'); break;
+                    case 'debug': log_li.classList.add('list-group-item-secondary'); break;
+                    default: log_li.classList.add('list-group-item-dark'); break;
+                }
+
+                let a_link = document.createElement('a');
+                a_link.textContent = `${log.created_at} [${log.id}]`;
+                a_link.href = logModalLink + log.id;
+                a_link.setAttribute('data-bs-target', '#static-modal');
+                a_link.setAttribute('data-bs-toggle', 'modal');
+                a_link.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    ajaxModal(a_link);
+                });
+                log_li.appendChild(a_link);
+                log_li.appendChild(document.createTextNode(' '));
+
+                let span_msg = document.createElement('span');
+                span_msg.innerHTML = log.message;
+                log_li.appendChild(span_msg);
+                log_li.appendChild(document.createTextNode(' '));
+
+                let span_user_action = document.createElement('span');
+                span_user_action.innerHTML = `<span class="text-muted small"><u>${log.context.action ?? ''} by ${log.context.auth_user?.username ?? ''}</u></span>`;
+                span_user_action.classList.add('text-muted', 'small');
+                log_li.appendChild(span_user_action);
+
+                logger.appendChild(log_li);
+            });
+        }).catch(error => {
+            console.log(error.message);
+        }).finally(() => {
+            logger.style.display = '';
+            spinner.style.display = 'none';
+        });
+    }
+});
+</script>

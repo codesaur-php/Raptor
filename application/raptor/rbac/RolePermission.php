@@ -156,6 +156,59 @@ class RolePermission extends Model
             
             $this->setForeignKeyChecks(true);
         }
+
+        // Роль бүрт permission оноох seed
+        $nowdate = \date('Y-m-d H:i:s');
+
+        // coder: permission шаардахгүй - бүх газар шууд нэвтрэх эрхтэй
+
+        // admin: development-аас бусад бүх permission
+        $this->exec("
+            INSERT INTO $table(created_at, role_id, permission_id, alias)
+            SELECT '$nowdate', r.id, p.id, p.alias
+            FROM $roles r, $permissions p
+            WHERE r.name = 'admin'
+        ");
+
+        // manager: хэрэглэгч, байгууллага, контент, орчуулга удирдах
+        $this->exec("
+            INSERT INTO $table(created_at, role_id, permission_id, alias)
+            SELECT '$nowdate', r.id, p.id, p.alias
+            FROM $roles r, $permissions p
+            WHERE r.name = 'manager' AND p.name IN (
+                'logger',
+                'user_index','user_insert','user_update','user_organization_set',
+                'organization_index','organization_update',
+                'content_settings','content_index','content_insert',
+                'content_update','content_publish','content_delete',
+                'localization_index','localization_insert','localization_update',
+                'templates_index',
+                'development'
+            )
+        ");
+
+        // editor: контент үүсгэх, засах, нийтлэх
+        $this->exec("
+            INSERT INTO $table(created_at, role_id, permission_id, alias)
+            SELECT '$nowdate', r.id, p.id, p.alias
+            FROM $roles r, $permissions p
+            WHERE r.name = 'editor' AND p.name IN (
+                'content_index','content_insert','content_update','content_publish',
+                'localization_index',
+                'templates_index'
+            )
+        ");
+
+        // viewer: зөвхөн харах эрх
+        $this->exec("
+            INSERT INTO $table(created_at, role_id, permission_id, alias)
+            SELECT '$nowdate', r.id, p.id, p.alias
+            FROM $roles r, $permissions p
+            WHERE r.name = 'viewer' AND p.name IN (
+                'content_index',
+                'localization_index'
+            )
+        ");
     }
 
     /**

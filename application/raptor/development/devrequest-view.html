@@ -1,0 +1,245 @@
+{#
+ # devrequest-view.html
+ # ------------------------------------------------------------------
+ # Хөгжүүлэлтийн хүсэлтийн дэлгэрэнгүй харах ба хариултын thread хуудас.
+ #
+ # Controller: DevRequestController::view()
+ # Route: GET /dashboard/dev-requests/view/{id}
+ #
+ # Twig хувьсагчууд:
+ #   {{ record }}      - Хүсэлтийн бичлэг
+ #   {{ attachments }} - Хавсралтуудын массив
+ #   {{ responses }}   - Хариултуудын thread массив
+ #   {{ can_manage }}  - system_development эрхтэй эсэх
+ #
+ # JS сангууд: SweetAlert2
+ #}
+<script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+
+<!-- ========== ТОЛГОЙ ХЭСЭГ ========== -->
+<div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-2 shadow">
+    <h3 class="px-2 my-auto fs-6 text-info text-uppercase">
+        <i class="bi bi-code-slash"></i> {{ 'dev-requests'|text }} #{{ record['id'] }}
+    </h3>
+    <div class="ms-auto">
+        <a class="btn btn-sm btn-info shadow-sm" href="{{ 'dev-requests'|link }}">
+            <i class="bi bi-arrow-left"></i> {{ 'list'|text }}
+        </a>
+    </div>
+</div>
+
+<!-- ========== ХҮСЭЛТИЙН МЭДЭЭЛЭЛ ========== -->
+<div class="row mt-3">
+    <div class="col-md-5">
+        <label class="form-label fw-bolder">{{ 'title'|text }}</label>
+        <div class="form-control bg-body-secondary text-body">{{ record['title']|e }}</div>
+    </div>
+    <div class="col-md-3">
+        <label class="form-label fw-bolder">{{ 'status'|text }}</label>
+        <div class="form-control bg-body-secondary text-body">
+            {% if record['status'] == 'pending' %}
+                <span class="badge bg-warning text-dark">{{ 'pending'|text }}</span>
+            {% elseif record['status'] == 'in_progress' %}
+                <span class="badge bg-info">{{ 'in-progress'|text }}</span>
+            {% elseif record['status'] == 'resolved' %}
+                <span class="badge bg-success">{{ 'resolved'|text }}</span>
+            {% elseif record['status'] == 'closed' %}
+                <span class="badge bg-secondary">{{ 'closed'|text }}</span>
+            {% else %}
+                <span class="badge bg-body-tertiary text-body">{{ record['status'] }}</span>
+            {% endif %}
+        </div>
+    </div>
+    <div class="col-md-2">
+        <label class="form-label fw-bolder">{{ 'date'|text }}</label>
+        <div class="form-control bg-body-secondary text-body">{{ record['created_at']|date('Y-m-d H:i') }}</div>
+    </div>
+    <div class="col-md-2">
+        <label class="form-label fw-bolder">{{ 'created-by'|text }}</label>
+        <div class="form-control bg-body-secondary text-body">{{ record['created_user']|default('-') }}</div>
+    </div>
+</div>
+
+<div class="mt-3">
+    <label class="form-label fw-bolder">{{ 'description'|text }}</label>
+    <div class="form-control bg-body-secondary text-body" style="min-height:100px;white-space:pre-wrap">{{ record['content']|e }}</div>
+</div>
+
+{% if attachments is not empty %}
+<div class="mt-3">
+    <label class="form-label fw-bolder"><i class="bi bi-paperclip"></i> {{ 'attachments'|text }}</label>
+    <ul class="list-group">
+        {% for file in attachments %}
+        <li class="list-group-item list-group-item-action">
+            <a href="{{ file.path }}" target="_blank">
+                <i class="bi bi-file-earmark"></i> {{ file.path|split('/')|last }}
+            </a>
+            {% if file.size is defined %}
+                <small class="text-body-secondary ms-2">({{ (file.size / 1024)|round(1) }} KB)</small>
+            {% endif %}
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+<!-- ========== ХАРИУЛТУУДЫН THREAD ========== -->
+<div class="mt-4">
+    <h5 class="fw-bolder mb-3">
+        <i class="bi bi-chat-left-text"></i> {{ 'responses'|text }}
+        {% if responses is not empty %}
+            <span class="badge bg-body-tertiary text-body-secondary">{{ responses|length }}</span>
+        {% endif %}
+    </h5>
+
+    {% if responses is empty %}
+        <div class="text-body-secondary fst-italic mb-3">{{ 'no-responses-yet'|text }}</div>
+    {% else %}
+        <div class="d-flex flex-column gap-3 mb-3">
+            {% for resp in responses %}
+                {% set is_owner = resp['created_by'] == record['created_by'] %}
+                <div class="card {{ is_owner ? 'border-primary' : 'border-success' }}">
+                    <div class="card-header bg-body-tertiary d-flex justify-content-between align-items-center py-2">
+                        <div>
+                            <i class="bi bi-person-circle me-1"></i>
+                            <strong>{{ resp['author_name']|default('-') }}</strong>
+                            {% if is_owner %}
+                                <span class="badge bg-primary ms-1">{{ 'author'|text }}</span>
+                            {% endif %}
+                        </div>
+                        <small class="text-body-secondary">
+                            <i class="bi bi-clock me-1"></i>{{ resp['created_at']|date('Y-m-d H:i') }}
+                        </small>
+                    </div>
+                    <div class="card-body py-2">
+                        <div style="white-space:pre-wrap">{{ resp['content']|e }}</div>
+                        {% if resp['_attachments'] is not empty %}
+                            <div class="mt-1">
+                                {% for file in resp['_attachments'] %}
+                                    <a href="{{ file.path }}" target="_blank" class="badge bg-body-secondary text-body-secondary text-decoration-none me-1">
+                                        <i class="bi bi-paperclip"></i> {{ file.path|split('/')|last }}
+                                    </a>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        {% if resp['status'] is not empty %}
+                            <div class="mt-2">
+                                <small class="text-body-secondary">
+                                    {{ 'status'|text }}:
+                                    {% if resp['status'] == 'pending' %}
+                                        <span class="badge bg-warning text-dark">{{ 'pending'|text }}</span>
+                                    {% elseif resp['status'] == 'in_progress' %}
+                                        <span class="badge bg-info">{{ 'in-progress'|text }}</span>
+                                    {% elseif resp['status'] == 'resolved' %}
+                                        <span class="badge bg-success">{{ 'resolved'|text }}</span>
+                                    {% elseif resp['status'] == 'closed' %}
+                                        <span class="badge bg-secondary">{{ 'closed'|text }}</span>
+                                    {% endif %}
+                                </small>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+</div>
+
+<!-- ========== ХАРИУЛТ БИЧИХ ФОРМ ========== -->
+{% if record['status'] != 'closed' %}
+<div class="card mt-2">
+    <div class="card-header bg-body-tertiary fw-bolder">
+        <i class="bi bi-reply"></i> {{ 'write-response'|text }}
+    </div>
+    <div class="card-body">
+        <form id="respond-form" enctype="multipart/form-data">
+            <input type="hidden" name="id" value="{{ record['id'] }}">
+
+            <div class="mb-3">
+                <textarea class="form-control" id="response" name="response" rows="4"
+                    placeholder="{{ 'write-response-here'|text }}" required></textarea>
+            </div>
+
+            <div class="mb-3">
+                <label for="resp-attachments" class="form-label">
+                    <i class="bi bi-paperclip"></i> {{ 'attachments'|text }}
+                </label>
+                <input type="file" class="form-control" id="resp-attachments" name="attachments[]" multiple>
+            </div>
+
+            {% if can_manage %}
+            <div class="mb-3">
+                <label for="status" class="form-label">{{ 'status'|text }}</label>
+                <select class="form-select" id="status" name="status">
+                    <option value="">- {{ 'no-change'|text }} -</option>
+                    <option value="pending" {{ record['status'] == 'pending' ? 'selected' : '' }}>{{ 'pending'|text }}</option>
+                    <option value="in_progress" {{ record['status'] == 'in_progress' ? 'selected' : '' }}>{{ 'in-progress'|text }}</option>
+                    <option value="resolved" {{ record['status'] == 'resolved' ? 'selected' : '' }}>{{ 'resolved'|text }}</option>
+                    <option value="closed" {{ record['status'] == 'closed' ? 'selected' : '' }}>{{ 'closed'|text }}</option>
+                </select>
+            </div>
+            {% endif %}
+
+            <div class="d-flex justify-content-end">
+                <button type="submit" class="btn btn-primary" id="respond-btn">
+                    <i class="bi bi-send"></i> {{ 'send'|text }}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% else %}
+<div class="alert alert-secondary mt-3">
+    <i class="bi bi-lock me-1"></i> {{ 'request-closed'|text }}
+</div>
+{% endif %}
+
+<!-- ========== JAVASCRIPT ========== -->
+<script type="text/javascript">
+    document.addEventListener('DOMContentLoaded', function () {
+        const form = document.getElementById('respond-form');
+        if (!form) return;
+
+        const respondBtn = document.getElementById('respond-btn');
+
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const responseText = form.querySelector('#response').value.trim();
+            if (!responseText) {
+                return NotifyTop('warning', `{{ 'warning'|text|e }}`, `{{ 'invalid-request'|text|e }}`);
+            }
+
+            respondBtn.disabled = true;
+            respondBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>';
+
+            const formData = new FormData(form);
+
+            fetch(`{{ 'dev-requests-respond'|link }}`, {
+                method: 'POST',
+                body: formData
+            }).then(res => {
+                if (res.headers.get('content-type')?.includes('application/json')) return res.json();
+                throw new Error(`HTTP [${res.status}]: ${res.statusText}`);
+            }).then(data => {
+                if (data.status === 'success') {
+                    Swal.fire({
+                        icon: 'success',
+                        title: data.title,
+                        text: data.message,
+                        confirmButtonText: 'OK'
+                    }).then(() => {
+                        window.location.reload();
+                    });
+                } else {
+                    throw new Error(data.message || 'Error');
+                }
+            }).catch(err => {
+                NotifyTop('error', `{{ 'error'|text|e }}`, err.message);
+            }).finally(() => {
+                respondBtn.disabled = false;
+                respondBtn.innerHTML = '<i class="bi bi-send"></i> {{ "send"|text|e }}';
+            });
+        });
+    });
+</script>

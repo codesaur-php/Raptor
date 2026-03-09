@@ -161,6 +161,7 @@ class ContentsRouter extends Router
         $this->POST('/dashboard/settings/files', [SettingsController::class, 'files'])->name('settings-files');
         
         
+
         /**
          * MOEDIT AI API
          *
