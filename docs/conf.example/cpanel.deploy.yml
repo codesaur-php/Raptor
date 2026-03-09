@@ -9,7 +9,7 @@
 #     FTP_HOST      - cPanel серверийн FTP хаяг (жишээ: ftp.example.com)
 #     FTP_USERNAME  - cPanel FTP хэрэглэгчийн нэр
 #     FTP_PASSWORD  - cPanel FTP нууц үг
-#     FTP_SERVER_DIR - Серверийн зорьсон хавтас (жишээ: /home/user/)
+#     FTP_SERVER_DIR - Серверийн зорьсон хавтас (жишээ: / гэвэл root хавтас гэсэн үг. Эсвэл /myapp/ гэдэг ч юмуу)
 #
 # Хэрэглээ:
 #   1. Энэ файлыг .github/workflows/deploy.yml руу хуулна
