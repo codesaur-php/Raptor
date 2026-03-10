@@ -502,7 +502,6 @@ class FilesController extends FileController
 
             // Update metadata
             $payload['updated_by'] = $this->getUserId();
-            
             // Update row with payload
             $updated = $model->updateById($id, $payload);
             if (empty($updated)) {

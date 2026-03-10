@@ -422,7 +422,10 @@ class LoginController extends \Raptor\Controller
             $payload['password'] = \password_hash($password, \PASSWORD_BCRYPT);
 
             $payload['code'] = $code;
-            
+
+            // Spam хамгаалалтын талбаруудыг цэвэрлэх (honeypot + HMAC)
+            unset($payload['website'], $payload['_ts'], $payload['_token']);
+
             // 2) Email template татах (request-new-user)
             $templateService = $this->getService('template_service');
             $template = $templateService->getByKeyword('request-new-user', $code);

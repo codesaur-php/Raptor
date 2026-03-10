@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 
 ---
 
+## [1.3.1] - 2026-03-10
+[1.3.1]: https://github.com/codesaur-php/Raptor/compare/v1.3.0...v1.3.1
+
+Honeypot spam field cleanup and numeric payload sanitization for Products.
+
+### Fixed
+- **LoginController** - Signup form honeypot fields (`website`, `_ts`, `_token`) were not removed from payload before DB insert, causing "column not found" error on the `signup` table
+- **ProductsController** - Empty string values from frontend for numeric columns (`price`, `sale_price`, `stock`, etc.) caused database type errors on insert and update; added `sanitizePayload()` to convert empty strings to `null` for numeric fields
+
+---
+
 ## [1.3.0] - 2026-03-10
 [1.3.0]: https://github.com/codesaur-php/Raptor/compare/v1.2.1...v1.3.0
 

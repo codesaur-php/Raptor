@@ -30,6 +30,19 @@ class ProductsController extends FileController
     use \Raptor\Template\DashboardTrait;
 
     /**
+     * Payload доторх тоон талбаруудын хоосон string утгыг null болгох.
+     */
+    private function sanitizePayload(ProductsModel $model, array $payload): array
+    {
+        foreach ($payload as $key => $value) {
+            if ($value === '' && $model->hasColumn($key) && $model->getColumn($key)->isNumeric()) {
+                $payload[$key] = null;
+            }
+        }
+        return $payload;
+    }
+
+    /**
      * Бүтээгдэхүүний жагсаалтын dashboard хуудсыг харуулах.
      *
      * Хэл, төрөл, ангилал, статус зэрэг шүүлтийн сонголтуудыг бэлтгэнэ.
@@ -188,6 +201,8 @@ class ProductsController extends FileController
                 $files = \json_decode($payload['files'] ?? '{}', true) ?: [];
                 unset($payload['files']);
 
+                $payload = $this->sanitizePayload($model, $payload);
+
                 $record = $model->insert(
                     $payload + ['created_by' => $this->getUserId()]
                 );
@@ -301,6 +316,8 @@ class ProductsController extends FileController
                 if (isset($payload['id'])) {
                     unset($payload['id']);
                 }
+
+                $payload = $this->sanitizePayload($model, $payload);
 
                 $fileChanges = $this->processFiles($record, $files);
 
