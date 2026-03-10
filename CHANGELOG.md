@@ -6,6 +6,33 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 
 ---
 
+## [1.3.0] - 2026-03-10
+[1.3.0]: https://github.com/codesaur-php/Raptor/compare/v1.2.1...v1.3.0
+
+Dev Request user assignment and CI/CD quality checks.
+
+### Added
+- **Dev Request assignment** - Assign requests to a specific user when creating
+  - `assigned_to` column added to `dev_requests` table (FK to `users.id`)
+  - User selector dropdown on create form with two groups: Developers (coder role / development permission) shown first, then all other users
+  - Only the assigned user receives the new-request email notification (instead of all dev users)
+  - Assigned user can view, respond to, and deactivate the request
+  - Assigned user name displayed in request list and detail view
+- **CI/CD quality checks** - `validate` job added to `cpanel.deploy.yml` (runs before deploy)
+  - `composer validate --strict` - Validates composer.json structure
+  - PHP syntax check (`php -l`) on all application and public PHP files
+  - Merge conflict marker detection in PHP, HTML, JS, CSS, JSON, YML files
+  - Debug statement detection (`var_dump`, `dd`, `print_r`) as warning
+  - PSR-4 autoload verification (`composer dump-autoload --strict-psr`)
+- **Localization** - New dashboard text entries: `assign-to`, `assigned-to`, `developers`, `fill-required-fields`, `other-users`
+
+### Changed
+- **Dev Request notifications** - `notifyNewRequest()` now sends email only to the assigned user instead of broadcasting to all users with coder role or development permission
+- **Dev Request permissions** - `list()`, `view()`, `respond()`, `deactivate()` now grant access to the assigned user in addition to the creator and users with `system_development` permission
+- **Dev Request list query** - Users without `system_development` permission now see both their own requests and requests assigned to them
+
+---
+
 ## [1.2.1] - 2026-03-09
 [1.2.1]: https://github.com/codesaur-php/Raptor/compare/v1.2.0...v1.2.1
 

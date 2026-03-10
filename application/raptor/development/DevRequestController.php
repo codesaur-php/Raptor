@@ -83,10 +83,11 @@ class DevRequestController extends FileController
                 }
             }
 
-            // system_development эрхгүй бол зөвхөн өөрийн хүсэлтүүд
+            // system_development эрхгүй бол зөвхөн өөрийн болон өөрт хуваарилагдсан хүсэлтүүд
             if (!$this->isUserCan('system_development')) {
-                $conditions[] = "t.created_by=:created_by";
+                $conditions[] = "(t.created_by=:created_by OR t.assigned_to=:assigned_to)";
                 $params['created_by'] = $userId;
+                $params['assigned_to'] = $userId;
             }
 
             $where = \implode(' AND ', $conditions);
@@ -95,9 +96,11 @@ class DevRequestController extends FileController
             $table = $model->getName();
             $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
             $sql =
-                "SELECT t.id, t.title, t.status, t.created_at, t.created_by, " .
-                "CONCAT(u.first_name, ' ', u.last_name) as created_user " .
+                "SELECT t.id, t.title, t.status, t.created_at, t.created_by, t.assigned_to, " .
+                "CONCAT(u.first_name, ' ', u.last_name) as created_user, " .
+                "CONCAT(a.first_name, ' ', a.last_name) as assigned_user " .
                 "FROM $table t LEFT JOIN $users u ON t.created_by = u.id " .
+                "LEFT JOIN $users a ON t.assigned_to = a.id " .
                 "WHERE $where ORDER BY t.created_at DESC";
             $stmt = $this->prepare($sql);
             foreach ($params as $name => $value) {
@@ -128,9 +131,32 @@ class DevRequestController extends FileController
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
 
+            $devRecipientIds = \array_column($this->getDevRecipients(), 'id');
+            $usersModel = new \Raptor\User\UsersModel($this->pdo);
+            $usersTable = $usersModel->getName();
+            $allStmt = $this->prepare(
+                "SELECT id, email, first_name, last_name FROM $usersTable WHERE is_active = 1 ORDER BY first_name ASC"
+            );
+            $allStmt->execute();
+            $allUsers = $allStmt->fetchAll();
+
+            $devUsers = [];
+            $otherUsers = [];
+            foreach ($allUsers as $u) {
+                if (\in_array((int)$u['id'], $devRecipientIds)) {
+                    $devUsers[] = $u;
+                } else {
+                    $otherUsers[] = $u;
+                }
+            }
+
             $dashboard = $this->twigDashboard(
                 __DIR__ . '/devrequest-create.html',
-                ['max_file_size' => $this->getMaximumFileUploadSize()]
+                [
+                    'max_file_size' => $this->getMaximumFileUploadSize(),
+                    'dev_users' => $devUsers,
+                    'other_users' => $otherUsers
+                ]
             );
             $dashboard->set('title', $this->text('dev-requests'));
             $dashboard->render();
@@ -158,12 +184,19 @@ class DevRequestController extends FileController
                 throw new \InvalidArgumentException($this->text('invalid-request'), 400);
             }
 
-            $model = new DevRequestModel($this->pdo);
-            $record = $model->insert([
+            $assignedTo = !empty($payload['assigned_to']) ? \filter_var($payload['assigned_to'], \FILTER_VALIDATE_INT) : null;
+
+            $insertData = [
                 'title' => $payload['title'],
                 'content' => $payload['content'],
                 'created_by' => $this->getUserId()
-            ]);
+            ];
+            if ($assignedTo) {
+                $insertData['assigned_to'] = $assignedTo;
+            }
+
+            $model = new DevRequestModel($this->pdo);
+            $record = $model->insert($insertData);
             if (!isset($record['id'])) {
                 throw new \Exception($this->text('record-insert-error'));
             }
@@ -187,8 +220,8 @@ class DevRequestController extends FileController
                 }
             }
 
-            // Email мэдэгдэл: system_coder болон system_development эрхтэй хүмүүст
-            $this->notifyNewRequest($id, $payload['title']);
+            // Email мэдэгдэл: зөвхөн сонгогдсон хэрэглэгчид
+            $this->notifyNewRequest($id, $payload['title'], $assignedTo ?: null);
 
             $this->respondJSON([
                 'status' => 'success',
@@ -235,8 +268,10 @@ class DevRequestController extends FileController
             $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
 
             $sql =
-                "SELECT t.*, CONCAT(u.first_name, ' ', u.last_name) as created_user " .
+                "SELECT t.*, CONCAT(u.first_name, ' ', u.last_name) as created_user, " .
+                "CONCAT(a.first_name, ' ', a.last_name) as assigned_user " .
                 "FROM $table t LEFT JOIN $users u ON t.created_by = u.id " .
+                "LEFT JOIN $users a ON t.assigned_to = a.id " .
                 "WHERE t.id = :id AND t.is_active = 1";
             $stmt = $this->prepare($sql);
             $stmt->bindValue(':id', $id, \PDO::PARAM_INT);
@@ -247,8 +282,8 @@ class DevRequestController extends FileController
                 throw new \Exception($this->text('no-record-selected'));
             }
 
-            // Өөрийн хүсэлт биш бөгөөд system_development эрхгүй бол хориглох
-            if (!$canManage && (int)$record['created_by'] !== $userId) {
+            // Өөрийн хүсэлт биш, хуваарилагдаагүй, system_development эрхгүй бол хориглох
+            if (!$canManage && (int)$record['created_by'] !== $userId && (int)($record['assigned_to'] ?? 0) !== $userId) {
                 throw new \Exception($this->text('system-no-permission'), 403);
             }
 
@@ -349,8 +384,8 @@ class DevRequestController extends FileController
                 throw new \Exception($this->text('no-record-selected'));
             }
 
-            // Өөрийн хүсэлт биш бөгөөд system_development эрхгүй бол хориглох
-            if (!$this->isUserCan('system_development') && (int)$record['created_by'] !== $userId) {
+            // Өөрийн хүсэлт биш, хуваарилагдаагүй, system_development эрхгүй бол хориглох
+            if (!$this->isUserCan('system_development') && (int)$record['created_by'] !== $userId && (int)($record['assigned_to'] ?? 0) !== $userId) {
                 throw new \Exception($this->text('system-no-permission'), 403);
             }
 
@@ -460,8 +495,8 @@ class DevRequestController extends FileController
                 throw new \Exception($this->text('no-record-selected'));
             }
 
-            // Өөрийн хүсэлт биш бөгөөд system_development эрхгүй бол хориглох
-            if (!$this->isUserCan('system_development') && (int)$record['created_by'] !== $userId) {
+            // Өөрийн хүсэлт биш, хуваарилагдаагүй, system_development эрхгүй бол хориглох
+            if (!$this->isUserCan('system_development') && (int)$record['created_by'] !== $userId && (int)($record['assigned_to'] ?? 0) !== $userId) {
                 throw new \Exception($this->text('system-no-permission'), 403);
             }
 
@@ -502,17 +537,27 @@ class DevRequestController extends FileController
     /**
      * Шинэ хүсэлт үүссэн тухай email мэдэгдэл.
      *
-     * system_coder болон system_development эрхтэй бүх хэрэглэгчид email илгээнэ.
+     * Зөвхөн сонгогдсон (assigned_to) хэрэглэгчид email илгээнэ.
      * Email template: dev-request-new (Reference Templates-аас)
      *
-     * @param int    $requestId Хүсэлтийн ID
-     * @param string $title     Хүсэлтийн гарчиг
+     * @param int      $requestId  Хүсэлтийн ID
+     * @param string   $title      Хүсэлтийн гарчиг
+     * @param int|null $assignedTo Хүсэлтийг хүлээн авах хэрэглэгчийн ID
      */
-    private function notifyNewRequest(int $requestId, string $title)
+    private function notifyNewRequest(int $requestId, string $title, ?int $assignedTo)
     {
         try {
+            if (empty($assignedTo)) {
+                return;
+            }
+
             $mailer = $this->getService('mailer');
             if (empty($mailer)) {
+                return;
+            }
+
+            // Өөртөө илгээхгүй
+            if ($assignedTo === $this->getUserId()) {
                 return;
             }
 
@@ -523,8 +568,9 @@ class DevRequestController extends FileController
                 return;
             }
 
-            $recipients = $this->getDevRecipients();
-            if (empty($recipients)) {
+            $usersModel = new \Raptor\User\UsersModel($this->pdo);
+            $recipient = $usersModel->getRowWhere(['id' => $assignedTo]);
+            if (empty($recipient) || empty($recipient['email'])) {
                 return;
             }
 
@@ -547,12 +593,7 @@ class DevRequestController extends FileController
             $memtemplate->source($template['content']);
             $body = $memtemplate->output();
 
-            foreach ($recipients as $recipient) {
-                if ((int)$recipient['id'] === $this->getUserId()) {
-                    continue;
-                }
-                $mailer->mail($recipient['email'], $recipient['first_name'], $subject, $body)->send();
-            }
+            $mailer->mail($recipient['email'], $recipient['first_name'], $subject, $body)->send();
         } catch (\Throwable $e) {
             \error_log('DevRequest notifyNewRequest error: ' . $e->getMessage());
         }

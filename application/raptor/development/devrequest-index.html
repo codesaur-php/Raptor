@@ -65,6 +65,7 @@
             <th scope="col">{{ 'date'|text }}</th>
             <th scope="col">{{ 'title'|text }}</th>
             <th scope="col">{{ 'sent-by'|text }}</th>
+            <th scope="col">{{ 'assigned-to'|text }}</th>
             <th scope="col">{{ 'status'|text }}</th>
             <th scope="col"><i class="bi bi-paperclip"></i></th>
             <th scope="col" style="width:7rem">{{ 'action'|text }}</th>
@@ -199,6 +200,7 @@
                     `<td>${createdAt}</td>` +
                     `<td>${record.title || ''}</td>` +
                     `<td>${record.created_user || ''}</td>` +
+                    `<td>${record.assigned_user || '-'}</td>` +
                     `<td>${statusBadge}</td>` +
                     `<td>${attachCount}</td>` +
                     `<td>${actions}</td>` +

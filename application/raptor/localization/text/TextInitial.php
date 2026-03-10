@@ -116,6 +116,7 @@ class TextInitial
         $model->insert(['keyword' => 'delete', 'type' => 'sys-defined'], ['mn' => ['text' => 'Устгах'], 'en' => ['text' => 'Delete']]);
         $model->insert(['keyword' => 'description', 'type' => 'sys-defined'], ['mn' => ['text' => 'Тайлбар'], 'en' => ['text' => 'Description']]);
         $model->insert(['keyword' => 'developer', 'type' => 'sys-defined'], ['mn' => ['text' => 'Хөгжүүлэгч'], 'en' => ['text' => 'Developer']]);
+        $model->insert(['keyword' => 'developers', 'type' => 'sys-defined'], ['mn' => ['text' => 'Хөгжүүлэгчид'], 'en' => ['text' => 'Developers']]);
         $model->insert(['keyword' => 'email', 'type' => 'sys-defined'], ['mn' => ['text' => 'Имэйл'], 'en' => ['text' => 'Email']]);
         $model->insert(['keyword' => 'enter-search-terms', 'type' => 'sys-defined'], ['mn' => ['text' => 'Хайх утгаа оруулна уу..'], 'en' => ['text' => 'Enter search terms..']]);
         $model->insert(['keyword' => 'error', 'type' => 'sys-defined'], ['mn' => ['text' => 'Алдаа'], 'en' => ['text' => 'Error']]);
@@ -227,6 +228,8 @@ class TextInitial
         // table: dashboard
         $model->insert(['keyword' => 'active-user-can-login', 'type' => 'sys-defined'], ['mn' => ['text' => 'зөвхөн идэвхитэй хэрэглэгч системд нэвтэрч чадна'], 'en' => ['text' => 'only active users can login']]);
         $model->insert(['keyword' => 'allow-write', 'type' => 'sys-defined'], ['mn' => ['text' => 'Бичих зөвшөөрөх'], 'en' => ['text' => 'Allow write']]);
+        $model->insert(['keyword' => 'assign-to', 'type' => 'sys-defined'], ['mn' => ['text' => 'Хариуцуулах'], 'en' => ['text' => 'Assign to']]);
+        $model->insert(['keyword' => 'assigned-to', 'type' => 'sys-defined'], ['mn' => ['text' => 'Хариуцагч'], 'en' => ['text' => 'Assigned to']]);
         $model->insert(['keyword' => 'add-record', 'type' => 'sys-defined'], ['mn' => ['text' => 'Бичлэг нэмэх'], 'en' => ['text' => 'Add Record']]);
         $model->insert(['keyword' => 'ask-dont-have-user-yet', 'type' => 'sys-defined'], ['mn' => ['text' => 'Хэрэглэгч болж амжаагүй байна уу?'], 'en' => ['text' => 'Don\'t have an user yet?']]);
         $model->insert(['keyword' => 'auto-generate-from-content', 'type' => 'sys-defined'], ['mn' => ['text' => 'Хоосон үлдээвэл агуулгаас автоматаар үүсгэнэ'], 'en' => ['text' => 'Leave empty to auto-generate from content']]);
@@ -272,6 +275,7 @@ class TextInitial
         $model->insert(['keyword' => 'files-excludes-note', 'type' => 'sys-defined'], ['mn' => ['text' => 'контентын толгой зураг, агуулгын файл тооцогдоогүй'], 'en' => ['text' => 'excludes header images & inline files']]);
         $model->insert(['keyword' => 'field-is-required', 'type' => 'sys-defined'], ['mn' => ['text' => 'Талбарын утгыг оруулна уу'], 'en' => ['text' => 'This field is required']]);
         $model->insert(['keyword' => 'fill-new-password', 'type' => 'sys-defined'], ['mn' => ['text' => 'Шинэ нууц үгийг оруулна уу!'], 'en' => ['text' => 'Please fill a new password!']]);
+        $model->insert(['keyword' => 'fill-required-fields', 'type' => 'sys-defined'], ['mn' => ['text' => 'Шаардлагатай талбаруудыг бөглөнө үү'], 'en' => ['text' => 'Please fill in the required fields']]);
         $model->insert(['keyword' => 'forgot-password', 'type' => 'sys-defined'], ['mn' => ['text' => 'Нууц үгээ мартсан уу?'], 'en' => ['text' => 'Forgot password?']]);
         $model->insert(['keyword' => 'general-info', 'type' => 'sys-defined'], ['mn' => ['text' => 'Ерөнхий мэдээлэл'], 'en' => ['text' => 'General Info']]);
         $model->insert(['keyword' => 'in-progress', 'type' => 'sys-defined'], ['mn' => ['text' => 'Хийгдэж буй'], 'en' => ['text' => 'In progress']]);
@@ -293,6 +297,7 @@ $model->insert(['keyword' => 'lines', 'type' => 'sys-defined'], ['mn' => ['text'
         $model->insert(['keyword' => 'no-data-found', 'type' => 'sys-defined'], ['mn' => ['text' => 'Мэдээлэл олдсонгүй'], 'en' => ['text' => 'No data found']]);
         $model->insert(['keyword' => 'no-record-selected', 'type' => 'sys-defined'], ['mn' => ['text' => 'Бичлэг сонгогдоогүй байна'], 'en' => ['text' => 'No record selected']]);
         $model->insert(['keyword' => 'older', 'type' => 'sys-defined'], ['mn' => ['text' => 'Хуучин'], 'en' => ['text' => 'Older']]);
+        $model->insert(['keyword' => 'other-users', 'type' => 'sys-defined'], ['mn' => ['text' => 'Бусад хэрэглэгчид'], 'en' => ['text' => 'Other users']]);
         $model->insert(['keyword' => 'no-responses-yet', 'type' => 'sys-defined'], ['mn' => ['text' => 'Одоогоор хариулт байхгүй'], 'en' => ['text' => 'No responses yet']]);
         $model->insert(['keyword' => 'pages-navigation', 'type' => 'sys-defined'], ['mn' => ['text' => 'Хуудасны навигац'], 'en' => ['text' => 'Pages Navigation']]);
         $model->insert(['keyword' => 'parent-page', 'type' => 'sys-defined'], ['mn' => ['text' => 'Эцэг хуудас'], 'en' => ['text' => 'Parent page']]);

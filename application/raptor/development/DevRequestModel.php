@@ -26,6 +26,7 @@ class DevRequestModel extends Model
             new Column('content', 'text'),
            (new Column('status', 'varchar', 16))->default('pending'),
            (new Column('is_active', 'tinyint'))->default(1),
+            new Column('assigned_to', 'bigint'),
             new Column('created_at', 'datetime'),
             new Column('created_by', 'bigint'),
             new Column('updated_at', 'datetime'),
@@ -42,6 +43,7 @@ class DevRequestModel extends Model
         $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
         $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_created_by FOREIGN KEY (created_by) REFERENCES $users(id) ON DELETE SET NULL ON UPDATE CASCADE");
         $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_updated_by FOREIGN KEY (updated_by) REFERENCES $users(id) ON DELETE SET NULL ON UPDATE CASCADE");
+        $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_assigned_to FOREIGN KEY (assigned_to) REFERENCES $users(id) ON DELETE SET NULL ON UPDATE CASCADE");
         $this->setForeignKeyChecks(true);
 
         // Хүсэлтийн шүүлтийн гүйцэтгэлийг сайжруулах индекс
