@@ -6,6 +6,30 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 
 ---
 
+## [1.4.0] - 2026-03-11
+[1.4.0]: https://github.com/codesaur-php/Raptor/compare/v1.3.1...v1.4.0
+
+Log system consolidation, model rename, Discord notification improvement, and error logging cleanup.
+
+### Added
+- **DiscordNotifier** - `newOrder()` method now includes customer phone number in Discord embed notification
+- **DiscordNotifier** - `newDevRequest()` method for notifying when a new development request is created (shows author and assigned user)
+- **DiscordNotifier** - `devRequestUpdated()` method for notifying when a development request receives a response (shows responder and new status)
+- **DevRequestController** - Discord notifications on `store()` and `respond()` actions
+
+### Changed
+- **OrdersModel → ProductOrdersModel** - Renamed class and file; table name changed from `orders` to `products_orders`
+- **Log consolidation** - All shop-related logs (orders CRUD, products CRUD, orderSubmit) now write to a single `'product'` log channel instead of dynamic `$table` names
+- **Log consolidation** - All development module logs (DevRequest, FileManager, SqlTerminal) now write to a single `'development'` log channel instead of separate `'dev_requests'`, `'file_manager'`, `'sql_terminal'` channels
+- **Error logging** - All non-critical `error_log()` calls across the application now only execute when `CODESAUR_DEVELOPMENT` is `true`; critical exception/error handlers remain unconditional
+- **FileManagerController** - All UI-facing text (exception messages, log messages, response strings) changed from Mongolian to English; PHPDoc and code comments remain in Mongolian
+- **SqlTerminalController** - All UI-facing text (exception messages, log messages, response strings) changed from Mongolian to English; PHPDoc and code comments remain in Mongolian
+
+### Removed
+- **Controller::errorLog()** - Removed `protected final function errorLog(\Throwable $e)` method; all call sites replaced with inline `if (CODESAUR_DEVELOPMENT) { \error_log(...); }` pattern
+
+---
+
 ## [1.3.1] - 2026-03-10
 [1.3.1]: https://github.com/codesaur-php/Raptor/compare/v1.3.0...v1.3.1
 

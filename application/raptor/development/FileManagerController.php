@@ -97,7 +97,7 @@ class FileManagerController extends \Raptor\Controller
         $dashboard->set('title', 'File Manager');
         $dashboard->render();
 
-        $this->log('file_manager', LogLevel::NOTICE, 'File Manager хуудсыг нээлээ');
+        $this->log('development', LogLevel::NOTICE, 'File Manager page opened');
     }
 
     /**
@@ -112,7 +112,7 @@ class FileManagerController extends \Raptor\Controller
     {
         try {
             if (!$this->isUser('system_coder') || $this->getUserId() !== 1) {
-                throw new \Exception('Эрхгүй байна', 403);
+                throw new \Exception('Access denied', 403);
             }
 
             $params = $this->getQueryParams();
@@ -123,18 +123,18 @@ class FileManagerController extends \Raptor\Controller
             } else {
                 $fullPath = $this->resolveSecurePath($relativePath);
                 if ($fullPath === false) {
-                    throw new \Exception('Зам олдсонгүй эсвэл хандах эрхгүй', 400);
+                    throw new \Exception('Path not found or access denied', 400);
                 }
             }
 
             if (!\is_dir($fullPath)) {
-                throw new \Exception('Энэ нь directory биш байна', 400);
+                throw new \Exception('Not a directory', 400);
             }
 
             $items = [];
             $entries = @\scandir($fullPath);
             if ($entries === false) {
-                throw new \Exception('Directory-г уншиж чадсангүй', 500);
+                throw new \Exception('Failed to read directory', 500);
             }
 
             foreach ($entries as $entry) {
@@ -212,22 +212,22 @@ class FileManagerController extends \Raptor\Controller
     {
         try {
             if (!$this->isUser('system_coder') || $this->getUserId() !== 1) {
-                throw new \Exception('Эрхгүй байна', 403);
+                throw new \Exception('Access denied', 403);
             }
 
             $params = $this->getQueryParams();
             $relativePath = $params['path'] ?? '';
             if (empty($relativePath)) {
-                throw new \Exception('Файлын зам заагаагүй байна', 400);
+                throw new \Exception('File path not specified', 400);
             }
 
             $fullPath = $this->resolveSecurePath($relativePath);
             if ($fullPath === false) {
-                throw new \Exception('Файл олдсонгүй эсвэл хандах эрхгүй', 400);
+                throw new \Exception('File not found or access denied', 400);
             }
 
             if (\is_dir($fullPath)) {
-                throw new \Exception('Энэ нь файл биш directory байна', 400);
+                throw new \Exception('Path is a directory, not a file', 400);
             }
 
             $size = @\filesize($fullPath) ?: 0;
@@ -254,7 +254,7 @@ class FileManagerController extends \Raptor\Controller
             $truncated = false;
 
             if ($isBinary) {
-                $content = '[Binary файл - харуулах боломжгүй]';
+                $content = '[Binary file - cannot display]';
             } elseif ($size > $maxReadSize) {
                 $content = @\file_get_contents($fullPath, false, null, 0, $maxReadSize);
                 $truncated = true;
@@ -263,7 +263,7 @@ class FileManagerController extends \Raptor\Controller
             }
 
             if ($content === false) {
-                throw new \Exception('Файлыг унших боломжгүй', 500);
+                throw new \Exception('Unable to read file', 500);
             }
 
             // Encoding шалгах
@@ -334,12 +334,12 @@ class FileManagerController extends \Raptor\Controller
     {
         try {
             if (!$this->isUser('system_coder') || $this->getUserId() !== 1) {
-                throw new \Exception('Эрхгүй байна', 403);
+                throw new \Exception('Access denied', 403);
             }
 
             $logFile = \dirname($this->getDocumentRoot()) . '/logs/code.log';
             if (!\is_file($logFile)) {
-                throw new \Exception('Log файл олдсонгүй: logs/code.log', 404);
+                throw new \Exception('Log file not found: logs/code.log', 404);
             }
 
             $params = $this->getQueryParams();
@@ -428,18 +428,18 @@ class FileManagerController extends \Raptor\Controller
     {
         try {
             if (!$this->isUser('system_coder') || $this->getUserId() !== 1) {
-                throw new \Exception('Эрхгүй байна', 403);
+                throw new \Exception('Access denied', 403);
             }
 
             $params = $this->getQueryParams();
             $relativePath = $params['path'] ?? '';
             if (empty($relativePath)) {
-                throw new \Exception('Файлын зам заагаагүй байна', 400);
+                throw new \Exception('File path not specified', 400);
             }
 
             $fullPath = $this->resolveSecurePath($relativePath);
             if ($fullPath === false || !\is_file($fullPath)) {
-                throw new \Exception('Файл олдсонгүй', 404);
+                throw new \Exception('File not found', 404);
             }
 
             $fileName = \basename($fullPath);

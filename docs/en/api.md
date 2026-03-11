@@ -81,7 +81,7 @@ Outputs a JSON response with `Content-Type: application/json` header.
 Redirects to a named route (302). Calls `exit`.
 
 #### `log(string $table, string $level, string $message, array $context = []): void`
-Writes a system log entry. Server request metadata and user info are auto-appended.
+Writes a system log entry to the `{$table}_log` database table. Server request metadata and user info are auto-appended.
 
 #### `generateRouteLink(string $routeName, array $params = [], bool $is_absolute = false, string $default = '#'): string`
 Generates a URL from a route name.
@@ -91,9 +91,6 @@ Returns the DI Container.
 
 #### `getService(string $id): mixed`
 Gets a service from the container.
-
-#### `errorLog(\Throwable $e): void`
-Writes error to `error_log()` in development mode only.
 
 #### `headerResponseCode(int|string $code): void`
 Sets HTTP response code. Ignores non-standard codes.

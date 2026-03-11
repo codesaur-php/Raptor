@@ -694,7 +694,6 @@ $this->use(new MyRouter());
 | `generateRouteLink($name, $params)` | URL үүсгэх |
 | `getContainer()` | DI Container |
 | `getService($id)` | Service авах |
-| `errorLog($e)` | Алдаа логлох |
 
 ### Жишээ: Шинэ Controller бичих
 

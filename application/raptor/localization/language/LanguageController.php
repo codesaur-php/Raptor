@@ -588,7 +588,9 @@ class LanguageController extends \Raptor\Controller
             return $copied;
         } catch (\Exception $ex) {
             // Алдаа гарсан тул лог бичээд false буцаана
-            $this->errorLog($ex);
+            if (CODESAUR_DEVELOPMENT) {
+                \error_log($ex->getMessage());
+            }
             return false;
         }
     }

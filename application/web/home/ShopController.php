@@ -7,7 +7,7 @@ use Psr\Log\LogLevel;
 use Web\Template\TemplateController;
 
 use Dashboard\Shop\ProductsModel;
-use Dashboard\Shop\OrdersModel;
+use Dashboard\Shop\ProductOrdersModel;
 use Raptor\Content\FilesModel;
 use codesaur\Template\MemoryTemplate;
 
@@ -234,7 +234,7 @@ class ShopController extends TemplateController
             );
         }
 
-        $model = new OrdersModel($this->pdo);
+        $model = new ProductOrdersModel($this->pdo);
         $record = $model->insert([
             'product_id' => !empty($payload['product_id']) ? (int)$payload['product_id'] : null,
             'product_title' => $payload['product_title'] ?? '',
@@ -270,7 +270,8 @@ class ShopController extends TemplateController
             $payload['customer_name'],
             $payload['customer_email'],
             $payload['product_title'] ?? '',
-            \max(1, (int)($payload['quantity'] ?? 1))
+            \max(1, (int)($payload['quantity'] ?? 1)),
+            $payload['customer_phone'] ?? ''
         );
 
         $template = $this->template(__DIR__ . '/order-success.html', [
@@ -282,7 +283,7 @@ class ShopController extends TemplateController
         $template->render();
 
         $this->log(
-            (new OrdersModel($this->pdo))->getName(),
+            'product',
             LogLevel::INFO,
             '{auth_user.username} шинэ захиалга илгээлээ',
             [
@@ -350,7 +351,9 @@ class ShopController extends TemplateController
 
             $mailer->mail($customerEmail, $customerName, $subject, $body)->send();
         } catch (\Throwable $e) {
-            \error_log("OrderConfirmationEmail: {$e->getMessage()}");
+            if (CODESAUR_DEVELOPMENT) {
+                \error_log("OrderConfirmationEmail: {$e->getMessage()}");
+            }
         }
     }
 }

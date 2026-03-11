@@ -81,7 +81,7 @@ JSON хариулт хэвлэх. `Content-Type: application/json` header тох
 Route нэрээр 302 redirect хийх. `exit` дуудна.
 
 #### `log(string $table, string $level, string $message, array $context = []): void`
-Системийн лог бичих. Server request metadata болон хэрэглэгчийн мэдээлэл автоматаар нэмэгдэнэ.
+Мэдээллийн баазийн `{$table}_log` нэртэй хүснэгт рүү системийн лог бичих. Server request metadata болон хэрэглэгчийн мэдээлэл автоматаар нэмэгдэнэ.
 
 #### `generateRouteLink(string $routeName, array $params = [], bool $is_absolute = false, string $default = '#'): string`
 Route нэрээр URL үүсгэх.
@@ -91,9 +91,6 @@ DI Container авах.
 
 #### `getService(string $id): mixed`
 Container-аас service авах.
-
-#### `errorLog(\Throwable $e): void`
-Development горимд алдааг `error_log()`-д бичих.
 
 #### `headerResponseCode(int|string $code): void`
 HTTP response code тохируулах. Стандарт бус код бол алгасна.

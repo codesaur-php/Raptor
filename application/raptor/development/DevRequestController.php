@@ -50,7 +50,7 @@ class DevRequestController extends FileController
         $dashboard->set('title', $this->text('dev-requests'));
         $dashboard->render();
 
-        $this->log('dev_requests', LogLevel::NOTICE, 'Хөгжүүлэлтийн хүсэлтүүдийн жагсаалтыг үзэж байна', ['action' => 'index']);
+        $this->log('development', LogLevel::NOTICE, 'Хөгжүүлэлтийн хүсэлтүүдийн жагсаалтыг үзэж байна', ['action' => 'index']);
     }
 
     /**
@@ -208,7 +208,7 @@ class DevRequestController extends FileController
                 $this->setFolder("/dev-requests/$id");
                 $this->setSizeLimit(10485760); // 10MB
                 $filesModel = new FilesModel($this->pdo);
-                $filesModel->setTable('dev_requests');
+                $filesModel->setTable('development');
                 foreach ($files as $file) {
                     $uploaded = $this->moveUploaded($file);
                     if ($uploaded) {
@@ -222,6 +222,15 @@ class DevRequestController extends FileController
 
             // Email мэдэгдэл: зөвхөн сонгогдсон хэрэглэгчид
             $this->notifyNewRequest($id, $payload['title'], $assignedTo ?: null);
+
+            // Discord мэдэгдэл
+            $authorName = \trim(($this->getUser()->profile['first_name'] ?? '') . ' ' . ($this->getUser()->profile['last_name'] ?? ''));
+            $assignedName = '';
+            if ($assignedTo) {
+                $assignedUser = (new \Raptor\User\UsersModel($this->pdo))->getRowWhere(['id' => $assignedTo]);
+                $assignedName = $assignedUser ? \trim(($assignedUser['first_name'] ?? '') . ' ' . ($assignedUser['last_name'] ?? '')) : '';
+            }
+            $this->getService('discord')?->newDevRequest($id, $payload['title'], $authorName, $assignedName);
 
             $this->respondJSON([
                 'status' => 'success',
@@ -240,7 +249,7 @@ class DevRequestController extends FileController
                 $message = '{record_id} дугаартай хөгжүүлэлтийн хүсэлт амжилттай бүртгэгдлээ';
                 $context += ['record_id' => $id ?? null];
             }
-            $this->log('dev_requests', $level, $message, $context);
+            $this->log('development', $level, $message, $context);
         }
     }
 
@@ -289,7 +298,7 @@ class DevRequestController extends FileController
 
             // Хүсэлтийн хавсралтуудыг FilesModel-ээс татах
             $filesModel = new FilesModel($this->pdo);
-            $filesModel->setTable('dev_requests');
+            $filesModel->setTable('development');
             $filesTable = $filesModel->getName();
             $attachStmt = $this->prepare(
                 "SELECT id, path, size, type, mime_content_type FROM $filesTable " .
@@ -350,7 +359,7 @@ class DevRequestController extends FileController
                 $message = '{record_id} дугаартай хөгжүүлэлтийн хүсэлтийг үзэж байна';
                 $context += ['record' => $record];
             }
-            $this->log('dev_requests', $level, $message, $context);
+            $this->log('development', $level, $message, $context);
         }
     }
 
@@ -439,6 +448,10 @@ class DevRequestController extends FileController
             // Email мэдэгдэл илгээх
             $this->notifyResponse($record, $userId, $payload['response']);
 
+            // Discord мэдэгдэл
+            $authorName = \trim(($this->getUser()->profile['first_name'] ?? '') . ' ' . ($this->getUser()->profile['last_name'] ?? ''));
+            $this->getService('discord')?->devRequestUpdated($id, $record['title'], $authorName, $newStatus);
+
             $this->respondJSON([
                 'status' => 'success',
                 'title' => $this->text('success'),
@@ -461,7 +474,7 @@ class DevRequestController extends FileController
                 $message = '{record_id} дугаартай хүсэлтэд хариулт бичлээ';
                 $context += ['record_id' => $id];
             }
-            $this->log('dev_requests', $level, $message, $context);
+            $this->log('development', $level, $message, $context);
         }
     }
 
@@ -530,7 +543,7 @@ class DevRequestController extends FileController
                 $message = '{record_id} дугаартай хөгжүүлэлтийн хүсэлтийг идэвхгүй болголоо';
                 $context += ['record_id' => $id];
             }
-            $this->log('dev_requests', $level, $message, $context);
+            $this->log('development', $level, $message, $context);
         }
     }
 
@@ -595,7 +608,9 @@ class DevRequestController extends FileController
 
             $mailer->mail($recipient['email'], $recipient['first_name'], $subject, $body)->send();
         } catch (\Throwable $e) {
-            \error_log('DevRequest notifyNewRequest error: ' . $e->getMessage());
+            if (CODESAUR_DEVELOPMENT) {
+                \error_log('DevRequest notifyNewRequest error: ' . $e->getMessage());
+            }
         }
     }
 
@@ -683,7 +698,9 @@ class DevRequestController extends FileController
 
             $mailer->mail($recipient['email'], $recipient['first_name'], $subject, $body)->send();
         } catch (\Throwable $e) {
-            \error_log('DevRequest notifyResponse error: ' . $e->getMessage());
+            if (CODESAUR_DEVELOPMENT) {
+                \error_log('DevRequest notifyResponse error: ' . $e->getMessage());
+            }
         }
     }
 

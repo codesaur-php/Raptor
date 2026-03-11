@@ -95,7 +95,7 @@ class ProductsController extends FileController
         $dashboard->set('title', $this->text('products'));
         $dashboard->render();
 
-        $this->log($table, LogLevel::NOTICE, 'Бүтээгдэхүүний жагсаалтыг үзэж байна', ['action' => 'index']);
+        $this->log('product', LogLevel::NOTICE, 'Бүтээгдэхүүний жагсаалтыг үзэж байна', ['action' => 'index']);
     }
 
     /**
@@ -253,7 +253,7 @@ class ProductsController extends FileController
                 $level = LogLevel::NOTICE;
                 $message = 'Бүтээгдэхүүн үүсгэх үйлдлийг эхлүүллээ';
             }
-            $this->log($table ?? 'products', $level, $message, $context);
+            $this->log('product', $level, $message, $context);
         }
     }
 
@@ -395,7 +395,7 @@ class ProductsController extends FileController
                 $message = '{record.id} дугаартай [{record.title}] бүтээгдэхүүнийг шинэчлэхээр нээж байна';
                 $context += ['record' => $record, 'files' => $files];
             }
-            $this->log($table ?? 'products', $level, $message, $context);
+            $this->log('product', $level, $message, $context);
         }
     }
 
@@ -449,7 +449,7 @@ class ProductsController extends FileController
                 $message = '[{title}] {slug} бүтээгдэхүүнийг уншиж байна';
                 $context += $record + ['files' => $files];
             }
-            $this->log($table ?? 'products', $level, $message, $context);
+            $this->log('product', $level, $message, $context);
         }
     }
 
@@ -498,7 +498,7 @@ class ProductsController extends FileController
                 $message = '{record.id} дугаартай [{record.title}] бүтээгдэхүүнийг үзэж байна';
                 $context += ['record' => $record, 'files' => $files];
             }
-            $this->log($table ?? 'products', $level, $message, $context);
+            $this->log('product', $level, $message, $context);
         }
     }
 
@@ -703,7 +703,7 @@ class ProductsController extends FileController
                 $message = '{record_id} дугаартай [{server_request.body.title}] бүтээгдэхүүнийг идэвхгүй болголоо';
                 $context += ['record_id' => $id];
             }
-            $this->log($table ?? 'products', $level, $message, $context);
+            $this->log('product', $level, $message, $context);
         }
     }
 
@@ -764,7 +764,7 @@ class ProductsController extends FileController
                 $level = LogLevel::ALERT;
                 $message = 'Бүтээгдэхүүний хүснэгтийг жишиг датанаас цэвэрлэж production горимд шилжүүллээ';
             }
-            $this->log($table ?? 'products', $level, $message, $context);
+            $this->log('product', $level, $message, $context);
         }
     }
 

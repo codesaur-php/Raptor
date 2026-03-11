@@ -310,7 +310,9 @@ class FileController extends \Raptor\Controller
     {
         // GD сан суусан эсэхийг шалгах
         if (!\extension_loaded('gd')) {
-            \error_log('optimizeImage: GD extension суугаагүй байна');
+            if (CODESAUR_DEVELOPMENT) {
+                \error_log('optimizeImage: GD extension суугаагүй байна');
+            }
             return false;
         }
 
@@ -357,7 +359,9 @@ class FileController extends \Raptor\Controller
                 }
                 break;
             default:
-                \error_log("optimizeImage: Дэмжигдээгүй зургийн төрөл: $type");
+                if (CODESAUR_DEVELOPMENT) {
+                    \error_log("optimizeImage: Дэмжигдээгүй зургийн төрөл: $type");
+                }
                 return false;
         }
 
@@ -574,7 +578,9 @@ class FileController extends \Raptor\Controller
             }
             return \unlink($filePath);
         } catch (\Throwable $err) {
-            $this->errorLog($err);
+            if (CODESAUR_DEVELOPMENT) {
+                \error_log($err->getMessage());
+            }
             return false;
         }
     }

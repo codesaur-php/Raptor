@@ -29,7 +29,6 @@ use Raptor\Log\Logger;
  *  JSON response (respondJSON)
  *  Redirect хийх (redirectTo)
  *  Рапторлог (raptorlog) - системийн протокол хөтлөх
- *  Алдаа логлох (errorLog)
  *  ----------------------------------------------------------------
  *
  * Raptor-ийн бүх Controller-ууд энэ ангийг өргөтгөснөөр
@@ -190,7 +189,9 @@ abstract class Controller extends \codesaur\Http\Application\Controller
 
             return (string) $this->getRequest()->getUri()->withPath($pattern);
         } catch (\Throwable $e) {
-            $this->errorLog($e);
+            if (CODESAUR_DEVELOPMENT) {
+                \error_log($e->getMessage());
+            }
             return $default;
         }
     }
@@ -485,7 +486,9 @@ abstract class Controller extends \codesaur\Http\Application\Controller
             $logger->setTable($table);
             $logger->log($level, $message, $context);
         } catch (\Throwable $e) {
-            $this->errorLog($e);
+            if (CODESAUR_DEVELOPMENT) {
+                \error_log($e->getMessage());
+            }
         }
     }
 
@@ -533,20 +536,5 @@ abstract class Controller extends \codesaur\Http\Application\Controller
             return false;
         }
         return $container->has($id);
-    }
-
-    /**
-     * Хөгжүүлэлтийн орчинд алдааны мессежийг системийн лог руу бичих.
-     *
-     * @param \Throwable $e
-     * @return void
-     */
-    protected final function errorLog(\Throwable $e)
-    {
-        if (!CODESAUR_DEVELOPMENT) {
-            return;
-        }
-
-        \error_log($e->getMessage());
     }
 }

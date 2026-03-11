@@ -6,9 +6,9 @@ use codesaur\DataObject\Model;
 use codesaur\DataObject\Column;
 
 /**
- * Class OrdersModel
+ * Class ProductOrdersModel
  * ---------------------------------------------------------------
- * Захиалгын (`orders`) хүснэгттэй ажиллах өгөгдлийн загвар (Model) класс.
+ * Захиалгын (`products_orders`) хүснэгттэй ажиллах өгөгдлийн загвар (Model) класс.
  *
  * Үндсэн боломжууд:
  *   - Захиалгын хүснэгтийн багануудыг тодорхойлох
@@ -30,13 +30,13 @@ use codesaur\DataObject\Column;
  *
  * @package Dashboard\Shop
  */
-class OrdersModel extends Model
+class ProductOrdersModel extends Model
 {
     /**
-     * OrdersModel constructor.
+     * ProductOrdersModel constructor.
      *
      * PDO instance-г оноож, захиалгын хүснэгтийн бүх багануудыг тодорхойлно.
-     * Хүснэгтийн нэрийг 'orders' гэж тохируулна.
+     * Хүснэгтийн нэрийг 'products_orders' гэж тохируулна.
      *
      * @param \PDO $pdo Database connection instance
      */
@@ -62,7 +62,7 @@ class OrdersModel extends Model
             new Column('updated_by', 'bigint')
         ]);
 
-        $this->setTable('orders');
+        $this->setTable('products_orders');
     }
 
     /**

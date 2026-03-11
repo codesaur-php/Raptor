@@ -265,7 +265,9 @@ trait DashboardTrait
                 }
             }
         } catch (\Throwable $e) {
-            $this->errorLog($e);
+            if (CODESAUR_DEVELOPMENT) {
+                \error_log($e->getMessage());
+            }
         }
 
         return $sidemenu;

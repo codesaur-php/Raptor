@@ -138,7 +138,9 @@ class PrivateFilesController extends FilesController
             \header("Content-Type: $mimeType");
             \readfile($filePath);
         } catch (\Throwable $err) {
-            $this->errorLog($err);
+            if (CODESAUR_DEVELOPMENT) {
+                \error_log($err->getMessage());
+            }
             $this->headerResponseCode($err->getCode());
         }
     }

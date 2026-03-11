@@ -44,7 +44,7 @@ class OrdersController extends \Raptor\Controller
         }
 
         $filters = [];
-        $table = (new OrdersModel($this->pdo))->getName();
+        $table = (new ProductOrdersModel($this->pdo))->getName();
         $status_result = $this->query(
             "SELECT DISTINCT status FROM $table WHERE is_active=1"
         )->fetchAll();
@@ -64,7 +64,7 @@ class OrdersController extends \Raptor\Controller
         $dashboard->set('title', $this->text('orders'));
         $dashboard->render();
 
-        $this->log($table, LogLevel::NOTICE, 'Захиалгын жагсаалтыг үзэж байна', ['action' => 'index']);
+        $this->log('product', LogLevel::NOTICE, 'Захиалгын жагсаалтыг үзэж байна', ['action' => 'index']);
     }
 
     /**
@@ -95,7 +95,7 @@ class OrdersController extends \Raptor\Controller
                 }
             }
             $where = \implode(' AND ', $conditions);
-            $table = (new OrdersModel($this->pdo))->getName();
+            $table = (new ProductOrdersModel($this->pdo))->getName();
             $select_orders =
                 'SELECT id, product_id, product_title, customer_name, customer_email, customer_phone, ' .
                 'quantity, status, code, date(created_at) as created_date ' .
@@ -126,7 +126,7 @@ class OrdersController extends \Raptor\Controller
     public function view(int $id)
     {
         try {
-            $model = new OrdersModel($this->pdo);
+            $model = new ProductOrdersModel($this->pdo);
             $table = $model->getName();
             if (!$this->isUserCan('system_content_index')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
@@ -157,7 +157,7 @@ class OrdersController extends \Raptor\Controller
                 $message = '{record.id} дугаартай захиалгыг үзэж байна';
                 $context += ['record' => $record];
             }
-            $this->log($table ?? 'orders', $level, $message, $context);
+            $this->log('product', $level, $message, $context);
         }
     }
 
@@ -179,7 +179,7 @@ class OrdersController extends \Raptor\Controller
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
 
-            $model = new OrdersModel($this->pdo);
+            $model = new ProductOrdersModel($this->pdo);
             $table = $model->getName();
             $record = $model->getRowWhere([
                 'id' => $id,
@@ -237,7 +237,7 @@ class OrdersController extends \Raptor\Controller
                 $message = '{record_id} дугаартай захиалгын статусыг амжилттай шинэчлэлээ';
                 $context += ['old_status' => $record['status'], 'new_status' => $payload['status'], 'record' => $updated];
             }
-            $this->log($table ?? 'orders', $level, $message, $context);
+            $this->log('product', $level, $message, $context);
         }
     }
 
@@ -251,7 +251,7 @@ class OrdersController extends \Raptor\Controller
     public function deactivate()
     {
         try {
-            $model = new OrdersModel($this->pdo);
+            $model = new ProductOrdersModel($this->pdo);
             $table = $model->getName();
 
             if (!$this->isUserCan('system_content_delete')) {
@@ -297,7 +297,7 @@ class OrdersController extends \Raptor\Controller
                 $message = '{record_id} дугаартай захиалгыг идэвхгүй болголоо';
                 $context += ['record_id' => $id];
             }
-            $this->log($table ?? 'orders', $level, $message, $context);
+            $this->log('product', $level, $message, $context);
         }
     }
 
@@ -353,7 +353,9 @@ class OrdersController extends \Raptor\Controller
 
             $mailer->mail($order['customer_email'], $order['customer_name'], $subject, $body)->send();
         } catch (\Throwable $e) {
-            \error_log("OrderStatusEmail: {$e->getMessage()}");
+            if (CODESAUR_DEVELOPMENT) {
+                \error_log("OrderStatusEmail: {$e->getMessage()}");
+            }
         }
     }
 }

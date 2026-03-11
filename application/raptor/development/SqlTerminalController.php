@@ -34,7 +34,7 @@ class SqlTerminalController extends \Raptor\Controller
         $dashboard->set('title', 'MySQL Terminal');
         $dashboard->render();
 
-        $this->log('sql_terminal', LogLevel::NOTICE, 'MySQL Terminal хуудсыг нээлээ');
+        $this->log('development', LogLevel::NOTICE, 'MySQL Terminal page opened');
     }
 
     /**
@@ -50,13 +50,13 @@ class SqlTerminalController extends \Raptor\Controller
     {
         try {
             if (!$this->isUser('system_coder') || $this->getUserId() !== 1) {
-                throw new \Exception('Энэ үйлдлийг гүйцэтгэх эрхгүй байна', 403);
+                throw new \Exception('Access denied', 403);
             }
 
             $payload = $this->getParsedBody();
             $sql = \trim($payload['query'] ?? '');
             if (empty($sql)) {
-                throw new \InvalidArgumentException('SQL query хоосон байна', 400);
+                throw new \InvalidArgumentException('SQL query is empty', 400);
             }
 
             // SQL comment-уудыг алгасаж эхний бодит командыг олох
@@ -64,7 +64,7 @@ class SqlTerminalController extends \Raptor\Controller
             $stripped = \preg_replace('/\/\*.*?\*\//s', '', $stripped); // /* comment */
             $stripped = \trim($stripped);
             if (empty($stripped)) {
-                throw new \InvalidArgumentException('SQL query хоосон байна (зөвхөн comment)', 400);
+                throw new \InvalidArgumentException('SQL query is empty (comments only)', 400);
             }
             $firstWord = \strtoupper(\strtok($stripped, " \t\n\r("));
             $readOnly = ['SELECT', 'SHOW', 'DESCRIBE', 'DESC', 'EXPLAIN'];
@@ -72,11 +72,11 @@ class SqlTerminalController extends \Raptor\Controller
             $allowWrite = !empty($payload['allow_write']);
 
             if (!\in_array($firstWord, $readOnly) && !\in_array($firstWord, $writeAllowed)) {
-                throw new \Exception("Зөвшөөрөгдөөгүй SQL комманд: $firstWord", 400);
+                throw new \Exception("Unsupported SQL command: $firstWord", 400);
             }
 
             if (\in_array($firstWord, $writeAllowed) && !$allowWrite) {
-                throw new \Exception("Бичих эрхтэй query ($firstWord) ажиллуулахын тулд 'Бичих зөвшөөрөх' сонголтыг идэвхжүүлнэ үү", 400);
+                throw new \Exception("Enable 'Allow Write' to execute write query ($firstWord)", 400);
             }
 
             $startTime = \microtime(true);
@@ -97,7 +97,7 @@ class SqlTerminalController extends \Raptor\Controller
                 $result['row_count'] = \count($rows);
             } else {
                 $result['affected_rows'] = $stmt->rowCount();
-                $result['message'] = "Амжилттай. {$stmt->rowCount()} мөр өөрчлөгдлөө.";
+                $result['message'] = "Success. {$stmt->rowCount()} row(s) affected.";
             }
 
             $this->respondJSON($result);
@@ -110,13 +110,13 @@ class SqlTerminalController extends \Raptor\Controller
             $context = ['action' => 'execute', 'query' => $sql ?? ''];
             if (isset($err) && $err instanceof \Throwable) {
                 $level = LogLevel::ERROR;
-                $message = 'SQL Terminal алдаа: ' . ($err->getMessage());
+                $message = 'SQL Terminal error: ' . ($err->getMessage());
             } else {
                 $level = LogLevel::INFO;
-                $message = 'SQL query гүйцэтгэлээ';
+                $message = 'SQL query executed';
                 $context['duration_ms'] = $duration ?? 0;
             }
-            $this->log('sql_terminal', $level, $message, $context);
+            $this->log('development', $level, $message, $context);
         }
     }
 }

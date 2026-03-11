@@ -767,7 +767,9 @@ class PagesController extends FileController
             $ancestry = $this->findAncestry($id, $pages);
             if (\array_key_exists($id, $ancestry)) {
                 unset($ancestry[$id]);
-                \error_log(__CLASS__ . ": Page $id misconfigured with parenting path!");
+                if (CODESAUR_DEVELOPMENT) {
+                    \error_log(__CLASS__ . ": Page $id misconfigured with parenting path!");
+                }
             }
             if (empty($ancestry)) {
                 continue;

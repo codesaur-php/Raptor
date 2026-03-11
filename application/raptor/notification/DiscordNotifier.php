@@ -16,6 +16,8 @@ use codesaur\Http\Client\CurlClient;
  *   - Хэрэглэгч баталгаажсан (userApproved)
  *   - Шинэ захиалга (newOrder)
  *   - Захиалгын статус өөрчлөгдсөн (orderStatusChanged)
+ *   - Шинэ хөгжүүлэлтийн хүсэлт (newDevRequest)
+ *   - Хөгжүүлэлтийн хүсэлт шинэчлэгдсэн (devRequestUpdated)
  *   - Контент үйлдэл: үүсгэх, шинэчлэх, устгах, нийтлэх (contentAction)
  *
  * .env дотор RAPTOR_DISCORD_WEBHOOK_URL тохируулсан байх шаардлагатай.
@@ -74,7 +76,9 @@ class DiscordNotifier
                 [\CURLOPT_HTTPHEADER => ['Content-Type: application/json']]
             );
         } catch (\Throwable $e) {
-            \error_log("DiscordNotifier: {$e->getMessage()}");
+            if (CODESAUR_DEVELOPMENT) {
+                \error_log("DiscordNotifier: {$e->getMessage()}");
+            }
         }
     }
 
@@ -139,20 +143,24 @@ class DiscordNotifier
      * @param string $email    Захиалагчийн имэйл
      * @param string $product  Бүтээгдэхүүний нэр
      * @param int    $quantity Тоо ширхэг
+     * @param string $phone    Захиалагчийн утасны дугаар
      * @return void
      */
-    public function newOrder(int $orderId, string $customer, string $email, string $product, int $quantity): void
+    public function newOrder(int $orderId, string $customer, string $email, string $product, int $quantity, string $phone = ''): void
     {
+        $fields = [
+            ['name' => 'Customer', 'value' => $customer, 'inline' => true],
+            ['name' => 'Email', 'value' => $email, 'inline' => true],
+            ['name' => 'Phone', 'value' => $phone ?: '-', 'inline' => true],
+            ['name' => 'Product', 'value' => $product ?: '-', 'inline' => true],
+            ['name' => 'Quantity', 'value' => (string)$quantity, 'inline' => true]
+        ];
+
         $this->send(
             '🛒 New Order #' . $orderId,
             "**$customer** placed a new order.",
             self::COLOR_SUCCESS,
-            [
-                ['name' => 'Customer', 'value' => $customer, 'inline' => true],
-                ['name' => 'Email', 'value' => $email, 'inline' => true],
-                ['name' => 'Product', 'value' => $product ?: '-', 'inline' => true],
-                ['name' => 'Quantity', 'value' => (string)$quantity, 'inline' => true]
-            ]
+            $fields
         );
     }
 
@@ -179,6 +187,58 @@ class DiscordNotifier
         $this->send(
             '📦 Order #' . $orderId . ' Status Changed',
             "Status updated for **$customer**'s order.",
+            self::COLOR_WARNING,
+            $fields
+        );
+    }
+
+    /**
+     * Шинэ хөгжүүлэлтийн хүсэлт үүссэн тухай мэдэгдэл.
+     *
+     * @param int    $requestId Хүсэлтийн ID
+     * @param string $title     Хүсэлтийн гарчиг
+     * @param string $author    Үүсгэсэн хэрэглэгчийн нэр
+     * @param string $assignedTo Хариуцагчийн нэр
+     * @return void
+     */
+    public function newDevRequest(int $requestId, string $title, string $author, string $assignedTo = ''): void
+    {
+        $fields = [
+            ['name' => 'Author', 'value' => $author, 'inline' => true]
+        ];
+        if ($assignedTo !== '') {
+            $fields[] = ['name' => 'Assigned to', 'value' => $assignedTo, 'inline' => true];
+        }
+
+        $this->send(
+            '🔧 Dev Request #' . $requestId,
+            "**$title**",
+            self::COLOR_INFO,
+            $fields
+        );
+    }
+
+    /**
+     * Хөгжүүлэлтийн хүсэлтэд хариулт бичигдсэн тухай мэдэгдэл.
+     *
+     * @param int    $requestId Хүсэлтийн ID
+     * @param string $title     Хүсэлтийн гарчиг
+     * @param string $author    Хариулт бичсэн хэрэглэгчийн нэр
+     * @param string $status    Шинэ статус (хоосон бол өөрчлөгдөөгүй)
+     * @return void
+     */
+    public function devRequestUpdated(int $requestId, string $title, string $author, string $status = ''): void
+    {
+        $fields = [
+            ['name' => 'By', 'value' => $author, 'inline' => true]
+        ];
+        if ($status !== '') {
+            $fields[] = ['name' => 'Status', 'value' => $status, 'inline' => true];
+        }
+
+        $this->send(
+            '💬 Dev Request #' . $requestId . ' Updated',
+            "**$title**",
             self::COLOR_WARNING,
             $fields
         );

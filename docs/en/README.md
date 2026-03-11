@@ -694,7 +694,6 @@ All controllers extend `Raptor\Controller`. Available methods:
 | `generateRouteLink($name, $params)` | Generate URL |
 | `getContainer()` | DI Container |
 | `getService($id)` | Get service |
-| `errorLog($e)` | Log error |
 
 ### Example: Writing a New Controller
 
