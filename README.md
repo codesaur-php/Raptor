@@ -156,6 +156,7 @@ raptor/
 |   |-- .htaccess            # Apache URL rewrite
 |   |-- robots.txt           # Search engine bot rules
 |   \-- assets/              # CSS, JS (dashboard, moedit, motable etc)
+|-- tests/                   # PHPUnit tests (unit, integration)
 |-- docs/
 |   |-- conf.example/        # Server config examples + cPanel deploy
 |   |-- en/                  # English documentation
@@ -163,8 +164,24 @@ raptor/
 |-- logs/                    # Error logs
 |-- private/                 # Protected files
 |-- composer.json            # Dependencies
+|-- phpunit.xml              # PHPUnit configuration
 \-- LICENSE                  # MIT License
 ```
+
+### Testing / Тестчилгээ
+
+PHPUnit 11 суурьтай unit болон integration тестүүдтэй.
+Includes PHPUnit 11 test suite with unit and integration tests.
+
+```bash
+composer test              # Бүх тест / All tests
+composer test:unit         # Unit тест / Unit tests only
+composer test:integration  # Integration тест / Integration tests only
+```
+
+Integration тест `.env.testing` файлын тохиргоог ашиглан тусдаа test database дээр ажиллана. Тест бүр transaction дотор ажиллаж, дуусахад rollback хийнэ.
+
+Integration tests use `.env.testing` config with a separate test database. Each test runs in a transaction and rolls back on teardown.
 
 ---
 

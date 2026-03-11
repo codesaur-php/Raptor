@@ -27,7 +27,7 @@
 }
 </style>
 <div class="d-flex align-items-center flex-wrap gap-2 mt-3 mb-2">
-    {% if user.can('system_content_insert') %}
+    {% if user.can('system_product_insert') %}
     <a class="btn btn-sm btn-outline-success text-uppercase shadow-sm" href="{{ 'product-insert'|link }}">
         <i class="bi-plus-circle-dotted"></i> {{ 'new'|text }}
     </a>
@@ -184,8 +184,8 @@
             const indexLink = `{{ 'products'|link }}`;
 
             /* Хэрэглэгчийн эрхүүдийг шалгах */
-            const canUpdate = {{ user.can('system_content_update') ? 'true' : 'false' }};  /* Засах эрх */
-            const canDelete = {{ user.can('system_content_delete') ? 'true' : 'false' }};  /* Устгах эрх */
+            const canUpdate = {{ user.can('system_product_update') ? 'true' : 'false' }};  /* Засах эрх */
+            const canDelete = {{ user.can('system_product_delete') ? 'true' : 'false' }};  /* Устгах эрх */
 
             /* Нийтлэгдсэн гэсэн текстийг хэлнээс хамааруулан тохируулах */
             const published_text = document.documentElement.lang === 'mn' ? 'нийтэлсэн' : 'published';

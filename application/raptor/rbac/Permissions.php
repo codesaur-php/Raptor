@@ -56,6 +56,7 @@ use codesaur\DataObject\Column;
  *  - user management permissions
  *  - organization management permissions
  *  - content (page/news/file/settings) permissions
+ *  - product (shop) permissions
  *  - localization permissions
  *
  * Энэ нь framework-ийг суурилуулахад шаардлагатай үндсэн эрхүүдийг
@@ -156,6 +157,12 @@ class Permissions extends Model
             ('$nowdate','system','content','content_update','Edit existing content entries'),
             ('$nowdate','system','content','content_publish','Publish or unpublish content'),
             ('$nowdate','system','content','content_delete','Delete content entries'),
+
+            ('$nowdate','system','product','product_index','View the list of products and orders'),
+            ('$nowdate','system','product','product_insert','Create new product entries'),
+            ('$nowdate','system','product','product_update','Edit existing products and update order status'),
+            ('$nowdate','system','product','product_publish','Publish or unpublish products'),
+            ('$nowdate','system','product','product_delete','Delete products and orders'),
 
             ('$nowdate','system','localization','localization_index','View localization and translation entries'),
             ('$nowdate','system','localization','localization_insert','Add new translation entries'),

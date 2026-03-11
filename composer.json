@@ -13,6 +13,14 @@
             "homepage": "https://github.com/codesaur"
         }
     ],
+    "require-dev": {
+        "phpunit/phpunit": "^11.0"
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
     "require": {
         "ext-gd": "*",
         "ext-intl": "*",
@@ -64,6 +72,9 @@
         }
     },
     "scripts": {
+        "test": "phpunit",
+        "test:unit": "phpunit --testsuite Unit",
+        "test:integration": "phpunit --testsuite Integration",
         "post-root-package-install": [
             "@php -r \"file_exists('.env') || copy('docs/conf.example/.env.example', '.env');\"",
             "@php -r \"$envFile='.env';$secret=bin2hex(random_bytes(64));if(file_exists($envFile)){ $content=file_get_contents($envFile);if(preg_match('/^RAPTOR_JWT_SECRET=.*/m',$content)){ $content=preg_replace('/^RAPTOR_JWT_SECRET=.*/m','RAPTOR_JWT_SECRET='.$secret,$content);} else { if(substr($content,-1)!==PHP_EOL)$content.=PHP_EOL;$content.='RAPTOR_JWT_SECRET='.$secret.PHP_EOL;} file_put_contents($envFile,$content);} else { file_put_contents($envFile,'RAPTOR_JWT_SECRET='.$secret.PHP_EOL);} echo 'RAPTOR_JWT_SECRET generated: '.$secret.PHP_EOL;\""

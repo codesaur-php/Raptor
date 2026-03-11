@@ -47,13 +47,13 @@ class ProductsController extends FileController
      *
      * Хэл, төрөл, ангилал, статус зэрэг шүүлтийн сонголтуудыг бэлтгэнэ.
      *
-     * Permission: system_content_index
+     * Permission: system_product_index
      *
      * @return void
      */
     public function index()
     {
-        if (!$this->isUserCan('system_content_index')) {
+        if (!$this->isUserCan('system_product_index')) {
             $this->dashboardProhibited(null, 401)->render();
             return;
         }
@@ -104,14 +104,14 @@ class ProductsController extends FileController
      * Query parameter-уудаас шүүлтийн нөхцөлүүдийг авч,
      * жагсаалтыг бүртгэлийн огноогоор буурахаар эрэмбэлнэ.
      *
-     * Permission: system_content_index
+     * Permission: system_product_index
      *
      * @return void JSON response буцаана
      */
     public function list()
     {
         try {
-            if (!$this->isUserCan('system_content_index')) {
+            if (!$this->isUserCan('system_product_index')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
 
@@ -163,14 +163,14 @@ class ProductsController extends FileController
      * GET: Форм хуудсыг харуулна
      * POST: Шинэ бүтээгдэхүүнийг үүсгэнэ
      *
-     * Permission: system_content_insert, system_content_publish
+     * Permission: system_product_insert, system_product_publish
      *
      * @return void
      */
     public function insert()
     {
         try {
-            if (!$this->isUserCan('system_content_insert')) {
+            if (!$this->isUserCan('system_product_insert')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
 
@@ -188,7 +188,7 @@ class ProductsController extends FileController
                     ($payload['is_featured'] ?? 0) == 1 ||
                     ($payload['comment'] ?? 0) == 1;
                 if ($needsPublishPermission
-                    && !$this->isUserCan('system_content_publish')
+                    && !$this->isUserCan('system_product_publish')
                 ) {
                     throw new \Exception($this->text('system-no-permission'), 401);
                 }
@@ -263,7 +263,7 @@ class ProductsController extends FileController
      * GET: Шинэчлэх форм хуудсыг харуулна
      * PUT: Бүтээгдэхүүнийг шинэчлэнэ
      *
-     * Permission: system_content_update, system_content_publish
+     * Permission: system_product_update, system_product_publish
      *
      * @param int $id Шинэчлэх бүтээгдэхүүний ID
      * @return void
@@ -271,7 +271,7 @@ class ProductsController extends FileController
     public function update(int $id)
     {
         try {
-            if (!$this->isUserCan('system_content_update')) {
+            if (!$this->isUserCan('system_product_update')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
 
@@ -286,7 +286,7 @@ class ProductsController extends FileController
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));
             } elseif ($record['published'] == 1
-                && !$this->isUserCan('system_content_publish')
+                && !$this->isUserCan('system_product_publish')
             ) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             } elseif ($this->getRequest()->getMethod() == 'PUT') {
@@ -301,7 +301,7 @@ class ProductsController extends FileController
                     ($payload['is_featured'] ?? 0) == 1 ||
                     ($payload['comment'] ?? 0) == 1;
                 if ($needsPublishPermission
-                    && !$this->isUserCan('system_content_publish')
+                    && !$this->isUserCan('system_product_publish')
                 ) {
                     throw new \Exception($this->text('system-no-permission'), 401);
                 }
@@ -402,7 +402,7 @@ class ProductsController extends FileController
     /**
      * Бүтээгдэхүүний бичлэгийг унших.
      *
-     * Permission: system_content_index
+     * Permission: system_product_index
      *
      * @param string $slug Бүтээгдэхүүний slug
      * @return void
@@ -412,7 +412,7 @@ class ProductsController extends FileController
         try {
             $model = new ProductsModel($this->pdo);
             $table = $model->getName();
-            if (!$this->isUserCan('system_content_index')) {
+            if (!$this->isUserCan('system_product_index')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
             $record = $model->getRowWhere([
@@ -456,7 +456,7 @@ class ProductsController extends FileController
     /**
      * Бүтээгдэхүүний дэлгэрэнгүй мэдээллийг dashboard-д харуулах.
      *
-     * Permission: system_content_index
+     * Permission: system_product_index
      *
      * @param int $id Үзэх бүтээгдэхүүний ID
      * @return void
@@ -466,7 +466,7 @@ class ProductsController extends FileController
         try {
             $model = new ProductsModel($this->pdo);
             $table = $model->getName();
-            if (!$this->isUserCan('system_content_index')) {
+            if (!$this->isUserCan('system_product_index')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
             $record = $model->getRowWhere([
@@ -647,7 +647,7 @@ class ProductsController extends FileController
     /**
      * Бүтээгдэхүүний бичлэгийг идэвхгүй болгох.
      *
-     * Permission: system_content_delete
+     * Permission: system_product_delete
      *
      * @return void JSON response буцаана
      */
@@ -657,7 +657,7 @@ class ProductsController extends FileController
             $model = new ProductsModel($this->pdo);
             $table = $model->getName();
 
-            if (!$this->isUserCan('system_content_delete')) {
+            if (!$this->isUserCan('system_product_delete')) {
                 throw new \Exception('No permission for an action [delete]!', 401);
             }
 
@@ -710,14 +710,14 @@ class ProductsController extends FileController
     /**
      * Жишиг датаг цэвэрлэж production эхлүүлэх.
      *
-     * Permission: system_content_delete
+     * Permission: system_product_delete
      *
      * @return void
      */
     public function reset()
     {
         try {
-            if (!$this->isUserCan('system_content_delete')) {
+            if (!$this->isUserCan('system_product_delete')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
 

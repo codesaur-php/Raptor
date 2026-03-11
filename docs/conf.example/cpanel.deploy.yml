@@ -101,7 +101,9 @@ jobs:
             **/.git*/**
             **/.github/**
             **/docs/**
+            **/tests/**
             **/.env*
             **/logs/**
             **/nbproject/**
             **/private/**
+            **/phpunit.xml

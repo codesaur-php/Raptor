@@ -32,13 +32,13 @@ class OrdersController extends \Raptor\Controller
     /**
      * Захиалгын жагсаалтын dashboard хуудсыг харуулах.
      *
-     * Permission: system_content_index
+     * Permission: system_product_index
      *
      * @return void
      */
     public function index()
     {
-        if (!$this->isUserCan('system_content_index')) {
+        if (!$this->isUserCan('system_product_index')) {
             $this->dashboardProhibited(null, 401)->render();
             return;
         }
@@ -70,14 +70,14 @@ class OrdersController extends \Raptor\Controller
     /**
      * Захиалгын жагсаалтыг JSON хэлбэрээр буцаах.
      *
-     * Permission: system_content_index
+     * Permission: system_product_index
      *
      * @return void JSON response буцаана
      */
     public function list()
     {
         try {
-            if (!$this->isUserCan('system_content_index')) {
+            if (!$this->isUserCan('system_product_index')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
 
@@ -118,7 +118,7 @@ class OrdersController extends \Raptor\Controller
     /**
      * Захиалгын дэлгэрэнгүй мэдээллийг dashboard-д харуулах.
      *
-     * Permission: system_content_index
+     * Permission: system_product_index
      *
      * @param int $id Үзэх захиалгын ID
      * @return void
@@ -128,7 +128,7 @@ class OrdersController extends \Raptor\Controller
         try {
             $model = new ProductOrdersModel($this->pdo);
             $table = $model->getName();
-            if (!$this->isUserCan('system_content_index')) {
+            if (!$this->isUserCan('system_product_index')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
             $record = $model->getRowWhere([
@@ -167,7 +167,7 @@ class OrdersController extends \Raptor\Controller
      * Боломжит статусууд: new, processing, confirmed, shipped, completed, cancelled.
      * Статус өөрчлөгдсөн тухай захиалагчид имэйл, Discord мэдэгдэл илгээнэ.
      *
-     * Permission: system_content_update
+     * Permission: system_product_update
      *
      * @param int $id Захиалгын ID
      * @return void
@@ -175,7 +175,7 @@ class OrdersController extends \Raptor\Controller
     public function updateStatus(int $id)
     {
         try {
-            if (!$this->isUserCan('system_content_update')) {
+            if (!$this->isUserCan('system_product_update')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
 
@@ -244,7 +244,7 @@ class OrdersController extends \Raptor\Controller
     /**
      * Захиалгыг идэвхгүй болгох (soft delete).
      *
-     * Permission: system_content_delete
+     * Permission: system_product_delete
      *
      * @return void JSON response буцаана
      */
@@ -254,7 +254,7 @@ class OrdersController extends \Raptor\Controller
             $model = new ProductOrdersModel($this->pdo);
             $table = $model->getName();
 
-            if (!$this->isUserCan('system_content_delete')) {
+            if (!$this->isUserCan('system_product_delete')) {
                 throw new \Exception('No permission for an action [delete]!', 401);
             }
 

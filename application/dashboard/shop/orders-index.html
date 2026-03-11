@@ -172,7 +172,7 @@
             let rowsHTML = '';
             const indexLink = `{{ 'orders'|link }}`;
 
-            const canDelete = {{ user.can('system_content_delete') ? 'true' : 'false' }};
+            const canDelete = {{ user.can('system_product_delete') ? 'true' : 'false' }};
 
             data.list.forEach(record => {
                 const id = record.id;

@@ -23,7 +23,7 @@
         <i class="bi bi-pencil-square"></i> {{ record['title']|e }}
     </h3>
     <div class="ms-auto">
-        {% if user.can('system_content_update') %}
+        {% if user.can('system_product_update') %}
             <button class="submit-update btn btn-sm btn-primary shadow-sm text-uppercase">
                 <i class="bi bi-check-lg"></i> {{ 'save'|text }}
             </button>
@@ -138,7 +138,7 @@
         <label class="form-label">{{ 'link'|text }} <i class="bi bi-link-45deg"></i></label>
         <input class="form-control" name="link" type="url" value="{{ record['link']|default('')|e }}" maxlength="255" placeholder="{{ 'optional'|text }}">
     </div>
-    {% if user.can('system_content_publish') %}
+    {% if user.can('system_product_publish') %}
     <div class="rounded border border-success mt-3 p-3">
         <div class="row">
             <!-- Нийтлэх эсэх сонголт -->
@@ -170,7 +170,7 @@
     {% endif %}
 </form>
 <div class="rounded p-2 mt-4 shadow">
-    {% if user.can('system_content_update') %}
+    {% if user.can('system_product_update') %}
         <button class="submit-update btn btn-primary text-uppercase shadow-sm">
             <i class="bi bi-check2"></i> {{ 'save'|text }}
         </button>

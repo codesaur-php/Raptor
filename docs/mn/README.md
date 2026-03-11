@@ -19,7 +19,8 @@
 8. [Routing](#8-routing)
 9. [Controller](#9-controller)
 10. [Model](#10-model)
-11. [Хэрэглээний жишээ](#11-хэрэглээний-жишээ)
+11. [Тестчилгээ](#11-тестчилгээ)
+12. [Хэрэглээний жишээ](#12-хэрэглээний-жишээ)
 
 ---
 
@@ -319,9 +320,11 @@ raptor/
 |   |   \-- cpanel.deploy.yml      # GitHub Actions cPanel FTP deploy
 |   |-- en/                        # Англи баримтжуулалт
 |   \-- mn/                        # Монгол баримтжуулалт
+|-- tests/                         # PHPUnit тестүүд (unit, integration)
 |-- logs/                          # Алдааны лог файлууд
 |-- private/                       # Хамгаалагдсан файлууд
 |-- composer.json
+|-- phpunit.xml                    # PHPUnit тохиргоо
 \-- LICENSE
 ```
 
@@ -824,7 +827,87 @@ class CategoriesModel extends LocalizedModel
 
 ---
 
-## 11. Хэрэглээний жишээ
+## 11. Тестчилгээ
+
+Raptor нь PHPUnit 11 суурьтай unit болон integration тестүүдтэй.
+
+### Шаардлага
+
+```bash
+composer install   # phpunit dev dependency суулгах
+```
+
+### Тест ажиллуулах
+
+```bash
+# Бүх тест
+composer test
+
+# Зөвхөн unit тест
+composer test:unit
+
+# Зөвхөн integration тест
+composer test:integration
+```
+
+### Тохиргоо
+
+`.env.testing` файл нь тест орчны тохиргоог агуулна. Integration тест нь тусдаа test database ашиглана (жишээ: `raptor12_test`).
+
+```env
+RAPTOR_DB_NAME=raptor12_test
+```
+
+### Тестийн бүтэц
+
+```
+tests/
+|-- bootstrap.php              # Тест орчин тохируулах
+|-- Support/
+|   |-- RaptorTestCase.php     # Unit тестийн суурь анги
+|   \-- IntegrationTestCase.php # Integration тестийн суурь анги
+|-- Unit/
+|   |-- Authentication/
+|   |   \-- UserTest.php       # User::is(), User::can() тест
+|   \-- Controller/
+|       \-- ControllerTextTest.php  # Controller::text() тест
+\-- Integration/
+    |-- Model/
+    |   |-- UsersModelTest.php          # Хэрэглэгчийн CRUD тест
+    |   |-- OrganizationModelTest.php   # Байгууллагын тест
+    |   \-- SignupModelTest.php         # Бүртгэлийн тест
+    |-- RBAC/
+    |   \-- RolesPermissionsTest.php    # RBAC seed шалгалт
+    \-- Authentication/
+        \-- JWTAuthTest.php             # JWT encode/decode тест
+```
+
+### Тестийн онцлогууд
+
+- **Transaction isolation** - Integration тест бүр transaction дотор ажиллаж, дуусахад rollback хийнэ. Тест дата бодит database-д нөлөөлөхгүй
+- **RaptorTestCase** - Mock request, mock user үүсгэх helper-ууд (`createAdmin()`, `createCoder()`, `createGuest()`)
+- **IntegrationTestCase** - Static PDO холболт (тест анги дотор дахин холбогдохгүй), auto database create
+
+### Шинэ тест бичих жишээ
+
+```php
+namespace Tests\Unit;
+
+use Tests\Support\RaptorTestCase;
+
+class MyTest extends RaptorTestCase
+{
+    public function test_example(): void
+    {
+        $user = $this->createAdmin();
+        $this->assertTrue($user->can('system_user_index'));
+    }
+}
+```
+
+---
+
+## 12. Хэрэглээний жишээ
 
 ### Шинэ Router нэмэх
 

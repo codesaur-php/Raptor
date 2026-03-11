@@ -9,15 +9,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 ## [1.4.0] - 2026-03-11
 [1.4.0]: https://github.com/codesaur-php/Raptor/compare/v1.3.1...v1.4.0
 
-Log system consolidation, model rename, Discord notification improvement. Removed SQLite support from Raptor due to lack of practical use case.
+Log system consolidation, model rename, Discord notification improvement, automated testing, product RBAC permissions. Removed SQLite support from Raptor due to lack of practical use case.
 
 ### Added
+- **RBAC** - New `system_product_*` permissions for Shop module: `product_index`, `product_insert`, `product_update`, `product_publish`, `product_delete`; assigned to admin (all), manager (all), editor (index/insert/update/publish), viewer (index)
+- **Automated Testing** - PHPUnit 11 test suite with unit and integration tests (47 tests, 83 assertions)
+  - Unit tests: `User::is()`, `User::can()`, `Controller::text()`, `Controller::getLanguageCode()`
+  - Integration tests: `UsersModel`, `OrganizationModel`, `SignupModel` CRUD, RBAC seed data verification, JWT encode/decode
+  - Transaction-based test isolation (auto-rollback)
+  - `.env.testing` for test database configuration
 - **DiscordNotifier** - `newOrder()` method now includes customer phone number in Discord embed notification
 - **DiscordNotifier** - `newDevRequest()` method for notifying when a new development request is created (shows author and assigned user)
 - **DiscordNotifier** - `devRequestUpdated()` method for notifying when a development request receives a response (shows responder and new status)
 - **DevRequestController** - Discord notifications on `store()` and `respond()` actions
 
 ### Changed
+- **Shop RBAC** - Shop module (`ProductsController`, `OrdersController`, templates) now uses dedicated `system_product_*` permissions instead of shared `system_content_*`
 - **OrdersModel → ProductOrdersModel** - Renamed class and file; table name changed from `orders` to `products_orders`
 - **Log consolidation** - All shop-related logs (orders CRUD, products CRUD, orderSubmit) now write to a single `'product'` log channel instead of dynamic `$table` names
 - **Log consolidation** - All development module logs (DevRequest, FileManager, SqlTerminal) now write to a single `'development'` log channel instead of separate `'dev_requests'`, `'file_manager'`, `'sql_terminal'` channels

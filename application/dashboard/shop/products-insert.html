@@ -25,7 +25,7 @@
     </h3>
     <div class="ms-auto">
         <!-- Хэрэв хэрэглэгч бүтээгдэхүүн нэмэх эрхтэй бол хадгалах товч харуулах -->
-        {% if user.can('system_content_insert') %}
+        {% if user.can('system_product_insert') %}
             <button class="submit-insert btn btn-sm btn-success text-uppercase shadow-sm">
                 <i class="bi bi-check-lg"></i> {{ 'save'|text }}
             </button>
@@ -148,7 +148,7 @@
         <input class="form-control" name="link" type="url" value="" maxlength="255" placeholder="{{ 'optional'|text }}">
     </div>
     <!-- Хэрэв хэрэглэгч нийтлэх эрхтэй бол нийтлэх болон сэтгэгдэл авах тохиргоо харуулах -->
-    {% if user.can('system_content_publish') %}
+    {% if user.can('system_product_publish') %}
     <div class="rounded border border-success mt-3 p-3">
         <div class="row">
             <!-- Нийтлэх эсэх сонголт -->
@@ -181,7 +181,7 @@
 </form>
 <!-- Формын доорх үйлдлийн товчнууд -->
 <div class="rounded p-2 mt-4 shadow">
-    {% if user.can('system_content_insert') %}
+    {% if user.can('system_product_insert') %}
         <button class="submit-insert btn btn-success text-uppercase shadow-sm">
             <i class="bi bi-check2"></i> {{ 'save'|text }}
         </button>

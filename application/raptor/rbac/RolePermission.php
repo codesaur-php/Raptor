@@ -175,6 +175,8 @@ class RolePermission extends Model
                 'organization_index','organization_update',
                 'content_settings','content_index','content_insert',
                 'content_update','content_publish','content_delete',
+                'product_index','product_insert','product_update',
+                'product_publish','product_delete',
                 'localization_index','localization_insert','localization_update',
                 'templates_index',
                 'development'
@@ -188,6 +190,7 @@ class RolePermission extends Model
             FROM $roles r, $permissions p
             WHERE r.name = 'editor' AND p.name IN (
                 'content_index','content_insert','content_update','content_publish',
+                'product_index','product_insert','product_update','product_publish',
                 'localization_index',
                 'templates_index'
             )
@@ -200,6 +203,7 @@ class RolePermission extends Model
             FROM $roles r, $permissions p
             WHERE r.name = 'viewer' AND p.name IN (
                 'content_index',
+                'product_index',
                 'localization_index'
             )
         ");

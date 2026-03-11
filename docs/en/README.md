@@ -19,7 +19,8 @@
 8. [Routing](#8-routing)
 9. [Controller](#9-controller)
 10. [Model](#10-model)
-11. [Usage Examples](#11-usage-examples)
+11. [Testing](#11-testing)
+12. [Usage Examples](#12-usage-examples)
 
 ---
 
@@ -319,9 +320,11 @@ raptor/
 |   |   \-- cpanel.deploy.yml      # GitHub Actions cPanel FTP deploy
 |   |-- en/                        # English documentation
 |   \-- mn/                        # Mongolian documentation
+|-- tests/                         # PHPUnit tests (unit, integration)
 |-- logs/                          # Error log files
 |-- private/                       # Protected files
 |-- composer.json
+|-- phpunit.xml                    # PHPUnit configuration
 \-- LICENSE
 ```
 
@@ -824,7 +827,87 @@ class CategoriesModel extends LocalizedModel
 
 ---
 
-## 11. Usage Examples
+## 11. Testing
+
+Raptor includes a PHPUnit 11 test suite with unit and integration tests.
+
+### Requirements
+
+```bash
+composer install   # installs phpunit dev dependency
+```
+
+### Running Tests
+
+```bash
+# All tests
+composer test
+
+# Unit tests only
+composer test:unit
+
+# Integration tests only
+composer test:integration
+```
+
+### Configuration
+
+The `.env.testing` file contains test environment settings. Integration tests use a separate test database (e.g., `raptor12_test`).
+
+```env
+RAPTOR_DB_NAME=raptor12_test
+```
+
+### Test Structure
+
+```
+tests/
+|-- bootstrap.php              # Test environment setup
+|-- Support/
+|   |-- RaptorTestCase.php     # Base class for unit tests
+|   \-- IntegrationTestCase.php # Base class for integration tests
+|-- Unit/
+|   |-- Authentication/
+|   |   \-- UserTest.php       # User::is(), User::can() tests
+|   \-- Controller/
+|       \-- ControllerTextTest.php  # Controller::text() tests
+\-- Integration/
+    |-- Model/
+    |   |-- UsersModelTest.php          # User CRUD tests
+    |   |-- OrganizationModelTest.php   # Organization tests
+    |   \-- SignupModelTest.php         # Signup tests
+    |-- RBAC/
+    |   \-- RolesPermissionsTest.php    # RBAC seed data verification
+    \-- Authentication/
+        \-- JWTAuthTest.php             # JWT encode/decode tests
+```
+
+### Key Features
+
+- **Transaction isolation** - Each integration test runs inside a transaction that is rolled back on teardown. Test data never affects the real database
+- **RaptorTestCase** - Provides mock request and user factory helpers (`createAdmin()`, `createCoder()`, `createGuest()`)
+- **IntegrationTestCase** - Static PDO connection shared across test class, auto-creates test database if not exists
+
+### Writing a New Test
+
+```php
+namespace Tests\Unit;
+
+use Tests\Support\RaptorTestCase;
+
+class MyTest extends RaptorTestCase
+{
+    public function test_example(): void
+    {
+        $user = $this->createAdmin();
+        $this->assertTrue($user->can('system_user_index'));
+    }
+}
+```
+
+---
+
+## 12. Usage Examples
 
 ### Adding a New Router
 
