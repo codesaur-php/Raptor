@@ -3,17 +3,17 @@
 namespace Raptor\Content;
 
 use Psr\Log\LogLevel;
-use Twig\TwigFilter;
 
 /**
  * Class PagesController
  *
  * Хуудас (Pages) модулийн Dashboard Controller.
- * Хуудас үүсгэх, засварлах, унших, харах, идэвхгүй болгох
- * зэрэг бүх CRUD үйлдлийг гүйцэтгэнэ.
+ * Хуудас үүсгэх, засварлах, харах, идэвхгүй болгох
+ * зэрэг CRUD үйлдлийг гүйцэтгэнэ.
  *
  * Онцлог:
  *  - Хуудас бүр нэг хэлтэй (code), parent_id-р шатлал үүсгэнэ
+ *  - type талбараар төрөл зааж өгнө (анхдагч: menu)
  *  - Header image (photo) + content media + attachment файлуудтай
  *  - Published/unpublished төлөвтэй, нийтлэхэд тусгай эрх шаардлагатай
  *  - Slug автоматаар үүсгэдэг (PagesModel)
@@ -269,6 +269,18 @@ class PagesController extends FileController
                     $files = [];
                 }
 
+                // Parent хэлний шалгалт
+                $parentId = (int)($payload['parent_id'] ?? 0);
+                if ($parentId > 0 && !empty($payload['code'])) {
+                    $parentRow = $model->getRowWhere(['id' => $parentId, 'is_active' => 1]);
+                    if (empty($parentRow) || $parentRow['code'] !== $payload['code']) {
+                        throw new \InvalidArgumentException(
+                            $this->text('invalid-request'),
+                            400
+                        );
+                    }
+                }
+
                 // Link шалгах
                 $link = \trim($payload['link'] ?? '');
                 if (!$this->isValidLink($link)) {
@@ -278,11 +290,6 @@ class PagesController extends FileController
                     );
                 }
 
-                // Type: nav, content, link
-                $payload['type'] = \in_array($payload['type'] ?? '', ['nav', 'content', 'link'])
-                    ? $payload['type']
-                    : 'content';
-
                 $record = $model->insert(
                     $payload + ['created_by' => $this->getUserId()]
                 );
@@ -290,15 +297,6 @@ class PagesController extends FileController
                     throw new \Exception($this->text('record-insert-error'));
                 }
                 $id = $record['id'];
-
-                // Parent болсон хуудасны is_featured, comment-г унтраах
-                $parentId = (int)($payload['parent_id'] ?? 0);
-                if ($parentId > 0) {
-                    $model->updateById($parentId, [
-                        'is_featured' => 0,
-                        'comment' => 0
-                    ]);
-                }
 
                 // Файлуудыг нэгдсэн аргаар боловсруулах
                 $fileChanges = $this->processFiles($record, $files, true);
@@ -312,11 +310,14 @@ class PagesController extends FileController
                 $adminName = \trim(($this->getUser()->profile['first_name'] ?? '') . ' ' . ($this->getUser()->profile['last_name'] ?? ''));
                 $this->getService('discord')?->contentAction('page', $action, $payload['title'] ?? '', $id, $adminName);
             } else {
+                $allInfos = $this->getInfos($table);
+                $codeParam = $this->getQueryParams()['code'] ?? '';
                 $dashboard = $this->twigDashboard(
                     __DIR__ . '/page-insert.html',
                     [
                         'table' => $table,
-                        'infos' => $this->getInfos($table),
+                        'all_infos' => $allInfos,
+                        'infos' => $codeParam !== '' ? \array_filter($allInfos, fn($i) => $i['code'] === $codeParam) : $allInfos,
                         'max_file_size' => $this->getMaximumFileUploadSize()
                     ]
                 );
@@ -349,83 +350,10 @@ class PagesController extends FileController
     }
 
     /**
-     * Хуудсыг blog хэлбэрээр унших (read view).
-     *
-     * - Хуудасны контент + хавсралт файлуудыг харуулна
-     * - read_count тоолуурыг нэмэгдүүлнэ
-     *
-     * Permission: system_content_index
-     *
-     * @param string $slug Хуудасны slug
-     */
-    public function read(string $slug)
-    {
-        try {
-            $model = new PagesModel($this->pdo);
-            $table = $model->getName();
-            if (!$this->isUserCan('system_content_index')) {
-                throw new \Exception($this->text('system-no-permission'), 401);
-            }
-            $record = $model->getRowWhere([
-                'slug' => $slug,
-                'is_active' => 1
-            ]);
-            if (empty($record)) {
-                throw new \Exception($this->text('no-record-selected'));
-            }
-            if ($record['published'] != 1) {
-                throw new \Exception($this->text('no-record-selected'), 403);
-            }
-            $id = (int) $record['id'];
-
-            // Parent хуудас бол read харуулахгүй
-            $childCount = $this->query(
-                "SELECT COUNT(*) as cnt FROM $table WHERE parent_id=$id AND is_active=1"
-            )->fetch();
-            if ((int)($childCount['cnt'] ?? 0) > 0) {
-                throw new \Exception($this->text('no-record-selected'), 403);
-            }
-
-            // Link байвал тийш чиглүүлэх
-            if (!empty($record['link'])) {
-                \header('Location: ' . $record['link']);
-                return;
-            }
-
-            $filesModel = new FilesModel($this->pdo);
-            $filesModel->setTable($table);
-            $files = $filesModel->getRows(['WHERE' => "record_id=$id AND is_active=1"]);
-
-            $template = $this->twigTemplate(__DIR__ . '/page-read.html');
-            foreach ($this->getAttribute('settings', []) as $key => $value) {
-                $template->set($key, $value);
-            }
-            $template->set('record', $record);
-            $template->set('files', $files);
-            $template->addFilter(new TwigFilter('basename', fn(string $path): string => \rawurldecode(\basename($path))));
-            $template->render();
-            $model->updateById($id, ['read_count' => $record['read_count'] + 1]);
-        } catch (\Throwable $err) {
-            $this->dashboardProhibited($err->getMessage(), $err->getCode())->render();
-        } finally {
-            $context = ['action' => 'read', 'slug' => $slug];
-            if (isset($err) && $err instanceof \Throwable) {
-                $level = LogLevel::ERROR;
-                $message = '{slug} хуудсыг унших үед алдаа гарч зогслоо';
-                $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
-            } else {
-                $level = LogLevel::NOTICE;
-                $message = '[{title}] {slug} хуудсыг уншиж байна';
-                $context += $record + ['files' => $files];
-            }
-            $this->log($table ?? 'pages', $level, $message, $context);
-        }
-    }
-
-    /**
      * Хуудасны дэлгэрэнгүй мэдээлэл харах (Dashboard view).
      *
      * - Бичлэг + хавсралт файлууд + эцэг хуудасны мэдээлэл
+     * - Дэд хуудас агуулсан бол has_children анхааруулга харуулна
      *
      * Permission: system_content_index
      *
@@ -450,13 +378,17 @@ class PagesController extends FileController
             $filesModel->setTable($table);
             $files = $filesModel->getRows(['WHERE' => "record_id=$id AND is_active=1"]);
             $infos = $this->getInfos($table, "(id=$id OR id={$record['parent_id']})");
+            $childCount = $this->query(
+                "SELECT COUNT(*) as cnt FROM $table WHERE parent_id=$id AND is_active=1"
+            )->fetch();
             $dashboard = $this->twigDashboard(
                 __DIR__ . '/page-view.html',
                 [
                     'table' => $table,
                     'record' => $record,
                     'files' => $files,
-                    'infos' => $infos
+                    'infos' => $infos,
+                    'has_children' => (int)($childCount['cnt'] ?? 0) > 0
                 ]
             );
             $dashboard->set('title', $this->text('view-record') . ' | Pages');
@@ -481,8 +413,9 @@ class PagesController extends FileController
     /**
      * Хуудасны бичлэгийг шинэчлэх.
      *
-     * - GET: Засварлах форм харуулна
+     * - GET: Засварлах форм харуулна (дэд хуудас агуулсан бол has_children анхааруулга)
      * - PUT: Бичлэгийг шинэчлэнэ
+     *   - type, code зэрэг бүх талбарыг өөрчлөх боломжтой
      *   - Гол зураг (photo) шинэчлэх/устгах боломжтой
      *   - Хавсаргасан файлууд нэмэх/засах/устгах боломжтой
      *   - published төлөв өөрчлөхөд system_content_publish эрх шаардлагатай
@@ -536,6 +469,25 @@ class PagesController extends FileController
                     $payload['published_by'] = $this->getUserId();
                 }
 
+                // Parent circular reference + хэлний шалгалт
+                $parentId = (int)($payload['parent_id'] ?? 0);
+                if ($parentId > 0) {
+                    $parentRow = $model->getRowWhere(['id' => $parentId, 'is_active' => 1]);
+                    if (empty($parentRow) || $parentRow['code'] !== $record['code']) {
+                        throw new \InvalidArgumentException(
+                            $this->text('invalid-request'),
+                            400
+                        );
+                    }
+                    $descendantIds = $this->getDescendantIds($id, $table);
+                    if ($parentId === $id || \in_array($parentId, $descendantIds)) {
+                        throw new \InvalidArgumentException(
+                            $this->text('cannot-set-descendant-as-parent'),
+                            400
+                        );
+                    }
+                }
+
                 // Link шалгах
                 $link = \trim($payload['link'] ?? '');
                 if (!$this->isValidLink($link)) {
@@ -581,25 +533,11 @@ class PagesController extends FileController
                     $payload['description'] = $desc;
                 }
 
-                // Type: update үед өөрчлөгдөхгүй
-                if (\array_key_exists('type', $payload)) {
-                    unset($payload['type']);
-                }  
-
                 $payload['updated_at'] = \date('Y-m-d H:i:s');
                 $payload['updated_by'] = $this->getUserId();
                 $updated = $model->updateById($id, $payload);
                 if (empty($updated)) {
                     throw new \Exception($this->text('no-record-selected'));
-                }
-
-                // Parent өөрчлөгдсөн бол шинэ parent-ийн is_featured, comment-г унтраах
-                $newParentId = (int)($payload['parent_id'] ?? 0);
-                if ($newParentId > 0 && $newParentId != (int)$record['parent_id']) {
-                    $model->updateById($newParentId, [
-                        'is_featured' => 0,
-                        'comment' => 0
-                    ]);
                 }
 
                 $this->respondJSON([
@@ -614,7 +552,11 @@ class PagesController extends FileController
                 $adminName = \trim(($this->getUser()->profile['first_name'] ?? '') . ' ' . ($this->getUser()->profile['last_name'] ?? ''));
                 $this->getService('discord')?->contentAction('page', $action, $payload['title'] ?? $record['title'] ?? '', $id, $adminName);
             } else {
-                $infos = $this->getInfos($table, "id!=$id AND (parent_id IS NULL OR parent_id!=$id)");
+                $excludeIds = $this->getDescendantIds($id, $table);
+                $excludeIds[] = $id;
+                $excludeList = \implode(',', $excludeIds);
+                $codeQuoted = $this->quote($record['code']);
+                $infos = $this->getInfos($table, "id NOT IN ($excludeList) AND code=$codeQuoted");
                 $files = $filesModel->getRows(['WHERE' => "record_id=$id AND is_active=1"]);
                 $childCount = $this->query(
                     "SELECT COUNT(*) as cnt FROM $table WHERE parent_id=$id AND is_active=1"
@@ -718,6 +660,38 @@ class PagesController extends FileController
             }
             $this->log($table ?? 'pages', $level, $message, $context);
         }
+    }
+
+    /**
+     * Тухайн хуудасны бүх удам (children, grandchildren, ...) ID-г олох.
+     *
+     * @param int    $id    Хуудасны ID
+     * @param string $table Хүснэгтийн нэр
+     * @return array Бүх удмын ID-ийн массив
+     */
+    private function getDescendantIds(int $id, string $table): array
+    {
+        $allPages = $this->query(
+            "SELECT id, parent_id FROM $table WHERE is_active=1"
+        )->fetchAll();
+
+        $childrenMap = [];
+        foreach ($allPages as $row) {
+            $pid = (int)$row['parent_id'];
+            $childrenMap[$pid][] = (int)$row['id'];
+        }
+
+        $descendants = [];
+        $queue = $childrenMap[$id] ?? [];
+        while (!empty($queue)) {
+            $current = \array_shift($queue);
+            $descendants[] = $current;
+            foreach ($childrenMap[$current] ?? [] as $child) {
+                $queue[] = $child;
+            }
+        }
+
+        return $descendants;
     }
 
     /**

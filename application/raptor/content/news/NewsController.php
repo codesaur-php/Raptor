@@ -3,7 +3,6 @@
 namespace Raptor\Content;
 
 use Psr\Log\LogLevel;
-use Twig\TwigFilter;
 
 /**
  * Class NewsController
@@ -14,7 +13,6 @@ use Twig\TwigFilter;
  * - Мэдээний жагсаалт харуулах (index, list)
  * - Шинэ мэдээ үүсгэх (insert)
  * - Мэдээ шинэчлэх (update)
- * - Мэдээ унших (read)
  * - Мэдээний дэлгэрэнгүй мэдээлэл харуулах (view)
  * - Мэдээг идэвхгүй болгох (deactivate)
  * зэрэг үйлдлүүдийг гүйцэтгэнэ.
@@ -409,68 +407,6 @@ class NewsController extends FileController
                 $level = LogLevel::NOTICE;
                 $message = '{record.id} дугаартай [{record.title}] мэдээг шинэчлэхээр нээж байна';
                 $context += ['record' => $record, 'files' => $files];
-            }
-            $this->log($table ?? 'news', $level, $message, $context);
-        }
-    }
-    
-    /**
-     * Мэдээний бичлэгийг унших.
-     *
-     * Энэ method нь:
-     * - Мэдээний бүрэн мэдээллийг харуулна
-     * - Хавсаргасан файлуудыг харуулна
-     * - Уншсан тооллогыг (read_count) нэмэгдүүлнэ
-     * - news-read.html template ашиглана
-     *
-     * Permission: system_content_index
-     *
-     * @param string $slug Унших мэдээний slug
-     * @return void
-     * @throws \Exception Эрхгүй эсвэл бичлэг олдохгүй бол exception шидэнэ
-     */
-    public function read(string $slug)
-    {
-        try {
-            $model = new NewsModel($this->pdo);
-            $table = $model->getName();
-            if (!$this->isUserCan('system_content_index')) {
-                throw new \Exception($this->text('system-no-permission'), 401);
-            }
-            $record = $model->getRowWhere([
-                'slug' => $slug,
-                'is_active' => 1
-            ]);
-            if (empty($record)) {
-                throw new \Exception($this->text('no-record-selected'));
-            }
-            $id = (int) $record['id'];
-            $filesModel = new FilesModel($this->pdo);
-            $filesModel->setTable($table);
-            $files = $filesModel->getRows(['WHERE' => "record_id=$id AND is_active=1"]);
-
-            $template = $this->twigTemplate(__DIR__ . '/news-read.html');
-            foreach ($this->getAttribute('settings', []) as $key => $value) {
-                $template->set($key, $value);
-            }
-            $template->set('record', $record);
-            $template->set('files', $files);
-            // basename filter (rawurldecode хийж уншигдахуйц нэр харуулна)
-            $template->addFilter(new TwigFilter('basename', fn(string $path): string => \rawurldecode(\basename($path))));
-            $template->render();
-            $model->updateById($id, ['read_count' => $record['read_count'] + 1]);
-        } catch (\Throwable $err) {
-            $this->dashboardProhibited($err->getMessage(), $err->getCode())->render();
-        } finally {
-            $context = ['action' => 'read', 'slug' => $slug];
-            if (isset($err) && $err instanceof \Throwable) {
-                $level = LogLevel::ERROR;
-                $message = '{slug} мэдээг унших үед алдаа гарч зогслоо';
-                $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
-            } else {
-                $level = LogLevel::NOTICE;
-                $message = '[{title}] {slug} мэдээг уншиж байна';
-                $context += $record + ['files' => $files];
             }
             $this->log($table ?? 'news', $level, $message, $context);
         }

@@ -58,7 +58,7 @@ class SettingsController extends FileController
          * FileController доторх $this->local ашиглан физик path бүтээж шалгана.
          */
         if (\array_key_exists('id', $record)) {
-            // FAVICO
+            // FAVICON
             if (!empty($record['favicon'])) {
                 $faviconFile = $this->local_folder . '/' . \basename($record['favicon']);
                 if (\file_exists($faviconFile)) {
@@ -248,7 +248,7 @@ class SettingsController extends FileController
             $updates = [];
             $payload = [];
 
-            /* -------------------- FAVICO -------------------- */
+            /* -------------------- FAVICON -------------------- */
             $favicon_name = \basename($current['favicon'] ?? '');
             $this->allowExtensions(['ico']);
             $ico = $this->moveUploaded('favicon');

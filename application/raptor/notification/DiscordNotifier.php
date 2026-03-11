@@ -274,22 +274,25 @@ class DiscordNotifier
             'insert' => 'New', 'update' => 'Updated',
             'delete' => 'Deleted', 'publish' => 'Published'
         ];
-        $actionLabel = $actionLabels[$action] ?? \ucfirst($action);
-
-        $fields = [
-            ['name' => 'Type', 'value' => \ucfirst($type), 'inline' => true],
-            ['name' => 'Action', 'value' => $actionLabel, 'inline' => true]
+        $actionPast = [
+            'insert' => 'created', 'update' => 'updated',
+            'delete' => 'deleted', 'publish' => 'published'
         ];
+        $actionLabel = $actionLabels[$action] ?? \ucfirst($action);
+        $pastVerb = $actionPast[$action] ?? $action;
+
+        $desc = $admin !== ''
+            ? "**$admin** $pastVerb a " . \strtolower($type) . "."
+            : \ucfirst($type) . " has been $pastVerb.";
+
+        $fields = [];
         if ($id !== null) {
             $fields[] = ['name' => 'ID', 'value' => (string)$id, 'inline' => true];
-        }
-        if ($admin !== '') {
-            $fields[] = ['name' => 'By', 'value' => $admin, 'inline' => true];
         }
 
         $this->send(
             "$icon " . \ucfirst($type) . " ($actionLabel): $title",
-            '',
+            $desc,
             $color,
             $fields
         );

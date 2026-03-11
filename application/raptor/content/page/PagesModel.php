@@ -11,12 +11,9 @@ use codesaur\DataObject\Column;
  * Raptor CMS-ийн "Хуудас" (Pages) модулийн өгөгдлийн загвар.
  *
  * Хуудас нь мод бүтэцтэй (parent_id), олон хэлтэй бус (single-table),
- * SEO-friendly slug-тай контент юм. Тухайлбал:
- *  - Цэсний навигац (type=nav) - дотроо хүүхэд хуудсуудыг агуулах цэсний зүйл
- *  - Агуулга (type=content) - контент бүхий хуудас
- *  - Холбоос (type=link) - URL руу чиглүүлэх
+ * SEO-friendly slug-тай контент юм. type талбарын анхдагч утга нь 'menu'.
  *
- * Бүх нийтлэгдсэн хуудас навигацид харагдана (type ялгаагүй).
+ * Бүх нийтлэгдсэн хуудас навигацид харагдана.
  *  - Ерөнхий мэдээлэл (category=general)
  *  - Нийтлэл (published/draft)
  *
@@ -53,7 +50,7 @@ class PagesModel extends Model
         new Column('source', 'varchar', 255),
         new Column('photo', 'varchar', 255),
         new Column('code', 'varchar', 2),
-       (new Column('type', 'varchar', 32))->default('content'),
+       (new Column('type', 'varchar', 32))->default('menu'),
        (new Column('category', 'varchar', 32))->default('general'),
        (new Column('position', 'smallint'))->default(100),
         new Column('link', 'varchar', 255),
@@ -117,7 +114,6 @@ class PagesModel extends Model
         }
         $assets = $path . '/assets/images';
         $seed = [
-            'is_active' => 1,
             'published' => 1,
             'created_at' => $now,
             'published_at' => $now,
@@ -130,7 +126,6 @@ class PagesModel extends Model
         $this->insert($seed + [
             'code' => 'mn',
             'title' => 'Танилцуулга',
-            'type' => 'content',
             'position' => 10,
             'content' => '<p>Энэ бол <a href="https://github.com/codesaur-php/Raptor" target="_blank">Raptor Framework</a> дээр суурилсан демо вэб сайт юм.</p>'
                 . '<p>Та энэ хуудсыг <a href="' . $path . '/dashboard">хянах самбар</a>аас засварлах боломжтой.</p>'
@@ -146,14 +141,12 @@ class PagesModel extends Model
         $mnAbout = $this->insert($seed + [
             'code' => 'mn',
             'title' => 'Бидний тухай',
-            'type' => 'nav',
             'position' => 20
         ]);
         $this->insert($seed + [
             'code' => 'mn',
             'parent_id' => $mnAbout['id'],
             'title' => 'Байгууллага',
-            'type' => 'content',
             'position' => 21,
             'photo' => $assets . '/organization.jpg',
             'content' => '<p>Байгууллагын танилцуулга энд байрлана.</p>'
@@ -163,7 +156,6 @@ class PagesModel extends Model
             'code' => 'mn',
             'parent_id' => $mnAbout['id'],
             'title' => 'Баг',
-            'type' => 'content',
             'position' => 22,
             'content' => '<p>Манай багийн гишүүдийн танилцуулга.</p>'
                 . '<p><img src="' . $assets . '/team.jpg" alt="Баг" class="img-fluid rounded shadow-sm"></p>'
@@ -173,14 +165,12 @@ class PagesModel extends Model
         $mnDino = $this->insert($seed + [
             'code' => 'mn',
             'title' => 'Динозаврууд',
-            'type' => 'nav',
             'position' => 30
         ]);
         $this->insert($seed + [
             'code' => 'mn',
             'parent_id' => $mnDino['id'],
             'title' => 'Велоцираптор',
-            'type' => 'content',
             'position' => 31,
             'is_featured' => 1,
             'source' => 'Википедиа',
@@ -193,7 +183,6 @@ class PagesModel extends Model
             'code' => 'mn',
             'parent_id' => $mnDino['id'],
             'title' => 'Тарбозавр',
-            'type' => 'content',
             'position' => 32,
             'is_featured' => 1,
             'photo' => $assets . '/tarbosaurus.jpg',
@@ -206,7 +195,6 @@ class PagesModel extends Model
         $this->insert($seed + [
             'code' => 'mn',
             'title' => '<i class="bi bi-box2-heart"></i> Бүтээгдэхүүнүүд',
-            'type' => 'link',
             'position' => 35,
             'link' => $path . '/products'
         ]);
@@ -215,7 +203,6 @@ class PagesModel extends Model
         $this->insert($seed + [
             'code' => 'mn',
             'title' => 'Холбоо барих',
-            'type' => 'content',
             'position' => 40,
             'link' => $path . '/contact',
             'content' => '<p>Бидэнтэй холбогдохыг хүсвэл доорх мэдээллийг ашиглана уу.</p>'
@@ -228,7 +215,6 @@ class PagesModel extends Model
         $this->insert($seed + [
             'code' => 'en',
             'title' => 'Introduction',
-            'type' => 'content',
             'position' => 50,
             'content' => '<p>This is a demo website built on the <a href="https://github.com/codesaur-php/Raptor" target="_blank">Raptor Framework</a>.</p>'
                 . '<p>You can edit this page from the <a href="' . $path . '/dashboard">admin dashboard</a>.</p>'
@@ -244,14 +230,12 @@ class PagesModel extends Model
         $enAbout = $this->insert($seed + [
             'code' => 'en',
             'title' => 'About Us',
-            'type' => 'nav',
             'position' => 60
         ]);
         $this->insert($seed + [
             'code' => 'en',
             'parent_id' => $enAbout['id'],
             'title' => 'Organization',
-            'type' => 'content',
             'position' => 61,
             'photo' => $assets . '/organization.jpg',
             'content' => '<p>Organization introduction goes here.</p>'
@@ -261,7 +245,6 @@ class PagesModel extends Model
             'code' => 'en',
             'parent_id' => $enAbout['id'],
             'title' => 'Team',
-            'type' => 'content',
             'position' => 62,
             'content' => '<p>Meet our team members.</p>'
                 . '<p><img src="' . $assets . '/team.jpg" alt="Team" class="img-fluid rounded shadow-sm"></p>'
@@ -271,14 +254,12 @@ class PagesModel extends Model
         $enDino = $this->insert($seed + [
             'code' => 'en',
             'title' => 'Dinosaurs',
-            'type' => 'nav',
             'position' => 70
         ]);
         $this->insert($seed + [
             'code' => 'en',
             'parent_id' => $enDino['id'],
             'title' => 'Velociraptor',
-            'type' => 'content',
             'position' => 71,
             'is_featured' => 1,
             'source' => 'Wikipedia',
@@ -291,7 +272,6 @@ class PagesModel extends Model
             'code' => 'en',
             'parent_id' => $enDino['id'],
             'title' => 'Tarbosaurus',
-            'type' => 'content',
             'position' => 72,
             'is_featured' => 1,
             'photo' => $assets . '/tarbosaurus.jpg',
@@ -304,7 +284,6 @@ class PagesModel extends Model
         $this->insert($seed + [
             'code' => 'en',
             'title' => '<i class="bi bi-box2-heart"></i> Products',
-            'type' => 'link',
             'position' => 75,
             'link' => $path . '/products'
         ]);
@@ -313,7 +292,6 @@ class PagesModel extends Model
         $this->insert($seed + [
             'code' => 'en',
             'title' => 'Contact',
-            'type' => 'content',
             'position' => 80,
             'link' => $path . '/contact',
             'content' => '<p>Feel free to reach out to us using the information below.</p>'
@@ -413,8 +391,8 @@ class PagesModel extends Model
     /**
      * Хуудсуудыг parent_id-р мод бүтэцтэй навигаци болгон буцаана.
      *
-     * Бүх нийтлэгдсэн, идэвхтэй хуудсуудаас навигацийн бүтэц буцаана.
-     * parent -> child -> submenu хэлбэрээр бүтэцлэнэ (type ялгаагүй).
+     * Зөвхөн type нь *-menu (menu, mega-menu г.м.) хуудсуудаас навигацийн бүтэц буцаана.
+     * parent -> child -> submenu хэлбэрээр бүтэцлэнэ.
      *
      * @param string $code Хэлний код (mn, en...)
      * @return array Олон түвшний submenu бүтэцтэй навигацийн массив
@@ -425,7 +403,7 @@ class PagesModel extends Model
         $stmt = $this->pdo->prepare(
             'SELECT id, parent_id, title, slug, type, link ' .
             "FROM $table " .
-            "WHERE code=:code AND is_active=1 AND published=1 " .
+            "WHERE code=:code AND is_active=1 AND published=1 AND (type='menu' OR type LIKE '%-menu') " .
             'ORDER BY position, id'
         );
         $stmt->bindParam(':code', $code, \PDO::PARAM_STR);
@@ -465,6 +443,7 @@ class PagesModel extends Model
     /**
      * HTML контентоос товч тайлбар (excerpt) үүсгэх.
      *
+     * Block tag (p, div, li, ...) хаалтын ард зай нэмж, текст наалдахаас сэргийлнэ.
      * HTML tag-уудыг хасаж, цэвэр текстийг заасан уртаар таслана.
      *
      * @param string $content HTML контент.
@@ -473,7 +452,10 @@ class PagesModel extends Model
      */
     public function getExcerpt(string $content, int $length = 200): string
     {
-        $text = \strip_tags($content);
+        // Block tag хаалтын өмнө зай нэмж, текст наалдахаас сэргийлэх
+        $text = \preg_replace('/<\/(p|div|br|li|h[1-6]|blockquote|tr)>/i', '</$1> ', $content);
+        $text = \strip_tags($text);
+        $text = \preg_replace('/\s+/', ' ', $text);
         $text = \trim($text);
 
         if (\mb_strlen($text) <= $length) {

@@ -242,15 +242,19 @@ class ProductsModel extends Model
     /**
      * Content-оос товч тайлбар (excerpt) үүсгэх.
      *
+     * Block tag (p, div, li, ...) хаалтын ард зай нэмж, текст наалдахаас сэргийлнэ.
      * HTML tag-уудыг хасаж, эхний $length тэмдэгтийг буцаана.
      *
-     * @param string $content Бүтээгдэхүүний агуулга (HTML)
-     * @param int $length Тэмдэгтийн урт (default: 200)
-     * @return string Товч тайлбар
+     * @param string $content Бүтээгдэхүүний агуулга (HTML).
+     * @param int $length Хамгийн их тэмдэгтийн урт (анхдагч: 200).
+     * @return string Товчилсон текст. Хэтэрвэл `...` залгана.
      */
     public function getExcerpt(string $content, int $length = 200): string
     {
-        $text = \strip_tags($content);
+        // Block tag хаалтын өмнө зай нэмж, текст наалдахаас сэргийлэх
+        $text = \preg_replace('/<\/(p|div|br|li|h[1-6]|blockquote|tr)>/i', '</$1> ', $content);
+        $text = \strip_tags($text);
+        $text = \preg_replace('/\s+/', ' ', $text);
         $text = \trim($text);
 
         if (\mb_strlen($text) <= $length) {

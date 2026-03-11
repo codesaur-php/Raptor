@@ -208,11 +208,6 @@
                 const isParent = parentIds.has(parseInt(id));
                 const isPublished = page.published == 1;
                 const buttons = [];
-                if (!isParent && isPublished && page.link) {
-                    buttons.push(`<a class="btn btn-sm btn-warning mt-1 shadow-sm" href="${page.link}" target="_blank"><i class="bi bi-link-45deg"></i></a>`);
-                } else if (!isParent && isPublished) {
-                    buttons.push(`<a class="btn btn-sm btn-warning mt-1 shadow-sm" href="${indexLink}/read/${page.slug}?from=index"><i class="bi bi-book"></i></a>`);
-                }
                 buttons.push(`<a class="btn btn-sm btn-info mt-1 shadow-sm" href="${indexLink}/view/${page.id}?from=index"><i class="bi bi-eye"></i></a>`);
                 if (canUpdate) {
                     buttons.push(`<a class="btn btn-sm btn-primary mt-1 shadow-sm" href="${indexLink}/${page.id}?from=index"><i class="bi bi-pencil-square"></i></a>`);

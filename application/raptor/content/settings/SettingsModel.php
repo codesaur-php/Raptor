@@ -53,7 +53,7 @@ class SettingsModel extends LocalizedModel
            (new Column('id', 'bigint'))->primary(),          // PK, авто өсөх ID
             new Column('email', 'varchar', 70),              // Ерөнхий контакт имэйл
             new Column('phone', 'varchar', 70),              // Ерөнхий холбоо барих утас
-            new Column('favicon', 'varchar', 255),            // Favicon файлын харгалзах зам
+            new Column('favicon', 'varchar', 255),           // Favicon файлын харгалзах зам
             new Column('apple_touch_icon', 'varchar', 255),  // Apple touch icon зам
             new Column('config', 'text'),                    // Нэмэлт тохиргоо (ихэвчлэн JSON)
            (new Column('is_active', 'tinyint'))->default(1), // Тухайн мөр идэвхтэй эсэх (1=идэвхтэй)
@@ -120,21 +120,15 @@ class SettingsModel extends LocalizedModel
 
         $this->setForeignKeyChecks(true);
 
-        $now = \date('Y-m-d H:i:s');
         $path = \dirname($_SERVER['SCRIPT_NAME'] ?? '/');
         if ($path == '\\' || $path == '/' || $path == '.') {
             $path = '';
         }
-        $assets = $path . '/assets/images';
-        $logo = $assets . '/codesaur.png';
+        $logo = $path . '/assets/images/codesaur.png';
 
         $this->insert(
             [
-                'favicon' => $assets . '/favicon.ico',
-                'apple_touch_icon' => $assets . '/apple-touch-icon.png',
-                'is_active' => 1,
-                'created_by' => 1,
-                'created_at' => $now
+                'created_at' => \date('Y-m-d H:i:s')
             ],
             [
                 'mn' => [

@@ -82,9 +82,6 @@ class ContentsRouter extends Router
         // Мэдээг засварлах (GET form + PUT update)
         $this->GET_PUT('/dashboard/news/{uint:id}', [NewsController::class, 'update'])->name('news-update');
 
-        // Мэдээ унших (blog хэлбэрээр)
-        $this->GET('/dashboard/news/read/{slug}', [NewsController::class, 'read'])->name('news-read');
-
         // Мэдээг харах UI
         $this->GET('/dashboard/news/view/{uint:id}', [NewsController::class, 'view'])->name('news-view');
 
@@ -113,9 +110,6 @@ class ContentsRouter extends Router
 
         // Хуудас засварлах
         $this->GET_PUT('/dashboard/pages/{uint:id}', [PagesController::class, 'update'])->name('page-update');
-
-        // Хуудас унших (blog хэлбэрээр)
-        $this->GET('/dashboard/pages/read/{slug}', [PagesController::class, 'read'])->name('page-read');
 
         // Хуудас харах
         $this->GET('/dashboard/pages/view/{uint:id}', [PagesController::class, 'view'])->name('page-view');

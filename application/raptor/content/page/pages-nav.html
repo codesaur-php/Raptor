@@ -285,16 +285,9 @@ document.addEventListener('DOMContentLoaded', function () {
             const hasChildren = children && children.length > 0;
             const collapseId = `tree-node-${id}`;
 
-            // Type badge
-            let typeBadge = '';
-            if (page.type === 'link') {
-                typeBadge = `<span class="badge bg-warning text-dark">link</span>`;
-            } else if (page.type === 'content') {
-                typeBadge = `<span class="badge bg-success">content</span>`;
-            }
-            if (page.category && page.category !== 'general') {
-                typeBadge += ` <span class="badge bg-secondary">${page.category}</span>`;
-            }
+            // Type / Category badge
+            let typeBadge = `<span class="badge bg-warning text-dark">${page.type}</span>`;
+            typeBadge += ` <span class="badge bg-secondary">${page.category}</span>`;
 
             // Published
             const isPublished = page.published == 1;
@@ -304,11 +297,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
             // Actions
             let actions = '';
-            if (!hasChildren && isPublished && page.link) {
-                actions += `<a class="btn btn-sm btn-warning py-0 px-1" href="${page.link}" target="_blank" title="Link"><i class="bi bi-link-45deg"></i></a> `;
-            } else if (!hasChildren && isPublished) {
-                actions += `<a class="btn btn-sm btn-warning py-0 px-1" href="${indexLink}/read/${page.slug}?from=nav" title="Read"><i class="bi bi-book"></i></a> `;
-            }
             actions += `<a class="btn btn-sm btn-info py-0 px-1" href="${indexLink}/view/${id}?from=nav" title="View"><i class="bi bi-eye"></i></a>`;
             if (canUpdate) {
                 actions += ` <a class="btn btn-sm btn-primary py-0 px-1" href="${indexLink}/${id}?from=nav" title="Edit"><i class="bi bi-pencil-square"></i></a>`;
@@ -318,15 +306,14 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             // Toggle / leaf icon
-            const isExpandable = hasChildren || page.type === 'nav';
             let toggleBtn = '';
-            if (isExpandable) {
+            if (hasChildren) {
                 toggleBtn = `<a class="text-decoration-none me-1 tree-toggle" data-bs-toggle="collapse" href="#${collapseId}" role="button" aria-expanded="false"><i class="bi bi-chevron-right tree-chevron"></i></a>`;
             } else {
                 toggleBtn = `<i class="bi bi-file-earmark text-muted me-1"></i>`;
             }
 
-            const nodeIcon = page.type === 'nav' ? '<i class="bi bi-folder text-warning me-1"></i>' : '';
+            const nodeIcon = hasChildren ? '<i class="bi bi-folder text-warning me-1"></i>' : '';
             const pagePhoto = page.photo ? `<img src="${page.photo}" style="max-height:24px;max-width:36px;object-fit:cover" class="rounded me-1">` : '';
 
             html += `<div class="list-group-item list-group-item-action d-flex align-items-center py-2">
@@ -341,7 +328,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 <div class="ms-auto text-nowrap">${actions}</div>
             </div>`;
 
-            if (hasChildren || page.type === 'nav') {
+            if (hasChildren) {
                 html += `<div class="collapse" id="${collapseId}">`;
                 if (hasChildren) {
                     html += renderTree(children, childrenMap, depth + 1, langCode);

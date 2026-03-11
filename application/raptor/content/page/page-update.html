@@ -1,3 +1,9 @@
+<!-- Page types -->
+{% set types = {
+    'menu': { 'mn': 'Цэс' },
+    'mega-menu': { 'mn': 'Мега цэс' },
+    'special': { 'mn': 'Тусгай' }
+} %}
 <!-- Page categories -->
 {% set categories = {
     'general': { 'mn': 'Ерөнхий' },
@@ -6,21 +12,15 @@
     'legal': { 'mn': 'Хууль эрх зүй' },
     'reference': { 'mn': 'Лавлагаа' }
 } %}
-{% set has_children = has_children is defined and has_children %}
-{% if not has_children %}
 <!-- Mongolian WYSIWYG Editor -->
 <link href="{{ index }}/assets/moedit/moedit.css" rel="stylesheet">
 <link href="{{ index }}/assets/moedit/moedit-icons.css" rel="stylesheet">
 <script defer src="{{ index }}/assets/moedit/moedit.js"></script>
 <script defer src="{{ index }}/assets/moedit/moedit.ui.js"></script>
-{% endif %}
 <!-- Толгой хэсэг -->
 <div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-2 shadow">
     <h3 class="px-2 my-auto fs-6 text-primary text-uppercase">
         <i class="bi bi-pencil-square"></i> {{ record['title']|e }}
-        {% if has_children %}
-            <span class="badge bg-secondary"><i class="bi bi-diagram-3"></i> {{ 'parent-page'|text }}</span>
-        {% endif %}
     </h3>
     <div class="ms-auto">
         {% if user.can('system_content_update') %}
@@ -34,9 +34,9 @@
     </div>
 </div>
 <form class="needs-validation" id="page_update" action="{{ 'page-update'|link({id: record['id']}) }}" method="PUT" enctype="multipart/form-data" novalidate>
-    <!-- Хэл, Ангилал, Байрлал -->
+    <!-- Хэл, Төрөл, Ангилал, Байрлал -->
     <div class="row mt-3">
-        <div class="col-5">
+        <div class="col-4">
             <label class="form-label">{{ 'language'|text }} <i class="bi bi-translate"></i></label>
             {% set selected_code = record['code'] %}
             {% set selected_flag = selected_code == 'en' ? 'us' : selected_code %}
@@ -61,7 +61,19 @@
                 </ul>
             </div>
         </div>
-        <div class="col-4">
+        <div class="col-3">
+            <label class="form-label">{{ 'type'|text }} <i class="bi bi-grid"></i></label>
+            <div class="input-group">
+                <input class="form-control" name="type" type="text" value="{{ record['type']|e }}" maxlength="32">
+                <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"></button>
+                <ul class="dropdown-menu dropdown-menu-end" id="type_list">
+                    {% for value,name in types %}
+                        <li class="dropdown-item" value="{{ value|e }}">{{ name[localization.code] ?? value|capitalize }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        <div class="col-3">
             <label class="form-label">{{ 'category'|text }} <i class="bi bi-bookmark"></i></label>
             <div class="input-group">
                 <input class="form-control" name="category" type="text" value="{{ record['category']|e }}" maxlength="32">
@@ -73,7 +85,7 @@
                 </ul>
             </div>
         </div>
-        <div class="col-3">
+        <div class="col-2">
             <label class="form-label">{{ 'position'|text }} <i class="bi bi-sort-numeric-down"></i></label>
             <input class="form-control" name="position" value="{{ record['position']|e }}" placeholder="" type="number" autocomplete="off">
             <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
@@ -95,7 +107,18 @@
         <input class="form-control form-control-lg border-primary" name="title" required value="{{ record['title']|e }}" maxlength="255" type="text" autocomplete="off">
         <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
     </div>
-    {% if not has_children %}
+    {% if has_children is defined and has_children %}
+    <div class="alert alert-primary mt-3 mb-0" role="alert">
+        <i class="bi bi-exclamation-triangle"></i>
+        {{ 'parent-page-content-warning'|text }}
+    </div>
+    {% endif %}
+    {% if record['link'] is not empty %}
+    <div class="alert alert-info mt-3 mb-0" role="alert">
+        <i class="bi bi-info-circle"></i>
+        {{ 'link-page-content-warning'|text }}
+    </div>
+    {% endif %}
     <!-- Тайлбар -->
     <div class="mt-3">
         <label class="form-label">{{ 'short-description'|text }} <i class="bi bi-card-text"></i></label>
@@ -115,7 +138,6 @@
         <label class="form-label">{{ 'link'|text }} <i class="bi bi-link-45deg"></i></label>
         <input class="form-control border-info" name="link" type="text" value="{{ record['link']|e }}" maxlength="255" placeholder="{{ 'optional'|text }}">
     </div>
-    {% endif %}
     <!-- Нийтлэх тохиргоо -->
     {% if user.can('system_content_publish') %}
     <div class="rounded border border-success mt-3 p-3">
@@ -127,7 +149,6 @@
                     {{ 'visible-on-site'|text }}
                 </div>
             </div>
-            {% if not has_children %}
             <div class="col-4">
                 <label class="form-label fw-bolder">{{ 'featured'|text }} <i class="bi bi-star"></i></label>
                 <div class="form-check form-switch">
@@ -142,7 +163,6 @@
                     {{ 'can-comment'|text }}
                 </div>
             </div>
-            {% endif %}
         </div>
     </div>
     {% endif %}
@@ -186,6 +206,15 @@
         }
     });
 
+    /* Төрөл сонгох */
+    const typeInput = document.querySelector('input[name="type"]');
+    document.getElementById('type_list').addEventListener('click', function (e) {
+        const li = e.target.closest('li.dropdown-item');
+        if (li) {
+            typeInput.value = li.getAttribute('value');
+        }
+    });
+
     /* Ангилал сонгох */
     const category = document.querySelector('input[name="category"]');
     document.getElementById('category_list').addEventListener('click', function (e) {
@@ -200,7 +229,7 @@
             document.querySelectorAll('a.back-link').forEach(a => { a.href = `{{ 'pages-nav'|link }}`; });
         }
 
-        /* moedit (хүүхэд хуудасгүй үед) */
+        /* moedit ачаалах */
         if (content) {
             new moedit(content, {
                 upload: {

@@ -6,6 +6,37 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 
 ---
 
+## [1.5.0] - 2026-03-12
+[1.5.0]: https://github.com/codesaur-php/Raptor/compare/v1.4.0...v1.5.0
+
+Pages module simplification: flexible type system, removed read mode, improved navigation filtering, getExcerpt fix, Discord notification improvement.
+
+### Added
+- **Pages** - User-editable `type` input with dropdown suggestions (`menu`, `mega-menu`, `special`) on insert and update forms; type field is free-text with max 32 characters
+- **Pages** - `has_children` alert (alert-primary) on update and view forms warning that parent page content/links may not be directly used
+- **Pages** - `link` alert (alert-info) on update and view forms explaining that linked pages redirect from menu
+- **Localization** - New text keywords: `parent-page-content-warning` (mn/en), `link-page-content-warning` (mn/en)
+
+### Changed
+- **Pages** - Type system simplified: replaced rigid `nav`/`content`/`link` enum with flexible user-editable field; default changed from `content` to `menu`
+- **Pages** - All form fields (description, content, link, featured, comment) always visible regardless of type or children; removed all conditional field hiding
+- **Pages** - `type` field is now editable on update (previously locked after creation)
+- **Pages** - Navigation tree (`pages-nav.html`): folder icon based on `hasChildren` instead of `type=nav`; type and category shown as badges
+- **Pages** - Seed data updated to use `type='menu'` (relies on column default)
+- **PagesModel** - `getNavigation()` now filters by `type='menu' OR type LIKE '%-menu'`; only menu-type pages appear in website navigation
+- **getExcerpt()** - Fixed text sticking together when stripping HTML block tags (`<p>text1.</p><p>text2.</p>` now produces `text1. text2.` instead of `text1.text2.`); applied to `PagesModel`, `NewsModel`, `ProductsModel`
+- **DiscordNotifier** - `contentAction()` now includes admin name in description (e.g. "**Narankhuu N** updated a page.") and removed redundant Type/Action fields that duplicated the title
+
+### Removed
+- **Pages** - `read()` method and `page-read.html` template removed; blog-style page reading no longer supported
+- **News** - `read()` method and `news-read.html` template removed; blog-style news reading no longer supported
+- **Routes** - `page-read` and `news-read` routes removed from `ContentsRouter`
+- **Pages** - Read button removed from `pages-index.html` action buttons
+- **News** - Read button removed from `news-index.html` action buttons
+- **Localization** - Removed unused `parent-page` and `parent-page-hint` text keywords
+
+---
+
 ## [1.4.0] - 2026-03-11
 [1.4.0]: https://github.com/codesaur-php/Raptor/compare/v1.3.1...v1.4.0
 
