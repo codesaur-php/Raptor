@@ -16,5 +16,8 @@ composer.lock
 # Энэ файлд системийн нэвтрэх эрх, нууц түлхүүрүүд агуулагддаг тул git-д ОРУУЛЖ БОЛОХГҮЙ.
 .env
 
+# PHPUnit cache
+.phpunit.cache/
+
 # NetBeans private тохиргоо
 /nbproject/private/
