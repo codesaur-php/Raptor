@@ -151,33 +151,27 @@ class TextModel extends LocalizedModel
     {
         $table = $this->getName();
 
-        // SQLite нь ALTER TABLE ... ADD CONSTRAINT дэмжихгүй
-        // MySQL/PostgreSQL дээр л FK constraint нэмнэ
-        if ($this->getDriverName() != 'sqlite') {
-            // FK одоохондоо шалгахгүй
-            $this->setForeignKeyChecks(false);
+        $this->setForeignKeyChecks(false);
 
-            $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
+        $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
 
-            // created_by FK
-            $this->exec(
-                "ALTER TABLE $table 
-                 ADD CONSTRAINT {$table}_fk_created_by
-                 FOREIGN KEY (created_by) REFERENCES $users(id)
-                 ON DELETE SET NULL ON UPDATE CASCADE"
-            );
+        // created_by FK
+        $this->exec(
+            "ALTER TABLE $table
+             ADD CONSTRAINT {$table}_fk_created_by
+             FOREIGN KEY (created_by) REFERENCES $users(id)
+             ON DELETE SET NULL ON UPDATE CASCADE"
+        );
 
-            // updated_by FK
-            $this->exec(
-                "ALTER TABLE $table 
-                 ADD CONSTRAINT {$table}_fk_updated_by
-                 FOREIGN KEY (updated_by) REFERENCES $users(id)
-                 ON DELETE SET NULL ON UPDATE CASCADE"
-            );
+        // updated_by FK
+        $this->exec(
+            "ALTER TABLE $table
+             ADD CONSTRAINT {$table}_fk_updated_by
+             FOREIGN KEY (updated_by) REFERENCES $users(id)
+             ON DELETE SET NULL ON UPDATE CASCADE"
+        );
 
-            // FK шалгалт буцаан асаана
-            $this->setForeignKeyChecks(true);
-        }
+        $this->setForeignKeyChecks(true);
 
         // TextInitial class дотор тусгай анхны өгөгдөл байгаа эсэхийг шалгах
         if (\method_exists(TextInitial::class, $table)) {

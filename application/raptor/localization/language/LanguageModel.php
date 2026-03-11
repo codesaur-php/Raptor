@@ -116,31 +116,27 @@ class LanguageModel extends Model
     {
         $table = $this->getName();
 
-        // SQLite нь ALTER TABLE ... ADD CONSTRAINT дэмжихгүй
-        // MySQL/PostgreSQL дээр л FK constraint нэмнэ
-        if ($this->getDriverName() != 'sqlite') {
-            $this->setForeignKeyChecks(false);
+        $this->setForeignKeyChecks(false);
 
-            $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
+        $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
 
-            /* created_by -> users(id) холбоос */
-            $this->exec(
-                "ALTER TABLE $table 
-                 ADD CONSTRAINT {$table}_fk_created_by 
-                 FOREIGN KEY (created_by) REFERENCES $users(id)
-                 ON DELETE SET NULL ON UPDATE CASCADE"
-            );
+        /* created_by -> users(id) холбоос */
+        $this->exec(
+            "ALTER TABLE $table
+             ADD CONSTRAINT {$table}_fk_created_by
+             FOREIGN KEY (created_by) REFERENCES $users(id)
+             ON DELETE SET NULL ON UPDATE CASCADE"
+        );
 
-            /* updated_by -> users(id) холбоос */
-            $this->exec(
-                "ALTER TABLE $table 
-                 ADD CONSTRAINT {$table}_fk_updated_by 
-                 FOREIGN KEY (updated_by) REFERENCES $users(id)
-                 ON DELETE SET NULL ON UPDATE CASCADE"
-            );
+        /* updated_by -> users(id) холбоос */
+        $this->exec(
+            "ALTER TABLE $table
+             ADD CONSTRAINT {$table}_fk_updated_by
+             FOREIGN KEY (updated_by) REFERENCES $users(id)
+             ON DELETE SET NULL ON UPDATE CASCADE"
+        );
 
-            $this->setForeignKeyChecks(true);
-        }
+        $this->setForeignKeyChecks(true);
 
         /* Анхны 2 хэл бүртгэх */
         $nowdate = \date('Y-m-d H:i:s');

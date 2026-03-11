@@ -19,7 +19,7 @@ use Psr\Log\LogLevel;
  *
  * Онцлог:
  *  - Бүх файлуудыг `{table}_files` нэртэй динамик хүснэгтэд хадгална
- *  - PostgreSQL/MySQL/SQLite ажиллана
+ *  - PostgreSQL/MySQL ажиллана
  *  - JSON response + Dashboard HTML response хосолсон
  *  - Access control (permission) бүрэн тусгагдсан
  *  - log() -> үйлдэл бүрийг лог файл руу бичдэг
@@ -49,14 +49,10 @@ class FilesController extends FileController
             return;
         }
 
-        // PostgreSQL, MySQL, эсвэл SQLite мөр илрүүлэх
         if ($this->getDriverName() == 'pgsql') {
             $query =
                 'SELECT tablename FROM pg_catalog.pg_tables ' .
                 "WHERE schemaname != 'pg_catalog' AND schemaname != 'information_schema' AND tablename like '%_files'";
-        } elseif ($this->getDriverName() == 'sqlite') {
-            // SQLite хувилбар
-            $query = "SELECT name as tablename FROM sqlite_master WHERE type='table' AND name LIKE '%_files'";
         } else {
             $query = 'SHOW TABLES LIKE ' . $this->quote('%_files');
         }
@@ -153,9 +149,6 @@ class FilesController extends FileController
                 $query =
                     'SELECT tablename FROM pg_catalog.pg_tables ' .
                     "WHERE schemaname != 'pg_catalog' AND schemaname != 'information_schema' AND tablename like '{$table}_files'";
-            } elseif ($this->getDriverName() == 'sqlite') {
-                // SQLite хувилбар
-                $query = "SELECT name as tablename FROM sqlite_master WHERE type='table' AND name LIKE '{$table}_files'";
             } else {
                 $query = 'SHOW TABLES LIKE ' . $this->quote("{$table}_files");
             }

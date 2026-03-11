@@ -73,22 +73,18 @@ class MenuModel extends LocalizedModel
     {
         $table = $this->getName();
 
-        // SQLite нь ALTER TABLE ... ADD CONSTRAINT дэмжихгүй
-        // MySQL/PostgreSQL дээр л FK constraint нэмнэ
-        if ($this->getDriverName() != 'sqlite') {
-            $this->setForeignKeyChecks(false);
+        $this->setForeignKeyChecks(false);
 
-            $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
-            // created_by / updated_by -> Users FK
-            $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_created_by 
-                         FOREIGN KEY (created_by) REFERENCES $users(id) 
-                         ON DELETE SET NULL ON UPDATE CASCADE");
-            $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_updated_by 
-                         FOREIGN KEY (updated_by) REFERENCES $users(id) 
-                         ON DELETE SET NULL ON UPDATE CASCADE");
+        $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
+        // created_by / updated_by -> Users FK
+        $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_created_by
+                     FOREIGN KEY (created_by) REFERENCES $users(id)
+                     ON DELETE SET NULL ON UPDATE CASCADE");
+        $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_updated_by
+                     FOREIGN KEY (updated_by) REFERENCES $users(id)
+                     ON DELETE SET NULL ON UPDATE CASCADE");
 
-            $this->setForeignKeyChecks(true);
-        }
+        $this->setForeignKeyChecks(true);
 
         // Цэсний мод бүтэц, эрэмбэлэлтийн гүйцэтгэлийг сайжруулах индекс
         $this->exec("CREATE INDEX {$table}_idx_parent_id ON $table (parent_id)");

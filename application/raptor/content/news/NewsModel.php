@@ -130,36 +130,33 @@ class NewsModel extends Model
     {
         $table = $this->getName();
 
-        // SQLite нь ALTER TABLE ... ADD CONSTRAINT дэмжихгүй
-        // MySQL/PostgreSQL дээр л FK constraint нэмнэ
-        if ($this->getDriverName() != 'sqlite') {
-            $this->setForeignKeyChecks(false);
-            
-            $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
-            
-            // Foreign key constraint-ууд үүсгэх
-            $constraints = [
-                'published_by' => "{$table}_fk_published_by",
-                'created_by'   => "{$table}_fk_created_by",
-                'updated_by'   => "{$table}_fk_updated_by"
-            ];
-            
-            foreach ($constraints as $column => $constraint) {
-                $this->exec(
-                    "ALTER TABLE $table " .
-                    "ADD CONSTRAINT $constraint " .
-                    "FOREIGN KEY ($column) " .
-                    "REFERENCES $users(id) " .
-                    "ON DELETE SET NULL " .
-                    "ON UPDATE CASCADE"
-                );
-            }
-            
-            $this->setForeignKeyChecks(true);
+        $this->setForeignKeyChecks(false);
+
+        $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
+
+        // Foreign key constraint-ууд үүсгэх
+        $constraints = [
+            'published_by' => "{$table}_fk_published_by",
+            'created_by'   => "{$table}_fk_created_by",
+            'updated_by'   => "{$table}_fk_updated_by"
+        ];
+
+        foreach ($constraints as $column => $constraint) {
+            $this->exec(
+                "ALTER TABLE $table " .
+                "ADD CONSTRAINT $constraint " .
+                "FOREIGN KEY ($column) " .
+                "REFERENCES $users(id) " .
+                "ON DELETE SET NULL " .
+                "ON UPDATE CASCADE"
+            );
         }
 
-        // Нийтлэгдсэн мэдээний шүүлтийн гүйцэтгэлийг сайжруулах индекс
+        $this->setForeignKeyChecks(true);
+
+        // Хайлт, шүүлтийн гүйцэтгэлийг сайжруулах индексүүд
         $this->exec("CREATE INDEX {$table}_idx_active_published ON $table (is_active, published)");
+        $this->exec("CREATE INDEX {$table}_idx_code_active_published ON $table (code, is_active, published, published_at)");
 
         $now = \date('Y-m-d H:i:s');
         $path = \dirname($_SERVER['SCRIPT_NAME'] ?? '/');

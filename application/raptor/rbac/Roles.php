@@ -112,23 +112,18 @@ class Roles extends Model
     {
         $table = $this->getName();
 
-        // SQLite нь ALTER TABLE ... ADD CONSTRAINT дэмжихгүй
-        // MySQL/PostgreSQL дээр л FK constraint нэмнэ
-        if ($this->getDriverName() != 'sqlite') {
-            $this->setForeignKeyChecks(false);
-            // users хүснэгтийн нэрийг UsersModel::getName() ашиглан динамикаар авна. Ирээдүйд refactor хийхэд бэлэн байна.
-            $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
-            // FK created_by -> users.id
-            $this->exec("
-                ALTER TABLE $table
-                ADD CONSTRAINT {$table}_fk_created_by
-                FOREIGN KEY (created_by)
-                REFERENCES $users(id)
-                ON DELETE SET NULL
-                ON UPDATE CASCADE
-            ");
-            $this->setForeignKeyChecks(true);
-        }
+        $this->setForeignKeyChecks(false);
+        $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
+        // FK created_by -> users.id
+        $this->exec("
+            ALTER TABLE $table
+            ADD CONSTRAINT {$table}_fk_created_by
+            FOREIGN KEY (created_by)
+            REFERENCES $users(id)
+            ON DELETE SET NULL
+            ON UPDATE CASCADE
+        ");
+        $this->setForeignKeyChecks(true);
 
         // Default системийн ролиуд
         $nowdate = \date('Y-m-d H:i:s');

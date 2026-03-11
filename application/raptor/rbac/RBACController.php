@@ -239,9 +239,7 @@ class RBACController extends \Raptor\Controller
             // Role-г alias_name байдлаар lookup хийх
             // roles хүснэгтийн нэрийг Roles::getName() ашиглан динамикаар авна. Ирээдүйд refactor хийхэд бэлэн байна.
             $roles_table = (new Roles($this->pdo))->getName();
-            // String concatenation - SQLite болон PostgreSQL дээр ||, MySQL дээр CONCAT_WS
-            // SQLite дээр CONCAT_WS байхгүй тул || эсвэл CONCAT ашиглана
-            $concat_expr = ($this->getDriverName() == 'pgsql' || $this->getDriverName() == 'sqlite')
+            $concat_expr = ($this->getDriverName() == 'pgsql')
                 ? "alias || '_' || name"
                 : "CONCAT_WS('_',alias,name)";
             $select_role = $this->prepare(

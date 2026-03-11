@@ -72,17 +72,12 @@ class LocalizationController extends \Raptor\Controller
 
             // DB доторх орчуулгын content хүснэгтүүдийг хайх
             if ($this->getDriverName() == 'pgsql') {
-                // PostgreSQL хувилбар
                 $query =
                     'SELECT tablename FROM pg_catalog.pg_tables ' .
                     "WHERE schemaname != 'pg_catalog'
                        AND schemaname != 'information_schema'
                        AND tablename like 'localization_text_%_content'";
-            } elseif ($this->getDriverName() == 'sqlite') {
-                // SQLite хувилбар
-                $query = "SELECT name as tablename FROM sqlite_master WHERE type='table' AND name LIKE 'localization_text_%_content'";
             } else {
-                // MySQL хувилбар
                 $query = 'SHOW TABLES LIKE ' . $this->quote('localization_text_%_content');
             }
             $text_content_tables = $this->query($query)->fetchAll();

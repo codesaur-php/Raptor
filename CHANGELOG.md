@@ -9,7 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 ## [1.4.0] - 2026-03-11
 [1.4.0]: https://github.com/codesaur-php/Raptor/compare/v1.3.1...v1.4.0
 
-Log system consolidation, model rename, Discord notification improvement, and error logging cleanup.
+Log system consolidation, model rename, Discord notification improvement. Removed SQLite support from Raptor due to lack of practical use case.
 
 ### Added
 - **DiscordNotifier** - `newOrder()` method now includes customer phone number in Discord embed notification
@@ -26,6 +26,7 @@ Log system consolidation, model rename, Discord notification improvement, and er
 - **SqlTerminalController** - All UI-facing text (exception messages, log messages, response strings) changed from Mongolian to English; PHPDoc and code comments remain in Mongolian
 
 ### Removed
+- **SQLite support** - Removed `SQLiteConnectMiddleware` and all SQLite-specific code branches (sqlite_master queries, PRAGMA table_info, sqlite_sequence, json_extract without JSON_UNQUOTE). Application now supports MySQL and PostgreSQL only
 - **Controller::errorLog()** - Removed `protected final function errorLog(\Throwable $e)` method; all call sites replaced with inline `if (CODESAUR_DEVELOPMENT) { \error_log(...); }` pattern
 
 ---

@@ -37,7 +37,7 @@
 - **Multi-language** support (Localization)
 - CMS modules: News, Pages, Files, References, Settings
 - **Shop** module (Products, Orders)
-- MySQL / PostgreSQL / SQLite support
+- MySQL or PostgreSQL supported
 - **Twig** template engine
 - **OpenAI** integration (moedit editor)
 - Image optimization (GD)
@@ -67,7 +67,7 @@ Raptor works together with these codesaur packages:
 
 - PHP **8.2.1+**
 - Composer
-- MySQL / PostgreSQL / SQLite
+- MySQL or PostgreSQL
 - PHP extensions: `ext-gd`, `ext-intl`
 
 ### Install via Composer
@@ -217,7 +217,7 @@ cp docs/conf.example/cpanel.deploy.yml .github/workflows/deploy.yml
 
 - **`.env`** - Create and configure manually on the server (never deployed)
 - **`logs/`** - Created automatically by the application, not deployed
-- **`private/`** - Contains sensitive files (SQLite DB, uploads), not deployed
+- **`private/`** - Contains sensitive files (uploads), not deployed
 - **`docs/`** - Documentation only, not deployed
 - **`vendor/`** - Built during the workflow with `composer install --no-dev`
 
@@ -264,7 +264,6 @@ raptor/
 |   |   |-- Controller.php         # Base Controller for all controllers
 |   |   |-- MySQLConnectMiddleware.php
 |   |   |-- PostgresConnectMiddleware.php
-|   |   |-- SQLiteConnectMiddleware.php
 |   |   |-- ContainerMiddleware.php
 |   |   |-- authentication/        # Login, JWT, Session
 |   |   |-- content/               # CMS modules
@@ -365,9 +364,6 @@ $this->use(new \Raptor\MySQLConnectMiddleware());
 
 // PostgreSQL
 $this->use(new \Raptor\PostgresConnectMiddleware());
-
-// SQLite
-$this->use(new \Raptor\SQLiteConnectMiddleware());
 ```
 
 ---
@@ -908,9 +904,6 @@ $this->use(new \Raptor\MySQLConnectMiddleware());
 
 // Switch to PostgreSQL
 $this->use(new \Raptor\PostgresConnectMiddleware());
-
-// Switch to SQLite
-$this->use(new \Raptor\SQLiteConnectMiddleware());
 ```
 
 ---

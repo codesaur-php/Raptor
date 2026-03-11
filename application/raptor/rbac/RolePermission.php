@@ -125,37 +125,31 @@ class RolePermission extends Model
     {
         $table = $this->getName();
 
-        // SQLite нь ALTER TABLE ... ADD CONSTRAINT дэмжихгүй
-        // MySQL/PostgreSQL дээр л FK constraint нэмнэ
-        if ($this->getDriverName() != 'sqlite') {
-            $this->setForeignKeyChecks(false);
+        $this->setForeignKeyChecks(false);
 
-            // Хүснэгтийн нэрийг Roles, Permissions, UsersModel-ийн getName() метод ашиглан динамикаар авна.
-            // Ирээдүйд хүснэгтийн нэр өөрчлөгдвөл Model класс дахь setTable() засах хангалттай.
-            $roles       = (new Roles($this->pdo))->getName();
-            $permissions = (new Permissions($this->pdo))->getName();
-            $users       = (new \Raptor\User\UsersModel($this->pdo))->getName();
-            $this->exec("
-                ALTER TABLE $table
-                ADD CONSTRAINT {$table}_fk_role_id
-                FOREIGN KEY (role_id) REFERENCES $roles(id)
-                ON DELETE CASCADE ON UPDATE CASCADE
-            ");
-            $this->exec("
-                ALTER TABLE $table
-                ADD CONSTRAINT {$table}_fk_permission_id
-                FOREIGN KEY (permission_id) REFERENCES $permissions(id)
-                ON DELETE CASCADE ON UPDATE CASCADE
-            ");
-            $this->exec("
-                ALTER TABLE $table
-                ADD CONSTRAINT {$table}_fk_created_by
-                FOREIGN KEY (created_by) REFERENCES $users(id)
-                ON DELETE SET NULL ON UPDATE CASCADE
-            ");
-            
-            $this->setForeignKeyChecks(true);
-        }
+        $roles       = (new Roles($this->pdo))->getName();
+        $permissions = (new Permissions($this->pdo))->getName();
+        $users       = (new \Raptor\User\UsersModel($this->pdo))->getName();
+        $this->exec("
+            ALTER TABLE $table
+            ADD CONSTRAINT {$table}_fk_role_id
+            FOREIGN KEY (role_id) REFERENCES $roles(id)
+            ON DELETE CASCADE ON UPDATE CASCADE
+        ");
+        $this->exec("
+            ALTER TABLE $table
+            ADD CONSTRAINT {$table}_fk_permission_id
+            FOREIGN KEY (permission_id) REFERENCES $permissions(id)
+            ON DELETE CASCADE ON UPDATE CASCADE
+        ");
+        $this->exec("
+            ALTER TABLE $table
+            ADD CONSTRAINT {$table}_fk_created_by
+            FOREIGN KEY (created_by) REFERENCES $users(id)
+            ON DELETE SET NULL ON UPDATE CASCADE
+        ");
+
+        $this->setForeignKeyChecks(true);
 
         // Роль бүрт permission оноох seed
         $nowdate = \date('Y-m-d H:i:s');

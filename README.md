@@ -28,7 +28,7 @@ Clean architecture object-oriented web development framework
 - Олон хэл дэмжлэг (Localization)
 - CMS модулиуд: Мэдээ, Хуудас, Файл, Лавлах, Тохиргоо
 - Дэлгүүр модуль: Бүтээгдэхүүн, Захиалга (e-commerce)
-- MySQL / PostgreSQL / SQLite дэмжлэг
+- MySQL, PostgreSQL алийг нь ч дэмжинэ
 - Twig template engine
 - OpenAI интеграци (moedit editor)
 - Зураг optimize хийх (GD)
@@ -55,7 +55,7 @@ The framework operates in two layers - **Web** (public website) and **Dashboard*
 - Multi-language support (Localization)
 - CMS modules: News, Pages, Files, References, Settings
 - Shop module: Products, Orders (e-commerce)
-- MySQL / PostgreSQL / SQLite support
+- MySQL or PostgreSQL supported
 - Twig template engine
 - OpenAI integration (moedit editor)
 - Image optimization (GD)
@@ -74,7 +74,7 @@ The framework operates in two layers - **Web** (public website) and **Dashboard*
 
 - PHP **8.2.1+**
 - Composer
-- MySQL / PostgreSQL / SQLite
+- MySQL or PostgreSQL
 - PHP extensions: `ext-gd`, `ext-intl`
 
 ### Installation

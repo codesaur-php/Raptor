@@ -96,36 +96,29 @@ class SettingsModel extends LocalizedModel
     {
         $table = $this->getName();
 
-        // SQLite нь ALTER TABLE ... ADD CONSTRAINT дэмжихгүй
-        // MySQL/PostgreSQL дээр л FK constraint нэмнэ
-        if ($this->getDriverName() != 'sqlite') {
-            // FK constraint нэмэхийн өмнө FK шалгалтыг түр унтраана
-            $this->setForeignKeyChecks(false);
+        $this->setForeignKeyChecks(false);
 
-            // Raptor\User\UsersModel-ийн хүснэгтийн нэрийг авах
-            $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
+        $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
 
-            // created_by талбарын FK
-            $this->exec(
-                "ALTER TABLE $table 
-                 ADD CONSTRAINT {$table}_fk_created_by 
-                 FOREIGN KEY (created_by) REFERENCES $users(id) 
-                 ON DELETE SET NULL 
-                 ON UPDATE CASCADE"
-            );
+        // created_by талбарын FK
+        $this->exec(
+            "ALTER TABLE $table
+             ADD CONSTRAINT {$table}_fk_created_by
+             FOREIGN KEY (created_by) REFERENCES $users(id)
+             ON DELETE SET NULL
+             ON UPDATE CASCADE"
+        );
 
-            // updated_by талбарын FK
-            $this->exec(
-                "ALTER TABLE $table 
-                 ADD CONSTRAINT {$table}_fk_updated_by 
-                 FOREIGN KEY (updated_by) REFERENCES $users(id) 
-                 ON DELETE SET NULL 
-                 ON UPDATE CASCADE"
-            );
+        // updated_by талбарын FK
+        $this->exec(
+            "ALTER TABLE $table
+             ADD CONSTRAINT {$table}_fk_updated_by
+             FOREIGN KEY (updated_by) REFERENCES $users(id)
+             ON DELETE SET NULL
+             ON UPDATE CASCADE"
+        );
 
-            // FK шалгалтыг дахин идэвхжүүлнэ
-            $this->setForeignKeyChecks(true);
-        }
+        $this->setForeignKeyChecks(true);
 
         $now = \date('Y-m-d H:i:s');
         $path = \dirname($_SERVER['SCRIPT_NAME'] ?? '/');

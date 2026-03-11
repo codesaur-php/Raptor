@@ -97,28 +97,26 @@ class SignupModel extends Model
     {
         $table = $this->getName();
 
-        // SQLite нь ALTER TABLE ... ADD CONSTRAINT дэмжихгүй
-        // MySQL/PostgreSQL дээр л FK constraint нэмнэ
-        if ($this->getDriverName() != 'sqlite') {
-            $this->setForeignKeyChecks(false);
+        $this->setForeignKeyChecks(false);
 
-            // users хүснэгтийн нэрийг UsersModel::getName() ашиглан динамикаар авна. Ирээдүйд refactor хийхэд бэлэн байна.
-            $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
-            $this->exec(
-                "ALTER TABLE $table
-                 ADD CONSTRAINT {$table}_fk_user_id
-                 FOREIGN KEY (user_id) REFERENCES $users(id)
-                 ON DELETE SET NULL ON UPDATE CASCADE"
-            );
-            $this->exec(
-                "ALTER TABLE $table
-                 ADD CONSTRAINT {$table}_fk_updated_by
-                 FOREIGN KEY (updated_by) REFERENCES $users(id)
-                 ON DELETE SET NULL ON UPDATE CASCADE"
-            );
+        $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
+        $this->exec(
+            "ALTER TABLE $table
+             ADD CONSTRAINT {$table}_fk_user_id
+             FOREIGN KEY (user_id) REFERENCES $users(id)
+             ON DELETE SET NULL ON UPDATE CASCADE"
+        );
+        $this->exec(
+            "ALTER TABLE $table
+             ADD CONSTRAINT {$table}_fk_updated_by
+             FOREIGN KEY (updated_by) REFERENCES $users(id)
+             ON DELETE SET NULL ON UPDATE CASCADE"
+        );
 
-            $this->setForeignKeyChecks(true);
-        }
+        $this->setForeignKeyChecks(true);
+
+        // Хайлтын гүйцэтгэлийг сайжруулах индекс
+        $this->exec("CREATE INDEX {$table}_idx_user_id ON $table (user_id)");
     }
 
     /**

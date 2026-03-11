@@ -93,38 +93,31 @@ class OrganizationModel extends Model
     {
         $table = $this->getName();
 
-        // SQLite нь ALTER TABLE ... ADD CONSTRAINT дэмжихгүй
-        // MySQL/PostgreSQL дээр л FK constraint нэмнэ
-        if ($this->getDriverName() != 'sqlite') {
-            // FK шалгалтыг түр хаах
-            $this->setForeignKeyChecks(false);
+        $this->setForeignKeyChecks(false);
 
-            // users хүснэгтийн нэрийг UsersModel::getName() ашиглан динамикаар авна. Ирээдүйд refactor хийхэд бэлэн байна.
-            $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
+        $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
 
-            // created_by -> users.id FK
-            $this->exec(
-                "ALTER TABLE $table 
-                 ADD CONSTRAINT {$table}_fk_created_by 
-                 FOREIGN KEY (created_by) 
-                 REFERENCES $users(id) 
-                 ON DELETE SET NULL 
-                 ON UPDATE CASCADE"
-            );
+        // created_by -> users.id FK
+        $this->exec(
+            "ALTER TABLE $table
+             ADD CONSTRAINT {$table}_fk_created_by
+             FOREIGN KEY (created_by)
+             REFERENCES $users(id)
+             ON DELETE SET NULL
+             ON UPDATE CASCADE"
+        );
 
-            // updated_by -> users.id FK
-            $this->exec(
-                "ALTER TABLE $table 
-                 ADD CONSTRAINT {$table}_fk_updated_by 
-                 FOREIGN KEY (updated_by) 
-                 REFERENCES $users(id) 
-                 ON DELETE SET NULL 
-                 ON UPDATE CASCADE"
-            );
+        // updated_by -> users.id FK
+        $this->exec(
+            "ALTER TABLE $table
+             ADD CONSTRAINT {$table}_fk_updated_by
+             FOREIGN KEY (updated_by)
+             REFERENCES $users(id)
+             ON DELETE SET NULL
+             ON UPDATE CASCADE"
+        );
 
-            // FK шалгалтыг буцааж идэвхжүүлэх
-            $this->setForeignKeyChecks(true);
-        }
+        $this->setForeignKeyChecks(true);
 
         // Мод бүтцийн хайлтын гүйцэтгэлийг сайжруулах индекс
         $this->exec("CREATE INDEX {$table}_idx_parent_id ON $table (parent_id)");

@@ -86,8 +86,7 @@ class TemplateController extends \Raptor\Controller
             $permissions = [];
             // permissions хүснэгтийн нэрийг Permissions::getName() ашиглан динамикаар авна. Ирээдүйд refactor хийхэд бэлэн байна.
             $permissions_table = (new Permissions($this->pdo))->getName();
-            // String concatenation - SQLite болон PostgreSQL дээр ||, MySQL дээр CONCAT()
-            $concat_expr = ($this->getDriverName() == 'pgsql' || $this->getDriverName() == 'sqlite')
+            $concat_expr = ($this->getDriverName() == 'pgsql')
                 ? "alias || '_' || name"
                 : "CONCAT(alias, '_', name)";
             $permission_results = $this->query(

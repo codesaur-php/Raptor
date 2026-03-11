@@ -181,20 +181,15 @@ class FilesModel extends Model
     {
         $my_name = $this->getName();
 
-        // SQLite нь ALTER TABLE ... ADD CONSTRAINT дэмжихгүй
-        // MySQL/PostgreSQL дээр л FK constraint нэмнэ
-        if ($this->getDriverName() != 'sqlite') {
-            $this->setForeignKeyChecks(false);
-            $record_name = $this->getRecordName();
-            // users хүснэгтийн нэрийг UsersModel::getName() ашиглан динамикаар авна. Ирээдүйд refactor хийхэд бэлэн байна.
-            $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
-            $this->exec("ALTER TABLE $my_name ADD CONSTRAINT {$my_name}_fk_created_by FOREIGN KEY (created_by) REFERENCES $users(id) ON DELETE SET NULL ON UPDATE CASCADE");
-            $this->exec("ALTER TABLE $my_name ADD CONSTRAINT {$my_name}_fk_updated_by FOREIGN KEY (updated_by) REFERENCES $users(id) ON DELETE SET NULL ON UPDATE CASCADE");
-            if ($this->hasTable($record_name)) {
-                $this->exec("ALTER TABLE $my_name ADD CONSTRAINT {$my_name}_fk_record_id FOREIGN KEY (record_id) REFERENCES $record_name(id) ON DELETE SET NULL ON UPDATE CASCADE");            
-            }
-            $this->setForeignKeyChecks(true);
+        $this->setForeignKeyChecks(false);
+        $record_name = $this->getRecordName();
+        $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
+        $this->exec("ALTER TABLE $my_name ADD CONSTRAINT {$my_name}_fk_created_by FOREIGN KEY (created_by) REFERENCES $users(id) ON DELETE SET NULL ON UPDATE CASCADE");
+        $this->exec("ALTER TABLE $my_name ADD CONSTRAINT {$my_name}_fk_updated_by FOREIGN KEY (updated_by) REFERENCES $users(id) ON DELETE SET NULL ON UPDATE CASCADE");
+        if ($this->hasTable($record_name)) {
+            $this->exec("ALTER TABLE $my_name ADD CONSTRAINT {$my_name}_fk_record_id FOREIGN KEY (record_id) REFERENCES $record_name(id) ON DELETE SET NULL ON UPDATE CASCADE");
         }
+        $this->setForeignKeyChecks(true);
 
         // Файл хайлтын гүйцэтгэлийг сайжруулах индекс
         $this->exec("CREATE INDEX {$my_name}_idx_record_id ON $my_name (record_id, is_active)");

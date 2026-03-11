@@ -575,12 +575,6 @@ Sends email via Brevo (SendInBlue) API.
 
 PostgreSQL variant. DSN: `pgsql:host=...;dbname=...`
 
-### SQLiteConnectMiddleware
-
-**File:** `application/raptor/SQLiteConnectMiddleware.php`
-
-SQLite variant. DB file: `private/database.sqlite`
-
 ### ContainerMiddleware
 
 **File:** `application/raptor/ContainerMiddleware.php`

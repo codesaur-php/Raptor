@@ -99,6 +99,10 @@ class UsersModel extends Model
     protected function __initial()
     {
         $table = $this->getName();
+
+        // Хайлт, шүүлтийн гүйцэтгэлийг сайжруулах индекс
+        $this->exec("CREATE INDEX {$table}_idx_active_name ON $table (is_active, first_name, last_name)");
+
         $now   = \date('Y-m-d H:i:s');
         $pass  = \password_hash('password', \PASSWORD_BCRYPT);
         $passQ = $this->quote($pass);

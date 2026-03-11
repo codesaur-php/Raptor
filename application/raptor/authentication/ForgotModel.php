@@ -70,28 +70,21 @@ class ForgotModel extends Model
     {
         $table = $this->getName();
 
-        // SQLite нь ALTER TABLE ... ADD CONSTRAINT дэмжихгүй
-        // MySQL/PostgreSQL дээр л FK constraint нэмнэ
-        if ($this->getDriverName() != 'sqlite') {
-            $this->setForeignKeyChecks(false);
-            
-            // Энд гадаад түлхүүр (FOREIGN KEY)-ийн холбоосыг UsersModel-ийн хүснэгттэй үүсгэнэ.
-            // users хүснэгтийн нэрийг UsersModel::getName() ашиглан динамикаар авна. Ирээдүйд refactor хийхэд бэлэн байна.
-            // user_id -> {UsersModel::getName()}(id)
-            // ON DELETE SET NULL -> Хэрэглэгч устсан тохиолдолд user_id null болно.
-            // ON UPDATE CASCADE -> Хэрэглэгчийн id өөрчлөгдвөл автоматаар шинэчлэгдэнэ.
-            $users = (new \Raptor\User\UsersModel($this->pdo))->getName();            
-            $this->exec("
-                ALTER TABLE $table 
-                ADD CONSTRAINT {$table}_fk_user_id 
-                FOREIGN KEY (user_id) 
-                REFERENCES $users(id) 
-                ON DELETE SET NULL 
-                ON UPDATE CASCADE
-            ");
+        $this->setForeignKeyChecks(false);
 
-            $this->setForeignKeyChecks(true);
-        }
+        $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
+        $this->exec("
+            ALTER TABLE $table
+            ADD CONSTRAINT {$table}_fk_user_id
+            FOREIGN KEY (user_id)
+            REFERENCES $users(id)
+            ON DELETE SET NULL
+            ON UPDATE CASCADE
+        ");
+
+        $this->setForeignKeyChecks(true);
+
+        $this->exec("CREATE INDEX {$table}_idx_user_id ON $table (user_id)");
     }
     
     /**

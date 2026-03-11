@@ -24,7 +24,7 @@ You can contribute by:
 - PHP 8.2.1 or higher
 - Composer
 - Git
-- MySQL, PostgreSQL, or SQLite
+- MySQL or PostgreSQL
 - PHP extensions: `ext-gd`, `ext-intl`
 
 ### Setup Steps
@@ -233,8 +233,7 @@ Raptor/
 |   |   |-- Controller.php       # Base controller
 |   |   |-- ContainerMiddleware.php
 |   |   |-- MySQLConnectMiddleware.php
-|   |   |-- PostgresConnectMiddleware.php
-|   |   \-- SQLiteConnectMiddleware.php
+|   |   \-- PostgresConnectMiddleware.php
 |   |-- dashboard/               # Dashboard application layer
 |   |   \-- home/
 |   \-- web/                     # Public website layer

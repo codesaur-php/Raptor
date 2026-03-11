@@ -78,41 +78,40 @@ class ProductOrdersModel extends Model
     {
         $table = $this->getName();
 
-        if ($this->getDriverName() != 'sqlite') {
-            $this->setForeignKeyChecks(false);
+        $this->setForeignKeyChecks(false);
 
-            $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
-            $products = (new ProductsModel($this->pdo))->getName();
+        $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
+        $products = (new ProductsModel($this->pdo))->getName();
 
-            $constraints = [
-                'created_by' => "{$table}_fk_created_by",
-                'updated_by' => "{$table}_fk_updated_by"
-            ];
+        $constraints = [
+            'created_by' => "{$table}_fk_created_by",
+            'updated_by' => "{$table}_fk_updated_by"
+        ];
 
-            foreach ($constraints as $column => $constraint) {
-                $this->exec(
-                    "ALTER TABLE $table " .
-                    "ADD CONSTRAINT $constraint " .
-                    "FOREIGN KEY ($column) " .
-                    "REFERENCES $users(id) " .
-                    "ON DELETE SET NULL " .
-                    "ON UPDATE CASCADE"
-                );
-            }
-
+        foreach ($constraints as $column => $constraint) {
             $this->exec(
                 "ALTER TABLE $table " .
-                "ADD CONSTRAINT {$table}_fk_product_id " .
-                "FOREIGN KEY (product_id) " .
-                "REFERENCES $products(id) " .
+                "ADD CONSTRAINT $constraint " .
+                "FOREIGN KEY ($column) " .
+                "REFERENCES $users(id) " .
                 "ON DELETE SET NULL " .
                 "ON UPDATE CASCADE"
             );
-
-            $this->setForeignKeyChecks(true);
         }
 
+        $this->exec(
+            "ALTER TABLE $table " .
+            "ADD CONSTRAINT {$table}_fk_product_id " .
+            "FOREIGN KEY (product_id) " .
+            "REFERENCES $products(id) " .
+            "ON DELETE SET NULL " .
+            "ON UPDATE CASCADE"
+        );
+
+        $this->setForeignKeyChecks(true);
+
         $this->exec("CREATE INDEX {$table}_idx_active_status ON $table (is_active, status)");
+        $this->exec("CREATE INDEX {$table}_idx_product_id ON $table (product_id)");
     }
 
     /**

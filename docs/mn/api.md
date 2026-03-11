@@ -575,12 +575,6 @@ PSR-3 стандартын лог систем. Өгөгдлийн санд ха
 
 PostgreSQL-д зориулсан. DSN: `pgsql:host=...;dbname=...`
 
-### SQLiteConnectMiddleware
-
-**Файл:** `application/raptor/SQLiteConnectMiddleware.php`
-
-SQLite-д зориулсан. DB файл: `private/database.sqlite`
-
 ### ContainerMiddleware
 
 **Файл:** `application/raptor/ContainerMiddleware.php`

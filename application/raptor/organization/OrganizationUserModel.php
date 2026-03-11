@@ -105,50 +105,42 @@ class OrganizationUserModel extends Model
     {
         $table = $this->getName();
 
-        // SQLite нь ALTER TABLE ... ADD CONSTRAINT дэмжихгүй
-        // MySQL/PostgreSQL дээр л FK constraint нэмнэ
-        if ($this->getDriverName() != 'sqlite') {
-            // FK шалгалтыг түр хаах
-            $this->setForeignKeyChecks(false);
+        $this->setForeignKeyChecks(false);
 
-            // Хүснэгтийн нэрийг UsersModel болон OrganizationModel-ийн getName() метод ашиглан динамикаар авна.
-            // Ирээдүйд хүснэгтийн нэр өөрчлөгдвөл Model класс дахь setTable() засах хангалттай.
-            $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
-            $organizations = (new OrganizationModel($this->pdo))->getName();
+        $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
+        $organizations = (new OrganizationModel($this->pdo))->getName();
 
-            // user_id -> FK
-            $this->exec(
-                "ALTER TABLE $table 
-                 ADD CONSTRAINT {$table}_fk_user_id 
-                 FOREIGN KEY (user_id) 
-                 REFERENCES $users(id) 
-                 ON DELETE CASCADE 
-                 ON UPDATE CASCADE"
-            );
+        // user_id -> FK
+        $this->exec(
+            "ALTER TABLE $table
+             ADD CONSTRAINT {$table}_fk_user_id
+             FOREIGN KEY (user_id)
+             REFERENCES $users(id)
+             ON DELETE CASCADE
+             ON UPDATE CASCADE"
+        );
 
-            // organization_id -> FK
-            $this->exec(
-                "ALTER TABLE $table 
-                 ADD CONSTRAINT {$table}_fk_organization_id 
-                 FOREIGN KEY (organization_id) 
-                 REFERENCES $organizations(id) 
-                 ON DELETE CASCADE 
-                 ON UPDATE CASCADE"
-            );
+        // organization_id -> FK
+        $this->exec(
+            "ALTER TABLE $table
+             ADD CONSTRAINT {$table}_fk_organization_id
+             FOREIGN KEY (organization_id)
+             REFERENCES $organizations(id)
+             ON DELETE CASCADE
+             ON UPDATE CASCADE"
+        );
 
-            // created_by -> FK
-            $this->exec(
-                "ALTER TABLE $table 
-                 ADD CONSTRAINT {$table}_fk_created_by 
-                 FOREIGN KEY (created_by) 
-                 REFERENCES $users(id) 
-                 ON DELETE SET NULL 
-                 ON UPDATE CASCADE"
-            );
+        // created_by -> FK
+        $this->exec(
+            "ALTER TABLE $table
+             ADD CONSTRAINT {$table}_fk_created_by
+             FOREIGN KEY (created_by)
+             REFERENCES $users(id)
+             ON DELETE SET NULL
+             ON UPDATE CASCADE"
+        );
 
-            // FK буцааж асаах
-            $this->setForeignKeyChecks(true);
-        }
+        $this->setForeignKeyChecks(true);
 
         // JOIN хайлтын гүйцэтгэлийг сайжруулах индекс
         $this->exec("CREATE INDEX {$table}_idx_user_org ON $table (user_id, organization_id)");

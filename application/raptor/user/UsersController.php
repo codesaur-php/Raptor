@@ -781,8 +781,7 @@ class UsersController extends FileController
             // Ирээдүйд хүснэгтийн нэр өөрчлөгдвөл Model класс дахь setTable() засах хангалттай.
             $roles_table = (new Roles($this->pdo))->getName();
             $user_role_table = (new UserRole($this->pdo))->getName();
-            // PostgreSQL, SQLite, болон MySQL нарт string concat ялгаатай
-            $concat = $this->getDriverName() == 'pgsql' || $this->getDriverName() == 'sqlite'
+            $concat = $this->getDriverName() == 'pgsql'
                 ? "t2.alias || '_' || t2.name"
                 : "CONCAT(t2.alias, '_', t2.name)";
             $select_user_roles =

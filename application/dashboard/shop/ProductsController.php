@@ -735,18 +735,10 @@ class ProductsController extends FileController
                 );
             }
 
-            $driver = $this->pdo->getAttribute(\PDO::ATTR_DRIVER_NAME);
-            if ($driver === 'sqlite') {
-                try { $this->exec("DELETE FROM {$table}_files"); } catch (\Throwable) {}
-                $this->exec("DELETE FROM $table");
-                $this->exec("DELETE FROM sqlite_sequence WHERE name='$table'");
-                try { $this->exec("DELETE FROM sqlite_sequence WHERE name='{$table}_files'"); } catch (\Throwable) {}
-            } else {
-                $this->exec('SET FOREIGN_KEY_CHECKS=0');
-                try { $this->exec("TRUNCATE TABLE {$table}_files"); } catch (\Throwable) {}
-                $this->exec("TRUNCATE TABLE $table");
-                $this->exec('SET FOREIGN_KEY_CHECKS=1');
-            }
+            $this->exec('SET FOREIGN_KEY_CHECKS=0');
+            try { $this->exec("TRUNCATE TABLE {$table}_files"); } catch (\Throwable) {}
+            $this->exec("TRUNCATE TABLE $table");
+            $this->exec('SET FOREIGN_KEY_CHECKS=1');
 
             $this->respondJSON([
                 'status' => 'success',

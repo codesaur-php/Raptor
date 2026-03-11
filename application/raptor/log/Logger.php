@@ -100,6 +100,7 @@ class Logger extends AbstractLogger
     protected function __initial()
     {
         $this->prepare("CREATE INDEX idx_{$this->name}_created_at ON {$this->name} (created_at)")->execute();
+        $this->prepare("CREATE INDEX idx_{$this->name}_level ON {$this->name} (level, created_at)")->execute();
     }
     
     /**

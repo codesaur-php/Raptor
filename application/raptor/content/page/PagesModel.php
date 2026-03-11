@@ -78,41 +78,37 @@ class PagesModel extends Model
      *
      * published_by, created_by, updated_by баганууд нь
      * users хүснэгтийн id руу гадаад түлхүүрээр холбогдоно.
-     * SQLite дээр ALTER TABLE ADD CONSTRAINT дэмжигдэхгүй тул алгасна.
      */
     protected function __initial()
     {
         $table = $this->getName();
 
-        // SQLite нь ALTER TABLE ... ADD CONSTRAINT дэмжихгүй
-        // MySQL/PostgreSQL дээр л FK constraint нэмнэ
-        if ($this->getDriverName() != 'sqlite') {
-            $this->setForeignKeyChecks(false);
-            $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
+        $this->setForeignKeyChecks(false);
+        $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
 
-            $constraints = [
-                'published_by' => "{$table}_fk_published_by",
-                'created_by'   => "{$table}_fk_created_by",
-                'updated_by'   => "{$table}_fk_updated_by"
-            ];
+        $constraints = [
+            'published_by' => "{$table}_fk_published_by",
+            'created_by'   => "{$table}_fk_created_by",
+            'updated_by'   => "{$table}_fk_updated_by"
+        ];
 
-            foreach ($constraints as $column => $constraint) {
-                $this->exec(
-                    "ALTER TABLE $table " .
-                    "ADD CONSTRAINT $constraint " .
-                    "FOREIGN KEY ($column) " .
-                    "REFERENCES $users(id) " .
-                    "ON DELETE SET NULL " .
-                    "ON UPDATE CASCADE"
-                );
-            }
-
-            $this->setForeignKeyChecks(true);
+        foreach ($constraints as $column => $constraint) {
+            $this->exec(
+                "ALTER TABLE $table " .
+                "ADD CONSTRAINT $constraint " .
+                "FOREIGN KEY ($column) " .
+                "REFERENCES $users(id) " .
+                "ON DELETE SET NULL " .
+                "ON UPDATE CASCADE"
+            );
         }
+
+        $this->setForeignKeyChecks(true);
 
         // Хайлт, шүүлтийн гүйцэтгэлийг сайжруулах индексүүд
         $this->exec("CREATE INDEX {$table}_idx_parent_id ON $table (parent_id)");
         $this->exec("CREATE INDEX {$table}_idx_active_published ON $table (is_active, published)");
+        $this->exec("CREATE INDEX {$table}_idx_code_active_published ON $table (code, is_active, published, position)");
 
         $now = \date('Y-m-d H:i:s');
         $path = \dirname($_SERVER['SCRIPT_NAME'] ?? '/');
