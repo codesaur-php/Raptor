@@ -99,29 +99,20 @@ class LocalizationMiddleware implements MiddlewareInterface
     }
     
     /**
-     * Сонгогдсон хэл дээр WEB талд шаардлагатай текстүүдийг
-     * зөвхөн `default` болон `user` хүснэгтээс ачаална.
+     * Сонгогдсон хэл дээр орчуулгын текстүүдийг
+     * localization_text хүснэгтээс ачаална.
      */
     private function retrieveTexts(ServerRequestInterface $request, string $langCode)
     {
-        $texts = [];
         try {
-            $tables = ['default', 'user'];
-            $pdo = $request->getAttribute('pdo');            
-            foreach ($tables as $table) {
-                $model = new TextModel($pdo);
-                $model->setTable($table);
-                $text = $model->retrieve($langCode);
-                if (!empty($text)) {
-                    $texts += $text;
-                }
-            }
+            $model = new TextModel($request->getAttribute('pdo'));
+            return $model->retrieve($langCode);
         } catch (\Throwable $e) {
             if (CODESAUR_DEVELOPMENT) {
                 \error_log($e->getMessage());
             }
+            return [];
         }
-        return $texts;
     }
     
     /**

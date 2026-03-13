@@ -211,7 +211,7 @@
                 type_category += ` <span class="badge bg-danger">${record.category}</span>`;
 
                 /* Нийтлэгдсэн төлөвийг харуулах */
-                const published = record.published === 1 ? `<i class="bi bi-emoji-heart-eyes-fill text-success"></i> ${published_text}<br/><small>${record['published_at']}</small>` : '<i class="bi bi-eye-slash"></i>';
+                const published = record.published == 1 ? `<i class="bi bi-emoji-heart-eyes-fill text-success"></i> ${published_text}<br/><small>${record['published_at']}</small>` : '<i class="bi bi-eye-slash"></i>';
 
                 /* ========== ҮЙЛДЛИЙН ТОВЧНУУДЫГ ҮҮСГЭХ ========== */
                 const buttons = [];

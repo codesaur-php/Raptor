@@ -29,10 +29,14 @@ Clean architecture object-oriented web development framework
 - CMS модулиуд: Мэдээ, Хуудас, Файл, Лавлах, Тохиргоо
 - Дэлгүүр модуль: Бүтээгдэхүүн, Захиалга (e-commerce)
 - MySQL, PostgreSQL алийг нь ч дэмжинэ
+- SQL файл суурьтай өгөгдлийн сангийн migration систем
 - Twig template engine
 - OpenAI интеграци (moedit editor)
 - Зураг optimize хийх (GD)
 - PSR-3 лог систем
+- Brevo API и-мэйл, Discord webhook мэдэгдэл
+- SEO: Хайлт, Sitemap, XML Sitemap, RSS feed
+- Спам хамгаалалт (honeypot, HMAC token, rate limiting)
 
 ### Дэлгэрэнгүй мэдээлэл
 
@@ -56,10 +60,14 @@ The framework operates in two layers - **Web** (public website) and **Dashboard*
 - CMS modules: News, Pages, Files, References, Settings
 - Shop module: Products, Orders (e-commerce)
 - MySQL or PostgreSQL supported
+- SQL file-based database migration system
 - Twig template engine
 - OpenAI integration (moedit editor)
 - Image optimization (GD)
 - PSR-3 logging system
+- Brevo API email, Discord webhook notifications
+- SEO: Search, Sitemap, XML Sitemap, RSS feed
+- Spam protection (honeypot, HMAC token, rate limiting)
 
 ### Documentation
 
@@ -118,7 +126,7 @@ RAPTOR_JWT_LIFETIME=2592000
 public_html/index.php
  |-- /dashboard/* -> Dashboard\Application (Admin Panel)
  |    |-- Middleware stack (Session, JWT, RBAC, Localization, Settings)
- |    |-- Routers (Login, Users, Organization, RBAC, Content, Logs)
+ |    |-- Routers (Login, Users, Organization, RBAC, Content, Logs, Shop, Development, Migration)
  |    \-- Controllers -> Twig Templates
  |
  \-- /* -> Web\Application (Public Website)
@@ -145,7 +153,8 @@ raptor/
 |   |   |-- log/             # Logging
 |   |   |-- mail/            # Email
 |   |   |-- notification/    # Discord webhook notifications
-|   |   \-- development/     # Dev tools (SQL terminal, file manager, error log)
+|   |   |-- development/     # Dev request tracking
+|   |   \-- migration/       # Database migration system
 |   |-- dashboard/           # Dashboard application
 |   |   |-- home/            # Dashboard home
 |   |   \-- shop/            # Shop module (Products, Orders)
@@ -156,6 +165,8 @@ raptor/
 |   |-- .htaccess            # Apache URL rewrite
 |   |-- robots.txt           # Search engine bot rules
 |   \-- assets/              # CSS, JS (dashboard, moedit, motable etc)
+|-- database/
+|   \-- migrations/          # SQL migration files
 |-- tests/                   # PHPUnit tests (unit, integration)
 |-- docs/
 |   |-- conf.example/        # Server config examples + cPanel deploy

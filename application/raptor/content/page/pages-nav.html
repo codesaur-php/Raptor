@@ -330,9 +330,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             if (hasChildren) {
                 html += `<div class="collapse" id="${collapseId}">`;
-                if (hasChildren) {
-                    html += renderTree(children, childrenMap, depth + 1, langCode);
-                }
+                html += renderTree(children, childrenMap, depth + 1, langCode);
                 if (canInsert) {
                     html += `<div class="py-1 ps-4 ms-3">
                         <a class="btn btn-sm btn-outline-success py-0 px-2" href="${insertLink}&code=${langCode}&parent_id=${id}" title="${lang === 'mn' ? 'Хүүхэд нэмэх' : 'Add child'}">

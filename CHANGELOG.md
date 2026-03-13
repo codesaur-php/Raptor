@@ -6,6 +6,57 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 
 ---
 
+## [1.6.0] - 2026-03-13
+[1.6.0]: https://github.com/codesaur-php/Raptor/compare/v1.5.0...v1.6.0
+
+Database migration system, security hardening (removed dangerous dev tools), error log integration, route optimization, documentation update.
+
+### Added
+- **Database Migration** - SQL file-based forward-only migration system (`Raptor\Migration`)
+  - `MigrationRunner` - Core engine: parse SQL files, execute pending migrations, track status
+  - `MigrationMiddleware` - PSR-15 middleware that auto-runs pending migrations on each request
+  - `MigrationController` - Dashboard UI for viewing migration status and SQL file contents (system_coder only)
+  - `MigrationRouter` - Routes: `/dashboard/migrations`, `/dashboard/migrations/status`, `/dashboard/migrations/view`
+  - Pending migrations in `database/migrations/`, ran migrations moved to `database/migrations/ran/`
+  - Advisory lock (`GET_LOCK`) prevents concurrent migration execution
+  - Rename with unlink fallback for servers with permission issues
+  - `.htaccess` protection (`deny from all`) blocks direct browser access to SQL files
+  - Nginx `.sql` file deny rule added to `.nginx.conf.example`
+  - `database/migrations/example_never_runs.sql` - Example pending migration for testing
+- **Error Log Tab** - PHP error.log viewer integrated as the last tab in Access Logs page (`/dashboard/logs`)
+  - Lazy-loaded on tab activation via AJAX (`error-log-read` endpoint)
+  - Pagination support (newest entries first)
+  - Syntax-highlighted log output
+  - Visible to all `system_coder` users (no user ID restriction)
+- **Migration Tests** - 35 tests covering the migration system
+  - `tests/Unit/Migration/MigrationRunnerTest.php` - 22 unit tests (parseFile, splitStatements, hasPending, status)
+  - `tests/Integration/Migration/MigrationRunnerIntegrationTest.php` - 13 integration tests (migrate, partial failure, lock, file naming)
+- **Middleware Pipeline** - `MigrationMiddleware` registered after `MySQLConnectMiddleware` in both Dashboard and Web applications
+- **Autoload** - `Raptor\Migration\` PSR-4 namespace added to `composer.json`
+
+### Changed
+- **Error Log** - Moved from standalone Development Tools page to Access Logs tab; `errorLogRead()` method moved from `FileManagerController` to `LogsController`
+- **Route Name Optimization** - Removed `->name()` from 11 routes across 7 routers whose names were never referenced via `|link` or `redirectTo()`:
+  - `organization-view` (OrganizationRouter)
+  - `manage-menu` (TemplateRouter)
+  - `user-view` (UsersRouter, removed from `update` route renamed path)
+  - `product-read`, `product-view` (ProductsRouter)
+  - `order-view` (OrdersRouter)
+  - `private-files-read`, `news-view`, `page-view` (ContentsRouter)
+  - `products-page`, `sitemap-xml` (HomeRouter)
+- **Spam Protection** - Login rate limit reduced from 3s to 2s; minimum form fill speed reduced from 2s to 1s
+- **Dashboard Sidebar** - Removed entire "Developer Tools" section (file-manager, sql-terminal, error-log links)
+- **DevelopmentRouter** - Only DevRequest routes remain; SQL Terminal, Error Log, File Manager routes removed
+- **Documentation** - All 5 markdown files updated (`README.md`, `docs/en/README.md`, `docs/mn/README.md`, `docs/en/api.md`, `docs/mn/api.md`)
+
+### Removed
+- **SqlTerminalController** - Production security risk: allowed arbitrary SQL execution. Completely removed (`SqlTerminalController.php`, `sql-terminal.html`)
+- **FileManagerController** - Production security risk: allowed arbitrary file system browsing. Completely removed (`FileManagerController.php`, `filemanager.html`)
+- **Error Log Page** - Standalone error log page removed (`error-log.html`); functionality preserved in Access Logs tab
+- **Localization** - Removed 7 unused text keywords: `developer`, `error-log`, `file-manager`, `file-too-large-preview`, `sql-query-placeholder`, `sql-terminal`, `execute`
+
+---
+
 ## [1.5.0] - 2026-03-12
 [1.5.0]: https://github.com/codesaur-php/Raptor/compare/v1.4.0...v1.5.0
 

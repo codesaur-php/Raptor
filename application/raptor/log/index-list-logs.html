@@ -22,6 +22,17 @@
            data-table="{{ table }}">{{ table }}</a>
     </li>
 {% endfor %}
+{% if show_error_log %}
+    <li class="nav-item">
+        <a class="nav-link text-uppercase text-danger"
+           role="tab"
+           data-bs-toggle="tab"
+           href="#log_error_file"
+           id="errorLogTab">
+            <i class="bi bi-file-earmark-text"></i> ERROR LOG
+        </a>
+    </li>
+{% endif %}
 </ul>
 
 <!-- Таб бүрийн контент - логийн жагсаалт, spinner, sentinel, төгсгөлийн мэдэгдэл -->
@@ -64,6 +75,42 @@
         </div>
     </div>
 {% endfor %}
+{% if show_error_log %}
+    <div class="tab-pane" id="log_error_file"
+         style="width:100%;height:82vh;min-height:400px;overflow-y:auto;overflow-x:hidden;position:relative;">
+        <div class="d-flex align-items-center justify-content-between px-3 py-2 bg-dark text-white sticky-top">
+            <div>
+                <span class="badge bg-secondary" id="errorLogTotalInfo">{{ error_log_lines }} lines</span>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <button id="errorLogBtnRefresh" class="btn btn-sm btn-outline-light" title="Refresh">
+                    <i class="bi bi-arrow-clockwise"></i>
+                </button>
+                <button id="errorLogBtnPrev" class="btn btn-sm btn-outline-light" disabled>
+                    <i class="bi bi-chevron-left"></i> Older
+                </button>
+                <span class="text-light small" id="errorLogPageInfo">-</span>
+                <button id="errorLogBtnNext" class="btn btn-sm btn-outline-light" disabled>
+                    Newer <i class="bi bi-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+        <div id="errorLogLoading" class="text-center py-4">
+            <div class="spinner-border spinner-border-sm text-primary"></div>
+            <span class="ms-2 text-muted">Loading...</span>
+        </div>
+        <div id="errorLogArea" class="d-none">
+            <pre id="errorLogContent" class="mb-0 p-3"
+                style="background:#1e1e2e; color:#cdd6f4; font-size:12px; line-height:1.6; white-space:pre-wrap; word-break:break-all;"></pre>
+        </div>
+        <div id="errorLogEmpty" class="d-none text-center py-4 text-muted">
+            Log file is empty
+        </div>
+        <div id="errorLogError" class="d-none px-3 py-2">
+            <div class="alert alert-danger mb-0" id="errorLogErrorMsg"></div>
+        </div>
+    </div>
+{% endif %}
 </div>
 
 <script type="text/javascript">
@@ -249,6 +296,14 @@ document.addEventListener('DOMContentLoaded', function () {
     /* Bootstrap таб солигдох үед тухайн табын логийг эхний удаад ачаалах */
     document.querySelectorAll('a[data-bs-toggle="tab"]').forEach(tabLink => {
         tabLink.addEventListener('shown.bs.tab', function (e) {
+            /* Error log таб */
+            if (e.target.id === 'errorLogTab') {
+                if (!window._errorLogInitialized) {
+                    loadErrorLogPage();
+                }
+                return;
+            }
+
             /* data-table атрибут байвал шууд; байхгүй бол href="#log_table" -оос table нэр гаргаж авах */
             const table = e.target.getAttribute('data-table') ||
                           (e.target.getAttribute('href') || '').replace('#log_', '');
@@ -279,5 +334,96 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
     });
+
+    /* ========== ERROR LOG TAB ========== */
+    const errorLogReadUrl = `{{ 'error-log-read'|link }}`;
+    const elBtnPrev = document.getElementById('errorLogBtnPrev');
+    const elBtnNext = document.getElementById('errorLogBtnNext');
+    const elBtnRefresh = document.getElementById('errorLogBtnRefresh');
+
+    if (elBtnRefresh) {
+        let errorLogPage = 1;
+        let errorLogTotalPages = 1;
+        window._errorLogInitialized = false;
+
+        function errorLogEscapeHtml(text) {
+            const div = document.createElement('div');
+            div.appendChild(document.createTextNode(text));
+            return div.innerHTML;
+        }
+
+        function loadErrorLogPage() {
+            const loading = document.getElementById('errorLogLoading');
+            const area = document.getElementById('errorLogArea');
+            const content = document.getElementById('errorLogContent');
+            const empty = document.getElementById('errorLogEmpty');
+            const error = document.getElementById('errorLogError');
+            const errorMsg = document.getElementById('errorLogErrorMsg');
+            const pageInfo = document.getElementById('errorLogPageInfo');
+            const totalInfo = document.getElementById('errorLogTotalInfo');
+
+            loading.classList.remove('d-none');
+            area.classList.add('d-none');
+            empty.classList.add('d-none');
+            error.classList.add('d-none');
+
+            fetch(errorLogReadUrl + '?page=' + errorLogPage)
+            .then(r => r.json())
+            .then(data => {
+                loading.classList.add('d-none');
+
+                if (data.status === 'error') {
+                    errorMsg.textContent = data.message;
+                    error.classList.remove('d-none');
+                    return;
+                }
+
+                errorLogTotalPages = data.total_pages;
+                totalInfo.textContent = data.total_lines + ' lines';
+
+                if (data.lines.length === 0) {
+                    empty.classList.remove('d-none');
+                    pageInfo.textContent = '-';
+                } else {
+                    area.classList.remove('d-none');
+                    let html = '';
+                    for (let i = 0; i < data.lines.length; i++) {
+                        let line = errorLogEscapeHtml(data.lines[i]);
+                        if (/\b(Fatal|Error|Exception|Warning)\b/i.test(data.lines[i])) {
+                            line = '<span style="color:#f38ba8">' + line + '</span>';
+                        } else if (/\b(Notice|Deprecated)\b/i.test(data.lines[i])) {
+                            line = '<span style="color:#fab387">' + line + '</span>';
+                        } else if (/^\[/.test(data.lines[i])) {
+                            line = '<span style="color:#a6e3a1">' + line + '</span>';
+                        }
+                        html += line + '\n';
+                    }
+                    content.innerHTML = html;
+                    pageInfo.textContent = errorLogPage + ' / ' + errorLogTotalPages +
+                        ' (lines ' + data.from_line + '-' + data.to_line + ')';
+                }
+
+                elBtnPrev.disabled = (errorLogPage >= errorLogTotalPages);
+                elBtnNext.disabled = (errorLogPage <= 1);
+                window._errorLogInitialized = true;
+            })
+            .catch(err => {
+                loading.classList.add('d-none');
+                errorMsg.textContent = 'Network error: ' + err.message;
+                error.classList.remove('d-none');
+            });
+        }
+        window.loadErrorLogPage = loadErrorLogPage;
+
+        elBtnPrev.addEventListener('click', () => {
+            if (errorLogPage < errorLogTotalPages) { errorLogPage++; loadErrorLogPage(); }
+        });
+        elBtnNext.addEventListener('click', () => {
+            if (errorLogPage > 1) { errorLogPage--; loadErrorLogPage(); }
+        });
+        elBtnRefresh.addEventListener('click', () => {
+            errorLogPage = 1; loadErrorLogPage();
+        });
+    }
 });
 </script>

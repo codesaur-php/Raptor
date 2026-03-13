@@ -101,7 +101,7 @@ class MenuModel extends LocalizedModel
          * ----------------------------------------
          */
         $contents = $this->insert(
-            ['position' => '200'],
+            ['position' => '100'],
             ['mn' => ['title' => 'Агуулгууд'], 'en' => ['title' => 'Contents']]
         );
         if (isset($contents['id'])) {
@@ -109,7 +109,7 @@ class MenuModel extends LocalizedModel
             $this->insert(
                 [
                     'parent_id' => $contents['id'],
-                    'position' => '201',
+                    'position' => '110',
                     'alias' => 'system',
                     'icon' => 'bi bi-rocket-takeoff',
                     'href' => "$path/home\" target=\"__blank"
@@ -120,7 +120,7 @@ class MenuModel extends LocalizedModel
             $this->insert(
                 [
                     'parent_id' => $contents['id'],
-                    'position' => '250',
+                    'position' => '120',
                     'alias' => 'system',
                     'permission' => 'system_content_index',
                     'icon' => 'bi bi-book-half',
@@ -132,7 +132,7 @@ class MenuModel extends LocalizedModel
             $this->insert(
                 [
                     'parent_id' => $contents['id'],
-                    'position' => '260',
+                    'position' => '130',
                     'alias' => 'system',
                     'permission' => 'system_content_index',
                     'icon' => 'bi bi-newspaper',
@@ -144,7 +144,7 @@ class MenuModel extends LocalizedModel
             $this->insert(
                 [
                     'parent_id' => $contents['id'],
-                    'position' => '270',
+                    'position' => '140',
                     'alias' => 'system',
                     'permission' => 'system_content_index',
                     'icon' => 'bi bi-folder',
@@ -156,7 +156,7 @@ class MenuModel extends LocalizedModel
             $this->insert(
                 [
                     'parent_id' => $contents['id'],
-                    'position' => '280',
+                    'position' => '150',
                     'alias' => 'system',
                     'permission' => 'system_localization_index',
                     'icon' => 'bi bi-translate',
@@ -168,7 +168,7 @@ class MenuModel extends LocalizedModel
             $this->insert(
                 [
                     'parent_id' => $contents['id'],
-                    'position' => '290',
+                    'position' => '160',
                     'alias' => 'system',
                     'permission' => 'system_templates_index',
                     'icon' => 'bi bi-layout-wtf',
@@ -180,7 +180,7 @@ class MenuModel extends LocalizedModel
             $this->insert(
                 [
                     'parent_id' => $contents['id'],
-                    'position' => '295',
+                    'position' => '170',
                     'alias' => 'system',
                     'permission' => 'system_content_settings',
                     'icon' => 'bi bi-gear-wide-connected',
@@ -196,7 +196,7 @@ class MenuModel extends LocalizedModel
          * ----------------------------------------
          */
         $shop = $this->insert(
-            ['position' => '240'],
+            ['position' => '200'],
             ['mn' => ['title' => 'Дэлгүүр'], 'en' => ['title' => 'Shop']]
         );
         if (isset($shop['id'])) {
@@ -204,7 +204,7 @@ class MenuModel extends LocalizedModel
             $this->insert(
                 [
                     'parent_id' => $shop['id'],
-                    'position' => '242',
+                    'position' => '210',
                     'alias' => 'system',
                     'permission' => 'system_content_index',
                     'icon' => 'bi bi-box2-heart',
@@ -216,7 +216,7 @@ class MenuModel extends LocalizedModel
             $this->insert(
                 [
                     'parent_id' => $shop['id'],
-                    'position' => '244',
+                    'position' => '220',
                     'alias' => 'system',
                     'permission' => 'system_content_index',
                     'icon' => 'bi bi-cart3',
@@ -262,31 +262,50 @@ class MenuModel extends LocalizedModel
             $this->insert(
                 [
                     'parent_id' => $system['id'],
-                    'position' => '340',
+                    'position' => '330',
                     'permission' => 'system_logger',
                     'icon' => 'bi bi-list-stars',
                     'href' => "$path/dashboard/logs"
                 ],
                 ['mn' => ['title' => 'Хандалтын протокол'], 'en' => ['title' => 'Access logs']]
             );
-            // Хөгжүүлэлтийн хүсэлт (нэвтэрсэн бүх хэрэглэгчид харагдана)
+            // Хөгжүүлэлтийн хүсэлт
             $this->insert(
                 [
                     'parent_id' => $system['id'],
-                    'position' => '345',
+                    'position' => '340',
                     'alias' => 'system',
                     'icon' => 'bi bi-code-slash',
                     'href' => "$path/dashboard/dev-requests"
                 ],
                 ['mn' => ['title' => 'Хөгжүүлэлтийн хүсэлт'], 'en' => ['title' => 'Dev Requests']]
             );
-            // Цэс удирдах
+            
+            // Raptor Migrations & Цэс удирдах
+            //
+            // permission => 'system_coder' тайлбар:
+            // 'system_coder' нь RBAC permission биш, RBAC role юм.
+            // Ийм нэртэй permission rbac_permissions хүснэгтэд байхгүй (Permissions::insert()-д хамгаалалттай).
+            // Sidebar filter нь isUserCan($permission) ашигладаг бөгөөд system_coder role-тэй
+            // хэрэглэгчид isUserCan() бүх утганд true буцаадаг тул зөвхөн coder-д харагдана.
+            // Бусад хэрэглэгчдэд 'system_coder' permission олдохгүй -> isUserCan() = false -> нуугдана.
             $this->insert(
                 [
                     'parent_id' => $system['id'],
                     'position' => '350',
                     'alias' => 'system',
-                    'permission' => 'system_manage_menu',
+                    'permission' => 'system_coder',
+                    'icon' => 'bi bi-database-gear',
+                    'href' => "$path/dashboard/migrations"
+                ],
+                ['mn' => ['title' => 'Database Migrations'], 'en' => ['title' => 'Database Migrations']]
+            );
+            $this->insert(
+                [
+                    'parent_id' => $system['id'],
+                    'position' => '360',
+                    'alias' => 'system',
+                    'permission' => 'system_coder',
                     'icon' => 'bi bi-menu-button-wide-fill',
                     'href' => "$path/dashboard/manage/menu"
                 ],

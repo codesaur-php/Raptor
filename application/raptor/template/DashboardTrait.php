@@ -60,7 +60,7 @@ trait DashboardTrait
      *
      * Товчхондоо:
      * ---------------------------------------------------------------
-     *  > Dashboard layout + Dynamic sidebar + Dynamic content + System settings 
+     *  > Dashboard layout + Dynamic sidebar + Dynamic content + System settings
      *  -> нэг TwigTemplate объект болж буцна.
      *
      * @param string $template  Контент template-ийн файл зам
@@ -72,7 +72,7 @@ trait DashboardTrait
     {
         $dashboard = $this->twigTemplate(__DIR__ . '/dashboard.html');
         $dashboard->set('sidemenu', $this->getUserMenu());
-        $dashboard->set('content', $this->twigTemplate($template, $vars));        
+        $dashboard->set('content', $this->twigTemplate($template, $vars));
         foreach ($this->getAttribute('settings', []) as $key => $value) {
             $dashboard->set($key, $value);
         }

@@ -65,5 +65,7 @@ class LogsRouter extends Router
          * fetch('logs-retrieve', { method:'POST', body:{ ... } })
          */
         $this->POST('/dashboard/logs/retrieve', [LogsController::class, 'retrieve'])->name('logs-retrieve');
+
+        $this->GET('/dashboard/logs/error-log-read', [LogsController::class, 'errorLogRead'])->name('error-log-read');
     }
 }

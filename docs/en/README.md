@@ -14,7 +14,7 @@
 3. [Configuration (.env)](#3-configuration)
 4. [Architecture](#4-architecture)
 5. [Middleware Pipeline](#5-middleware-pipeline)
-6. [Modules](#6-modules) (6.1-6.13 Core | 6.14-6.18 New: Shop, Notification, Development, SEO, Spam Protection)
+6. [Modules](#6-modules) (6.1-6.13 Core | 6.14-6.19 New: Shop, Notification, Development, SEO, Spam Protection, Migration)
 7. [Twig Template System](#7-twig-template-system)
 8. [Routing](#8-routing)
 9. [Controller](#9-controller)
@@ -39,6 +39,7 @@
 - CMS modules: News, Pages, Files, References, Settings
 - **Shop** module (Products, Orders)
 - MySQL or PostgreSQL supported
+- SQL file-based **database migration** system
 - **Twig** template engine
 - **OpenAI** integration (moedit editor)
 - Image optimization (GD)
@@ -233,7 +234,7 @@ public_html/index.php (Entry point)
 |
 |-- /dashboard/* -> Dashboard\Application (Admin Panel)
 |    |-- Middleware: ErrorHandler -> MySQL -> Session -> JWT -> Container -> Localization -> Settings
-|    |-- Routers: Login, Users, Organization, RBAC, Localization, Contents, Logs, Template, Shop, Development
+|    |-- Routers: Login, Users, Organization, RBAC, Localization, Contents, Logs, Template, Shop, Development, Migration
 |    \-- Controllers -> Twig Templates -> HTML Response
 |
 \-- /* -> Web\Application (Public Website)
@@ -281,7 +282,8 @@ raptor/
 |   |   |-- log/                   # PSR-3 logging
 |   |   |-- mail/                  # Email
 |   |   |-- notification/          # Discord webhook notifications
-|   |   |-- development/           # Dev tools (SQL terminal, file manager, error log)
+|   |   |-- migration/             # Database migration system
+|   |   |-- development/           # Dev request tracking
 |   |   \-- exception/             # Error handling
 |   |-- dashboard/                 # Dashboard Application
 |   |   |-- Application.php
@@ -321,6 +323,8 @@ raptor/
 |   |-- en/                        # English documentation
 |   \-- mn/                        # Mongolian documentation
 |-- tests/                         # PHPUnit tests (unit, integration)
+|-- database/
+|   \-- migrations/              # SQL migration files
 |-- logs/                          # Error log files
 |-- private/                       # Protected files
 |-- composer.json
@@ -340,6 +344,7 @@ Middleware are PSR-15 standard layers that process request/response. Registratio
 |---|-----------|---------|
 | 1 | `ErrorHandler` | Returns errors as JSON/HTML |
 | 2 | `MySQLConnectMiddleware` | Creates PDO and injects into request |
+| 2.5 | `MigrationMiddleware` | Auto-runs pending SQL migrations |
 | 3 | `SessionMiddleware` | Starts and manages PHP session |
 | 4 | `JWTAuthMiddleware` | Validates JWT and creates `User` object |
 | 5 | `ContainerMiddleware` | Injects DI Container |
@@ -493,6 +498,7 @@ $this->isUserCan('news_edit');
 - Log levels: emergency, alert, critical, error, warning, notice, info, debug
 - Auto-captures server request metadata
 - Auto-captures authenticated user info
+- Error log viewer tab (system_coder users) - view PHP error.log directly in the Access Logs page
 
 ### 6.12 Mail
 
@@ -511,11 +517,11 @@ $this->isUserCan('news_edit');
 
 ### 6.14 Shop (E-Commerce)
 
-**Classes:** `ProductsController`, `ProductsRouter`, `ProductsModel`, `OrdersController`, `OrdersRouter`, `OrdersModel`
+**Classes:** `ProductsController`, `ProductsRouter`, `ProductsModel`, `OrdersController`, `OrdersRouter`, `ProductOrdersModel`
 
 - Product CRUD with slug generation, excerpt extraction
 - Product fields: price, sale_price, SKU, barcode, sizes, colors, stock, category, featured
-- Order management with customer info and status tracking
+- Order management (`products_orders` table) with customer info and status tracking
 - Sample product data seeded on first run
 - Discord notifications for new orders and status changes
 
@@ -531,12 +537,9 @@ $this->isUserCan('news_edit');
 
 ### 6.16 Development Tools
 
-**Classes:** `DevelopmentRouter`, `DevRequestController`, `DevRequestModel`, `DevResponseModel`, `SqlTerminalController`, `FileManagerController`
+**Classes:** `DevelopmentRouter`, `DevRequestController`, `DevRequestModel`, `DevResponseModel`
 
-- Development request tracking system
-- SQL Terminal for database queries
-- Error log viewer
-- File manager
+- Development request tracking system (submit requests, respond, view history)
 - Protected by `development:development` RBAC permission
 
 ### 6.17 SEO & Content Discovery (Web)
@@ -567,10 +570,23 @@ Sitemap: https://example.com/sitemap.xml
 
 - Honeypot hidden field detection
 - HMAC token validation with timestamp
-- Rate limiting per action (login 3s, signup 5s, forgot 10s)
+- Rate limiting per action (login 2s, signup 5s, forgot 10s)
 - Form expiration (1 hour max)
-- Minimum fill speed check (2 seconds)
+- Minimum fill speed check (1 second)
 - Applied to login, signup, forgot password, and order forms
+
+### 6.19 Database Migration
+
+**Classes:** `MigrationRunner`, `MigrationMiddleware`, `MigrationController`, `MigrationRouter`
+
+- SQL file-based forward-only migration system
+- Migrations stored in `database/migrations/` directory
+- Pending = files in `migrations/`, Ran = moved to `migrations/ran/`
+- `MigrationMiddleware` auto-runs pending migrations on each request
+- Advisory lock (`GET_LOCK`) prevents concurrent migration execution
+- Dashboard UI for viewing migration status and SQL file contents
+- Protected: only `system_coder` users can access the dashboard
+- `.htaccess` protection blocks direct browser access to SQL files
 
 ---
 
@@ -666,6 +682,14 @@ In your Application class:
 ```php
 $this->use(new MyRouter());
 ```
+
+### Route Name Optimization
+
+Only use `->name('route-name')` when the route name is actually referenced via:
+- `{{ 'route-name'|link }}` in Twig templates
+- `$this->redirectTo('route-name')` in PHP controllers
+
+Routes that are never referenced by name do not need `->name()`, reducing unnecessary overhead.
 
 ---
 
@@ -869,8 +893,10 @@ tests/
 |-- Unit/
 |   |-- Authentication/
 |   |   \-- UserTest.php       # User::is(), User::can() tests
-|   \-- Controller/
-|       \-- ControllerTextTest.php  # Controller::text() tests
+|   |-- Controller/
+|   |   \-- ControllerTextTest.php  # Controller::text() tests
+|   \-- Migration/
+|       \-- MigrationRunnerTest.php  # Migration parser/status tests
 \-- Integration/
     |-- Model/
     |   |-- UsersModelTest.php          # User CRUD tests
@@ -878,8 +904,10 @@ tests/
     |   \-- SignupModelTest.php         # Signup tests
     |-- RBAC/
     |   \-- RolesPermissionsTest.php    # RBAC seed data verification
-    \-- Authentication/
-        \-- JWTAuthTest.php             # JWT encode/decode tests
+    |-- Authentication/
+    |   \-- JWTAuthTest.php             # JWT encode/decode tests
+    \-- Migration/
+        \-- MigrationRunnerIntegrationTest.php  # Migration engine tests
 ```
 
 ### Key Features

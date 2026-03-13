@@ -1,0 +1,162 @@
+<div class="container-fluid py-3">
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-danger text-white d-flex align-items-center justify-content-between">
+                    <div>
+                        <span class="me-2" style="font-size:1.25em">🦖</span>
+                        <strong>Raptor Migrations</strong>
+                    </div>
+                    <button id="btnRefresh" class="btn btn-sm btn-outline-light" title="Refresh">
+                        <i class="bi bi-arrow-clockwise"></i>
+                    </button>
+                </div>
+                <div class="card-body p-0">
+                    <div id="statusArea" class="px-3 py-2 bg-body-tertiary text-body-secondary small border-bottom">
+                        Loading status...
+                    </div>
+                    <div class="table-responsive" style="max-height:500px; overflow:auto;">
+                        <table class="table table-sm table-bordered table-hover mb-0 small text-body">
+                            <thead class="table-secondary">
+                                <tr>
+                                    <th class="text-nowrap">#</th>
+                                    <th class="text-nowrap">File</th>
+                                    <th class="text-nowrap">Executed</th>
+                                    <th class="text-nowrap">Status</th>
+                                    <th class="text-nowrap text-center">View</th>
+                                </tr>
+                            </thead>
+                            <tbody id="migrationsBody">
+                                <tr><td colspan="5" class="text-center text-muted py-3">Loading...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow-sm mt-3">
+                <div class="card-header bg-body-tertiary">
+                    <i class="bi bi-info-circle me-2"></i>
+                    <strong>How Raptor Migrations Work</strong>
+                </div>
+                <div class="card-body small">
+                    <p>Raptor uses a <strong>file-based, forward-only</strong> migration system. Unlike traditional frameworks (e.g. Laravel), Raptor Models define their own table schema and seed data via <code>setTable()</code> and <code>__initial()</code>. Migrations are used only for <strong>schema changes after initial setup</strong> - not for creating tables.</p>
+
+                    <h6 class="mt-3">Directory Structure</h6>
+                    <pre class="bg-body-tertiary p-2 rounded mb-3"><code>database/migrations/
+&#9500;&#9472;&#9472; *.sql          &larr; Pending (will auto-run on next request)
+&#9492;&#9472;&#9472; ran/
+    &#9492;&#9472;&#9472; *.sql      &larr; Executed (moved here after success)</code></pre>
+
+                    <h6>Lifecycle</h6>
+                    <ol class="mb-3">
+                        <li>Developer places a <code>.sql</code> file into <code>database/migrations/</code></li>
+                        <li><code>MigrationMiddleware</code> detects pending files on the next HTTP request</li>
+                        <li>Each SQL file is parsed and executed automatically</li>
+                        <li>On success, the file is moved to <code>ran/</code> subfolder</li>
+                        <li>On failure, the <code>-- [DOWN]</code> section runs to clean up, and the file stays as pending for retry</li>
+                    </ol>
+
+                    <h6>SQL File Format</h6>
+<pre class="bg-body-tertiary p-2 rounded mb-3"><code>-- [UP]
+ALTER TABLE news ADD COLUMN source VARCHAR(255) AFTER photo;
+CREATE INDEX news_idx_source ON news (source);
+
+-- [DOWN]
+ALTER TABLE news DROP COLUMN source;</code></pre>
+                    <p>The <code>-- [DOWN]</code> section is optional. It is only used for automatic cleanup when the <code>-- [UP]</code> section partially fails.</p>
+
+                    <h6>Important Notes</h6>
+                    <ul class="mb-0">
+                        <li><strong>Do NOT</strong> use migrations to create tables. Models auto-create tables on first use via <code>setTable()</code>, which calls <code>__initial()</code> for FK constraints and seed data</li>
+                        <li><strong>Forward-only:</strong> there is no rollback button. To reverse a change, write a new migration</li>
+                        <li><strong>File naming is free:</strong> <code>add_source_to_news.sql</code>, <code>001_fix_typo.sql</code> - any name works</li>
+                        <li>If a target table doesn't exist yet, the migration will fail silently and retry on subsequent requests until the Model creates the table</li>
+                        <li>MySQL DDL statements (ALTER, CREATE INDEX) auto-commit and cannot be rolled back transactionally</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var statusUrl = '{{ "migrations-status"|link }}';
+    var viewUrl = '{{ "migrations-view"|link }}';
+    var tbody = document.getElementById('migrationsBody');
+    var statusArea = document.getElementById('statusArea');
+
+    function escapeHtml(text) {
+        var div = document.createElement('div');
+        div.appendChild(document.createTextNode(text));
+        return div.innerHTML;
+    }
+
+    function bindViewButtons() {
+        tbody.querySelectorAll('.ajax-modal').forEach(function(a) {
+            a.addEventListener('click', function(e) {
+                e.preventDefault();
+                ajaxModal(a);
+            });
+        });
+    }
+
+    function loadStatus() {
+        statusArea.textContent = 'Loading...';
+        fetch(statusUrl)
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.error) {
+                statusArea.textContent = 'Error: ' + data.error;
+                return;
+            }
+
+            var ran = data.ran || [];
+            var pending = data.pending || [];
+
+            statusArea.textContent = ran.length + ' executed, ' + pending.length + ' pending';
+
+            var allFiles = [];
+            ran.forEach(function(r) {
+                allFiles.push({ name: r.file, executed_at: r.executed_at, status: 'ran' });
+            });
+            pending.forEach(function(name) {
+                allFiles.push({ name: name, executed_at: '-', status: 'pending' });
+            });
+
+            if (allFiles.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-3">No migration files found</td></tr>';
+                return;
+            }
+
+            var html = '';
+            allFiles.forEach(function(m, i) {
+                var badge = m.status === 'ran'
+                    ? '<span class="badge bg-success">Ran</span>'
+                    : '<span class="badge bg-warning text-dark">Pending</span>';
+                var link = viewUrl + '?file=' + encodeURIComponent(m.name) + '&type=' + encodeURIComponent(m.status);
+                var viewBtn = '<a href="' + link + '" class="ajax-modal btn btn-sm btn-outline-secondary py-0 px-1"'
+                    + ' data-bs-toggle="modal" data-bs-target="#static-modal" title="View SQL">'
+                    + '<i class="bi bi-eye"></i></a>';
+                html += '<tr>'
+                    + '<td>' + (i + 1) + '</td>'
+                    + '<td class="font-monospace">' + escapeHtml(m.name) + '</td>'
+                    + '<td>' + escapeHtml(String(m.executed_at)) + '</td>'
+                    + '<td>' + badge + '</td>'
+                    + '<td class="text-center">' + viewBtn + '</td>'
+                    + '</tr>';
+            });
+            tbody.innerHTML = html;
+            bindViewButtons();
+        })
+        .catch(function(err) {
+            statusArea.textContent = 'Network error: ' + err.message;
+        });
+    }
+
+    document.getElementById('btnRefresh').addEventListener('click', loadStatus);
+
+    loadStatus();
+})();
+</script>

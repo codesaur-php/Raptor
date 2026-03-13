@@ -87,7 +87,7 @@ class OrganizationRouter extends Router
          * Action:   OrganizationController::view()
          * Name:     organization-view
          */
-        $this->GET('/dashboard/organizations/view/{uint:id}', [OrganizationController::class, 'view'])->name('organization-view');
+        $this->GET('/dashboard/organizations/view/{uint:id}', [OrganizationController::class, 'view']);
 
         /**
          * --------------------------------------------------------------

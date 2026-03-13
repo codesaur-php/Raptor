@@ -55,7 +55,7 @@ class UsersRouter extends Router
         $this->GET_PUT('/dashboard/users/update/{uint:id}', [UsersController::class, 'update'])->name('user-update');
         
         // Хэрэглэгчийн дэлгэрэнгүй мэдээлэл харах
-        $this->GET('/dashboard/users/view/{uint:id}', [UsersController::class, 'view'])->name('user-view');
+        $this->GET('/dashboard/users/view/{uint:id}', [UsersController::class, 'view']);
 
         /**
          * ----------------------------------------------------------

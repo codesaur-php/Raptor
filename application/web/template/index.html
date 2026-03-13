@@ -238,11 +238,6 @@
                                     <i class="bi bi-chevron-right me-1"></i> {{ 'dashboard'|text }}
                                 </a>
                             </li>
-                            <li class="mb-2">
-                                <a class="footer-link" href="{{ 'contact'|link }}">
-                                    <i class="bi bi-chevron-right me-1"></i> {{ 'contact'|text }}
-                                </a>
-                            </li>
                             {% for item in featured_pages %}
                                 {% if item['link'] is not empty %}
                                     {% set href = item['link'] %}
@@ -277,13 +272,18 @@
                     <div class="col-lg-4 col-md-12">
                         <h5 class="mb-3 text-uppercase fw-semibold">{{ 'follow-us'|text }}</h5>
                         <div class="d-flex flex-wrap mb-3">
-                            {% if config['fb']['page']['url'] is not empty %}
-                                <a class="social-icon" href="{{ config['fb']['page']['url'] }}" target="_blank" title="Facebook">
+                            {% if config['facebook'] is not empty %}
+                                <a class="social-icon" href="{{ config['facebook'] }}" target="_blank" title="Facebook">
                                     <i class="bi bi-facebook"></i>
                                 </a>
                             {% endif %}
-                            {% if config['youtube']['url'] is not empty %}
-                                <a class="social-icon" href="{{ config['youtube']['url'] }}" target="_blank" title="YouTube">
+                            {% if config['instagram'] is not empty %}
+                                <a class="social-icon" href="{{ config['instagram'] }}" target="_blank" title="Instagram">
+                                    <i class="bi bi-instagram"></i>
+                                </a>
+                            {% endif %}
+                            {% if config['youtube'] is not empty %}
+                                <a class="social-icon" href="{{ config['youtube'] }}" target="_blank" title="YouTube">
                                     <i class="bi bi-youtube"></i>
                                 </a>
                             {% endif %}
@@ -292,8 +292,7 @@
                 </div>
 
                 <!-- Copyright -->
-                <div class="border-top border-secondary mt-4 pt-3 text-center">
-                    
+                <div class="border-top border-secondary mt-4 pt-3 text-center">                    
                         {% if logo is not empty %}
                             <a href="{{ 'home'|link }}">
                                 <img src="{{ logo }}" alt="{{ title }}" height="50" style="opacity:.8">

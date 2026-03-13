@@ -4,7 +4,7 @@
         <div class="modal-header">
             <!-- Хүснэгтийн нэр болон мөрийн id-г харуулж админд илүү ойлгомжтой болгоно -->
             <h3 class="modal-title fs-6 text-uppercase text-primary">
-                <i class="bi bi-plus-circle"></i> {{ 'edit-record'|text }} ({{ table ~ ':' ~ record['id'] }})
+                <i class="bi bi-plus-circle"></i> {{ 'edit-record'|text }} #{{ record['id'] }}
             </h3>
 
             <!-- Modal-г хаах товч -->
@@ -18,7 +18,7 @@
             <form class="needs-validation"
                   novalidate
                   id="text_update"
-                  action="{{ 'text-update'|link({'table':table, 'id':record['id']}) }}"
+                  action="{{ 'text-update'|link({'id':record['id']}) }}"
                   method="PUT"
                   enctype="multipart/form-data">
                 <!-- Түлхүүр үг (keyword)   -->

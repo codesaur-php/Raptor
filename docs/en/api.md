@@ -25,6 +25,7 @@
 17. [Shop](#shop)
 18. [Notification](#notification)
 19. [Development](#development)
+20. [Migration](#migration)
 
 ---
 
@@ -114,12 +115,13 @@ Base for the Dashboard Application. Registers the middleware pipeline and router
 
 1. `ErrorHandler` - Error handling
 2. `MySQLConnectMiddleware` - DB connection
+2.5. `MigrationMiddleware` - Auto-run pending migrations
 3. `SessionMiddleware` - Session management
 4. `JWTAuthMiddleware` - JWT authentication
 5. `ContainerMiddleware` - DI Container
 6. `LocalizationMiddleware` - Multi-language
 7. `SettingsMiddleware` - System settings
-8. `LoginRouter`, `UsersRouter`, `OrganizationRouter`, `RBACRouter`, `LocalizationRouter`, `ContentsRouter`, `LogsRouter`, `TemplateRouter`, `ProductsRouter`, `OrdersRouter`, `DevelopmentRouter`
+8. `LoginRouter`, `UsersRouter`, `OrganizationRouter`, `RBACRouter`, `LocalizationRouter`, `ContentsRouter`, `LogsRouter`, `TemplateRouter`, `ProductsRouter`, `OrdersRouter`, `DevelopmentRouter`, `MigrationRouter`
 
 ---
 
@@ -316,7 +318,7 @@ Stores file metadata. Table name is dynamic (`setTable()`).
 | `/dashboard/files/modal/{table}` | GET | `files-modal` |
 | `/dashboard/files/{table}/{uint:id}` | PUT | `files-update` |
 | `/dashboard/files/{table}/deactivate` | DELETE | `files-deactivate` |
-| `/dashboard/private/file` | GET | `private-files-read` |
+| `/dashboard/private/file` | GET | - |
 
 ---
 
@@ -332,18 +334,35 @@ Stores file metadata. Table name is dynamic (`setTable()`).
 | Column | Type | Description |
 |--------|------|-------------|
 | `id` | bigint (PK) | Auto-increment |
-| `code` | varchar(6) | Language code |
+| `slug` | varchar(255, unique) | SEO-friendly URL slug |
 | `title` | varchar(255) | Title |
-| `content` | longtext | HTML content |
+| `description` | varchar(255) | Short description (auto-generated from content) |
+| `content` | mediumtext | HTML content |
+| `source` | varchar(255) | Source attribution |
 | `photo` | varchar(255) | Cover image |
-| `published` | tinyint | Published status |
+| `code` | varchar(2) | Language code |
+| `type` | varchar(32, default: 'article') | News type |
+| `category` | varchar(32, default: 'general') | Category |
+| `is_featured` | tinyint (default: 0) | Featured news |
+| `comment` | tinyint (default: 1) | Comments enabled |
+| `read_count` | bigint (default: 0) | View count |
+| `is_active` | tinyint (default: 1) | Active status |
+| `published` | tinyint (default: 0) | Published status |
 | `published_at` | datetime | Published date |
-| `read_count` | int | View count |
-| `is_active` | tinyint | Active status |
+| `published_by` | bigint | Published by user (FK -> users) |
 | `created_at` | datetime | Created date |
-| `created_by` | bigint | Created by user |
+| `created_by` | bigint | Created by user (FK -> users) |
 | `updated_at` | datetime | Updated date |
-| `updated_by` | bigint | Updated by user |
+| `updated_by` | bigint | Updated by user (FK -> users) |
+
+#### `generateSlug(string $title): string`
+Generates an SEO-friendly slug. Supports Mongolian Cyrillic transliteration. Auto-appends number on duplicate.
+
+#### `getBySlug(string $slug): array|null`
+Finds a news article by its slug.
+
+#### `getExcerpt(string $content, int $length = 200): string`
+Extracts a plain-text excerpt from HTML content.
 
 ### ContentsRouter - News Routes
 
@@ -353,9 +372,9 @@ Stores file metadata. Table name is dynamic (`setTable()`).
 | `/dashboard/news/list` | GET | `news-list` |
 | `/dashboard/news/insert` | GET+POST | `news-insert` |
 | `/dashboard/news/{uint:id}` | GET+PUT | `news-update` |
-| `/dashboard/news/read/{slug}` | GET | `news-read` |
-| `/dashboard/news/view/{uint:id}` | GET | `news-view` |
+| `/dashboard/news/view/{uint:id}` | GET | - |
 | `/dashboard/news/deactivate` | DELETE | `news-deactivate` |
+| `/dashboard/news/reset` | DELETE | `news-sample-reset` |
 
 ---
 
@@ -371,31 +390,46 @@ Stores file metadata. Table name is dynamic (`setTable()`).
 | Column | Type | Description |
 |--------|------|-------------|
 | `id` | bigint (PK) | Auto-increment |
+| `slug` | varchar(255, unique) | SEO-friendly URL slug |
 | `parent_id` | bigint | Parent page ID |
-| `code` | varchar(6) | Language code |
-| `type` | varchar(50) | Page type |
 | `title` | varchar(255) | Title |
-| `content` | longtext | HTML content |
+| `description` | varchar(255) | Short description (auto-generated from content) |
+| `content` | mediumtext | HTML content |
+| `source` | varchar(255) | Source attribution |
 | `photo` | varchar(255) | Cover image |
+| `code` | varchar(2) | Language code |
+| `type` | varchar(32, default: 'menu') | Page type |
+| `category` | varchar(32, default: 'general') | Category |
+| `position` | smallint (default: 100) | Sort order |
 | `link` | varchar(255) | External link |
-| `position` | int | Sort order |
-| `published` | tinyint | Published status |
+| `is_featured` | tinyint (default: 0) | Featured page |
+| `comment` | tinyint (default: 0) | Comments enabled |
+| `read_count` | bigint (default: 0) | View count |
+| `is_active` | tinyint (default: 1) | Active status |
+| `published` | tinyint (default: 0) | Published status |
 | `published_at` | datetime | Published date |
-| `is_featured` | tinyint | Featured page |
-| `read_count` | int | View count |
-| `is_active` | tinyint | Active status |
+| `published_by` | bigint | Published by user (FK -> users) |
 | `created_at` | datetime | Created date |
-| `created_by` | bigint | Created by user |
+| `created_by` | bigint | Created by user (FK -> users) |
 | `updated_at` | datetime | Updated date |
-| `updated_by` | bigint | Updated by user |
+| `updated_by` | bigint | Updated by user (FK -> users) |
 
 #### `generateSlug(string $title): string`
-Generates an SEO-friendly slug from a title.
+Generates an SEO-friendly slug. Supports Mongolian Cyrillic transliteration. Auto-appends number on duplicate.
 
-#### `getBySlug(string $slug): array`
+#### `getBySlug(string $slug): array|null`
 Finds a page by its slug.
 
-#### `getExcerpt(string $content, int $length = 150): string`
+#### `getNavigation(string $code): array`
+Returns tree-structured navigation for published pages where type matches `*-menu` pattern. Ordered by position, id.
+
+#### `buildTree(array $pages, int $parentId = 0): array`
+Recursively builds parent -> children -> submenu tree from flat page list.
+
+#### `getFeaturedLeafPages(string $code): array`
+Returns featured pages that have no children (leaf nodes only).
+
+#### `getExcerpt(string $content, int $length = 200): string`
 Extracts a plain-text excerpt from HTML content.
 
 ### ContentsRouter - Page Routes
@@ -403,12 +437,13 @@ Extracts a plain-text excerpt from HTML content.
 | Route | Method | Name |
 |-------|--------|------|
 | `/dashboard/pages` | GET | `pages` |
+| `/dashboard/pages/nav` | GET | `pages-nav` |
 | `/dashboard/pages/list` | GET | `pages-list` |
 | `/dashboard/pages/insert` | GET+POST | `page-insert` |
 | `/dashboard/pages/{uint:id}` | GET+PUT | `page-update` |
-| `/dashboard/pages/read/{slug}` | GET | `page-read` |
-| `/dashboard/pages/view/{uint:id}` | GET | `page-view` |
+| `/dashboard/pages/view/{uint:id}` | GET | - |
 | `/dashboard/pages/deactivate` | DELETE | `page-deactivate` |
+| `/dashboard/pages/reset` | DELETE | `pages-sample-reset` |
 
 ---
 
@@ -542,8 +577,9 @@ Writes a log entry.
 | Route | Method | Name |
 |-------|--------|------|
 | `/dashboard/logs` | GET | `logs` |
-| `/dashboard/logs/{table}` | GET | `logs-list` |
-| `/dashboard/logs/view/{table}/{uint:id}` | GET | `log-view` |
+| `/dashboard/logs/view` | GET | `logs-view` |
+| `/dashboard/logs/retrieve` | POST | `logs-retrieve` |
+| `/dashboard/logs/error-log-read` | GET | `error-log-read` |
 
 ---
 
@@ -616,7 +652,7 @@ ExceptionHandler -> MySQL -> Container -> Session -> Localization -> Settings ->
 | `/order` | POST | `order-submit` | Submit order |
 | `/search` | GET | `search` | Search |
 | `/sitemap` | GET | `sitemap` | Sitemap page |
-| `/sitemap.xml` | GET | `sitemap-xml` | XML sitemap |
+| `/sitemap.xml` | GET | - | XML sitemap |
 | `/rss` | GET | `rss` | RSS feed |
 
 ### HomeController
@@ -685,8 +721,6 @@ ExceptionHandler -> MySQL -> Container -> Session -> Localization -> Settings ->
 | Method | Description |
 |--------|-------------|
 | `template(string $template, array $vars): TwigTemplate` | Merges web layout + content |
-| `getMainMenu(string $code): array` | Builds multi-level main menu |
-| `getFeaturedPages(string $code): array` | Gets featured pages list |
 
 ### Moedit AI
 
@@ -751,30 +785,30 @@ Generates an SEO-friendly slug. Supports Mongolian Cyrillic transliteration.
 #### `getExcerpt(string $content, int $length = 150): string`
 Extracts a plain-text excerpt from HTML content.
 
-### OrdersModel
+### ProductOrdersModel
 
-**File:** `application/dashboard/shop/OrdersModel.php`
+**File:** `application/dashboard/shop/ProductOrdersModel.php`
 **Extends:** `codesaur\DataObject\Model`
 
-**Table:** `orders`
+**Table:** `products_orders`
 
 | Column | Type | Description |
 |--------|------|-------------|
 | `id` | bigint (PK) | Auto-increment |
-| `product_id` | bigint | Product reference |
+| `product_id` | bigint | Product reference (FK -> products) |
 | `product_title` | varchar(255) | Product title snapshot |
-| `customer_name` | varchar(255) | Customer name |
-| `customer_email` | varchar(100) | Customer email |
-| `customer_phone` | varchar(50) | Customer phone |
+| `customer_name` | varchar(128) | Customer name |
+| `customer_email` | varchar(128) | Customer email |
+| `customer_phone` | varchar(32) | Customer phone |
 | `message` | text | Customer message |
-| `quantity` | int | Quantity |
-| `code` | varchar(6) | Language code |
-| `status` | varchar(50) | Order status |
-| `is_active` | tinyint | Active status |
+| `quantity` | int (default: 1) | Quantity |
+| `code` | varchar(2) | Language code |
+| `status` | varchar(32, default: 'new') | Order status |
+| `is_active` | tinyint (default: 1) | Active status |
 | `created_at` | datetime | Created date |
-| `created_by` | bigint | Created by user |
+| `created_by` | bigint | Created by user (FK -> users) |
 | `updated_at` | datetime | Updated date |
-| `updated_by` | bigint | Updated by user |
+| `updated_by` | bigint | Updated by user (FK -> users) |
 
 ### ProductsRouter
 
@@ -834,11 +868,60 @@ Notification for content management actions (insert, update, delete, publish).
 
 **File:** `application/raptor/development/DevelopmentRouter.php`
 
-| Route | Method | Description |
-|-------|--------|-------------|
-| `/dashboard/dev-requests/*` | CRUD | Development request tracking |
-| `/dashboard/sql-terminal/*` | GET+POST | SQL query interface |
-| `/dashboard/error-log/*` | GET | Error log viewer |
-| `/dashboard/file-manager/*` | GET | File manager |
+| Route | Method | Name | Description |
+|-------|--------|------|-------------|
+| `/dashboard/dev-requests` | GET | `dev-requests` | Request list |
+| `/dashboard/dev-requests/list` | GET | `dev-requests-list` | JSON list |
+| `/dashboard/dev-requests/create` | GET | `dev-requests-create` | Create form |
+| `/dashboard/dev-requests/store` | POST | `dev-requests-store` | Submit request |
+| `/dashboard/dev-requests/view/{uint:id}` | GET | `dev-requests-view` | View request |
+| `/dashboard/dev-requests/respond` | POST | `dev-requests-respond` | Add response |
+| `/dashboard/dev-requests/deactivate` | DELETE | `dev-requests-deactivate` | Deactivate |
 
-All routes protected by `development:development` RBAC permission.
+Protected by `development:development` RBAC permission.
+
+---
+
+## Migration
+
+### MigrationRunner
+
+**File:** `application/raptor/migration/MigrationRunner.php`
+
+SQL file-based forward-only migration engine.
+
+| Method | Description |
+|--------|-------------|
+| `__construct(\PDO $pdo, string $migrationsPath)` | PDO + path to migrations directory |
+| `hasPending(): bool` | Check if any pending migrations exist |
+| `migrate(): array` | Run all pending SQL files, return list of migrated filenames |
+| `status(): array` | Return `['ran' => [...], 'pending' => [...]]` |
+| `parseFile(string $path): array` | Parse SQL file returning `['up' => string, 'down' => string]` |
+
+### MigrationMiddleware
+
+**File:** `application/raptor/migration/MigrationMiddleware.php`
+**Implements:** `MiddlewareInterface`
+
+Auto-runs pending migrations on each request. Uses advisory lock (`GET_LOCK`) to prevent concurrent execution. Silent failure: logs errors but does not block the request.
+
+### MigrationController
+
+**File:** `application/raptor/migration/MigrationController.php`
+**Extends:** `Raptor\Controller`
+
+| Method | Description |
+|--------|-------------|
+| `index()` | Dashboard page showing migration status (system_coder only) |
+| `status()` | JSON: return ran + pending migration lists |
+| `view()` | AJAX modal: display SQL file contents |
+
+### MigrationRouter
+
+**File:** `application/raptor/migration/MigrationRouter.php`
+
+| Route | Method | Name |
+|-------|--------|------|
+| `/dashboard/migrations` | GET | `migrations` |
+| `/dashboard/migrations/status` | GET | `migrations-status` |
+| `/dashboard/migrations/view` | GET | `migrations-view` |

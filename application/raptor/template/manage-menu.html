@@ -1,6 +1,6 @@
 <!-- Template Menu Management UI (Dashboard цэс удирдах) -->
 
-{% set user_can = user.can('system_manage_menu') %}
+{% set user_can = user.is('system_coder') %}
 
 <style>
     /* Menu list table styles */
@@ -741,7 +741,7 @@
             updateModal.querySelector('input[name="id"]').value = record.id;
             updateModal.querySelector('select[name="parent_id"]').value = record.parent_id;
             updateModal.querySelector('input[name="position"]').value = record.position;
-            updateModal.querySelector('input[name="is_visible"]').checked = record.is_visible === 1;
+            updateModal.querySelector('input[name="is_visible"]').checked = record.is_visible == 1;
             updateModal.querySelector('input[name="icon"]').value = record.icon;
             updateModal.querySelector('input[name="href"]').value = record.href;
             updateModal.querySelector('select[name="alias"]').value = record.alias;
@@ -769,7 +769,7 @@
             viewModal.querySelector('input[name="id"]').value = record.id;
             viewModal.querySelector('select[name="parent_id"]').value = record.parent_id;
             viewModal.querySelector('input[name="position"]').value = record.position;
-            viewModal.querySelector('input[name="is_visible"]').checked = record.is_visible === 1;
+            viewModal.querySelector('input[name="is_visible"]').checked = record.is_visible == 1;
             viewModal.querySelector('input[name="icon"]').value = record.icon;
             viewModal.querySelector('input[name="href"]').value = record.href;
             viewModal.querySelector('select[name="alias"]').value = record.alias;

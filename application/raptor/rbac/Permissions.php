@@ -170,7 +170,6 @@ class Permissions extends Model
             ('$nowdate','system','localization','localization_delete','Delete translation entries'),
 
             ('$nowdate','system','template','templates_index','View and manage reference tables'),
-            ('$nowdate','system','template','manage_menu','Manage dashboard sidebar menu structure'),
 
             ('$nowdate','system','development','development','Manage all development requests and respond to others')
         ";
@@ -180,12 +179,40 @@ class Permissions extends Model
     /**
      * insert() - Permission бүртгэх үед created_at автоматаар тохируулах.
      *
+     * Хамгаалалт: `system` alias дээр `coder` нэртэй permission үүсгэхийг хориглоно.
+     * `system_coder` нь RBAC role бөгөөд permission биш. Хэрэв ийм permission
+     * үүсвэл sidebar-ийн `system_coder` permission filter буруу ажиллах эрсдэлтэй.
+     *
      * @param array $record
      * @return array|false
+     * @throws \RuntimeException system_coder permission үүсгэх оролдлого хийвэл
      */
     public function insert(array $record): array|false
     {
+        if (($record['alias'] ?? '') === 'system' && ($record['name'] ?? '') === 'coder') {
+            throw new \RuntimeException(
+                'Cannot create "system_coder" permission: it is a reserved RBAC role name, not a permission.'
+            );
+        }
         $record['created_at'] ??= \date('Y-m-d H:i:s');
         return parent::insert($record);
+    }
+
+    /**
+     * updateById() - Permission шинэчлэх үед system_coder хамгаалалт.
+     *
+     * @param int   $id
+     * @param array $record
+     * @return array|false
+     * @throws \RuntimeException system_coder permission болгох оролдлого хийвэл
+     */
+    public function updateById(int $id, array $record): array|false
+    {
+        if (($record['alias'] ?? '') === 'system' && ($record['name'] ?? '') === 'coder') {
+            throw new \RuntimeException(
+                'Cannot rename permission to "system_coder": it is a reserved RBAC role name, not a permission.'
+            );
+        }
+        return parent::updateById($id, $record);
     }
 }

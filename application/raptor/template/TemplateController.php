@@ -41,7 +41,7 @@ class TemplateController extends \Raptor\Controller
      * Цэсний (menu) жагсаалтыг харах Dashboard хуудас.
      *
      * Шалгах зүйлс:
-     *   - Хэрэглэгч system_manage_menu permission-тэй эсэх
+     *   - Хэрэглэгч system_coder role-тэй эсэх
      *   - raptor_menu хүснэгтээс бүх идэвхтэй menu-г авах
      *   - created_by / updated_by -> хэрэглэгчийн нэр, имэйл болгон хөрвүүлэх
      *   - Байгууллагын alias-уудыг цуглуулах (common + active organizations)
@@ -52,7 +52,7 @@ class TemplateController extends \Raptor\Controller
     public function manageMenu()
     {
         try {
-            if (!$this->isUserCan('system_manage_menu')) {
+            if (!$this->isUser('system_coder')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
 
@@ -136,7 +136,7 @@ class TemplateController extends \Raptor\Controller
     public function manageMenuInsert()
     {
         try {
-            if (!$this->isUserCan('system_manage_menu')) {
+            if (!$this->isUser('system_coder')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
 
@@ -207,7 +207,7 @@ class TemplateController extends \Raptor\Controller
     public function manageMenuUpdate()
     {
         try {
-            if (!$this->isUserCan('system_manage_menu')) {
+            if (!$this->isUser('system_coder')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
 
@@ -299,7 +299,7 @@ class TemplateController extends \Raptor\Controller
      * Цэсийг идэвхгүй болгох (soft delete).
      *
      * Анхаарах зүйл:
-     *   - "system_manage_menu" permission шаардлагатай
+     *   - system_coder role шаардлагатай
      *   - Идэвхтэй цэс дээр л идэвхгүй болгох боломжтой
      *
      * @return void
@@ -307,7 +307,7 @@ class TemplateController extends \Raptor\Controller
     public function manageMenuDeactivate()
     {
         try {
-            if (!$this->isUserCan('system_manage_menu')) {
+            if (!$this->isUser('system_coder')) {
                 throw new \Exception(
                     'No permission for an action [deactivate]!',
                     401

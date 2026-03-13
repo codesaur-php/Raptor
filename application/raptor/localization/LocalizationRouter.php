@@ -63,22 +63,22 @@ class LocalizationRouter extends Router
         $this->DELETE('/dashboard/language/deactivate', [LanguageController::class, 'deactivate'])->name('language-deactivate');
         
         /**
-         * Орчуулгын текст шинээр нэмэх (динамик хүснэгт рүү).
-         * Example: GET/POST /dashboard/text/user
+         * Орчуулгын текст шинээр нэмэх.
+         * Example: GET/POST /dashboard/text
          */
-        $this->GET_POST('/dashboard/text/{table}', [TextController::class, 'insert'])->name('text-insert');
+        $this->GET_POST('/dashboard/text', [TextController::class, 'insert'])->name('text-insert');
 
         /**
          * Орчуулгын текст шинэчлэх.
-         * Example: GET/PUT /dashboard/text/user/12
+         * Example: GET/PUT /dashboard/text/12
          */
-        $this->GET_PUT('/dashboard/text/{table}/{uint:id}', [TextController::class, 'update'])->name('text-update');
+        $this->GET_PUT('/dashboard/text/{uint:id}', [TextController::class, 'update'])->name('text-update');
 
         /**
          * Орчуулгын текстийн дэлгэрэнгүй харах.
-         * Example: GET /dashboard/text/view/user/12
+         * Example: GET /dashboard/text/view/12
          */
-        $this->GET('/dashboard/text/view/{table}/{uint:id}', [TextController::class, 'view'])->name('text-view');
+        $this->GET('/dashboard/text/view/{uint:id}', [TextController::class, 'view'])->name('text-view');
 
         /**
          * Орчуулгын текст идэвхгүй болгох (зөөлөн устгал).

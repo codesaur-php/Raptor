@@ -22,8 +22,8 @@ use Psr\Http\Server\RequestHandlerInterface;
  * 2) Аль хэл сонгогдсоныг (RAPTOR_LANGUAGE_CODE - session key) шалгаж,
  *    боломжгүй бол default хэлийг автоматаар сонгоно.
  *
- * 3) default, dashboard, user зэрэг хүснэгтүүдээс тухайн хэл дээрх
- *    орчуулгуудыг ачаалж нэгтгэнэ.
+ * 3) localization_text хүснэгтээс тухайн хэл дээрх
+ *    орчуулгуудыг ачаална.
  *
  * 4) Эцэст нь request-д 'localization' нэртэй attribute болгон:
  *      [
@@ -70,40 +70,26 @@ class LocalizationMiddleware implements MiddlewareInterface
     }
 
     /**
-     * Dashboard апп нь орчуулгаа 3 үндсэн группээс татна:
-     *   - default
-     *   - dashboard
-     *   - user
+     * Орчуулгын текстүүдийг localization_text хүснэгтээс татах.
      *
-     * Эдгээрийг нэгтгэн цогц орчуулгын массив болгон буцаана.
+     * TextModel::retrieve() ашиглан тухайн хэл дээрх бүх
+     * keyword => text хосуудыг нэг массив болгон буцаана.
      *
      * @param ServerRequestInterface $request
-     * @param string $langCode - сонгогдсон хэлний код (mn, en, ru, ...)
-     * @return array
+     * @param string $langCode Сонгогдсон хэлний код (mn, en, ru, ...)
+     * @return array ['keyword' => 'translated text', ...]
      */
     private function retrieveTexts(ServerRequestInterface $request, string $langCode)
     {
-        $texts = [];
         try {
-            $pdo = $request->getAttribute('pdo');
-            
-            // Ачаалах текстийн бүлгүүд
-            $tables = ['default', 'dashboard', 'user'];
-            foreach ($tables as $table) {
-                $model = new TextModel($pdo);
-                $model->setTable($table);   // Хүснэгтийг автоматаар шалгаж үүсгэнэ (__initial)
-                $text = $model->retrieve($langCode);
-                // Хүснэгт хоосон биш бол үр дүнг нэгтгэнэ
-                if (!empty($text)) {
-                    $texts += $text;
-                }
-            }
+            $model = new TextModel($request->getAttribute('pdo'));
+            return $model->retrieve($langCode);
         } catch (\Throwable $err) {
             if (CODESAUR_DEVELOPMENT) {
                 \error_log($err->getMessage());
             }
+            return [];
         }
-        return $texts;
     }
 
     /**

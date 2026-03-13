@@ -135,32 +135,6 @@
                                     </a>
                                 </li>
                             </ul>
-
-                            <!-- Developer Tools (зөвхөн system_coder id=1) -->
-                            {% if user.is('system_coder') and user.profile['id'] == 1 %}
-                                <hr>
-                                <h6 class="px-3 mt-3 mb-1">{{ 'developer'|text }}</h6>
-                                <ul class="nav flex-column mb-2">
-                                    <li class="nav-item">
-                                        <a class="nav-link" href="{{ 'file-manager'|link }}">
-                                            <i class="bi bi-folder2-open"></i>
-                                            {{ 'file-manager'|text }}
-                                        </a>
-                                    </li>
-                                    <li class="nav-item">
-                                        <a class="nav-link" href="{{ 'sql-terminal'|link }}">
-                                            <i class="bi bi-terminal-fill"></i>
-                                            {{ 'sql-terminal'|text }}
-                                        </a>
-                                    </li>
-                                    <li class="nav-item">
-                                        <a class="nav-link" href="{{ 'error-log'|link }}">
-                                            <i class="bi bi-file-earmark-text"></i>
-                                            {{ 'error-log'|text }}
-                                        </a>
-                                    </li>
-                                </ul>
-                            {% endif %}
                         </div>
                     </nav>
                 </div>

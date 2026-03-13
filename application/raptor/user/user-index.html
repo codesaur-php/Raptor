@@ -117,7 +117,7 @@
 
                 /* -------- Хэрэглэгчийн мэдээлэл -------- */
                 let usernameInfo = `<strong>${profile.username}</strong>`;
-                if (profile.is_active === 0) {
+                if (profile.is_active == 0) {
                     usernameInfo += `<span class="badge bg-danger ms-3">${deactivated_title}</span>`;
                 }
                 const fullName = `${profile.first_name ?? ''} ${profile.last_name ?? ''}`;

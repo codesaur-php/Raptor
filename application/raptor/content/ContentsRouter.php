@@ -63,7 +63,7 @@ class ContentsRouter extends Router
         $this->DELETE('/dashboard/files/{table}/deactivate', [FilesController::class, 'deactivate'])->name('files-deactivate');
 
         // Private файл унших (зөвхөн нэвтэрсэн хэрэглэгчдэд, PUBLIC web дээр харагдахгүй гэсэн үг)
-        $this->GET('/dashboard/private/file', [PrivateFilesController::class, 'read'])->name('private-files-read');
+        $this->GET('/dashboard/private/file', [PrivateFilesController::class, 'read']);
         
         
         /* ------------------------------
@@ -83,7 +83,7 @@ class ContentsRouter extends Router
         $this->GET_PUT('/dashboard/news/{uint:id}', [NewsController::class, 'update'])->name('news-update');
 
         // Мэдээг харах UI
-        $this->GET('/dashboard/news/view/{uint:id}', [NewsController::class, 'view'])->name('news-view');
+        $this->GET('/dashboard/news/view/{uint:id}', [NewsController::class, 'view']);
 
         // Мэдээг идэвхгүй болгох SOFT DELETE
         $this->DELETE('/dashboard/news/deactivate', [NewsController::class, 'deactivate'])->name('news-deactivate');
@@ -112,7 +112,7 @@ class ContentsRouter extends Router
         $this->GET_PUT('/dashboard/pages/{uint:id}', [PagesController::class, 'update'])->name('page-update');
 
         // Хуудас харах
-        $this->GET('/dashboard/pages/view/{uint:id}', [PagesController::class, 'view'])->name('page-view');
+        $this->GET('/dashboard/pages/view/{uint:id}', [PagesController::class, 'view']);
 
         // Хуудас идэвхгүй болгох SOFT DELETE
         $this->DELETE('/dashboard/pages/deactivate', [PagesController::class, 'deactivate'])->name('page-deactivate');

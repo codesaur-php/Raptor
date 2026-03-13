@@ -170,13 +170,6 @@
             const canDelete = {{ user.can('system_content_delete') ? 'true' : 'false' }};
             const published_text = `{{ 'published'|text|e('js') }}`;
 
-            /* Хүүхэдтэй хуудсуудыг олох (nav page) */
-            const parentIds = new Set();
-            data.list.forEach(page => {
-                const pid = data.infos[page.id]?.parent_id;
-                if (pid) parentIds.add(parseInt(pid));
-            });
-
             data.list.forEach(page => {
                 const id = page.id;
 
@@ -203,10 +196,8 @@
                 let type_category = `<span class="badge bg-warning text-dark">${page.type}</span>`;
                 type_category += ` <span class="badge bg-secondary">${page.category}</span>`;
 
-                const published = page.published === 1 ? `<i class="bi bi-emoji-heart-eyes-fill text-success"></i> ${published_text}<br/><small>${page['published_at']}</small>` : '<i class="bi bi-eye-slash"></i>';
+                const published = page.published == 1 ? `<i class="bi bi-emoji-heart-eyes-fill text-success"></i> ${published_text}<br/><small>${page['published_at']}</small>` : '<i class="bi bi-eye-slash"></i>';
 
-                const isParent = parentIds.has(parseInt(id));
-                const isPublished = page.published == 1;
                 const buttons = [];
                 buttons.push(`<a class="btn btn-sm btn-info mt-1 shadow-sm" href="${indexLink}/view/${page.id}?from=index"><i class="bi bi-eye"></i></a>`);
                 if (canUpdate) {

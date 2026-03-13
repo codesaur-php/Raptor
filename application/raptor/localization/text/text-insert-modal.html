@@ -2,7 +2,7 @@
     <div class="modal-content">
         <div class="modal-header">
             <h3 class="modal-title fs-6 text-uppercase text-success">
-                <i class="bi bi-plus-circle"></i> {{ 'add-record'|text }} ({{ table }})
+                <i class="bi bi-plus-circle"></i> {{ 'add-record'|text }}
             </h3>
             <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="{{ 'close'|text|e }}"></button>
         </div>
@@ -10,7 +10,7 @@
         <div class="modal-body">
             <!-- Текст шинээр үүсгэх форм -->
             <form class="needs-validation" novalidate id="text_insert"
-                  action="{{ 'text-insert'|link({'table':table}) }}"
+                  action="{{ 'text-insert'|link }}"
                   method="POST" enctype="multipart/form-data">
 
                 <!-- keyword (unique) -->

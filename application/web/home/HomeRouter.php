@@ -59,7 +59,7 @@ class HomeRouter extends Router
         $this->GET('/archive', [NewsController::class, 'archive'])->name('archive');
 
         // Бүтээгдэхүүнүүд (жагсаалт)
-        $this->GET('/products', [ShopController::class, 'products'])->name('products-page');
+        $this->GET('/products', [ShopController::class, 'products']);
 
         // Динамик Product (ID-аар болон slug-аар)
         $this->GET('/product/{uint:id}', [ShopController::class, 'productById']);
@@ -76,7 +76,7 @@ class HomeRouter extends Router
         $this->GET('/sitemap', [SeoController::class, 'sitemap'])->name('sitemap');
 
         // XML Sitemap (SEO)
-        $this->GET('/sitemap.xml', [SeoController::class, 'sitemapXml'])->name('sitemap-xml');
+        $this->GET('/sitemap.xml', [SeoController::class, 'sitemapXml']);
 
         // RSS Feed
         $this->GET('/rss', [SeoController::class, 'rss'])->name('rss');

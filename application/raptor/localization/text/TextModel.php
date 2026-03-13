@@ -14,9 +14,9 @@ use codesaur\DataObject\LocalizedModel;
  *    - Олон хэл дээрх контентын хүснэгт (content table)
  * гэсэн хоёр түвшний өгөгдөлтэй ажиллана.
  *
- * Жишээ хүснэгт:
- *    localization_text_user         -> parent
- *    localization_text_user_content -> content
+ * Хүснэгт:
+ *    localization_text         -> parent
+ *    localization_text_content -> content
  *
  * Гол зориулалт:
  *    - Тухайн модульд хамаарах keyword-уудыг хадгалах
@@ -63,28 +63,9 @@ class TextModel extends LocalizedModel
         $this->setContentColumns([
             new Column('text', 'varchar', 255)
         ]);
-    }
 
-    /**
-     * setTable()
-     *
-     * @param string $name  Модуль/хүснэгтийн нэр (жишээ: social, user)
-     *
-     * Тухайн орчуулгын хүснэгт нэрийг автоматаар дараах хэлбэрт хөрвүүлнэ:
-     *   localization_text_{name}
-     *
-     * Нэрэнд зөвшөөрөгдөөгүй тэмдэгт байвал хасна.
-     */
-    public function setTable(string $name)
-    {
-        // Table нэрийг цэвэрлэх
-        $table = \preg_replace('/[^A-Za-z0-9_-]/', '', $name);
-        if (empty($table)) {
-            throw new \InvalidArgumentException(__CLASS__ . ': Table name must be provided', 1103);
-        }
-
-        // Parent table нэр
-        parent::setTable("localization_text_$table");
+        // Хүснэгтийн нэрийг тогтоох
+        parent::setTable('localization_text');
     }
 
     /**
@@ -173,10 +154,8 @@ class TextModel extends LocalizedModel
 
         $this->setForeignKeyChecks(true);
 
-        // TextInitial class дотор тусгай анхны өгөгдөл байгаа эсэхийг шалгах
-        if (\method_exists(TextInitial::class, $table)) {
-            TextInitial::$table($this);
-        }
+        // TextInitial class дотор анхны өгөгдөл суулгах
+        TextInitial::localization_text($this);
     }
 
     /**

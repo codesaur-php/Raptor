@@ -24,15 +24,11 @@
         </a>
     </li>
 
-    <!-- texts хувьсагчаас орчуулгын таблицуудын нэрийг уншаад нэмэлт табууд үүсгэнэ -->
-    {% for name in texts|keys %}
-        <li class="nav-item">
-            <!-- Орчуулгын текстийн төрөл тус бүр өөрийн табтай -->
-            <a class="nav-link" data-bs-toggle="tab" href="#tab-text-{{ name }}">
-                <i class="bi bi-translate"></i> {{ name }}
-            </a>
-        </li>
-    {% endfor %}
+    <li class="nav-item">
+        <a class="nav-link" data-bs-toggle="tab" href="#tab-text">
+            <i class="bi bi-translate"></i> {{ 'localization'|text }}
+        </a>
+    </li>
 </ul>
 
 <!-- Табуудын агуулга -->
@@ -131,86 +127,83 @@
         </table>
     </div>
 
-    <!-- 2-р табууд: Орчуулгын текстийн төрөл бүрийн хүснэгтүүд
-         texts хувьсагч нь {tableName: rows[]} бүтэцтэй -->
-    {% for name,rows in texts %}
-        <div class="tab-pane" id="tab-text-{{ name }}" role="tabpanel">
+    <!-- 2-р таб: Орчуулгын текстүүд -->
+    <div class="tab-pane" id="tab-text" role="tabpanel">
 
-            <!-- Шинэ текст нэмэх товч -->
-            {% if can_insert %}
-                <a class="btn btn-sm btn-outline-success text-uppercase shadow-sm mt-2"
-                   href="{{ 'text-insert'|link({'table':name}) }}"
-                   data-bs-target="#static-modal"
-                   data-bs-toggle="modal">
-                    <i class="bi bi-plus-circle-dotted"></i> {{ 'new'|text }}
-                </a>
-            {% endif %}
+        <!-- Шинэ текст нэмэх товч -->
+        {% if can_insert %}
+            <a class="btn btn-sm btn-outline-success text-uppercase shadow-sm mt-2"
+               href="{{ 'text-insert'|link }}"
+               data-bs-target="#static-modal"
+               data-bs-toggle="modal">
+                <i class="bi bi-plus-circle-dotted"></i> {{ 'new'|text }}
+            </a>
+        {% endif %}
 
-            <!-- Тухайн текстийн төрлийн хүснэгт -->
-            <table class="table table-hover table-striped table-bordered" data-table="{{ name }}">
-                <thead>
+        <!-- Орчуулгын текстийн хүснэгт -->
+        <table class="table table-hover table-striped table-bordered" id="texts">
+            <thead>
+                <tr>
+                    <th scope="col">{{ 'keyword'|text }}</th>
+
+                    <!-- Бүх бүртгэлтэй хэл дээрх орчуулга -->
+                    {% for language in localization.language %}
+                        <th scope="col">{{ 'title'|text }} ({{ language['title'] }})</th>
+                    {% endfor %}
+
+                    <th scope="col">{{ 'type'|text }}</th>
+                    <th scope="col" style="width:8rem">{{ 'action'|text }}</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for row in texts %}
                     <tr>
-                        <th scope="col">{{ 'keyword'|text }}</th>
+                        <!-- Текстийн түлхүүр keyword -->
+                        <td>{{ row['keyword'] }}</td>
 
-                        <!-- Бүх бүртгэлтэй хэл дээрх орчуулга -->
-                        {% for language in localization.language %}
-                            <th scope="col">{{ 'title'|text }} ({{ language['title'] }})</th>
+                        <!-- Хэл бүрийн текст -->
+                        {% for code in localization.language|keys %}
+                            <td>{{ row['localized'][code]['text'] }}</td>
                         {% endfor %}
 
-                        <th scope="col">{{ 'type'|text }}</th>
-                        <th scope="col" style="width:8rem">{{ 'action'|text }}</th>
-                    </tr>
-                </thead>
+                        <!-- Текстийн төрөл (plain, html...) -->
+                        <td>{{ row['type'] }}</td>
 
-                <tbody>
-                    {% for row in rows %}
-                        <tr>
-                            <!-- Текстийн түлхүүр keyword -->
-                            <td>{{ row['keyword'] }}</td>
+                        <!-- Үйлдлүүд -->
+                        <td>
+                            <!-- Харах -->
+                            <a class="ajax-modal btn btn-sm btn-info mt-1 shadow-sm"
+                               href="{{ 'text-view'|link({'id':row['id']}) }}"
+                               data-bs-target="#static-modal"
+                               data-bs-toggle="modal">
+                                <i class="bi bi-eye"></i>
+                            </a>
 
-                            <!-- Хэл бүрийн текст -->
-                            {% for code in localization.language|keys %}
-                                <td>{{ row['localized'][code]['text'] }}</td>
-                            {% endfor %}
-
-                            <!-- Текстийн төрөл (plain, html...) -->
-                            <td>{{ row['type'] }}</td>
-
-                            <!-- Үйлдлүүд -->
-                            <td>
-                                <!-- Харах -->
-                                <a class="ajax-modal btn btn-sm btn-info mt-1 shadow-sm"
-                                   href="{{ 'text-view'|link({'table':name,'id':row['id']}) }}"
+                            {% if can_update %}
+                                <!-- Засах -->
+                                <a class="ajax-modal btn btn-sm btn-primary mt-1 shadow-sm"
+                                   href="{{ 'text-update'|link({'id':row['id']}) }}"
                                    data-bs-target="#static-modal"
                                    data-bs-toggle="modal">
-                                    <i class="bi bi-eye"></i>
+                                    <i class="bi bi-pencil-square"></i>
                                 </a>
+                            {% endif %}
 
-                                {% if can_update %}
-                                    <!-- Засах -->
-                                    <a class="ajax-modal btn btn-sm btn-primary mt-1 shadow-sm"
-                                       href="{{ 'text-update'|link({'table':name,'id':row['id']}) }}"
-                                       data-bs-target="#static-modal"
-                                       data-bs-toggle="modal">
-                                        <i class="bi bi-pencil-square"></i>
-                                    </a>
-                                {% endif %}
-
-                                {% if can_delete %}
-                                    <!-- Идэвхгүй болгох -->
-                                    <button class="deactivate-text btn btn-sm btn-danger mt-1 shadow-sm"
-                                            value="{{ row['id'] }}"
-                                            type="button">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
-                                {% endif %}
-                            </td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    {% endfor %}
+                            {% if can_delete %}
+                                <!-- Идэвхгүй болгох -->
+                                <button class="deactivate-text btn btn-sm btn-danger mt-1 shadow-sm"
+                                        value="{{ row['id'] }}"
+                                        type="button">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 
 {% if user.can('system_logger') %}
@@ -241,7 +234,7 @@
     if (tabLink) {
         const activeTab = document.querySelector('ul.nav.nav-tabs > li.nav-item > a.active.show');
 
-        if (activeTab.href !== tabLink) {
+        if (activeTab.getAttribute('href') !== tabLink) {
             const linkTab = document.querySelector(`ul.nav.nav-tabs > li.nav-item > a[href="${tabLink}"]`);
             if (linkTab) {
                 activeTab.classList.remove('active', 'show');
@@ -365,18 +358,13 @@
             })
         );
         
-        /* Бүх текстийн хүснэгтүүдийг (data-table attribute-тэй) цуглуулна */
-        const textTables = document.querySelectorAll('table[data-table]');
-        textTables.forEach(table => {
-            /* motable ашиглан хүснэгтийг тохируулна (оун багана fixed) */
-            const text = new motable(table, { freezeColumns: [0] });
+        /* Орчуулгын текстийн хүснэгтийг motable ашиглан тохируулна */
+        const textsTable = document.querySelector('table#texts');
+        if (textsTable) {
+            const text = new motable(textsTable, { freezeColumns: [0] });
             text.setReady();
 
-            /* Тухайн текстийн хүснэгтийн нэр (жишээ: default) */
-            const name = text.table.getAttribute('data-table');
-            if (!name) return;
-
-            /* Тухайн хүснэгтийн бүх "устгах" товчлууруудыг цуглуулах */
+            /* Бүх "устгах" товчлууруудыг цуглуулах */
             const deactivateText = text.table.querySelectorAll('.deactivate-text');
             deactivateText.forEach(btn =>
                 btn.addEventListener('click', function (e) {
@@ -427,7 +415,6 @@
                                     },
                                     body: JSON.stringify({
                                         keyword,
-                                        table: name,
                                         id: btn.value
                                     })
                                 }
@@ -457,7 +444,7 @@
                     });
                 })
             );
-        });
+        }
 
         /* LOGGER харуулах */
         const logger = document.querySelector('ul.logger-protocol');

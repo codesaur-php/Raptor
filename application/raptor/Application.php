@@ -65,6 +65,9 @@ abstract class Application extends \codesaur\Http\Application\Application
         // -> Хэрэв PostgreSQL ашиглавал:
         // $this->use(new PostgresConnectMiddleware());
 
+        // 2.5 Migration middleware (auto-migrate pending SQL files)
+        $this->use(new Migration\MigrationMiddleware());
+
         // 3. Session ба JWT authentication pipeline
         $this->use(new Authentication\SessionMiddleware());
         $this->use(new Authentication\JWTAuthMiddleware());
@@ -87,6 +90,7 @@ abstract class Application extends \codesaur\Http\Application\Application
         $this->use(new \Dashboard\Shop\OrdersRouter());
         $this->use(new Log\LogsRouter());
         $this->use(new Development\DevelopmentRouter());
+        $this->use(new Migration\MigrationRouter());
         $this->use(new Template\TemplateRouter());
     }
 }

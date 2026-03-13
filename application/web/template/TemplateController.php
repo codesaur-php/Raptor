@@ -57,51 +57,11 @@ class TemplateController extends \Raptor\Controller
 
         // Navigation menu (сонгосон хэлээр)
         $code = $this->getLanguageCode();
-        $index->set('main_menu', $this->getMainMenu($code));
-        $index->set('featured_pages', $this->getFeaturedPages($code));
+        $pagesModel = new PagesModel($this->pdo);
+        $index->set('main_menu', $pagesModel->getNavigation($code));
+        $index->set('featured_pages', $pagesModel->getFeaturedLeafPages($code));
 
         return $index;
     }
 
-    /**
-     * Вэб сайтын Main Menu-г олон түвшний бүтэцтэйгээр үүсгэнэ.
-     *
-     * PagesModel::getNavigation() ашиглан parent -> child бүтэцтэй
-     * навигацийн менюг буцаана.
-     *
-     * @param string $code Тухайн хэлний код (mn, en...)
-     * @return array Бүтэцлэгдсэн меню (submenu дотор дахин хүүхэд элементтэй)
-     */
-    public function getMainMenu(string $code): array
-    {
-        return (new PagesModel($this->pdo))->getNavigation($code);
-    }
-
-    /**
-     * Онцлох хуудсуудыг авах (footer-ийн чухал холбоосууд).
-     *
-     * is_featured=1 гэж тэмдэглэгдсэн, нийтлэгдсэн хуудсуудыг буцаана.
-     * id, title, slug, link талбаруудыг авна.
-     *
-     * @param string $code Хэлний код
-     * @return array Footer-д харуулах онцлох хуудсуудын жагсаалт (slug-аар холбоослож)
-     */
-    public function getFeaturedPages(string $code): array
-    {
-        $pages = [];
-        $pages_table = (new PagesModel($this->pdo))->getName();
-        $pages_query =
-            'SELECT id, title, slug, link ' .
-            "FROM $pages_table " .
-            'WHERE code=:code AND is_active=1 AND published=1 AND is_featured=1 ' .
-            'ORDER BY position, id';
-        $stmt = $this->prepare($pages_query);
-        $stmt->bindParam(':code', $code, \PDO::PARAM_STR);
-        if ($stmt->execute() && $stmt->rowCount() > 0) {
-            while ($row = $stmt->fetch()) {
-                $pages[$row['id']] = $row;
-            }
-        }
-        return $pages;
-    }
 }

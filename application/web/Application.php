@@ -84,6 +84,9 @@ class Application extends \codesaur\Http\Application\Application
         // -> Хэрэв PostgreSQL ашиглавал:
         // $this->use(new \Raptor\PostgresConnectMiddleware());
 
+        // Migration middleware (auto-migrate pending SQL files)
+        $this->use(new \Raptor\Migration\MigrationMiddleware());
+
         // Container middleware (PDO шаардлагатай тул Database-ийн дараа)
         $this->use(new \Raptor\ContainerMiddleware());
 

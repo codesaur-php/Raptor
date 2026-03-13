@@ -17,7 +17,7 @@ class OrdersRouter extends Router
     {
         $this->GET('/dashboard/orders', [OrdersController::class, 'index'])->name('orders');
         $this->GET('/dashboard/orders/list', [OrdersController::class, 'list'])->name('orders-list');
-        $this->GET('/dashboard/orders/view/{uint:id}', [OrdersController::class, 'view'])->name('order-view');
+        $this->GET('/dashboard/orders/view/{uint:id}', [OrdersController::class, 'view']);
         $this->PUT('/dashboard/orders/{uint:id}/status', [OrdersController::class, 'updateStatus'])->name('order-status');
         $this->DELETE('/dashboard/orders/deactivate', [OrdersController::class, 'deactivate'])->name('order-deactivate');
     }

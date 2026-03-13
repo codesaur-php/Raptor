@@ -50,7 +50,7 @@ class TemplateRouter extends Router
         $this->GET(
             '/dashboard/manage/menu',
             [TemplateController::class, 'manageMenu']
-        )->name('manage-menu');
+        );
 
         // Шинэ меню үүсгэх
         $this->POST(

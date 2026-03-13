@@ -16,7 +16,8 @@ class HomeRouter extends Router
     public function __construct()
     {
         $this->GET('/dashboard', [HomeController::class, 'index'])->name('home');
-        $this->GET('/dashboard/stats', [HomeController::class, 'stats'])->name('dashboard-stats');
-        $this->GET('/dashboard/log-stats', [HomeController::class, 'logStats'])->name('dashboard-log-stats');
+        
+        $this->GET('/dashboard/stats', [WebLogStatsController::class, 'stats'])->name('dashboard-stats');
+        $this->GET('/dashboard/log-stats', [WebLogStatsController::class, 'logStats'])->name('dashboard-log-stats');
     }
 }

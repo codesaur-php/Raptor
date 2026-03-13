@@ -64,9 +64,30 @@ class LogsController extends \Raptor\Controller
                     $log_tables[] = \substr(\current($row), 0, -\strlen('_log'));
                 }
             }
+
+            // Error log файлын мэдээлэл (system_coder эрхтэй хэрэглэгчид)
+            $errorLogLines = 0;
+            $showErrorLog = $this->isUser('system_coder');
+            if ($showErrorLog) {
+                $logFile = \ini_get('error_log');
+                if (\is_file($logFile)) {
+                    $fh = \fopen($logFile, 'r');
+                    if ($fh) {
+                        while (!\feof($fh)) {
+                            $errorLogLines += \substr_count(\fread($fh, 65536), "\n");
+                        }
+                        \fclose($fh);
+                    }
+                }
+            }
+
             $dashboard = $this->twigDashboard(
                 __DIR__ . '/index-list-logs.html',
-                ['log_tables' => $log_tables]
+                [
+                    'log_tables' => $log_tables,
+                    'show_error_log' => $showErrorLog,
+                    'error_log_lines' => $errorLogLines
+                ]
             );
             $dashboard->set('title', $this->text('log'));
             $dashboard->render();
@@ -156,6 +177,85 @@ class LogsController extends \Raptor\Controller
      *
      * @return void
      */
+    /**
+     * Error log файлыг сүүлээс нь 100 мөрөөр уншиж JSON буцаах.
+     *
+     * Зөвхөн system_coder эрхтэй хэрэглэгчид хандах боломжтой.
+     *
+     * Query params:
+     *   page=1 -> хамгийн сүүлийн 100 мөр
+     *   page=2 -> түүнээс өмнөх 100 мөр гэх мэт
+     *
+     * @return void
+     */
+    public function errorLogRead()
+    {
+        try {
+            if (!$this->isUser('system_coder')) {
+                throw new \Exception('Access denied', 403);
+            }
+
+            $logFile = \ini_get('error_log');
+            if (!\is_file($logFile)) {
+                throw new \Exception('Error log file not found', 404);
+            }
+
+            $params = $this->getQueryParams();
+            $page = \max(1, (int)($params['page'] ?? 1));
+            $perPage = 100;
+
+            // Нийт мөрийн тоо тоолох
+            $totalLines = 0;
+            $fh = \fopen($logFile, 'r');
+            if ($fh) {
+                while (!\feof($fh)) {
+                    $totalLines += \substr_count(\fread($fh, 65536), "\n");
+                }
+                \fclose($fh);
+            }
+
+            $totalPages = \max(1, (int)\ceil($totalLines / $perPage));
+
+            // Сүүлээс нь уншихдаа page=1 -> хамгийн сүүлийн мөрүүд
+            $endLine = $totalLines - (($page - 1) * $perPage);
+            $startLine = \max(1, $endLine - $perPage + 1);
+
+            $lines = [];
+            if ($endLine > 0) {
+                $fh = \fopen($logFile, 'r');
+                if ($fh) {
+                    $current = 0;
+                    while (($line = \fgets($fh)) !== false) {
+                        $current++;
+                        if ($current >= $startLine && $current <= $endLine) {
+                            $lines[] = \rtrim($line);
+                        }
+                        if ($current > $endLine) {
+                            break;
+                        }
+                    }
+                    \fclose($fh);
+                }
+                $lines = \array_reverse($lines);
+            }
+
+            $this->respondJSON([
+                'status' => 'success',
+                'lines' => $lines,
+                'page' => $page,
+                'total_pages' => $totalPages,
+                'total_lines' => $totalLines,
+                'from_line' => $startLine,
+                'to_line' => $endLine
+            ]);
+        } catch (\Throwable $err) {
+            $this->respondJSON([
+                'status' => 'error',
+                'message' => $err->getMessage()
+            ], $err->getCode() ?: 500);
+        }
+    }
+
     public function retrieve()
     {
         try {

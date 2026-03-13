@@ -68,7 +68,8 @@
             "Raptor\\Notification\\": "application/raptor/notification/",
             "Raptor\\Mail\\": "application/raptor/mail/",
             "Raptor\\Log\\": "application/raptor/log/",
-            "Raptor\\Development\\": "application/raptor/development/"
+            "Raptor\\Development\\": "application/raptor/development/",
+            "Raptor\\Migration\\": "application/raptor/migration/"
         }
     },
     "scripts": {

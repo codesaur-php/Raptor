@@ -206,7 +206,8 @@ class PagesModel extends Model
             'position' => 40,
             'link' => $path . '/contact',
             'content' => '<p>Бидэнтэй холбогдохыг хүсвэл доорх мэдээллийг ашиглана уу.</p>'
-                . '<p>Имэйл: info@example.com</p>'
+                . '<p>Имэйл: info@example.com</p>',
+            'is_featured' => 1
         ]);
 
         // ============ EN хуудсууд ============
@@ -295,7 +296,8 @@ class PagesModel extends Model
             'position' => 80,
             'link' => $path . '/contact',
             'content' => '<p>Feel free to reach out to us using the information below.</p>'
-                . '<p>Email: info@example.com</p>'
+                . '<p>Email: info@example.com</p>',
+            'is_featured' => 1
         ]);
     }
 
@@ -438,6 +440,37 @@ class PagesModel extends Model
             }
         }
         return $tree;
+    }
+
+    /**
+     * Онцлох контент хуудсуудыг авах (child-гүй, is_featured=1).
+     *
+     * is_featured=1, нийтлэгдсэн, идэвхтэй хуудсуудаас
+     * өөртөө ямар нэгэн child агуулаагүй (leaf) хуудсуудыг буцаана.
+     *
+     * @param string $code Хэлний код (mn, en...)
+     * @return array id => [id, title, slug, link] бүтэцтэй массив
+     */
+    public function getFeaturedLeafPages(string $code): array
+    {
+        $table = $this->getName();
+        $stmt = $this->pdo->prepare(
+            'SELECT p.id, p.title, p.slug, p.link ' .
+            "FROM $table p " .
+            "LEFT JOIN $table c ON c.parent_id = p.id " .
+            'WHERE p.code = :code AND p.is_active = 1 AND p.published = 1 AND p.is_featured = 1 ' .
+            'AND c.id IS NULL ' .
+            'ORDER BY p.position, p.id'
+        );
+        $stmt->bindParam(':code', $code, \PDO::PARAM_STR);
+
+        $pages = [];
+        if ($stmt->execute()) {
+            while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
+                $pages[$row['id']] = $row;
+            }
+        }
+        return $pages;
     }
 
     /**

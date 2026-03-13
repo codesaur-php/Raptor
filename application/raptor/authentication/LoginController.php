@@ -66,9 +66,9 @@ class LoginController extends \Raptor\Controller
             throw new \Exception('Invalid request', 403);
         }
 
-        // 3) 2 секундээс хурдан бол бот
+        // 3) 1 секундээс хурдан бол бот (auto-fill хэрэглэгчдэд зөвшөөрөх)
         $elapsed = \time() - $ts;
-        if ($elapsed < 2) {
+        if ($elapsed < 1) {
             throw new \Exception('Invalid request', 429);
         }
 
@@ -202,7 +202,7 @@ class LoginController extends \Raptor\Controller
     public function entry()
     {
         try {
-            $this->spamCheck('_last_login_at', 3);
+            $this->spamCheck('_last_login_at', 2);
 
             // 1) Payload шалгах
             $payload = $this->getParsedBody();
