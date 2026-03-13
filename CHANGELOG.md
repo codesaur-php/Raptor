@@ -6,6 +6,34 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 
 ---
 
+## [1.7.0] - 2026-03-13
+[1.7.0]: https://github.com/codesaur-php/Raptor/compare/v1.6.0...v1.7.0
+
+Anti-spam hardening: username gibberish detection, Gmail email normalization, scoring-based validation system.
+
+### Added
+- **Username Gibberish Detection** - Score-based system to reject bot-generated random usernames (`LoginController::isGibberishUsername()`)
+  - Shannon entropy check: high randomness in character distribution (+2/+3 points)
+  - Vowel ratio check: rejects consonant-heavy nonsense (+1/+3 points)
+  - Consecutive consonant check: flags long unpronounceable clusters (+1/+2 points)
+  - Case change ratio check: detects random casing patterns like `CdIrBVTolz` (+1/+3 points)
+  - Score threshold of 3+ required to reject (no single check causes false rejection)
+  - Designed for Mongolian transliteration compatibility (`munkhtseteg`, `tserenbold` pass cleanly)
+- **Username Format Validation** - Regex: 3-63 characters, must start with a letter, allows letters/numbers/underscores/dots
+- **Gmail Email Normalization** - `LoginController::normalizeEmail()` strips Gmail alias tricks before uniqueness checks
+  - Removes dots from Gmail/Googlemail local parts (`y.i.r@gmail.com` -> `yir@gmail.com`)
+  - Strips `+` sub-addressing (`user+spam@gmail.com` -> `user@gmail.com`)
+  - Normalizes `googlemail.com` -> `gmail.com`
+  - Normalized email stored in database, preventing future bypass with dot variations
+- **Anti-Spam Tests** - `LoginSpamProtectionTest` with 43 test cases
+  - 22 valid username tests (Mongolian, Slavic, German names, common patterns)
+  - 8 gibberish username tests (random chars, keyboard smash, bot patterns)
+  - 8 Gmail normalization tests (dots, plus, googlemail, uppercase)
+  - 4 non-Gmail preservation tests (Yahoo, Outlook, custom domains)
+  - Real spam signup integration test (`CdIrBVTolzIvAxjqdF` + `yir.o.h.obo.j.u.k.1.0@gmail.com`)
+
+---
+
 ## [1.6.0] - 2026-03-13
 [1.6.0]: https://github.com/codesaur-php/Raptor/compare/v1.5.0...v1.6.0
 

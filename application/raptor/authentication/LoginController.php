@@ -87,6 +87,110 @@ class LoginController extends \Raptor\Controller
     }
 
     /**
+     * Gmail болон түгээмэл email provider-ийн alias/dot trick-ийг арилгах.
+     *
+     * Gmail дээр цэг (.) ялгаа байхгүй: test.user@gmail.com == testuser@gmail.com
+     * Мөн + тэмдэгтийн ард байгаа хэсгийг хаях (sub-addressing).
+     */
+    private function normalizeEmail(string $email): string
+    {
+        $email = \strtolower(\trim($email));
+        [$local, $domain] = \explode('@', $email, 2);
+
+        // Gmail болон Google-ийн домайнууд
+        $gmailDomains = ['gmail.com', 'googlemail.com'];
+
+        if (\in_array($domain, $gmailDomains, true)) {
+            // + хойшхи хэсгийг хаях (sub-addressing)
+            $plusPos = \strpos($local, '+');
+            if ($plusPos !== false) {
+                $local = \substr($local, 0, $plusPos);
+            }
+
+            // Цэгүүдийг арилгах
+            $local = \str_replace('.', '', $local);
+
+            // googlemail.com -> gmail.com руу нэгтгэх
+            $domain = 'gmail.com';
+        }
+
+        return "$local@$domain";
+    }
+
+    /**
+     * Username нь санамсаргүй/утгагүй (gibberish) тэмдэгт мөн эсэхийг шалгах.
+     *
+     * Оноо-д суурилсан (scoring) систем ашиглана.
+     * Шалгуур бүр тодорхой оноо нэмэх бөгөөд нийт оноо босго давбал gibberish гэж үзнэ.
+     * Ингэснээр ганц шалгуурт баригдаж бодит хэрэглэгч хаагдахаас сэргийлнэ.
+     *
+     *  1) Shannon entropy          - санамсаргүй тэмдэгтийн мэдээллийн нягтрал
+     *  2) Эгшиг/гийгүүлэгчийн харьцаа - бодит нэрэнд эгшиг заавал байна
+     *  3) Дараалсан гийгүүлэгч     - урт дараалал сэжигтэй (гэхдээ ганцаараа reject хийхгүй)
+     *  4) Том/жижиг үсгийн солигдол - хэт олон солигдол бот-ын шинж
+     */
+    private function isGibberishUsername(string $username): bool
+    {
+        // Тоо, доогуур зураас, цэгийг хасаад зөвхөн үсгэн хэсгийг шалгана
+        $letters = \preg_replace('/[0-9_.]/', '', $username);
+        if (\strlen($letters) < 4) {
+            return false;
+        }
+
+        $score = 0;
+        $len = \strlen($letters);
+
+        // 1) Shannon entropy
+        $freq = \array_count_values(\str_split(\strtolower($letters)));
+        $entropy = 0.0;
+        foreach ($freq as $count) {
+            $p = $count / $len;
+            $entropy -= $p * \log($p, 2);
+        }
+        if ($len >= 8 && $entropy > 3.8) {
+            $score += 3; // Маш өндөр entropy → бараг гарцаагүй random
+        } elseif ($len >= 8 && $entropy > 3.5) {
+            $score += 2;
+        }
+
+        // 2) Эгшигийн харьцаа
+        $vowelCount = \preg_match_all('/[aeiouy]/i', $letters);
+        $vowelRatio = $vowelCount / $len;
+        if ($vowelRatio < 0.10) {
+            $score += 3; // Эгшиг бараг байхгүй
+        } elseif ($vowelRatio < 0.20) {
+            $score += 1;
+        }
+
+        // 3) Дараалсан гийгүүлэгч (6+ бол хүчтэй дохио, 5 бол бага оноо)
+        if (\preg_match('/[^aeiouy]{6}/i', $letters)) {
+            $score += 2;
+        } elseif (\preg_match('/[^aeiouy]{5}/i', $letters)) {
+            $score += 1;
+        }
+
+        // 4) Том/жижиг үсгийн солигдол
+        $caseChanges = 0;
+        for ($i = 1; $i < \strlen($username); $i++) {
+            if (
+                \ctype_alpha($username[$i]) && \ctype_alpha($username[$i - 1])
+                && \ctype_upper($username[$i]) !== \ctype_upper($username[$i - 1])
+            ) {
+                $caseChanges++;
+            }
+        }
+        $alphaLen = \preg_match_all('/[a-zA-Z]/', $username);
+        if ($alphaLen >= 8 && ($caseChanges / $alphaLen) > 0.5) {
+            $score += 3;
+        } elseif ($alphaLen >= 8 && ($caseChanges / $alphaLen) > 0.4) {
+            $score += 1;
+        }
+
+        // Нийт оноо 3+ бол gibberish гэж үзнэ
+        return $score >= 3;
+    }
+
+    /**
      * Login хуудасны үндсэн view-г рендерлэх controller action.
      *
      * Энэ функц дараах 3 нөхцөл дээр ажиллана:
@@ -440,6 +544,23 @@ class LoginController extends \Raptor\Controller
             if (\filter_var($payload['email'], \FILTER_VALIDATE_EMAIL) === false) {
                 throw new \InvalidArgumentException('Please provide valid email address.', 400);
             }
+
+            // Username format + gibberish validation
+            if (!\preg_match('/^[a-zA-Z][a-zA-Z0-9_.]{2,62}$/', $payload['username'])) {
+                throw new \InvalidArgumentException(
+                    'Хэрэглэгчийн нэр 3-63 тэмдэгт, латин үсгээр эхэлсэн, зөвхөн үсэг, тоо, доогуур зураас, цэг агуулсан байх ёстой.',
+                    400
+                );
+            }
+            if ($this->isGibberishUsername($payload['username'])) {
+                throw new \InvalidArgumentException(
+                    'Хэрэглэгчийн нэр хүчингүй байна. Утга учиртай нэр оруулна уу.',
+                    400
+                );
+            }
+
+            // Gmail dot normalization: dots are ignored by Gmail
+            $payload['email'] = $this->normalizeEmail($payload['email']);
 
             // Шалгах: email / username system дотор давхцаж байна уу?
             $users = new UsersModel($this->pdo);
