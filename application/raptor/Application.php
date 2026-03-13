@@ -86,8 +86,6 @@ abstract class Application extends \codesaur\Http\Application\Application
         $this->use(new RBAC\RBACRouter());
         $this->use(new Localization\LocalizationRouter());
         $this->use(new Content\ContentsRouter());
-        $this->use(new \Dashboard\Shop\ProductsRouter());
-        $this->use(new \Dashboard\Shop\OrdersRouter());
         $this->use(new Log\LogsRouter());
         $this->use(new Development\DevelopmentRouter());
         $this->use(new Migration\MigrationRouter());

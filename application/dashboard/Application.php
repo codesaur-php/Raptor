@@ -39,7 +39,11 @@ class Application extends \Raptor\Application
     {
         parent::__construct();
 
-        // Dashboard-ийн Home модулийн Router-г бүртгэж байна
-        $this->use(new Home\HomeRouter());
+        // Home модулийн Router-г бүртгэж байна
+        $this->use(new Home\HomeRouter());        
+        
+        // Shop модулийн Router-г бүртгэж байна
+        $this->use(new Shop\ProductsRouter());
+        $this->use(new Shop\OrdersRouter());
     }
 }

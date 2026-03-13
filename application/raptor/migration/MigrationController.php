@@ -141,5 +141,4 @@ class MigrationController extends \Raptor\Controller
             . '</div>'
             . '</div>';
     }
-
 }

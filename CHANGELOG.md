@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 
 ---
 
+## [1.7.1] - 2026-03-13
+[1.7.1]: https://github.com/codesaur-php/Raptor/compare/v1.7.0...v1.7.1
+
+Shop router registration moved from shared base application to Dashboard application.
+
+### Changed
+- **Dashboard\Application** - Shop module routers (`ProductsRouter`, `OrdersRouter`) now registered here instead of in `Raptor\Application`, since shop routes are dashboard-specific
+- **Raptor\Application** - Removed `Dashboard\Shop\ProductsRouter` and `Dashboard\Shop\OrdersRouter` registration from shared base class
+
+---
+
 ## [1.7.0] - 2026-03-13
 [1.7.0]: https://github.com/codesaur-php/Raptor/compare/v1.6.0...v1.7.0
 
