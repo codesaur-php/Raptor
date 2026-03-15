@@ -1,11 +1,17 @@
 <?php
 
-namespace Web\Home;
+namespace Web;
 
 use codesaur\Router\Router;
 
+use Web\Content\PageController;
+use Web\Content\NewsController;
+use Web\Shop\ShopController;
+use Web\Seo\SearchController;
+use Web\Seo\SeoController;
+
 /**
- * Class HomeRouter
+ * Class SiteRouter
  * ---------------------------------------------------------------
  * Web Layer-ийн үндсэн маршрут тодорхойлогч класс.
  *
@@ -27,11 +33,15 @@ use codesaur\Router\Router;
  *   - /sitemap              -> HTML Sitemap
  *   - /sitemap.xml          -> XML Sitemap (SEO)
  *   - /rss                  -> RSS Feed
+ *   - /favicon.ico          -> Favicon (settings-ээс эсвэл default)
  *
- * @package Web\Home
+ * @package Web
  */
-class HomeRouter extends Router
+class SiteRouter extends Router
 {
+    /**
+     * Website маршрутуудыг бүртгэх.
+     */
     public function __construct()
     {
         // Нүүр хуудас
@@ -70,7 +80,7 @@ class HomeRouter extends Router
         $this->POST('/order', [ShopController::class, 'orderSubmit'])->name('order-submit');
 
         // Хайлт
-        $this->GET('/search', [SeoController::class, 'search'])->name('search');
+        $this->GET('/search', [SearchController::class, 'search'])->name('search');
 
         // Сайтын бүтэц (хэрэглэгчдэд)
         $this->GET('/sitemap', [SeoController::class, 'sitemap'])->name('sitemap');
@@ -80,5 +90,8 @@ class HomeRouter extends Router
 
         // RSS Feed
         $this->GET('/rss', [SeoController::class, 'rss'])->name('rss');
+
+        // Favicon
+        $this->GET('/favicon.ico', [HomeController::class, 'favicon']);
     }
 }

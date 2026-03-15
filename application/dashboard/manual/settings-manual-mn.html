@@ -1,0 +1,109 @@
+<div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-3 shadow bg-secondary">
+    <h3 class="px-2 my-auto fs-6 text-white">
+        <i class="bi bi-gear-fill"></i> Settings - Гарын авлага
+    </h3>
+    <a href="{{ 'manual' | link }}" class="btn btn-sm btn-light m-1">
+        <i class="bi bi-arrow-left"></i> {{ 'manual' | text }}
+    </a>
+</div>
+
+<!-- ==================== ТОЙМ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3">Тохиргоо гэж юу вэ?</h4>
+        <p>
+            <strong>Settings</strong> нь вэбсайтын ерөнхий тохиргоог удирдах модуль юм.
+            Гурван табтай: <strong>Meta</strong>, <strong>Logo</strong>, <strong>Config</strong>.
+        </p>
+    </div>
+</div>
+
+<!-- ==================== META ТАБ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-card-text"></i> Meta таб</h4>
+        <p>Олон хэл дээрх талбарууд:</p>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Талбар</th><th>Тайлбар</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Гарчиг (title)</td><td>Вэбсайтын гарчиг, 70 тэмдэгт хүртэл</td></tr>
+                <tr><td>Тайлбар (description)</td><td>Вэбсайтын тайлбар, 255 тэмдэгт хүртэл</td></tr>
+                <tr><td>Яаралтай мэдэгдэл (urgent)</td><td>Яаралтай мэдэгдэл, HTML дэмжинэ</td></tr>
+                <tr><td>Холбоо барих (contact)</td><td>Холбоо барих мэдээлэл, HTML дэмжинэ</td></tr>
+                <tr><td>Хаяг (address)</td><td>Вэбсайт дээр харагдах хаяг, HTML дэмжинэ</td></tr>
+                <tr><td>Copyright</td><td>Зохиогчийн эрхийн мэдэгдэл</td></tr>
+            </tbody>
+        </table>
+        <p>Глобал талбарууд (хэлнээс үл хамаарах):</p>
+        <ul>
+            <li><strong>И-мэйл</strong> - Вэбсайт дээр харагдах и-мэйл хаяг</li>
+            <li><strong>Утас</strong> - Вэбсайт дээр харагдах утасны дугаар</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== LOGO ТАБ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-image"></i> Logo таб</h4>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Талбар</th><th>Тайлбар</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Лого</td><td>Хэл тус бүрт лого зураг (зураг сонгох, солих, устгах)</td></tr>
+                <tr><td>Favicon</td><td><code>.ico</code> файл</td></tr>
+                <tr><td>Apple Touch Icon</td><td>180x180 пиксел хэмжээтэй зураг</td></tr>
+            </tbody>
+        </table>
+        <p>Зураг preview болон файл хэмжээ харагдана.</p>
+    </div>
+</div>
+
+<!-- ==================== CONFIG ТАБ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-code-slash"></i> Config таб</h4>
+        <p>JSON хэлбэртэй нэмэлт тохиргоо.</p>
+        <ul>
+            <li><strong>Pretty Print</strong> товчоор JSON-г форматлах</li>
+            <li>Жишээ: <code>google_analytics</code>, <code>maintenance_mode</code> гэх мэт</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== ХАДГАЛАХ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-save"></i> Хадгалах</h4>
+        <p>Таб бүрт тусдаа хадгалах товч байна. AJAX fetch-ээр хадгалагдана.</p>
+    </div>
+</div>
+
+<!-- ==================== ЛОГ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-journal-text"></i> Лог</h4>
+        <p>
+            <code>system_logger</code> эрхтэй бол <code>settings-*</code> лог харагдана.
+        </p>
+    </div>
+</div>
+
+<!-- ==================== ЭРХ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-shield-lock"></i> Шаардлагатай эрхүүд</h4>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Үйлдэл</th><th>Эрх</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Тохиргоо харах, засах</td><td><code>system_content_settings</code></td></tr>
+                <tr><td>Лог харах</td><td><code>system_logger</code></td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>

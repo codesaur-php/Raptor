@@ -35,6 +35,7 @@ class MigrationMiddleware implements MiddlewareInterface
         $pdo = $request->getAttribute('pdo');
         if ($pdo) {
             try {
+                // dirname(__DIR__, 3) -> project root (database/ is sibling of application/)
                 $runner = new MigrationRunner($pdo, \dirname(__DIR__, 3) . '/database/migrations');
                 if ($runner->hasPending()) {
                     $runner->migrate();

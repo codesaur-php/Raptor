@@ -1,0 +1,109 @@
+<div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-3 shadow bg-secondary">
+    <h3 class="px-2 my-auto fs-6 text-white">
+        <i class="bi bi-gear-fill"></i> Settings - Manual
+    </h3>
+    <a href="{{ 'manual' | link }}" class="btn btn-sm btn-light m-1">
+        <i class="bi bi-arrow-left"></i> {{ 'manual' | text }}
+    </a>
+</div>
+
+<!-- ==================== OVERVIEW ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3">What are Settings?</h4>
+        <p>
+            <strong>Settings</strong> is a module for managing general website configuration.
+            It has three tabs: <strong>Meta</strong>, <strong>Logo</strong>, <strong>Config</strong>.
+        </p>
+    </div>
+</div>
+
+<!-- ==================== META TAB ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-card-text"></i> Meta Tab</h4>
+        <p>Multi-language fields:</p>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Field</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Title</td><td>Website title, up to 70 characters</td></tr>
+                <tr><td>Description</td><td>Website description, up to 255 characters</td></tr>
+                <tr><td>Urgent Notice</td><td>Urgent notification, supports HTML</td></tr>
+                <tr><td>Contact</td><td>Contact information, supports HTML</td></tr>
+                <tr><td>Address</td><td>Address displayed on the website, supports HTML</td></tr>
+                <tr><td>Copyright</td><td>Copyright notice</td></tr>
+            </tbody>
+        </table>
+        <p>Global fields (language-independent):</p>
+        <ul>
+            <li><strong>Email</strong> - Email address displayed on the website</li>
+            <li><strong>Phone</strong> - Phone number displayed on the website</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== LOGO TAB ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-image"></i> Logo Tab</h4>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Field</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Logo</td><td>Logo image per language (select, replace, delete)</td></tr>
+                <tr><td>Favicon</td><td><code>.ico</code> file</td></tr>
+                <tr><td>Apple Touch Icon</td><td>180x180 pixel image</td></tr>
+            </tbody>
+        </table>
+        <p>Image preview and file size are displayed.</p>
+    </div>
+</div>
+
+<!-- ==================== CONFIG TAB ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-code-slash"></i> Config Tab</h4>
+        <p>Additional configuration in JSON format.</p>
+        <ul>
+            <li><strong>Pretty Print</strong> button to format JSON</li>
+            <li>Examples: <code>google_analytics</code>, <code>maintenance_mode</code>, etc.</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== SAVING ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-save"></i> Saving</h4>
+        <p>Each tab has its own save button. Data is saved via AJAX fetch.</p>
+    </div>
+</div>
+
+<!-- ==================== LOG ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-journal-text"></i> Log</h4>
+        <p>
+            If you have the <code>system_logger</code> permission, <code>settings-*</code> logs are displayed.
+        </p>
+    </div>
+</div>
+
+<!-- ==================== PERMISSIONS ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-shield-lock"></i> Required Permissions</h4>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Action</th><th>Permission</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>View and edit settings</td><td><code>system_content_settings</code></td></tr>
+                <tr><td>View log</td><td><code>system_logger</code></td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>

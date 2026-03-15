@@ -45,8 +45,8 @@
                     <input type="text" name="website" id="hp_field" tabindex="-1" autocomplete="off">
                 </div>
                 <div class="form-floating mb-3">
-                    <input class="form-control" autofocus required type="text" name="username" id="username" autocomplete="on" placeholder="{{ 'user'|text|e }}">
-                    <label for="username">{{ 'user'|text }}</label>
+                    <input class="form-control" autofocus required type="text" name="username" id="username" autocomplete="on" placeholder="{{ 'username'|text|e }} / {{ 'email'|text|e }}">
+                    <label for="username">{{ 'username'|text }} / {{ 'email'|text }}</label>
                 </div>
                 <div class="form-floating mb-4">
                     <input class="form-control" required type="password" name="password" id="password" placeholder="{{ 'password'|text|e }}">
@@ -77,7 +77,8 @@
                     {% if copyright is not empty %}{{ copyright }}{% else %}{{ 'now'|date('Y') }} &copy; {{ 'dashboard'|text }}{% endif %}
                 </p>
                 
-                <!-- Language Switch -->
+                <!-- Language Switch (1-ээс олон хэлтэй үед л харуулна) -->
+                {% if localization.language|length > 1 %}
                 <div class="text-center">
                     <span id="language">
                     {%  if lang != 'en' and localization.language['en'] %}
@@ -87,6 +88,7 @@
                     {% endif %}
                     </span>
                 </div>
+                {% endif %}
             </form>
             
             <!-- ============================================================
@@ -115,6 +117,7 @@
                 <div class="form-floating mt-3 mb-2">
                     <input class="form-control" type="text" placeholder="{{ 'username'|text|e }}" name="codeUsername" id="codeUsername" autocomplete="new-username">
                     <label for="codeUsername">{{ 'username'|text }}</label>
+                    <small class="text-warning"><i class="bi bi-exclamation-triangle"></i> {{ 'error-username-cannot-change'|text }}</small>
                 </div>
                 <div class="form-floating mb-2">
                     <input class="form-control" type="text" placeholder="{{ 'email'|text|e }}" name="codeEmail" id="codeEmail" autocomplete="new-email">

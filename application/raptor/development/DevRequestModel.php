@@ -16,6 +16,11 @@ use codesaur\DataObject\Column;
  */
 class DevRequestModel extends Model
 {
+    /**
+     * DevRequestModel constructor.
+     *
+     * @param \PDO $pdo Database connection instance
+     */
     public function __construct(\PDO $pdo)
     {
         $this->setInstance($pdo);
@@ -36,6 +41,11 @@ class DevRequestModel extends Model
         $this->setTable('dev_requests');
     }
 
+    /**
+     * Анхны тохиргоо: FK constraint болон индекс үүсгэх.
+     *
+     * @return void
+     */
     protected function __initial()
     {
         $this->setForeignKeyChecks(false);
@@ -50,6 +60,12 @@ class DevRequestModel extends Model
         $this->exec("CREATE INDEX {$table}_idx_status_active ON $table (status, is_active)");
     }
 
+    /**
+     * Шинэ хөгжүүлэлтийн хүсэлт үүсгэх.
+     *
+     * @param array $record Бичлэгийн өгөгдөл
+     * @return array|false Амжилттай бол бичлэгийн массив, бусад тохиолдолд false
+     */
     public function insert(array $record): array|false
     {
         if (!isset($record['created_at'])) {
@@ -58,6 +74,13 @@ class DevRequestModel extends Model
         return parent::insert($record);
     }
 
+    /**
+     * Хөгжүүлэлтийн хүсэлтийг шинэчлэх.
+     *
+     * @param int   $id     Бичлэгийн ID
+     * @param array $record Шинэчлэх өгөгдөл
+     * @return array|false Амжилттай бол шинэчилсэн бичлэг, бусад тохиолдолд false
+     */
     public function updateById(int $id, array $record): array|false
     {
         if (!isset($record['updated_at'])) {

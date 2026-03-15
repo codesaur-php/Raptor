@@ -115,13 +115,13 @@ Base for the Dashboard Application. Registers the middleware pipeline and router
 
 1. `ErrorHandler` - Error handling
 2. `MySQLConnectMiddleware` - DB connection
-2.5. `MigrationMiddleware` - Auto-run pending migrations
-3. `SessionMiddleware` - Session management
-4. `JWTAuthMiddleware` - JWT authentication
-5. `ContainerMiddleware` - DI Container
-6. `LocalizationMiddleware` - Multi-language
-7. `SettingsMiddleware` - System settings
-8. `LoginRouter`, `UsersRouter`, `OrganizationRouter`, `RBACRouter`, `LocalizationRouter`, `ContentsRouter`, `LogsRouter`, `TemplateRouter`, `ProductsRouter`, `OrdersRouter`, `DevelopmentRouter`, `MigrationRouter`
+3. `MigrationMiddleware` - Auto-run pending migrations
+4. `SessionMiddleware` - Session management
+5. `JWTAuthMiddleware` - JWT authentication
+6. `ContainerMiddleware` - DI Container
+7. `LocalizationMiddleware` - Multi-language
+8. `SettingsMiddleware` - System settings
+9. `LoginRouter`, `UsersRouter`, `OrganizationRouter`, `RBACRouter`, `LocalizationRouter`, `ContentsRouter`, `LogsRouter`, `TemplateRouter`, `ProductsRouter`, `OrdersRouter`, `DevelopmentRouter`, `MigrationRouter`
 
 ---
 
@@ -147,12 +147,19 @@ Decodes and validates JWT. Throws `RuntimeException` if expired. Requires `user_
 6. Creates `User` object and adds to request attributes
 7. On failure, redirects to `/dashboard/login`
 
-### SessionMiddleware (Dashboard)
+### SessionMiddleware
 
-**File:** `application/raptor/authentication/SessionMiddleware.php`
+**File:** `application/raptor/SessionMiddleware.php`
 **Implements:** `MiddlewareInterface`
 
-Starts PHP session (`session_start()`).
+Shared middleware for both Dashboard and Web apps.
+Starts PHP session and releases write-lock early on read-only routes.
+
+Constructor accepts a `needsWrite` closure to define which routes need session writes:
+- Dashboard: `fn($path, $method) => str_contains($path, '/login')`
+- Web: `fn($path, $method) => str_starts_with($path, '/language/') || ...`
+
+If closure is null, all routes are read-only (session_write_close on every request).
 
 ### LoginRouter
 
@@ -437,7 +444,7 @@ Extracts a plain-text excerpt from HTML content.
 | Route | Method | Name |
 |-------|--------|------|
 | `/dashboard/pages` | GET | `pages` |
-| `/dashboard/pages/nav` | GET | `pages-nav` |
+| `/dashboard/pages/table` | GET | `pages-table` |
 | `/dashboard/pages/list` | GET | `pages-list` |
 | `/dashboard/pages/insert` | GET+POST | `page-insert` |
 | `/dashboard/pages/{uint:id}` | GET+PUT | `page-update` |
@@ -545,13 +552,18 @@ Returns all translations structured as language code -> key -> value.
 **File:** `application/raptor/localization/LocalizationMiddleware.php`
 **Implements:** `MiddlewareInterface`
 
+Shared middleware for both Dashboard and Web apps. Constructor accepts session key:
+- Dashboard: `new LocalizationMiddleware()` - defaults to `RAPTOR_LANGUAGE_CODE`
+- Web: `new LocalizationMiddleware('WEB_LANGUAGE_CODE')`
+
 Injects `localization` array into request attributes:
 
 ```php
 [
-    'code'     => 'mn',           // Active language code
-    'language' => [...],          // All languages list
-    'text'     => ['key' => 'value', ...]  // Translation texts
+    'code'        => 'mn',                    // Active language code
+    'language'    => [...],                   // All languages list
+    'text'        => ['key' => 'value', ...], // Translation texts
+    'session_key' => 'RAPTOR_LANGUAGE_CODE'   // Session key for language storage
 ]
 ```
 
@@ -627,11 +639,11 @@ Injects PSR-11 DI Container into request. Registers PDO, User ID, and `DiscordNo
 **Extends:** `codesaur\Http\Application\Application`
 
 Public website Application. Middleware pipeline:
-ExceptionHandler -> MySQL -> Container -> Session -> Localization -> Settings -> HomeRouter
+ExceptionHandler -> MySQL -> Container -> Session -> Localization -> Settings -> SiteRouter
 
-### HomeRouter
+### SiteRouter
 
-**File:** `application/web/home/HomeRouter.php`
+**File:** `application/web/SiteRouter.php`
 
 | Route | Method | Name | Description |
 |-------|--------|------|-------------|
@@ -657,7 +669,7 @@ ExceptionHandler -> MySQL -> Container -> Session -> Localization -> Settings ->
 
 ### HomeController
 
-**File:** `application/web/home/HomeController.php`
+**File:** `application/web/HomeController.php`
 **Extends:** `TemplateController`
 
 | Method | Description |
@@ -667,7 +679,7 @@ ExceptionHandler -> MySQL -> Container -> Session -> Localization -> Settings ->
 
 ### PageController
 
-**File:** `application/web/home/PageController.php`
+**File:** `application/web/content/PageController.php`
 **Extends:** `TemplateController`
 
 | Method | Description |
@@ -678,7 +690,7 @@ ExceptionHandler -> MySQL -> Container -> Session -> Localization -> Settings ->
 
 ### NewsController (Web)
 
-**File:** `application/web/home/NewsController.php`
+**File:** `application/web/content/NewsController.php`
 **Extends:** `TemplateController`
 
 | Method | Description |
@@ -690,7 +702,7 @@ ExceptionHandler -> MySQL -> Container -> Session -> Localization -> Settings ->
 
 ### ShopController
 
-**File:** `application/web/home/ShopController.php`
+**File:** `application/web/shop/ShopController.php`
 **Extends:** `TemplateController`
 
 | Method | Description |
@@ -703,7 +715,7 @@ ExceptionHandler -> MySQL -> Container -> Session -> Localization -> Settings ->
 
 ### SeoController
 
-**File:** `application/web/home/SeoController.php`
+**File:** `application/web/seo/SeoController.php`
 **Extends:** `TemplateController`
 
 | Method | Description |

@@ -1,0 +1,676 @@
+<div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-3 shadow bg-secondary">
+    <h3 class="px-2 my-auto fs-6 text-white">
+        <i class="bi bi-book"></i> moedit - Гарын авлага
+    </h3>
+    <a href="{{ 'manual' | link }}" class="btn btn-sm btn-light m-1">
+        <i class="bi bi-arrow-left"></i> {{ 'manual' | text }}
+    </a>
+</div>
+
+<!-- ==================== ТОЙМ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3">moedit гэж юу вэ?</h4>
+        <p>
+            <strong>moedit</strong> нь Raptor Dashboard-д ашиглагддаг WYSIWYG текст засварлагч юм.
+            Хуудас, мэдээ, бүтээгдэхүүн зэрэг контент бэлтгэхэд зориулагдсан.
+        </p>
+        <p>
+            Dashboard-ийн дараах хэсгүүдэд ашиглагдана:
+        </p>
+        <ul>
+            <li><strong>Хуудсууд (Pages)</strong> - Хуудас үүсгэх, засварлах, харах</li>
+            <li><strong>Мэдээнүүд (News)</strong> - Мэдээ үүсгэх, засварлах, харах</li>
+            <li><strong>Бүтээгдэхүүнүүд (Products)</strong> - Бүтээгдэхүүн үүсгэх, засварлах, харах</li>
+        </ul>
+        <p>
+            Контентийн төрөл <strong>embed</strong> байвал автоматаар HTML эх код (Source) горимд шилжинэ.
+            Бусад тохиолдолд Visual горимд ажиллана.
+        </p>
+    </div>
+</div>
+
+<!-- ==================== 1. TOOLBAR БҮТЭЦ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-layout-wtf"></i> Toolbar-ын бүтэц</h4>
+        <p>Toolbar нь дараах бүлгүүдтэй:</p>
+        <table class="table table-bordered">
+            <thead class="table-light">
+                <tr><th>Бүлэг</th><th>Агуулах товчнууд</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Зураг оптимизаци</td><td>Зураг шахах checkbox</td></tr>
+                <tr><td>Медиа оруулах</td><td>Толгой зураг, Зураг, Видео, Аудио, Хавсралт файл</td></tr>
+                <tr><td>Хүснэгт & Бүтэц</td><td>Хүснэгт, Accordion, Холбоос, Хэвтээ зураас</td></tr>
+                <tr><td>Embed контент</td><td>YouTube, Facebook, Twitter/X, Google Maps</td></tr>
+                <tr><td>AI хэрэгслүүд</td><td>AI OCR, PDF -> HTML, AI Shine</td></tr>
+                <tr><td>Текст форматлах</td><td>Bold, Italic, Underline, Strikethrough, Highlight, Subscript, Superscript</td></tr>
+                <tr><td>Гарчиг & Хэмжээ</td><td>Paragraph/H1-H6/Pre/Quote, Фонтын хэмжээ (1-7), Текстийн өнгө</td></tr>
+                <tr><td>Зэрэгцүүлэлт & Жагсаалт</td><td>Зүүн, Голд, Баруун, Justify, Догол нэмэх/хасах, Формат арилгах, Bullet/Дугаар жагсаалт</td></tr>
+                <tr><td>Түүх</td><td>Undo, Redo</td></tr>
+                <tr><td>Горим</td><td>Бүтэн дэлгэц, Эх код, Хэвлэх, Урьдчилж харах</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ==================== 2. HOTKEYS ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-keyboard"></i> Hotkeys</h4>
+        <table class="table table-bordered">
+            <thead class="table-light">
+                <tr><th>Товч</th><th>Үйлдэл</th><th>Тайлбар</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><kbd>Ctrl+B</kbd></td><td>Тод (Bold)</td><td>Сонгосон текстийг тодоор бичнэ</td></tr>
+                <tr><td><kbd>Ctrl+I</kbd></td><td>Налуу (Italic)</td><td>Сонгосон текстийг налуугаар бичнэ</td></tr>
+                <tr><td><kbd>Ctrl+U</kbd></td><td>Доогуур зураас</td><td>Сонгосон текстийг доогуур зураастай болгоно</td></tr>
+                <tr><td><kbd>Ctrl+Z</kbd></td><td>Буцаах (Undo)</td><td>Сүүлийн үйлдлийг буцаана</td></tr>
+                <tr><td><kbd>Ctrl+Y</kbd></td><td>Дахих (Redo)</td><td>Буцаасан үйлдлийг дахин хийнэ</td></tr>
+                <tr><td><kbd>Ctrl+Shift+Z</kbd></td><td>Дахих (Redo)</td><td>Redo-ийн өөр хувилбар</td></tr>
+                <tr><td><kbd>Ctrl+S</kbd></td><td>Source горимоос гарах</td><td>Source горимд байх үед Visual горим руу буцна</td></tr>
+                <tr><td><kbd>Escape</kbd></td><td>Бүтэн дэлгэцээс гарах</td><td>Fullscreen горимд байх үед хэвийн горим руу буцна</td></tr>
+                <tr><td><kbd>Alt+F10</kbd></td><td>Toolbar руу очих</td><td>Editor-ээс toolbar руу фокус шилжүүлнэ</td></tr>
+                <tr><td><kbd>Tab</kbd></td><td>Дараагийн нүд</td><td>Хүснэгтийн сүүлийн нүдэнд байвал шинэ мөр нэмнэ</td></tr>
+                <tr><td><kbd>Shift+Tab</kbd></td><td>Өмнөх нүд</td><td>Хүснэгт дотор өмнөх нүд рүү шилжинэ</td></tr>
+                <tr><td><kbd>Backspace</kbd></td><td>Мөр устгах</td><td>Хүснэгтийн эхний нүд хоосон байвал тухайн мөрийг устгана</td></tr>
+            </tbody>
+        </table>
+        <div class="alert alert-info mb-0">
+            <i class="bi bi-apple"></i> macOS дээр <kbd>Ctrl</kbd>-ийн оронд <kbd>Cmd</kbd> ашиглана.
+        </div>
+    </div>
+</div>
+
+<!-- ==================== 3. БҮТЭН ДЭЛГЭЦ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-arrows-fullscreen text-primary"></i> Бүтэн дэлгэц</h4>
+        <p>
+            Toolbar дээрх <i class="bi bi-arrows-fullscreen text-primary"></i> товч дарж бүтэн дэлгэц горимд шилжинэ.
+        </p>
+        <ul>
+            <li>Контентын гарчиг (title) дээд хэсэгт харагдана</li>
+            <li><kbd>Escape</kbd> дарж эсвэл товч дахин дарж гарна</li>
+            <li>Илүү их зай ашиглан контент засварлахад тохиромжтой</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== 4. PASTE БОЛОВСРУУЛАЛТ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-clipboard"></i> Paste (буулгах) боловсруулалт</h4>
+        <table class="table table-bordered">
+            <thead class="table-light">
+                <tr><th>Буулгах төрөл</th><th>Тайлбар</th></tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>HTML контент</strong></td>
+                    <td>HTML-ийг автоматаар цэвэрлэж семантик бүтцийг хадгална</td>
+                </tr>
+                <tr>
+                    <td><strong>Энгийн текст</strong></td>
+                    <td>Мөр бүрийг <code>&lt;p&gt;</code> таг руу хөрвүүлнэ</td>
+                </tr>
+                <tr>
+                    <td><strong>Зураг (Clipboard)</strong></td>
+                    <td>Clipboard-аас зураг автоматаар илрүүлж серверт байршуулна</td>
+                </tr>
+                <tr>
+                    <td><strong>Word документ</strong></td>
+                    <td>Word-ийн тусгай формат цэвэрлэгдэнэ. Локал зургууд шилжихгүйг анхааруулна</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ==================== 5. ЗУРАГ ОПТИМИЗАЦИ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-speedometer2"></i> Зураг оптимизаци</h4>
+        <p>
+            Toolbar-ын эхэнд байрлах <strong>Optimize Images</strong> checkbox идэвхтэй байвал
+            зураг байршуулах үед автоматаар шахна (50-80%-ийн хэмжээ буурна, чанар хадгалагдана).
+        </p>
+        <p>Хамаарах хэсгүүд:</p>
+        <ul>
+            <li>Толгой зураг</li>
+            <li>Контент дотор оруулсан зурагнууд</li>
+            <li>Хавсралт файлуудаас зургийн төрлийнх</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== 6. ТОЛГОЙ ЗУРАГ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-image text-primary"></i> Толгой зураг (Header Image)</h4>
+        <p>Мэдээ, бүтээгдэхүүн зэрэг контентийн нүүр зураг оруулахад ашиглана. Нэг контентод зөвхөн 1 толгой зураг байна.</p>
+        <ul>
+            <li>Toolbar дээрх <i class="bi bi-image text-primary"></i> товч дарна</li>
+            <li>Зураг оруулсны дараа editor-ийн дээд хэсэгт харагдана</li>
+            <li>Зургийг солих - <i class="bi bi-pencil"></i> (Change) товч дарна</li>
+            <li>Зургийг устгах - <i class="bi bi-trash"></i> (Remove) товч дарна</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== 7. ЗУРАГ ОРУУЛАХ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-image"></i> Зураг оруулах</h4>
+        <p>Toolbar дээрх <i class="bi bi-image text-danger"></i> товч дарахад хоёр сонголттой цонх нээгдэнэ. Контент дотор хэдэн ч зураг оруулах боломжтой.</p>
+        <table class="table table-bordered">
+            <thead class="table-light">
+                <tr><th>Сонголт</th><th>Тайлбар</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><strong>Компьютерээс</strong></td><td>Файл сонгох хэрэгслээр зургийг сонгоно</td></tr>
+                <tr><td><strong>URL-ээр</strong></td><td>Зургийн URL оруулна - шууд урьдчилж харна</td></tr>
+            </tbody>
+        </table>
+        <div class="alert alert-info mt-2 mb-0">
+            <i class="bi bi-lightbulb"></i> <strong>Зөвлөгөө:</strong>
+            <ul class="mb-0">
+                <li>Зургийг чирж (drag &amp; drop) шууд editor дотор тавьж болно</li>
+                <li>Clipboard-оос буулгаж (Ctrl+V) зураг оруулж болно - дэлгэцийн зураг (screenshot) ч мөн адил</li>
+                <li>Оруулсан зураг автоматаар серверт хуулагдана</li>
+                <li>Зургийн хэмжээ: max-width: 100%, height: auto</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== 8. ХАВСРАЛТ ФАЙЛ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-paperclip text-warning"></i> Хавсралт файл</h4>
+        <p>Toolbar дээрх <i class="bi bi-paperclip text-warning"></i> товч дарж контентод файл хавсаргана. Хэдэн ч файл хавсаргах боломжтой.</p>
+        <p>Хавсралт файлуудын хүснэгтэд:</p>
+        <ul>
+            <li><strong>Файлын нэр</strong> - татах холбоостой</li>
+            <li><strong>Шинж чанар</strong> - төрөл (extension), хэмжээ</li>
+            <li><strong>Тайлбар</strong> - засварлах боломжтой</li>
+            <li><strong>Огноо</strong> - байршуулсан огноо</li>
+            <li><strong>Устгах</strong> - нэг бүрчлэн устгах боломжтой</li>
+        </ul>
+        <p>Засварлах (Update) горимд өмнө хавсаргасан файлууд автоматаар ачаалагдана.</p>
+    </div>
+</div>
+
+<!-- ==================== 9. ВИДЕО ОРУУЛАХ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-camera-video text-info"></i> Видео оруулах</h4>
+        <p>Toolbar дээрх <i class="bi bi-camera-video text-info"></i> товч дарна:</p>
+        <table class="table table-bordered">
+            <thead class="table-light">
+                <tr><th>Сонголт</th><th>Тайлбар</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><strong>Компьютерээс</strong></td><td>Видео файл сонгож серверт байршуулна</td></tr>
+                <tr><td><strong>URL-ээр</strong></td><td>Видеоны URL оруулна - шууд тоглуулагчаар урьдчилж харна</td></tr>
+            </tbody>
+        </table>
+        <p>HTML5 <code>&lt;video&gt;</code> тагаар контент дотор байрлана. Responsive: max-width: 100%.</p>
+    </div>
+</div>
+
+<!-- ==================== 10. АУДИО ОРУУЛАХ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-music-note-beamed text-success"></i> Аудио оруулах</h4>
+        <p>Toolbar дээрх <i class="bi bi-music-note-beamed text-success"></i> товч дарна:</p>
+        <table class="table table-bordered">
+            <thead class="table-light">
+                <tr><th>Сонголт</th><th>Тайлбар</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><strong>Компьютерээс</strong></td><td>Аудио файл сонгож серверт байршуулна</td></tr>
+                <tr><td><strong>URL-ээр</strong></td><td>Аудионы URL оруулна - тоглуулагчаар урьдчилж харна</td></tr>
+            </tbody>
+        </table>
+        <p>HTML5 <code>&lt;audio&gt;</code> тагаар контент дотор байрлана.</p>
+    </div>
+</div>
+
+<!-- ==================== 11. ХОЛБООС / ИМЭЙЛ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-link-45deg"></i> Холбоос / Имэйл оруулах</h4>
+        <ol>
+            <li>Холбоос оруулах текстийг сонгоно</li>
+            <li>Toolbar дээрх <i class="bi bi-link-45deg"></i> товч дарна</li>
+            <li>URL эсвэл Email горимыг сонгоно</li>
+        </ol>
+        <table class="table table-bordered mt-3">
+            <thead class="table-light">
+                <tr><th>Горим</th><th>Тайлбар</th></tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>URL</strong></td>
+                    <td>Холбоос оруулна. <code>https://</code> автоматаар нэмэгдэнэ. Шинэ цонхонд нээгдэнэ (target="_blank")</td>
+                </tr>
+                <tr>
+                    <td><strong>Email</strong></td>
+                    <td>Имэйл хаяг оруулна. <code>mailto:</code> автоматаар нэмэгдэнэ</td>
+                </tr>
+            </tbody>
+        </table>
+        <p>Харагдах текст (Display text) талбарыг хоосон орхивол сонгосон текст ашиглагдана.</p>
+    </div>
+</div>
+
+<!-- ==================== 12. YOUTUBE ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-youtube"></i> YouTube видео оруулах</h4>
+        <ol>
+            <li>Toolbar дээрх <i class="bi bi-youtube"></i> товч дарна</li>
+            <li>YouTube видеоны embed код эсвэл URL оруулна</li>
+        </ol>
+        <div class="alert alert-warning mt-2">
+            <i class="bi bi-exclamation-triangle"></i> <strong>Зөвлөмж:</strong>
+            YouTube видео дээр <strong>Share -> Embed</strong> дарж <code>&lt;iframe&gt;</code> кодыг хуулбал хамгийн оновчтой.
+            URL ашиглавал хэмжээг таамаглан тохируулна.
+        </div>
+        <p>Дэмждэг URL формат:</p>
+        <ul>
+            <li><code>https://www.youtube.com/watch?v=VIDEO_ID</code></li>
+            <li><code>https://youtu.be/VIDEO_ID</code></li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== 13. FACEBOOK ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-facebook"></i> Facebook видео оруулах</h4>
+        <ol>
+            <li>Toolbar дээрх <i class="bi bi-facebook"></i> товч дарна</li>
+            <li>Facebook видеоны embed код эсвэл URL оруулна</li>
+        </ol>
+        <div class="alert alert-warning mt-2">
+            <i class="bi bi-exclamation-triangle"></i> <strong>Зөвлөмж:</strong>
+            Facebook видео дээр <strong>... -> Embed</strong> дарж кодыг хуулбал хамгийн оновчтой.
+            URL ашиглавал reel/видео гэдгийг таамаглан хэмжээг тохируулна.
+        </div>
+        <table class="table table-bordered mt-3 mb-0">
+            <thead class="table-light">
+                <tr><th>Төрөл</th><th>URL жишээ</th><th>Хэмжээ</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Reel (босоо)</td><td><code>facebook.com/reel/123...</code></td><td>267 x 476 (9:16)</td></tr>
+                <tr><td>Видео (хэвтээ)</td><td><code>facebook.com/user/videos/123...</code></td><td>500 x 282 (16:9)</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ==================== 14. TWITTER / X ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-twitter-x"></i> Twitter/X пост оруулах</h4>
+        <ol>
+            <li>Toolbar дээрх <i class="bi bi-twitter-x"></i> товч дарна</li>
+            <li>Tweet/пост-ын embed код эсвэл URL оруулна</li>
+        </ol>
+        <div class="alert alert-warning mt-2 mb-0">
+            <i class="bi bi-exclamation-triangle"></i> <strong>Зөвлөмж:</strong>
+            Tweet/пост дээр <strong>Share -> Embed</strong> дарж кодыг хуулбал хамгийн оновчтой.
+            URL ашиглавал хэмжээг таамаглан тохируулна.
+        </div>
+        <p class="mt-2 mb-0">URL формат: <code>https://x.com/username/status/...</code></p>
+    </div>
+</div>
+
+<!-- ==================== 15. GOOGLE MAPS ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-geo-alt"></i> Google Maps оруулах</h4>
+        <ol>
+            <li>Toolbar дээрх <i class="bi bi-geo-alt"></i> товч дарна</li>
+            <li>Google Maps-ийн embed код эсвэл URL оруулна</li>
+        </ol>
+        <div class="alert alert-warning mt-2 mb-0">
+            <i class="bi bi-exclamation-triangle"></i> <strong>Зөвлөмж:</strong>
+            Google Maps дээр <strong>Share -> Embed a map</strong> дарж <code>&lt;iframe&gt;</code> кодыг хуулбал хамгийн оновчтой.
+            URL ашиглавал хэмжээг таамаглан тохируулна.
+        </div>
+    </div>
+</div>
+
+<!-- ==================== 16. AI OCR ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-file-text text-info"></i> AI OCR - Зураг дээрх текст таних</h4>
+        <ol>
+            <li>Контент дотор текст агуулсан зураг оруулна</li>
+            <li>Toolbar дээрх <i class="bi bi-file-text text-info"></i> товч дарна</li>
+            <li>AI заавар бичих боломжтой (хоосон орхиж болно)</li>
+            <li><strong>Convert</strong> дарна</li>
+        </ol>
+        <p>AI нь зурган дээрх текстийг таниж, автоматаар HTML болгон хөрвүүлнэ:</p>
+        <ul>
+            <li>Хүснэгт -> <code>&lt;table&gt;</code></li>
+            <li>Жагсаалт -> <code>&lt;ul&gt;</code> / <code>&lt;ol&gt;</code></li>
+            <li>Гарчиг -> <code>&lt;h1&gt;</code>-<code>&lt;h6&gt;</code></li>
+            <li>Текст -> <code>&lt;p&gt;</code></li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== 17. AI PDF -> HTML ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-file-earmark-pdf text-danger"></i> AI PDF -> HTML</h4>
+        <ol>
+            <li>Toolbar дээрх <i class="bi bi-file-earmark-pdf text-danger"></i> товч дарна</li>
+            <li>PDF файл сонгоно</li>
+            <li>Хуудас сонгох боломжтой (олон хуудастай бол)</li>
+            <li>AI заавар бичих боломжтой</li>
+            <li><strong>Insert</strong> дарна</li>
+        </ol>
+        <p>AI нь PDF-ийн бүтцийг (хүснэгт, жагсаалт, гарчиг, текст) таниж HTML болгон контент дотор оруулна.</p>
+    </div>
+</div>
+
+<!-- ==================== 18. AI SHINE ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-stars text-warning"></i> AI Shine - Контент гоёлдох</h4>
+        <ol>
+            <li>Контентоо бэлтгэнэ (энгийн текст, жагсаалт г.м.)</li>
+            <li>Toolbar дээрх <i class="bi bi-stars text-warning"></i> товч дарна</li>
+            <li>AI заавар бичих боломжтой</li>
+            <li><strong>Apply</strong> дарна</li>
+        </ol>
+        <p>AI нь контентын бүтцийг шинжилж, Bootstrap 5 компонент ашиглан гоёлдоно:</p>
+        <table class="table table-bordered mt-2">
+            <thead class="table-light">
+                <tr><th>Контентын төрөл</th><th>Хувирах хэлбэр</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Жагсаалт мэдээлэл</td><td>Card эсвэл list-group</td></tr>
+                <tr><td>Харьцуулалт / Олон баганатай</td><td>Table (table-striped, table-hover)</td></tr>
+                <tr><td>Асуулт-хариулт / FAQ</td><td>Accordion</td></tr>
+                <tr><td>Алхам алхмаар</td><td>List-group эсвэл card</td></tr>
+                <tr><td>Чухал мэдээлэл</td><td>Alert эсвэл callout</td></tr>
+                <tr><td>Холбогдох зүйлс</td><td>Row/col grid</td></tr>
+            </tbody>
+        </table>
+        <p>Текстийн агуулга хадгалагдана, зөвхөн HTML бүтэц гоёмсог болно.</p>
+    </div>
+</div>
+
+<!-- ==================== ХҮСНЭГТ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-table"></i> Хүснэгт оруулах</h4>
+        <ol>
+            <li>Toolbar дээрх <i class="bi bi-table"></i> товч дарна</li>
+            <li>Мөр, баганын тоог оруулна</li>
+            <li>Хүснэгтийн төрлийг сонгоно</li>
+        </ol>
+        <table class="table table-bordered mt-3">
+            <thead class="table-light">
+                <tr><th>Төрөл</th><th>Тайлбар</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><strong>Vanilla Table</strong></td><td>Inline style бүхий энгийн хүснэгт</td></tr>
+                <tr><td><strong>Bootstrap Table</strong></td><td>Bootstrap CSS class бүхий хүснэгт (table-striped, table-hover, table-bordered)</td></tr>
+            </tbody>
+        </table>
+        <h5 class="mt-3 mb-2">Хүснэгтийн товчлолууд:</h5>
+        <table class="table table-bordered">
+            <thead class="table-light">
+                <tr><th>Товч</th><th>Тайлбар</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><kbd>Tab</kbd></td><td>Дараагийн нүд рүү шилжинэ. Сүүлийн нүдэнд дарвал шинэ мөр нэмнэ</td></tr>
+                <tr><td><kbd>Shift+Tab</kbd></td><td>Өмнөх нүд рүү шилжинэ</td></tr>
+                <tr><td><kbd>Backspace</kbd></td><td>Эхний нүд хоосон үед тухайн мөрийг устгана (2+ мөртэй үед)</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ==================== 19. HTML ЭХ КОД ЗАСВАРЛАХ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-code-slash text-success"></i> HTML эх код засварлах</h4>
+        <p>
+            Toolbar дээрх <i class="bi bi-code-slash text-success"></i> товч дарж <strong>Visual</strong> болон <strong>Source</strong>
+            горим хооронд шилжинэ.
+        </p>
+        <ul>
+            <li>Source горимд HTML кодыг шууд засварлах боломжтой</li>
+            <li>Код автоматаар 2-space indent-ээр форматлагдана</li>
+            <li>Cursor байрлал хоёр горим хооронд хадгалагдана</li>
+            <li><kbd>Ctrl+S</kbd> дарж Visual горим руу буцна</li>
+        </ul>
+        <div class="alert alert-info mt-2 mb-0">
+            <i class="bi bi-info-circle"></i> Контентын төрөл <strong>embed</strong> байвал Source горим автоматаар идэвхжинэ.
+        </div>
+    </div>
+</div>
+
+<!-- ==================== 20. ХЭВЛЭХ & УРЬДЧИЛЖ ХАРАХ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-printer"></i> Хэвлэх & <i class="bi bi-eye text-info"></i> Урьдчилж харах</h4>
+        <table class="table table-bordered">
+            <thead class="table-light">
+                <tr><th>Товч</th><th>Тайлбар</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><i class="bi bi-printer"></i> Хэвлэх</td><td>Контентыг хэвлэх цонх нээнэ</td></tr>
+                <tr><td><i class="bi bi-eye text-info"></i> Урьдчилж харах</td><td>Контентыг хадгалахаас өмнө эцсийн хэлбэрээр харна</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ==================== 21. ТЕКСТ ФОРМАТЛАХ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-type-bold"></i> Текст форматлах</h4>
+        <table class="table table-bordered">
+            <thead class="table-light">
+                <tr><th>Товч</th><th>Үйлдэл</th><th>Тайлбар</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><i class="bi bi-type-bold"></i> Bold</td><td>Тод бичих</td><td>Сонгосон текстийг тод болгоно</td></tr>
+                <tr><td><i class="bi bi-type-italic"></i> Italic</td><td>Налуу бичих</td><td>Сонгосон текстийг налуу болгоно</td></tr>
+                <tr><td><i class="bi bi-type-underline"></i> Underline</td><td>Доогуур зураас</td><td>Сонгосон текстийг доогуур зурна</td></tr>
+                <tr><td><i class="bi bi-type-strikethrough"></i> Strikethrough</td><td>Дундуур зураас</td><td>Сонгосон текстийг дундуур зурна</td></tr>
+                <tr><td><i class="bi bi-highlighter"></i> Highlight</td><td>Тодруулах</td><td>Сонгосон текстийг шар дэвсгэрээр тодруулна</td></tr>
+                <tr><td>x<sub>2</sub> Subscript</td><td>Доод индекс</td><td>Текстийг доод индекс болгоно (жишээ: H₂O)</td></tr>
+                <tr><td>x<sup>2</sup> Superscript</td><td>Дээд индекс</td><td>Текстийг дээд индекс болгоно (жишээ: м²)</td></tr>
+                <tr><td><i class="bi bi-eraser"></i> Remove Format</td><td>Формат арилгах</td><td>Сонгосон текстийн бүх форматыг арилгана</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ==================== 22. ГАРЧИГ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-card-heading"></i> Heading</h4>
+        <p>Toolbar дээрх heading dropdown-оос сонгоно:</p>
+        <table class="table table-bordered">
+            <thead class="table-light">
+                <tr><th>Сонголт</th><th>Тайлбар</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Paragraph</td><td>Ердийн текст (анхдагч)</td></tr>
+                <tr><td>H1 - H6</td><td>Гарчигны 6 түвшин (H1 хамгийн том)</td></tr>
+                <tr><td>Preformatted</td><td>Код блок - monospace фонтоор харуулна</td></tr>
+                <tr><td>Quote</td><td>Ишлэл - хөх зүүн зураастай блок</td></tr>
+            </tbody>
+        </table>
+        <p>Cursor байрлалд тохирох гарчиг автоматаар идэвхжинэ.</p>
+    </div>
+</div>
+
+<!-- ==================== 23. ФОНТЫН ХЭМЖЭЭ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-fonts"></i> Фонтын хэмжээ</h4>
+        <p>7 түвшний фонтын хэмжээ:</p>
+        <table class="table table-bordered">
+            <thead class="table-light">
+                <tr><th>Түвшин</th><th>Тайлбар</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>1</td><td>Хамгийн жижиг</td></tr>
+                <tr><td>2</td><td>Жижиг</td></tr>
+                <tr><td><strong>3</strong></td><td>Хэвийн (анхдагч)</td></tr>
+                <tr><td>4</td><td>Дунд</td></tr>
+                <tr><td>5</td><td>Том</td></tr>
+                <tr><td>6</td><td>Маш том</td></tr>
+                <tr><td>7</td><td>Хамгийн том</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ==================== 24. ТЕКСТИЙН ӨНГӨ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-palette"></i> Текстийн өнгө</h4>
+        <p>
+            Toolbar дээрх өнгөний товчийг дарж текстийн өнгийг сонгоно.
+            HEX (#RRGGBB) формат болон нэрлэсэн өнгөнүүдийг (red, blue, green г.м.) дэмжинэ.
+        </p>
+        <p>Cursor байрлалд тохирох өнгө автоматаар идэвхжинэ.</p>
+    </div>
+</div>
+
+<!-- ==================== 25. ЗЭРЭГЦҮҮЛЭЛТ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-text-center"></i> Зэрэгцүүлэлт</h4>
+        <table class="table table-bordered">
+            <thead class="table-light">
+                <tr><th>Товч</th><th>Тайлбар</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><i class="bi bi-text-left"></i> Зүүн тийш</td><td>Текстийг зүүн талд зэрэгцүүлнэ (анхдагч)</td></tr>
+                <tr><td><i class="bi bi-text-center"></i> Голд</td><td>Текстийг голд байрлуулна</td></tr>
+                <tr><td><i class="bi bi-text-right"></i> Баруун тийш</td><td>Текстийг баруун талд зэрэгцүүлнэ</td></tr>
+                <tr><td><i class="bi bi-justify"></i> Justify</td><td>Текстийг хоёр талаас тэгшлэнэ</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ==================== 26. ДОГОЛ МӨР ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-text-indent-left"></i> Догол мөр</h4>
+        <table class="table table-bordered">
+            <thead class="table-light">
+                <tr><th>Товч</th><th>Тайлбар</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><i class="bi bi-text-indent-left"></i> Догол нэмэх</td><td>Зүүн талаас 40px-ээр доголдуулна. Давтан дарж гүнийг нэмнэ</td></tr>
+                <tr><td><i class="bi bi-text-indent-right"></i> Догол хасах</td><td>Зүүн доголыг 40px-ээр хасна. Хамгийн бага 0px</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ==================== 27. ЖАГСААЛТ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-list-ul"></i> Жагсаалт</h4>
+        <table class="table table-bordered">
+            <thead class="table-light">
+                <tr><th>Товч</th><th>Тайлбар</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><i class="bi bi-list-ul"></i> Bullet жагсаалт</td><td>Тэмдэгтэй жагсаалт (unordered list) үүсгэнэ</td></tr>
+                <tr><td><i class="bi bi-list-ol"></i> Дугаар жагсаалт</td><td>Дугаартай жагсаалт (ordered list) үүсгэнэ</td></tr>
+            </tbody>
+        </table>
+        <p>Дахин дарж жагсаалтыг арилгана.</p>
+    </div>
+</div>
+
+<!-- ==================== 29. ACCORDION ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-chevron-bar-expand"></i> Accordion оруулах</h4>
+        <p>
+            Toolbar дээрх <i class="bi bi-chevron-bar-expand"></i> товч дарж Bootstrap accordion компонент оруулна.
+            Асуулт-хариулт, FAQ зэрэг агуулгыг нуж задлах хэлбэрээр харуулахад тохиромжтой.
+        </p>
+    </div>
+</div>
+
+<!-- ==================== 30. ХЭВТЭЭ ЗУРААС ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-dash-lg"></i> Хэвтээ зураас</h4>
+        <p>
+            Toolbar дээрх <i class="bi bi-dash-lg"></i> товч дарж контентод хэвтээ зураас (<code>&lt;hr&gt;</code>) оруулна.
+            Хэсгүүдийг хооронд нь тусгаарлахад тохиромжтой.
+        </p>
+    </div>
+</div>
+
+<!-- ==================== 31. ЗӨВХӨН ХАРАХ ГОРИМ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-eye-slash"></i> Зөвхөн харах горим (Readonly)</h4>
+        <p>
+            Контентыг <strong>View</strong> горимд нээх үед editor зөвхөн унших горимд ажиллана:
+        </p>
+        <ul>
+            <li>Бүх засварлах хэрэгслүүд нуугдана</li>
+            <li>Зөвхөн <strong>Хэвлэх</strong>, <strong>Эх код</strong> (readonly), <strong>Бүтэн дэлгэц</strong> товчнууд үлдэнэ</li>
+            <li>Контентыг засварлах боломжгүй</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== 32. TOOLBAR НАВИГАЦИ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-universal-access"></i> Toolbar навигаци (Accessibility)</h4>
+        <table class="table table-bordered">
+            <thead class="table-light">
+                <tr><th>Товч</th><th>Тайлбар</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><kbd>Alt+F10</kbd></td><td>Editor-ээс toolbar руу фокус шилжүүлнэ</td></tr>
+                <tr><td><kbd>&rarr;</kbd> / <kbd>&darr;</kbd></td><td>Дараагийн toolbar элемент</td></tr>
+                <tr><td><kbd>&larr;</kbd> / <kbd>&uarr;</kbd></td><td>Өмнөх toolbar элемент</td></tr>
+                <tr><td><kbd>Home</kbd></td><td>Эхний toolbar элемент</td></tr>
+                <tr><td><kbd>End</kbd></td><td>Сүүлийн toolbar элемент</td></tr>
+                <tr><td><kbd>Enter</kbd> / <kbd>Space</kbd></td><td>Товч идэвхжүүлэх</td></tr>
+                <tr><td><kbd>Escape</kbd></td><td>Editor рүү буцах</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ==================== 33. DARK MODE & RESPONSIVE ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-moon-stars"></i> Dark Mode & Responsive</h4>
+        <ul>
+            <li><strong>Dark Mode:</strong> Системийн тохиргоо (prefers-color-scheme) эсвэл <code>data-bs-theme="dark"</code> ашиглан автоматаар идэвхждэг</li>
+            <li><strong>Гар утас:</strong> Toolbar товчнууд жижгэрч, touch-friendly зайтай болно</li>
+            <li><strong>Таблет:</strong> Дунд хэмжээний товчнууд</li>
+            <li><strong>Компьютер:</strong> Бүтэн хэмжээний toolbar, баруун талын layout сонголттой</li>
+        </ul>
+    </div>
+</div>

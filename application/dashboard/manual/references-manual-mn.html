@@ -1,0 +1,206 @@
+<div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-3 shadow bg-secondary">
+    <h3 class="px-2 my-auto fs-6 text-white">
+        <i class="bi bi-book"></i> References - Гарын авлага
+    </h3>
+    <a href="{{ 'manual' | link }}" class="btn btn-sm btn-light m-1">
+        <i class="bi bi-arrow-left"></i> {{ 'manual' | text }}
+    </a>
+</div>
+
+<!-- ==================== ТОЙМ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3">References (Лавлах) гэж юу вэ?</h4>
+        <p>
+            <strong>References</strong> нь Raptor Dashboard-ийн лавлах контентын удирдлагын модуль юм.
+            Системийн янз бүрийн текст, загвар, тохиргоог нэг дороос удирдах боломж олгоно.
+        </p>
+        <p>Лавлах контент нь дараах онцлогуудтай:</p>
+        <ul>
+            <li><strong>Олон хэл</strong> - Хэл тус бүрт тусдаа гарчиг, контент хадгална</li>
+            <li><strong>Динамик хүснэгт</strong> - Шинэ лавлах хүснэгт автоматаар нэмэгдэж болно</li>
+            <li><strong>Түлхүүр (keyword)</strong> - Бичлэг бүр давтагдахгүй түлхүүрээр тодорхойлогдоно</li>
+            <li><strong>Ангилал</strong> - system, email, general гэх мэт ангилалаар бүлэглэнэ</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== ХҮСНЭГТҮҮД ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-layout-wtf"></i> Лавлах хүснэгтүүд</h4>
+        <p>
+            References модуль нь олон хүснэгттэй ажиллах боломжтой. Хүснэгт бүр
+            <code>reference_{нэр}</code> ба <code>reference_{нэр}_content</code> гэсэн
+            хос хүснэгтээс бүрдэнэ.
+        </p>
+        <p>Жагсаалтын хуудсанд хүснэгт бүр таб (tab) хэлбэрээр харагдана.</p>
+
+        <h5 class="mt-3">Анхдагч хүснэгт: Templates</h5>
+        <p>Систем анх суулгагдахад <strong>templates</strong> хүснэгт автоматаар үүсэж, дараах анхны бичлэгүүд бэлтгэгдэнэ:</p>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Түлхүүр</th><th>Ангилал</th><th>Тайлбар</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><code>tos</code></td><td>system</td><td>Веб систем ашиглах ерөнхий нөхцөл (Terms of Service)</td></tr>
+                <tr><td><code>pp</code></td><td>system</td><td>Нууцлалын бодлого (Privacy Policy)</td></tr>
+                <tr><td><code>forgotten-password-reset</code></td><td>email</td><td>Нууц үг сэргээх имэйл загвар</td></tr>
+                <tr><td><code>request-new-user</code></td><td>email</td><td>Шинэ хэрэглэгч бүртгүүлэх хүсэлтийн имэйл</td></tr>
+                <tr><td><code>approve-new-user</code></td><td>email</td><td>Хэрэглэгч баталгаажсан тухай имэйл</td></tr>
+                <tr><td><code>dev-request-new</code></td><td>email</td><td>Шинэ хөгжүүлэлтийн хүсэлтийн имэйл</td></tr>
+                <tr><td><code>dev-request-response</code></td><td>email</td><td>Хөгжүүлэлтийн хүсэлтийн хариултын имэйл</td></tr>
+                <tr><td><code>order-status-update</code></td><td>email</td><td>Захиалгын төлөв шинэчлэгдсэн имэйл</td></tr>
+                <tr><td><code>order-confirmation</code></td><td>email</td><td>Захиалга баталгаажсан имэйл</td></tr>
+            </tbody>
+        </table>
+        <p class="text-muted">
+            <i class="bi bi-info-circle"></i> Имэйл загварууд дотор <code>&#123;&#123; variable &#125;&#125;</code>
+            хэлбэрийн placeholder ашиглаж болно. Систем тэдгээрийг илгээхдээ бодит утгаар орлуулна.
+        </p>
+    </div>
+</div>
+
+<!-- ==================== ЖАГСААЛТ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-list-ul"></i> Лавлах жагсаалт</h4>
+        <p>Dashboard цэснээс <strong>Лавлах</strong> дарахад жагсаалтын хуудас нээгдэнэ.</p>
+        <ul>
+            <li>Хүснэгт бүр таб (tab) хэлбэрээр харагдана</li>
+            <li>URL hash (<code>#templates-tab-pane</code>) ашиглан тухайн табыг шууд сонгох боломжтой</li>
+            <li>Хүснэгт бүрт keyword, хэл бүрийн title, ангилал, үйлдлийн баганууд харагдана</li>
+        </ul>
+        <h5 class="mt-3">Хүснэгтийн баганууд</h5>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Багана</th><th>Тайлбар</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>#</td><td>Бичлэгийн ID</td></tr>
+                <tr><td>Keyword</td><td>Давтагдахгүй түлхүүр</td></tr>
+                <tr><td>Title (хэл бүрт)</td><td>Хэл тус бүрийн гарчиг</td></tr>
+                <tr><td>Category</td><td>Ангилал</td></tr>
+                <tr><td>Action</td><td>Харах, Засах, Устгах товчнууд</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ==================== ШИНЭ БИЧЛЭГ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-plus-circle"></i> Шинэ бичлэг үүсгэх</h4>
+        <p>Тухайн хүснэгтийн таб дотроос <strong>New</strong> товчийг дарна.</p>
+
+        <h5 class="mt-3">Талбарууд</h5>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Талбар</th><th>Тайлбар</th><th>Заавал эсэх</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><strong>Keyword</strong></td><td>Давтагдахгүй түлхүүр (128 тэмдэгт хүртэл)</td><td>Тийм</td></tr>
+                <tr><td><strong>Category</strong></td><td>Ангилал - жагсаалтаас сонгох эсвэл шинээр бичих</td><td>Тийм</td></tr>
+                <tr><td><strong>Title</strong> (хэл бүрт)</td><td>Гарчиг (255 тэмдэгт хүртэл)</td><td>Тийм</td></tr>
+                <tr><td><strong>Content</strong> (хэл бүрт)</td><td>Бүтэн агуулга (HTML)</td><td>Тийм</td></tr>
+            </tbody>
+        </table>
+
+        <h5 class="mt-3">Ангилалууд</h5>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Утга</th><th>Тайлбар</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><code>general</code></td><td>Ерөнхий</td></tr>
+                <tr><td><code>system</code></td><td>Систем</td></tr>
+                <tr><td><code>special</code></td><td>Тусгай</td></tr>
+                <tr><td><code>manual</code></td><td>Заавар</td></tr>
+                <tr><td><code>notification</code></td><td>Сонордуулга</td></tr>
+                <tr><td><code>email</code></td><td>Цахим захиа</td></tr>
+            </tbody>
+        </table>
+        <p class="text-muted">
+            <i class="bi bi-info-circle"></i> Жагсаалтаас сонгохоос гадна шинэ ангилалыг гараар бичих боломжтой.
+        </p>
+    </div>
+</div>
+
+<!-- ==================== ХАРАХ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-eye"></i> Бичлэг харах</h4>
+        <p>Жагсаалтаас <strong>харах</strong> (нүд) товчийг дарахад modal цонхонд бичлэгийн дэлгэрэнгүй мэдээлэл нээгдэнэ.</p>
+        <ul>
+            <li>Keyword, ангилал</li>
+            <li>Хэл бүрийн гарчиг, контент</li>
+            <li>Зөвхөн идэвхтэй (<code>is_active = 1</code>) бичлэгийг харуулна</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== ЗАСВАРЛАХ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-pencil-square"></i> Бичлэг засварлах</h4>
+        <p>Жагсаалтаас <strong>засварлах</strong> (харандаа) товчийг дарахад modal цонхонд засварлах форм нээгдэнэ.</p>
+        <ul>
+            <li>Keyword, ангилал, хэл бүрийн title ба content засах боломжтой</li>
+            <li>Ямар нэг өөрчлөлт байхгүй бол хадгалахгүй ("No update!" алдаа)</li>
+            <li><code>system_content_update</code> эрх шаардлагатай</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== УСТГАХ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-trash"></i> Бичлэг устгах</h4>
+        <p>Жагсаалтаас <strong>устгах</strong> (хогийн сав) товчийг дарна.</p>
+        <ul>
+            <li>Баталгаажуулах цонх гарна (SweetAlert2)</li>
+            <li>Зөөлөн устгалт (soft delete) - <code>is_active = 0</code> болгоно, өгөгдөл хадгалагдана</li>
+            <li><code>system_content_delete</code> эрх шаардлагатай</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== ОЛОН ХЭЛ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-translate"></i> Олон хэлний дэмжлэг</h4>
+        <p>
+            Лавлах бичлэг бүр олон хэл дээр контент хадгалах боломжтой.
+            Шинэ бичлэг үүсгэх болон засварлах үед хэл бүрт тусдаа таб харагдана.
+        </p>
+        <ul>
+            <li>Хэл бүрт <strong>Title</strong> ба <strong>Content</strong> талбарууд</li>
+            <li>Контент нь HTML форматаар хадгалагдана</li>
+            <li>Имэйл загварт <code>&#123;&#123; variable &#125;&#125;</code> placeholder ашиглаж болно</li>
+        </ul>
+        <div class="alert alert-info mb-0">
+            <i class="bi bi-info-circle"></i>
+            <strong>LocalizedModel:</strong> Үндсэн мэдээлэл (keyword, category) нь
+            <code>reference_{нэр}</code> хүснэгтэд, хэл тус бүрийн контент (title, content)
+            нь <code>reference_{нэр}_content</code> хүснэгтэд хадгалагдана.
+        </div>
+    </div>
+</div>
+
+<!-- ==================== ЭРХ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-shield-lock"></i> Шаардлагатай эрхүүд</h4>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Үйлдэл</th><th>Эрх</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Жагсаалт харах, Бичлэг харах</td><td><code>system_content_index</code></td></tr>
+                <tr><td>Шинэ бичлэг үүсгэх</td><td><code>system_content_insert</code></td></tr>
+                <tr><td>Бичлэг засварлах</td><td><code>system_content_update</code></td></tr>
+                <tr><td>Бичлэг устгах</td><td><code>system_content_delete</code></td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>

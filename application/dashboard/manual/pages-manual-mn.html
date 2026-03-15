@@ -1,0 +1,307 @@
+<div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-3 shadow bg-secondary">
+    <h3 class="px-2 my-auto fs-6 text-white">
+        <i class="bi bi-book"></i> Pages - Гарын авлага
+    </h3>
+    <a href="{{ 'manual' | link }}" class="btn btn-sm btn-light m-1">
+        <i class="bi bi-arrow-left"></i> {{ 'manual' | text }}
+    </a>
+</div>
+
+<!-- ==================== ТОЙМ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3">Pages (Хуудас) гэж юу вэ?</h4>
+        <p>
+            <strong>Pages</strong> нь Raptor Dashboard-ийн контент удирдлагын модуль юм.
+            Вэбсайтын хуудсуудыг үүсгэх, засварлах, устгах, нийтлэх зэрэг бүх үйлдлийг энэ модулиар хийнэ.
+        </p>
+        <p>Хуудас нь дараах онцлогуудтай:</p>
+        <ul>
+            <li><strong>Мод бүтэц</strong> - Хуудсууд эцэг-хүүхэд (parent-child) шатлалтай байж болно</li>
+            <li><strong>Олон хэл</strong> - Хэл тус бүрт тусдаа хуудас үүсгэнэ</li>
+            <li><strong>SEO-friendly slug</strong> - Гарчгаас автоматаар URL slug үүсгэнэ</li>
+            <li><strong>Навигаци</strong> - <code>menu</code> болон <code>*-menu</code> төрлийн нийтлэгдсэн хуудсууд вэбсайтын цэсэнд автоматаар орно</li>
+            <li><strong>Тусгай</strong> - <code>type='special'</code> төрлийн хуудсууд навигацийн цэсэнд орохгүй ч системд програмистын заасан тодорхой газарт харагдана</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== ЖАГСААЛТ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-list-ul"></i> Хуудасны жагсаалт</h4>
+        <p>Dashboard цэснээс <strong>Хуудсууд</strong> дарахад жагсаалтын хуудас нээгдэнэ.</p>
+        <h5 class="mt-3">Шүүлтүүр</h5>
+        <p>Дараах шүүлтүүрээр хуудсуудыг ялгаж харж болно:</p>
+        <ul>
+            <li><strong>Хэл</strong> - mn, en гэх мэт хэлний кодоор</li>
+            <li><strong>Төрөл</strong> - menu, mega-menu, special гэх мэт</li>
+            <li><strong>Ангилал</strong> - general, info, service, legal, reference</li>
+            <li><strong>Төлөв</strong> - Нийтлэгдсэн эсвэл ноорог</li>
+        </ul>
+        <h5 class="mt-3">Хүснэгтийн баганууд</h5>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Багана</th><th>Тайлбар</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>ID / Он сар</td><td>Хуудасны ID болон үүсгэсэн огноо</td></tr>
+                <tr><td>Хэл</td><td>Хэлний туг, код</td></tr>
+                <tr><td>Зураг</td><td>Толгой зураг (хэрэв байвал)</td></tr>
+                <tr><td>Гарчиг</td><td>Хуудасны нэр</td></tr>
+                <tr><td>Хавсралт</td><td>Хавсаргасан файлын тоо</td></tr>
+                <tr><td>Төрөл / Ангилал</td><td>Хуудасны төрөл ба ангилал</td></tr>
+                <tr><td>Байрлал</td><td>Цэсэн дэх дараалал (жижиг тоо = эхэнд)</td></tr>
+                <tr><td>Нийтлэх</td><td>Нийтлэгдсэн эсэх, огноо</td></tr>
+                <tr><td>Үйлдэл</td><td>Харах, Засах, Устгах товчнууд</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ==================== НАВИГАЦИ МОД ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-diagram-3"></i> Навигацийн мод бүтэц</h4>
+        <p>
+            Жагсаалтын хуудсан дээрх <strong>Навигаци</strong> товчийг дарахад хуудсуудын мод бүтцийг
+            хэл тус бүрээр харж болно.
+        </p>
+        <ul>
+            <li>Эцэг хуудсуудыг дэлгэж/хураах боломжтой</li>
+            <li><strong>Expand All / Collapse All</strong> товчнууд</li>
+            <li>Хүүхэд хуудас нэмэх - эцэг хуудсын доор шууд нэмэх линк</li>
+            <li>Хэл бүрт хуудасны нийт тоо харагдана</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== ШИНЭ ХУУДАС ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-plus-circle"></i> Шинэ хуудас үүсгэх</h4>
+        <p>Жагсаалтын хуудсан дээрх <strong>Шинэ</strong> товчийг дарна.</p>
+
+        <h5 class="mt-3">Талбарууд</h5>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Талбар</th><th>Тайлбар</th><th>Заавал эсэх</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><strong>Хэл</strong></td><td>Хуудасны хэл (mn, en гэх мэт)</td><td>Тийм</td></tr>
+                <tr><td><strong>Төрөл</strong></td><td>menu, mega-menu, special</td><td>Тийм</td></tr>
+                <tr><td><strong>Ангилал</strong></td><td>general, info, service, legal, reference</td><td>Тийм</td></tr>
+                <tr><td><strong>Байрлал</strong></td><td>Цэсэн дэх дараалал (анхдагч: 100)</td><td>Тийм</td></tr>
+                <tr><td><strong>Эцэг хуудас</strong></td><td>Аль хуудасны дор байрлах вэ (ижил хэлтэй байх ёстой)</td><td>Үгүй</td></tr>
+                <tr><td><strong>Гарчиг</strong></td><td>Хуудасны нэр (255 тэмдэгт хүртэл)</td><td>Тийм</td></tr>
+                <tr><td><strong>Тайлбар</strong></td><td>Товч тайлбар (хоосон бол контентоос автомат үүснэ)</td><td>Үгүй</td></tr>
+                <tr><td><strong>Контент</strong></td><td>Бүтэн агуулга - <a href="{{ 'manual-view' | link({'file': 'moedit-manual-mn.html'}) }}" title="moedit manual харах">moedit</a> засварлагчаар бичнэ</td><td>Үгүй</td></tr>
+                <tr><td><strong>Эх сурвалж</strong></td><td>Эх сурвалжийн мэдээлэл</td><td>Үгүй</td></tr>
+                <tr><td><strong>Холбоос</strong></td><td>Гадаад/дотоод URL (контентыг орлоно)</td><td>Үгүй</td></tr>
+                <tr><td><strong>Толгой зураг</strong></td><td>Хуудасны толгой зураг (1 ширхэг)</td><td>Үгүй</td></tr>
+            </tbody>
+        </table>
+
+        <h5 class="mt-3">Нийтлэх тохиргоо</h5>
+        <p><code>system_content_publish</code> эрхтэй хэрэглэгчдэд дараах сонголтууд харагдана:</p>
+        <ul>
+            <li><strong>Нийтлэх</strong> - Вэбсайт дээр харагдах болно</li>
+            <li><strong>Онцлох</strong> - Нүүр хуудсанд онцлох хэсэгт орно</li>
+            <li><strong>Сэтгэгдэл</strong> - Зочид сэтгэгдэл бичих боломжтой</li>
+        </ul>
+
+        <h5 class="mt-3">Автомат үйлдлүүд</h5>
+        <ul>
+            <li><strong>Slug</strong> - Гарчигаас автоматаар үүснэ (Монгол кирилл -> латин хөрвүүлэлт)</li>
+            <li><strong>Тайлбар</strong> - Хоосон бол контентоос 200 тэмдэгтийн товчлол үүснэ</li>
+            <li><strong>Байрлал</strong> - Эцэг хуудас сонгоход автоматаар тооцоолно</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== ЗАСВАРЛАХ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-pencil-square"></i> Хуудас засварлах</h4>
+        <p>Жагсаалтаас <strong>засварлах</strong> (харандаа) товчийг дарна.</p>
+        <ul>
+            <li>Бүх талбаруудыг өөрчлөх боломжтой (slug-аас бусад)</li>
+            <li>Толгой зургийг солих эсвэл устгах боломжтой</li>
+            <li>Хавсралт файлуудын тайлбарыг засах, шинэ файл нэмэх, устгах</li>
+            <li>Нийтлэгдсэн хуудсыг засварлахад <code>system_content_publish</code> эрх шаардлагатай</li>
+        </ul>
+
+        <h5 class="mt-3">Эцэг хуудас сонгох</h5>
+        <div class="alert alert-warning mb-0">
+            <i class="bi bi-exclamation-triangle"></i>
+            Эцэг хуудсыг сонгохдоо ижил хэлтэй байх ёстой. Мөн өөрийн хүүхэд хуудсыг
+            эцэг болгон сонгох боломжгүй (циклээс сэргийлнэ).
+        </div>
+    </div>
+</div>
+
+<!-- ==================== ХАРАХ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-eye"></i> Хуудас харах</h4>
+        <p>Жагсаалтаас <strong>харах</strong> (нүд) товчийг дарна.</p>
+        <ul>
+            <li>Бүх талбаруудыг зөвхөн унших горимд харуулна</li>
+            <li>Контентыг moedit read-only горимд харуулна</li>
+            <li>Толгой зураг, хавсралт файлуудыг харна</li>
+            <li>Хүүхэд хуудастай бол анхааруулга харагдана</li>
+            <li>Холбоос хуудас бол анхааруулга харагдана</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== УСТГАХ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-trash"></i> Хуудас устгах</h4>
+        <p>Жагсаалтаас <strong>устгах</strong> (хогийн сав) товчийг дарна.</p>
+        <ul>
+            <li>Баталгаажуулах цонх гарна (SweetAlert2)</li>
+            <li>Зөөлөн устгалт (soft delete) - өгөгдөл хадгалагдана, зөвхөн идэвхгүй болно</li>
+            <li>Хавсралт файлууд болон хүүхэд хуудсууд хэвээр үлдэнэ</li>
+            <li><code>system_content_delete</code> эрх шаардлагатай</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== DISCORD МЭДЭГДЭЛ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-bell"></i> Discord мэдэгдэл</h4>
+        <p>
+            Хуудастай холбоотой үйлдэл хийгдэх бүрд Discord webhook-ээр автомат мэдэгдэл илгээгдэнэ
+            (webhook тохируулсан бол).
+        </p>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Үйлдэл</th><th>Мэдэгдэлд орох мэдээлэл</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Шинэ хуудас үүсгэх</td><td>Контентын төрөл (page), үйлдэл (insert), гарчиг, ID, хэн хийсэн</td></tr>
+                <tr><td>Хуудас засварлах / нийтлэх</td><td>Контентын төрөл (page), үйлдэл (update/publish), гарчиг, ID, хэн хийсэн</td></tr>
+                <tr><td>Хуудас устгах</td><td>Контентын төрөл (page), үйлдэл (delete), гарчиг, ID, хэн хийсэн</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ==================== ТӨРЛҮҮД ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-tags"></i> Хуудасны төрөл ба ангилал</h4>
+        <h5>Төрөл (type)</h5>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Утга</th><th>Тайлбар</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><code>menu</code></td><td>Ердийн цэсний хуудас (анхдагч)</td></tr>
+                <tr><td><code>mega-menu</code></td><td>Mega цэсний хуудас</td></tr>
+                <tr><td><code>special</code></td><td>Тусгай хуудас (навигацид орохгүй)</td></tr>
+            </tbody>
+        </table>
+        <p class="text-muted">
+            <i class="bi bi-info-circle"></i> Навигацид <code>menu</code> эсвэл <code>*-menu</code>
+            төрлийн нийтлэгдсэн хуудсууд орно.
+        </p>
+
+        <h5 class="mt-3">Ангилал (category)</h5>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Утга</th><th>Тайлбар</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><code>general</code></td><td>Ерөнхий (анхдагч)</td></tr>
+                <tr><td><code>info</code></td><td>Мэдээлэл</td></tr>
+                <tr><td><code>service</code></td><td>Үйлчилгээ</td></tr>
+                <tr><td><code>legal</code></td><td>Хууль, дүрэм</td></tr>
+                <tr><td><code>reference</code></td><td>Лавлагаа</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ==================== ХОЛБООС ХУУДАС ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-link-45deg"></i> Холбоос хуудас</h4>
+        <p>
+            <strong>Холбоос</strong> талбар бөглөсөн тохиолдолд тухайн хуудас нь контент биш,
+            харин линк болж ажиллана. Навигацийн цэсэнд дарахад тухайн URL руу шилжинэ.
+        </p>
+        <p>Дэмжигддэг холбоосын форматууд:</p>
+        <ul>
+            <li><code>https://example.com</code> - Гадаад URL</li>
+            <li><code>/about</code> - Дотоод зам</li>
+            <li><code>mailto:info@example.com</code> - И-мэйл</li>
+            <li><code>tel:+97699001234</code> - Утасны дугаар</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== ФАЙЛ ХАВСРАЛТ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-paperclip"></i> Файл хавсралт</h4>
+        <p>Хуудас бүрт дараах төрлийн файлууд хавсаргах боломжтой:</p>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Төрөл</th><th>Тоо</th><th>Тайлбар</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><strong>Толгой зураг</strong></td><td>1 ширхэг</td><td>Хуудасны толгой зураг, солих/устгах боломжтой</td></tr>
+                <tr><td><strong>Контент зураг/медиа</strong></td><td>Хязгааргүй</td><td>moedit засварлагчаар контент дотор оруулна</td></tr>
+                <tr><td><strong>Хавсралт файл</strong></td><td>Хязгааргүй</td><td>Тусдаа файл хавсаргана, тайлбартай</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ==================== ЖИШИГ ДАТА ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-arrow-counterclockwise"></i> Жишиг дата цэвэрлэх</h4>
+        <p>
+            Систем анх суулгагдахад жишиг (sample) өгөгдөл бэлтгэгдсэн байдаг.
+            Жишиг дата илэрвэл жагсаалтын хуудсанд шар анхааруулга болон
+            <strong>Reset & Production</strong> товч харагдана.
+        </p>
+        <div class="alert alert-danger">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            <strong>Анхааруулга:</strong> Reset хийхэд зөвхөн жишиг (sample) өгөгдөл болон тэдгээрийн хавсралт файлуудын
+            бүртгэл устана. Хэрэглэгчийн үүсгэсэн бодит өгөгдөл хэвээр үлдэнэ. Энэ үйлдлийг буцаах боломжгүй.
+        </div>
+        <div class="alert alert-info mb-0">
+            <i class="bi bi-lightbulb"></i>
+            <strong>Жишиг дата таних:</strong> <code>category='_raptor_sample_'</code> ангилалтай хуудсууд нь
+            жишиг өгөгдөл гэж тооцогдоно. Хэрэв та заримыг нь бодит контент болгон ашиглахыг хүсвэл
+            тухайн хуудасны ангилалыг өөрчилж (жишээ нь <code>general</code>) хадгалахад хангалттай -
+            тэдгээр нь reset хийхэд устахгүй.
+        </div>
+    </div>
+</div>
+
+<!-- ==================== ЭРХ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-shield-lock"></i> Шаардлагатай эрхүүд</h4>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Үйлдэл</th><th>Эрх</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Жагсаалт харах, Хуудас харах</td><td><code>system_content_index</code></td></tr>
+                <tr><td>Шинэ хуудас үүсгэх</td><td><code>system_content_insert</code></td></tr>
+                <tr><td>Хуудас засварлах</td><td><code>system_content_update</code></td></tr>
+                <tr><td>Нийтлэх, Онцлох, Сэтгэгдэл</td><td><code>system_content_publish</code></td></tr>
+                <tr><td>Устгах, Жишиг дата цэвэрлэх</td><td><code>system_content_delete</code></td></tr>
+                <tr><td>Лог харах</td><td><code>system_logger</code></td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>

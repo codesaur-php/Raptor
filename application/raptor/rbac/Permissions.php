@@ -97,23 +97,8 @@ class Permissions extends Model
     }
 
     /**
-     * __initial() - Permission хүснэгт шинээр үүсэх үед FK болон анхны өгөгдөл үүсгэх hook.
-     *
-     * FK:
-     *   rbac_permissions.created_by -> users.id
-     *       ON DELETE SET NULL
-     *       ON UPDATE CASCADE
-     *
-     * Анхны seed өгөгдөл:
-     *   - logger
-     *   - rbac
-     *   - user_* permissions
-     *   - organization_* permissions
-     *   - content_* permissions
-     *   - localization_* permissions
-     *
-     * Анхны эрхүүд нь системийн үндсэн модулиудыг ажиллуулахад зайлшгүй
-     * шаардлагатай тул автоматоор үүсгэнэ.
+     * Permission хүснэгт шинээр үүсэх үед FK үүсгэж,
+     * PermissionsSeed-ээр анхны permission-уудыг seed хийнэ.
      *
      * @return void
      */
@@ -133,47 +118,7 @@ class Permissions extends Model
         ");
         $this->setForeignKeyChecks(true);
 
-        // Seed үндсэн permission-үүд
-        $nowdate = \date('Y-m-d H:i:s');
-        $query =
-            "INSERT INTO $table(created_at,alias,module,name,description)
-            VALUES
-            ('$nowdate','system','log','logger','View system access logs and activity history'),
-            ('$nowdate','system','user','rbac','Manage roles and assign permissions to users'),
-            ('$nowdate','system','user','user_index','View the list of registered users'),
-            ('$nowdate','system','user','user_insert','Create new user accounts'),
-            ('$nowdate','system','user','user_update','Edit existing user profiles and settings'),
-            ('$nowdate','system','user','user_delete','Delete user accounts from the system'),
-            ('$nowdate','system','user','user_organization_set','Assign or change a user organization'),
-
-            ('$nowdate','system','organization','organization_index','View the list of organizations'),
-            ('$nowdate','system','organization','organization_insert','Create new organizations'),
-            ('$nowdate','system','organization','organization_update','Edit existing organization details'),
-            ('$nowdate','system','organization','organization_delete','Delete organizations from the system'),
-
-            ('$nowdate','system','content','content_settings','Manage site content settings and configuration'),
-            ('$nowdate','system','content','content_index','View the list of content pages news and files'),
-            ('$nowdate','system','content','content_insert','Create new content entries'),
-            ('$nowdate','system','content','content_update','Edit existing content entries'),
-            ('$nowdate','system','content','content_publish','Publish or unpublish content'),
-            ('$nowdate','system','content','content_delete','Delete content entries'),
-
-            ('$nowdate','system','product','product_index','View the list of products and orders'),
-            ('$nowdate','system','product','product_insert','Create new product entries'),
-            ('$nowdate','system','product','product_update','Edit existing products and update order status'),
-            ('$nowdate','system','product','product_publish','Publish or unpublish products'),
-            ('$nowdate','system','product','product_delete','Delete products and orders'),
-
-            ('$nowdate','system','localization','localization_index','View localization and translation entries'),
-            ('$nowdate','system','localization','localization_insert','Add new translation entries'),
-            ('$nowdate','system','localization','localization_update','Edit existing translation entries'),
-            ('$nowdate','system','localization','localization_delete','Delete translation entries'),
-
-            ('$nowdate','system','template','templates_index','View and manage reference tables'),
-
-            ('$nowdate','system','development','development','Manage all development requests and respond to others')
-        ";
-        $this->exec($query);
+        PermissionsSeed::seed($table, $this->pdo);
     }
 
     /**

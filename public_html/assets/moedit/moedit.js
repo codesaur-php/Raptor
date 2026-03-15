@@ -178,7 +178,7 @@ class moedit {
         title: isMn ? 'YouTube видео оруулах' : 'Insert YouTube Video',
         urlLabel: isMn ? 'YouTube URL эсвэл Embed код' : 'YouTube URL or Embed code',
         placeholder: 'https://www.youtube.com/watch?v=... эсвэл <iframe>...</iframe>',
-        hint: isMn ? 'YouTube дээр Share -> Embed дарж кодыг хуулна уу, эсвэл видеоны URL хуулна уу' : 'Click Share -> Embed on YouTube and copy the code, or paste the video URL',
+        hint: isMn ? 'YouTube дээр Share -> Embed дарж кодыг хуулбал хамгийн оновчтой. URL ашиглавал хэмжээг таамаглан тохируулна.' : 'For best results, use Share -> Embed on YouTube and copy the code. Pasting a URL will use estimated dimensions.',
         invalidUrl: isMn ? 'YouTube видео ID олдсонгүй. URL эсвэл embed код зөв эсэхийг шалгана уу.' : 'YouTube video ID not found. Please check the URL or embed code.',
         cancelText: isMn ? 'Болих' : 'Cancel',
         okText: isMn ? 'Оруулах' : 'Insert'
@@ -188,7 +188,7 @@ class moedit {
         title: isMn ? 'Facebook видео оруулах' : 'Insert Facebook Video',
         urlLabel: isMn ? 'Facebook URL эсвэл Embed код' : 'Facebook URL or Embed code',
         placeholder: 'https://www.facebook.com/... эсвэл <iframe>...</iframe>',
-        hint: isMn ? 'Facebook видео дээр ... -> Embed дарж кодыг хуулна уу, эсвэл видеоны URL хуулна уу' : 'Click ... -> Embed on Facebook video and copy the code, or paste the video URL',
+        hint: isMn ? 'Facebook видео дээр ... -> Embed дарж кодыг хуулбал хамгийн оновчтой. URL ашиглавал хэмжээг таамаглан тохируулна.' : 'For best results, use ... -> Embed on Facebook and copy the code. Pasting a URL will use estimated dimensions.',
         cancelText: isMn ? 'Болих' : 'Cancel',
         okText: isMn ? 'Оруулах' : 'Insert'
       },
@@ -197,7 +197,7 @@ class moedit {
         title: isMn ? 'Twitter/X пост оруулах' : 'Insert Twitter/X Post',
         urlLabel: isMn ? 'Twitter/X URL' : 'Twitter/X URL',
         placeholder: 'https://x.com/username/status/...',
-        hint: isMn ? 'Tweet/пост дээр Share -> Copy link дарж URL хуулна уу' : 'Click Share -> Copy link on the tweet/post',
+        hint: isMn ? 'Tweet/пост дээр Share -> Copy link дарж URL хуулна уу. Embed код хуулбал хамгийн оновчтой.' : 'Paste the tweet URL, or copy the embed code for best results.',
         invalidUrl: isMn ? 'Twitter/X пост олдсонгүй. URL зөв эсэхийг шалгана уу.' : 'Twitter/X post not found. Please check the URL.',
         cancelText: isMn ? 'Болих' : 'Cancel',
         okText: isMn ? 'Оруулах' : 'Insert'
@@ -207,7 +207,7 @@ class moedit {
         title: isMn ? 'Google Maps оруулах' : 'Insert Google Maps',
         urlLabel: isMn ? 'Google Maps URL эсвэл Embed код' : 'Google Maps URL or Embed code',
         placeholder: 'https://www.google.com/maps/... эсвэл <iframe>...</iframe>',
-        hint: isMn ? 'Google Maps дээр Share -> Embed a map дарж кодыг хуулна уу' : 'On Google Maps click Share -> Embed a map and copy the code',
+        hint: isMn ? 'Google Maps дээр Share -> Embed a map дарж кодыг хуулбал хамгийн оновчтой. URL ашиглавал хэмжээг таамаглан тохируулна.' : 'For best results, use Share -> Embed a map on Google Maps and copy the code. Pasting a URL will use estimated dimensions.',
         invalidUrl: isMn ? 'Google Maps URL буруу байна. Share -> Embed a map ашиглана уу.' : 'Invalid Google Maps URL. Please use Share -> Embed a map.',
         cancelText: isMn ? 'Болих' : 'Cancel',
         okText: isMn ? 'Оруулах' : 'Insert'

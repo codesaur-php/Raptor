@@ -37,6 +37,7 @@ class MigrationController extends \Raptor\Controller
      */
     private function getRunner(): MigrationRunner
     {
+        // dirname(__DIR__, 3) -> project root (database/ is sibling of application/)
         return new MigrationRunner($this->pdo, \dirname(__DIR__, 3) . '/database/migrations');
     }
 

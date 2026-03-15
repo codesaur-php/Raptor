@@ -129,10 +129,10 @@ class NewsController extends FileController
             }
             $news = $news_stmt->execute() ? $news_stmt->fetchAll() : [];
             $files_counts = $this->getFilesCounts($table);
-            // Жишиг дата эсэхийг шалгах
+            // Жишиг дата байгаа эсэхийг шалгах
             $sampleCheck = $this->query(
                 "SELECT COUNT(*) as total, " .
-                "SUM(CASE WHEN created_by IS NULL AND created_at = published_at AND category='sample' THEN 1 ELSE 0 END) as sample " .
+                "SUM(CASE WHEN created_by IS NULL AND created_at = published_at AND category='_raptor_sample_' THEN 1 ELSE 0 END) as sample " .
                 "FROM $table WHERE is_active=1"
             )->fetch();
             $isSample = (int)$sampleCheck['sample'] > 0;
@@ -271,6 +271,7 @@ class NewsController extends FileController
      * Permission:
      * - system_content_update: Мэдээ шинэчлэх эрх
      * - system_content_publish: Мэдээ нийтлэх эрх (published статус өөрчлөх үед)
+     * - Эсвэл: өөрийн үүсгэсэн, нийтлэгдээгүй бичлэгийг засах боломжтой
      *
      * @param int $id Шинэчлэх мэдээний ID дугаар
      * @return void
@@ -279,26 +280,31 @@ class NewsController extends FileController
     public function update(int $id)
     {
         try {
-            if (!$this->isUserCan('system_content_update')) {
-                throw new \Exception($this->text('system-no-permission'), 401);
-            }
-            
             $model = new NewsModel($this->pdo);
             $table = $model->getName();
             $filesModel = new FilesModel($this->pdo);
-            $filesModel->setTable($table);            
+            $filesModel->setTable($table);
             $record = $model->getRowWhere([
                 'id' => $id,
                 'is_active' => 1
             ]);
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));
+            }
+
+            if (!$this->isUserCan('system_content_update')) {
+                if ((int)$record['created_by'] !== $this->getUserId()
+                    || (int)$record['published'] !== 0
+                ) {
+                    throw new \Exception($this->text('system-no-permission'), 401);
+                }
             } elseif ($record['published'] == 1
                 && !$this->isUserCan('system_content_publish')
             ) {
-                // Нийтлэгдсэн бичлэгийг засахад publish эрх шаардлагатай
                 throw new \Exception($this->text('system-no-permission'), 401);
-            } elseif ($this->getRequest()->getMethod() == 'PUT') {
+            }
+
+            if ($this->getRequest()->getMethod() == 'PUT') {
                 $payload = $this->getParsedBody();
                 if (empty($payload['title'])) {
                     throw new \InvalidArgumentException($this->text('invalid-request'), 400);
@@ -421,6 +427,7 @@ class NewsController extends FileController
      * - news-view.html template ашиглана
      *
      * Permission: system_content_index
+     * Нийтлэгдсэн бичлэгийг нэвтэрсэн бүх admin харах боломжтой
      *
      * @param int $id Үзэх мэдээний ID дугаар
      * @return void
@@ -431,15 +438,17 @@ class NewsController extends FileController
         try {
             $model = new NewsModel($this->pdo);
             $table = $model->getName();
-            if (!$this->isUserCan('system_content_index')) {
-                throw new \Exception($this->text('system-no-permission'), 401);
-            }
             $record = $model->getRowWhere([
                 'id' => $id,
                 'is_active' => 1
             ]);
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));
+            }
+            if (!$this->isUserCan('system_content_index')
+                && (int)$record['published'] !== 1
+            ) {
+                throw new \Exception($this->text('system-no-permission'), 401);
             }
             $filesModel = new FilesModel($this->pdo);
             $filesModel->setTable($table);
@@ -627,6 +636,7 @@ class NewsController extends FileController
      * - updated_by, updated_at талбаруудыг автоматаар шинэчлэнэ
      *
      * Permission: system_content_delete
+     * Эсвэл: өөрийн үүсгэсэн, нийтлэгдээгүй бичлэгийг устгах боломжтой
      *
      * @return void JSON response буцаана
      * @throws \Exception Эрхгүй, буруу хүсэлт эсвэл бичлэг олдохгүй бол exception шидэнэ
@@ -634,13 +644,6 @@ class NewsController extends FileController
     public function deactivate()
     {
         try {
-            $model = new NewsModel($this->pdo);
-            $table = $model->getName();
-            
-            if (!$this->isUserCan('system_content_delete')) {
-                throw new \Exception('No permission for an action [delete]!', 401);
-            }
-            
             $payload = $this->getParsedBody();
             if (!isset($payload['id'])
                 || !\filter_var($payload['id'], \FILTER_VALIDATE_INT)
@@ -648,6 +651,19 @@ class NewsController extends FileController
                 throw new \InvalidArgumentException($this->text('invalid-request'), 400);
             }
             $id = \filter_var($payload['id'], \FILTER_VALIDATE_INT);
+
+            $model = new NewsModel($this->pdo);
+            $table = $model->getName();
+            if (!$this->isUserCan('system_content_delete')) {
+                $record = $model->getRowWhere(['id' => $id, 'is_active' => 1]);
+                if (empty($record)
+                    || (int)$record['created_by'] !== $this->getUserId()
+                    || (int)$record['published'] !== 0
+                ) {
+                    throw new \Exception('No permission for an action [delete]!', 401);
+                }
+            }
+
             $deactivated = $model->deactivateById(
                 $id,
                 [
@@ -693,22 +709,22 @@ class NewsController extends FileController
      * Хүснэгтийн бүх өгөгдлийг устгаж, auto-increment-г 1 рүү буцаана.
      * Зөвхөн жишиг дата байгаа үед л ажиллана.
      *
-     * Permission: system_content_delete
+     * Permission: system_content_index
      */
     public function reset()
     {
         try {
-            if (!$this->isUserCan('system_content_delete')) {
+            if (!$this->isUserCan('system_content_index')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
 
             $model = new NewsModel($this->pdo);
             $table = $model->getName();
 
-            // Жишиг дата эсэхийг давхар шалгах
+            // Жишиг дата байгаа эсэхийг давхар шалгах
             $check = $this->query(
                 "SELECT COUNT(*) as sample FROM $table " .
-                "WHERE is_active=1 AND created_by IS NULL AND created_at = published_at AND category='sample'"
+                "WHERE is_active=1 AND created_by IS NULL AND created_at = published_at AND category='_raptor_sample_'"
             )->fetch();
             if ((int)$check['sample'] === 0) {
                 throw new \Exception(
@@ -717,10 +733,33 @@ class NewsController extends FileController
                 );
             }
 
-            $this->exec('SET FOREIGN_KEY_CHECKS=0');
-            try { $this->exec("TRUNCATE TABLE {$table}_files"); } catch (\Throwable) {}
-            $this->exec("TRUNCATE TABLE $table");
-            $this->exec('SET FOREIGN_KEY_CHECKS=1');
+            // Жишиг датаны ID-уудыг олох
+            $sampleIds = $this->query(
+                "SELECT id FROM $table WHERE category='_raptor_sample_' AND created_by IS NULL AND created_at = published_at"
+            )->fetchAll(\PDO::FETCH_COLUMN);
+
+            if (!empty($sampleIds)) {
+                $idList = \implode(',', \array_map('intval', $sampleIds));
+                // Жишиг датаны файлуудыг устгах
+                try { $this->exec("DELETE FROM {$table}_files WHERE record_id IN ($idList)"); } catch (\Throwable) {}
+                // Жишиг датаг устгах
+                $this->exec("DELETE FROM $table WHERE id IN ($idList)");
+            }
+
+            // Идэвхгүй (is_active=0) бичлэгүүдийг устгах
+            $inactiveIds = $this->query(
+                "SELECT id FROM $table WHERE is_active=0"
+            )->fetchAll(\PDO::FETCH_COLUMN);
+            if (!empty($inactiveIds)) {
+                $idList = \implode(',', \array_map('intval', $inactiveIds));
+                try { $this->exec("DELETE FROM {$table}_files WHERE record_id IN ($idList)"); } catch (\Throwable) {}
+                $this->exec("DELETE FROM $table WHERE id IN ($idList)");
+            }
+
+            // Auto increment тохируулах
+            $maxId = $this->query("SELECT MAX(id) as max_id FROM $table")->fetch();
+            $nextId = ((int)($maxId['max_id'] ?? 0)) + 1;
+            $this->exec("ALTER TABLE $table AUTO_INCREMENT = $nextId");
 
             $this->respondJSON([
                 'status' => 'success',

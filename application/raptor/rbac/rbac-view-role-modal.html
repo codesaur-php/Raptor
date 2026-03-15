@@ -1,22 +1,21 @@
 <!--
     RBAC - View Role Modal
 
-    Зорилго:
-      * Дүр (Role)-ийн товч мэдээллийг харах
-      * Нэр + Тайлбар л харуулна
-      * Хэрэглэгч зөвхөн уншихад зориулсан modal
-
-    Оролтууд:
-      - role:     RBAC роль (system_admin, news_editor гэх мэт)
-      - description: Дүрийн дэлгэрэнгүй тайлбар
+    Variables:
+      role        - alias_name (e.g. system_admin)
+      description - Role description
+      alias       - RBAC alias
+      permissions - Array of assigned permissions (name, module, description)
 -->
 
-<div class="modal-dialog modal-dialog-centered" role="document">
+<div class="modal-dialog modal-dialog-centered modal-lg" role="document">
     <div class="modal-content">
 
-        <!-- Modal Header (Дүрийн нэр) -->
+        <!-- Modal Header -->
         <div class="modal-header">
-            <h3 class="modal-title fs-6 text-info">{{ role }}</h3>
+            <h3 class="modal-title fs-6 text-info">
+                <i class="bi bi-shield-check"></i> {{ role }}
+            </h3>
             <button
                 class="btn-close"
                 type="button"
@@ -25,14 +24,42 @@
             ></button>
         </div>
 
-        <!-- Modal Body (Дүрийн тайлбар) -->
+        <!-- Modal Body -->
         <div class="modal-body">
-            <!--
-                Дүрийн тайлбар:
-                Тухайн RBAC Role яг юу хийх эрхтэйг админд ойлгуулах зорилготой.
-                Тэмдэгт мөр байх ба HTML-тэй холилддоггүй.
-            -->
-            <p>{{ description }}</p>
+            <p class="text-muted">{{ description }}</p>
+
+            {% if name == 'coder' %}
+            {% elseif permissions is empty %}
+                <div class="alert alert-secondary mb-0">
+                    <i class="bi bi-info-circle"></i> No permissions assigned
+                </div>
+            {% else %}
+                <h6 class="fw-bold mb-2">
+                    Permissions
+                    <span class="badge bg-primary">{{ permissions|length }}</span>
+                </h6>
+                <div style="max-height: 350px; overflow-y: auto;">
+                    <table class="table table-sm table-bordered mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Permission</th>
+                                <th class="d-none d-md-table-cell">{{ 'description'|text }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for perm in permissions %}
+                            <tr>
+                                <td>
+                                    <code class="text-dark">{{ alias }}_{{ perm.name }}</code>
+                                    <span class="d-md-none text-muted small d-block">{{ perm.description }}</span>
+                                </td>
+                                <td class="text-muted small d-none d-md-table-cell">{{ perm.description }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endif %}
         </div>
 
         <!-- Modal Footer -->

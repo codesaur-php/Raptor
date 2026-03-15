@@ -26,16 +26,22 @@ use Psr\Http\Message\UploadedFileInterface;
  */
 class FileController extends \Raptor\Controller
 {
+    /** @var string Локал файл хадгалах фолдерийн зам */
     protected string $local_folder;
-    
+
+    /** @var string Файлын public URL зам */
     protected string $public_path;
-    
+
+    /** @var bool Файл давхцвал дарж бичих эсэх */
     private bool $_overwrite = false;
-    
+
+    /** @var int|false Файлын хэмжээний хязгаар (байтаар), false бол хязгааргүй */
     private int|false $_size_limit = false;
-    
+
+    /** @var array|false Зөвшөөрөгдсөн файл өргөтгөлүүд, false бол бүгд */
     private array|false $_allowed_exts = false;
-    
+
+    /** @var int Upload алдааны код */
     private int $_upload_error = \UPLOAD_ERR_OK;
     
     /**
@@ -63,6 +69,12 @@ class FileController extends \Raptor\Controller
         return $this->public_path . "/" . \rawurlencode($fileName);
     }
 
+    /**
+     * Document root-д суурилсан файлын бүтэн замыг буцаах.
+     *
+     * @param string $filePath Харьцангуй файлын зам
+     * @return string Бүтэн физик файлын зам
+     */
     protected function getDocumentPath(string $filePath): string
     {
         return $this->getDocumentRoot() . $filePath;

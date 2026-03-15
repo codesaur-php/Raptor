@@ -1,0 +1,266 @@
+<div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-3 shadow bg-secondary">
+    <h3 class="px-2 my-auto fs-6 text-white">
+        <i class="bi bi-book"></i> News - User Manual
+    </h3>
+    <a href="{{ 'manual' | link }}" class="btn btn-sm btn-light m-1">
+        <i class="bi bi-arrow-left"></i> {{ 'manual' | text }}
+    </a>
+</div>
+
+<!-- ==================== OVERVIEW ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3">What is News?</h4>
+        <p>
+            <strong>News</strong> is the news and article management module of the Raptor Dashboard.
+            It handles creating, editing, deleting, and publishing news articles.
+        </p>
+        <p>Key features:</p>
+        <ul>
+            <li><strong>Multi-language</strong> - Separate articles per language</li>
+            <li><strong>SEO-friendly slug</strong> - Auto-generated URL slug from title</li>
+            <li><strong>Types & Categories</strong> - article, announcement, embed, gallery, video, audio, live</li>
+            <li><strong>Publishing workflow</strong> - Draft to published transition</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== LIST ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-list-ul"></i> News List</h4>
+        <p>Click <strong>News</strong> in the Dashboard sidebar to open the list page.</p>
+        <h5 class="mt-3">Filters</h5>
+        <p>Filter news by:</p>
+        <ul>
+            <li><strong>Language</strong> - mn, en, etc.</li>
+            <li><strong>Type</strong> - article, announcement, embed, etc.</li>
+            <li><strong>Category</strong> - general, activity, press, event, etc.</li>
+            <li><strong>Status</strong> - Published or draft</li>
+        </ul>
+        <h5 class="mt-3">Table Columns</h5>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Column</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>ID / Date</td><td>News ID and creation date</td></tr>
+                <tr><td>Language</td><td>Language flag and code</td></tr>
+                <tr><td>Image</td><td>Header image (if exists)</td></tr>
+                <tr><td>Title</td><td>News headline</td></tr>
+                <tr><td>Attachments</td><td>Number of attached files</td></tr>
+                <tr><td>Type / Category</td><td>News type and category</td></tr>
+                <tr><td>Published</td><td>Publication status and date</td></tr>
+                <tr><td>Actions</td><td>View, Edit, Delete buttons</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ==================== CREATE ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-plus-circle"></i> Create New Article</h4>
+        <p>Click the <strong>New</strong> button on the list page.</p>
+
+        <h5 class="mt-3">Fields</h5>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Field</th><th>Description</th><th>Required</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><strong>Language</strong></td><td>Article language (mn, en, etc.)</td><td>Yes</td></tr>
+                <tr><td><strong>Type</strong></td><td>article, announcement, embed, gallery, video, audio, live</td><td>Yes</td></tr>
+                <tr><td><strong>Category</strong></td><td>general, activity, press, event, report, policy, fun</td><td>Yes</td></tr>
+                <tr><td><strong>Title</strong></td><td>News headline (up to 255 characters)</td><td>Yes</td></tr>
+                <tr><td><strong>Description</strong></td><td>Short summary (auto-generated from content if empty)</td><td>No</td></tr>
+                <tr><td><strong>Content</strong></td><td>Full article - written with <a href="{{ 'manual-view' | link({'file': 'moedit-manual-en.html'}) }}" title="View moedit manual">moedit</a> editor</td><td>No</td></tr>
+                <tr><td><strong>Source</strong></td><td>Source/attribution information</td><td>No</td></tr>
+                <tr><td><strong>Header image</strong></td><td>Featured image (1 only)</td><td>No</td></tr>
+            </tbody>
+        </table>
+
+        <h5 class="mt-3">Publishing Options</h5>
+        <p>Users with <code>system_content_publish</code> permission see these options:</p>
+        <ul>
+            <li><strong>Publish</strong> - Make visible on the website</li>
+            <li><strong>Feature</strong> - Show in the homepage featured section</li>
+            <li><strong>Comments</strong> - Allow visitor comments (default: enabled)</li>
+        </ul>
+
+        <h5 class="mt-3">Auto-generated Fields</h5>
+        <ul>
+            <li><strong>Slug</strong> - Auto-generated from title (Cyrillic to Latin transliteration)</li>
+            <li><strong>Description</strong> - Auto-extracted from content (200 characters) if left empty</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== EDIT ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-pencil-square"></i> Edit Article</h4>
+        <p>Click the <strong>edit</strong> (pencil) button from the list.</p>
+        <ul>
+            <li>All fields can be modified (except slug)</li>
+            <li>Header image can be replaced or removed</li>
+            <li>Attachment descriptions can be edited, new files added, or existing files deleted</li>
+            <li>Editing a published article requires <code>system_content_publish</code> permission</li>
+            <li>If no changes are detected, saving is rejected ("No update!" error)</li>
+        </ul>
+
+        <h5 class="mt-3">Activity Log</h5>
+        <p>
+            Users with <code>system_logger</code> permission can view the last 10 activity entries
+            on the edit page. Click a log entry to see full details in a modal.
+        </p>
+    </div>
+</div>
+
+<!-- ==================== VIEW ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-eye"></i> View Article</h4>
+        <p>Click the <strong>view</strong> (eye) button from the list.</p>
+        <ul>
+            <li>All fields displayed in read-only mode</li>
+            <li>Content shown in moedit read-only mode</li>
+            <li>Header image and attachments visible</li>
+            <li>Publication status and date</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== DELETE ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-trash"></i> Delete Article</h4>
+        <p>Click the <strong>delete</strong> (trash) button from the list.</p>
+        <ul>
+            <li>A confirmation dialog appears (SweetAlert2) with the article thumbnail</li>
+            <li>Soft delete - data is preserved, only deactivated</li>
+            <li>Requires <code>system_content_delete</code> permission</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== DISCORD NOTIFICATION ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-bell"></i> Discord Notification</h4>
+        <p>
+            Automatic Discord notifications are sent via webhook for every news action
+            (if a webhook is configured).
+        </p>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Action</th><th>Notification details</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Create new article</td><td>Content type (news), action (insert), title, ID, admin name</td></tr>
+                <tr><td>Edit / publish article</td><td>Content type (news), action (update/publish), title, ID, admin name</td></tr>
+                <tr><td>Delete article</td><td>Content type (news), action (delete), title, ID, admin name</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ==================== TYPES ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-tags"></i> News Types & Categories</h4>
+        <h5>Type</h5>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Value</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><code>article</code></td><td>News article (default)</td></tr>
+                <tr><td><code>announcement</code></td><td>Announcement</td></tr>
+                <tr><td><code>embed</code></td><td>Embedded content (switches to HTML Source mode)</td></tr>
+                <tr><td><code>gallery</code></td><td>Photo gallery</td></tr>
+                <tr><td><code>video</code></td><td>Video content</td></tr>
+                <tr><td><code>audio</code></td><td>Audio content</td></tr>
+                <tr><td><code>live</code></td><td>Live broadcast</td></tr>
+            </tbody>
+        </table>
+
+        <h5 class="mt-3">Category</h5>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Value</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><code>general</code></td><td>General (default)</td></tr>
+                <tr><td><code>activity</code></td><td>Activity</td></tr>
+                <tr><td><code>press</code></td><td>Press release</td></tr>
+                <tr><td><code>event</code></td><td>Event</td></tr>
+                <tr><td><code>report</code></td><td>Report</td></tr>
+                <tr><td><code>policy</code></td><td>Policy, regulations</td></tr>
+                <tr><td><code>fun</code></td><td>Fun/Entertainment</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ==================== FILES ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-paperclip"></i> File Attachments</h4>
+        <p>Each article supports the following file types:</p>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Type</th><th>Count</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><strong>Header image</strong></td><td>1 only</td><td>Featured image, can be replaced or removed</td></tr>
+                <tr><td><strong>Content media</strong></td><td>Unlimited</td><td>Embedded in content via moedit editor</td></tr>
+                <tr><td><strong>Attachments</strong></td><td>Unlimited</td><td>Separate file attachments with descriptions</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ==================== SAMPLE DATA ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-arrow-counterclockwise"></i> Reset Sample Data</h4>
+        <p>
+            When the system is first installed, sample data is pre-loaded.
+            If sample data is detected, a yellow alert with a <strong>Reset & Production</strong>
+            button appears on the list page.
+        </p>
+        <div class="alert alert-danger">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            <strong>Warning:</strong> Resetting will delete only sample data and their file attachment records.
+            User-created content will remain intact. This action cannot be undone.
+        </div>
+        <div class="alert alert-info mb-0">
+            <i class="bi bi-lightbulb"></i>
+            <strong>How sample data is detected:</strong> News articles with <code>category='_raptor_sample_'</code>
+            are considered sample data. If you want to keep some of them as real content,
+            simply change the category (e.g. to <code>general</code>) and save -
+            they will not be deleted during reset.
+        </div>
+    </div>
+</div>
+
+<!-- ==================== PERMISSIONS ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-shield-lock"></i> Required Permissions</h4>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Action</th><th>Permission</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>View list, View article</td><td><code>system_content_index</code></td></tr>
+                <tr><td>Create new article</td><td><code>system_content_insert</code></td></tr>
+                <tr><td>Edit article</td><td><code>system_content_update</code></td></tr>
+                <tr><td>Publish, Feature, Comments</td><td><code>system_content_publish</code></td></tr>
+                <tr><td>Delete, Reset sample data</td><td><code>system_content_delete</code></td></tr>
+                <tr><td>View activity logs</td><td><code>system_logger</code></td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>

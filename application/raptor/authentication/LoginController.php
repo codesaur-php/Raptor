@@ -20,11 +20,11 @@ use Raptor\Organization\OrganizationUserModel;
  *   - index()                -> Login хуудас руу орох
  *   - entry()                -> Нэвтрэх оролдлого (username/password)
  *   - logout()               -> Системээс гарах
+ *   - selectOrganization()   -> Хэрэглэгчийн ажиллах байгууллагыг сонгох
  *   - signup()               -> Шинэ хэрэглэгч бүртгүүлэх хүсэлт
  *   - forgot()               -> Нууц үг сэргээх хүсэлт илгээх
  *   - forgotPassword()       -> Хэрэглэгч нууц үг сэргээх link дээр дарсан үеийн UI
  *   - setPassword()          -> Шинэ нууц үг тохируулах
- *   - selectOrganization()   -> Хэрэглэгчийн ажиллах байгууллагыг сонгох
  *   - language()             -> Login интерфейсийн хэлийг солих
  *
  * Тус Controller нь:
@@ -40,155 +40,9 @@ use Raptor\Organization\OrganizationUserModel;
  */
 class LoginController extends \Raptor\Controller
 {
-    /**
-     * Spam хамгаалалт шалгах.
-     *
-     * Honeypot, HMAC token, хурд, хугацаа, rate limit шалгана.
-     *
-     * @param string $sessionKey  Rate limit session түлхүүр
-     * @param int    $rateSeconds Rate limit хугацаа (секунд)
-     */
-    private function spamCheck(string $sessionKey = '_last_login_at', int $rateSeconds = 3)
-    {
-        $payload = $this->getParsedBody();
-
-        // 1) Honeypot
-        if (!empty($payload['website'])) {
-            throw new \Exception('Invalid request', 400);
-        }
-
-        // 2) HMAC token шалгалт
-        $ts = (int)($payload['_ts'] ?? 0);
-        $token = $payload['_token'] ?? '';
-        $secret = $_ENV['RAPTOR_JWT_SECRET'] ?? 'raptor-form-secret';
-        $expected = \hash_hmac('sha256', "login-form-$ts", $secret);
-        if (!\hash_equals($expected, $token)) {
-            throw new \Exception('Invalid request', 403);
-        }
-
-        // 3) 1 секундээс хурдан бол бот (auto-fill хэрэглэгчдэд зөвшөөрөх)
-        $elapsed = \time() - $ts;
-        if ($elapsed < 1) {
-            throw new \Exception('Invalid request', 429);
-        }
-
-        // 4) 1 цагаас хэтэрсэн form хүчингүй
-        if ($elapsed > 3600) {
-            throw new \Exception($this->text('invalid-request'), 400);
-        }
-
-        // 5) Rate limit
-        $now = \time();
-        $last = $_SESSION[$sessionKey] ?? 0;
-        if ($now - $last < $rateSeconds) {
-            throw new \Exception($this->text('invalid-request'), 429);
-        }
-        $_SESSION[$sessionKey] = $now;
-    }
-
-    /**
-     * Gmail болон түгээмэл email provider-ийн alias/dot trick-ийг арилгах.
-     *
-     * Gmail дээр цэг (.) ялгаа байхгүй: test.user@gmail.com == testuser@gmail.com
-     * Мөн + тэмдэгтийн ард байгаа хэсгийг хаях (sub-addressing).
-     */
-    private function normalizeEmail(string $email): string
-    {
-        $email = \strtolower(\trim($email));
-        [$local, $domain] = \explode('@', $email, 2);
-
-        // Gmail болон Google-ийн домайнууд
-        $gmailDomains = ['gmail.com', 'googlemail.com'];
-
-        if (\in_array($domain, $gmailDomains, true)) {
-            // + хойшхи хэсгийг хаях (sub-addressing)
-            $plusPos = \strpos($local, '+');
-            if ($plusPos !== false) {
-                $local = \substr($local, 0, $plusPos);
-            }
-
-            // Цэгүүдийг арилгах
-            $local = \str_replace('.', '', $local);
-
-            // googlemail.com -> gmail.com руу нэгтгэх
-            $domain = 'gmail.com';
-        }
-
-        return "$local@$domain";
-    }
-
-    /**
-     * Username нь санамсаргүй/утгагүй (gibberish) тэмдэгт мөн эсэхийг шалгах.
-     *
-     * Оноо-д суурилсан (scoring) систем ашиглана.
-     * Шалгуур бүр тодорхой оноо нэмэх бөгөөд нийт оноо босго давбал gibberish гэж үзнэ.
-     * Ингэснээр ганц шалгуурт баригдаж бодит хэрэглэгч хаагдахаас сэргийлнэ.
-     *
-     *  1) Shannon entropy          - санамсаргүй тэмдэгтийн мэдээллийн нягтрал
-     *  2) Эгшиг/гийгүүлэгчийн харьцаа - бодит нэрэнд эгшиг заавал байна
-     *  3) Дараалсан гийгүүлэгч     - урт дараалал сэжигтэй (гэхдээ ганцаараа reject хийхгүй)
-     *  4) Том/жижиг үсгийн солигдол - хэт олон солигдол бот-ын шинж
-     */
-    private function isGibberishUsername(string $username): bool
-    {
-        // Тоо, доогуур зураас, цэгийг хасаад зөвхөн үсгэн хэсгийг шалгана
-        $letters = \preg_replace('/[0-9_.]/', '', $username);
-        if (\strlen($letters) < 4) {
-            return false;
-        }
-
-        $score = 0;
-        $len = \strlen($letters);
-
-        // 1) Shannon entropy
-        $freq = \array_count_values(\str_split(\strtolower($letters)));
-        $entropy = 0.0;
-        foreach ($freq as $count) {
-            $p = $count / $len;
-            $entropy -= $p * \log($p, 2);
-        }
-        if ($len >= 8 && $entropy > 3.8) {
-            $score += 3; // Маш өндөр entropy → бараг гарцаагүй random
-        } elseif ($len >= 8 && $entropy > 3.5) {
-            $score += 2;
-        }
-
-        // 2) Эгшигийн харьцаа
-        $vowelCount = \preg_match_all('/[aeiouy]/i', $letters);
-        $vowelRatio = $vowelCount / $len;
-        if ($vowelRatio < 0.10) {
-            $score += 3; // Эгшиг бараг байхгүй
-        } elseif ($vowelRatio < 0.20) {
-            $score += 1;
-        }
-
-        // 3) Дараалсан гийгүүлэгч (6+ бол хүчтэй дохио, 5 бол бага оноо)
-        if (\preg_match('/[^aeiouy]{6}/i', $letters)) {
-            $score += 2;
-        } elseif (\preg_match('/[^aeiouy]{5}/i', $letters)) {
-            $score += 1;
-        }
-
-        // 4) Том/жижиг үсгийн солигдол
-        $caseChanges = 0;
-        for ($i = 1; $i < \strlen($username); $i++) {
-            if (
-                \ctype_alpha($username[$i]) && \ctype_alpha($username[$i - 1])
-                && \ctype_upper($username[$i]) !== \ctype_upper($username[$i - 1])
-            ) {
-                $caseChanges++;
-            }
-        }
-        $alphaLen = \preg_match_all('/[a-zA-Z]/', $username);
-        if ($alphaLen >= 8 && ($caseChanges / $alphaLen) > 0.5) {
-            $score += 3;
-        } elseif ($alphaLen >= 8 && ($caseChanges / $alphaLen) > 0.4) {
-            $score += 1;
-        }
-
-        // Нийт оноо 3+ бол gibberish гэж үзнэ
-        return $score >= 3;
-    }
+    // =========================================================================
+    // Authentication: Login / Logout / Organization
+    // =========================================================================
 
     /**
      * Login хуудасны үндсэн view-г рендерлэх controller action.
@@ -254,7 +108,7 @@ class LoginController extends \Raptor\Controller
         // Login template-г render хийх
         $login->render();
     }
-    
+
     /**
      * Хэрэглэгчийн нэвтрэх (login) оролдлогыг боловсруулах action.
      *
@@ -319,10 +173,11 @@ class LoginController extends \Raptor\Controller
 
             // 2) Хэрэглэгчийг username эсвэл email-аар хайх
             $users = new UsersModel($this->pdo);
+            $normalizedEmail = $this->normalizeEmail($payload['username']);
             $stmt = $users->prepare(
                 "SELECT * FROM {$users->getName()} WHERE (username=:usr OR email=:eml) LIMIT 1"
             );
-            $stmt->bindParam(':eml', $payload['username'], \PDO::PARAM_STR, $users->getColumn('email')->getLength());
+            $stmt->bindParam(':eml', $normalizedEmail, \PDO::PARAM_STR, $users->getColumn('email')->getLength());
             $stmt->bindParam(':usr', $payload['username'], \PDO::PARAM_STR, $users->getColumn('username')->getLength());
             if (!$stmt->execute() || $stmt->rowCount() != 1) {
                 throw new \Exception('Invalid username or password', 401);
@@ -381,7 +236,7 @@ class LoginController extends \Raptor\Controller
             } elseif ($user['code'] != $this->getLanguageCode()
                 && isset($this->getLanguages()[$user['code']])
             ) {
-                $_SESSION['RAPTOR_LANGUAGE_CODE'] = $user['code'];
+                $_SESSION[$this->getAttribute('localization')['session_key']] = $user['code'];
             }
 
         } catch (\Throwable $err) {
@@ -452,7 +307,150 @@ class LoginController extends \Raptor\Controller
         // 3) 'home' маршрут руу redirect хийх
         $this->redirectTo('home');
     }
-    
+
+    /**
+     * Нэвтэрсэн хэрэглэгч өөр байгууллагыг (organization) сонгох action.
+     *
+     * Raptor Framework-д хэрэглэгч нэгээс олон байгууллагад харьяалагдаж
+     * болдог. Энэ функц нь хэрэглэгч active session дотроо өөр байгууллага руу
+     * шилжих үед ажиллана.
+     *
+     * Workflow (алхам алхмаар):
+     * ---------------------------------------------------------------
+     *
+     * 1) Хэрэглэгч нэвтэрсэн эсэхийг шалгах
+     *    - Authorization байхгүй -> Exception (401)
+     *
+     * 2) Одоогийн байгууллагын ID-г тодорхойлох
+     *    - Хэрэв сонгож буй байгууллага одоогийнхоороо таарч байвал -> 400
+     *
+     * 3) Сонгосон байгууллага (organization) хүчинтэй эсэхийг шалгах
+     *    - id таарах, is_active=1 байх ёстой
+     *    - Олдохгүй бол -> Exception (403)
+     *
+     * 4) Хэрэглэгч сонгосон байгууллагад харьяалагддаг эсэхийг шалгах
+     *    - OrganizationUserModel -> retrieve(id, user_id)
+     *    - Олдохгүй бол -> 406 (User does not belong to organization)
+     *
+     * 5) Онцгой эрх: system_coder role
+     *    - Хэрэглэгч system_coder бол тухайн байгууллагад шууд нэмнэ
+     *      (auto-insert organization_user row).
+     *
+     * 6) JWT токен шинээр үүсгэх
+     *    - user_id + organization_id бүхий шинэ JWT
+     *    - Session-д RAPTOR_JWT шинэчилнэ
+     *
+     * 7) Лог бичих (log)
+     *    - Success -> LogLevel::NOTICE
+     *         "Хэрэглэгч ... байгууллага [id:x] сонгов"
+     *    - Error -> LogLevel::ERROR
+     *         "... алдаа илэрлээ"
+     *
+     * 8) Redirect хийх
+     *    - Referer байгаа бол -> түүн рүү буцаана
+     *    - Байхгүй бол -> home маршрут руу буцаана
+     *
+     * Security онцлогууд:
+     *   - Хэрэглэгч зөвхөн өөрийн харьяалагдсан байгууллага руу л орж чадна
+     *   - Шинэ JWT токен заавал үүсгэгдэнэ (old token-г ашиглах боломжгүй)
+     *   - system_coder role-ийн тусгай эрхийг framework-level дээр тодорхойлсон
+     *   - Actions бүр лог-т бүртгэгдэнэ (audit trail)
+     *
+     * @param int $id  Сонгож буй байгууллагын ID
+     * @return void Redirect хийнэ
+     */
+    public function selectOrganization(int $id)
+    {
+        try {
+            // 1) Хэрэглэгч нэвтэрсэн эсэх
+            if (!$this->isUserAuthorized()) {
+                throw new \Exception('Unauthorized', 401);
+            }
+
+            // 2) Одоогийн байгууллагын ID
+            $current_org_id = $this->getUser()->organization['id'];
+            if ($id == $current_org_id) {
+                throw new \Exception("Organization [$id] currently selected", 400);
+            }
+
+            // 3) Байгууллага хүчинтэй эсэхийг шалгах
+            $org_model = new OrganizationModel($this->pdo);
+            $organization = $org_model->getRowWhere([
+                'id'        => $id,
+                'is_active' => 1
+            ]);
+            if (!isset($organization['id'])) {
+                throw new \Exception('Invalid organization', 403);
+            }
+
+            // 4) Хэрэглэгч тухайн байгууллагад харьяалагдсан эсэх
+            $user_id = $this->getUserId();
+            $org_user_model = new OrganizationUserModel($this->pdo);
+            $org_user = $org_user_model->retrieve($id, $user_id);
+            if (empty($org_user)) {
+                // 5) Онцгой эрх: system_coder -> байгууллагад автоматаар нэмнэ
+                if (!$this->isUser('system_coder')) {
+                    throw new \Exception('User does not belong to an organization', 406);
+                }
+
+                if (
+                    empty($org_user_model->insert([
+                        'user_id'         => $user_id,
+                        'organization_id' => $id,
+                        'created_by'      => $user_id
+                    ]))
+                ) {
+                    throw new \RuntimeException('User can not select an organization');
+                }
+            }
+
+            // 6) JWT токен шинэчлэх
+            $jwt = (new JWTAuthMiddleware())->generate([
+                'user_id'         => $user_id,
+                'organization_id' => $id
+            ]);
+            $_SESSION['RAPTOR_JWT'] = $jwt;
+
+            // Success log
+            $this->log(
+                'dashboard',
+                LogLevel::NOTICE,
+                'Хэрэглэгч {auth_user.first_name} {auth_user.last_name} нэвтэрсэн байгууллага [id:{id}] сонгов',
+                ['action' => 'login-to-organization', 'id' => $id, 'leave' => $current_org_id]
+            );
+        } catch (\Throwable $err) {
+            // Error log
+            $this->log(
+                'dashboard',
+                LogLevel::ERROR,
+                'Хэрэглэгч нэвтэрсэн байгууллага [id:{id}] сонгохоор оролдох үед алдаа илэрлээ. {error.message}',
+                [
+                    'action' => 'login-to-organization',
+                    'id'     => $id,
+                    'error'  => [
+                        'code'    => $err->getCode(),
+                        'message' => $err->getMessage()
+                    ]
+                ]
+            );
+        }
+
+        // 8) Redirect logic
+        $home = $this->generateRouteLink('home');
+        if (isset($this->getRequest()->getServerParams()['HTTP_REFERER'])) {
+            $referer = \filter_var($this->getRequest()->getServerParams()['HTTP_REFERER'], \FILTER_SANITIZE_URL);
+            $location = \str_contains($referer, $home) ? $referer : $home;
+        } else {
+            $location = $home;
+        }
+        \header('Location: ' . $location, true, 302);
+        exit;
+    }
+
+    // =========================================================================
+    // Registration
+    // =========================================================================
+
     /**
      * Шинэ хэрэглэгч бүртгүүлэх (signup) хүсэлтийг боловсруулах action.
      *
@@ -656,7 +654,11 @@ class LoginController extends \Raptor\Controller
             );
         }
     }
-    
+
+    // =========================================================================
+    // Password Recovery
+    // =========================================================================
+
     /**
      * Нууц үг сэргээх (password reset) хүсэлт илгээх action.
      *
@@ -778,7 +780,7 @@ class LoginController extends \Raptor\Controller
             // 5) Reset email илгээх
             $memtemplate = new MemoryTemplate();
             $memtemplate->set('email',   $payload['email']);
-            $memtemplate->set('minutes', CODESAUR_PASSWORD_RESET_MINUTES);
+            $memtemplate->set('minutes', RAPTOR_PASSWORD_RESET_MINUTES);
             $memtemplate->set(
                 'link',
                 "{$this->generateRouteLink('login', [], true)}?forgot={$request['forgot_password']}"
@@ -831,7 +833,7 @@ class LoginController extends \Raptor\Controller
             );
         }
     }
-    
+
     /**
      * Нууц үг шинээр тааруулах (reset password) хуудсыг харуулах action.
      *
@@ -856,14 +858,14 @@ class LoginController extends \Raptor\Controller
      *
      * 2) Token-д тохирох хэл (code) шалгах
      *    - Хэрэв токенийх код != одоогийн localization code бол:
-     *        -> $_SESSION['RAPTOR_LANGUAGE_CODE'] = token.code
+     *        -> $_SESSION[$this->getAttribute('localization')['session_key']] = token.code
      *        -> login form руу redirect хийх (token-г хадгалсаар)
      *
      * 3) Token хугацаа дууссан эсэхийг шалгах
      *    - created_at-аас хойш:
      *        - өдрөөр, сараар, жилээр өөрчлөгдсөн бол -> дууссан
      *        - цаг >= 1 бол (тохиолдолд) -> дууссан
-     *        - минут >= CODESAUR_PASSWORD_RESET_MINUTES бол -> дууссан
+     *        - минут >= RAPTOR_PASSWORD_RESET_MINUTES бол -> дууссан
      *    - Хугацаа дууссан бол -> алдаа (403)
      *
      * 4) Template рүү өгөгдөл дамжуулах
@@ -908,11 +910,11 @@ class LoginController extends \Raptor\Controller
                 isset($this->getLanguages()[$code])
             ) {
                 // Localization middleware-д дамжуулах шинэ код
-                $_SESSION['RAPTOR_LANGUAGE_CODE'] = $code;
+                $_SESSION[$this->getAttribute('localization')['session_key']] = $code;
 
                 // Token-г хадгалсан чигээрээ login руу redirect
-                $link = $this->generateRouteLink('login') . "?forgot=$forgot_password";
-                \header("Location: $link", false, 302);
+                $link = $this->generateRouteLink('login') . '?forgot=' . \urlencode($forgot_password);
+                \header('Location: ' . \filter_var($link, \FILTER_SANITIZE_URL), true, 302);
                 exit;
             }
 
@@ -924,7 +926,7 @@ class LoginController extends \Raptor\Controller
                 $diff->m > 0 ||
                 $diff->d > 0 ||
                 $diff->h > 0 ||
-                $diff->i > CODESAUR_PASSWORD_RESET_MINUTES
+                $diff->i > RAPTOR_PASSWORD_RESET_MINUTES
             ) {
                 throw new \Exception(
                     'Хугацаа дууссан код ашиглан нууц үг шинээр тааруулахыг хүсэв',
@@ -966,7 +968,7 @@ class LoginController extends \Raptor\Controller
             );
         }
     }
-    
+
     /**
      * Нууц үг шинээр тохируулах (password reset submit) action.
      *
@@ -991,7 +993,7 @@ class LoginController extends \Raptor\Controller
      *
      * 3) Token хугацаа дууссан эсэхийг шалгах
      *    - created_at -> NOW() хүртэлх зөрүү
-     *    - минут >= CODESAUR_PASSWORD_RESET_MINUTES бол -> expired
+     *    - минут >= RAPTOR_PASSWORD_RESET_MINUTES бол -> expired
      *    - Алдаа -> 403
      *
      * 4) Хэрэглэгчийг шалгах
@@ -1080,7 +1082,7 @@ class LoginController extends \Raptor\Controller
                 || $diff->m > 0
                 || $diff->d > 0
                 || $diff->h > 0
-                || $diff->i > CODESAUR_PASSWORD_RESET_MINUTES
+                || $diff->i > RAPTOR_PASSWORD_RESET_MINUTES
             ) {
                 throw new \Exception(
                     'Хугацаа дууссан код ашиглан нууц үг шинээр тааруулахыг хүсэв',
@@ -1156,152 +1158,17 @@ class LoginController extends \Raptor\Controller
             );
         }
     }
-    
-    /**
-     * Нэвтэрсэн хэрэглэгч өөр байгууллагыг (organization) сонгох action.
-     *
-     * Raptor Framework-д хэрэглэгч нэгээс олон байгууллагад харьяалагдаж
-     * болдог. Энэ функц нь хэрэглэгч active session дотроо өөр байгууллага руу
-     * шилжих үед ажиллана.
-     *
-     * Workflow (алхам алхмаар):
-     * ---------------------------------------------------------------
-     *
-     * 1) Хэрэглэгч нэвтэрсэн эсэхийг шалгах
-     *    - Authorization байхгүй -> Exception (401)
-     *
-     * 2) Одоогийн байгууллагын ID-г тодорхойлох
-     *    - Хэрэв сонгож буй байгууллага одоогийнхоороо таарч байвал -> 400
-     *
-     * 3) Сонгосон байгууллага (organization) хүчинтэй эсэхийг шалгах
-     *    - id таарах, is_active=1 байх ёстой
-     *    - Олдохгүй бол -> Exception (403)
-     *
-     * 4) Хэрэглэгч сонгосон байгууллагад харьяалагддаг эсэхийг шалгах
-     *    - OrganizationUserModel -> retrieve(id, user_id)
-     *    - Олдохгүй бол -> 406 (User does not belong to organization)
-     *
-     * 5) Онцгой эрх: system_coder role
-     *    - Хэрэглэгч system_coder бол тухайн байгууллагад шууд нэмнэ
-     *      (auto-insert organization_user row).
-     *
-     * 6) JWT токен шинээр үүсгэх
-     *    - user_id + organization_id бүхий шинэ JWT
-     *    - Session-д RAPTOR_JWT шинэчилнэ
-     *
-     * 7) Лог бичих (log)
-     *    - Success -> LogLevel::NOTICE
-     *         "Хэрэглэгч ... байгууллага [id:x] сонгов"
-     *    - Error -> LogLevel::ERROR
-     *         "... алдаа илэрлээ"
-     *
-     * 8) Redirect хийх
-     *    - Referer байгаа бол -> түүн рүү буцаана
-     *    - Байхгүй бол -> home маршрут руу буцаана
-     *
-     * Security онцлогууд:
-     *   - Хэрэглэгч зөвхөн өөрийн харьяалагдсан байгууллага руу л орж чадна
-     *   - Шинэ JWT токен заавал үүсгэгдэнэ (old token-г ашиглах боломжгүй)
-     *   - system_coder role-ийн тусгай эрхийг framework-level дээр тодорхойлсон
-     *   - Actions бүр лог-т бүртгэгдэнэ (audit trail)
-     *
-     * @param int $id  Сонгож буй байгууллагын ID
-     * @return void Redirect хийнэ
-     */
-    public function selectOrganization(int $id)
-    {
-        try {
-            // 1) Хэрэглэгч нэвтэрсэн эсэх
-            if (!$this->isUserAuthorized()) {
-                throw new \Exception('Unauthorized', 401);
-            }
 
-            // 2) Одоогийн байгууллагын ID
-            $current_org_id = $this->getUser()->organization['id'];
-            if ($id == $current_org_id) {
-                throw new \Exception("Organization [$id] currently selected", 400);
-            }
+    // =========================================================================
+    // UI / Settings
+    // =========================================================================
 
-            // 3) Байгууллага хүчинтэй эсэхийг шалгах
-            $org_model = new OrganizationModel($this->pdo);
-            $organization = $org_model->getRowWhere([
-                'id'        => $id,
-                'is_active' => 1
-            ]);
-            if (!isset($organization['id'])) {
-                throw new \Exception('Invalid organization', 403);
-            }
-
-            // 4) Хэрэглэгч тухайн байгууллагад харьяалагдсан эсэх
-            $user_id = $this->getUserId();
-            $org_user_model = new OrganizationUserModel($this->pdo);
-            $org_user = $org_user_model->retrieve($id, $user_id);
-            if (empty($org_user)) {
-                // 5) Онцгой эрх: system_coder -> байгууллагад автоматаар нэмнэ
-                if (!$this->isUser('system_coder')) {
-                    throw new \Exception('User does not belong to an organization', 406);
-                }
-
-                if (
-                    empty($org_user_model->insert([
-                        'user_id'         => $user_id,
-                        'organization_id' => $id,
-                        'created_by'      => $user_id
-                    ]))
-                ) {
-                    throw new \RuntimeException('User can not select an organization');
-                }
-            }
-
-            // 6) JWT токен шинэчлэх
-            $jwt = (new JWTAuthMiddleware())->generate([
-                'user_id'         => $user_id,
-                'organization_id' => $id
-            ]);
-            $_SESSION['RAPTOR_JWT'] = $jwt;
-
-            // Success log
-            $this->log(
-                'dashboard',
-                LogLevel::NOTICE,
-                'Хэрэглэгч {auth_user.first_name} {auth_user.last_name} нэвтэрсэн байгууллага [id:{id}] сонгов',
-                ['action' => 'login-to-organization', 'id' => $id, 'leave' => $current_org_id]
-            );
-        } catch (\Throwable $err) {
-            // Error log
-            $this->log(
-                'dashboard',
-                LogLevel::ERROR,
-                'Хэрэглэгч нэвтэрсэн байгууллага [id:{id}] сонгохоор оролдох үед алдаа илэрлээ. {error.message}',
-                [
-                    'action' => 'login-to-organization',
-                    'id'     => $id,
-                    'error'  => [
-                        'code'    => $err->getCode(),
-                        'message' => $err->getMessage()
-                    ]
-                ]
-            );
-        }
-
-        // 8) Redirect logic
-        $home = $this->generateRouteLink('home');
-        if (isset($this->getRequest()->getServerParams()['HTTP_REFERER'])) {
-            $referer = $this->getRequest()->getServerParams()['HTTP_REFERER'];
-            $location = \str_contains($referer, $home) ? $referer : $home;
-        } else {
-            $location = $home;
-        }
-        \header("Location: $location", false, 302);
-        exit;
-    }
-    
     /**
      * Системд ажиллах хэл (localization language)-ийг солих action.
      *
      * Энэ action нь хэрэглэгч footer/header дээрээс хэл сонгох үед ажиллана.
      * LocalizationMiddleware дараагийн хүсэлт дээр гарч ирэх хэлийг
-     * $_SESSION['RAPTOR_LANGUAGE_CODE'] утгаар тодорхойлдог.
+     * $_SESSION[$this->getAttribute('localization')['session_key']] утгаар тодорхойлдог.
      *
      * Workflow (алхам алхмаар):
      * ---------------------------------------------------------------
@@ -1314,7 +1181,7 @@ class LoginController extends \Raptor\Controller
      *      -> Хэрэв байхгүй бол юу ч хийхгүй, шууд redirect
      *
      * 3) code өөр байвал хэлний сонголтыг session-д хадгална:
-     *       $_SESSION['RAPTOR_LANGUAGE_CODE'] = $code
+     *       $_SESSION[$this->getAttribute('localization')['session_key']] = $code
      *
      * 4) Хэрвээ хэрэглэгч нэвтэрсэн бол:
      *       - UsersModel -> хэрэглэгчийн profile дахь 'code' талбарыг update хийнэ
@@ -1343,13 +1210,13 @@ class LoginController extends \Raptor\Controller
         // 2) Хэл бүртгэлтэй эсэх, мөн өөр хэл байгаа эсэхийг шалгах
         if (isset($language[$code]) && $code != $from) {
             // 3) Session-д хадгалах -> LocalizationMiddleware уншиж хэрэглэнэ
-            $_SESSION['RAPTOR_LANGUAGE_CODE'] = $code;
+            $_SESSION[$this->getAttribute('localization')['session_key']] = $code;
 
             // 4) Хэрэглэгч нэвтэрсэн бол -> profile update + log
             if ($this->isUserAuthorized()) {
                 $user = $this->getUser()->profile;
                 (new UsersModel($this->pdo))->updateById($user['id'], ['code' => $code]);
-                
+
                 $this->log(
                     'dashboard',
                     LogLevel::NOTICE,
@@ -1367,15 +1234,172 @@ class LoginController extends \Raptor\Controller
         $script_path = $this->getScriptPath();
         $home        = (string) $this->getRequest()->getUri()->withPath($script_path);
         if (isset($this->getRequest()->getServerParams()['HTTP_REFERER'])) {
-            $referer  = $this->getRequest()->getServerParams()['HTTP_REFERER'];
+            $referer  = \filter_var($this->getRequest()->getServerParams()['HTTP_REFERER'], \FILTER_SANITIZE_URL);
             $location = \str_contains($referer, $home) ? $referer : $home;
         } else {
             $location = $home;
         }
-        \header("Location: $location", false, 302);
+        \header('Location: ' . $location, true, 302);
         exit;
     }
-    
+
+    // =========================================================================
+    // Private Helpers
+    // =========================================================================
+
+    /**
+     * Spam хамгаалалт шалгах.
+     *
+     * Honeypot, HMAC token, хурд, хугацаа, rate limit шалгана.
+     *
+     * @param string $sessionKey  Rate limit session түлхүүр
+     * @param int    $rateSeconds Rate limit хугацаа (секунд)
+     */
+    private function spamCheck(string $sessionKey = '_last_login_at', int $rateSeconds = 3)
+    {
+        $payload = $this->getParsedBody();
+
+        // 1) Honeypot
+        if (!empty($payload['website'])) {
+            throw new \Exception('Invalid request', 400);
+        }
+
+        // 2) HMAC token шалгалт
+        $ts = (int)($payload['_ts'] ?? 0);
+        $token = $payload['_token'] ?? '';
+        $secret = $_ENV['RAPTOR_JWT_SECRET'] ?? 'raptor-form-secret';
+        $expected = \hash_hmac('sha256', "login-form-$ts", $secret);
+        if (!\hash_equals($expected, $token)) {
+            throw new \Exception('Invalid request', 403);
+        }
+
+        // 3) 1 секундээс хурдан бол бот (auto-fill хэрэглэгчдэд зөвшөөрөх)
+        $elapsed = \time() - $ts;
+        if ($elapsed < 1) {
+            throw new \Exception('Invalid request', 429);
+        }
+
+        // 4) 1 цагаас хэтэрсэн form хүчингүй
+        if ($elapsed > 3600) {
+            throw new \Exception($this->text('invalid-request'), 400);
+        }
+
+        // 5) Rate limit
+        $now = \time();
+        $last = $_SESSION[$sessionKey] ?? 0;
+        if ($now - $last < $rateSeconds) {
+            throw new \Exception($this->text('invalid-request'), 429);
+        }
+        $_SESSION[$sessionKey] = $now;
+    }
+
+    /**
+     * Gmail болон түгээмэл email provider-ийн alias/dot trick-ийг арилгах.
+     *
+     * Gmail дээр цэг (.) ялгаа байхгүй: test.user@gmail.com == testuser@gmail.com
+     * Мөн + тэмдэгтийн ард байгаа хэсгийг хаях (sub-addressing).
+     */
+    private function normalizeEmail(string $email): string
+    {
+        $email = \strtolower(\trim($email));
+        if (\strpos($email, '@') === false) {
+            return $email;
+        }
+        [$local, $domain] = \explode('@', $email, 2);
+
+        // Gmail болон Google-ийн домайнууд
+        $gmailDomains = ['gmail.com', 'googlemail.com'];
+
+        if (\in_array($domain, $gmailDomains, true)) {
+            // + хойшхи хэсгийг хаях (sub-addressing)
+            $plusPos = \strpos($local, '+');
+            if ($plusPos !== false) {
+                $local = \substr($local, 0, $plusPos);
+            }
+
+            // Цэгүүдийг арилгах
+            $local = \str_replace('.', '', $local);
+
+            // googlemail.com -> gmail.com руу нэгтгэх
+            $domain = 'gmail.com';
+        }
+
+        return "$local@$domain";
+    }
+
+    /**
+     * Username нь санамсаргүй/утгагүй (gibberish) тэмдэгт мөн эсэхийг шалгах.
+     *
+     * Оноо-д суурилсан (scoring) систем ашиглана.
+     * Шалгуур бүр тодорхой оноо нэмэх бөгөөд нийт оноо босго давбал gibberish гэж үзнэ.
+     * Ингэснээр ганц шалгуурт баригдаж бодит хэрэглэгч хаагдахаас сэргийлнэ.
+     *
+     *  1) Shannon entropy          - санамсаргүй тэмдэгтийн мэдээллийн нягтрал
+     *  2) Эгшиг/гийгүүлэгчийн харьцаа - бодит нэрэнд эгшиг заавал байна
+     *  3) Дараалсан гийгүүлэгч     - урт дараалал сэжигтэй (гэхдээ ганцаараа reject хийхгүй)
+     *  4) Том/жижиг үсгийн солигдол - хэт олон солигдол бот-ын шинж
+     */
+    private function isGibberishUsername(string $username): bool
+    {
+        // Тоо, доогуур зураас, цэгийг хасаад зөвхөн үсгэн хэсгийг шалгана
+        $letters = \preg_replace('/[0-9_.]/', '', $username);
+        if (\strlen($letters) < 4) {
+            return false;
+        }
+
+        $score = 0;
+        $len = \strlen($letters);
+
+        // 1) Shannon entropy
+        $freq = \array_count_values(\str_split(\strtolower($letters)));
+        $entropy = 0.0;
+        foreach ($freq as $count) {
+            $p = $count / $len;
+            $entropy -= $p * \log($p, 2);
+        }
+        if ($len >= 8 && $entropy > 3.8) {
+            $score += 3; // Маш өндөр entropy → бараг гарцаагүй random
+        } elseif ($len >= 8 && $entropy > 3.5) {
+            $score += 2;
+        }
+
+        // 2) Эгшигийн харьцаа
+        $vowelCount = \preg_match_all('/[aeiouy]/i', $letters);
+        $vowelRatio = $vowelCount / $len;
+        if ($vowelRatio < 0.10) {
+            $score += 3; // Эгшиг бараг байхгүй
+        } elseif ($vowelRatio < 0.20) {
+            $score += 1;
+        }
+
+        // 3) Дараалсан гийгүүлэгч (6+ бол хүчтэй дохио, 5 бол бага оноо)
+        if (\preg_match('/[^aeiouy]{6}/i', $letters)) {
+            $score += 2;
+        } elseif (\preg_match('/[^aeiouy]{5}/i', $letters)) {
+            $score += 1;
+        }
+
+        // 4) Том/жижиг үсгийн солигдол
+        $caseChanges = 0;
+        for ($i = 1; $i < \strlen($username); $i++) {
+            if (
+                \ctype_alpha($username[$i]) && \ctype_alpha($username[$i - 1])
+                && \ctype_upper($username[$i]) !== \ctype_upper($username[$i - 1])
+            ) {
+                $caseChanges++;
+            }
+        }
+        $alphaLen = \preg_match_all('/[a-zA-Z]/', $username);
+        if ($alphaLen >= 8 && ($caseChanges / $alphaLen) > 0.5) {
+            $score += 3;
+        } elseif ($alphaLen >= 8 && ($caseChanges / $alphaLen) > 0.4) {
+            $score += 1;
+        }
+
+        // Нийт оноо 3+ бол gibberish гэж үзнэ
+        return $score >= 3;
+    }
+
     /**
      * Хэрэглэгчийн хамгийн сүүлд нэвтэрсэн байгууллагын ID-г олж буцаах.
      *

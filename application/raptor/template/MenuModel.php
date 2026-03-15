@@ -89,233 +89,15 @@ class MenuModel extends LocalizedModel
         // Цэсний мод бүтэц, эрэмбэлэлтийн гүйцэтгэлийг сайжруулах индекс
         $this->exec("CREATE INDEX {$table}_idx_parent_id ON $table (parent_id)");
 
-        // --- Base URL (subfolder дотор суусан тохиолдолд зөв линк үүсгэх) ---
-        $path = \dirname($_SERVER['SCRIPT_NAME'] ?? '/');
-        if ($path == '\\' || $path == '/' || $path == '.') {
-            $path = '';
-        }
-        
-        /**
-         * ----------------------------------------
-         * 1. CONTENTS үндсэн хэсэг
-         * ----------------------------------------
-         */
-        $contents = $this->insert(
-            ['position' => '100'],
-            ['mn' => ['title' => 'Агуулгууд'], 'en' => ['title' => 'Contents']]
-        );
-        if (isset($contents['id'])) {
-            // Public веб сайт руу очих линк
-            $this->insert(
-                [
-                    'parent_id' => $contents['id'],
-                    'position' => '110',
-                    'alias' => 'system',
-                    'icon' => 'bi bi-rocket-takeoff',
-                    'href' => "$path/home\" target=\"__blank"
-                ],
-                ['mn' => ['title' => 'Веблүү очих'], 'en' => ['title' => 'Visit Website']]
-            );
-            // Хуудсууд
-            $this->insert(
-                [
-                    'parent_id' => $contents['id'],
-                    'position' => '120',
-                    'alias' => 'system',
-                    'permission' => 'system_content_index',
-                    'icon' => 'bi bi-book-half',
-                    'href' => "$path/dashboard/pages/nav"
-                ],
-                ['mn' => ['title' => 'Хуудсууд'], 'en' => ['title' => 'Pages']]
-            );
-            // Мэдээнүүд
-            $this->insert(
-                [
-                    'parent_id' => $contents['id'],
-                    'position' => '130',
-                    'alias' => 'system',
-                    'permission' => 'system_content_index',
-                    'icon' => 'bi bi-newspaper',
-                    'href' => "$path/dashboard/news"
-                ],
-                ['mn' => ['title' => 'Мэдээнүүд'], 'en' => ['title' => 'News']]
-            );
-            // Файлууд
-            $this->insert(
-                [
-                    'parent_id' => $contents['id'],
-                    'position' => '140',
-                    'alias' => 'system',
-                    'permission' => 'system_content_index',
-                    'icon' => 'bi bi-folder',
-                    'href' => "$path/dashboard/files"
-                ],
-                ['mn' => ['title' => 'Файлууд'], 'en' => ['title' => 'Files']]
-            );
-            // Localization
-            $this->insert(
-                [
-                    'parent_id' => $contents['id'],
-                    'position' => '150',
-                    'alias' => 'system',
-                    'permission' => 'system_localization_index',
-                    'icon' => 'bi bi-translate',
-                    'href' => "$path/dashboard/localization"
-                ],
-                ['mn' => ['title' => 'Нутагшуулалт'], 'en' => ['title' => 'Localization']]
-            );
-            // Reference tables
-            $this->insert(
-                [
-                    'parent_id' => $contents['id'],
-                    'position' => '160',
-                    'alias' => 'system',
-                    'permission' => 'system_templates_index',
-                    'icon' => 'bi bi-layout-wtf',
-                    'href' => "$path/dashboard/references"
-                ],
-                ['mn' => ['title' => 'Лавлах хүснэгтүүд'], 'en' => ['title' => 'Reference Tables']]
-            );
-            // Settings
-            $this->insert(
-                [
-                    'parent_id' => $contents['id'],
-                    'position' => '170',
-                    'alias' => 'system',
-                    'permission' => 'system_content_settings',
-                    'icon' => 'bi bi-gear-wide-connected',
-                    'href' => "$path/dashboard/settings"
-                ],
-                ['mn' => ['title' => 'Тохируулгууд'], 'en' => ['title' => 'Settings']]
-            );
-        }
-
-        /**
-         * ----------------------------------------
-         * 2. ХУДАЛДАА (Products & Orders)
-         * ----------------------------------------
-         */
-        $shop = $this->insert(
-            ['position' => '200'],
-            ['mn' => ['title' => 'Дэлгүүр'], 'en' => ['title' => 'Shop']]
-        );
-        if (isset($shop['id'])) {
-            // Бүтээгдэхүүнүүд
-            $this->insert(
-                [
-                    'parent_id' => $shop['id'],
-                    'position' => '210',
-                    'alias' => 'system',
-                    'permission' => 'system_content_index',
-                    'icon' => 'bi bi-box2-heart',
-                    'href' => "$path/dashboard/products"
-                ],
-                ['mn' => ['title' => 'Бүтээгдэхүүнүүд'], 'en' => ['title' => 'Products']]
-            );
-            // Захиалгууд
-            $this->insert(
-                [
-                    'parent_id' => $shop['id'],
-                    'position' => '220',
-                    'alias' => 'system',
-                    'permission' => 'system_content_index',
-                    'icon' => 'bi bi-cart3',
-                    'href' => "$path/dashboard/orders"
-                ],
-                ['mn' => ['title' => 'Захиалгууд'], 'en' => ['title' => 'Orders']]
-            );
-        }
-
-        /**
-         * ----------------------------------------
-         * 3. SYSTEM үндсэн хэсэг
-         * ----------------------------------------
-         */
-        $system = $this->insert(
-            ['position' => '300'],
-            ['mn' => ['title' => 'Систем'], 'en' => ['title' => 'System']]
-        );
-        if (isset($system['id'])) {
-            // Хэрэглэгчид
-            $this->insert(
-                [
-                    'parent_id' => $system['id'],
-                    'position' => '310',
-                    'permission' => 'system_user_index',
-                    'icon' => 'bi bi-people-fill',
-                    'href' => "$path/dashboard/users"
-                ],
-                ['mn' => ['title' => 'Хэрэглэгчид'], 'en' => ['title' => 'Users']]
-            );
-            // Байгууллагууд
-            $this->insert(
-                [
-                    'parent_id' => $system['id'],
-                    'position' => '320',
-                    'permission' => 'system_organization_index',
-                    'icon' => 'bi bi-building',
-                    'href' => "$path/dashboard/organizations"
-                ],
-                ['mn' => ['title' => 'Байгууллагууд'], 'en' => ['title' => 'Organizations']]
-            );
-            // Logs
-            $this->insert(
-                [
-                    'parent_id' => $system['id'],
-                    'position' => '330',
-                    'permission' => 'system_logger',
-                    'icon' => 'bi bi-list-stars',
-                    'href' => "$path/dashboard/logs"
-                ],
-                ['mn' => ['title' => 'Хандалтын протокол'], 'en' => ['title' => 'Access logs']]
-            );
-            // Хөгжүүлэлтийн хүсэлт
-            $this->insert(
-                [
-                    'parent_id' => $system['id'],
-                    'position' => '340',
-                    'alias' => 'system',
-                    'icon' => 'bi bi-code-slash',
-                    'href' => "$path/dashboard/dev-requests"
-                ],
-                ['mn' => ['title' => 'Хөгжүүлэлтийн хүсэлт'], 'en' => ['title' => 'Dev Requests']]
-            );
-            
-            // Raptor Migrations & Цэс удирдах
-            //
-            // permission => 'system_coder' тайлбар:
-            // 'system_coder' нь RBAC permission биш, RBAC role юм.
-            // Ийм нэртэй permission rbac_permissions хүснэгтэд байхгүй (Permissions::insert()-д хамгаалалттай).
-            // Sidebar filter нь isUserCan($permission) ашигладаг бөгөөд system_coder role-тэй
-            // хэрэглэгчид isUserCan() бүх утганд true буцаадаг тул зөвхөн coder-д харагдана.
-            // Бусад хэрэглэгчдэд 'system_coder' permission олдохгүй -> isUserCan() = false -> нуугдана.
-            $this->insert(
-                [
-                    'parent_id' => $system['id'],
-                    'position' => '350',
-                    'alias' => 'system',
-                    'permission' => 'system_coder',
-                    'icon' => 'bi bi-database-gear',
-                    'href' => "$path/dashboard/migrations"
-                ],
-                ['mn' => ['title' => 'Database Migrations'], 'en' => ['title' => 'Database Migrations']]
-            );
-            $this->insert(
-                [
-                    'parent_id' => $system['id'],
-                    'position' => '360',
-                    'alias' => 'system',
-                    'permission' => 'system_coder',
-                    'icon' => 'bi bi-menu-button-wide-fill',
-                    'href' => "$path/dashboard/manage/menu"
-                ],
-                ['mn' => ['title' => 'Цэс удирдах'], 'en' => ['title' => 'Manage Menu']]
-            );
-        }
+        DashboardMenus::seed($this);
     }
 
     /**
      * Insert хийж буй үед created_at автоматаар бөглөгдөнө.
+     *
+     * @param array $record  Үндсэн хүснэгтийн өгөгдөл
+     * @param array $content Олон хэлний контент
+     * @return array|false Амжилттай бол бичлэгийн массив, бусад тохиолдолд false
      */
     public function insert(array $record, array $content): array|false
     {
@@ -324,7 +106,12 @@ class MenuModel extends LocalizedModel
     }
 
     /**
-     * update үед updated_at автоматаар шинэчлэгдэнэ.
+     * Update хийх үед updated_at автоматаар шинэчлэгдэнэ.
+     *
+     * @param int   $id      Бичлэгийн ID
+     * @param array $record  Үндсэн хүснэгтийн өгөгдөл
+     * @param array $content Олон хэлний контент
+     * @return array|false Амжилттай бол шинэчилсэн бичлэг, бусад тохиолдолд false
      */
     public function updateById(int $id, array $record, array $content): array|false
     {

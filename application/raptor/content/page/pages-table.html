@@ -1,13 +1,14 @@
 <script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <!-- ========== ТОЛГОЙ ХЭСЭГ ========== -->
-<div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 shadow">
-    <h3 class="px-2 my-auto fs-5 text-primary text-uppercase">
-        <i class="bi bi-book-half"></i> {{ 'pages'|text }}
-    </h3>
-    <div class="ms-auto">
-        <a class="btn btn-outline-primary text-uppercase shadow-sm" href="{{ 'pages-nav'|link }}">
+<div class="d-flex justify-content-between align-items-center">
+    <h5 class="text-primary text-uppercase"><i class="bi bi-book-half"></i> {{ 'pages'|text }}</h5>
+    <div>
+        <a class="btn btn-sm btn-outline-primary text-uppercase" href="{{ 'pages'|link }}">
             <i class="bi bi-diagram-3"></i> {{ 'navigation'|text }}
+        </a>
+        <a class="btn btn-sm btn-outline-secondary" href="{{ 'manual-view'|link({'file': 'pages-manual-' ~ localization.code ~ '.html'}) }}" title="{{ 'manual'|text }}" target="_blank">
+            <i class="bi bi-question-circle"></i>
         </a>
     </div>
 </div>
@@ -274,14 +275,14 @@
                 }
                 const id = btn.value;
                 const title = thisRow.children[3].textContent.replace(/<\/?[^>]+(>|$)/g, '');
-                let question = `<p class="text-danger mb-3">{{ 'confirm-deactivate'|text|e('js') }}: (${title})?</p>`;
+                let question = `<h5>${title}</h5><p class="text-danger mb-3">{{ 'confirm-deactivate'|text|e('js') }}?</p>`;
 
                 let src = '';
                 const photo = thisRow.children[2].querySelector('img');
                 if (photo && photo.src) {
                     src = photo.src;
                 } else {
-                    question = `<i class="bi bi-question-circle text-danger mb-4" style="font-size:3rem"></i><p>${question}</p>`;
+                    question = `<i class="bi bi-question-circle text-danger mb-4" style="font-size:3rem"></i>${question}`;
                 }
                 Swal.fire({
                     imageUrl: src,

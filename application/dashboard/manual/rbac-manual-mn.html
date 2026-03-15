@@ -1,0 +1,189 @@
+<div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-3 shadow bg-secondary">
+    <h3 class="px-2 my-auto fs-6 text-white">
+        <i class="bi bi-book"></i> RBAC - Гарын авлага
+    </h3>
+    <a href="{{ 'manual' | link }}" class="btn btn-sm btn-light m-1">
+        <i class="bi bi-arrow-left"></i> {{ 'manual' | text }}
+    </a>
+</div>
+
+<!-- ==================== ТОЙМ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-shield-fill-check"></i> RBAC (Role-Based Access Control) гэж юу вэ?</h4>
+        <p>
+            Хэрэглэгчдийн эрхийн удирдлагын модуль.
+            Дүр (Role) болон Эрх (Permission) хоёрын хослолоор хэрэглэгч бүрийн хандах эрхийг тодорхойлно.
+            Байгууллага бүрт тусдаа RBAC alias-ээр эрхийн бүлэг үүсгэнэ.
+        </p>
+        <ul>
+            <li><strong>Alias систем</strong> - Байгууллага бүрт тусдаа alias (жишээ: <code>system</code>, <code>common</code>, <code>university</code>)</li>
+            <li><strong>Дүр (Role)</strong> - Хэрэглэгчид оноогдох дүр (admin, manager, editor, viewer гэх мэт)</li>
+            <li><strong>Эрх (Permission)</strong> - Тодорхой үйлдэл хийх зөвшөөрөл (<code>user_insert</code>, <code>content_delete</code> гэх мэт)</li>
+            <li><strong>Матриц харагдац</strong> - Дүр x Эрх хүснэгтээр нүд бүрт checkbox-оор удирдана</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== МАТРИЦ ХҮСНЭГТ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-grid-3x3"></i> Матриц хүснэгт</h4>
+        <p>RBAC-ийн үндсэн хуудас нь дүр (мөр) x эрх (багана) хүснэгт хэлбэрээр харагдана.</p>
+        <ul>
+            <li>Checkbox тэмдэглэхэд тухайн дүрт эрх оноогдоно (AJAX POST)</li>
+            <li>Checkbox арилгахад эрх хасагдана (AJAX DELETE)</li>
+            <li>Эрхүүд модулиар бүлэглэгдсэн (<code>user</code>, <code>content</code>, <code>product</code>, <code>localization</code> гэх мэт)</li>
+            <li>Баруун дээд талд <strong>Add Role</strong>, <strong>Add Permission</strong> товчнууд</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== ALIAS ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-diagram-3"></i> Alias</h4>
+        <p>Байгууллага бүрт тусдаа RBAC alias бий. Alias-ийн дор дүрүүд ба эрхүүд бүлэглэгдэнэ.</p>
+        <ul>
+            <li><code>system</code> - Системийн үндсэн alias</li>
+            <li><code>common</code> - Олон байгууллагад нийтлэг alias, common alias-тай байгууллагуудын хэрэглэгчдийн эрх нийтлэг удирдагдана</li>
+            <li>Байгууллагын alias (жишээ: <code>university</code>) - Тусдаа эрхийн бүлэг</li>
+            <li>Байгууллагын жагсаалтаас alias дээр дарахад RBAC матриц руу шилжинэ (Дэлгэрэнгүй: <a href="{{ 'manual-view' | link({'file': 'organizations-manual-' ~ localization.code ~ '.html'}) }}">Байгууллага manual</a>)</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== АНХДАГЧ ДҮРҮҮД ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-person-badge"></i> Анхдагч дүрүүд (system alias)</h4>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Дүр</th><th>Тайлбар</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><code>coder</code></td><td>Системийн супер-админ, бүх эрхтэй (RBAC матрицад харагдахгүй)</td></tr>
+                <tr><td><code>admin</code></td><td>Бүрэн удирдлага (хөгжүүлэлтээс бусад)</td></tr>
+                <tr><td><code>manager</code></td><td>Хэрэглэгч, контент, нутагшуулалт удирдах</td></tr>
+                <tr><td><code>editor</code></td><td>Контент үүсгэх, засварлах</td></tr>
+                <tr><td><code>viewer</code></td><td>Зөвхөн харах</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ==================== АНХДАГЧ ЭРХҮҮД ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-key"></i> Анхдагч эрхүүд (system alias)</h4>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Модуль</th><th>Эрх</th><th>Тайлбар</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><strong>Log</strong></td><td><code>logger</code></td><td>Лог харах</td></tr>
+                <tr><td rowspan="6"><strong>User</strong></td><td><code>rbac</code></td><td>RBAC удирдах</td></tr>
+                <tr><td><code>user_index</code></td><td>Жагсаалт</td></tr>
+                <tr><td><code>user_insert</code></td><td>Шинэ</td></tr>
+                <tr><td><code>user_update</code></td><td>Засах</td></tr>
+                <tr><td><code>user_delete</code></td><td>Устгах</td></tr>
+                <tr><td><code>user_organization_set</code></td><td>Байгууллага оноох</td></tr>
+                <tr><td rowspan="4"><strong>Organization</strong></td><td><code>organization_index</code></td><td>Жагсаалт</td></tr>
+                <tr><td><code>organization_insert</code></td><td>Шинэ</td></tr>
+                <tr><td><code>organization_update</code></td><td>Засах</td></tr>
+                <tr><td><code>organization_delete</code></td><td>Устгах</td></tr>
+                <tr><td rowspan="5"><strong>Content</strong></td><td><code>content_settings</code></td><td>Тохиргоо</td></tr>
+                <tr><td><code>content_index</code></td><td>Жагсаалт</td></tr>
+                <tr><td><code>content_insert</code></td><td>Шинэ</td></tr>
+                <tr><td><code>content_update</code></td><td>Засах</td></tr>
+                <tr><td><code>content_publish</code></td><td>Нийтлэх</td></tr>
+                <tr><td></td><td><code>content_delete</code></td><td>Устгах</td></tr>
+                <tr><td rowspan="5"><strong>Product</strong></td><td><code>product_index</code></td><td>Жагсаалт</td></tr>
+                <tr><td><code>product_insert</code></td><td>Шинэ</td></tr>
+                <tr><td><code>product_update</code></td><td>Засах</td></tr>
+                <tr><td><code>product_publish</code></td><td>Нийтлэх</td></tr>
+                <tr><td><code>product_delete</code></td><td>Устгах</td></tr>
+                <tr><td rowspan="4"><strong>Localization</strong></td><td><code>localization_index</code></td><td>Жагсаалт</td></tr>
+                <tr><td><code>localization_insert</code></td><td>Шинэ</td></tr>
+                <tr><td><code>localization_update</code></td><td>Засах</td></tr>
+                <tr><td><code>localization_delete</code></td><td>Устгах</td></tr>
+                <tr><td><strong>Template</strong></td><td><code>templates_index</code></td><td>Загвар харах</td></tr>
+                <tr><td><strong>Development</strong></td><td><code>development</code></td><td>Хөгжүүлэлт</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ==================== ШИНЭ ДҮР НЭМЭХ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-person-plus"></i> Шинэ дүр нэмэх</h4>
+        <p>Modal хэлбэрээр. Талбарууд:</p>
+        <ul>
+            <li><strong>Нэр (name)</strong> - заавал, давтагдахгүй, 128 тэмдэгт хүртэл</li>
+            <li><strong>Тайлбар (description)</strong> - заавал биш</li>
+        </ul>
+        <div class="alert alert-warning mb-0">
+            <i class="bi bi-exclamation-triangle"></i>
+            <code>system</code> alias-д <code>coder</code> нэртэй дүр үүсгэх боломжгүй (системд нөөцлөгдсөн).
+        </div>
+    </div>
+</div>
+
+<!-- ==================== ШИНЭ ЭРХ НЭМЭХ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-plus-shield"></i> Шинэ эрх нэмэх</h4>
+        <p>Modal хэлбэрээр. Талбарууд:</p>
+        <ul>
+            <li><strong>Модуль (module)</strong> - заавал биш, байгаа модулиудаас сонгох эсвэл шинэ бичих (анхдагч: <code>general</code>)</li>
+            <li><strong>Нэр (name)</strong> - заавал, давтагдахгүй, 128 тэмдэгт</li>
+            <li><strong>Тайлбар (description)</strong> - заавал биш</li>
+        </ul>
+        <div class="alert alert-warning mb-0">
+            <i class="bi bi-exclamation-triangle"></i>
+            <code>system_coder</code> нэртэй эрх үүсгэх боломжгүй (нөөцлөгдсөн).
+        </div>
+    </div>
+</div>
+
+<!-- ==================== ЭРХ ШАЛГАХ МЕХАНИЗМ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-check2-circle"></i> Эрх шалгах механизм</h4>
+        <p>
+            Хэрэглэгч нэвтрэхэд RBAC системд бүх дүрүүд болон тэдгээрийн эрхүүдийг санах ойд ачаална.
+            Эрх шалгах key формат: <code>{alias}_{name}</code>
+            (жишээ: <code>system_rbac</code>, <code>system_content_delete</code>).
+        </p>
+        <ul>
+            <li><code>system_coder</code> дүртэй хэрэглэгч бүх эрхтэй (шалгалт хийхгүй)</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== ЛОГ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-journal-text"></i> Лог</h4>
+        <p>
+            <code>system_logger</code> эрхтэй бол хуудасны доод хэсэгт RBAC-тай холбоотой сүүлийн үйлдлүүдийн лог харагдана.
+        </p>
+    </div>
+</div>
+
+<!-- ==================== ШААРДЛАГАТАЙ ЭРХҮҮД ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-lock"></i> Шаардлагатай эрхүүд</h4>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Үйлдэл</th><th>Эрх</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>RBAC матриц харах, дүр/эрх нэмэх, эрх оноох/хасах</td><td><code>system_rbac</code></td></tr>
+                <tr><td>Лог харах</td><td><code>system_logger</code></td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>

@@ -12,74 +12,113 @@
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-4Q6Gf2aSP4eDXB8Miphtr37CMZZQ5oXLH2yaXMJ2w8e2ZtHTl7GptT4jmndRuHDT" crossorigin="anonymous">
         <script defer src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js" integrity="sha384-j1CDi7MgGQ12Z7Qab0qlWQ/Qqz24Gc6BM0thvEMVjHnfYGF0rmFCozFSxQBxwHKO" crossorigin="anonymous"></script>
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
-        <link href="{{ index }}/assets/dashboard/dashboard.css" rel="stylesheet">
-        <script defer src="{{ index }}/assets/dashboard/dashboard.js"></script>
+        <link href="{{ index }}/assets/dashboard/dashboard.css?v=1" rel="stylesheet">
+        <script defer src="{{ index }}/assets/dashboard/dashboard.js?v=1"></script>
         <link href="{{ index }}/assets/motable/motable.css" rel="stylesheet">
         <script defer src="{{ index }}/assets/motable/motable.js"></script>
     </head>
     <body>
-        <!-- 
-            MOBILE HEADER
-            (md breakpoint-с доош үед sidebar алга болдог -> 
-            түүнтэй адилхан mobile topbar гарч ирнэ)
-        -->
-        <header class="navbar sticky-top navbar-expand-lg bg-primary d-md-none d-block shadow">
-            <div class="container-fluid">
-                <!-- Brand / Organization name -->
-                <a class="navbar-brand text-white text-uppercase" href="{{ 'home'|link }}">
+        <!-- TOPBAR (бүтэн өргөнтэй, бүх дэлгэцэнд харагдана) -->
+        <header class="dashboard-topbar sticky-top bg-primary shadow">
+            <div class="d-flex align-items-center justify-content-between px-3 py-2">
+                <!-- Brand / Organization -->
+                <a class="d-flex align-items-center text-white text-decoration-none text-uppercase" href="{{ 'home'|link }}">
                     {% if user.organization['logo'] is not empty %}
-                        <img src="{{ user.organization['logo'] }}">
+                        <img class="topbar-brand-logo me-2" src="{{ user.organization['logo'] }}">
                     {% endif %}
-                    {{ user.organization['name'] }}
+                    <span style="position:relative;top:1px">{{ user.organization['name'] }}</span>
                 </a>
-                <!-- Mobile sidebar toggle -->
-                <button class="navbar-toggler" 
-                        type="button" 
-                        data-bs-toggle="offcanvas"
-                        data-bs-target="#sidebarMenu">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
+                <!-- Search (desktop only) -->
+                <div class="d-none d-md-block topbar-search">
+                    <button class="topbar-search-trigger" type="button" onclick="this.parentElement.classList.add('open');this.nextElementSibling.querySelector('input').focus()">
+                        <i class="bi bi-search me-1"></i>{{ 'search'|text }}
+                    </button>
+                    <div class="topbar-search-input">
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text bg-white border-0"><i class="bi bi-search text-muted"></i></span>
+                            <input id="topbar-search-q" type="text" class="form-control border-0 shadow-none"
+                                   placeholder="{{ 'search'|text }}..." autocomplete="off">
+                        </div>
+                        <div id="topbar-search-results" class="topbar-search-results"></div>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center">
+                    <!-- User dropdown -->
+                    <div class="dropdown">
+                        <a class="d-flex align-items-center text-white text-decoration-none dropdown-toggle"
+                           href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            {% if user.profile['photo'] is not empty %}
+                                <img class="rounded-circle me-1" src="{{ user.profile['photo'] }}"
+                                     width="26" height="26" style="object-fit:cover">
+                            {% else %}
+                                <i class="bi bi-person-circle fs-5 me-1"></i>
+                            {% endif %}
+                            <span class="d-none d-sm-inline">{{ user.profile['first_name'] ~ ' ' ~ user.profile['last_name'] }}</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end shadow">
+                            <li>
+                                <a class="dropdown-item" href="{{ 'user-update'|link({'id': user.profile['id']}) }}">
+                                    <i class="bi bi-person me-2"></i>{{ 'user'|text }}
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{{ 'organization-user'|link }}">
+                                    <i class="bi bi-building me-2"></i>{{ 'organization'|text }}
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item"
+                                   data-bs-toggle="modal"
+                                   data-bs-target="#static-modal"
+                                   href="{{ 'user-option'|link }}">
+                                    <i class="bi bi-sliders me-2"></i>Language & Options
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item text-danger" href="{{ 'logout'|link }}">
+                                    <i class="bi bi-box-arrow-left me-2"></i>{{ 'logout'|text }}
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    <!-- Mobile sidebar toggle -->
+                    <button class="btn text-white ms-2 p-0 d-md-none"
+                            type="button"
+                            data-bs-toggle="offcanvas"
+                            data-bs-target="#sidebarMenu">
+                        <i class="bi bi-list fs-4"></i>
+                    </button>
+                </div>
             </div>
         </header>
         <!-- MAIN LAYOUT GRID -->
         <div class="container-fluid">
             <div class="row">
-                <!-- 
-                    LEFT SIDEBAR (desktop)
-                    OFFCANVAS (mobile)
-                -->
+                <!-- LEFT SIDEBAR (desktop) / OFFCANVAS (mobile) -->
                 <div class="sidebar border border-right col-md-3 col-lg-2 p-0 bg-dark">
                     <nav class="offcanvas-md offcanvas-end"
                          tabindex="-1"
                          id="sidebarMenu">
-                        <!-- Sidebar header (only mobile visible) -->
+                        <!-- Sidebar header (mobile offcanvas) -->
                         <div class="offcanvas-header bg-dark">
                             <a href="{{ 'home'|link }}">
                                 <h5 class="offcanvas-title text-light">
                                     {{ user.organization['name'] }}
                                 </h5>
                             </a>
-
                             <button class="btn-close text-bg-light"
                                     type="button"
-                                    data-bs-dismiss="offcanvas">
+                                    data-bs-dismiss="offcanvas"
+                                    data-bs-target="#sidebarMenu"
+                                    aria-label="Close">
                             </button>
                         </div>
                         <!-- SIDEBAR BODY -->
                         <div class="sidebar-menu offcanvas-body bg-dark d-md-flex flex-column p-0 overflow-y-auto">
-                            <!-- Desktop brand -->
-                            <div class="sidebar-brand d-none d-md-block">
-                                <a href="{{ 'home'|link }}">
-                                    {% if user.organization['logo'] is not empty %}
-                                        <img src="{{ user.organization['logo'] }}">
-                                    {% endif %}
-                                    <p>{{ user.organization['name'] }}</p>
-                                </a>
-                            </div>
                             <!-- Dynamic sidebar menu loops -->
                             {% for menu in sidemenu %}
                                 <h6 class="px-3 mt-3 mb-1">{{ menu['title'] }}</h6>
-
                                 <ul class="nav flex-column">
                                     {% for item in menu['submenu'] %}
                                         <li class="nav-item">
@@ -91,60 +130,13 @@
                                     {% endfor %}
                                 </ul>
                             {% endfor %}
-                            <!-- USER SECTION -->
-                            <h6 class="px-3 mt-3 mb-1">{{ 'user'|text }}</h6>
-                            <ul class="nav flex-column mb-3">
-                                <!-- Profile -->
-                                <li class="nav-item">
-                                    <a class="nav-link"
-                                       href="{{ 'user-update'|link({'id': user.profile['id']}) }}">
-                                        {% if user.profile['photo'] is not empty %}
-                                            <img class="rounded-circle" src="{{ user.profile['photo'] }}">
-                                        {% else %}
-                                            <i class="bi bi-person-circle"></i>
-                                        {% endif %}
-                                        {{ user.profile['first_name'] ~ ' ' ~ user.profile['last_name'] }}
-                                    </a>
-                                </li>
-                                <!-- Organization -->
-                                <li class="nav-item">
-                                    <a class="nav-link" href="{{ 'organization-user'|link }}">
-                                        {% if user.organization['logo'] is not empty %}
-                                            <img src="{{ user.organization['logo'] }}">
-                                        {% else %}
-                                            <i class="bi bi-bank"></i>
-                                        {% endif %}
-                                        {{ 'organization'|text }}
-                                    </a>
-                                </li>
-                                <!-- Language & theme -->
-                                <li class="nav-item">
-                                    <a class="nav-link"
-                                       data-bs-toggle="modal"
-                                       data-bs-target="#static-modal"
-                                       href="{{ 'user-option'|link }}">
-                                        <i class="bi bi-sliders"></i>
-                                        Language & Theme
-                                    </a>
-                                </li>
-                                <!-- Logout -->
-                                <li class="nav-item">
-                                    <a class="nav-link" href="{{ 'logout'|link }}">
-                                        <i class="bi bi-box-arrow-left"></i>
-                                        {{ 'logout'|text }}
-                                    </a>
-                                </li>
-                            </ul>
                         </div>
                     </nav>
                 </div>
-                
-                <!-- 
-                    MAIN CONTENT AREA 
-                    (энд бүх dashboard page-үүд render хийгддэг)
-                -->
+
+                <!-- MAIN CONTENT AREA -->
                 <main class="col-md-9 col-lg-10 ms-auto"
-                      style="margin-top:.7rem!important;margin-bottom:1.2rem!important">
+                      style="margin-top:.8rem!important;margin-bottom:1.2rem!important">
                     {{ content }}
                 </main>
 
@@ -164,5 +156,10 @@
                 </div>
             </div>
         </div>
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                initTopbarSearch("{{ 'dashboard-search'|link }}", "{{ index }}");
+            });
+        </script>
     </body>
 </html>

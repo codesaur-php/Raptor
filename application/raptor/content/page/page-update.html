@@ -13,10 +13,10 @@
     'reference': { 'mn': 'Лавлагаа' }
 } %}
 <!-- Mongolian WYSIWYG Editor -->
-<link href="{{ index }}/assets/moedit/moedit.css" rel="stylesheet">
-<link href="{{ index }}/assets/moedit/moedit-icons.css" rel="stylesheet">
-<script defer src="{{ index }}/assets/moedit/moedit.js"></script>
-<script defer src="{{ index }}/assets/moedit/moedit.ui.js"></script>
+<link href="{{ index }}/assets/moedit/moedit.css?v=1" rel="stylesheet">
+<link href="{{ index }}/assets/moedit/moedit-icons.css?v=1" rel="stylesheet">
+<script defer src="{{ index }}/assets/moedit/moedit.js?v=1"></script>
+<script defer src="{{ index }}/assets/moedit/moedit.ui.js?v=1"></script>
 <!-- Толгой хэсэг -->
 <div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-2 shadow">
     <h3 class="px-2 my-auto fs-6 text-primary text-uppercase">
@@ -28,7 +28,7 @@
                 <i class="bi bi-check-lg"></i> {{ 'save'|text }}
             </button>
         {% endif %}
-        <a class="btn btn-sm btn-secondary shadow-sm back-link" href="{{ 'pages'|link }}">
+        <a class="btn btn-sm btn-secondary shadow-sm back-link" href="{{ 'pages-table'|link }}">
             <i class="bi bi-arrow-left"></i> {{ 'pages'|text }}
         </a>
     </div>
@@ -173,7 +173,7 @@
             <i class="bi bi-check2"></i> {{ 'save'|text }}
         </button>
     {% endif %}
-    <a class="btn btn-secondary text-uppercase shadow-sm back-link" href="{{ 'pages'|link }}">
+    <a class="btn btn-secondary text-uppercase shadow-sm back-link" href="{{ 'pages-table'|link }}">
         <i class="bi bi-arrow-left"></i> {{ 'pages'|text }}
     </a>
 </div>
@@ -226,7 +226,7 @@
     document.addEventListener('DOMContentLoaded', function () {
         const fromPage = new URLSearchParams(window.location.search).get('from');
         if (fromPage === 'nav') {
-            document.querySelectorAll('a.back-link').forEach(a => { a.href = `{{ 'pages-nav'|link }}`; });
+            document.querySelectorAll('a.back-link').forEach(a => { a.href = `{{ 'pages'|link }}`; });
         }
 
         /* moedit ачаалах */
@@ -315,7 +315,7 @@
                         throw new Error(response.message ? response.message : 'Invalid response!');
                     }
 
-                    window.location.href = fromPage === 'nav' ? `{{ 'pages-nav'|link }}` : `{{ 'pages'|link }}`;
+                    window.location.href = fromPage === 'nav' ? `{{ 'pages'|link }}` : `{{ 'pages-table'|link }}`;
 
                     NotifyTop(response.type ?? 'success', response.title ?? `{{ 'success'|text|e }}`, response.message ?? 'Page updated');
                 }).catch(error => {

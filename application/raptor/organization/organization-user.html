@@ -24,25 +24,21 @@
 {% for org in organizations %}
     {% set count = count + 1 %}
 
-    {# Эхний карт эхлэхэд row wrapper үүсгэнэ #}
     {% if count == 1 %}
         <div class="row row-cols-1 row-cols-md-3 mt-1 text-center">
     {% endif %}
 
-    {# Одоогоор сонгосон байгууллага мөн эсэхийг тодорхойлох #}
     {% set current = org['id'] == user.organization['id'] %}
 
     <div class="col">
         <div class="card mb-4 rounded-3 shadow-sm{{ current ? ' border-primary' : '' }}">
             
-            <!-- Картын толгой - Сонгогдсон байгууллагыг тодруулж харуулна -->
             <div class="card-header py-3{{ current ? ' text-white bg-primary border-primary text-uppercase' : '' }}">
                 <h6 class="my-0 fw-normal text-truncate">{{ org['name'] }}</h6>
             </div>
 
             <div class="card-body">
 
-                <!-- Байгууллагын лого - байхгүй бол банкны icon харуулна -->
                 <ul class="list-unstyled mb-3">
                     <li>
                         {% if org['logo'] is defined and org['logo'] is not empty %}
@@ -57,7 +53,6 @@
                     </li>
                 </ul>
 
-                <!-- Сонгох товч - одоо сонгосон байгууллага бол disabled -->
                 <a class="w-50 btn btn-outline-primary text-uppercase{{ current ? ' disabled' : '' }}"
                    href="{{ 'login-select-organization'|link({'id': org['id']|int}) }}">
                     {{ 'select'|text }}
@@ -67,7 +62,6 @@
         </div>
     </div>
 
-    {# 3 карт хүрмэгц мөрийг хааж дараагийн мөрийг шинэчилнэ #}
     {% if count == 3 %}
         {% set count = 0 %}
         </div>
@@ -75,7 +69,7 @@
 
 {% endfor %}
 
-{# Хэрэв сүүлийн мөр 3-аас дутуу карттай үлдсэн бол wrapper-ийг хаана #}
+<!-- Хэрэв сүүлийн мөр 3-аас дутуу карттай үлдсэн бол wrapper-ийг хаана -->
 {% if count != 0 %}
 </div>
 {% endif %}

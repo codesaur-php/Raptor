@@ -1,0 +1,189 @@
+<div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-3 shadow bg-secondary">
+    <h3 class="px-2 my-auto fs-6 text-white">
+        <i class="bi bi-book"></i> RBAC - Manual
+    </h3>
+    <a href="{{ 'manual' | link }}" class="btn btn-sm btn-light m-1">
+        <i class="bi bi-arrow-left"></i> {{ 'manual' | text }}
+    </a>
+</div>
+
+<!-- ==================== OVERVIEW ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-shield-fill-check"></i> What is RBAC (Role-Based Access Control)?</h4>
+        <p>
+            A module for managing user access rights.
+            Each user's access is determined by a combination of Roles and Permissions.
+            Each organization has its own RBAC alias to create separate permission groups.
+        </p>
+        <ul>
+            <li><strong>Alias system</strong> - Each organization has its own alias (e.g., <code>system</code>, <code>common</code>, <code>university</code>)</li>
+            <li><strong>Role</strong> - A role assigned to users (admin, manager, editor, viewer, etc.)</li>
+            <li><strong>Permission</strong> - Authorization to perform a specific action (<code>user_insert</code>, <code>content_delete</code>, etc.)</li>
+            <li><strong>Matrix view</strong> - Managed via checkboxes in a Role x Permission table</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== MATRIX TABLE ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-grid-3x3"></i> Matrix table</h4>
+        <p>The main RBAC page is displayed as a Role (row) x Permission (column) table.</p>
+        <ul>
+            <li>Checking a checkbox grants the permission to that role (AJAX POST)</li>
+            <li>Unchecking a checkbox revokes the permission (AJAX DELETE)</li>
+            <li>Permissions are grouped by module (<code>user</code>, <code>content</code>, <code>product</code>, <code>localization</code>, etc.)</li>
+            <li><strong>Add Role</strong> and <strong>Add Permission</strong> buttons are located at the top right</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== ALIAS ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-diagram-3"></i> Alias</h4>
+        <p>Each organization has its own RBAC alias. Roles and permissions are grouped under each alias.</p>
+        <ul>
+            <li><code>system</code> - The default system alias</li>
+            <li><code>common</code> - A shared alias for multiple organizations; users in organizations with the common alias share the same access rights</li>
+            <li>Organization alias (e.g., <code>university</code>) - A separate permission group</li>
+            <li>Clicking an alias in the organization list navigates to the RBAC matrix (Details: <a href="{{ 'manual-view' | link({'file': 'organizations-manual-' ~ localization.code ~ '.html'}) }}">Organizations manual</a>)</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== DEFAULT ROLES ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-person-badge"></i> Default roles (system alias)</h4>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Role</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><code>coder</code></td><td>System super-admin, has all permissions (not visible in the RBAC matrix)</td></tr>
+                <tr><td><code>admin</code></td><td>Full management (except development)</td></tr>
+                <tr><td><code>manager</code></td><td>Manage users, content, and localization</td></tr>
+                <tr><td><code>editor</code></td><td>Create and edit content</td></tr>
+                <tr><td><code>viewer</code></td><td>View only</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ==================== DEFAULT PERMISSIONS ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-key"></i> Default permissions (system alias)</h4>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Module</th><th>Permission</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><strong>Log</strong></td><td><code>logger</code></td><td>View logs</td></tr>
+                <tr><td rowspan="6"><strong>User</strong></td><td><code>rbac</code></td><td>Manage RBAC</td></tr>
+                <tr><td><code>user_index</code></td><td>List</td></tr>
+                <tr><td><code>user_insert</code></td><td>Create</td></tr>
+                <tr><td><code>user_update</code></td><td>Edit</td></tr>
+                <tr><td><code>user_delete</code></td><td>Delete</td></tr>
+                <tr><td><code>user_organization_set</code></td><td>Assign organization</td></tr>
+                <tr><td rowspan="4"><strong>Organization</strong></td><td><code>organization_index</code></td><td>List</td></tr>
+                <tr><td><code>organization_insert</code></td><td>Create</td></tr>
+                <tr><td><code>organization_update</code></td><td>Edit</td></tr>
+                <tr><td><code>organization_delete</code></td><td>Delete</td></tr>
+                <tr><td rowspan="5"><strong>Content</strong></td><td><code>content_settings</code></td><td>Settings</td></tr>
+                <tr><td><code>content_index</code></td><td>List</td></tr>
+                <tr><td><code>content_insert</code></td><td>Create</td></tr>
+                <tr><td><code>content_update</code></td><td>Edit</td></tr>
+                <tr><td><code>content_publish</code></td><td>Publish</td></tr>
+                <tr><td></td><td><code>content_delete</code></td><td>Delete</td></tr>
+                <tr><td rowspan="5"><strong>Product</strong></td><td><code>product_index</code></td><td>List</td></tr>
+                <tr><td><code>product_insert</code></td><td>Create</td></tr>
+                <tr><td><code>product_update</code></td><td>Edit</td></tr>
+                <tr><td><code>product_publish</code></td><td>Publish</td></tr>
+                <tr><td><code>product_delete</code></td><td>Delete</td></tr>
+                <tr><td rowspan="4"><strong>Localization</strong></td><td><code>localization_index</code></td><td>List</td></tr>
+                <tr><td><code>localization_insert</code></td><td>Create</td></tr>
+                <tr><td><code>localization_update</code></td><td>Edit</td></tr>
+                <tr><td><code>localization_delete</code></td><td>Delete</td></tr>
+                <tr><td><strong>Template</strong></td><td><code>templates_index</code></td><td>View templates</td></tr>
+                <tr><td><strong>Development</strong></td><td><code>development</code></td><td>Development</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ==================== ADD NEW ROLE ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-person-plus"></i> Add new role</h4>
+        <p>Displayed as a modal. Fields:</p>
+        <ul>
+            <li><strong>Name (name)</strong> - required, unique, up to 128 characters</li>
+            <li><strong>Description (description)</strong> - optional</li>
+        </ul>
+        <div class="alert alert-warning mb-0">
+            <i class="bi bi-exclamation-triangle"></i>
+            A role named <code>coder</code> cannot be created under the <code>system</code> alias (reserved by the system).
+        </div>
+    </div>
+</div>
+
+<!-- ==================== ADD NEW PERMISSION ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-plus-shield"></i> Add new permission</h4>
+        <p>Displayed as a modal. Fields:</p>
+        <ul>
+            <li><strong>Module (module)</strong> - optional, select from existing modules or enter a new one (default: <code>general</code>)</li>
+            <li><strong>Name (name)</strong> - required, unique, up to 128 characters</li>
+            <li><strong>Description (description)</strong> - optional</li>
+        </ul>
+        <div class="alert alert-warning mb-0">
+            <i class="bi bi-exclamation-triangle"></i>
+            A permission named <code>system_coder</code> cannot be created (reserved).
+        </div>
+    </div>
+</div>
+
+<!-- ==================== PERMISSION CHECK MECHANISM ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-check2-circle"></i> Permission check mechanism</h4>
+        <p>
+            When a user logs in, all roles and their permissions are loaded into memory by the RBAC system.
+            The permission check key format is: <code>{alias}_{name}</code>
+            (e.g., <code>system_rbac</code>, <code>system_content_delete</code>).
+        </p>
+        <ul>
+            <li>A user with the <code>system_coder</code> role has all permissions (no checks performed)</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== LOG ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-journal-text"></i> Log</h4>
+        <p>
+            If the user has the <code>system_logger</code> permission, a log of recent RBAC-related actions is displayed at the bottom of the page.
+        </p>
+    </div>
+</div>
+
+<!-- ==================== REQUIRED PERMISSIONS ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-lock"></i> Required permissions</h4>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Action</th><th>Permission</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>View RBAC matrix, add roles/permissions, grant/revoke permissions</td><td><code>system_rbac</code></td></tr>
+                <tr><td>View logs</td><td><code>system_logger</code></td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>

@@ -1,24 +1,23 @@
 <!-- SweetAlert2 - идэвхгүй болгох үед асууж баталгаажуулах диалог ашиглана -->
 <script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-<!-- Хуудасны гарчиг ба "Шинэ байгууллага" үүсгэх товч -->
-<div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-2 shadow">
-    <h3 class="px-2 my-auto fs-6">
-        <i class="bi bi-bank"></i> {{ 'organizations'|text }}
-    </h3>
-
-    <div class="ms-auto">
-        {% if user.can('system_organization_insert') %}
-            <!-- Шинэ байгууллага үүсгэх modal нээх -->
-            <a class="btn btn-sm btn-outline-success shadow-sm"
-               href="{{ 'organization-insert'|link }}"
-               data-bs-target="#static-modal"
-               data-bs-toggle="modal">
-                <i class="bi bi-plus-circle-dotted"></i> {{ 'new'|text }}
-            </a>
-        {% endif %}
-    </div>
+<!-- Хуудасны гарчиг -->
+<div class="d-flex justify-content-between align-items-center mb-2">
+    <h5 class="text-uppercase"><i class="bi bi-bank"></i> {{ 'organizations'|text }}</h5>
+    <a class="btn btn-sm btn-outline-secondary" href="{{ 'manual-view'|link({'file': 'organizations-manual-' ~ localization.code ~ '.html'}) }}" title="{{ 'manual'|text }}" target="_blank">
+        <i class="bi bi-question-circle"></i>
+    </a>
 </div>
+{% if user.can('system_organization_insert') %}
+<div class="mb-2">
+    <a class="btn btn-sm btn-outline-success text-uppercase"
+       href="{{ 'organization-insert'|link }}"
+       data-bs-target="#static-modal"
+       data-bs-toggle="modal">
+        <i class="bi bi-plus-circle-dotted"></i> {{ 'new'|text }}
+    </a>
+</div>
+{% endif %}
 
 <!-- Байгууллагын жагсаалт motable-р харуулах хүснэгт -->
 <table class="table table-striped table-hover table-bordered" id="organizations">

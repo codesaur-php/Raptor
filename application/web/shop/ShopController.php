@@ -1,15 +1,17 @@
 <?php
 
-namespace Web\Home;
+namespace Web\Shop;
 
 use Psr\Log\LogLevel;
 
-use Web\Template\TemplateController;
+use codesaur\Template\MemoryTemplate;
+
+use Raptor\Content\FilesModel;
 
 use Dashboard\Shop\ProductsModel;
 use Dashboard\Shop\ProductOrdersModel;
-use Raptor\Content\FilesModel;
-use codesaur\Template\MemoryTemplate;
+
+use Web\Template\TemplateController;
 
 /**
  * Class ShopController
@@ -32,7 +34,7 @@ use codesaur\Template\MemoryTemplate;
  *   4) 1 цагаас хэтэрсэн form хүчингүй
  *   5) Session rate limit - 10 секундэд 1 захиалга
  *
- * @package Web\Home
+ * @package Web\Shop
  */
 class ShopController extends TemplateController
 {
@@ -79,7 +81,7 @@ class ShopController extends TemplateController
         $stmt->execute();
         $row = $stmt->fetch();
         if (empty($row)) {
-            throw new \Error('Бүтээгдэхүүн олдсонгүй', 404);
+            throw new \Exception('Бүтээгдэхүүн олдсонгүй', 404);
         }
         return $this->product($row['slug']);
     }
@@ -103,7 +105,7 @@ class ShopController extends TemplateController
             'is_active' => 1
         ]);
         if (empty($record)) {
-            throw new \Error('Бүтээгдэхүүн олдсонгүй', 404);
+            throw new \Exception('Бүтээгдэхүүн олдсонгүй', 404);
         }
 
         $id = $record['id'];
@@ -123,8 +125,7 @@ class ShopController extends TemplateController
         $template->render();
 
         // Read count
-        $read_count = ($record['read_count'] ?? 0) + 1;
-        $this->exec("UPDATE $table SET read_count=$read_count WHERE id=$id");
+        $this->exec("UPDATE $table SET read_count=read_count+1 WHERE id=$id");
 
         $this->log(
             'web',
@@ -169,7 +170,7 @@ class ShopController extends TemplateController
         //    -> orderSubmit() дотор шалгаж хаядаг
         //  - timestamp + HMAC token
         $ts = \time();
-        $secret = $_ENV['RAPTOR_JWT_SECRET'] ?? 'raptor-form-secret';
+        $secret = $this->getJwtSecret();
         $vars['spam_ts'] = $ts;
         $vars['spam_token'] = \hash_hmac('sha256', "order-form-$ts", $secret);
 
@@ -195,24 +196,24 @@ class ShopController extends TemplateController
         // --- Spam хамгаалалт ---
         // 1) Honeypot: бот бөглөсөн бол хаях
         if (!empty($payload['website'])) {
-            throw new \Error('Invalid request', 400);
+            throw new \Exception('Invalid request', 400);
         }
         // 2) Timestamp + HMAC token: хуурамч/хугацаа дууссан form хаях
         $ts = (int)($payload['_ts'] ?? 0);
         $token = $payload['_token'] ?? '';
-        $secret = $_ENV['RAPTOR_JWT_SECRET'] ?? 'raptor-form-secret';
+        $secret = $this->getJwtSecret();
         $expected = \hash_hmac('sha256', "order-form-$ts", $secret);
         if (!\hash_equals($expected, $token)) {
-            throw new \Error('Invalid request', 403);
+            throw new \Exception('Invalid request', 403);
         }
         // 3) 3 секундээс хурдан бөглөсөн бол бот гэж үзэх
         $elapsed = \time() - $ts;
         if ($elapsed < 3) {
-            throw new \Error('Invalid request', 429);
+            throw new \Exception('Invalid request', 429);
         }
         // 4) 1 цагаас хэтэрсэн form хүчингүй
         if ($elapsed > 3600) {
-            throw new \Error(
+            throw new \Exception(
                 $code === 'mn' ? 'Формын хугацаа дууссан. Дахин оролдоно уу.' : 'Form expired. Please try again.',
                 400
             );
@@ -221,14 +222,14 @@ class ShopController extends TemplateController
         $now = \time();
         $lastOrder = $_SESSION['_last_order_at'] ?? 0;
         if ($now - $lastOrder < 10) {
-            throw new \Error(
+            throw new \Exception(
                 $code === 'mn' ? 'Хэт олон хүсэлт. Түр хүлээнэ үү.' : 'Too many requests. Please wait.',
                 429
             );
         }
 
         if (empty($payload['customer_name']) || empty($payload['customer_email'])) {
-            throw new \Error(
+            throw new \Exception(
                 $code === 'mn' ? 'Нэр болон имэйл хаяг шаардлагатай' : 'Name and email are required',
                 400
             );
@@ -248,7 +249,7 @@ class ShopController extends TemplateController
         ]);
 
         if (!isset($record['id'])) {
-            throw new \Error(
+            throw new \Exception(
                 $code === 'mn' ? 'Захиалга үүсгэхэд алдаа гарлаа' : 'Failed to create order',
                 500
             );
@@ -302,18 +303,33 @@ class ShopController extends TemplateController
     }
 
     /**
+     * JWT нууц түлхүүрийг environment-ээс авах.
+     *
+     * @return string JWT secret
+     * @throws \RuntimeException Environment variable тохируулаагүй бол
+     */
+    private function getJwtSecret(): string
+    {
+        $secret = $_ENV['RAPTOR_JWT_SECRET'] ?? '';
+        if (empty($secret)) {
+            throw new \RuntimeException('RAPTOR_JWT_SECRET environment variable is not set');
+        }
+        return $secret;
+    }
+
+    /**
      * Захиалга амжилттай үүссэн тухай имэйл илгээх.
      *
      * Reference template service-ээс 'order-confirmation' template-г
      * тухайн хэл дээр хайж, MemoryTemplate ашиглан рендерлээд
      * mailer service-ээр захиалагчид илгээнэ.
      *
-     * @param int    $orderId      Захиалгын ID
-     * @param string $customerName Захиалагчийн нэр
+     * @param int    $orderId       Захиалгын ID
+     * @param string $customerName  Захиалагчийн нэр
      * @param string $customerEmail Захиалагчийн имэйл
-     * @param string $productTitle Бүтээгдэхүүний нэр
-     * @param int    $quantity     Тоо ширхэг
-     * @param string $code         Хэлний код
+     * @param string $productTitle  Бүтээгдэхүүний нэр
+     * @param int    $quantity      Тоо ширхэг
+     * @param string $code          Хэлний код
      * @return void
      */
     private function sendOrderConfirmation(

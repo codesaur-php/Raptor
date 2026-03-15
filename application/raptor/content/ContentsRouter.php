@@ -96,11 +96,11 @@ class ContentsRouter extends Router
          * PAGES - Хуудас
          * ------------------------------ */
 
-        // Хуудасны жагсаалтын хүснэгт
-        $this->GET('/dashboard/pages', [PagesController::class, 'index'])->name('pages');
+        // Хуудасны навигацийн мод бүтэц (үндсэн хуудас)
+        $this->GET('/dashboard/pages', [PagesController::class, 'nav'])->name('pages');
 
-        // Хуудасны навигацийн мод бүтэц
-        $this->GET('/dashboard/pages/nav', [PagesController::class, 'nav'])->name('pages-nav');
+        // Хуудасны жагсаалтын хүснэгт
+        $this->GET('/dashboard/pages/table', [PagesController::class, 'index'])->name('pages-table');
 
         // Хуудасны жагсаалт JSON
         $this->GET('/dashboard/pages/list', [PagesController::class, 'list'])->name('pages-list');
@@ -153,8 +153,7 @@ class ContentsRouter extends Router
 
         // Тохиргооны файл upload хийх
         $this->POST('/dashboard/settings/files', [SettingsController::class, 'files'])->name('settings-files');
-        
-        
+                
 
         /**
          * MOEDIT AI API

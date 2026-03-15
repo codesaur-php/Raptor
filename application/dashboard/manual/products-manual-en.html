@@ -1,0 +1,210 @@
+<div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-3 shadow bg-secondary">
+    <h3 class="px-2 my-auto fs-6 text-white">
+        <i class="bi bi-book"></i> Products - Manual
+    </h3>
+    <a href="{{ 'manual' | link }}" class="btn btn-sm btn-light m-1">
+        <i class="bi bi-arrow-left"></i> {{ 'manual' | text }}
+    </a>
+</div>
+
+<!-- ==================== OVERVIEW ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-box-seam"></i> What is a Product?</h4>
+        <p>
+            <strong>Products</strong> is the product management module of Raptor Dashboard.
+            All operations such as creating, editing, deleting, and publishing products are performed through this module.
+        </p>
+        <p>Products have the following features:</p>
+        <ul>
+            <li><strong>Multi-language</strong> - Create separate products for each language</li>
+            <li><strong>SEO-friendly slug</strong> - URL slug is automatically generated from the title</li>
+            <li><strong>Type & Category</strong> - Classify products by type and category</li>
+            <li><strong>Price information</strong> - Set product pricing</li>
+            <li><strong>File attachments</strong> - Attach images and other files</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== LIST ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-list-ul"></i> Product List</h4>
+        <p>Click <strong>Products</strong> from the Dashboard menu to open the list page.</p>
+        <h5 class="mt-3">Filters</h5>
+        <p>You can filter products by the following criteria:</p>
+        <ul>
+            <li><strong>Language</strong> - By language code such as mn, en</li>
+            <li><strong>Type</strong> - By product type</li>
+            <li><strong>Category</strong> - By product category</li>
+            <li><strong>Status</strong> - Published or draft</li>
+        </ul>
+        <h5 class="mt-3">Table Columns</h5>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Column</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>ID / Date</td><td>Product ID and creation date</td></tr>
+                <tr><td>Language</td><td>Language flag and code</td></tr>
+                <tr><td>Image</td><td>Header image (if available)</td></tr>
+                <tr><td>Title</td><td>Product name</td></tr>
+                <tr><td>Price</td><td>Product price</td></tr>
+                <tr><td>Attachments</td><td>Number of attached files</td></tr>
+                <tr><td>Type / Category</td><td>Product type and category</td></tr>
+                <tr><td>Publish</td><td>Published status and date</td></tr>
+                <tr><td>Actions</td><td>Read, View, Edit, Delete buttons</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ==================== NEW PRODUCT ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-plus-circle"></i> Create New Product</h4>
+        <p>Click the <strong>New</strong> button on the list page.</p>
+
+        <h5 class="mt-3">Fields</h5>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Field</th><th>Description</th><th>Required</th><th>Note</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><strong>Language</strong></td><td>Product language (mn, en, etc.)</td><td>Yes</td><td></td></tr>
+                <tr><td><strong>Type</strong></td><td>Product type</td><td>Yes</td><td></td></tr>
+                <tr><td><strong>Category</strong></td><td>Product category</td><td>Yes</td><td></td></tr>
+                <tr><td><strong>Title</strong></td><td>Product name</td><td>Yes</td><td>Up to 255 characters</td></tr>
+                <tr><td><strong>Description</strong></td><td>Short description (auto-generated from content if empty)</td><td>No</td><td>Auto excerpt</td></tr>
+                <tr><td><strong>Content</strong></td><td>Full content - written using <a href="{{ 'manual-view' | link({'file': 'moedit-manual-en.html'}) }}" title="view moedit manual">moedit</a> editor</td><td>No</td><td>moedit</td></tr>
+                <tr><td><strong>Price</strong></td><td>Product price</td><td>No</td><td></td></tr>
+                <tr><td><strong>Source</strong></td><td>Product source information</td><td>No</td><td></td></tr>
+                <tr><td><strong>Header image</strong></td><td>Product header image (1 file)</td><td>No</td><td></td></tr>
+            </tbody>
+        </table>
+
+        <h5 class="mt-3">Publish Settings</h5>
+        <p>Users with <code>system_content_publish</code> permission will see the following options:</p>
+        <ul>
+            <li><strong>Publish</strong> - Makes the product visible on the website</li>
+            <li><strong>Featured</strong> - Includes the product in featured products on the homepage</li>
+        </ul>
+
+        <h5 class="mt-3">Automatic Actions</h5>
+        <ul>
+            <li><strong>Slug</strong> - Automatically generated from the title (Mongolian Cyrillic to Latin transliteration)</li>
+            <li><strong>Description</strong> - If empty, an excerpt is generated from the content</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== EDIT ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-pencil-square"></i> Edit Product</h4>
+        <p>Click the <strong>edit</strong> (pencil) button from the list.</p>
+        <ul>
+            <li>All fields can be modified (except slug)</li>
+            <li>File attachment management - add new files, edit descriptions, delete</li>
+            <li>Editing a published product requires <code>system_content_publish</code> permission</li>
+            <li>If no changes are made, saving is skipped ("No update!" error)</li>
+        </ul>
+
+        <h5 class="mt-3">Change Log</h5>
+        <p>
+            Users with <code>system_logger</code> permission will see the last 10 action logs
+            on the edit page. Clicking a log entry opens detailed information in a modal.
+        </p>
+    </div>
+</div>
+
+<!-- ==================== VIEW ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-eye"></i> View Product</h4>
+        <p>Click the <strong>view</strong> (eye) button from the list.</p>
+        <ul>
+            <li>All fields are displayed in read-only mode</li>
+            <li>Content is displayed in moedit read-only mode (moedit preview)</li>
+            <li>View header image and attached files</li>
+            <li>Publication status and date</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== DELETE ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-trash"></i> Delete Product</h4>
+        <p>Click the <strong>delete</strong> (trash) button from the list.</p>
+        <ul>
+            <li>A confirmation dialog appears (SweetAlert2)</li>
+            <li>Soft delete - data is preserved</li>
+            <li><code>system_product_delete</code> permission is required</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== DISCORD NOTIFICATION ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-bell"></i> Discord Notification</h4>
+        <p>
+            Automatic Discord notifications are sent via webhook for every product action
+            (if a webhook is configured).
+        </p>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Action</th><th>Notification details</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Create new product</td><td>Content type (product), action (insert), title, ID, admin name</td></tr>
+                <tr><td>Edit / publish product</td><td>Content type (product), action (update/publish), title, ID, admin name</td></tr>
+                <tr><td>Delete product</td><td>Content type (product), action (delete), title, ID, admin name</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ==================== SAMPLE DATA ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-arrow-counterclockwise"></i> Sample Data</h4>
+        <p>
+            Products with <code>category='_raptor_sample_'</code> are sample data.
+            When sample data is detected, a yellow warning and a
+            <strong>Reset & Production</strong> button appear on the list page.
+        </p>
+        <div class="alert alert-danger">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            <strong>Warning:</strong> Resetting will only delete sample data and their attachment records.
+            User-created data will remain intact. This action cannot be undone.
+        </div>
+        <div class="alert alert-info mb-0">
+            <i class="bi bi-lightbulb"></i>
+            <strong>Identifying sample data:</strong> If you want to use some as real content,
+            simply change the product's category (e.g., to <code>general</code>) and save -
+            those will not be deleted during a reset.
+        </div>
+    </div>
+</div>
+
+<!-- ==================== PERMISSIONS ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-shield-lock"></i> Required Permissions</h4>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Action</th><th>Permission</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>View list, View product</td><td><code>system_product_index</code></td></tr>
+                <tr><td>Create new product</td><td><code>system_product_insert</code></td></tr>
+                <tr><td>Edit product</td><td><code>system_product_update</code></td></tr>
+                <tr><td>Publish, Featured</td><td><code>system_content_publish</code></td></tr>
+                <tr><td>Delete, Reset sample data</td><td><code>system_product_delete</code></td></tr>
+                <tr><td>View logs</td><td><code>system_logger</code></td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>

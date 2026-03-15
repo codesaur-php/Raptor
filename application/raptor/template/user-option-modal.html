@@ -1,13 +1,8 @@
 <!-- ====================================================================== -->
 <!--  USER OPTION MODAL                                                     -->
 <!--  Хэрэглэгч Dashboard-ийн Theme болон Language сонголтуудыг             -->
-<!--  түргэн өөрчлөх зориулалттай тохиргооны modal.                        -->
+<!--  түргэн өөрчлөх зориулалттай тохиргооны modal.                         -->
 <!-- ====================================================================== -->
-<style>
-    /* --------------------------------------------------------------- */
-    /*  ИЛҮҮЦ CSS байхгүй. Хэрэв custom style нэмэх бол энд байрлуулна. */
-    /* --------------------------------------------------------------- */
-</style>
 <div class="modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content">
         <!-- ========================================================== -->
@@ -66,15 +61,13 @@
                     </div>
                 </div>
             </div>
-            <!-- ===================== LANGUAGE SELECT ==================== -->
-            <!-- LocalizationMiddleware-аас ирсэн бүх хэлний жагсаалт       -->
+            <!-- Language select -->
             <div class="row mb-3">
                 <label class="col-3 col-form-label text-end">Language:</label>
                 <div class="col-9">
                     {% set current = localization.code ?? 'en' %}
                     {% for code,language in localization.language %}
                         <div class="form-check form-check-inline mt-2">
-                            <!-- Хэл сонгох радио input -->
                             <input class="form-check-input"
                                    type="radio"
                                    name="language"
@@ -82,12 +75,10 @@
                                    value="{{ code }}"
                                    style="cursor:pointer"
                                    {% if code == current %} checked{% endif %}>
-                            <!-- Дарах үед тухайн хэл сонгогдоно -->
                             <label class="form-check-label"
                                    for="lang_{{ code }}"
                                    style="cursor:pointer">
                                 {% set flag = code == 'en' ? 'us' : code %}
-                                <!-- Улсын жижиг icon -->
                                 <img
                                     src="https://flagcdn.com/20x15/{{ flag }}.png"
                                     srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x"

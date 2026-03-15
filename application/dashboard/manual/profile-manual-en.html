@@ -1,0 +1,150 @@
+<div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-3 shadow bg-secondary">
+    <h3 class="px-2 my-auto fs-6 text-white">
+        <i class="bi bi-book"></i> My Profile - Manual
+    </h3>
+    <a href="{{ 'manual' | link }}" class="btn btn-sm btn-light m-1">
+        <i class="bi bi-arrow-left"></i> {{ 'manual' | text }}
+    </a>
+</div>
+
+<!-- ==================== OVERVIEW ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-person-circle"></i> What is My Profile?</h4>
+        <p>
+            The dropdown menu displayed with your name in the top-right navigation bar provides
+            access to personal profile management features.
+        </p>
+        <ul>
+            <li><strong>User</strong> - View and edit your own profile</li>
+            <li><strong>Organization</strong> - View your organizations and switch between them</li>
+            <li><strong>Language &amp; Options</strong> - Change interface language and theme</li>
+            <li><strong>Logout</strong> - Sign out of the system</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== USER PROFILE ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-person"></i> User (Edit Profile)</h4>
+        <p>Click <strong>User</strong> from the profile menu to open your profile edit page.</p>
+
+        <h5 class="mt-3">Personal Info Tab</h5>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Field</th><th>Description</th><th>Editable</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><strong>Username</strong></td><td>Your login name</td><td>No (read-only)</td></tr>
+                <tr><td><strong>Email</strong></td><td>Email address</td><td>Yes</td></tr>
+                <tr><td><strong>First name</strong></td><td>First name</td><td>Yes</td></tr>
+                <tr><td><strong>Last name</strong></td><td>Last name</td><td>Yes</td></tr>
+                <tr><td><strong>Phone</strong></td><td>Phone number</td><td>Yes</td></tr>
+            </tbody>
+        </table>
+
+        <h5 class="mt-3">Image Tab</h5>
+        <ul>
+            <li>Upload a new profile photo</li>
+            <li>Replace or remove existing photo</li>
+            <li>Preview with file size display</li>
+        </ul>
+
+        <h5 class="mt-3">Options Tab</h5>
+        <p>
+            If you have the appropriate permissions, the Options tab allows managing
+            organization assignments and RBAC roles.
+            (See: <a href="{{ 'manual-view'|link({'file': 'users-manual-' ~ localization.code ~ '.html'}) }}">Users Manual</a>)
+        </p>
+    </div>
+</div>
+
+<!-- ==================== CHANGE PASSWORD ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-key"></i> Change Password</h4>
+        <p>There are 2 ways to change your password:</p>
+
+        <h5 class="mt-3">1. From the users list</h5>
+        <p>
+            In the users list table, click the
+            <i class="bi bi-key-fill"></i> (key) button on your row to change your password.
+        </p>
+
+        <h5 class="mt-3">2. From the login screen (forgot password)</h5>
+        <ul>
+            <li>Click the <strong>forgot password</strong> link on the login screen</li>
+            <li>Enter your email address and submit the request</li>
+            <li>Reset your password via the link sent to your email</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== ORGANIZATION ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-building"></i> Organization</h4>
+        <p>Click <strong>Organization</strong> from the profile menu to view your organizations.</p>
+
+        <h5 class="mt-3">Features</h5>
+        <ul>
+            <li>View all organizations you are assigned to</li>
+            <li>Each organization shows its name and logo</li>
+            <li>The currently active organization is highlighted with a blue border</li>
+        </ul>
+
+        <h5 class="mt-3">Switch Organization</h5>
+        <p>
+            Click the <strong>Select</strong> button on any organization card to switch
+            your active organization. This changes which organization context you are working in.
+        </p>
+
+        <div class="alert alert-info mb-0">
+            <i class="bi bi-info-circle"></i>
+            Users with the <strong>system_coder</strong> role can see and switch to all organizations.
+            Regular users only see their assigned organizations.
+        </div>
+    </div>
+</div>
+
+<!-- ==================== LANGUAGE & OPTIONS ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-sliders"></i> Language &amp; Options</h4>
+        <p>Click <strong>Language &amp; Options</strong> from the profile menu. A modal dialog will open.</p>
+
+        <h5 class="mt-3">Theme Selection</h5>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Option</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><strong>Light mode</strong></td><td>Light background theme</td></tr>
+                <tr><td><strong>Dark mode</strong></td><td>Dark background theme</td></tr>
+            </tbody>
+        </table>
+        <p>Theme preference is saved in the browser and persists across sessions.</p>
+
+        <h5 class="mt-3">Language Selection</h5>
+        <ul>
+            <li>All available system languages are listed with country flags</li>
+            <li>Select a language and click confirm to switch</li>
+            <li>The page will reload in the selected language</li>
+            <li>Your language preference is saved to your user profile</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== LOGOUT ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-box-arrow-left"></i> Logout</h4>
+        <p>Click <strong>Logout</strong> from the profile menu to sign out.</p>
+        <ul>
+            <li>Your authentication session (JWT token) is removed</li>
+            <li>You will be redirected to the home page</li>
+            <li>Language preference is preserved for next login</li>
+        </ul>
+    </div>
+</div>

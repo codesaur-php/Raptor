@@ -1,0 +1,106 @@
+<div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-3 shadow bg-secondary">
+    <h3 class="px-2 my-auto fs-6 text-white">
+        <i class="bi bi-folder2-open"></i> Files - Гарын авлага
+    </h3>
+    <a href="{{ 'manual' | link }}" class="btn btn-sm btn-light m-1">
+        <i class="bi bi-arrow-left"></i> {{ 'manual' | text }}
+    </a>
+</div>
+
+<!-- ==================== ТОЙМ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3">Файлууд гэж юу вэ?</h4>
+        <p>
+            <strong>Files</strong> нь Dashboard дээр бүх модулиудаас байршуулсан файлуудыг нэг дороос харах модуль юм.
+            Зураг, видео, аудио, PDF, баримт бичиг зэрэг бүх файлуудыг хүснэгтээр харуулна.
+        </p>
+    </div>
+</div>
+
+<!-- ==================== ХҮСНЭГТ СОНГОХ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-table"></i> Хүснэгт сонгох</h4>
+        <p>
+            Хуудасны дээд хэсэгт файлын хүснэгтүүдийн жагсаалт (pill badge) харагдана.
+            Хүснэгт бүрт файлын тоо, нийт хэмжээ харуулна.
+        </p>
+        <ul>
+            <li><code>files</code> бол үндсэн хүснэгт</li>
+            <li>Бусад нь <code>attachments</code> хэлбэртэй</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== ФАЙЛЫН ЖАГСААЛТ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-list-ul"></i> Файлын жагсаалт</h4>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Багана</th><th>Тайлбар</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Файл</td><td>Thumbnail/icon, нэр, action товчнууд</td></tr>
+                <tr><td>Шинж чанар</td><td>MIME төрөл, хэмжээ</td></tr>
+                <tr><td>Тайлбар</td><td>Файлын тайлбар</td></tr>
+                <tr><td>Түлхүүр үг</td><td>Файлын түлхүүр үгс</td></tr>
+                <tr><td>Огноо</td><td>Файл байршуулсан огноо</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ==================== УРЬДЧИЛАН ХАРАХ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-eye"></i> Файлын урьдчилан харах</h4>
+        <ul>
+            <li>Зургийг overlay дээр томруулж харах</li>
+            <li>Видео/аудио шууд тоглуулах</li>
+            <li>PDF файлыг iframe-д нээх</li>
+            <li>Текст файлыг fetch хийж харуулах</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== ФАЙЛЫН МЭДЭЭЛЭЛ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-info-circle"></i> Файлын мэдээлэл</h4>
+        <p>Файл бүрт дараах modal-ууд бий:</p>
+        <ul>
+            <li><strong>Location</strong> - Файлын серверийн зам (байршил)</li>
+            <li><strong>Code tag</strong> - HTML-д оруулах embed код (HTML tag)</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== СТАТИСТИК ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-bar-chart"></i> Статистик</h4>
+        <p>Хуудасны дээд хэсэгт дараах статистик мэдээлэл харагдана:</p>
+        <ul>
+            <li>Нийт хүснэгтийн тоо</li>
+            <li>Файлын тоо</li>
+            <li>Нийт хэмжээ</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== ЭРХ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-shield-lock"></i> Шаардлагатай эрхүүд</h4>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Үйлдэл</th><th>Эрх</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Файлын жагсаалт харах</td><td><code>system_content_index</code></td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>

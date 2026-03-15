@@ -323,6 +323,108 @@ function copyContent(elem)
 }
 
 /**
+ * Topbar Search - Live хайлт
+ */
+function initTopbarSearch(searchUrl, basePath) {
+    const input = document.getElementById('topbar-search-q');
+    const resultsDiv = document.getElementById('topbar-search-results');
+    if (!input || !resultsDiv || !searchUrl) return;
+
+    let timer = null;
+    let xhr = null;
+
+    const SOURCE_META = {
+        news:     { icon: 'bi-newspaper',      badge: 'bg-info',      label: 'News',     url: '/dashboard/news/view/' },
+        pages:    { icon: 'bi-file-earmark',    badge: 'bg-success',   label: 'Pages',    url: '/dashboard/pages/view/' },
+        products: { icon: 'bi-box-seam',        badge: 'bg-warning',   label: 'Products', url: '/dashboard/products/view/' },
+        orders:   { icon: 'bi-cart-check',      badge: 'bg-secondary', label: 'Orders',   url: '/dashboard/orders/view/' },
+        users:    { icon: 'bi-person',          badge: 'bg-primary',   label: 'Users',    url: '/dashboard/users/view/' }
+    };
+
+    function doSearch(q) {
+        if (xhr) xhr.abort();
+        if (q.length < 2) {
+            resultsDiv.classList.remove('show');
+            return;
+        }
+
+        resultsDiv.innerHTML = '<div class="search-loading"><span class="spinner-border spinner-border-sm"></span></div>';
+        resultsDiv.classList.add('show');
+
+        xhr = new XMLHttpRequest();
+        xhr.open('GET', searchUrl + '?q=' + encodeURIComponent(q), true);
+        xhr.onreadystatechange = function () {
+            if (this.readyState !== XMLHttpRequest.DONE) return;
+            try {
+                const data = JSON.parse(this.responseText);
+                if (!data.results || data.results.length === 0) {
+                    resultsDiv.innerHTML = '<div class="search-empty"><i class="bi bi-search"></i> No results</div>';
+                    resultsDiv.classList.add('show');
+                    return;
+                }
+
+                let html = '';
+                data.results.forEach(function (item) {
+                    const meta = SOURCE_META[item.source] || { icon: 'bi-file', badge: 'bg-dark', label: item.source, url: '#' };
+                    let href = basePath + meta.url + item.id;
+
+                    let subtitle = '';
+                    if (item.source === 'users' && item.email) subtitle = item.email;
+                    else if (item.source === 'orders' && item.customer_name) subtitle = item.customer_name;
+                    else if (item.code) subtitle = item.code.toUpperCase();
+
+                    html += '<a class="search-item" href="' + href + '">' +
+                        '<span class="search-icon"><i class="bi ' + meta.icon + '"></i></span>' +
+                        '<span class="search-title">' + escapeHtml(item.title || '') +
+                            (subtitle ? ' <small class="text-muted">(' + escapeHtml(subtitle) + ')</small>' : '') +
+                        '</span>' +
+                        '<span class="badge ' + meta.badge + ' search-badge">' + meta.label + '</span>' +
+                        '</a>';
+                });
+                resultsDiv.innerHTML = html;
+                resultsDiv.classList.add('show');
+            } catch (e) {
+                resultsDiv.classList.remove('show');
+            }
+        };
+        xhr.send();
+    }
+
+    function escapeHtml(str) {
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
+
+    input.addEventListener('input', function () {
+        clearTimeout(timer);
+        timer = setTimeout(function () {
+            doSearch(input.value.trim());
+        }, 300);
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener('mousedown', function (e) {
+        if (!e.target.closest('.topbar-search')) {
+            resultsDiv.classList.remove('show');
+            if (!input.value) {
+                input.closest('.topbar-search')?.classList.remove('open');
+            }
+        }
+    });
+
+    // Close on Escape
+    input.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') {
+            resultsDiv.classList.remove('show');
+            input.value = '';
+            input.closest('.topbar-search')?.classList.remove('open');
+            input.blur();
+        }
+    });
+}
+
+/**
  * DOMContentLoaded:
  * -- Sidebar activate
  * -- static-modal reset

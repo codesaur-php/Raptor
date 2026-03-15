@@ -170,7 +170,7 @@ class MigrationRunner
      *
      * Файлд `-- [UP]` болон `-- [DOWN]` маркер байвал тэдгээрээр хуваана.
      * Маркер огт байхгүй бол файлын бүх агуулгыг UP гэж тооцно.
-     * Маркер хайлт case-insensitive (-- [up], -- [UP] аль ч болно).
+     * Маркер хайлт case-insensitive (-- [up],- [UP] аль ч болно).
      *
      * @param string $path SQL файлын бүтэн зам
      * @return array{up: string, down: string} UP болон DOWN SQL агуулга
@@ -318,7 +318,7 @@ class MigrationRunner
     /**
      * Advisory lock авах (зэрэгцээ migration давхардлаас хамгаалах).
      *
-     * MySQL: GET_LOCK('raptor_migration', 0) — блоклохгүй, шууд буцаана.
+     * MySQL: GET_LOCK('raptor_migration', 0) - блоклохгүй, шууд буцаана.
      * PostgreSQL: pg_try_advisory_lock(hashtext('raptor_migration')).
      *
      * @return bool Lock амжилттай авсан бол true

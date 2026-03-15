@@ -3386,29 +3386,20 @@ moedit.prototype._insertYouTube = function() {
     const pBefore = document.createElement('p');
     pBefore.innerHTML = '<br>';
 
-    /* Responsive wrapper div үүсгэх */
-    const wrapper = document.createElement('div');
-    wrapper.style.maxWidth = '560px';
-    wrapper.style.margin = '10px 0';
-    wrapper.setAttribute('contenteditable', 'false');
-
     const iframe = document.createElement('iframe');
     iframe.src = 'https://www.youtube.com/embed/' + videoId;
     iframe.width = '560';
     iframe.height = '315';
-    iframe.style.border = 'none';
-    iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
+    iframe.style.cssText = 'border:none;overflow:hidden';
+    iframe.frameBorder = '0';
     iframe.allowFullscreen = true;
-    iframe.setAttribute('loading', 'lazy');
-    iframe.setAttribute('referrerpolicy', 'no-referrer-when-downgrade');
-
-    wrapper.appendChild(iframe);
+    iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
 
     const pAfter = document.createElement('p');
     pAfter.innerHTML = '<br>';
 
     fragment.appendChild(pBefore);
-    fragment.appendChild(wrapper);
+    fragment.appendChild(iframe);
     fragment.appendChild(pAfter);
 
     const sel = window.getSelection();
@@ -3506,7 +3497,10 @@ moedit.prototype._insertFacebook = function() {
     debounceTimer = setTimeout(() => {
       const fbUrl = extractFacebookUrl(urlInput.value);
       if (fbUrl) {
-        previewIframe.src = 'https://www.facebook.com/plugins/video.php?href=' + encodeURIComponent(fbUrl) + '&show_text=0&width=500';
+        const isReelPreview = /\/(reel|reels)\//i.test(fbUrl);
+        const previewW = isReelPreview ? 267 : 500;
+        const previewH = isReelPreview ? 476 : 282;
+        previewIframe.src = 'https://www.facebook.com/plugins/video.php?height=' + previewH + '&href=' + encodeURIComponent(fbUrl) + '&show_text=false&width=' + previewW + '&t=0';
         previewDiv.style.display = 'block';
       } else {
         previewDiv.style.display = 'none';
@@ -3557,29 +3551,24 @@ moedit.prototype._insertFacebook = function() {
     const pBefore = document.createElement('p');
     pBefore.innerHTML = '<br>';
 
-    /* Responsive wrapper div үүсгэх */
-    const wrapper = document.createElement('div');
-    wrapper.style.maxWidth = '560px';
-    wrapper.style.margin = '10px 0';
-    wrapper.setAttribute('contenteditable', 'false');
-
+    const isReel = /\/(reel|reels)\//i.test(fbUrl);
+    const embedWidth = isReel ? 267 : 500;
+    const embedHeight = isReel ? 476 : 282;
     const iframe = document.createElement('iframe');
-    iframe.src = 'https://www.facebook.com/plugins/video.php?href=' + encodeURIComponent(fbUrl) + '&show_text=0&width=560';
-    iframe.width = '560';
-    iframe.height = '315';
-    iframe.style.border = 'none';
+    iframe.src = 'https://www.facebook.com/plugins/video.php?height=' + embedHeight + '&href=' + encodeURIComponent(fbUrl) + '&show_text=false&width=' + embedWidth + '&t=0';
+    iframe.width = String(embedWidth);
+    iframe.height = String(embedHeight);
+    iframe.style.cssText = 'border:none;overflow:hidden';
     iframe.scrolling = 'no';
-    iframe.allow = 'encrypted-media';
-    iframe.setAttribute('loading', 'lazy');
-    iframe.setAttribute('referrerpolicy', 'no-referrer-when-downgrade');
-
-    wrapper.appendChild(iframe);
+    iframe.frameBorder = '0';
+    iframe.allowFullscreen = true;
+    iframe.allow = 'autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share';
 
     const pAfter = document.createElement('p');
     pAfter.innerHTML = '<br>';
 
     fragment.appendChild(pBefore);
-    fragment.appendChild(wrapper);
+    fragment.appendChild(iframe);
     fragment.appendChild(pAfter);
 
     const sel = window.getSelection();
@@ -3737,27 +3726,18 @@ moedit.prototype._insertTwitter = function() {
     const pBefore = document.createElement('p');
     pBefore.innerHTML = '<br>';
 
-    /* Responsive wrapper div үүсгэх */
-    const wrapper = document.createElement('div');
-    wrapper.style.maxWidth = '550px';
-    wrapper.style.margin = '10px 0';
-    wrapper.setAttribute('contenteditable', 'false');
-
     const iframe = document.createElement('iframe');
     iframe.src = 'https://platform.twitter.com/embed/Tweet.html?id=' + tweetId;
     iframe.width = '550';
     iframe.height = '300';
-    iframe.style.border = 'none';
-    iframe.setAttribute('loading', 'lazy');
-    iframe.setAttribute('referrerpolicy', 'no-referrer-when-downgrade');
-
-    wrapper.appendChild(iframe);
+    iframe.style.cssText = 'border:none;overflow:hidden';
+    iframe.frameBorder = '0';
 
     const pAfter = document.createElement('p');
     pAfter.innerHTML = '<br>';
 
     fragment.appendChild(pBefore);
-    fragment.appendChild(wrapper);
+    fragment.appendChild(iframe);
     fragment.appendChild(pAfter);
 
     const sel = window.getSelection();
@@ -3945,33 +3925,19 @@ moedit.prototype._insertMap = function() {
     const pBefore = document.createElement('p');
     pBefore.innerHTML = '<br>';
 
-    /* Responsive wrapper div үүсгэх */
-    const wrapper = document.createElement('div');
-    wrapper.style.position = 'relative';
-    wrapper.style.width = '100%';
-    wrapper.style.maxWidth = '600px';
-    wrapper.style.height = '450px';
-    wrapper.style.margin = '10px 0';
-    wrapper.style.borderRadius = '8px';
-    wrapper.style.overflow = 'hidden';
-    wrapper.setAttribute('contenteditable', 'false');
-
     const iframe = document.createElement('iframe');
     iframe.src = embedUrl;
-    iframe.style.width = '100%';
-    iframe.style.height = '100%';
-    iframe.style.border = 'none';
-    iframe.setAttribute('allowfullscreen', '');
-    iframe.setAttribute('loading', 'lazy');
-    iframe.setAttribute('referrerpolicy', 'no-referrer-when-downgrade');
-
-    wrapper.appendChild(iframe);
+    iframe.width = '600';
+    iframe.height = '450';
+    iframe.style.cssText = 'border:none;overflow:hidden';
+    iframe.frameBorder = '0';
+    iframe.allowFullscreen = true;
 
     const pAfter = document.createElement('p');
     pAfter.innerHTML = '<br>';
 
     fragment.appendChild(pBefore);
-    fragment.appendChild(wrapper);
+    fragment.appendChild(iframe);
     fragment.appendChild(pAfter);
 
     const sel = window.getSelection();

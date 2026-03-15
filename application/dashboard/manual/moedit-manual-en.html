@@ -1,0 +1,674 @@
+<div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-3 shadow bg-secondary">
+    <h3 class="px-2 my-auto fs-6 text-white">
+        <i class="bi bi-book"></i> moedit - User Manual
+    </h3>
+    <a href="{{ 'manual' | link }}" class="btn btn-sm btn-light m-1">
+        <i class="bi bi-arrow-left"></i> {{ 'manual' | text }}
+    </a>
+</div>
+
+<!-- ==================== OVERVIEW ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3">What is moedit?</h4>
+        <p>
+            <strong>moedit</strong> is a WYSIWYG text editor used in the Raptor Dashboard.
+            It is designed for preparing content such as pages, news, and products.
+        </p>
+        <p>Used in the following Dashboard sections:</p>
+        <ul>
+            <li><strong>Pages</strong> - Create, edit, and view pages</li>
+            <li><strong>News</strong> - Create, edit, and view news articles</li>
+            <li><strong>Products</strong> - Create, edit, and view products</li>
+        </ul>
+        <p>
+            When the content type is <strong>embed</strong>, the editor automatically switches to HTML Source mode.
+            Otherwise, it operates in Visual mode.
+        </p>
+    </div>
+</div>
+
+<!-- ==================== 1. TOOLBAR STRUCTURE ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-layout-wtf"></i> Toolbar Structure</h4>
+        <p>The toolbar is organized into the following groups:</p>
+        <table class="table table-bordered">
+            <thead class="table-light">
+                <tr><th>Group</th><th>Buttons</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Image Optimization</td><td>Optimize images checkbox</td></tr>
+                <tr><td>Media Insert</td><td>Header Image, Image, Video, Audio, File Attachment</td></tr>
+                <tr><td>Table & Structure</td><td>Table, Accordion, Link, Horizontal Rule</td></tr>
+                <tr><td>Embed Content</td><td>YouTube, Facebook, Twitter/X, Google Maps</td></tr>
+                <tr><td>AI Tools</td><td>AI OCR, PDF to HTML, AI Shine</td></tr>
+                <tr><td>Text Formatting</td><td>Bold, Italic, Underline, Strikethrough, Highlight, Subscript, Superscript</td></tr>
+                <tr><td>Heading & Size</td><td>Paragraph/H1-H6/Pre/Quote, Font size (1-7), Text color</td></tr>
+                <tr><td>Alignment & Lists</td><td>Left, Center, Right, Justify, Indent/Outdent, Remove Format, Bullet/Ordered list</td></tr>
+                <tr><td>History</td><td>Undo, Redo</td></tr>
+                <tr><td>Mode</td><td>Fullscreen, Source Code, Print, Preview</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ==================== 2. KEYBOARD SHORTCUTS ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-keyboard"></i> Keyboard Shortcuts</h4>
+        <table class="table table-bordered">
+            <thead class="table-light">
+                <tr><th>Shortcut</th><th>Action</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><kbd>Ctrl+B</kbd></td><td>Bold</td><td>Make selected text bold</td></tr>
+                <tr><td><kbd>Ctrl+I</kbd></td><td>Italic</td><td>Make selected text italic</td></tr>
+                <tr><td><kbd>Ctrl+U</kbd></td><td>Underline</td><td>Underline selected text</td></tr>
+                <tr><td><kbd>Ctrl+Z</kbd></td><td>Undo</td><td>Undo the last action</td></tr>
+                <tr><td><kbd>Ctrl+Y</kbd></td><td>Redo</td><td>Redo the undone action</td></tr>
+                <tr><td><kbd>Ctrl+Shift+Z</kbd></td><td>Redo</td><td>Alternative redo shortcut</td></tr>
+                <tr><td><kbd>Ctrl+S</kbd></td><td>Exit Source mode</td><td>Switch from Source mode back to Visual mode</td></tr>
+                <tr><td><kbd>Escape</kbd></td><td>Exit Fullscreen</td><td>Return from Fullscreen to normal mode</td></tr>
+                <tr><td><kbd>Alt+F10</kbd></td><td>Focus Toolbar</td><td>Move focus from editor to toolbar</td></tr>
+                <tr><td><kbd>Tab</kbd></td><td>Next cell</td><td>In tables, adds a new row when pressed in the last cell</td></tr>
+                <tr><td><kbd>Shift+Tab</kbd></td><td>Previous cell</td><td>Navigate to the previous table cell</td></tr>
+                <tr><td><kbd>Backspace</kbd></td><td>Delete row</td><td>Deletes the current row if the first cell is empty</td></tr>
+            </tbody>
+        </table>
+        <div class="alert alert-info mb-0">
+            <i class="bi bi-apple"></i> On macOS, use <kbd>Cmd</kbd> instead of <kbd>Ctrl</kbd>.
+        </div>
+    </div>
+</div>
+
+<!-- ==================== 3. FULLSCREEN ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-arrows-fullscreen text-primary"></i> Fullscreen Mode</h4>
+        <p>
+            Click the <i class="bi bi-arrows-fullscreen text-primary"></i> button in the toolbar to enter fullscreen mode.
+        </p>
+        <ul>
+            <li>The content title is displayed at the top</li>
+            <li>Press <kbd>Escape</kbd> or click the button again to exit</li>
+            <li>Provides more space for editing content</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== 4. PASTE HANDLING ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-clipboard"></i> Paste Handling</h4>
+        <table class="table table-bordered">
+            <thead class="table-light">
+                <tr><th>Paste Type</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>HTML content</strong></td>
+                    <td>HTML is automatically cleaned while preserving semantic structure</td>
+                </tr>
+                <tr>
+                    <td><strong>Plain text</strong></td>
+                    <td>Each line is converted to a <code>&lt;p&gt;</code> tag</td>
+                </tr>
+                <tr>
+                    <td><strong>Image (Clipboard)</strong></td>
+                    <td>Clipboard images are automatically detected and uploaded to the server</td>
+                </tr>
+                <tr>
+                    <td><strong>Word document</strong></td>
+                    <td>Word-specific formatting is cleaned. Warning shown if local images are present (cannot be transferred)</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ==================== 5. IMAGE OPTIMIZATION ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-speedometer2"></i> Image Optimization</h4>
+        <p>
+            When the <strong>Optimize Images</strong> checkbox at the beginning of the toolbar is checked,
+            images are automatically compressed during upload (50-80% size reduction while preserving quality).
+        </p>
+        <p>Applies to:</p>
+        <ul>
+            <li>Header image</li>
+            <li>Images inserted into content</li>
+            <li>Image-type file attachments</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== 6. HEADER IMAGE ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-image text-primary"></i> Header Image</h4>
+        <p>Used for the featured/cover image of news articles, products, etc. Only one header image can be set per content.</p>
+        <ul>
+            <li>Click the <i class="bi bi-image text-primary"></i> button in the toolbar</li>
+            <li>After uploading, the image appears at the top of the editor</li>
+            <li>To change - click the <i class="bi bi-pencil"></i> (Change) button on hover</li>
+            <li>To remove - click the <i class="bi bi-trash"></i> (Remove) button on hover</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== 7. INSERT IMAGE ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-image"></i> Insert Image</h4>
+        <p>Click the <i class="bi bi-image text-danger"></i> button in the toolbar. A dialog opens with two tabs. You can insert as many images as needed into the content.</p>
+        <table class="table table-bordered">
+            <thead class="table-light">
+                <tr><th>Tab</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><strong>From Computer</strong></td><td>Select an image file from your computer</td></tr>
+                <tr><td><strong>From URL</strong></td><td>Enter an image URL - real-time preview is shown</td></tr>
+            </tbody>
+        </table>
+        <div class="alert alert-info mt-2 mb-0">
+            <i class="bi bi-lightbulb"></i> <strong>Tips:</strong>
+            <ul class="mb-0">
+                <li>You can drag and drop images directly into the editor</li>
+                <li>You can paste images from the clipboard (Ctrl+V) - screenshots work too</li>
+                <li>Uploaded images are automatically saved to the server</li>
+                <li>Image sizing: max-width: 100%, height: auto</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== 8. FILE ATTACHMENTS ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-paperclip text-warning"></i> File Attachments</h4>
+        <p>Click the <i class="bi bi-paperclip text-warning"></i> button in the toolbar to attach files to the content. You can attach as many files as needed.</p>
+        <p>The attachment table displays:</p>
+        <ul>
+            <li><strong>File name</strong> - with download link</li>
+            <li><strong>Properties</strong> - file type (extension) and size</li>
+            <li><strong>Description</strong> - editable text field</li>
+            <li><strong>Date</strong> - upload date</li>
+            <li><strong>Delete</strong> - remove individual attachments</li>
+        </ul>
+        <p>In Update mode, previously attached files are automatically loaded.</p>
+    </div>
+</div>
+
+<!-- ==================== 9. INSERT VIDEO ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-camera-video text-info"></i> Insert Video</h4>
+        <p>Click the <i class="bi bi-camera-video text-info"></i> button in the toolbar:</p>
+        <table class="table table-bordered">
+            <thead class="table-light">
+                <tr><th>Tab</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><strong>From Computer</strong></td><td>Select and upload a video file to the server</td></tr>
+                <tr><td><strong>From URL</strong></td><td>Enter a video URL - preview player is shown</td></tr>
+            </tbody>
+        </table>
+        <p>Inserted as an HTML5 <code>&lt;video&gt;</code> tag with controls. Responsive: max-width: 100%.</p>
+    </div>
+</div>
+
+<!-- ==================== 10. INSERT AUDIO ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-music-note-beamed text-success"></i> Insert Audio</h4>
+        <p>Click the <i class="bi bi-music-note-beamed text-success"></i> button in the toolbar:</p>
+        <table class="table table-bordered">
+            <thead class="table-light">
+                <tr><th>Tab</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><strong>From Computer</strong></td><td>Select and upload an audio file to the server</td></tr>
+                <tr><td><strong>From URL</strong></td><td>Enter an audio URL - preview player is shown</td></tr>
+            </tbody>
+        </table>
+        <p>Inserted as an HTML5 <code>&lt;audio&gt;</code> tag with controls.</p>
+    </div>
+</div>
+
+<!-- ==================== 11. LINK / EMAIL ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-link-45deg"></i> Insert Link / Email</h4>
+        <ol>
+            <li>Select the text you want to link</li>
+            <li>Click the <i class="bi bi-link-45deg"></i> button in the toolbar</li>
+            <li>Choose URL or Email mode</li>
+        </ol>
+        <table class="table table-bordered mt-3">
+            <thead class="table-light">
+                <tr><th>Mode</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>URL</strong></td>
+                    <td>Enter a link. <code>https://</code> is auto-added. Opens in a new tab (target="_blank")</td>
+                </tr>
+                <tr>
+                    <td><strong>Email</strong></td>
+                    <td>Enter an email address. <code>mailto:</code> is auto-added</td>
+                </tr>
+            </tbody>
+        </table>
+        <p>The Display text field is optional - if left empty, the selected text is used.</p>
+    </div>
+</div>
+
+<!-- ==================== 12. YOUTUBE ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-youtube"></i> Insert YouTube Video</h4>
+        <ol>
+            <li>Click the <i class="bi bi-youtube"></i> button in the toolbar</li>
+            <li>Enter the YouTube embed code or URL</li>
+        </ol>
+        <div class="alert alert-warning mt-2">
+            <i class="bi bi-exclamation-triangle"></i> <strong>Recommendation:</strong>
+            On YouTube, click <strong>Share -> Embed</strong> and copy the <code>&lt;iframe&gt;</code> code for best results.
+            Pasting a URL will use estimated dimensions.
+        </div>
+        <p>Supported URL formats:</p>
+        <ul>
+            <li><code>https://www.youtube.com/watch?v=VIDEO_ID</code></li>
+            <li><code>https://youtu.be/VIDEO_ID</code></li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== 13. FACEBOOK ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-facebook"></i> Insert Facebook Video</h4>
+        <ol>
+            <li>Click the <i class="bi bi-facebook"></i> button in the toolbar</li>
+            <li>Enter the Facebook embed code or URL</li>
+        </ol>
+        <div class="alert alert-warning mt-2">
+            <i class="bi bi-exclamation-triangle"></i> <strong>Recommendation:</strong>
+            On the Facebook video, click <strong>... -> Embed</strong> and copy the code for best results.
+            Pasting a URL will estimate dimensions based on reel/video type.
+        </div>
+        <table class="table table-bordered mt-3 mb-0">
+            <thead class="table-light">
+                <tr><th>Type</th><th>URL Example</th><th>Size</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Reel (vertical)</td><td><code>facebook.com/reel/123...</code></td><td>267 x 476 (9:16)</td></tr>
+                <tr><td>Video (horizontal)</td><td><code>facebook.com/user/videos/123...</code></td><td>500 x 282 (16:9)</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ==================== 14. TWITTER / X ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-twitter-x"></i> Insert Twitter/X Post</h4>
+        <ol>
+            <li>Click the <i class="bi bi-twitter-x"></i> button in the toolbar</li>
+            <li>Enter the tweet/post embed code or URL</li>
+        </ol>
+        <div class="alert alert-warning mt-2 mb-0">
+            <i class="bi bi-exclamation-triangle"></i> <strong>Recommendation:</strong>
+            On the tweet/post, click <strong>Share -> Embed</strong> and copy the code for best results.
+            Pasting a URL will use estimated dimensions.
+        </div>
+        <p class="mt-2 mb-0">URL format: <code>https://x.com/username/status/...</code></p>
+    </div>
+</div>
+
+<!-- ==================== 15. GOOGLE MAPS ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-geo-alt"></i> Insert Google Maps</h4>
+        <ol>
+            <li>Click the <i class="bi bi-geo-alt"></i> button in the toolbar</li>
+            <li>Enter the Google Maps embed code or URL</li>
+        </ol>
+        <div class="alert alert-warning mt-2 mb-0">
+            <i class="bi bi-exclamation-triangle"></i> <strong>Recommendation:</strong>
+            On Google Maps, click <strong>Share -> Embed a map</strong> and copy the <code>&lt;iframe&gt;</code> code for best results.
+            Pasting a URL will use estimated dimensions.
+        </div>
+    </div>
+</div>
+
+<!-- ==================== 16. AI OCR ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-file-text text-info"></i> AI OCR - Recognize Text from Images</h4>
+        <ol>
+            <li>Insert an image containing text into the content</li>
+            <li>Click the <i class="bi bi-file-text text-info"></i> button in the toolbar</li>
+            <li>Optionally enter AI instructions (can be left empty)</li>
+            <li>Click <strong>Convert</strong></li>
+        </ol>
+        <p>AI recognizes text in the image and automatically converts it to HTML:</p>
+        <ul>
+            <li>Tables -> <code>&lt;table&gt;</code></li>
+            <li>Lists -> <code>&lt;ul&gt;</code> / <code>&lt;ol&gt;</code></li>
+            <li>Headings -> <code>&lt;h1&gt;</code>-<code>&lt;h6&gt;</code></li>
+            <li>Text -> <code>&lt;p&gt;</code></li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== 17. AI PDF to HTML ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-file-earmark-pdf text-danger"></i> AI PDF -> HTML</h4>
+        <ol>
+            <li>Click the <i class="bi bi-file-earmark-pdf text-danger"></i> button in the toolbar</li>
+            <li>Select a PDF file</li>
+            <li>Choose pages if the PDF has multiple pages</li>
+            <li>Optionally enter AI instructions</li>
+            <li>Click <strong>Insert</strong></li>
+        </ol>
+        <p>AI recognizes the PDF structure (tables, lists, headings, text) and converts it to HTML within the content.</p>
+    </div>
+</div>
+
+<!-- ==================== 18. AI SHINE ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-stars text-warning"></i> AI Shine - Beautify Content</h4>
+        <ol>
+            <li>Prepare your content (plain text, lists, etc.)</li>
+            <li>Click the <i class="bi bi-stars text-warning"></i> button in the toolbar</li>
+            <li>Optionally enter AI instructions</li>
+            <li>Click <strong>Apply</strong></li>
+        </ol>
+        <p>AI analyzes the content structure and beautifies it using Bootstrap 5 components:</p>
+        <table class="table table-bordered mt-2">
+            <thead class="table-light">
+                <tr><th>Content Type</th><th>Transformed To</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>List information</td><td>Card or list-group</td></tr>
+                <tr><td>Comparisons / Multi-column</td><td>Table (table-striped, table-hover)</td></tr>
+                <tr><td>Q&A / FAQ</td><td>Accordion</td></tr>
+                <tr><td>Step-by-step</td><td>List-group or card</td></tr>
+                <tr><td>Important information</td><td>Alert or callout</td></tr>
+                <tr><td>Related items</td><td>Row/col grid</td></tr>
+            </tbody>
+        </table>
+        <p>Text content is preserved - only the HTML structure is beautified.</p>
+    </div>
+</div>
+
+<!-- ==================== TABLE ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-table"></i> Insert Table</h4>
+        <ol>
+            <li>Click the <i class="bi bi-table"></i> button in the toolbar</li>
+            <li>Enter the number of rows and columns</li>
+            <li>Choose the table type</li>
+        </ol>
+        <table class="table table-bordered mt-3">
+            <thead class="table-light">
+                <tr><th>Type</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><strong>Vanilla Table</strong></td><td>Simple table with inline styles</td></tr>
+                <tr><td><strong>Bootstrap Table</strong></td><td>Table with Bootstrap CSS classes (table-striped, table-hover, table-bordered)</td></tr>
+            </tbody>
+        </table>
+        <h5 class="mt-3 mb-2">Table Shortcuts:</h5>
+        <table class="table table-bordered">
+            <thead class="table-light">
+                <tr><th>Key</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><kbd>Tab</kbd></td><td>Move to next cell. Adds a new row when pressed in the last cell</td></tr>
+                <tr><td><kbd>Shift+Tab</kbd></td><td>Move to previous cell</td></tr>
+                <tr><td><kbd>Backspace</kbd></td><td>Delete the current row if the first cell is empty (requires 2+ rows)</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ==================== 19. SOURCE CODE ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-code-slash text-success"></i> Edit HTML Source</h4>
+        <p>
+            Click the <i class="bi bi-code-slash text-success"></i> button in the toolbar to toggle between
+            <strong>Visual</strong> and <strong>Source</strong> mode.
+        </p>
+        <ul>
+            <li>In Source mode, you can directly edit the HTML code</li>
+            <li>Code is auto-formatted with 2-space indentation</li>
+            <li>Cursor position is preserved between modes</li>
+            <li>Press <kbd>Ctrl+S</kbd> to switch back to Visual mode</li>
+        </ul>
+        <div class="alert alert-info mt-2 mb-0">
+            <i class="bi bi-info-circle"></i> When the content type is <strong>embed</strong>, Source mode is automatically activated.
+        </div>
+    </div>
+</div>
+
+<!-- ==================== 20. PRINT & PREVIEW ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-printer"></i> Print & <i class="bi bi-eye text-info"></i> Preview</h4>
+        <table class="table table-bordered">
+            <thead class="table-light">
+                <tr><th>Button</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><i class="bi bi-printer"></i> Print</td><td>Open the browser print dialog for the content</td></tr>
+                <tr><td><i class="bi bi-eye text-info"></i> Preview</td><td>Preview the content in its final form before saving</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ==================== 21. TEXT FORMATTING ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-type-bold"></i> Text Formatting</h4>
+        <table class="table table-bordered">
+            <thead class="table-light">
+                <tr><th>Button</th><th>Action</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><i class="bi bi-type-bold"></i> Bold</td><td>Bold text</td><td>Make selected text bold</td></tr>
+                <tr><td><i class="bi bi-type-italic"></i> Italic</td><td>Italic text</td><td>Make selected text italic</td></tr>
+                <tr><td><i class="bi bi-type-underline"></i> Underline</td><td>Underline text</td><td>Underline selected text</td></tr>
+                <tr><td><i class="bi bi-type-strikethrough"></i> Strikethrough</td><td>Strikethrough</td><td>Draw a line through selected text</td></tr>
+                <tr><td><i class="bi bi-highlighter"></i> Highlight</td><td>Highlight text</td><td>Add yellow background highlight to selected text</td></tr>
+                <tr><td>x<sub>2</sub> Subscript</td><td>Subscript</td><td>Make text subscript (e.g., H₂O)</td></tr>
+                <tr><td>x<sup>2</sup> Superscript</td><td>Superscript</td><td>Make text superscript (e.g., m²)</td></tr>
+                <tr><td><i class="bi bi-eraser"></i> Remove Format</td><td>Clear formatting</td><td>Strip all formatting from selected text</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ==================== 22. HEADINGS ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-card-heading"></i> Headings</h4>
+        <p>Select from the heading dropdown in the toolbar:</p>
+        <table class="table table-bordered">
+            <thead class="table-light">
+                <tr><th>Option</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Paragraph</td><td>Normal text (default)</td></tr>
+                <tr><td>H1 - H6</td><td>Six heading levels (H1 is largest)</td></tr>
+                <tr><td>Preformatted</td><td>Code block - displayed in monospace font</td></tr>
+                <tr><td>Quote</td><td>Blockquote - styled with blue left border</td></tr>
+            </tbody>
+        </table>
+        <p>The dropdown automatically reflects the current cursor position.</p>
+    </div>
+</div>
+
+<!-- ==================== 23. FONT SIZE ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-fonts"></i> Font Size</h4>
+        <p>7 font size levels:</p>
+        <table class="table table-bordered">
+            <thead class="table-light">
+                <tr><th>Level</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>1</td><td>Smallest</td></tr>
+                <tr><td>2</td><td>Small</td></tr>
+                <tr><td><strong>3</strong></td><td>Normal (default)</td></tr>
+                <tr><td>4</td><td>Medium</td></tr>
+                <tr><td>5</td><td>Large</td></tr>
+                <tr><td>6</td><td>Very large</td></tr>
+                <tr><td>7</td><td>Largest</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ==================== 24. TEXT COLOR ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-palette"></i> Text Color</h4>
+        <p>
+            Click the color button in the toolbar to choose a text color.
+            Supports HEX (#RRGGBB) format and named colors (red, blue, green, etc.).
+        </p>
+        <p>The color picker automatically reflects the current cursor position.</p>
+    </div>
+</div>
+
+<!-- ==================== 25. ALIGNMENT ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-text-center"></i> Text Alignment</h4>
+        <table class="table table-bordered">
+            <thead class="table-light">
+                <tr><th>Button</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><i class="bi bi-text-left"></i> Align Left</td><td>Align text to the left (default)</td></tr>
+                <tr><td><i class="bi bi-text-center"></i> Align Center</td><td>Center text</td></tr>
+                <tr><td><i class="bi bi-text-right"></i> Align Right</td><td>Align text to the right</td></tr>
+                <tr><td><i class="bi bi-justify"></i> Justify</td><td>Justify text on both sides</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ==================== 26. INDENTATION ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-text-indent-left"></i> Indentation</h4>
+        <table class="table table-bordered">
+            <thead class="table-light">
+                <tr><th>Button</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><i class="bi bi-text-indent-left"></i> Increase Indent</td><td>Adds 40px left margin. Press repeatedly to increase depth</td></tr>
+                <tr><td><i class="bi bi-text-indent-right"></i> Decrease Indent</td><td>Removes 40px left margin. Minimum 0px</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ==================== 27. LISTS ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-list-ul"></i> Lists</h4>
+        <table class="table table-bordered">
+            <thead class="table-light">
+                <tr><th>Button</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><i class="bi bi-list-ul"></i> Bullet List</td><td>Create an unordered (bullet) list</td></tr>
+                <tr><td><i class="bi bi-list-ol"></i> Ordered List</td><td>Create a numbered (ordered) list</td></tr>
+            </tbody>
+        </table>
+        <p>Click the button again to remove the list formatting.</p>
+    </div>
+</div>
+
+<!-- ==================== 29. ACCORDION ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-chevron-bar-expand"></i> Insert Accordion</h4>
+        <p>
+            Click the <i class="bi bi-chevron-bar-expand"></i> button in the toolbar to insert a Bootstrap accordion component.
+            Ideal for Q&A, FAQ, or collapsible content sections.
+        </p>
+    </div>
+</div>
+
+<!-- ==================== 30. HORIZONTAL RULE ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-dash-lg"></i> Horizontal Rule</h4>
+        <p>
+            Click the <i class="bi bi-dash-lg"></i> button in the toolbar to insert a horizontal rule (<code>&lt;hr&gt;</code>).
+            Useful for separating content sections.
+        </p>
+    </div>
+</div>
+
+<!-- ==================== 31. READONLY MODE ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-eye-slash"></i> Readonly Mode</h4>
+        <p>
+            When content is opened in <strong>View</strong> mode, the editor operates in read-only mode:
+        </p>
+        <ul>
+            <li>All editing tools are hidden</li>
+            <li>Only <strong>Print</strong>, <strong>Source</strong> (read-only), and <strong>Fullscreen</strong> buttons remain</li>
+            <li>Content cannot be edited</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== 32. TOOLBAR NAVIGATION ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-universal-access"></i> Toolbar Navigation (Accessibility)</h4>
+        <table class="table table-bordered">
+            <thead class="table-light">
+                <tr><th>Key</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><kbd>Alt+F10</kbd></td><td>Move focus from editor to toolbar</td></tr>
+                <tr><td><kbd>&rarr;</kbd> / <kbd>&darr;</kbd></td><td>Next toolbar element</td></tr>
+                <tr><td><kbd>&larr;</kbd> / <kbd>&uarr;</kbd></td><td>Previous toolbar element</td></tr>
+                <tr><td><kbd>Home</kbd></td><td>First toolbar element</td></tr>
+                <tr><td><kbd>End</kbd></td><td>Last toolbar element</td></tr>
+                <tr><td><kbd>Enter</kbd> / <kbd>Space</kbd></td><td>Activate button</td></tr>
+                <tr><td><kbd>Escape</kbd></td><td>Return to editor</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ==================== 33. DARK MODE & RESPONSIVE ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-moon-stars"></i> Dark Mode & Responsive</h4>
+        <ul>
+            <li><strong>Dark Mode:</strong> Automatically activates based on system settings (prefers-color-scheme) or <code>data-bs-theme="dark"</code></li>
+            <li><strong>Mobile:</strong> Toolbar buttons are smaller with touch-friendly spacing</li>
+            <li><strong>Tablet:</strong> Medium-sized buttons</li>
+            <li><strong>Desktop:</strong> Full-size toolbar with optional right-side layout</li>
+        </ul>
+    </div>
+</div>

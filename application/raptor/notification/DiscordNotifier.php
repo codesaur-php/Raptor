@@ -27,6 +27,7 @@ use codesaur\Http\Client\CurlClient;
  */
 class DiscordNotifier
 {
+    /** @var string Discord Webhook URL */
     private string $webhookUrl;
 
     /**
@@ -82,12 +83,16 @@ class DiscordNotifier
         }
     }
 
-    // -- Түгээмэл өнгөнүүд --
-    const COLOR_SUCCESS = 0x2ecc71; // ногоон
-    const COLOR_INFO    = 0x3498db; // цэнхэр
-    const COLOR_WARNING = 0xf39c12; // шар
-    const COLOR_DANGER  = 0xe74c3c; // улаан
-    const COLOR_PURPLE  = 0x9b59b6; // нил ягаан
+    /** @var int Амжилтын өнгө (ногоон) */
+    const COLOR_SUCCESS = 0x2ecc71;
+    /** @var int Мэдээллийн өнгө (цэнхэр) */
+    const COLOR_INFO    = 0x3498db;
+    /** @var int Анхааруулгын өнгө (шар) */
+    const COLOR_WARNING = 0xf39c12;
+    /** @var int Алдааны өнгө (улаан) */
+    const COLOR_DANGER  = 0xe74c3c;
+    /** @var int Нил ягаан өнгө */
+    const COLOR_PURPLE  = 0x9b59b6;
 
     /**
      * Шинэ хэрэглэгч бүртгүүлэх хүсэлт ирсэн тухай мэдэгдэл.

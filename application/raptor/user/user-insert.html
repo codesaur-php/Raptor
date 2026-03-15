@@ -44,6 +44,7 @@
                 <label class="form-label">{{ 'login'|text }}</label>
                 <input class="form-control" required name="username" value="" maxlength="128" placeholder="" type="text" autocomplete="off">
                 <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
+                <small class="text-warning"><i class="bi bi-exclamation-triangle"></i> {{ 'error-username-cannot-change'|text }}</small>
             </div>
             <div class="mb-3">
                 <label class="form-label">{{ 'password'|text }}</label>

@@ -3,7 +3,6 @@
 namespace Dashboard\Shop;
 
 use Psr\Log\LogLevel;
-use Twig\TwigFilter;
 
 use Raptor\Content\FileController;
 use Raptor\Content\FilesModel;
@@ -28,19 +27,6 @@ use Raptor\Content\FilesModel;
 class ProductsController extends FileController
 {
     use \Raptor\Template\DashboardTrait;
-
-    /**
-     * Payload доторх тоон талбаруудын хоосон string утгыг null болгох.
-     */
-    private function sanitizePayload(ProductsModel $model, array $payload): array
-    {
-        foreach ($payload as $key => $value) {
-            if ($value === '' && $model->hasColumn($key) && $model->getColumn($key)->isNumeric()) {
-                $payload[$key] = null;
-            }
-        }
-        return $payload;
-    }
 
     /**
      * Бүтээгдэхүүний жагсаалтын dashboard хуудсыг харуулах.
@@ -141,7 +127,7 @@ class ProductsController extends FileController
             $files_counts = $this->getFilesCounts($table);
             $sampleCheck = $this->query(
                 "SELECT COUNT(*) as total, " .
-                "SUM(CASE WHEN created_by IS NULL AND created_at = published_at AND category='sample' THEN 1 ELSE 0 END) as sample " .
+                "SUM(CASE WHEN created_by IS NULL AND created_at = published_at AND category='_raptor_sample_' THEN 1 ELSE 0 END) as sample " .
                 "FROM $table WHERE is_active=1"
             )->fetch();
             $isSample = (int)$sampleCheck['sample'] > 0;
@@ -177,16 +163,16 @@ class ProductsController extends FileController
             $model = new ProductsModel($this->pdo);
             $table = $model->getName();
             if ($this->getRequest()->getMethod() == 'POST') {
-                $payload = $this->getParsedBody();
-                if (empty($payload['title'])) {
+                $parsedBody = $this->getParsedBody();
+                if (empty($parsedBody['title'])) {
                     throw new \InvalidArgumentException($this->text('invalid-request'), 400);
                 }
 
-                $isPublished = ($payload['published'] ?? 0) == 1;
+                $isPublished = ($parsedBody['published'] ?? 0) == 1;
                 $needsPublishPermission =
                     $isPublished ||
-                    ($payload['is_featured'] ?? 0) == 1 ||
-                    ($payload['comment'] ?? 0) == 1;
+                    ($parsedBody['is_featured'] ?? 0) == 1 ||
+                    ($parsedBody['comment'] ?? 0) == 1;
                 if ($needsPublishPermission
                     && !$this->isUserCan('system_product_publish')
                 ) {
@@ -194,15 +180,14 @@ class ProductsController extends FileController
                 }
 
                 if ($isPublished) {
-                    $payload['published_at'] = \date('Y-m-d H:i:s');
-                    $payload['published_by'] = $this->getUserId();
+                    $parsedBody['published_at'] = \date('Y-m-d H:i:s');
+                    $parsedBody['published_by'] = $this->getUserId();
                 }
 
-                $files = \json_decode($payload['files'] ?? '{}', true) ?: [];
-                unset($payload['files']);
+                $files = \json_decode($parsedBody['files'] ?? '{}', true) ?: [];
+                unset($parsedBody['files']);
 
-                $payload = $this->sanitizePayload($model, $payload);
-
+                $payload = $this->sanitizePayload($model, $parsedBody);
                 $record = $model->insert(
                     $payload + ['created_by' => $this->getUserId()]
                 );
@@ -264,6 +249,7 @@ class ProductsController extends FileController
      * PUT: Бүтээгдэхүүнийг шинэчлэнэ
      *
      * Permission: system_product_update, system_product_publish
+     * Эсвэл: өөрийн үүсгэсэн, нийтлэгдээгүй бичлэгийг засах боломжтой
      *
      * @param int $id Шинэчлэх бүтээгдэхүүний ID
      * @return void
@@ -271,10 +257,6 @@ class ProductsController extends FileController
     public function update(int $id)
     {
         try {
-            if (!$this->isUserCan('system_product_update')) {
-                throw new \Exception($this->text('system-no-permission'), 401);
-            }
-
             $model = new ProductsModel($this->pdo);
             $table = $model->getName();
             $filesModel = new FilesModel($this->pdo);
@@ -285,21 +267,31 @@ class ProductsController extends FileController
             ]);
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));
+            }
+
+            if (!$this->isUserCan('system_product_update')) {
+                if ((int)$record['created_by'] !== $this->getUserId()
+                    || (int)$record['published'] !== 0
+                ) {
+                    throw new \Exception($this->text('system-no-permission'), 401);
+                }
             } elseif ($record['published'] == 1
                 && !$this->isUserCan('system_product_publish')
             ) {
                 throw new \Exception($this->text('system-no-permission'), 401);
-            } elseif ($this->getRequest()->getMethod() == 'PUT') {
-                $payload = $this->getParsedBody();
-                if (empty($payload['title'])) {
+            }
+
+            if ($this->getRequest()->getMethod() == 'PUT') {
+                $parsedBody = $this->getParsedBody();
+                if (empty($parsedBody['title'])) {
                     throw new \InvalidArgumentException($this->text('invalid-request'), 400);
                 }
 
-                $isPublished = ($payload['published'] ?? 0) == 1;
+                $isPublished = ($parsedBody['published'] ?? 0) == 1;
                 $needsPublishPermission =
                     $isPublished ||
-                    ($payload['is_featured'] ?? 0) == 1 ||
-                    ($payload['comment'] ?? 0) == 1;
+                    ($parsedBody['is_featured'] ?? 0) == 1 ||
+                    ($parsedBody['comment'] ?? 0) == 1;
                 if ($needsPublishPermission
                     && !$this->isUserCan('system_product_publish')
                 ) {
@@ -307,20 +299,20 @@ class ProductsController extends FileController
                 }
 
                 if ($isPublished && $record['published'] != 1) {
-                    $payload['published_at'] = \date('Y-m-d H:i:s');
-                    $payload['published_by'] = $this->getUserId();
+                    $parsedBody['published_at'] = \date('Y-m-d H:i:s');
+                    $parsedBody['published_by'] = $this->getUserId();
                 }
 
-                $files = \json_decode($payload['files'] ?? '{}', true) ?: [];
-                unset($payload['files']);
-                if (isset($payload['id'])) {
-                    unset($payload['id']);
+                $files = \json_decode($parsedBody['files'] ?? '{}', true) ?: [];
+                unset($parsedBody['files']);
+                if (isset($parsedBody['id'])) {
+                    unset($parsedBody['id']);
                 }
 
-                $payload = $this->sanitizePayload($model, $payload);
-
+                $payload = $this->sanitizePayload($model, $parsedBody);
+                
                 $fileChanges = $this->processFiles($record, $files);
-
+                
                 $updates = [];
                 foreach ($payload as $field => $value) {
                     if (($record[$field] ?? null) != $value) {
@@ -400,63 +392,10 @@ class ProductsController extends FileController
     }
 
     /**
-     * Бүтээгдэхүүний бичлэгийг унших.
-     *
-     * Permission: system_product_index
-     *
-     * @param string $slug Бүтээгдэхүүний slug
-     * @return void
-     */
-    public function read(string $slug)
-    {
-        try {
-            $model = new ProductsModel($this->pdo);
-            $table = $model->getName();
-            if (!$this->isUserCan('system_product_index')) {
-                throw new \Exception($this->text('system-no-permission'), 401);
-            }
-            $record = $model->getRowWhere([
-                'slug' => $slug,
-                'is_active' => 1
-            ]);
-            if (empty($record)) {
-                throw new \Exception($this->text('no-record-selected'));
-            }
-            $id = (int) $record['id'];
-            $filesModel = new FilesModel($this->pdo);
-            $filesModel->setTable($table);
-            $files = $filesModel->getRows(['WHERE' => "record_id=$id AND is_active=1"]);
-
-            $template = $this->twigTemplate(__DIR__ . '/products-read.html');
-            foreach ($this->getAttribute('settings', []) as $key => $value) {
-                $template->set($key, $value);
-            }
-            $template->set('record', $record);
-            $template->set('files', $files);
-            $template->addFilter(new TwigFilter('basename', fn(string $path): string => \rawurldecode(\basename($path))));
-            $template->render();
-            $model->updateById($id, ['read_count' => $record['read_count'] + 1]);
-        } catch (\Throwable $err) {
-            $this->dashboardProhibited($err->getMessage(), $err->getCode())->render();
-        } finally {
-            $context = ['action' => 'read', 'slug' => $slug];
-            if (isset($err) && $err instanceof \Throwable) {
-                $level = LogLevel::ERROR;
-                $message = '{slug} бүтээгдэхүүнийг унших үед алдаа гарч зогслоо';
-                $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
-            } else {
-                $level = LogLevel::NOTICE;
-                $message = '[{title}] {slug} бүтээгдэхүүнийг уншиж байна';
-                $context += $record + ['files' => $files];
-            }
-            $this->log('product', $level, $message, $context);
-        }
-    }
-
-    /**
      * Бүтээгдэхүүний дэлгэрэнгүй мэдээллийг dashboard-д харуулах.
      *
      * Permission: system_product_index
+     * Нийтлэгдсэн бичлэгийг нэвтэрсэн бүх admin харах боломжтой
      *
      * @param int $id Үзэх бүтээгдэхүүний ID
      * @return void
@@ -466,15 +405,17 @@ class ProductsController extends FileController
         try {
             $model = new ProductsModel($this->pdo);
             $table = $model->getName();
-            if (!$this->isUserCan('system_product_index')) {
-                throw new \Exception($this->text('system-no-permission'), 401);
-            }
             $record = $model->getRowWhere([
                 'id' => $id,
                 'is_active' => 1
             ]);
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));
+            }
+            if (!$this->isUserCan('system_product_index')
+                && (int)$record['published'] !== 1
+            ) {
+                throw new \Exception($this->text('system-no-permission'), 401);
             }
             $filesModel = new FilesModel($this->pdo);
             $filesModel->setTable($table);
@@ -648,19 +589,13 @@ class ProductsController extends FileController
      * Бүтээгдэхүүний бичлэгийг идэвхгүй болгох.
      *
      * Permission: system_product_delete
+     * Эсвэл: өөрийн үүсгэсэн, нийтлэгдээгүй бичлэгийг устгах боломжтой
      *
      * @return void JSON response буцаана
      */
     public function deactivate()
     {
         try {
-            $model = new ProductsModel($this->pdo);
-            $table = $model->getName();
-
-            if (!$this->isUserCan('system_product_delete')) {
-                throw new \Exception('No permission for an action [delete]!', 401);
-            }
-
             $payload = $this->getParsedBody();
             if (!isset($payload['id'])
                 || !\filter_var($payload['id'], \FILTER_VALIDATE_INT)
@@ -668,6 +603,18 @@ class ProductsController extends FileController
                 throw new \InvalidArgumentException($this->text('invalid-request'), 400);
             }
             $id = \filter_var($payload['id'], \FILTER_VALIDATE_INT);
+
+            $model = new ProductsModel($this->pdo);
+            if (!$this->isUserCan('system_product_delete')) {
+                $record = $model->getRowWhere(['id' => $id, 'is_active' => 1]);
+                if (empty($record)
+                    || (int)$record['created_by'] !== $this->getUserId()
+                    || (int)$record['published'] !== 0
+                ) {
+                    throw new \Exception('No permission for an action [delete]!', 401);
+                }
+            }
+
             $deactivated = $model->deactivateById(
                 $id,
                 [
@@ -710,14 +657,14 @@ class ProductsController extends FileController
     /**
      * Жишиг датаг цэвэрлэж production эхлүүлэх.
      *
-     * Permission: system_product_delete
+     * Permission: system_product_index
      *
      * @return void
      */
     public function reset()
     {
         try {
-            if (!$this->isUserCan('system_product_delete')) {
+            if (!$this->isUserCan('system_product_index')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
 
@@ -726,7 +673,7 @@ class ProductsController extends FileController
 
             $check = $this->query(
                 "SELECT COUNT(*) as sample FROM $table " .
-                "WHERE is_active=1 AND created_by IS NULL AND created_at = published_at AND category='sample'"
+                "WHERE is_active=1 AND created_by IS NULL AND created_at = published_at AND category='_raptor_sample_'"
             )->fetch();
             if ((int)$check['sample'] === 0) {
                 throw new \Exception(
@@ -735,10 +682,33 @@ class ProductsController extends FileController
                 );
             }
 
-            $this->exec('SET FOREIGN_KEY_CHECKS=0');
-            try { $this->exec("TRUNCATE TABLE {$table}_files"); } catch (\Throwable) {}
-            $this->exec("TRUNCATE TABLE $table");
-            $this->exec('SET FOREIGN_KEY_CHECKS=1');
+            // Жишиг датаны ID-уудыг олох
+            $sampleIds = $this->query(
+                "SELECT id FROM $table WHERE category='_raptor_sample_' AND created_by IS NULL AND created_at = published_at"
+            )->fetchAll(\PDO::FETCH_COLUMN);
+
+            if (!empty($sampleIds)) {
+                $idList = \implode(',', \array_map('intval', $sampleIds));
+                // Жишиг датаны файлуудыг устгах
+                try { $this->exec("DELETE FROM {$table}_files WHERE record_id IN ($idList)"); } catch (\Throwable) {}
+                // Жишиг датаг устгах
+                $this->exec("DELETE FROM $table WHERE id IN ($idList)");
+            }
+
+            // Идэвхгүй (is_active=0) бичлэгүүдийг устгах
+            $inactiveIds = $this->query(
+                "SELECT id FROM $table WHERE is_active=0"
+            )->fetchAll(\PDO::FETCH_COLUMN);
+            if (!empty($inactiveIds)) {
+                $idList = \implode(',', \array_map('intval', $inactiveIds));
+                try { $this->exec("DELETE FROM {$table}_files WHERE record_id IN ($idList)"); } catch (\Throwable) {}
+                $this->exec("DELETE FROM $table WHERE id IN ($idList)");
+            }
+
+            // Auto increment тохируулах
+            $maxId = $this->query("SELECT MAX(id) as max_id FROM $table")->fetch();
+            $nextId = ((int)($maxId['max_id'] ?? 0)) + 1;
+            $this->exec("ALTER TABLE $table AUTO_INCREMENT = $nextId");
 
             $this->respondJSON([
                 'status' => 'success',
@@ -783,5 +753,18 @@ class ProductsController extends FileController
         } catch (\Throwable) {
             return [];
         }
+    }
+
+    /**
+     * Payload доторх тоон талбаруудын хоосон string утгыг null болгох.
+     */
+    private function sanitizePayload(ProductsModel $model, array $payload): array
+    {
+        foreach ($payload as $key => $value) {
+            if ($value === '' && $model->hasColumn($key) && $model->getColumn($key)->isNumeric()) {
+                $payload[$key] = null;
+            }
+        }
+        return $payload;
     }
 }

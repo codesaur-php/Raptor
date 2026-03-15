@@ -1,0 +1,307 @@
+<div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-3 shadow bg-secondary">
+    <h3 class="px-2 my-auto fs-6 text-white">
+        <i class="bi bi-book"></i> Pages - User Manual
+    </h3>
+    <a href="{{ 'manual' | link }}" class="btn btn-sm btn-light m-1">
+        <i class="bi bi-arrow-left"></i> {{ 'manual' | text }}
+    </a>
+</div>
+
+<!-- ==================== OVERVIEW ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3">What is Pages?</h4>
+        <p>
+            <strong>Pages</strong> is the content management module of the Raptor Dashboard.
+            It handles creating, editing, deleting, and publishing website pages.
+        </p>
+        <p>Key features:</p>
+        <ul>
+            <li><strong>Tree structure</strong> - Pages can have parent-child hierarchy</li>
+            <li><strong>Multi-language</strong> - Separate pages per language</li>
+            <li><strong>SEO-friendly slug</strong> - Auto-generated URL slug from title</li>
+            <li><strong>Navigation</strong> - Published pages with type <code>menu</code> or <code>*-menu</code> automatically appear in website menus</li>
+            <li><strong>Special pages</strong> - Pages with <code>type='special'</code> are excluded from navigation menus but can appear in specific locations designated by the developer</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== LIST ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-list-ul"></i> Pages List</h4>
+        <p>Click <strong>Pages</strong> in the Dashboard sidebar to open the list page.</p>
+        <h5 class="mt-3">Filters</h5>
+        <p>Filter pages by:</p>
+        <ul>
+            <li><strong>Language</strong> - mn, en, etc.</li>
+            <li><strong>Type</strong> - menu, mega-menu, special</li>
+            <li><strong>Category</strong> - general, info, service, legal, reference</li>
+            <li><strong>Status</strong> - Published or draft</li>
+        </ul>
+        <h5 class="mt-3">Table Columns</h5>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Column</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>ID / Date</td><td>Page ID and creation date</td></tr>
+                <tr><td>Language</td><td>Language flag and code</td></tr>
+                <tr><td>Image</td><td>Header image (if exists)</td></tr>
+                <tr><td>Title</td><td>Page name</td></tr>
+                <tr><td>Attachments</td><td>Number of attached files</td></tr>
+                <tr><td>Type / Category</td><td>Page type and category</td></tr>
+                <tr><td>Position</td><td>Menu order (lower number = first)</td></tr>
+                <tr><td>Published</td><td>Publication status and date</td></tr>
+                <tr><td>Actions</td><td>View, Edit, Delete buttons</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ==================== NAVIGATION TREE ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-diagram-3"></i> Navigation Tree</h4>
+        <p>
+            Click the <strong>Navigation</strong> button on the list page to view the hierarchical
+            tree structure of pages, grouped by language.
+        </p>
+        <ul>
+            <li>Expand/collapse parent pages</li>
+            <li><strong>Expand All / Collapse All</strong> buttons</li>
+            <li>Add child pages directly under a parent</li>
+            <li>Total page count per language</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== CREATE ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-plus-circle"></i> Create New Page</h4>
+        <p>Click the <strong>New</strong> button on the list page.</p>
+
+        <h5 class="mt-3">Fields</h5>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Field</th><th>Description</th><th>Required</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><strong>Language</strong></td><td>Page language (mn, en, etc.)</td><td>Yes</td></tr>
+                <tr><td><strong>Type</strong></td><td>menu, mega-menu, special</td><td>Yes</td></tr>
+                <tr><td><strong>Category</strong></td><td>general, info, service, legal, reference</td><td>Yes</td></tr>
+                <tr><td><strong>Position</strong></td><td>Menu order (default: 100)</td><td>Yes</td></tr>
+                <tr><td><strong>Parent page</strong></td><td>Place under which page (must share same language)</td><td>No</td></tr>
+                <tr><td><strong>Title</strong></td><td>Page name (up to 255 characters)</td><td>Yes</td></tr>
+                <tr><td><strong>Description</strong></td><td>Short description (auto-generated from content if empty)</td><td>No</td></tr>
+                <tr><td><strong>Content</strong></td><td>Full content - written with <a href="{{ 'manual-view' | link({'file': 'moedit-manual-en.html'}) }}" title="View moedit manual">moedit</a> editor</td><td>No</td></tr>
+                <tr><td><strong>Source</strong></td><td>Source/attribution information</td><td>No</td></tr>
+                <tr><td><strong>Link</strong></td><td>External/internal URL (replaces content display)</td><td>No</td></tr>
+                <tr><td><strong>Header image</strong></td><td>Page header image (1 only)</td><td>No</td></tr>
+            </tbody>
+        </table>
+
+        <h5 class="mt-3">Publishing Options</h5>
+        <p>Users with <code>system_content_publish</code> permission see these options:</p>
+        <ul>
+            <li><strong>Publish</strong> - Make visible on the website</li>
+            <li><strong>Feature</strong> - Show in the homepage featured section</li>
+            <li><strong>Comments</strong> - Allow visitor comments</li>
+        </ul>
+
+        <h5 class="mt-3">Auto-generated Fields</h5>
+        <ul>
+            <li><strong>Slug</strong> - Auto-generated from title (Cyrillic to Latin transliteration)</li>
+            <li><strong>Description</strong> - Auto-extracted from content (200 characters) if left empty</li>
+            <li><strong>Position</strong> - Auto-calculated based on parent hierarchy</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== EDIT ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-pencil-square"></i> Edit Page</h4>
+        <p>Click the <strong>edit</strong> (pencil) button from the list.</p>
+        <ul>
+            <li>All fields can be modified (except slug)</li>
+            <li>Header image can be replaced or removed</li>
+            <li>Attachment descriptions can be edited, new files added, or existing files deleted</li>
+            <li>Editing a published page requires <code>system_content_publish</code> permission</li>
+        </ul>
+
+        <h5 class="mt-3">Parent Page Selection</h5>
+        <div class="alert alert-warning mb-0">
+            <i class="bi bi-exclamation-triangle"></i>
+            The parent page must share the same language. You cannot select a descendant
+            page as a parent (prevents circular references).
+        </div>
+    </div>
+</div>
+
+<!-- ==================== VIEW ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-eye"></i> View Page</h4>
+        <p>Click the <strong>view</strong> (eye) button from the list.</p>
+        <ul>
+            <li>All fields displayed in read-only mode</li>
+            <li>Content shown in moedit read-only mode</li>
+            <li>Header image and attachments visible</li>
+            <li>Warning shown if page has child pages</li>
+            <li>Warning shown if page is a link page</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== DELETE ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-trash"></i> Delete Page</h4>
+        <p>Click the <strong>delete</strong> (trash) button from the list.</p>
+        <ul>
+            <li>A confirmation dialog appears (SweetAlert2)</li>
+            <li>Soft delete - data is preserved, only deactivated</li>
+            <li>Attachments and child pages remain intact</li>
+            <li>Requires <code>system_content_delete</code> permission</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== DISCORD NOTIFICATION ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-bell"></i> Discord Notification</h4>
+        <p>
+            Automatic Discord notifications are sent via webhook for every page action
+            (if a webhook is configured).
+        </p>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Action</th><th>Notification details</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Create new page</td><td>Content type (page), action (insert), title, ID, admin name</td></tr>
+                <tr><td>Edit / publish page</td><td>Content type (page), action (update/publish), title, ID, admin name</td></tr>
+                <tr><td>Delete page</td><td>Content type (page), action (delete), title, ID, admin name</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ==================== TYPES ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-tags"></i> Page Types & Categories</h4>
+        <h5>Type</h5>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Value</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><code>menu</code></td><td>Regular menu page (default)</td></tr>
+                <tr><td><code>mega-menu</code></td><td>Mega menu page</td></tr>
+                <tr><td><code>special</code></td><td>Special page (not shown in navigation)</td></tr>
+            </tbody>
+        </table>
+        <p class="text-muted">
+            <i class="bi bi-info-circle"></i> Only published pages with type <code>menu</code>
+            or <code>*-menu</code> appear in the website navigation.
+        </p>
+
+        <h5 class="mt-3">Category</h5>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Value</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><code>general</code></td><td>General (default)</td></tr>
+                <tr><td><code>info</code></td><td>Information</td></tr>
+                <tr><td><code>service</code></td><td>Service</td></tr>
+                <tr><td><code>legal</code></td><td>Legal, regulations</td></tr>
+                <tr><td><code>reference</code></td><td>Reference</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ==================== LINK PAGE ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-link-45deg"></i> Link Pages</h4>
+        <p>
+            When the <strong>Link</strong> field is filled, the page acts as a redirect link
+            instead of displaying content. Clicking it in the navigation menu redirects to that URL.
+        </p>
+        <p>Supported link formats:</p>
+        <ul>
+            <li><code>https://example.com</code> - External URL</li>
+            <li><code>/about</code> - Internal path</li>
+            <li><code>mailto:info@example.com</code> - Email</li>
+            <li><code>tel:+97699001234</code> - Phone number</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== FILES ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-paperclip"></i> File Attachments</h4>
+        <p>Each page supports the following file types:</p>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Type</th><th>Count</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><strong>Header image</strong></td><td>1 only</td><td>Page header image, can be replaced or removed</td></tr>
+                <tr><td><strong>Content media</strong></td><td>Unlimited</td><td>Embedded in content via moedit editor</td></tr>
+                <tr><td><strong>Attachments</strong></td><td>Unlimited</td><td>Separate file attachments with descriptions</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ==================== SAMPLE DATA ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-arrow-counterclockwise"></i> Reset Sample Data</h4>
+        <p>
+            When the system is first installed, sample data is pre-loaded.
+            If sample data is detected, a yellow alert with a <strong>Reset & Production</strong>
+            button appears on the list page.
+        </p>
+        <div class="alert alert-danger">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            <strong>Warning:</strong> Resetting will delete only sample data and their file attachment records.
+            User-created content will remain intact. This action cannot be undone.
+        </div>
+        <div class="alert alert-info mb-0">
+            <i class="bi bi-lightbulb"></i>
+            <strong>How sample data is detected:</strong> Pages with <code>category='_raptor_sample_'</code>
+            are considered sample data. If you want to keep some of them as real content,
+            simply change the category (e.g. to <code>general</code>) and save -
+            they will not be deleted during reset.
+        </div>
+    </div>
+</div>
+
+<!-- ==================== PERMISSIONS ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-shield-lock"></i> Required Permissions</h4>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Action</th><th>Permission</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>View list, View page</td><td><code>system_content_index</code></td></tr>
+                <tr><td>Create new page</td><td><code>system_content_insert</code></td></tr>
+                <tr><td>Edit page</td><td><code>system_content_update</code></td></tr>
+                <tr><td>Publish, Feature, Comments</td><td><code>system_content_publish</code></td></tr>
+                <tr><td>Delete, Reset sample data</td><td><code>system_content_delete</code></td></tr>
+                <tr><td>View activity logs</td><td><code>system_logger</code></td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>

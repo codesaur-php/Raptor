@@ -1,0 +1,149 @@
+<div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-3 shadow bg-secondary">
+    <h3 class="px-2 my-auto fs-6 text-white">
+        <i class="bi bi-book"></i> Миний профайл - Гарын авлага
+    </h3>
+    <a href="{{ 'manual' | link }}" class="btn btn-sm btn-light m-1">
+        <i class="bi bi-arrow-left"></i> {{ 'manual' | text }}
+    </a>
+</div>
+
+<!-- ==================== ТОЙМ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-person-circle"></i> Миний профайл гэж юу вэ?</h4>
+        <p>
+            Дээд навигацийн баруун талд таны нэрээр харагдах цэс нь хэрэглэгчийн хувийн
+            профайл удирдлагын үйлдлүүдийг агуулна.
+        </p>
+        <ul>
+            <li><strong>Хэрэглэгч</strong> - Өөрийн профайлыг харах, засварлах</li>
+            <li><strong>Байгууллага</strong> - Харъяалагдах байгууллагуудаа харах, сонгох</li>
+            <li><strong>Language &amp; Options</strong> - Хэл болон загвар сонголт</li>
+            <li><strong>Гарах</strong> - Системээс гарах</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== ХЭРЭГЛЭГЧ ПРОФАЙЛ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-person"></i> Хэрэглэгч (Профайл засах)</h4>
+        <p>Профайл цэснээс <strong>Хэрэглэгч</strong> дарж профайл засварлах хуудас руу орно.</p>
+
+        <h5 class="mt-3">Хувийн мэдээлэл таб</h5>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Талбар</th><th>Тайлбар</th><th>Засах боломж</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><strong>Username</strong></td><td>Нэвтрэх нэр</td><td>Үгүй (зөвхөн харах)</td></tr>
+                <tr><td><strong>Email</strong></td><td>И-мэйл хаяг</td><td>Тийм</td></tr>
+                <tr><td><strong>First name</strong></td><td>Нэр</td><td>Тийм</td></tr>
+                <tr><td><strong>Last name</strong></td><td>Овог</td><td>Тийм</td></tr>
+                <tr><td><strong>Phone</strong></td><td>Утасны дугаар</td><td>Тийм</td></tr>
+            </tbody>
+        </table>
+
+        <h5 class="mt-3">Зураг таб</h5>
+        <ul>
+            <li>Шинэ профайл зураг байршуулах</li>
+            <li>Зураг солих эсвэл устгах</li>
+            <li>Файлын хэмжээтэй урьдчилан харах</li>
+        </ul>
+
+        <h5 class="mt-3">Тохиргоо таб</h5>
+        <p>
+            Зохих эрх байвал Тохиргоо табаас байгууллага болон RBAC дүр оноох боломжтой.
+            (Дэлгэрэнгүй: <a href="{{ 'manual-view'|link({'file': 'users-manual-' ~ localization.code ~ '.html'}) }}">Хэрэглэгчдийн гарын авлага</a>)
+        </p>
+    </div>
+</div>
+
+<!-- ==================== НУУЦ ҮГ СОЛИХ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-key"></i> Нууц үг солих</h4>
+        <p>Нууц үг солих 2 арга бий:</p>
+
+        <h5 class="mt-3">1. Хэрэглэгчдийн жагсаалтаас</h5>
+        <p>
+            Хэрэглэгчдийн жагсаалтын хүснэгтэд таны мөр дээрх
+            <i class="bi bi-key-fill"></i> (түлхүүр) товчийг дарж нууц үгээ солино.
+        </p>
+
+        <h5 class="mt-3">2. Нэвтрэх дэлгэцнээс (нууц үг мартсан)</h5>
+        <ul>
+            <li>Нэвтрэх дэлгэц дээрх <strong>нууц үг мартсан</strong> холбоосыг дарна</li>
+            <li>И-мэйл хаягаа оруулж хүсэлт илгээнэ</li>
+            <li>И-мэйлээр ирсэн линкээр дамжин нууц үгээ сэргээнэ</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== БАЙГУУЛЛАГА ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-building"></i> Байгууллага</h4>
+        <p>Профайл цэснээс <strong>Байгууллага</strong> дарж байгууллагуудаа харна.</p>
+
+        <h5 class="mt-3">Боломжууд</h5>
+        <ul>
+            <li>Өөрт оноогдсон бүх байгууллагуудыг харах</li>
+            <li>Байгууллага бүрийн нэр, лого харагдана</li>
+            <li>Одоо идэвхтэй байгууллага цэнхэр хүрээгээр тодорно</li>
+        </ul>
+
+        <h5 class="mt-3">Байгууллага сонгох (солих)</h5>
+        <p>
+            Аль нэг байгууллагын карт дээрх <strong>Сонгох</strong> товчийг дарж
+            идэвхтэй байгууллагаа солино. Ингэснээр ямар байгууллагын хүрээнд ажиллах вэ гэдгийг тодорхойлно.
+        </p>
+
+        <div class="alert alert-info mb-0">
+            <i class="bi bi-info-circle"></i>
+            <strong>system_coder</strong> дүртэй хэрэглэгч бүх байгууллагыг харж, сонгох боломжтой.
+            Энгийн хэрэглэгч зөвхөн өөрт оноогдсон байгууллагуудыг харна.
+        </div>
+    </div>
+</div>
+
+<!-- ==================== ХЭЛ & ТОХИРГОО ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-sliders"></i> Language &amp; Options</h4>
+        <p>Профайл цэснээс <strong>Language &amp; Options</strong> дарна. Modal цонх нээгдэнэ.</p>
+
+        <h5 class="mt-3">Загвар сонголт (Theme)</h5>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Сонголт</th><th>Тайлбар</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><strong>Light mode</strong></td><td>Цайвар дэвсгэр загвар</td></tr>
+                <tr><td><strong>Dark mode</strong></td><td>Бараан дэвсгэр загвар</td></tr>
+            </tbody>
+        </table>
+        <p>Загварын сонголт хөтчийн санах ойд хадгалагдаж, дараагийн удаа ч хэвээр үлдэнэ.</p>
+
+        <h5 class="mt-3">Хэл сонголт</h5>
+        <ul>
+            <li>Системд бүртгэлтэй бүх хэлний жагсаалт улсын тугтай харагдана</li>
+            <li>Хэл сонгоод баталгаажуулах товчийг дарна</li>
+            <li>Хуудас сонгосон хэл дээр дахин ачаалагдана</li>
+            <li>Хэлний сонголт таны профайлд хадгалагдана</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== ГАРАХ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-box-arrow-left"></i> Гарах (Logout)</h4>
+        <p>Профайл цэснээс <strong>Гарах</strong> дарж системээс гарна.</p>
+        <ul>
+            <li>Таны нэвтрэлтийн сессий (JWT токен) устгагдана</li>
+            <li>Нүүр хуудас руу шилжинэ</li>
+            <li>Хэлний сонголт дараагийн нэвтрэлтэд хадгалагдсан хэвээр үлдэнэ</li>
+        </ul>
+    </div>
+</div>

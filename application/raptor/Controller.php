@@ -402,7 +402,7 @@ abstract class Controller extends \codesaur\Http\Application\Controller
     public function redirectTo(string $routeName, array $params = [])
     {
         $link = $this->generateRouteLink($routeName, $params);
-        \header("Location: $link", false, 302);
+        \header('Location: ' . \filter_var($link, \FILTER_SANITIZE_URL), true, 302);
         exit;
     }
 

@@ -72,10 +72,13 @@ namespace Web;
  */
 class Application extends \codesaur\Http\Application\Application
 {
+    /**
+     * Web Application-г эхлүүлж middleware, router-уудыг бүртгэх.
+     */
     public function __construct()
     {
         parent::__construct();
-        
+
         // Template тулгуурласан Error Handler
         $this->use(new Template\ExceptionHandler());
         
@@ -91,15 +94,19 @@ class Application extends \codesaur\Http\Application\Application
         $this->use(new \Raptor\ContainerMiddleware());
 
         // Session middleware
-        $this->use(new SessionMiddleware());
+        $this->use(new \Raptor\SessionMiddleware(
+            fn(string $path, string $method): bool =>
+                \str_starts_with($path, '/language/')
+                || ($path === '/order' && $method === 'POST')
+        ));
 
         // Localization middleware (mn/en ...)
-        $this->use(new LocalizationMiddleware());
+        $this->use(new \Raptor\Localization\LocalizationMiddleware('WEB_LANGUAGE_CODE'));
 
         // System settings middleware (branding, favicon, footer...)
         $this->use(new \Raptor\Content\SettingsMiddleware());
 
         // Вебийн үндсэн маршрут
-        $this->use(new Home\HomeRouter());
+        $this->use(new SiteRouter());
     }
 }

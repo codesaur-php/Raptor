@@ -29,6 +29,9 @@ use codesaur\Router\Router;
  */
 class UsersRouter extends Router
 {
+    /**
+     * Хэрэглэгчийн модулийн бүх маршрутуудыг бүртгэх.
+     */
     public function __construct()
     {
         /**

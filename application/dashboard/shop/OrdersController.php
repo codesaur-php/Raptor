@@ -3,6 +3,7 @@
 namespace Dashboard\Shop;
 
 use Psr\Log\LogLevel;
+
 use codesaur\Template\MemoryTemplate;
 
 /**
@@ -180,7 +181,6 @@ class OrdersController extends \Raptor\Controller
             }
 
             $model = new ProductOrdersModel($this->pdo);
-            $table = $model->getName();
             $record = $model->getRowWhere([
                 'id' => $id,
                 'is_active' => 1
@@ -251,13 +251,11 @@ class OrdersController extends \Raptor\Controller
     public function deactivate()
     {
         try {
-            $model = new ProductOrdersModel($this->pdo);
-            $table = $model->getName();
-
             if (!$this->isUserCan('system_product_delete')) {
                 throw new \Exception('No permission for an action [delete]!', 401);
             }
 
+            $model = new ProductOrdersModel($this->pdo);
             $payload = $this->getParsedBody();
             if (!isset($payload['id'])
                 || !\filter_var($payload['id'], \FILTER_VALIDATE_INT)

@@ -59,6 +59,12 @@ use codesaur\Http\Application\ExceptionHandlerInterface;
  */
 class JsonExceptionHandler implements ExceptionHandlerInterface
 {
+    /**
+     * Throwable-г JSON хэлбэрээр хариу болгон буцаах.
+     *
+     * @param \Throwable $throwable Үүссэн алдаа эсвэл exception
+     * @return void
+     */
     public function exception(\Throwable $throwable): void
     {
         $code = $throwable->getCode();

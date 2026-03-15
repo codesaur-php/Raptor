@@ -1,0 +1,159 @@
+<div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-3 shadow bg-secondary">
+    <h3 class="px-2 my-auto fs-6 text-white">
+        <i class="bi bi-book"></i> Orders - Гарын авлага
+    </h3>
+    <a href="{{ 'manual' | link }}" class="btn btn-sm btn-light m-1">
+        <i class="bi bi-arrow-left"></i> {{ 'manual' | text }}
+    </a>
+</div>
+
+<!-- ==================== ТОЙМ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-cart3"></i> Захиалга гэж юу вэ?</h4>
+        <p>
+            <strong>Orders</strong> нь вэбсайтаас ирсэн бүтээгдэхүүний захиалгыг удирдах модуль юм.
+        </p>
+        <p>Захиалгын модуль нь дараах онцлогуудтай:</p>
+        <ul>
+            <li><strong>Захиалгын статус workflow</strong> - Шинэ -> Боловсруулж байна -> Баталгаажсан -> Илгээсэн -> Дууссан</li>
+            <li><strong>И-мэйл мэдэгдэл</strong> - Хэрэглэгчид автомат мэдэгдэл илгээнэ</li>
+            <li><strong>Хэрэглэгчийн мэдээлэл</strong> - Захиалагчийн нэр, и-мэйл хаяг</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== ЖАГСААЛТ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-list-ul"></i> Захиалгын жагсаалт</h4>
+        <p>Dashboard цэснээс <strong>Захиалгууд</strong> дарахад жагсаалтын хуудас нээгдэнэ.</p>
+        <h5 class="mt-3">Шүүлтүүр</h5>
+        <p>Дараах шүүлтүүрээр захиалгуудыг ялгаж харж болно:</p>
+        <ul>
+            <li><strong>Хэл</strong> - mn, en гэх мэт хэлний кодоор</li>
+            <li><strong>Статус</strong> - Захиалгын төлвөөр (шинэ, боловсруулж байна, баталгаажсан гэх мэт)</li>
+        </ul>
+        <h5 class="mt-3">Хүснэгтийн баганууд</h5>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Багана</th><th>Тайлбар</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>ID / Огноо</td><td>Захиалгын ID болон үүсгэсэн огноо</td></tr>
+                <tr><td>Хэл</td><td>Хэлний туг, код</td></tr>
+                <tr><td>Хэрэглэгч</td><td>Захиалагчийн нэр, и-мэйл хаяг</td></tr>
+                <tr><td>Бүтээгдэхүүн</td><td>Захиалсан бүтээгдэхүүний нэр</td></tr>
+                <tr><td>Тоо хэмжээ</td><td>Захиалсан тоо</td></tr>
+                <tr><td>Статус</td><td>Захиалгын одоогийн төлөв</td></tr>
+                <tr><td>Үйлдэл</td><td>Харах, Устгах товчнууд</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ==================== СТАТУСЫН УРСГАЛ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-diagram-3"></i> Статусын урсгал</h4>
+        <p>Захиалга нь дараах статусуудыг дамжина:</p>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Код</th><th>Нэр</th><th>Өнгө</th><th>Тайлбар</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><code>new</code></td><td>Шинэ</td><td><span class="badge bg-primary">цэнхэр</span></td><td>Шинэ ирсэн захиалга</td></tr>
+                <tr><td><code>processing</code></td><td>Боловсруулж байна</td><td><span class="badge bg-warning text-dark">шар</span></td><td>Захиалгыг хянаж байна</td></tr>
+                <tr><td><code>confirmed</code></td><td>Баталгаажсан</td><td><span class="badge bg-info">цайвар цэнхэр</span></td><td>Захиалга баталгаажсан</td></tr>
+                <tr><td><code>shipped</code></td><td>Илгээсэн</td><td><span class="badge bg-secondary">саарал</span></td><td>Бүтээгдэхүүн илгээгдсэн</td></tr>
+                <tr><td><code>completed</code></td><td>Дууссан</td><td><span class="badge bg-success">ногоон</span></td><td>Захиалга амжилттай дууссан</td></tr>
+                <tr><td><code>cancelled</code></td><td>Цуцалсан</td><td><span class="badge bg-danger">улаан</span></td><td>Захиалга цуцлагдсан</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ==================== ЗАХИАЛГА ХАРАХ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-eye"></i> Захиалга харах</h4>
+        <p>Жагсаалтаас <strong>харах</strong> (нүд) товчийг дарна.</p>
+        <ul>
+            <li>Захиалгын дэлгэрэнгүй мэдээлэл - бүтээгдэхүүн, тоо хэмжээ, хэрэглэгчийн мэдээлэл</li>
+            <li>Статус өөрчлөх - dropdown-оос шинэ статус сонгоно</li>
+            <li>Хэрэглэгчид мэйл илгээх боломжтой</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== МЭДЭГДЭЛ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-bell"></i> Мэдэгдэл (Discord + И-мэйл)</h4>
+
+        <h5><i class="bi bi-discord"></i> Discord мэдэгдэл</h5>
+        <p>
+            Захиалгын статус өөрчлөгдөх үед Discord webhook-ээр автомат мэдэгдэл илгээгдэнэ
+            (webhook тохируулсан бол).
+        </p>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Үйлдэл</th><th>Мэдэгдэлд орох мэдээлэл</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Статус өөрчлөх</td><td>Захиалгын ID, хэрэглэгчийн нэр, хуучин статус, шинэ статус, хэн өөрчилсөн</td></tr>
+            </tbody>
+        </table>
+
+        <h5 class="mt-4"><i class="bi bi-envelope"></i> И-мэйл мэдэгдэл</h5>
+        <p>Захиалгатай холбоотой дараах үед хэрэглэгчид автомат и-мэйл илгээгдэнэ:</p>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Үйлдэл</th><th>Хүлээн авагч</th><th>Загвар</th><th>Агуулга</th></tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Шинэ захиалга (вэбсайтаас)</td>
+                    <td>Захиалагч</td>
+                    <td><code>order-confirmation</code></td>
+                    <td>Захиалгын ID, хэрэглэгчийн нэр, бүтээгдэхүүн, тоо хэмжээ, JWT баталгаажуулах линк</td>
+                </tr>
+                <tr>
+                    <td>Статус өөрчлөх (Dashboard-аас)</td>
+                    <td>Захиалагч</td>
+                    <td><code>order-status-update</code></td>
+                    <td>Захиалгын ID, хуучин/шинэ статус, хэрэглэгчийн нэр, бүтээгдэхүүн</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ==================== УСТГАХ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-trash"></i> Захиалга устгах</h4>
+        <p>Жагсаалтаас <strong>устгах</strong> (хогийн сав) товчийг дарна.</p>
+        <ul>
+            <li>Баталгаажуулах цонх гарна (SweetAlert2)</li>
+            <li>Зөөлөн устгалт (soft delete) - өгөгдөл хадгалагдана</li>
+            <li><code>system_product_delete</code> эрх шаардлагатай</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== ЭРХ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-shield-lock"></i> Шаардлагатай эрхүүд</h4>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Үйлдэл</th><th>Эрх</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Жагсаалт харах, Захиалга харах</td><td><code>system_product_index</code></td></tr>
+                <tr><td>Устгах</td><td><code>system_product_delete</code></td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>

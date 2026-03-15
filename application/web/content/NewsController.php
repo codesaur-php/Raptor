@@ -1,13 +1,13 @@
 <?php
 
-namespace Web\Home;
+namespace Web\Content;
 
 use Psr\Log\LogLevel;
 
-use Web\Template\TemplateController;
-
 use Raptor\Content\NewsModel;
 use Raptor\Content\FilesModel;
+
+use Web\Template\TemplateController;
 
 /**
  * Class NewsController
@@ -21,7 +21,7 @@ use Raptor\Content\FilesModel;
  *   - Уншсан тоолуурыг (read_count) нэмэгдүүлэх
  *   - Хавсаргасан файлуудыг хамт харуулах
  *
- * @package Web\Home
+ * @package Web\Content
  */
 class NewsController extends TemplateController
 {
@@ -41,7 +41,7 @@ class NewsController extends TemplateController
         $stmt->execute();
         $row = $stmt->fetch();
         if (empty($row)) {
-            throw new \Error('Мэдээ олдсонгүй', 404);
+            throw new \Exception('Мэдээ олдсонгүй', 404);
         }
         return $this->news($row['slug']);
     }
@@ -65,7 +65,7 @@ class NewsController extends TemplateController
             'is_active' => 1
         ]);
         if (empty($record)) {
-            throw new \Error('Мэдээ олдсонгүй', 404);
+            throw new \Exception('Мэдээ олдсонгүй', 404);
         }
 
         $id = $record['id'];
@@ -86,8 +86,7 @@ class NewsController extends TemplateController
         $template->render();
 
         // Read count
-        $read_count = ($record['read_count'] ?? 0) + 1;
-        $this->exec("UPDATE $table SET read_count=$read_count WHERE id=$id");
+        $this->exec("UPDATE $table SET read_count=read_count+1 WHERE id=$id");
 
         // Лог
         $this->log(
@@ -122,7 +121,7 @@ class NewsController extends TemplateController
         $stmt->bindValue(':code', $code);
         $records = $stmt->execute() ? $stmt->fetchAll() : [];
         if (empty($records)) {
-            throw new \Error('Мэдээ олдсонгүй', 404);
+            throw new \Exception('Мэдээ олдсонгүй', 404);
         }
 
         $template = $this->template(__DIR__ . '/news-type.html', [

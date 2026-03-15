@@ -1,0 +1,205 @@
+<div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-3 shadow bg-secondary">
+    <h3 class="px-2 my-auto fs-6 text-white">
+        <i class="bi bi-book"></i> References - User Manual
+    </h3>
+    <a href="{{ 'manual' | link }}" class="btn btn-sm btn-light m-1">
+        <i class="bi bi-arrow-left"></i> {{ 'manual' | text }}
+    </a>
+</div>
+
+<!-- ==================== OVERVIEW ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3">What is References?</h4>
+        <p>
+            <strong>References</strong> is the reference content management module of the Raptor Dashboard.
+            It allows managing various system texts, templates, and configurations from a single location.
+        </p>
+        <p>Key features:</p>
+        <ul>
+            <li><strong>Multi-language</strong> - Separate title and content per language</li>
+            <li><strong>Dynamic tables</strong> - New reference tables can be added automatically</li>
+            <li><strong>Keyword</strong> - Each record is identified by a unique keyword</li>
+            <li><strong>Categories</strong> - Grouped by categories like system, email, general, etc.</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== TABLES ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-layout-wtf"></i> Reference Tables</h4>
+        <p>
+            The References module can work with multiple tables. Each table consists of a pair:
+            <code>reference_{name}</code> and <code>reference_{name}_content</code>.
+        </p>
+        <p>Each table appears as a tab on the list page.</p>
+
+        <h5 class="mt-3">Default Table: Templates</h5>
+        <p>When the system is first installed, the <strong>templates</strong> table is automatically created with these default records:</p>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Keyword</th><th>Category</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><code>tos</code></td><td>system</td><td>Terms of Service</td></tr>
+                <tr><td><code>pp</code></td><td>system</td><td>Privacy Policy</td></tr>
+                <tr><td><code>forgotten-password-reset</code></td><td>email</td><td>Password reset email template</td></tr>
+                <tr><td><code>request-new-user</code></td><td>email</td><td>New user registration request email</td></tr>
+                <tr><td><code>approve-new-user</code></td><td>email</td><td>User registration approved email</td></tr>
+                <tr><td><code>dev-request-new</code></td><td>email</td><td>New development request email</td></tr>
+                <tr><td><code>dev-request-response</code></td><td>email</td><td>Development request response email</td></tr>
+                <tr><td><code>order-status-update</code></td><td>email</td><td>Order status update email</td></tr>
+                <tr><td><code>order-confirmation</code></td><td>email</td><td>Order confirmation email</td></tr>
+            </tbody>
+        </table>
+        <p class="text-muted">
+            <i class="bi bi-info-circle"></i> Email templates can use <code>&#123;&#123; variable &#125;&#125;</code>
+            placeholders. The system replaces them with actual values when sending.
+        </p>
+    </div>
+</div>
+
+<!-- ==================== LIST ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-list-ul"></i> Reference List</h4>
+        <p>Click <strong>References</strong> in the Dashboard sidebar to open the list page.</p>
+        <ul>
+            <li>Each table is displayed as a tab</li>
+            <li>URL hash (<code>#templates-tab-pane</code>) can be used to directly select a tab</li>
+            <li>Each table shows keyword, title per language, category, and action columns</li>
+        </ul>
+        <h5 class="mt-3">Table Columns</h5>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Column</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>#</td><td>Record ID</td></tr>
+                <tr><td>Keyword</td><td>Unique identifier</td></tr>
+                <tr><td>Title (per language)</td><td>Title in each language</td></tr>
+                <tr><td>Category</td><td>Category</td></tr>
+                <tr><td>Action</td><td>View, Edit, Delete buttons</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ==================== CREATE ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-plus-circle"></i> Create New Record</h4>
+        <p>Click the <strong>New</strong> button inside the desired table tab.</p>
+
+        <h5 class="mt-3">Fields</h5>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Field</th><th>Description</th><th>Required</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><strong>Keyword</strong></td><td>Unique identifier (up to 128 characters)</td><td>Yes</td></tr>
+                <tr><td><strong>Category</strong></td><td>Category - select from list or type a new one</td><td>Yes</td></tr>
+                <tr><td><strong>Title</strong> (per language)</td><td>Title (up to 255 characters)</td><td>Yes</td></tr>
+                <tr><td><strong>Content</strong> (per language)</td><td>Full content (HTML)</td><td>Yes</td></tr>
+            </tbody>
+        </table>
+
+        <h5 class="mt-3">Categories</h5>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Value</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><code>general</code></td><td>General</td></tr>
+                <tr><td><code>system</code></td><td>System</td></tr>
+                <tr><td><code>special</code></td><td>Special</td></tr>
+                <tr><td><code>manual</code></td><td>Manual</td></tr>
+                <tr><td><code>notification</code></td><td>Notification</td></tr>
+                <tr><td><code>email</code></td><td>Email</td></tr>
+            </tbody>
+        </table>
+        <p class="text-muted">
+            <i class="bi bi-info-circle"></i> You can type a custom category in addition to selecting from the list.
+        </p>
+    </div>
+</div>
+
+<!-- ==================== VIEW ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-eye"></i> View Record</h4>
+        <p>Click the <strong>view</strong> (eye) button to open the record details in a modal window.</p>
+        <ul>
+            <li>Keyword and category</li>
+            <li>Title and content for each language</li>
+            <li>Only active (<code>is_active = 1</code>) records are displayed</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== EDIT ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-pencil-square"></i> Edit Record</h4>
+        <p>Click the <strong>edit</strong> (pencil) button to open the edit form in a modal window.</p>
+        <ul>
+            <li>Keyword, category, title and content per language can be modified</li>
+            <li>If no changes are detected, saving is rejected ("No update!" error)</li>
+            <li>Requires <code>system_content_update</code> permission</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== DELETE ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-trash"></i> Delete Record</h4>
+        <p>Click the <strong>delete</strong> (trash) button from the list.</p>
+        <ul>
+            <li>A confirmation dialog appears (SweetAlert2)</li>
+            <li>Soft delete - sets <code>is_active = 0</code>, data is preserved</li>
+            <li>Requires <code>system_content_delete</code> permission</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== MULTI-LANGUAGE ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-translate"></i> Multi-language Support</h4>
+        <p>
+            Each reference record can store content in multiple languages.
+            When creating or editing, separate tabs appear for each language.
+        </p>
+        <ul>
+            <li><strong>Title</strong> and <strong>Content</strong> fields per language</li>
+            <li>Content is stored in HTML format</li>
+            <li>Email templates can use <code>&#123;&#123; variable &#125;&#125;</code> placeholders</li>
+        </ul>
+        <div class="alert alert-info mb-0">
+            <i class="bi bi-info-circle"></i>
+            <strong>LocalizedModel:</strong> Base data (keyword, category) is stored in
+            <code>reference_{name}</code>, while per-language content (title, content)
+            is stored in <code>reference_{name}_content</code>.
+        </div>
+    </div>
+</div>
+
+<!-- ==================== PERMISSIONS ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-shield-lock"></i> Required Permissions</h4>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Action</th><th>Permission</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>View list, View record</td><td><code>system_content_index</code></td></tr>
+                <tr><td>Create new record</td><td><code>system_content_insert</code></td></tr>
+                <tr><td>Edit record</td><td><code>system_content_update</code></td></tr>
+                <tr><td>Delete record</td><td><code>system_content_delete</code></td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>

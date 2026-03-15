@@ -25,10 +25,33 @@ class PagesController extends FileController
     use \Raptor\Template\DashboardTrait;
 
     /**
+     * Хуудасны навигацийн мод бүтцийн Dashboard хуудас.
+     *
+     * - pages-list JSON endpoint-ийг дахин ашиглана (template-ээс fetch хийнэ)
+     * - Хуудсуудын parent_id шатлалыг tree view хэлбэрээр харуулна
+     *
+     * Permission: system_content_index
+     */
+    public function nav()
+    {
+        if (!$this->isUserCan('system_content_index')) {
+            $this->dashboardProhibited(null, 401)->render();
+            return;
+        }
+
+        $table = (new PagesModel($this->pdo))->getName();
+        $dashboard = $this->twigDashboard(__DIR__ . '/pages-nav.html');
+        $dashboard->set('title', $this->text('pages-navigation'));
+        $dashboard->render();
+
+        $this->log($table, LogLevel::NOTICE, 'Хуудасны навигацийн модыг үзэж байна', ['action' => 'nav']);
+    }
+
+    /**
      * Хуудасны жагсаалтын хүснэгт Dashboard хуудас.
      *
      * - Шүүлтүүр: хэл (code), төрөл (type), ангилал (category), нийтлэгдсэн эсэх (published)
-     * - pages-index.html template-д filter утгуудыг дамжуулна
+     * - pages-table.html template-д filter утгуудыг дамжуулна
      *
      * Permission: system_content_index
      */
@@ -73,36 +96,13 @@ class PagesController extends FileController
                 ]
             ]
         ];
-        $dashboard = $this->twigDashboard(__DIR__ . '/pages-index.html', ['filters' => $filters]);
+        $dashboard = $this->twigDashboard(__DIR__ . '/pages-table.html', ['filters' => $filters]);
         $dashboard->set('title', $this->text('pages'));
         $dashboard->render();
 
         $this->log($table, LogLevel::NOTICE, 'Хуудас жагсаалтыг үзэж байна', ['action' => 'index']);
     }
-
-    /**
-     * Хуудасны навигацийн мод бүтцийн Dashboard хуудас.
-     *
-     * - pages-list JSON endpoint-ийг дахин ашиглана (template-ээс fetch хийнэ)
-     * - Хуудсуудын parent_id шатлалыг tree view хэлбэрээр харуулна
-     *
-     * Permission: system_content_index
-     */
-    public function nav()
-    {
-        if (!$this->isUserCan('system_content_index')) {
-            $this->dashboardProhibited(null, 401)->render();
-            return;
-        }
-
-        $table = (new PagesModel($this->pdo))->getName();
-        $dashboard = $this->twigDashboard(__DIR__ . '/pages-nav.html');
-        $dashboard->set('title', $this->text('pages-navigation'));
-        $dashboard->render();
-
-        $this->log($table, LogLevel::NOTICE, 'Хуудасны навигацийн модыг үзэж байна', ['action' => 'nav']);
-    }
-
+    
     /**
      * Хуудасны жагсаалтыг JSON хэлбэрээр буцаана.
      *
@@ -144,10 +144,10 @@ class PagesController extends FileController
             $pages = $pages_stmt->execute() ? $pages_stmt->fetchAll() : [];
             $infos = $this->getInfos($table);
             $files_counts = $this->getFilesCounts($table);
-            // Жишиг дата эсэхийг шалгах
+            // Жишиг дата байгаа эсэхийг шалгах
             $sampleCheck = $this->query(
                 "SELECT COUNT(*) as total, " .
-                "SUM(CASE WHEN created_by IS NULL AND created_at = published_at AND category='sample' THEN 1 ELSE 0 END) as sample " .
+                "SUM(CASE WHEN created_by IS NULL AND created_at = published_at AND category='_raptor_sample_' THEN 1 ELSE 0 END) as sample " .
                 "FROM $table WHERE is_active=1"
             )->fetch();
             $isSample = (int)$sampleCheck['sample'] > 0;
@@ -170,22 +170,22 @@ class PagesController extends FileController
      * Хүснэгтийн бүх өгөгдлийг устгаж, auto-increment-г 1 рүү буцаана.
      * Зөвхөн жишиг дата байгаа үед л ажиллана.
      *
-     * Permission: system_content_delete
+     * Permission: system_content_index
      */
     public function reset()
     {
         try {
-            if (!$this->isUserCan('system_content_delete')) {
+            if (!$this->isUserCan('system_content_index')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
 
             $model = new PagesModel($this->pdo);
             $table = $model->getName();
 
-            // Жишиг дата эсэхийг давхар шалгах
+            // Жишиг дата байгаа эсэхийг давхар шалгах
             $check = $this->query(
                 "SELECT COUNT(*) as sample FROM $table " .
-                "WHERE is_active=1 AND created_by IS NULL AND created_at = published_at AND category='sample'"
+                "WHERE is_active=1 AND created_by IS NULL AND created_at = published_at AND category='_raptor_sample_'"
             )->fetch();
             if ((int)$check['sample'] === 0) {
                 throw new \Exception(
@@ -194,10 +194,33 @@ class PagesController extends FileController
                 );
             }
 
-            $this->exec('SET FOREIGN_KEY_CHECKS=0');
-            try { $this->exec("TRUNCATE TABLE {$table}_files"); } catch (\Throwable) {}
-            $this->exec("TRUNCATE TABLE $table");
-            $this->exec('SET FOREIGN_KEY_CHECKS=1');
+            // Жишиг датаны ID-уудыг олох
+            $sampleIds = $this->query(
+                "SELECT id FROM $table WHERE category='_raptor_sample_' AND created_by IS NULL AND created_at = published_at"
+            )->fetchAll(\PDO::FETCH_COLUMN);
+
+            if (!empty($sampleIds)) {
+                $idList = \implode(',', \array_map('intval', $sampleIds));
+                // Жишиг датаны файлуудыг устгах
+                try { $this->exec("DELETE FROM {$table}_files WHERE record_id IN ($idList)"); } catch (\Throwable) {}
+                // Жишиг датаг устгах
+                $this->exec("DELETE FROM $table WHERE id IN ($idList)");
+            }
+
+            // Идэвхгүй (is_active=0) бичлэгүүдийг устгах
+            $inactiveIds = $this->query(
+                "SELECT id FROM $table WHERE is_active=0"
+            )->fetchAll(\PDO::FETCH_COLUMN);
+            if (!empty($inactiveIds)) {
+                $idList = \implode(',', \array_map('intval', $inactiveIds));
+                try { $this->exec("DELETE FROM {$table}_files WHERE record_id IN ($idList)"); } catch (\Throwable) {}
+                $this->exec("DELETE FROM $table WHERE id IN ($idList)");
+            }
+
+            // Auto increment тохируулах
+            $maxId = $this->query("SELECT MAX(id) as max_id FROM $table")->fetch();
+            $nextId = ((int)($maxId['max_id'] ?? 0)) + 1;
+            $this->exec("ALTER TABLE $table AUTO_INCREMENT = $nextId");
 
             $this->respondJSON([
                 'status' => 'success',
@@ -356,6 +379,7 @@ class PagesController extends FileController
      * - Дэд хуудас агуулсан бол has_children анхааруулга харуулна
      *
      * Permission: system_content_index
+     * Нийтлэгдсэн бичлэгийг нэвтэрсэн бүх admin харах боломжтой
      *
      * @param int $id Хуудасны ID
      */
@@ -364,15 +388,17 @@ class PagesController extends FileController
         try {
             $model = new PagesModel($this->pdo);
             $table = $model->getName();
-            if (!$this->isUserCan('system_content_index')) {
-                throw new \Exception($this->text('system-no-permission'), 401);
-            }
             $record = $model->getRowWhere([
                 'id' => $id,
                 'is_active' => 1
             ]);
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));
+            }
+            if (!$this->isUserCan('system_content_index')
+                && (int)$record['published'] !== 1
+            ) {
+                throw new \Exception($this->text('system-no-permission'), 401);
             }
             $filesModel = new FilesModel($this->pdo);
             $filesModel->setTable($table);
@@ -421,16 +447,13 @@ class PagesController extends FileController
      *   - published төлөв өөрчлөхөд system_content_publish эрх шаардлагатай
      *
      * Permission: system_content_update
+     * Эсвэл: өөрийн үүсгэсэн, нийтлэгдээгүй бичлэгийг засах боломжтой
      *
      * @param int $id Шинэчлэх хуудасны ID
      */
     public function update(int $id)
     {
         try {
-            if (!$this->isUserCan('system_content_update')) {
-                throw new \Exception($this->text('system-no-permission'), 401);
-            }
-
             $model = new PagesModel($this->pdo);
             $table = $model->getName();
             $filesModel = new FilesModel($this->pdo);
@@ -441,11 +464,21 @@ class PagesController extends FileController
             ]);
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));
+            }
+
+            if (!$this->isUserCan('system_content_update')) {
+                if ((int)$record['created_by'] !== $this->getUserId()
+                    || (int)$record['published'] !== 0
+                ) {
+                    throw new \Exception($this->text('system-no-permission'), 401);
+                }
             } elseif ($record['published'] == 1
                 && !$this->isUserCan('system_content_publish')
             ) {
                 throw new \Exception($this->text('system-no-permission'), 401);
-            } elseif ($this->getRequest()->getMethod() == 'PUT') {
+            }
+
+            if ($this->getRequest()->getMethod() == 'PUT') {
                 $payload = $this->getParsedBody();
                 if (empty($payload['title'])) {
                     throw new \InvalidArgumentException($this->text('invalid-request'), 400);
@@ -607,15 +640,11 @@ class PagesController extends FileController
      * Бодит файл устахгүй, is_active=0 болгоно.
      *
      * Permission: system_content_delete
+     * Эсвэл: өөрийн үүсгэсэн, нийтлэгдээгүй бичлэгийг устгах боломжтой
      */
     public function deactivate()
     {
         try {
-            $model = new PagesModel($this->pdo);
-            $table = $model->getName();
-            if (!$this->isUserCan('system_content_delete')) {
-                throw new \Exception('No permission for an action [delete]!', 401);
-            }
             $payload = $this->getParsedBody();
             if (!isset($payload['id'])
                 || !\filter_var($payload['id'], \FILTER_VALIDATE_INT)
@@ -623,6 +652,19 @@ class PagesController extends FileController
                 throw new \InvalidArgumentException($this->text('invalid-request'), 400);
             }
             $id = \filter_var($payload['id'], \FILTER_VALIDATE_INT);
+
+            $model = new PagesModel($this->pdo);
+            $table = $model->getName();
+            if (!$this->isUserCan('system_content_delete')) {
+                $record = $model->getRowWhere(['id' => $id, 'is_active' => 1]);
+                if (empty($record)
+                    || (int)$record['created_by'] !== $this->getUserId()
+                    || (int)$record['published'] !== 0
+                ) {
+                    throw new \Exception('No permission for an action [delete]!', 401);
+                }
+            }
+
             $deactivated = $model->deactivateById(
                 $id,
                 [

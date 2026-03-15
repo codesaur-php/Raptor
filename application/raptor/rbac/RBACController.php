@@ -255,6 +255,21 @@ class RBACController extends \Raptor\Controller
             }
             $values += $record;
 
+            // Тухайн role-д оноогдсон permission-уудыг авах
+            $rp_table = (new RolePermission($this->pdo))->getName();
+            $perms_table = (new Permissions($this->pdo))->getName();
+            $stmt = $this->prepare(
+                "SELECT p.name, p.module, p.description
+                 FROM $rp_table rp
+                 JOIN $perms_table p ON rp.permission_id = p.id
+                 WHERE rp.role_id = :role_id AND rp.alias = :alias
+                 ORDER BY p.module, p.name"
+            );
+            $stmt->bindValue(':role_id', $record['id'], \PDO::PARAM_INT);
+            $stmt->bindValue(':alias', $record['alias']);
+            $stmt->execute();
+            $values['permissions'] = $stmt->fetchAll();
+
             $this->twigTemplate(
                 __DIR__ . '/rbac-view-role-modal.html',
                 $values

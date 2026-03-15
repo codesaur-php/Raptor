@@ -172,7 +172,8 @@
                         </div>
                     </form>
 
-                    <!-- Language dropdown -->
+                    <!-- Language dropdown (1-ээс олон хэлтэй үед л харуулна) -->
+                    {% if localization.language|length > 1 %}
                     <ul class="navbar-nav">
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" role="button" id="dropdownLanguage" data-bs-toggle="dropdown" aria-expanded="false">
@@ -193,6 +194,7 @@
                             </ul>
                         </li>
                     </ul>
+                    {% endif %}
                 </div>
             </div>
         </nav>

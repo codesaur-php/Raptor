@@ -342,7 +342,8 @@ class UsersController extends FileController
                 ) {
                     throw new \InvalidArgumentException($this->text('invalid-request'), 400);
                 }
-                
+                $payload['email'] = $this->normalizeEmail($payload['email']);
+
                 // Нууц үг хоосон байвал санамсаргүй үүсгэнэ, байвал шууд ашиглана
                 if (empty($payload['password'])) {
                     $bytes = \random_bytes(10);
@@ -506,8 +507,8 @@ class UsersController extends FileController
                 ) {
                     throw new \InvalidArgumentException($this->text('invalid-request'), 400);
                 }
-                $payload['email'] = \filter_var($payload['email'], \FILTER_VALIDATE_EMAIL);
-                
+                $payload['email'] = $this->normalizeEmail($payload['email']);
+
                 // Нууц үг ирсэн бол hash хийнэ
                 if (!empty($payload['password'])) {
                     $payload['password'] = \password_hash($payload['password'], \PASSWORD_BCRYPT);
@@ -529,15 +530,12 @@ class UsersController extends FileController
                 ) ?: [];
                 unset($payload['roles']);
 
-                // Username / Email давхардал шалгах
-                $existing_username = $model->getRowWhere(['username' => $payload['username']]);
+                // Username өөрчлөхийг хориглох
+                unset($payload['username']);
+
+                // Email давхардал шалгах
                 $existing_email = $model->getRowWhere(['email' => $payload['email']]);
-                if (!empty($existing_username) && $existing_username['id'] != $id) {
-                    throw new \Exception(
-                        $this->text('user-exists') . " username => [{$payload['username']}], id => {$existing_username['id']}",
-                        403
-                    );
-                } elseif (!empty($existing_email) && $existing_email['id'] != $id) {
+                if (!empty($existing_email) && $existing_email['id'] != $id) {
                     throw new \Exception(
                         $this->text('user-exists') . " email => [{$payload['email']}], id => {$existing_email['id']}",
                         403
@@ -972,7 +970,7 @@ class UsersController extends FileController
                                         $diff->m > 0 ||
                                         $diff->d > 0 ||
                                         $diff->h > 0 ||
-                                        $diff->i > CODESAUR_PASSWORD_RESET_MINUTES;
+                                        $diff->i > RAPTOR_PASSWORD_RESET_MINUTES;
                                 }
                             )
                         );
@@ -1869,5 +1867,35 @@ class UsersController extends FileController
             // Алдааг залгия (UI дээр crash биш)
         }
         return $configured;
+    }
+
+    /**
+     * Email normalize хийх.
+     *
+     * Gmail/Googlemail: sub-addressing (+), dots арилгана,
+     * googlemail.com -> gmail.com болгоно.
+     *
+     * @param string $email
+     * @return string Normalized email
+     */
+    private function normalizeEmail(string $email): string
+    {
+        $email = \strtolower(\trim($email));
+        if (\strpos($email, '@') === false) {
+            return $email;
+        }
+        [$local, $domain] = \explode('@', $email, 2);
+
+        $gmailDomains = ['gmail.com', 'googlemail.com'];
+        if (\in_array($domain, $gmailDomains, true)) {
+            $plusPos = \strpos($local, '+');
+            if ($plusPos !== false) {
+                $local = \substr($local, 0, $plusPos);
+            }
+            $local = \str_replace('.', '', $local);
+            $domain = 'gmail.com';
+        }
+
+        return "$local@$domain";
     }
 }

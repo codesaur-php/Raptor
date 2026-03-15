@@ -1,0 +1,106 @@
+<div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-3 shadow bg-secondary">
+    <h3 class="px-2 my-auto fs-6 text-white">
+        <i class="bi bi-folder2-open"></i> Files - Manual
+    </h3>
+    <a href="{{ 'manual' | link }}" class="btn btn-sm btn-light m-1">
+        <i class="bi bi-arrow-left"></i> {{ 'manual' | text }}
+    </a>
+</div>
+
+<!-- ==================== OVERVIEW ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3">What are Files?</h4>
+        <p>
+            <strong>Files</strong> is a module to view all uploaded files across all modules in one place on the Dashboard.
+            It displays all files including images, videos, audio, PDFs, and documents in a table format.
+        </p>
+    </div>
+</div>
+
+<!-- ==================== TABLE SELECTION ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-table"></i> Table Selection</h4>
+        <p>
+            At the top of the page, a list of file tables is displayed as pill badges.
+            Each table shows the file count and total size.
+        </p>
+        <ul>
+            <li><code>files</code> is the main table</li>
+            <li>Others are in <code>attachments</code> format</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== FILE LIST ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-list-ul"></i> File List</h4>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Column</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>File</td><td>Thumbnail/icon, name, action buttons</td></tr>
+                <tr><td>Properties</td><td>MIME type, size</td></tr>
+                <tr><td>Description</td><td>File description</td></tr>
+                <tr><td>Keywords</td><td>File keywords</td></tr>
+                <tr><td>Date</td><td>File upload date</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ==================== FILE PREVIEW ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-eye"></i> File Preview</h4>
+        <ul>
+            <li>View images enlarged on an overlay</li>
+            <li>Play video/audio directly</li>
+            <li>Open PDF files in an iframe</li>
+            <li>Fetch and display text files</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== FILE INFORMATION ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-info-circle"></i> File Information</h4>
+        <p>Each file has the following modals:</p>
+        <ul>
+            <li><strong>Location</strong> - The file's server path</li>
+            <li><strong>Code tag</strong> - HTML embed code for inserting into content</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== STATISTICS ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-bar-chart"></i> Statistics</h4>
+        <p>The following statistics are displayed at the top of the page:</p>
+        <ul>
+            <li>Total number of tables</li>
+            <li>Number of files</li>
+            <li>Total size</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== PERMISSIONS ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-shield-lock"></i> Required Permissions</h4>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Action</th><th>Permission</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>View file list</td><td><code>system_content_index</code></td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>

@@ -18,6 +18,9 @@ use codesaur\Router\Router;
  */
 class MigrationRouter extends Router
 {
+    /**
+     * Migration модулийн маршрутуудыг бүртгэх.
+     */
     public function __construct()
     {
         $this->GET('/dashboard/migrations', [MigrationController::class, 'index'])

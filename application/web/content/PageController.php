@@ -1,13 +1,13 @@
 <?php
 
-namespace Web\Home;
+namespace Web\Content;
 
 use Psr\Log\LogLevel;
 
-use Web\Template\TemplateController;
-
 use Raptor\Content\PagesModel;
 use Raptor\Content\FilesModel;
+
+use Web\Template\TemplateController;
 
 /**
  * Class PageController
@@ -21,7 +21,7 @@ use Raptor\Content\FilesModel;
  *   - Уншсан тоолуурыг (read_count) нэмэгдүүлэх
  *   - Хавсаргасан файлуудыг хамт харуулах
  *
- * @package Web\Home
+ * @package Web\Content
  */
 class PageController extends TemplateController
 {
@@ -67,7 +67,7 @@ class PageController extends TemplateController
         $stmt->execute();
         $row = $stmt->fetch();
         if (empty($row)) {
-            throw new \Error('Хуудас олдсонгүй', 404);
+            throw new \Exception('Хуудас олдсонгүй', 404);
         }
         return $this->page($row['slug']);
     }
@@ -91,7 +91,7 @@ class PageController extends TemplateController
             'is_active' => 1
         ]);
         if (empty($record)) {
-            throw new \Error('Хуудас олдсонгүй', 404);
+            throw new \Exception('Хуудас олдсонгүй', 404);
         }
 
         $id = $record['id'];
@@ -112,8 +112,7 @@ class PageController extends TemplateController
         $template->render();
 
         // Read count нэмэгдүүлэх
-        $read_count = ($record['read_count'] ?? 0) + 1;
-        $this->exec("UPDATE $table SET read_count=$read_count WHERE id=$id");
+        $this->exec("UPDATE $table SET read_count=read_count+1 WHERE id=$id");
 
         // Лог
         $this->log(

@@ -443,6 +443,7 @@ class FilesController extends FileController
      * - JSON success response буцаана
      *
      * Permission: system_content_update
+     * Эсвэл: өөрийн upload хийсэн файлыг засах боломжтой
      *
      * @param string $table Хүснэгтийн нэр
      * @param int    $id    Файлын бичлэгийн id дугаар
@@ -452,11 +453,6 @@ class FilesController extends FileController
     public function update(string $table, int $id)
     {
         try {
-            // Нэвтэрсэн хэрэглэгч content засах эрхтэй байх ёстой
-            if (!$this->isUserCan('system_content_update')) {
-                throw new \Exception($this->text('system-no-permission'), 401);
-            }
-            
             $parsedBody = $this->getParsedBody();
             if (empty($parsedBody)) {
                 throw new \InvalidArgumentException($this->text('invalid-request'), 400);
@@ -478,6 +474,12 @@ class FilesController extends FileController
             $record = $model->getRowWhere(['id' => $id]);
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));
+            }
+
+            if (!$this->isUserCan('system_content_update')
+                && (int)($record['created_by'] ?? 0) !== $this->getUserId()
+            ) {
+                throw new \Exception($this->text('system-no-permission'), 401);
             }
 
             // Өөрчлөгдсөн талбаруудыг тодорхойлох
@@ -539,6 +541,7 @@ class FilesController extends FileController
      *  - Лог бичнэ
      *
      * Permission: system_content_delete
+     * Эсвэл: өөрийн upload хийсэн, record-д холбогдоогүй файлыг устгах боломжтой
      *
      * @param string $table Файл хадгалдаг хүснэгт
      * @return void
@@ -546,11 +549,6 @@ class FilesController extends FileController
     public function deactivate(string $table)
     {
         try {
-            // Нэвтэрсэн хэрэглэгч content устгах эрхтэй байх ёстой
-            if (!$this->isUserCan('system_content_delete')) {
-                throw new \Exception('No permission for an action [delete]!', 401);
-            }
-
             $payload = $this->getParsedBody();
             if (!isset($payload['id'])
                 || !\filter_var($payload['id'], \FILTER_VALIDATE_INT)
@@ -567,6 +565,14 @@ class FilesController extends FileController
             ]);
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));
+            }
+
+            if (!$this->isUserCan('system_content_delete')) {
+                if ((int)($record['created_by'] ?? 0) !== $this->getUserId()
+                    || (int)($record['record_id'] ?? 0) !== 0
+                ) {
+                    throw new \Exception('No permission for an action [delete]!', 401);
+                }
             }
 
             $deactivated = $model->deactivateById($id, [

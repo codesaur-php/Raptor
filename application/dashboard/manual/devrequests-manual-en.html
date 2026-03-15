@@ -1,0 +1,177 @@
+<div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-3 shadow bg-secondary">
+    <h3 class="px-2 my-auto fs-6 text-white">
+        <i class="bi bi-book"></i> Dev Requests - Manual
+    </h3>
+    <a href="{{ 'manual' | link }}" class="btn btn-sm btn-light m-1">
+        <i class="bi bi-arrow-left"></i> {{ 'manual' | text }}
+    </a>
+</div>
+
+<!-- ==================== OVERVIEW ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-code-slash"></i> What are Dev Requests?</h4>
+        <p>
+            <strong>Dev Requests</strong> is a module for sending requests and bug reports to developers.
+        </p>
+        <ul>
+            <li><strong>Request-reply thread structure</strong> - Each request has a reply thread</li>
+            <li><strong>File attachments</strong> - Attach files to requests and replies</li>
+            <li><strong>Email + Discord notifications</strong> - Automatic notification delivery</li>
+            <li><strong>Status management</strong> - Track request progress</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== LIST ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-list-ul"></i> List</h4>
+        <h5>Filters</h5>
+        <p>Filter by status: pending, in_progress, resolved, closed.</p>
+        <h5 class="mt-3">Table Columns</h5>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Column</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>ID</td><td>Request number</td></tr>
+                <tr><td>Date</td><td>Creation date</td></tr>
+                <tr><td>Title</td><td>Request title</td></tr>
+                <tr><td>Sender</td><td>User who sent the request</td></tr>
+                <tr><td>Assignee</td><td>User assigned to the request</td></tr>
+                <tr><td>Status</td><td>Current status of the request</td></tr>
+                <tr><td>Attachments</td><td>Number of attached files</td></tr>
+                <tr><td>Action</td><td>View, Delete buttons</td></tr>
+            </tbody>
+        </table>
+        <div class="alert alert-info mb-0 mt-3">
+            <i class="bi bi-info-circle"></i>
+            Regular users can only see their own requests and requests assigned to them.
+            Users with <code>system_development</code> permission can see all requests.
+        </div>
+    </div>
+</div>
+
+<!-- ==================== NEW REQUEST ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-plus-circle"></i> New Request</h4>
+        <h5>Fields</h5>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Field</th><th>Description</th><th>Required</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><strong>Title</strong></td><td>Request title</td><td>Yes</td></tr>
+                <tr><td><strong>Content</strong></td><td>Detailed description of the request</td><td>Yes</td></tr>
+                <tr><td><strong>Assignee</strong></td><td>Select from users with system_coder or system_development permission</td><td>No</td></tr>
+                <tr><td><strong>File attachments</strong></td><td>Up to 10MB, multiple files allowed</td><td>No</td></tr>
+            </tbody>
+        </table>
+        <p class="mt-3">After the request is created, an email + Discord notification is sent to the assignee.</p>
+    </div>
+</div>
+
+<!-- ==================== VIEW REQUEST ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-eye"></i> View Request</h4>
+        <ul>
+            <li>Displays the request and all replies in a thread format</li>
+            <li>Reply form</li>
+            <li>Change status</li>
+            <li>Attach files</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== STATUS FLOW ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-arrow-repeat"></i> Status Flow</h4>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Status</th><th>Description</th><th>Color</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><code>pending</code></td><td>Waiting</td><td><span class="badge bg-warning text-dark">Yellow</span></td></tr>
+                <tr><td><code>in_progress</code></td><td>In progress</td><td><span class="badge bg-primary">Blue</span></td></tr>
+                <tr><td><code>resolved</code></td><td>Resolved</td><td><span class="badge bg-success">Green</span></td></tr>
+                <tr><td><code>closed</code></td><td>Closed</td><td><span class="badge bg-secondary">Gray</span></td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ==================== NOTIFICATIONS ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-bell"></i> Notifications (Discord + Email)</h4>
+
+        <h5><i class="bi bi-discord"></i> Discord Notification</h5>
+        <p>When a webhook is configured, Discord notifications are sent for:</p>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Action</th><th>Notification details</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>New request created</td><td>Request ID, title, author name, assigned person</td></tr>
+                <tr><td>Reply posted</td><td>Request ID, title, responder name, new status</td></tr>
+            </tbody>
+        </table>
+
+        <h5 class="mt-4"><i class="bi bi-envelope"></i> Email Notification</h5>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Action</th><th>Recipient</th><th>Template</th><th>Content</th></tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>New request</td>
+                    <td>Assigned person (if any)</td>
+                    <td><code>dev-request-new</code></td>
+                    <td>Request ID, title, author name, link to request</td>
+                </tr>
+                <tr>
+                    <td>Reply posted</td>
+                    <td>Creator or last responder *</td>
+                    <td><code>dev-request-response</code></td>
+                    <td>Request ID, title, responder name, response content, link</td>
+                </tr>
+            </tbody>
+        </table>
+        <p class="text-muted small mt-2">
+            <i class="bi bi-info-circle"></i>
+            * If the creator replies - the last responder (developer) receives the notification.
+            If a developer replies - the original creator receives the notification.
+        </p>
+    </div>
+</div>
+
+<!-- ==================== DELETE ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-trash"></i> Delete</h4>
+        <ul>
+            <li>SweetAlert confirmation</li>
+            <li>Soft delete</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== PERMISSIONS ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-shield-lock"></i> Required Permissions</h4>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Action</th><th>Permission</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Send request, View own requests</td><td>Any logged-in user</td></tr>
+                <tr><td>View all requests, Manage</td><td><code>system_development</code></td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>

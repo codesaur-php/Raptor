@@ -1,112 +1,28 @@
 <?php
 
-namespace Web\Home;
+namespace Web\Seo;
 
 use Web\Template\TemplateController;
 
 use Raptor\Content\NewsModel;
 use Raptor\Content\PagesModel;
+
 use Dashboard\Shop\ProductsModel;
 
 /**
  * Class SeoController
  * ---------------------------------------------------------------
- * SEO (Search Engine Optimization) болон хайлтын контроллер.
+ * SEO контроллер.
  *
  * Энэ контроллер нь:
- *   - Хайлтын хуудас (search) - pages, news, products-оос хайлт хийнэ
  *   - HTML Sitemap (sitemap) - хэрэглэгчдэд зориулсан сайтын бүтэц
  *   - XML Sitemap (sitemapXml) - хайлтын системд зориулсан sitemap
  *   - RSS Feed (rss) - мэдээ болон бүтээгдэхүүний RSS feed
  *
- * @package Web\Home
+ * @package Web\Seo
  */
 class SeoController extends TemplateController
 {
-    /**
-     * Хайлтын хуудсыг харуулах.
-     *
-     * Pages, News, Products хүснэгтүүдээс LIKE хайлт хийж,
-     * нийт үр дүнг нэгтгэж харуулна. Хамгийн багадаа 2 тэмдэгт
-     * оруулах шаардлагатай.
-     *
-     * @return void
-     */
-    public function search()
-    {
-        $code = $this->getLanguageCode();
-        $q = \trim($this->getQueryParams()['q'] ?? '');
-        $results = [];
-
-        if (\mb_strlen($q) >= 2) {
-            $like = '%' . $q . '%';
-
-            // Pages-ээс хайх
-            $pages_table = (new PagesModel($this->pdo))->getName();
-            $stmt = $this->prepare(
-                "SELECT id, title, slug, description, 'page' AS type
-                 FROM $pages_table
-                 WHERE is_active=1 AND published=1 AND code=:code
-                   AND (title LIKE :q OR description LIKE :q2)
-                 ORDER BY published_at DESC
-                 LIMIT 20"
-            );
-            $stmt->bindValue(':code', $code);
-            $stmt->bindValue(':q', $like);
-            $stmt->bindValue(':q2', $like);
-            if ($stmt->execute()) {
-                while ($row = $stmt->fetch()) {
-                    $results[] = $row;
-                }
-            }
-
-            // News-ээс хайх
-            $news_table = (new NewsModel($this->pdo))->getName();
-            $stmt = $this->prepare(
-                "SELECT id, title, slug, description, 'news' AS type
-                 FROM $news_table
-                 WHERE is_active=1 AND published=1 AND code=:code
-                   AND (title LIKE :q OR description LIKE :q2)
-                 ORDER BY published_at DESC
-                 LIMIT 20"
-            );
-            $stmt->bindValue(':code', $code);
-            $stmt->bindValue(':q', $like);
-            $stmt->bindValue(':q2', $like);
-            if ($stmt->execute()) {
-                while ($row = $stmt->fetch()) {
-                    $results[] = $row;
-                }
-            }
-
-            // Products-оос хайх
-            $products_table = (new ProductsModel($this->pdo))->getName();
-            $stmt = $this->prepare(
-                "SELECT id, title, slug, description, 'product' AS type
-                 FROM $products_table
-                 WHERE is_active=1 AND published=1 AND code=:code
-                   AND (title LIKE :q OR description LIKE :q2)
-                 ORDER BY published_at DESC
-                 LIMIT 20"
-            );
-            $stmt->bindValue(':code', $code);
-            $stmt->bindValue(':q', $like);
-            $stmt->bindValue(':q2', $like);
-            if ($stmt->execute()) {
-                while ($row = $stmt->fetch()) {
-                    $results[] = $row;
-                }
-            }
-        }
-
-        $template = $this->template(__DIR__ . '/search.html', [
-            'q' => $q,
-            'results' => $results
-        ]);
-        $template->set('record_title', $this->text('search'));
-        $template->render();
-    }
-
     /**
      * HTML Sitemap хуудсыг харуулах.
      *
@@ -141,6 +57,7 @@ class SeoController extends TemplateController
             foreach ($nodes as &$node) {
                 $node['children'] = $buildTree((int)$node['id']);
             }
+            unset($node);
             return $nodes;
         };
         $page_tree = $buildTree(0);
@@ -209,7 +126,6 @@ class SeoController extends TemplateController
     {
         $baseUrl = (string)$this->getRequest()->getUri()->withPath($this->getScriptPath());
         $baseUrl = \rtrim($baseUrl, '/');
-        $languages = $this->getLanguages();
 
         $urls = [];
 

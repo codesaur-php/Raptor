@@ -52,6 +52,9 @@ use codesaur\Router\Router;
  */
 class RBACRouter extends Router
 {
+    /**
+     * RBAC модулийн бүх маршрутуудыг бүртгэх.
+     */
     public function __construct()
     {
         // RBAC alias list

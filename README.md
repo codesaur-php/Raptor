@@ -131,7 +131,7 @@ public_html/index.php
  |
  \-- /* -> Web\Application (Public Website)
       |-- Middleware stack (Session, Localization, Settings)
-      |-- HomeRouter (/, /page/{id}, /news/{id}, /contact, /language/{code})
+      |-- SiteRouter (/, /page/{id}, /news/{id}, /contact, /language/{code})
       \-- TemplateController -> Twig Templates
 ```
 
@@ -159,7 +159,11 @@ raptor/
 |   |   |-- home/            # Dashboard home
 |   |   \-- shop/            # Shop module (Products, Orders)
 |   \-- web/                 # Public website application
-|       \-- home/            # Web controllers (Home, Page, News, Shop, SEO)
+|       |-- SiteRouter.php   # Web routes
+|       |-- content/         # Pages, News
+|       |-- shop/            # Products, Orders
+|       |-- seo/             # Search, Sitemap, RSS
+|       \-- template/        # Web layout, exception handler
 |-- public_html/             # Document root
 |   |-- index.php            # Entry point
 |   |-- .htaccess            # Apache URL rewrite

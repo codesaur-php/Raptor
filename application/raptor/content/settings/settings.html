@@ -1,16 +1,14 @@
 {% set user_can = user.can('system_content_settings') %}
 
 <!-- SETTINGS ХУУДАСНЫ ЕРӨНХИЙ ТОЛГОЙ БҮТЭЦ -->
-<div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-2 shadow">    
-    <!-- Хуудасны гарчиг (Settings) -->
-    <h3 class="px-2 my-auto fs-6 text-primary">
-        <i class="bi bi-gear-fill"></i> {{ 'settings'|text }}
-    </h3>
-
-    <!-- Home page руу буцах товч -->
-    <div class="ms-auto">
-        <a class="btn btn-sm btn-secondary shadow-sm" href="{{ 'home'|link }}">
+<div class="d-flex justify-content-between align-items-center mb-2">
+    <h5 class="text-primary text-uppercase"><i class="bi bi-gear-fill"></i> {{ 'settings'|text }}</h5>
+    <div>
+        <a class="btn btn-sm btn-primary text-uppercase" href="{{ 'home'|link }}">
             <i class="bi bi-house-door-fill"></i> {{ 'home'|text }}
+        </a>
+        <a class="btn btn-sm btn-outline-secondary" href="{{ 'manual-view'|link({'file': 'settings-manual-' ~ localization.code ~ '.html'}) }}" title="{{ 'manual'|text }}" target="_blank">
+            <i class="bi bi-question-circle"></i>
         </a>
     </div>
 </div>
@@ -390,9 +388,7 @@
                              src="{{ record['localized'][code]['logo']|e }}"
                              style="max-height:480px;{% if record['localized'][code]['logo'] is empty %}display:none;{% endif %}">
                     {% endfor %}
-                </div> <!-- end col-left -->
-
-                
+                </div> <!-- end col-left -->                
 
                 <!-- 
                     БАРУУН ТАЛЫН БАГАНА
@@ -592,7 +588,6 @@
         </form>
     </div> <!-- END CONFIG TAB -->
 </div> <!-- END settings-tabs -->
-
 
 <!-- 
     LOGGER SECTION (Зөвхөн system_logger эрхтэй үед харагдана)

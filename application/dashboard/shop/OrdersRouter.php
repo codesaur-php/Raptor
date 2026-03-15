@@ -13,6 +13,9 @@ use codesaur\Router\Router;
  */
 class OrdersRouter extends Router
 {
+    /**
+     * Захиалгын модулийн маршрутуудыг бүртгэх.
+     */
     public function __construct()
     {
         $this->GET('/dashboard/orders', [OrdersController::class, 'index'])->name('orders');

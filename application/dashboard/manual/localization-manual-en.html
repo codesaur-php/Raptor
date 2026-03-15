@@ -1,0 +1,96 @@
+<div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-3 shadow bg-secondary">
+    <h3 class="px-2 my-auto fs-6 text-white">
+        <i class="bi bi-globe"></i> Localization - Manual
+    </h3>
+    <a href="{{ 'manual' | link }}" class="btn btn-sm btn-light m-1">
+        <i class="bi bi-arrow-left"></i> {{ 'manual' | text }}
+    </a>
+</div>
+
+<!-- ==================== OVERVIEW ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3">What is Localization?</h4>
+        <p>
+            <strong>Localization</strong> is a module for managing system languages and translation texts.
+            It has two tabs: <strong>Language</strong> and <strong>Localization</strong> (Text).
+        </p>
+    </div>
+</div>
+
+<!-- ==================== LANGUAGE MANAGEMENT ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-translate"></i> Language Management</h4>
+        <p>The language table displays the following information:</p>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Column</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Code</td><td>Language code (e.g., mn, en)</td></tr>
+                <tr><td>Flag</td><td>Language flag image</td></tr>
+                <tr><td>Locale</td><td>Locale setting</td></tr>
+                <tr><td>Name</td><td>Language name</td></tr>
+                <tr><td>Description</td><td>Additional description</td></tr>
+                <tr><td>Date</td><td>Creation date</td></tr>
+            </tbody>
+        </table>
+        <p>CRUD operations (create, read, update, delete) are available.</p>
+        <div class="alert alert-info mb-0">
+            <i class="bi bi-info-circle"></i>
+            When adding a new language, all localized content is automatically copied from the source language (<code>*_content</code> tables).
+            The default language cannot be deactivated.
+        </div>
+    </div>
+</div>
+
+<!-- ==================== TRANSLATION TEXT ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-chat-left-text"></i> Translation Text</h4>
+        <p>
+            System UI texts (keyword -> translation per language) are managed in this tab.
+        </p>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Column</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Keyword</td><td>Translation keyword (e.g., home, login)</td></tr>
+                <tr><td>Language texts</td><td>Translation for each language</td></tr>
+                <tr><td>Type</td><td><code>plain</code> or <code>html</code></td></tr>
+            </tbody>
+        </table>
+        <p>CRUD operations (create, read, update, delete) are available.</p>
+    </div>
+</div>
+
+<!-- ==================== LOG ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-journal-text"></i> Log</h4>
+        <p>
+            If you have the <code>system_logger</code> permission, the recent activity log is displayed at the bottom of the page.
+        </p>
+    </div>
+</div>
+
+<!-- ==================== PERMISSIONS ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-shield-lock"></i> Required Permissions</h4>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Action</th><th>Permission</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>View list</td><td><code>system_localization_index</code></td></tr>
+                <tr><td>Create new</td><td><code>system_localization_insert</code></td></tr>
+                <tr><td>Edit</td><td><code>system_localization_update</code></td></tr>
+                <tr><td>Delete</td><td><code>system_localization_delete</code></td></tr>
+                <tr><td>View log</td><td><code>system_logger</code></td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>

@@ -17,6 +17,12 @@ class TextController extends \Raptor\Controller
 
     /**
      * Орчуулгын текстийн шинэ бичлэг үүсгэх (INSERT).
+     *
+     * POST хүсэлтээр бичлэг хадгалж JSON хариу буцаана.
+     * GET хүсэлтээр оруулах форм бүхий template рендерлэнэ.
+     *
+     * @return void
+     * @throws \Exception Эрх хүрэлцэхгүй эсвэл алдаа гарвал
      */
     public function insert()
     {
@@ -234,6 +240,11 @@ class TextController extends \Raptor\Controller
 
     /**
      * Орчуулгын текст мэдээллийг идэвхгүй болгох (SOFT DELETE).
+     *
+     * DELETE хүсэлтээр is_active=0 болгож JSON хариу буцаана.
+     *
+     * @return void
+     * @throws \Exception Эрх хүрэлцэхгүй эсвэл алдаа гарвал
      */
     public function deactivate()
     {

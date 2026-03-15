@@ -17,6 +17,7 @@ namespace Raptor\Content;
  */
 class TemplateService
 {
+    /** @var \PDO Database connection instance */
     protected \PDO $pdo;
 
     /**

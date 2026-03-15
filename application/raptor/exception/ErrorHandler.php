@@ -95,7 +95,7 @@ class ErrorHandler implements ExceptionHandlerInterface
         $vars = [
             'title' => $title,
             'return' => 'Return to host',
-            'message' => "<h3 style=\"text-align:center;color:white\">$message</h3>"
+            'message' => '<h3 style="text-align:center;color:white">' . \htmlspecialchars($message, \ENT_QUOTES | \ENT_SUBSTITUTE, 'UTF-8') . '</h3>'
         ];
 
         // Хөгжүүлэлтийн горимд stack trace харуулах

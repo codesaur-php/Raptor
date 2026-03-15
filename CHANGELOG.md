@@ -6,6 +6,54 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 
 ---
 
+## [1.8.0] - 2026-03-15
+[1.8.0]: https://github.com/codesaur-php/Raptor/compare/v1.7.1...v1.8.0
+
+Major code review, refactoring, shared middleware consolidation, seed data extraction, RBAC UI redesign, security hardening, and CLAUDE.md rewrite.
+
+### Added
+- **SearchController** (`Web\Seo`) - Dedicated web search controller with full-text search across Pages (title, slug, description, content, source, link), News (title, slug, description, content, source), Products (title, slug, description, content, link). Strips `<img>` tags from content before matching to avoid false positives from image URLs
+- **PrivateFilesController security** - Blocks dangerous file extensions (php, phtml, phar, sh, bat, cmd, exe, ini, log, sql) and sensitive filenames (.env*, .htaccess, .htpasswd, .gitignore, composer.json, composer.lock) with 403 Forbidden
+- **Owner access pattern** - Users without `_update`/`_delete` permission can edit/delete their own unpublished (`published=0`) records in News, Pages, Products controllers
+- **Published view access** - `published=1` records viewable by all authenticated admins regardless of `_index` permission
+- **Seed data classes** - Extracted seed data from Model files into dedicated classes to reduce runtime file size:
+  - `NewsSamples`, `PagesSamples`, `ProductsSamples` - Content sample data
+  - `DashboardMenus` - Dashboard sidebar menu structure
+  - `PermissionsSeed` - RBAC permissions (parameterized queries)
+  - `RolePermissionSeed` - Role-permission assignments + role creation (admin, manager, editor, viewer)
+- **PrivateFilesBlockedTest** - 21 tests for blocked file extension/name security
+- **RAPTOR_PASSWORD_RESET_MINUTES** - Renamed from `CODESAUR_PASSWORD_RESET_MINUTES`, added to `.env` and `.env.example`
+
+### Changed
+- **SessionMiddleware consolidated** - `Web\SessionMiddleware` and `Raptor\Authentication\SessionMiddleware` merged into single `Raptor\SessionMiddleware` with `needsWrite` closure constructor
+- **LocalizationMiddleware consolidated** - `Web\LocalizationMiddleware` merged into `Raptor\Localization\LocalizationMiddleware` with `sessionKey` constructor parameter. Controllers read session key from `localization` attribute instead of hardcoding
+- **Web namespace refactored** - `Web\Home\` renamed to `Web\Site\`, `HomeRouter` renamed to `SiteRouter`
+- **RBAC UI redesigned** - `rbac-alias.html` changed from wide table matrix to responsive card-based layout (2 cards per row) with per-role permission checkboxes, select all/deselect all buttons, and badge counters. Roles and permissions display as `alias_name` format
+- **ReferenceInitial refactored** - Single-line insert statements broken into readable multi-line format with numbered sections
+- **error.html optimized** - particles.js moved from inline (~15KB) to CDN, CSS reformatted to multi-line
+- **reset() permission lowered** - News, Pages, Products reset changed from `_delete` to `_index` permission so editors can clear sample data
+- **reset() enhanced** - All reset methods now also delete `is_active=0` records alongside sample data
+- **FilesController owner access** - `update()` allows own file edit, `deactivate()` allows own unattached (`record_id=0`) file delete without permission
+- **UsersController email normalization** - Gmail `normalizeEmail()` added to `insert()` and `update()` methods
+- **DevRequestController auth fix** - Replaced `!$this->getUserId()` with `!$this->isUserAuthorized()` in all 7 methods to prevent id=0 bypass
+- **PagesModel::buildTree()** - Changed from `public` to `private` (only used internally)
+- **Twig comments removed** - All `{# #}` comments in 31 HTML files converted to vanilla `<!-- -->` for template engine independence
+- **SessionMiddlewareTest updated** - Tests both Web and Dashboard closure logic (21 tests)
+- **Language dropdown** - Hidden when only one language is active (web navbar, dashboard login)
+
+### Removed
+- **-read.html** - Unused template, route, and `PagesController::read()` `NewsController::read()` `ProductsController::read()` method removed
+- **Web\SessionMiddleware** - Replaced by shared `Raptor\SessionMiddleware`
+- **Web\LocalizationMiddleware** - Replaced by shared `Raptor\Localization\LocalizationMiddleware`
+
+### Documentation
+- **CLAUDE.md rewritten** - Restructured as forward-looking AI guide with "Adding a New Module" 11-step checklist, shared middleware configuration, owner access pattern, migration rules, and general conventions
+- **CONTRIBUTING.md** - Removed `## Project Structure` section (duplicated in CLAUDE.md)
+- **docs/en/api.md, docs/mn/api.md** - Updated SessionMiddleware and LocalizationMiddleware docs with shared middleware details
+- **docs/en/README.md, docs/mn/README.md** - Updated directory tree (`web/site/`, `SessionMiddleware.php` location), removed deleted files
+
+---
+
 ## [1.7.1] - 2026-03-13
 [1.7.1]: https://github.com/codesaur-php/Raptor/compare/v1.7.0...v1.7.1
 

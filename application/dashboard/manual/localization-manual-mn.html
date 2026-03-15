@@ -1,0 +1,96 @@
+<div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-3 shadow bg-secondary">
+    <h3 class="px-2 my-auto fs-6 text-white">
+        <i class="bi bi-globe"></i> Localization - Гарын авлага
+    </h3>
+    <a href="{{ 'manual' | link }}" class="btn btn-sm btn-light m-1">
+        <i class="bi bi-arrow-left"></i> {{ 'manual' | text }}
+    </a>
+</div>
+
+<!-- ==================== ТОЙМ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3">Нутагшуулалт гэж юу вэ?</h4>
+        <p>
+            <strong>Localization</strong> нь системийн хэл болон орчуулгын текстүүдийг удирдах модуль юм.
+            Хоёр табтай: <strong>Хэл</strong> (Language) ба <strong>Текст</strong> (Localization).
+        </p>
+    </div>
+</div>
+
+<!-- ==================== ХЭЛНИЙ УДИРДЛАГА ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-translate"></i> Хэлний удирдлага</h4>
+        <p>Хэлний хүснэгтэд дараах мэдээлэл харагдана:</p>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Багана</th><th>Тайлбар</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Код</td><td>Хэлний код (жишээ нь: mn, en)</td></tr>
+                <tr><td>Туг</td><td>Хэлний тугны зураг</td></tr>
+                <tr><td>Locale</td><td>Locale тохиргоо</td></tr>
+                <tr><td>Нэр</td><td>Хэлний нэр</td></tr>
+                <tr><td>Тайлбар</td><td>Нэмэлт тайлбар</td></tr>
+                <tr><td>Огноо</td><td>Үүсгэсэн огноо</td></tr>
+            </tbody>
+        </table>
+        <p>CRUD үйлдлүүд (үүсгэх, унших, засварлах, устгах) хийх боломжтой.</p>
+        <div class="alert alert-info mb-0">
+            <i class="bi bi-info-circle"></i>
+            Шинэ хэл нэмэхэд автоматаар бүх localized контентыг эх хэлнээс хуулна (<code>*_content</code> хүснэгтүүд).
+            Default хэлийг идэвхгүй болгох боломжгүй.
+        </div>
+    </div>
+</div>
+
+<!-- ==================== ОРЧУУЛГЫН ТЕКСТ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-chat-left-text"></i> Орчуулгын текст</h4>
+        <p>
+            Системийн UI текстүүд (keyword -> хэл бүрт орчуулга) энэ табд удирдагдана.
+        </p>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Багана</th><th>Тайлбар</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Түлхүүр үг</td><td>Орчуулгын keyword (жишээ нь: home, login)</td></tr>
+                <tr><td>Хэл бүрийн текст</td><td>Хэл тус бүрийн орчуулга</td></tr>
+                <tr><td>Төрөл</td><td><code>plain</code> эсвэл <code>html</code></td></tr>
+            </tbody>
+        </table>
+        <p>CRUD үйлдлүүд (үүсгэх, унших, засварлах, устгах) хийх боломжтой.</p>
+    </div>
+</div>
+
+<!-- ==================== ЛОГ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-journal-text"></i> Лог</h4>
+        <p>
+            <code>system_logger</code> эрхтэй бол хуудасны доод хэсэгт сүүлийн үйлдлүүдийн лог харагдана.
+        </p>
+    </div>
+</div>
+
+<!-- ==================== ЭРХ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-shield-lock"></i> Шаардлагатай эрхүүд</h4>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Үйлдэл</th><th>Эрх</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Жагсаалт харах</td><td><code>system_localization_index</code></td></tr>
+                <tr><td>Шинэ нэмэх</td><td><code>system_localization_insert</code></td></tr>
+                <tr><td>Засах</td><td><code>system_localization_update</code></td></tr>
+                <tr><td>Устгах</td><td><code>system_localization_delete</code></td></tr>
+                <tr><td>Лог харах</td><td><code>system_logger</code></td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>

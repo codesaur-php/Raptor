@@ -13,6 +13,9 @@ use codesaur\Router\Router;
  */
 class DevelopmentRouter extends Router
 {
+    /**
+     * Хөгжүүлэлтийн модулийн маршрутуудыг бүртгэх.
+     */
     public function __construct()
     {
         // DevRequest маршрутууд

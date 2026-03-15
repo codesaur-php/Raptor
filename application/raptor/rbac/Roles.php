@@ -125,18 +125,11 @@ class Roles extends Model
         ");
         $this->setForeignKeyChecks(true);
 
-        // Default системийн ролиуд
-        $nowdate = \date('Y-m-d H:i:s');
-        $query =
-            "INSERT INTO $table(created_at, name, description, alias)
-            VALUES
-            ('$nowdate','coder','Coder can do anything!','system'),
-            ('$nowdate','admin','Full management access except developer tools','system'),
-            ('$nowdate','manager','Manage users content and localization','system'),
-            ('$nowdate','editor','Create and edit content entries','system'),
-            ('$nowdate','viewer','Read-only access to content and localization','system')
-        ";
-        $this->exec($query);
+        // coder роль - системийн super-admin, бүх эрхтэй
+        $stmt = $this->pdo->prepare(
+            "INSERT INTO $table (created_at, name, description, alias) VALUES (:now, 'coder', 'Coder can do anything!', 'system')"
+        );
+        $stmt->execute([':now' => \date('Y-m-d H:i:s')]);
     }
 
     /**

@@ -1,0 +1,276 @@
+<div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-3 shadow bg-secondary">
+    <h3 class="px-2 my-auto fs-6 text-white">
+        <i class="bi bi-book"></i> Users - Manual
+    </h3>
+    <a href="{{ 'manual' | link }}" class="btn btn-sm btn-light m-1">
+        <i class="bi bi-arrow-left"></i> {{ 'manual' | text }}
+    </a>
+</div>
+
+<!-- ==================== OVERVIEW ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-people-fill"></i> What are Users?</h4>
+        <p>
+            <strong>Users</strong> is a module for managing system users.
+            It handles user registration, editing, deletion, and all related operations.
+        </p>
+        <ul>
+            <li><strong>Registration</strong> - Create new users and record their information</li>
+            <li><strong>Edit</strong> - Modify user information</li>
+            <li><strong>Delete</strong> - Deactivate users (soft delete)</li>
+            <li><strong>Organization</strong> - Assign users to organizations</li>
+            <li><strong>RBAC Role</strong> - Assign permission roles to users</li>
+            <li><strong>Password</strong> - Password management</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== LIST ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-list-ul"></i> List</h4>
+        <p>Click <strong>Users</strong> from the Dashboard menu to open the user list page.</p>
+        <h5 class="mt-3">Table Columns</h5>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Column</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>#</td><td>Number</td></tr>
+                <tr><td>Photo</td><td>User profile photo</td></tr>
+                <tr><td>User</td><td>Username, name, email, phone number</td></tr>
+                <tr><td>Organization</td><td>User's assigned organization</td></tr>
+                <tr><td>Role</td><td>RBAC role</td></tr>
+                <tr><td>Action</td><td>Action buttons (visible after the user list has loaded)</td></tr>
+            </tbody>
+        </table>
+        <h5 class="mt-3">Buttons</h5>
+        <ul>
+            <li><strong>Password Reset</strong> (top right) - Password reset requests from users</li>
+            <li><strong>Signup Requests</strong> (top right) - New user registration requests</li>
+            <li><strong>New</strong> (above table) - Create a new user</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== SIGNUP REQUESTS ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-person-plus-fill"></i> Signup Requests</h4>
+        <p>
+            Click the <strong>Signup Requests</strong> button to open a modal showing
+            users who submitted registration requests from the website.
+        </p>
+        <h5 class="mt-3">Table Columns</h5>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Column</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Username</td><td>Requester's login name</td></tr>
+                <tr><td>Email</td><td>Email address</td></tr>
+                <tr><td>Language</td><td>User's selected language (flag)</td></tr>
+                <tr><td>Date</td><td>Request creation date</td></tr>
+                <tr><td>Status</td><td><span class="badge bg-warning">waiting</span> / <span class="badge bg-info">approved</span> / <span class="badge bg-danger">deactivated</span></td></tr>
+                <tr><td>Action</td><td>Only visible for waiting status</td></tr>
+            </tbody>
+        </table>
+        <h5 class="mt-3">Actions</h5>
+        <ul>
+            <li><strong>Accept</strong> - Approve the request and register the user. A confirmation email is sent to the user</li>
+            <li><strong>Delete</strong> - Deactivate the request</li>
+        </ul>
+        <div class="alert alert-info mb-0">
+            <i class="bi bi-info-circle"></i>
+            Accepting requires <code>system_user_insert</code> permission, deleting requires <code>system_user_delete</code> permission.
+        </div>
+    </div>
+</div>
+
+<!-- ==================== PASSWORD RESET REQUESTS ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-shield-lock-fill"></i> Password Reset Requests</h4>
+        <p>
+            Click the <strong>Password Reset</strong> button to open a modal showing
+            password reset requests from users.
+        </p>
+        <h5 class="mt-3">Table Columns</h5>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Column</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Email</td><td>Requester's email address</td></tr>
+                <tr><td>User</td><td>Name, username, ID</td></tr>
+                <tr><td>Language</td><td>User's language (flag)</td></tr>
+                <tr><td>Status</td><td><span class="badge bg-primary">ready</span> - available, <span class="badge bg-secondary">used</span> - already used, <span class="badge bg-danger">expired</span> - expired</td></tr>
+                <tr><td>Date</td><td>Request creation date</td></tr>
+            </tbody>
+        </table>
+        <div class="alert alert-info mb-0">
+            <i class="bi bi-info-circle"></i>
+            This modal is for viewing only. Users reset their password via the link sent to their email.
+        </div>
+    </div>
+</div>
+
+<!-- ==================== NEW USER ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-person-plus"></i> New User</h4>
+        <p>Click the <strong>New</strong> button on the list page.</p>
+        <h5 class="mt-3">Fields</h5>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Field</th><th>Description</th><th>Required</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><strong>Username</strong></td><td>Login name (unique, cannot be changed)</td><td>Yes</td></tr>
+                <tr><td><strong>Email</strong></td><td>Email address</td><td>Yes</td></tr>
+                <tr><td><strong>First name</strong></td><td>First name</td><td>No</td></tr>
+                <tr><td><strong>Last name</strong></td><td>Last name</td><td>No</td></tr>
+                <tr><td><strong>Phone</strong></td><td>Phone number</td><td>No</td></tr>
+                <tr><td><strong>Photo</strong></td><td>Profile photo</td><td>No</td></tr>
+                <tr><td><strong>Password</strong></td><td>Set login password</td><td>Yes</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ==================== EDIT ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-pencil-square"></i> Edit</h4>
+        <p>Click the <strong>edit</strong> button from the list.</p>
+        <ul>
+            <li>All fields can be modified (except <strong>username</strong>)</li>
+            <li>Photo can be replaced or removed</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== ASSIGN ORGANIZATION ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-building"></i> Assign Organization</h4>
+        <p>
+            Users with <code>system_user_organization_set</code> permission can add or remove
+            users from organizations.
+        </p>
+        <div class="alert alert-info mb-0">
+            <i class="bi bi-info-circle"></i>
+            Users with the <strong>system_coder</strong> role have access to all organizations.
+        </div>
+    </div>
+</div>
+
+<!-- ==================== ASSIGN RBAC ROLE ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-person-gear"></i> Assign RBAC Role</h4>
+        <p>
+            Users with <code>system_rbac</code> permission can assign or remove roles from users.
+            (See: <a href="{{ 'manual-view'|link({'file': 'rbac-manual-' ~ localization.code ~ '.html'}) }}">RBAC Manual</a>)
+        </p>
+        <div class="alert alert-info mb-0">
+            <i class="bi bi-info-circle"></i>
+            Users with the <strong>system_coder</strong> role have permission to perform all actions.
+        </div>
+    </div>
+</div>
+
+<!-- ==================== PASSWORD ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-key"></i> Password</h4>
+        <ul>
+            <li>Users can change their own password</li>
+            <li>Users with <code>system_coder</code> permission can change other users' passwords</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== NOTIFICATIONS ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-bell"></i> Notifications (Discord + Email)</h4>
+
+        <h5><i class="bi bi-discord"></i> Discord Notification</h5>
+        <p>
+            The following user-related actions send Discord notifications via webhook
+            (if configured):
+        </p>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Action</th><th>Notification details</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>New signup request</td><td>Username, email address</td></tr>
+                <tr><td>Signup approval</td><td>Username, email, approving admin name</td></tr>
+            </tbody>
+        </table>
+
+        <h5 class="mt-4"><i class="bi bi-envelope"></i> Email Notification</h5>
+        <p>Automatic emails related to user registration:</p>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Action</th><th>Recipient</th><th>Template</th><th>Content</th></tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Signup request</td>
+                    <td>Requester</td>
+                    <td><code>request-new-user</code></td>
+                    <td>Confirmation link, email address</td>
+                </tr>
+                <tr>
+                    <td>Forgot password request</td>
+                    <td>Requester</td>
+                    <td><code>forgotten-password-reset</code></td>
+                    <td>Password reset link, email address</td>
+                </tr>
+                <tr>
+                    <td>Signup approval</td>
+                    <td>New user</td>
+                    <td><code>approve-new-user</code></td>
+                    <td>Email address, login link, username</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ==================== DELETE ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-trash"></i> Delete</h4>
+        <p>Click the <strong>delete</strong> button from the list.</p>
+        <ul>
+            <li>A SweetAlert confirmation dialog will appear</li>
+            <li>A text input field for providing a reason</li>
+            <li>Soft delete - data is preserved, only deactivated</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== PERMISSIONS ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-shield-lock"></i> Required Permissions</h4>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Action</th><th>Permission</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>List, View User</td><td><code>system_user_index</code></td></tr>
+                <tr><td>Create New User</td><td><code>system_user_insert</code></td></tr>
+                <tr><td>Edit User</td><td><code>system_user_update</code></td></tr>
+                <tr><td>Delete User</td><td><code>system_user_delete</code></td></tr>
+                <tr><td>Assign Organization</td><td><code>system_user_organization_set</code></td></tr>
+                <tr><td>Assign Role</td><td><code>system_rbac</code></td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>

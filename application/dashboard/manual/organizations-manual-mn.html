@@ -1,0 +1,139 @@
+<div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-3 shadow bg-secondary">
+    <h3 class="px-2 my-auto fs-6 text-white">
+        <i class="bi bi-book"></i> Organizations - Гарын авлага
+    </h3>
+    <a href="{{ 'manual' | link }}" class="btn btn-sm btn-light m-1">
+        <i class="bi bi-arrow-left"></i> {{ 'manual' | text }}
+    </a>
+</div>
+
+<!-- ==================== ТОЙМ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-bank"></i> Байгууллага гэж юу вэ?</h4>
+        <p>
+            <strong>Organizations</strong> нь системийн байгууллагуудыг удирдах модуль юм.
+        </p>
+        <ul>
+            <li><strong>Шатлалт бүтэц</strong> - Байгууллагуудыг шатлалтай зохион байгуулах</li>
+            <li><strong>RBAC alias систем</strong> - Байгууллага бүрт RBAC alias оноож эрхийн бүлэг болгоно</li>
+            <li><strong>Лого удирдлага</strong> - Байгууллагын лого зураг удирдах</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== ЖАГСААЛТ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-list-ul"></i> Жагсаалт</h4>
+        <p>Dashboard цэснээс <strong>Байгууллагууд</strong> дарахад жагсаалтын хуудас нээгдэнэ.</p>
+        <h5 class="mt-3">Хүснэгтийн баганууд</h5>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Багана</th><th>Тайлбар</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>ID</td><td>Байгууллагын дугаар</td></tr>
+                <tr><td>Лого</td><td>Байгууллагын лого зураг</td></tr>
+                <tr><td>Нэр</td><td>Байгууллагын нэр</td></tr>
+                <tr><td>RBAC (alias)</td><td>RBAC alias нэр</td></tr>
+                <tr><td>Үйлдэл</td><td>Харах, Засах, Устгах товчнууд</td></tr>
+            </tbody>
+        </table>
+        <p class="mt-3">
+            Modal-аар харах болон засварлах боломжтой.
+            <code>system_rbac</code> эрхтэй бол RBAC alias дээр дарахад тухайн alias-ийн
+            эрхийн тохиргоо руу шилжинэ.
+        </p>
+    </div>
+</div>
+
+<!-- ==================== ШИНЭ БАЙГУУЛЛАГА ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-plus-circle"></i> Шинэ байгууллага</h4>
+        <p>Modal хэлбэрээр нээгдэнэ.</p>
+        <h5 class="mt-3">Талбарууд</h5>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Талбар</th><th>Тайлбар</th><th>Заавал эсэх</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><strong>Нэр</strong></td><td>Байгууллагын нэр (давтагдахгүй)</td><td>Тийм</td></tr>
+                <tr><td><strong>Alias</strong></td><td>RBAC-д ашиглагдах нэр (хэд хэдэн байгууллага ижил alias-тай байж болно)</td><td>Үгүй</td></tr>
+                <tr><td><strong>Лого</strong></td><td>Байгууллагын лого зураг</td><td>Үгүй</td></tr>
+            </tbody>
+        </table>
+        <div class="alert alert-info mb-0 mt-3">
+            <i class="bi bi-info-circle"></i>
+            Байгууллага нь өөрийн alias-д харгалзах эрхийн бүлгийн permission-уудыг ашиглана.
+        </div>
+    </div>
+</div>
+
+<!-- ==================== ЗАСВАРЛАХ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-pencil-square"></i> Засварлах</h4>
+        <p>Modal хэлбэрээр нээгдэнэ.</p>
+        <ul>
+            <li>Нэр солих</li>
+            <li>Alias солих</li>
+            <li>Лого солих</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== УСТГАХ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-trash"></i> Устгах</h4>
+        <p>Жагсаалтаас <strong>устгах</strong> товчийг дарна.</p>
+        <ul>
+            <li>SweetAlert баталгаажуулалт + шалтгаан бичих</li>
+            <li>Зөөлөн устгалт (soft delete)</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== RBAC ALIAS ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-person-gear"></i> RBAC Alias</h4>
+        <p>
+            Байгууллага бүр RBAC alias-тай. Энэ alias-ийн дор тухайн байгууллагын
+            гишүүдийн эрхийг тохируулна.
+            (Дэлгэрэнгүй: <a href="{{ 'manual-view'|link({'file': 'rbac-manual-' ~ localization.code ~ '.html'}) }}">RBAC гарын авлага</a>)
+        </p>
+        <p>
+            Жишээ нь: <code>university</code> alias-тай байгууллага бол
+            тухайн байгууллагын хэрэглэгчдийн эрхүүдийг <code>university</code> бүлгийн
+            дор удирдана.
+        </p>
+        <div class="alert alert-info mb-0">
+            <i class="bi bi-info-circle"></i>
+            <strong>common</strong> alias-тай байгууллага бол тухайн байгууллагын хэрэглэгчдийн
+            эрхүүдийг <code>common</code> бүлгийн дор удирдана. Энэ нь олон байгууллагад нийтлэг
+            эрхийн тохиргоо хэрэглэхэд тохиромжтой.
+        </div>
+    </div>
+</div>
+
+<!-- ==================== ЭРХ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-shield-lock"></i> Шаардлагатай эрхүүд</h4>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Үйлдэл</th><th>Эрх</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Жагсаалт харах, Байгууллага харах</td><td><code>system_organization_index</code></td></tr>
+                <tr><td>Шинэ байгууллага үүсгэх</td><td><code>system_organization_insert</code></td></tr>
+                <tr><td>Байгууллага засварлах</td><td><code>system_organization_update</code></td></tr>
+                <tr><td>Байгууллага устгах</td><td><code>system_organization_delete</code></td></tr>
+                <tr><td>RBAC alias удирдах</td><td><code>system_rbac</code></td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>

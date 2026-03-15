@@ -3,7 +3,9 @@
 namespace Raptor\Development;
 
 use Psr\Log\LogLevel;
+
 use codesaur\Template\MemoryTemplate;
+
 use Raptor\Content\FileController;
 use Raptor\Content\FilesModel;
 
@@ -38,7 +40,7 @@ class DevRequestController extends FileController
      */
     public function index()
     {
-        if (!$this->getUserId()) {
+        if (!$this->isUserAuthorized()) {
             $this->dashboardProhibited(null, 401)->render();
             return;
         }
@@ -64,10 +66,10 @@ class DevRequestController extends FileController
     public function list()
     {
         try {
-            $userId = $this->getUserId();
-            if (!$userId) {
+            if (!$this->isUserAuthorized()) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
+            $userId = $this->getUserId();
 
             $params = $this->getQueryParams();
             if (!isset($params['is_active'])) {
@@ -127,7 +129,7 @@ class DevRequestController extends FileController
     public function create()
     {
         try {
-            if (!$this->getUserId()) {
+            if (!$this->isUserAuthorized()) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
 
@@ -175,7 +177,7 @@ class DevRequestController extends FileController
     public function store()
     {
         try {
-            if (!$this->getUserId()) {
+            if (!$this->isUserAuthorized()) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
 
@@ -265,10 +267,10 @@ class DevRequestController extends FileController
     public function view(int $id)
     {
         try {
-            $userId = $this->getUserId();
-            if (!$userId) {
+            if (!$this->isUserAuthorized()) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
+            $userId = $this->getUserId();
 
             $canManage = $this->isUserCan('system_development');
 
@@ -374,10 +376,10 @@ class DevRequestController extends FileController
     public function respond()
     {
         try {
-            $userId = $this->getUserId();
-            if (!$userId) {
+            if (!$this->isUserAuthorized()) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
+            $userId = $this->getUserId();
 
             $payload = $this->getParsedBody();
             if (!isset($payload['id'])
@@ -489,10 +491,10 @@ class DevRequestController extends FileController
     public function deactivate()
     {
         try {
-            $userId = $this->getUserId();
-            if (!$userId) {
+            if (!$this->isUserAuthorized()) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
+            $userId = $this->getUserId();
 
             $payload = $this->getParsedBody();
             if (!isset($payload['id'])
@@ -608,9 +610,7 @@ class DevRequestController extends FileController
 
             $mailer->mail($recipient['email'], $recipient['first_name'], $subject, $body)->send();
         } catch (\Throwable $e) {
-            if (CODESAUR_DEVELOPMENT) {
-                \error_log('DevRequest notifyNewRequest error: ' . $e->getMessage());
-            }
+            \error_log('DevRequest notifyNewRequest error: ' . $e->getMessage());
         }
     }
 
@@ -698,9 +698,7 @@ class DevRequestController extends FileController
 
             $mailer->mail($recipient['email'], $recipient['first_name'], $subject, $body)->send();
         } catch (\Throwable $e) {
-            if (CODESAUR_DEVELOPMENT) {
-                \error_log('DevRequest notifyResponse error: ' . $e->getMessage());
-            }
+            \error_log('DevRequest notifyResponse error: ' . $e->getMessage());
         }
     }
 

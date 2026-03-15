@@ -13,20 +13,14 @@ namespace Raptor;
  *
  * Middleware pipeline нь дараах дарааллаар ажиллана:
  *
- *   1) ErrorHandler    - Алдаа барих ба JSON/HTML error-г зохицуулна
- *   2) MySQLConnectMiddleware / PostgresConnectMiddleware
- *                      -> Controller болон бусад middleware-д PDO холболт inject хийнэ
- *   3) SessionMiddleware
- *                      -> PHP session эхлүүлж хэрэглэгчийн session-г удирдана
- *   4) JWTAuthMiddleware
- *                      -> Session доторх JWT-г шалгаж authenticated User объект үүсгэнэ
- *   5) ContainerMiddleware
- *                      -> Dependency Injection Container-г request attributes-д inject хийнэ
- *                      -> PDO болон User ID-г container-д бүртгэнэ
- *   6) LocalizationMiddleware
- *                      -> Хэлний жагсаалт, сонгогдсон хэл, орчуулгуудыг request attributes-д inject хийнэ
- *   7) Content\SettingsMiddleware
- *                      -> Системийн тохиргоог (settings) дуудлага бүрт inject хийнэ
+ *   1) ErrorHandler           - Алдаа барих, JSON/HTML error
+ *   2) MySQLConnectMiddleware - PDO холболт inject
+ *   3) MigrationMiddleware    - Pending SQL migration автомат ажиллуулах
+ *   4) SessionMiddleware      - PHP session удирдлага
+ *   5) JWTAuthMiddleware      - JWT шалгаж User объект үүсгэх
+ *   6) ContainerMiddleware    - DI Container inject
+ *   7) LocalizationMiddleware - Хэл, орчуулга inject
+ *   8) SettingsMiddleware     - Системийн тохиргоо inject
  *
  * Мөн дараах router-үүдийг бүртгэж өгнө:
  *
@@ -57,29 +51,34 @@ abstract class Application extends \codesaur\Http\Application\Application
     {
         parent::__construct();
 
-        // 1. Universal error handler
+        // 1. Error handler
         $this->use(new Exception\ErrorHandler());
 
-        // 2. Database middleware (MySQL эсвэл PostgreSQL)
+        // 2. Database (MySQL эсвэл PostgreSQL)
         $this->use(new MySQLConnectMiddleware());
-        // -> Хэрэв PostgreSQL ашиглавал:
         // $this->use(new PostgresConnectMiddleware());
 
-        // 2.5 Migration middleware (auto-migrate pending SQL files)
+        // 3. Migration (auto-run pending SQL files)
         $this->use(new Migration\MigrationMiddleware());
 
-        // 3. Session ба JWT authentication pipeline
-        $this->use(new Authentication\SessionMiddleware());
+        // 4. Session
+        $this->use(new SessionMiddleware(
+            fn(string $path, string $method): bool => \str_contains($path, '/login')
+        ));
+
+        // 5. JWT Authentication
         $this->use(new Authentication\JWTAuthMiddleware());
 
-        // 4. Container middleware
+        // 6. DI Container
         $this->use(new ContainerMiddleware());
 
-        // 5. Localization болон системийн тохиргоо
+        // 7. Localization
         $this->use(new Localization\LocalizationMiddleware());
+
+        // 8. Settings
         $this->use(new Content\SettingsMiddleware());
 
-        // 5. Route mapping - Dashboard/Admin модулиудын бүртгэл
+        // Route mapping
         $this->use(new Authentication\LoginRouter());
         $this->use(new User\UsersRouter());
         $this->use(new Organization\OrganizationRouter());

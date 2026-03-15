@@ -1,0 +1,266 @@
+<div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-3 shadow bg-secondary">
+    <h3 class="px-2 my-auto fs-6 text-white">
+        <i class="bi bi-book"></i> News - Гарын авлага
+    </h3>
+    <a href="{{ 'manual' | link }}" class="btn btn-sm btn-light m-1">
+        <i class="bi bi-arrow-left"></i> {{ 'manual' | text }}
+    </a>
+</div>
+
+<!-- ==================== ТОЙМ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3">News (Мэдээ) гэж юу вэ?</h4>
+        <p>
+            <strong>News</strong> нь Raptor Dashboard-ийн мэдээ, нийтлэлийн удирдлагын модуль юм.
+            Мэдээ үүсгэх, засварлах, устгах, нийтлэх зэрэг бүх үйлдлийг энэ модулиар хийнэ.
+        </p>
+        <p>Мэдээ нь дараах онцлогуудтай:</p>
+        <ul>
+            <li><strong>Олон хэл</strong> - Хэл тус бүрт тусдаа мэдээ үүсгэнэ</li>
+            <li><strong>SEO-friendly slug</strong> - Гарчгаас автоматаар URL slug үүсгэнэ</li>
+            <li><strong>Төрөл & Ангилал</strong> - article, announcement, embed, gallery, video, audio, live</li>
+            <li><strong>Нийтлэлийн процесс</strong> - Ноорог -> Нийтлэгдсэн хөрвүүлэлт</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== ЖАГСААЛТ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-list-ul"></i> Мэдээний жагсаалт</h4>
+        <p>Dashboard цэснээс <strong>Мэдээнүүд</strong> дарахад жагсаалтын хуудас нээгдэнэ.</p>
+        <h5 class="mt-3">Шүүлтүүр</h5>
+        <p>Дараах шүүлтүүрээр мэдээнүүдийг ялгаж харж болно:</p>
+        <ul>
+            <li><strong>Хэл</strong> - mn, en гэх мэт хэлний кодоор</li>
+            <li><strong>Төрөл</strong> - article, announcement, embed гэх мэт</li>
+            <li><strong>Ангилал</strong> - general, activity, press, event гэх мэт</li>
+            <li><strong>Төлөв</strong> - Нийтлэгдсэн эсвэл ноорог</li>
+        </ul>
+        <h5 class="mt-3">Хүснэгтийн баганууд</h5>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Багана</th><th>Тайлбар</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>ID / Он сар</td><td>Мэдээний ID болон үүсгэсэн огноо</td></tr>
+                <tr><td>Хэл</td><td>Хэлний туг, код</td></tr>
+                <tr><td>Зураг</td><td>Толгой зураг (хэрэв байвал)</td></tr>
+                <tr><td>Гарчиг</td><td>Мэдээний нэр</td></tr>
+                <tr><td>Хавсралт</td><td>Хавсаргасан файлын тоо</td></tr>
+                <tr><td>Төрөл / Ангилал</td><td>Мэдээний төрөл ба ангилал</td></tr>
+                <tr><td>Нийтлэх</td><td>Нийтлэгдсэн эсэх, огноо</td></tr>
+                <tr><td>Үйлдэл</td><td>Харах, Засах, Устгах товчнууд</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ==================== ШИНЭ МЭДЭЭ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-plus-circle"></i> Шинэ мэдээ үүсгэх</h4>
+        <p>Жагсаалтын хуудсан дээрх <strong>Шинэ</strong> товчийг дарна.</p>
+
+        <h5 class="mt-3">Талбарууд</h5>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Талбар</th><th>Тайлбар</th><th>Заавал эсэх</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><strong>Хэл</strong></td><td>Мэдээний хэл (mn, en гэх мэт)</td><td>Тийм</td></tr>
+                <tr><td><strong>Төрөл</strong></td><td>article, announcement, embed, gallery, video, audio, live</td><td>Тийм</td></tr>
+                <tr><td><strong>Ангилал</strong></td><td>general, activity, press, event, report, policy, fun</td><td>Тийм</td></tr>
+                <tr><td><strong>Гарчиг</strong></td><td>Мэдээний нэр (255 тэмдэгт хүртэл)</td><td>Тийм</td></tr>
+                <tr><td><strong>Тайлбар</strong></td><td>Товч тайлбар (хоосон бол контентоос автомат үүснэ)</td><td>Үгүй</td></tr>
+                <tr><td><strong>Контент</strong></td><td>Бүтэн агуулга - <a href="{{ 'manual-view' | link({'file': 'moedit-manual-mn.html'}) }}" title="moedit manual харах">moedit</a> засварлагчаар бичнэ</td><td>Үгүй</td></tr>
+                <tr><td><strong>Эх сурвалж</strong></td><td>Мэдээний эх сурвалжийн мэдээлэл</td><td>Үгүй</td></tr>
+                <tr><td><strong>Толгой зураг</strong></td><td>Мэдээний толгой зураг (1 ширхэг)</td><td>Үгүй</td></tr>
+            </tbody>
+        </table>
+
+        <h5 class="mt-3">Нийтлэх тохиргоо</h5>
+        <p><code>system_content_publish</code> эрхтэй хэрэглэгчдэд дараах сонголтууд харагдана:</p>
+        <ul>
+            <li><strong>Нийтлэх</strong> - Вэбсайт дээр харагдах болно</li>
+            <li><strong>Онцлох</strong> - Нүүр хуудсанд онцлох мэдээнд орно</li>
+            <li><strong>Сэтгэгдэл</strong> - Зочид сэтгэгдэл бичих боломжтой (анхдагч: идэвхтэй)</li>
+        </ul>
+
+        <h5 class="mt-3">Автомат үйлдлүүд</h5>
+        <ul>
+            <li><strong>Slug</strong> - Гарчигаас автоматаар үүснэ (Монгол кирилл -> латин хөрвүүлэлт)</li>
+            <li><strong>Тайлбар</strong> - Хоосон бол контентоос 200 тэмдэгтийн товчлол үүснэ</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== ЗАСВАРЛАХ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-pencil-square"></i> Мэдээ засварлах</h4>
+        <p>Жагсаалтаас <strong>засварлах</strong> (харандаа) товчийг дарна.</p>
+        <ul>
+            <li>Бүх талбаруудыг өөрчлөх боломжтой (slug-аас бусад)</li>
+            <li>Толгой зургийг солих эсвэл устгах боломжтой</li>
+            <li>Хавсралт файлуудын тайлбарыг засах, шинэ файл нэмэх, устгах</li>
+            <li>Нийтлэгдсэн мэдээг засварлахад <code>system_content_publish</code> эрх шаардлагатай</li>
+            <li>Ямар нэг өөрчлөлт байхгүй бол хадгалахгүй ("No update!" алдаа)</li>
+        </ul>
+
+        <h5 class="mt-3">Өөрчлөлтийн лог</h5>
+        <p>
+            <code>system_logger</code> эрхтэй хэрэглэгчдэд засварлах хуудсанд сүүлийн 10 үйлдлийн
+            лог харагдана. Лог дээр дарахад дэлгэрэнгүй мэдээлэл modal-д нээгдэнэ.
+        </p>
+    </div>
+</div>
+
+<!-- ==================== ХАРАХ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-eye"></i> Мэдээ харах</h4>
+        <p>Жагсаалтаас <strong>харах</strong> (нүд) товчийг дарна.</p>
+        <ul>
+            <li>Бүх талбаруудыг зөвхөн унших горимд харуулна</li>
+            <li>Контентыг moedit read-only горимд харуулна</li>
+            <li>Толгой зураг, хавсралт файлуудыг харна</li>
+            <li>Нийтлэлтийн төлөв, огноо</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== УСТГАХ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-trash"></i> Мэдээ устгах</h4>
+        <p>Жагсаалтаас <strong>устгах</strong> (хогийн сав) товчийг дарна.</p>
+        <ul>
+            <li>Баталгаажуулах цонх гарна (SweetAlert2) - мэдээний зурагтай</li>
+            <li>Зөөлөн устгалт (soft delete) - өгөгдөл хадгалагдана</li>
+            <li><code>system_content_delete</code> эрх шаардлагатай</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== DISCORD МЭДЭГДЭЛ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-bell"></i> Discord мэдэгдэл</h4>
+        <p>
+            Мэдээтэй холбоотой үйлдэл хийгдэх бүрд Discord webhook-ээр автомат мэдэгдэл илгээгдэнэ
+            (webhook тохируулсан бол).
+        </p>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Үйлдэл</th><th>Мэдэгдэлд орох мэдээлэл</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Шинэ мэдээ үүсгэх</td><td>Контентын төрөл (news), үйлдэл (insert), гарчиг, ID, хэн хийсэн</td></tr>
+                <tr><td>Мэдээ засварлах / нийтлэх</td><td>Контентын төрөл (news), үйлдэл (update/publish), гарчиг, ID, хэн хийсэн</td></tr>
+                <tr><td>Мэдээ устгах</td><td>Контентын төрөл (news), үйлдэл (delete), гарчиг, ID, хэн хийсэн</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ==================== ТӨРЛҮҮД ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-tags"></i> Мэдээний төрөл ба ангилал</h4>
+        <h5>Төрөл (type)</h5>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Утга</th><th>Тайлбар</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><code>article</code></td><td>Мэдээ, нийтлэл (анхдагч)</td></tr>
+                <tr><td><code>announcement</code></td><td>Зарлал</td></tr>
+                <tr><td><code>embed</code></td><td>Шигтгэсэн контент (HTML Source горимд шилжинэ)</td></tr>
+                <tr><td><code>gallery</code></td><td>Зургийн цомог</td></tr>
+                <tr><td><code>video</code></td><td>Видео контент</td></tr>
+                <tr><td><code>audio</code></td><td>Аудио контент</td></tr>
+                <tr><td><code>live</code></td><td>Шууд дамжуулалт</td></tr>
+            </tbody>
+        </table>
+
+        <h5 class="mt-3">Ангилал (category)</h5>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Утга</th><th>Тайлбар</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><code>general</code></td><td>Ерөнхий (анхдагч)</td></tr>
+                <tr><td><code>activity</code></td><td>Үйл ажиллагаа</td></tr>
+                <tr><td><code>press</code></td><td>Хэвлэлийн мэдээ</td></tr>
+                <tr><td><code>event</code></td><td>Арга хэмжээ</td></tr>
+                <tr><td><code>report</code></td><td>Тайлан</td></tr>
+                <tr><td><code>policy</code></td><td>Бодлого, дүрэм</td></tr>
+                <tr><td><code>fun</code></td><td>Хөгжилтэй</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ==================== ФАЙЛ ХАВСРАЛТ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-paperclip"></i> Файл хавсралт</h4>
+        <p>Мэдээ бүрт дараах төрлийн файлууд хавсаргах боломжтой:</p>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Төрөл</th><th>Тоо</th><th>Тайлбар</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><strong>Толгой зураг</strong></td><td>1 ширхэг</td><td>Мэдээний толгой зураг, солих/устгах боломжтой</td></tr>
+                <tr><td><strong>Контент зураг/медиа</strong></td><td>Хязгааргүй</td><td>moedit засварлагчаар контент дотор оруулна</td></tr>
+                <tr><td><strong>Хавсралт файл</strong></td><td>Хязгааргүй</td><td>Тусдаа файл хавсаргана, тайлбартай</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ==================== ЖИШИГ ДАТА ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-arrow-counterclockwise"></i> Жишиг дата цэвэрлэх</h4>
+        <p>
+            Систем анх суулгагдахад жишиг (sample) өгөгдөл бэлтгэгдсэн байдаг.
+            Жишиг дата илэрвэл жагсаалтын хуудсанд шар анхааруулга болон
+            <strong>Reset & Production</strong> товч харагдана.
+        </p>
+        <div class="alert alert-danger">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            <strong>Анхааруулга:</strong> Reset хийхэд зөвхөн жишиг (sample) өгөгдөл болон тэдгээрийн хавсралт файлуудын
+            бүртгэл устана. Хэрэглэгчийн үүсгэсэн бодит өгөгдөл хэвээр үлдэнэ. Энэ үйлдлийг буцаах боломжгүй.
+        </div>
+        <div class="alert alert-info mb-0">
+            <i class="bi bi-lightbulb"></i>
+            <strong>Жишиг дата таних:</strong> <code>category='_raptor_sample_'</code> ангилалтай мэдээнүүд нь
+            жишиг өгөгдөл гэж тооцогдоно. Хэрэв та заримыг нь бодит контент болгон ашиглахыг хүсвэл
+            тухайн мэдээний ангилалыг өөрчилж (жишээ нь <code>general</code>) хадгалахад хангалттай -
+            тэдгээр нь reset хийхэд устахгүй.
+        </div>
+    </div>
+</div>
+
+<!-- ==================== ЭРХ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-shield-lock"></i> Шаардлагатай эрхүүд</h4>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Үйлдэл</th><th>Эрх</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Жагсаалт харах, Мэдээ харах</td><td><code>system_content_index</code></td></tr>
+                <tr><td>Шинэ мэдээ үүсгэх</td><td><code>system_content_insert</code></td></tr>
+                <tr><td>Мэдээ засварлах</td><td><code>system_content_update</code></td></tr>
+                <tr><td>Нийтлэх, Онцлох, Сэтгэгдэл</td><td><code>system_content_publish</code></td></tr>
+                <tr><td>Устгах, Жишиг дата цэвэрлэх</td><td><code>system_content_delete</code></td></tr>
+                <tr><td>Лог харах</td><td><code>system_logger</code></td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>

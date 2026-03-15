@@ -64,6 +64,12 @@ use codesaur\Http\Application\ExceptionHandlerInterface;
  */
 class ExceptionHandler implements ExceptionHandlerInterface
 {
+    /**
+     * Throwable-г template ашиглан хэрэглэгчид ээлтэй алдааны хуудас харуулах.
+     *
+     * @param \Throwable $throwable Үүссэн алдаа эсвэл exception
+     * @return void
+     */
     public function exception(\Throwable $throwable): void
     {
         $errorTemplate = __DIR__ . '/page-404.html';
@@ -93,7 +99,7 @@ class ExceptionHandler implements ExceptionHandlerInterface
         $vars = [
             'title' => $title,
             'code'  => $code,
-            'message' => "<h3>$message</h3>"
+            'message' => '<h3>' . \htmlspecialchars($message, \ENT_QUOTES | \ENT_SUBSTITUTE, 'UTF-8') . '</h3>'
         ];
         
         if (CODESAUR_DEVELOPMENT) {

@@ -1,0 +1,276 @@
+<div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-3 shadow bg-secondary">
+    <h3 class="px-2 my-auto fs-6 text-white">
+        <i class="bi bi-book"></i> Users - Гарын авлага
+    </h3>
+    <a href="{{ 'manual' | link }}" class="btn btn-sm btn-light m-1">
+        <i class="bi bi-arrow-left"></i> {{ 'manual' | text }}
+    </a>
+</div>
+
+<!-- ==================== ТОЙМ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-people-fill"></i> Хэрэглэгч гэж юу вэ?</h4>
+        <p>
+            <strong>Users</strong> нь системийн хэрэглэгчдийг удирдах модуль юм.
+            Хэрэглэгчийн бүртгэл үүсгэх, засварлах, устгах зэрэг бүх үйлдлийг энэ модулиар хийнэ.
+        </p>
+        <ul>
+            <li><strong>Бүртгэл</strong> - Шинэ хэрэглэгч үүсгэх, мэдээлэл бүртгэх</li>
+            <li><strong>Засварлах</strong> - Хэрэглэгчийн мэдээллийг өөрчлөх</li>
+            <li><strong>Устгах</strong> - Хэрэглэгчийг идэвхгүй болгох (soft delete)</li>
+            <li><strong>Байгууллага</strong> - Хэрэглэгчийг байгууллагад оноох</li>
+            <li><strong>RBAC дүр</strong> - Хэрэглэгчид эрхийн дүр (role) оноох</li>
+            <li><strong>Нууц үг</strong> - Нууц үг удирдлага</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== ЖАГСААЛТ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-list-ul"></i> Жагсаалт</h4>
+        <p>Dashboard цэснээс <strong>Хэрэглэгчид</strong> дарахад жагсаалтын хуудас нээгдэнэ.</p>
+        <h5 class="mt-3">Хүснэгтийн баганууд</h5>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Багана</th><th>Тайлбар</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>#</td><td>Дугаар</td></tr>
+                <tr><td>Зураг</td><td>Хэрэглэгчийн профайл зураг</td></tr>
+                <tr><td>Хэрэглэгч</td><td>Username, нэр, и-мэйл, утасны дугаар</td></tr>
+                <tr><td>Байгууллага</td><td>Хэрэглэгчийн харъяалагдах байгууллага</td></tr>
+                <tr><td>Дүр (role)</td><td>RBAC дүр</td></tr>
+                <tr><td>Үйлдэл</td><td>Action товчнууд (хэрэглэгчийн жагсаалт ачаалагдсаны дараа харагдана)</td></tr>
+            </tbody>
+        </table>
+        <h5 class="mt-3">Товчнууд</h5>
+        <ul>
+            <li><strong>Нууц үг шинээр тааруулах</strong> (баруун дээд) - Хэрэглэгчээс ирсэн нууц үг сэргээх хүсэлтүүд</li>
+            <li><strong>Бүртгүүлэх хүсэлт</strong> (баруун дээд) - Шинэ хэрэглэгч бүртгүүлэх хүсэлтүүд</li>
+            <li><strong>Шинэ</strong> (хүснэгтийн дээд) - Шинэ хэрэглэгч үүсгэх</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== БҮРТГҮҮЛЭХ ХҮСЭЛТ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-person-plus-fill"></i> Бүртгүүлэх хүсэлт</h4>
+        <p>
+            <strong>Бүртгүүлэх хүсэлт</strong> товчийг дарахад modal цонх нээгдэж,
+            вэб сайтаас бүртгүүлэх хүсэлт илгээсэн хэрэглэгчдийн жагсаалт харагдана.
+        </p>
+        <h5 class="mt-3">Хүснэгтийн баганууд</h5>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Багана</th><th>Тайлбар</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Username</td><td>Хүсэлт гаргагчийн нэвтрэх нэр</td></tr>
+                <tr><td>Email</td><td>И-мэйл хаяг</td></tr>
+                <tr><td>Хэл</td><td>Хэрэглэгчийн сонгосон хэл (тугаар)</td></tr>
+                <tr><td>Огноо</td><td>Хүсэлт үүссэн огноо</td></tr>
+                <tr><td>Төлөв</td><td><span class="badge bg-warning">waiting</span> / <span class="badge bg-info">approved</span> / <span class="badge bg-danger">deactivated</span></td></tr>
+                <tr><td>Үйлдэл</td><td>Зөвхөн waiting төлөвт харагдана</td></tr>
+            </tbody>
+        </table>
+        <h5 class="mt-3">Үйлдлүүд</h5>
+        <ul>
+            <li><strong>Зөвшөөрөх</strong> - Хүсэлтийг баталж хэрэглэгчийг системд бүртгэнэ. Баталгаажуулсны дараа хэрэглэгчид и-мэйл илгээгдэнэ</li>
+            <li><strong>Устгах</strong> - Хүсэлтийг идэвхгүй болгоно</li>
+        </ul>
+        <div class="alert alert-info mb-0">
+            <i class="bi bi-info-circle"></i>
+            Зөвшөөрөхөд <code>system_user_insert</code>, устгахад <code>system_user_delete</code> эрх шаардлагатай.
+        </div>
+    </div>
+</div>
+
+<!-- ==================== НУУЦ ҮГ СЭРГЭЭХ ХҮСЭЛТ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-shield-lock-fill"></i> Нууц үг шинээр тааруулах</h4>
+        <p>
+            <strong>Нууц үг шинээр тааруулах</strong> товчийг дарахад modal цонх нээгдэж,
+            нууц үг мартсан хэрэглэгчдийн хүсэлтүүдийн жагсаалт харагдана.
+        </p>
+        <h5 class="mt-3">Хүснэгтийн баганууд</h5>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Багана</th><th>Тайлбар</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Email</td><td>Хүсэлт гаргагчийн и-мэйл хаяг</td></tr>
+                <tr><td>Хэрэглэгч</td><td>Нэр, username, ID</td></tr>
+                <tr><td>Хэл</td><td>Хэрэглэгчийн хэл (тугаар)</td></tr>
+                <tr><td>Төлөв</td><td><span class="badge bg-primary">ready</span> - ашиглах боломжтой, <span class="badge bg-secondary">used</span> - хэрэглэгдсэн, <span class="badge bg-danger">expired</span> - хугацаа дууссан</td></tr>
+                <tr><td>Огноо</td><td>Хүсэлт үүссэн огноо</td></tr>
+            </tbody>
+        </table>
+        <div class="alert alert-info mb-0">
+            <i class="bi bi-info-circle"></i>
+            Энэ modal нь зөвхөн мэдээлэл харуулах зориулалттай. Хэрэглэгч өөрөө и-мэйлээр ирсэн линкээр нууц үгээ сэргээнэ.
+        </div>
+    </div>
+</div>
+
+<!-- ==================== ШИНЭ ХЭРЭГЛЭГЧ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-person-plus"></i> Шинэ хэрэглэгч</h4>
+        <p>Жагсаалтын хуудсан дээрх <strong>Шинэ</strong> товчийг дарна.</p>
+        <h5 class="mt-3">Талбарууд</h5>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Талбар</th><th>Тайлбар</th><th>Заавал эсэх</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><strong>Username</strong></td><td>Нэвтрэх нэр (давтагдахгүй, өөрчлөх боломжгүй)</td><td>Тийм</td></tr>
+                <tr><td><strong>Email</strong></td><td>И-мэйл хаяг</td><td>Тийм</td></tr>
+                <tr><td><strong>First name</strong></td><td>Нэр</td><td>Үгүй</td></tr>
+                <tr><td><strong>Last name</strong></td><td>Овог</td><td>Үгүй</td></tr>
+                <tr><td><strong>Phone</strong></td><td>Утасны дугаар</td><td>Үгүй</td></tr>
+                <tr><td><strong>Photo</strong></td><td>Профайл зураг</td><td>Үгүй</td></tr>
+                <tr><td><strong>Нууц үг</strong></td><td>Нэвтрэх нууц үг тохируулах</td><td>Тийм</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ==================== ЗАСВАРЛАХ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-pencil-square"></i> Засварлах</h4>
+        <p>Жагсаалтаас <strong>засварлах</strong> товчийг дарна.</p>
+        <ul>
+            <li>Бүх талбаруудыг өөрчлөх боломжтой (<strong>username</strong>-аас бусад)</li>
+            <li>Зураг солих эсвэл устгах боломжтой</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== БАЙГУУЛЛАГА ОНООХ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-building"></i> Байгууллага оноох</h4>
+        <p>
+            <code>system_user_organization_set</code> эрхтэй бол хэрэглэгчийг байгууллагад нэмэх
+            эсвэл хасах боломжтой.
+        </p>
+        <div class="alert alert-info mb-0">
+            <i class="bi bi-info-circle"></i>
+            <strong>system_coder</strong> дүртэй хэрэглэгч бүх байгууллагад нэвтрэх эрхтэй.
+        </div>
+    </div>
+</div>
+
+<!-- ==================== RBAC ДҮР ОНООХ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-person-gear"></i> RBAC дүр оноох</h4>
+        <p>
+            <code>system_rbac</code> эрхтэй бол хэрэглэгчид дүр (role) оноох эсвэл хасах боломжтой.
+            (Дэлгэрэнгүй: <a href="{{ 'manual-view'|link({'file': 'rbac-manual-' ~ localization.code ~ '.html'}) }}">RBAC гарын авлага</a>)
+        </p>
+        <div class="alert alert-info mb-0">
+            <i class="bi bi-info-circle"></i>
+            <strong>system_coder</strong> дүртэй хэрэглэгч бүх үйлдэл хийх эрхтэй.
+        </div>
+    </div>
+</div>
+
+<!-- ==================== НУУЦ ҮГ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-key"></i> Нууц үг</h4>
+        <ul>
+            <li>Өөрийн нууц үгийг солих боломжтой</li>
+            <li><code>system_coder</code> эрхтэй бол бусдын нууц үг солих боломжтой</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== МЭДЭГДЭЛ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-bell"></i> Мэдэгдэл (Discord + И-мэйл)</h4>
+
+        <h5><i class="bi bi-discord"></i> Discord мэдэгдэл</h5>
+        <p>
+            Хэрэглэгчийн бүртгэлтэй холбоотой дараах үйлдлүүд Discord webhook-ээр мэдэгдэл илгээнэ
+            (webhook тохируулсан бол):
+        </p>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Үйлдэл</th><th>Мэдэгдэлд орох мэдээлэл</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Шинэ бүртгүүлэх хүсэлт (signup)</td><td>Хэрэглэгчийн нэр, и-мэйл хаяг</td></tr>
+                <tr><td>Бүртгэл баталгаажуулах (approve)</td><td>Хэрэглэгчийн нэр, и-мэйл, баталгаажуулсан админ</td></tr>
+            </tbody>
+        </table>
+
+        <h5 class="mt-4"><i class="bi bi-envelope"></i> И-мэйл мэдэгдэл</h5>
+        <p>Хэрэглэгчийн бүртгэлтэй холбоотой автомат и-мэйлүүд:</p>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Үйлдэл</th><th>Хүлээн авагч</th><th>Загвар</th><th>Агуулга</th></tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Бүртгүүлэх хүсэлт (signup)</td>
+                    <td>Хүсэлт гаргагч</td>
+                    <td><code>request-new-user</code></td>
+                    <td>Баталгаажуулах линк, и-мэйл хаяг</td>
+                </tr>
+                <tr>
+                    <td>Нууц үг сэргээх хүсэлт</td>
+                    <td>Хүсэлт гаргагч</td>
+                    <td><code>forgotten-password-reset</code></td>
+                    <td>Нууц үг сэргээх линк, и-мэйл хаяг</td>
+                </tr>
+                <tr>
+                    <td>Бүртгэл баталгаажуулах (approve)</td>
+                    <td>Шинэ хэрэглэгч</td>
+                    <td><code>approve-new-user</code></td>
+                    <td>И-мэйл хаяг, нэвтрэх линк, хэрэглэгчийн нэр</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ==================== УСТГАХ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-trash"></i> Устгах</h4>
+        <p>Жагсаалтаас <strong>устгах</strong> товчийг дарна.</p>
+        <ul>
+            <li>SweetAlert баталгаажуулалт гарна</li>
+            <li>Шалтгаан бичих текст input талбар</li>
+            <li>Зөөлөн устгалт (soft delete) - өгөгдөл хадгалагдана, зөвхөн идэвхгүй болно</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== ЭРХ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-shield-lock"></i> Шаардлагатай эрхүүд</h4>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Үйлдэл</th><th>Эрх</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Жагсаалт харах, Хэрэглэгч харах</td><td><code>system_user_index</code></td></tr>
+                <tr><td>Шинэ хэрэглэгч үүсгэх</td><td><code>system_user_insert</code></td></tr>
+                <tr><td>Хэрэглэгч засварлах</td><td><code>system_user_update</code></td></tr>
+                <tr><td>Хэрэглэгч устгах</td><td><code>system_user_delete</code></td></tr>
+                <tr><td>Байгууллага оноох</td><td><code>system_user_organization_set</code></td></tr>
+                <tr><td>Дүр оноох</td><td><code>system_rbac</code></td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>

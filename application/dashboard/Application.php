@@ -45,5 +45,8 @@ class Application extends \Raptor\Application
         // Shop модулийн Router-г бүртгэж байна
         $this->use(new Shop\ProductsRouter());
         $this->use(new Shop\OrdersRouter());
+
+        // Гарын авлага
+        $this->use(new Manual\ManualRouter());
     }
 }

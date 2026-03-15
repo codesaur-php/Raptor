@@ -239,7 +239,7 @@ public_html/index.php (Entry point)
 |
 \-- /* -> Web\Application (Public Website)
      |-- Middleware: ExceptionHandler -> MySQL -> Container -> Session -> Localization -> Settings
-     |-- Router: HomeRouter (/, /page, /news, /contact, /products, /order, /search, /sitemap, /rss, ...)
+     |-- Router: SiteRouter (/, /page, /news, /contact, /products, /order, /search, /sitemap, /rss, ...)
      \-- Controllers -> Twig Templates -> HTML Response
 ```
 
@@ -267,7 +267,8 @@ raptor/
 |   |   |-- MySQLConnectMiddleware.php
 |   |   |-- PostgresConnectMiddleware.php
 |   |   |-- ContainerMiddleware.php
-|   |   |-- authentication/        # Login, JWT, Session
+|   |   |-- SessionMiddleware.php  # Shared session management
+|   |   |-- authentication/        # Login, JWT
 |   |   |-- content/               # CMS modules
 |   |   |   |-- file/              # File management
 |   |   |   |-- news/              # News
@@ -291,20 +292,12 @@ raptor/
 |   |   \-- shop/                  # Shop module (Products, Orders)
 |   \-- web/                       # Web Application
 |       |-- Application.php
-|       |-- SessionMiddleware.php
-|       |-- LocalizationMiddleware.php
-|       |-- home/                  # Public page controllers + templates
-|       |   |-- HomeRouter.php
-|       |   |-- HomeController.php
-|       |   |-- PageController.php
-|       |   |-- NewsController.php
-|       |   |-- ShopController.php
-|       |   |-- SeoController.php
-|       |   |-- home.html, page.html, news.html
-|       |   |-- products.html, product.html
-|       |   |-- order.html, order-success.html
-|       |   |-- search.html, sitemap.html
-|       |   \-- archive.html, news-type.html
+|       |-- SiteRouter.php         # Web routes
+|       |-- HomeController.php     # Home, language
+|       |-- content/               # Pages, News
+|       |-- shop/                  # Products, Orders
+|       |-- seo/                   # Search, Sitemap, RSS
+|       |-- *.html                 # Twig templates
 |       \-- template/              # Web layout
 |           |-- TemplateController.php
 |           |-- ExceptionHandler.php
@@ -324,7 +317,7 @@ raptor/
 |   \-- mn/                        # Mongolian documentation
 |-- tests/                         # PHPUnit tests (unit, integration)
 |-- database/
-|   \-- migrations/              # SQL migration files
+|   \-- migrations/                # SQL migration files
 |-- logs/                          # Error log files
 |-- private/                       # Protected files
 |-- composer.json
@@ -344,12 +337,12 @@ Middleware are PSR-15 standard layers that process request/response. Registratio
 |---|-----------|---------|
 | 1 | `ErrorHandler` | Returns errors as JSON/HTML |
 | 2 | `MySQLConnectMiddleware` | Creates PDO and injects into request |
-| 2.5 | `MigrationMiddleware` | Auto-runs pending SQL migrations |
-| 3 | `SessionMiddleware` | Starts and manages PHP session |
-| 4 | `JWTAuthMiddleware` | Validates JWT and creates `User` object |
-| 5 | `ContainerMiddleware` | Injects DI Container |
-| 6 | `LocalizationMiddleware` | Determines language and translations |
-| 7 | `SettingsMiddleware` | Injects system settings |
+| 3 | `MigrationMiddleware` | Auto-runs pending SQL migrations |
+| 4 | `SessionMiddleware` | Starts and manages PHP session |
+| 5 | `JWTAuthMiddleware` | Validates JWT and creates `User` object |
+| 6 | `ContainerMiddleware` | Injects DI Container |
+| 7 | `LocalizationMiddleware` | Determines language and translations |
+| 8 | `SettingsMiddleware` | Injects system settings |
 
 ### Web Middleware
 
@@ -991,12 +984,12 @@ class Application extends \Raptor\Application
 ### Adding a Public Web Page
 
 ```php
-// application/web/home/HomeRouter.php
+// application/web/SiteRouter.php
 $this->GET('/products', [HomeController::class, 'products'])->name('products');
 ```
 
 ```php
-// application/web/home/HomeController.php
+// application/web/HomeController.php
 public function products()
 {
     $model = new ProductsModel($this->pdo);

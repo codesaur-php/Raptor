@@ -38,7 +38,7 @@
 
                         <!-- Хэл - flag дүрс -->
                         <td>
-                            {# `en` бол -> us flag ашиглана, бусад хэл шууд code-рээ #}
+                            <!-- `en` бол -> us flag ашиглана, бусад хэл шууд code-рээ -->
                             {% set flag = row['code'] == 'en' ? 'us' : row['code'] %}
                             <!-- flagcdn.com -> өндөр чанартай flag icon -->
                             <img src="https://flagcdn.com/20x15/{{ flag }}.png"

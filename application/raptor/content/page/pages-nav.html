@@ -1,32 +1,16 @@
+<!-- SweetAlert2 сан - устгах үед баталгаажуулах цонх гаргахад ашиглана -->
+<script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <!-- ========== ТОЛГОЙ ХЭСЭГ ========== -->
-<div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 shadow">
-    <h3 class="px-2 my-auto fs-5 text-primary text-uppercase">
-        <i class="bi bi-diagram-3"></i> {{ 'pages-navigation'|text }}
-    </h3>
-    <div class="ms-auto">
-        <a class="btn btn-outline-secondary text-uppercase shadow-sm" href="{{ 'pages'|link }}">
+<div class="d-flex justify-content-between align-items-center">
+    <h5 class="text-primary text-uppercase"><i class="bi bi-diagram-3"></i> {{ 'pages-navigation'|text }}</h5>
+    <div>
+        <a class="btn btn-sm btn-outline-secondary text-uppercase" href="{{ 'pages-table'|link }}">
             <i class="bi bi-table"></i> {{ 'pages'|text }}
         </a>
-    </div>
-</div>
-
-<!-- ========== DELETE CONFIRM MODAL ========== -->
-<div class="modal fade" id="deleteConfirmModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered modal-sm">
-        <div class="modal-content">
-            <div class="modal-body text-center py-4">
-                <span id="deleteConfirmIcon"><i class="bi bi-exclamation-triangle text-danger" style="font-size:2.5rem"></i></span>
-                <p class="text-danger mt-3 mb-0" id="deleteConfirmText"></p>
-            </div>
-            <div class="modal-footer justify-content-center border-0 pt-0">
-                <button type="button" class="btn btn-danger btn-sm" id="deleteConfirmBtn">
-                    <i class="bi bi-trash"></i> {{ 'delete'|text }}
-                </button>
-                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">
-                    {{ 'cancel'|text }}
-                </button>
-            </div>
-        </div>
+        <a class="btn btn-sm btn-outline-secondary" href="{{ 'manual-view'|link({'file': 'pages-manual-' ~ localization.code ~ '.html'}) }}" title="{{ 'manual'|text }}" target="_blank">
+            <i class="bi bi-question-circle"></i>
+        </a>
     </div>
 </div>
 
@@ -211,46 +195,52 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
         // Delete buttons
-        const deleteModal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
-        const deleteText = document.getElementById('deleteConfirmText');
-        const deleteBtn = document.getElementById('deleteConfirmBtn');
-        const deleteIcon = document.getElementById('deleteConfirmIcon');
-        const defaultIcon = '<i class="bi bi-exclamation-triangle text-danger" style="font-size:2.5rem"></i>';
         treeContainer.querySelectorAll('.deactivate-page').forEach(btn => {
             btn.addEventListener('click', function (e) {
                 e.preventDefault();
                 const id = btn.value;
                 const title = btn.getAttribute('data-title');
                 const photo = btn.getAttribute('data-photo');
-                deleteIcon.innerHTML = photo
-                    ? `<img src="${photo}" style="max-height:64px;max-width:96px;object-fit:cover" class="rounded">`
-                    : defaultIcon;
-                deleteText.innerHTML = lang === 'mn'
-                    ? `Та <strong>${title}</strong> хуудсыг устгахдаа итгэлтэй байна уу?`
-                    : `Are you sure you want to delete <strong>${title}</strong>?`;
-                deleteBtn.onclick = function () {
-                    deleteBtn.disabled = true;
-                    fetch(
-                        `{{ 'page-deactivate'|link }}`,
-                        {
-                            method: 'DELETE',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ id, title })
-                        }
-                    ).then(res => res.json()).then(response => {
-                        if (response.status !== 'success') {
-                            throw new Error(response.message ?? 'Invalid response!');
-                        }
-                        deleteModal.hide();
-                        btn.closest('.list-group-item').remove();
-                        NotifyTop('success', lang === 'mn' ? 'Амжилттай' : 'Success', response.message ?? `Page:${id} deleted`);
-                    }).catch(error => {
-                        NotifyTop('danger', lang === 'mn' ? 'Алдаа' : 'Error', error.message);
-                    }).finally(() => {
-                        deleteBtn.disabled = false;
-                    });
-                };
-                deleteModal.show();
+
+                let question = `<h5>${title}</h5><p class="text-danger mb-3">{{ 'confirm-deactivate'|text|e('js') }}?</p>`;
+                let src = '';
+                if (photo) {
+                    src = photo;
+                } else {
+                    question = `<i class="bi bi-question-circle text-danger mb-4" style="font-size:3rem"></i>${question}`;
+                }
+
+                Swal.fire({
+                    imageUrl: src,
+                    imageHeight: 64,
+                    html: question,
+                    showCancelButton: true,
+                    cancelButtonText: `{{ 'cancel'|text|e }}`,
+                    confirmButtonText: `<i class="bi bi-trash"></i> {{ 'delete'|text|e }}`,
+                    confirmButtonColor: '#df4759',
+                    showLoaderOnConfirm: true,
+                    allowOutsideClick: () => !Swal.isLoading(),
+                    backdrop: true,
+                    preConfirm: () => {
+                        return fetch(
+                            `{{ 'page-deactivate'|link }}`,
+                            {
+                                method: 'DELETE',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ id, title })
+                            }
+                        ).then(res => res.json()).then(response => {
+                            if (response.status !== 'success') {
+                                throw new Error(response.message ?? 'Invalid response!');
+                            }
+                            Swal.close();
+                            btn.closest('.list-group-item').remove();
+                            NotifyTop('success', `{{ 'success'|text|e }}`, response.message ?? `Page:${id} deactivated`);
+                        }).catch(error => {
+                            Swal.showValidationMessage(error.message);
+                        });
+                    }
+                });
             });
         });
 

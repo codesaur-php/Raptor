@@ -1,0 +1,177 @@
+<div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-3 shadow bg-secondary">
+    <h3 class="px-2 my-auto fs-6 text-white">
+        <i class="bi bi-book"></i> Dev Requests - Гарын авлага
+    </h3>
+    <a href="{{ 'manual' | link }}" class="btn btn-sm btn-light m-1">
+        <i class="bi bi-arrow-left"></i> {{ 'manual' | text }}
+    </a>
+</div>
+
+<!-- ==================== ТОЙМ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-code-slash"></i> Хөгжүүлэлтийн хүсэлт гэж юу вэ?</h4>
+        <p>
+            <strong>Dev Requests</strong> нь програмистуудад хүсэлт, алдааны мэдэгдэл илгээх модуль юм.
+        </p>
+        <ul>
+            <li><strong>Хүсэлт-хариулт thread бүтэц</strong> - Хүсэлт бүрт хариултын thread үүснэ</li>
+            <li><strong>Файл хавсралт</strong> - Хүсэлт болон хариултад файл хавсаргах</li>
+            <li><strong>И-мэйл + Discord мэдэгдэл</strong> - Автомат мэдэгдэл илгээх</li>
+            <li><strong>Статус удирдлага</strong> - Хүсэлтийн явцыг хянах</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== ЖАГСААЛТ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-list-ul"></i> Жагсаалт</h4>
+        <h5>Шүүлтүүр</h5>
+        <p>Статусаар шүүж харах боломжтой: pending, in_progress, resolved, closed.</p>
+        <h5 class="mt-3">Хүснэгтийн баганууд</h5>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Багана</th><th>Тайлбар</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>ID</td><td>Хүсэлтийн дугаар</td></tr>
+                <tr><td>Огноо</td><td>Үүсгэсэн огноо</td></tr>
+                <tr><td>Гарчиг</td><td>Хүсэлтийн гарчиг</td></tr>
+                <tr><td>Илгээгч</td><td>Хүсэлт илгээсэн хэрэглэгч</td></tr>
+                <tr><td>Хариуцагч</td><td>Хүсэлтийг хариуцсан хэрэглэгч</td></tr>
+                <tr><td>Статус</td><td>Хүсэлтийн одоогийн төлөв</td></tr>
+                <tr><td>Хавсралт</td><td>Хавсаргасан файлын тоо</td></tr>
+                <tr><td>Үйлдэл</td><td>Харах, Устгах товчнууд</td></tr>
+            </tbody>
+        </table>
+        <div class="alert alert-info mb-0 mt-3">
+            <i class="bi bi-info-circle"></i>
+            Ердийн хэрэглэгч зөвхөн өөрийн болон өөрт оноогдсон хүсэлтүүдийг харна.
+            <code>system_development</code> эрхтэй бол бүх хүсэлтийг харна.
+        </div>
+    </div>
+</div>
+
+<!-- ==================== ШИНЭ ХҮСЭЛТ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-plus-circle"></i> Шинэ хүсэлт</h4>
+        <h5>Талбарууд</h5>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Талбар</th><th>Тайлбар</th><th>Заавал эсэх</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><strong>Гарчиг</strong></td><td>Хүсэлтийн гарчиг</td><td>Тийм</td></tr>
+                <tr><td><strong>Агуулга</strong></td><td>Хүсэлтийн дэлгэрэнгүй тайлбар</td><td>Тийм</td></tr>
+                <tr><td><strong>Хариуцагч</strong></td><td>system_coder эсвэл system_development эрхтэй хэрэглэгчдээс сонгоно</td><td>Үгүй</td></tr>
+                <tr><td><strong>Файл хавсралт</strong></td><td>10MB хүртэл, олон файл хавсаргах боломжтой</td><td>Үгүй</td></tr>
+            </tbody>
+        </table>
+        <p class="mt-3">Хүсэлт үүссэний дараа хариуцагчид и-мэйл + Discord мэдэгдэл илгээгдэнэ.</p>
+    </div>
+</div>
+
+<!-- ==================== ХҮСЭЛТ ХАРАХ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-eye"></i> Хүсэлт харах</h4>
+        <ul>
+            <li>Thread хэлбэрээр хүсэлт ба бүх хариултуудыг харуулна</li>
+            <li>Хариулт бичих form</li>
+            <li>Статус өөрчлөх</li>
+            <li>Файл хавсаргах</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== СТАТУСЫН УРСГАЛ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-arrow-repeat"></i> Статусын урсгал</h4>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Статус</th><th>Тайлбар</th><th>Өнгө</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><code>pending</code></td><td>Хүлээгдэж байна</td><td><span class="badge bg-warning text-dark">Шар</span></td></tr>
+                <tr><td><code>in_progress</code></td><td>Хийгдэж байна</td><td><span class="badge bg-primary">Цэнхэр</span></td></tr>
+                <tr><td><code>resolved</code></td><td>Шийдэгдсэн</td><td><span class="badge bg-success">Ногоон</span></td></tr>
+                <tr><td><code>closed</code></td><td>Хаагдсан</td><td><span class="badge bg-secondary">Саарал</span></td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ==================== МЭДЭГДЭЛ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-bell"></i> Мэдэгдэл (Discord + И-мэйл)</h4>
+
+        <h5><i class="bi bi-discord"></i> Discord мэдэгдэл</h5>
+        <p>Webhook тохируулсан бол дараах үед Discord мэдэгдэл илгээгдэнэ:</p>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Үйлдэл</th><th>Мэдэгдэлд орох мэдээлэл</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Шинэ хүсэлт үүсгэх</td><td>Хүсэлтийн ID, гарчиг, илгээгчийн нэр, хариуцагчийн нэр</td></tr>
+                <tr><td>Хариулт бичих</td><td>Хүсэлтийн ID, гарчиг, хариулагчийн нэр, шинэ статус</td></tr>
+            </tbody>
+        </table>
+
+        <h5 class="mt-4"><i class="bi bi-envelope"></i> И-мэйл мэдэгдэл</h5>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Үйлдэл</th><th>Хүлээн авагч</th><th>Загвар</th><th>Агуулга</th></tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Шинэ хүсэлт</td>
+                    <td>Хариуцагч (оноогдсон бол)</td>
+                    <td><code>dev-request-new</code></td>
+                    <td>Хүсэлтийн ID, гарчиг, илгээгчийн нэр, хүсэлт рүү шилжих линк</td>
+                </tr>
+                <tr>
+                    <td>Хариулт бичих</td>
+                    <td>Илгээгч эсвэл сүүлийн хариулагч *</td>
+                    <td><code>dev-request-response</code></td>
+                    <td>Хүсэлтийн ID, гарчиг, хариулагчийн нэр, хариултын агуулга, линк</td>
+                </tr>
+            </tbody>
+        </table>
+        <p class="text-muted small mt-2">
+            <i class="bi bi-info-circle"></i>
+            * Илгээгч хариулбал - сүүлийн хариулагч (програмист) мэдэгдэл авна.
+            Програмист хариулбал - эх илгээгч мэдэгдэл авна.
+        </p>
+    </div>
+</div>
+
+<!-- ==================== УСТГАХ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-trash"></i> Устгах</h4>
+        <ul>
+            <li>SweetAlert баталгаажуулалт</li>
+            <li>Зөөлөн устгалт (soft delete)</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== ЭРХ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-shield-lock"></i> Шаардлагатай эрхүүд</h4>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Үйлдэл</th><th>Эрх</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Хүсэлт илгээх, Өөрийн хүсэлт харах</td><td>Нэвтэрсэн хэрэглэгч бүр</td></tr>
+                <tr><td>Бүх хүсэлт харах, Удирдах</td><td><code>system_development</code></td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>

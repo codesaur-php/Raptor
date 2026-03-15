@@ -1,12 +1,13 @@
 <?php
 
-namespace Web\Home;
+namespace Web;
 
 use Psr\Log\LogLevel;
 
+use Raptor\Content\NewsModel;
+
 use Web\Template\TemplateController;
 
-use Raptor\Content\NewsModel;
 
 /**
  * Class HomeController
@@ -17,7 +18,7 @@ use Raptor\Content\NewsModel;
  *   - Нүүр хуудас (index) рендерлэх - сүүлийн 20 мэдээтэй
  *   - Хэл солих (language) - session-д хэлний кодыг хадгалах
  *
- * @package Web\Home
+ * @package Web
  */
 class HomeController extends TemplateController
 {
@@ -57,6 +58,34 @@ class HomeController extends TemplateController
     }
 
     /**
+     * Favicon хүсэлтийг хариулах.
+     *
+     * Settings-д favicon тохируулсан бол тэр файл руу redirect хийнэ.
+     * Байхгүй бол 204 No Content + cache header буцааж браузерийг
+     * дахин хүсэлт илгээхээс сэргийлнэ.
+     *
+     * @return void
+     */
+    public function favicon()
+    {
+        $settings = $this->getAttribute('settings', []);
+        $favicon = $settings['favicon'] ?? '';
+
+        if (!empty($favicon)) {
+            \header('Location: ' . $favicon, true, 302);
+            \header('Cache-Control: public, max-age=86400');
+            exit;
+        }
+
+        // Favicon тохируулаагүй бол 204 No Content буцаах
+        // Cache header: браузер 7 хоног дахин хүсэхгүй
+        \header('HTTP/1.1 204 No Content');
+        \header('Cache-Control: public, max-age=604800');
+        \header('Content-Type: image/x-icon');
+        exit;
+    }
+
+    /**
      * Вэб сайтын хэлийг солих.
      *
      * Хэрэглэгчийн сонгосон хэлний кодыг session-д хадгалж,
@@ -70,12 +99,14 @@ class HomeController extends TemplateController
         $from = $this->getLanguageCode();
         $language = $this->getLanguages();
         if (isset($language[$code]) && $code !== $from) {
-            $_SESSION['WEB_LANGUAGE_CODE'] = $code;
+            $_SESSION[$this->getAttribute('localization')['session_key']] = $code;
         }
 
         $script_path = $this->getScriptPath();
         $home = (string)$this->getRequest()->getUri()->withPath($script_path);
-        \header("Location: $home", false, 302);
+        $home = \filter_var($home, \FILTER_SANITIZE_URL);
+        \header('Location: ' . $home, true, 302);
         exit;
     }
+
 }

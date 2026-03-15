@@ -16,6 +16,11 @@ class WebLogStats
 {
     use \codesaur\DataObject\PDOTrait;
 
+    /**
+     * WebLogStats constructor.
+     *
+     * @param \PDO $pdo Database connection instance
+     */
     public function __construct(\PDO $pdo)
     {
         $this->pdo = $pdo;

@@ -130,6 +130,18 @@ class PrivateFilesController extends FilesController
                 throw new \Exception('Not Found', 404);
             }
 
+            // Системийн чухал файлуудыг уншихаас хамгаалах
+            $basename = \strtolower(\basename($filePath));
+            $ext = \strtolower(\pathinfo($filePath, \PATHINFO_EXTENSION));
+            $blockedExtensions = ['php', 'phtml', 'phar', 'sh', 'bat', 'cmd', 'exe', 'ini', 'log', 'sql'];
+            $blockedFiles = ['.env', '.htaccess', '.htpasswd', '.gitignore', 'composer.json', 'composer.lock'];
+            if (\in_array($ext, $blockedExtensions, true)
+                || \in_array($basename, $blockedFiles, true)
+                || \str_starts_with($basename, '.env')
+            ) {
+                throw new \Exception('Forbidden', 403);
+            }
+
             $mimeType = \mime_content_type($filePath);
             if ($mimeType === false) {
                 throw new \Exception('No Content', 204);

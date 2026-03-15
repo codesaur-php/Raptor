@@ -3,7 +3,9 @@
 namespace Web\Template;
 
 use Twig\TwigFilter;
+
 use codesaur\Template\TwigTemplate;
+
 use Raptor\Content\PagesModel;
 
 /**

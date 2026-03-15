@@ -38,12 +38,15 @@
     "autoload": {
         "psr-4": {
             "Web\\": "application/web/",
-            "Web\\Home\\": "application/web/home/",
+            "Web\\Content\\": "application/web/content/",
+            "Web\\Shop\\": "application/web/shop/",
+            "Web\\Seo\\": "application/web/seo/",
             "Web\\Template\\": "application/web/template/",
 
             "Dashboard\\": "application/dashboard/",
             "Dashboard\\Home\\": "application/dashboard/home",
             "Dashboard\\Shop\\": "application/dashboard/shop",
+            "Dashboard\\Manual\\": "application/dashboard/manual",
             
             "Raptor\\": "application/raptor/",
             "Raptor\\Exception\\": "application/raptor/exception/",

@@ -256,6 +256,13 @@ class LogsController extends \Raptor\Controller
         }
     }
 
+    /**
+     * Лог бичлэгүүдийг хүснэгтээс хайж JSON буцаах.
+     *
+     * Query params-аар хүснэгтийн нэр, шүүлтүүр, хуудаслалт зэргийг хүлээн авна.
+     *
+     * @return void
+     */
     public function retrieve()
     {
         try {

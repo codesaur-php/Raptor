@@ -99,62 +99,7 @@ class ProductsModel extends Model
         $this->exec("CREATE INDEX {$table}_idx_active_published ON $table (is_active, published)");
         $this->exec("CREATE INDEX {$table}_idx_code_active_published ON $table (code, is_active, published, published_at)");
 
-        $now = \date('Y-m-d H:i:s');
-        $path = \dirname($_SERVER['SCRIPT_NAME'] ?? '/');
-        if ($path == '\\' || $path == '/' || $path == '.') {
-            $path = '';
-        }
-        $seed = [
-            'is_active' => 1,
-            'published' => 1,
-            'created_at' => $now,
-            'published_at' => $now,
-            'category' => 'sample'
-        ];
-
-        $this->insert($seed + [
-            'code' => 'mn',
-            'title' => 'Raptor Framework',
-            'photo' => $path . '/assets/images/codesaur_repo.jpg',
-            'price' => 0,
-            'sku' => 'RPT-FW-001',
-            'content' => '<p><a href="https://github.com/codesaur-php/Raptor" target="_blank">Raptor Framework</a> нь '
-                . 'PHP дээр суурилсан орчин үеийн вэб хөгжүүлэлтийн framework юм.</p>'
-                . '<p>PSR стандартуудыг бүрэн дэмждэг, MVC архитектуртай, '
-                . 'олон хэлний дэмжлэгтэй контент удирдлагын систем.</p>'
-        ]);
-        $this->insert($seed + [
-            'code' => 'mn',
-            'title' => 'Вэб сайт хөгжүүлэлт',
-            'price' => 1500000,
-            'sku' => 'WEB-DEV-001',
-            'content' => '<p>Мэргэжлийн вэб сайт хөгжүүлэлтийн үйлчилгээ. '
-                . 'Таны бизнест тохирсон вэб сайтыг захиалгаар хөгжүүлж өгнө.</p>'
-                . '<p>Responsive дизайн, SEO оновчлол, контент удирдлагын систем зэрэг '
-                . 'бүх шаардлагатай боломжуудыг багтаасан.</p>'
-        ]);
-
-        $this->insert($seed + [
-            'code' => 'en',
-            'title' => 'Raptor Framework',
-            'photo' => $path . '/assets/images/codesaur_repo.jpg',
-            'price' => 0,
-            'sku' => 'RPT-FW-001',
-            'content' => '<p><a href="https://github.com/codesaur-php/Raptor" target="_blank">Raptor Framework</a> is '
-                . 'a modern web development framework built on PHP.</p>'
-                . '<p>Fully PSR-compliant, MVC architecture, '
-                . 'with multilingual content management system.</p>'
-        ]);
-        $this->insert($seed + [
-            'code' => 'en',
-            'title' => 'Web Development',
-            'price' => 1500000,
-            'sku' => 'WEB-DEV-001',
-            'content' => '<p>Professional web development service. '
-                . 'We build custom websites tailored to your business needs.</p>'
-                . '<p>Responsive design, SEO optimization, content management system '
-                . 'and all essential features included.</p>'
-        ]);
+        ProductsSamples::seed($this);
     }
 
     /**

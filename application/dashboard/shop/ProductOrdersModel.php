@@ -82,12 +82,10 @@ class ProductOrdersModel extends Model
 
         $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
         $products = (new ProductsModel($this->pdo))->getName();
-
         $constraints = [
             'created_by' => "{$table}_fk_created_by",
             'updated_by' => "{$table}_fk_updated_by"
         ];
-
         foreach ($constraints as $column => $constraint) {
             $this->exec(
                 "ALTER TABLE $table " .
@@ -98,7 +96,6 @@ class ProductOrdersModel extends Model
                 "ON UPDATE CASCADE"
             );
         }
-
         $this->exec(
             "ALTER TABLE $table " .
             "ADD CONSTRAINT {$table}_fk_product_id " .

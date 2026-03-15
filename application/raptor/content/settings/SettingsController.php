@@ -164,7 +164,6 @@ class SettingsController extends FileController
 
             /* Update эсвэл Insert */
             if (isset($current['id'])) {
-
                 if (empty($model->updateById(
                     $current['id'],
                     $payload + ['updated_by' => $this->getUserId()],
@@ -172,19 +171,17 @@ class SettingsController extends FileController
                 ))) {
                     throw new \Exception($this->text('no-record-selected'));
                 }
-
+                
                 $notify = 'primary';
                 $notice = $this->text('record-update-success');
-
             } else {
-
                 // Хэрэв localized content хоосон бол хэл тус бүрд хоосон бичлэг үүсгэнэ
                 if (empty($content)) {
                     foreach (\array_keys($this->getLanguages()) as $code) {
                         $content[$code] = [];
                     }
                 }
-
+                
                 if (!$model->insert(
                     $payload + ['created_by' => $this->getUserId()],
                     $content
@@ -195,18 +192,12 @@ class SettingsController extends FileController
                 $notify = 'success';
                 $notice = $this->text('record-insert-success');
             }
-
             $this->respondJSON(['status' => 'success', 'type' => $notify, 'message' => $notice]);
-
         } catch (\Throwable $err) {
-
             $this->respondJSON(['message' => $err->getMessage()], $err->getCode());
-
         } finally {
-
             /* Лог үлдээх */
             $context = ['action' => 'settings-post'];
-
             if (isset($err)) {
                 $level = LogLevel::ERROR;
                 $message = 'Тохируулгыг шинэчлэх үед алдаа гарч зогслоо';
@@ -215,7 +206,6 @@ class SettingsController extends FileController
                 $level = LogLevel::INFO;
                 $message = 'Тохируулгыг амжилттай шинэчиллээ';
             }
-
             $this->log('content', $level, $message, $context);
         }
     }
@@ -297,9 +287,7 @@ class SettingsController extends FileController
             /* -------------------- LOGO (олон хэл) -------------------- */
             $content = [];
             $uploadedLogos = $this->getRequest()->getUploadedFiles()['logo'] ?? [];
-
             foreach (\array_keys($uploadedLogos) as $code) {
-
                 $logo_name = \basename($current['localized'][$code]['logo'] ?? '');
                 $logo = $this->moveUploaded($uploadedLogos[$code]);
 
@@ -329,7 +317,6 @@ class SettingsController extends FileController
 
             /* update эсвэл insert */
             if (isset($current['id'])) {
-
                 if (empty($model->updateById(
                     $current['id'],
                     $payload + ['updated_by' => $this->getUserId()],
@@ -340,9 +327,7 @@ class SettingsController extends FileController
 
                 $notify = 'primary';
                 $notice = $this->text('record-update-success');
-
             } else {
-
                 if (!$model->insert(
                     $payload + ['created_by' => $this->getUserId()],
                     $content
@@ -353,18 +338,12 @@ class SettingsController extends FileController
                 $notify = 'success';
                 $notice = $this->text('record-insert-success');
             }
-
             $this->respondJSON(['status' => 'success', 'type' => $notify, 'message' => $notice]);
-
         } catch (\Throwable $err) {
-
             $this->respondJSON(['message' => $err->getMessage()], $err->getCode());
-
         } finally {
-
             /* Системийн лог үлдээх */
             $context = ['action' => 'settings-files'];
-
             if (isset($err)) {
                 $level = LogLevel::ERROR;
                 $message = 'Тохируулга файлуудыг шинэчлэх үед алдаа гарч зогслоо';
@@ -373,7 +352,6 @@ class SettingsController extends FileController
                 $level = LogLevel::INFO;
                 $message = 'Тохируулга файлуудыг амжилттай шинэчиллээ';
             }
-
             $this->log('content', $level, $message, $context);
         }
     }
