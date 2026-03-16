@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 
 ---
 
+## [1.8.1] - 2026-03-16
+[1.8.1]: https://github.com/codesaur-php/Raptor/compare/v1.8.0...v1.8.1
+
+Web layer naming cleanup and Mongolian text corrections.
+
+### Changed
+- **`Web\Seo` renamed to `Web\Service`** - `application/web/seo/` folder renamed to `application/web/service/`. Search, Sitemap, RSS are site-wide services, not SEO-specific
+- **`SiteRouter` renamed to `WebRouter`** - Class and file renamed from `SiteRouter.php` to `WebRouter.php` for consistency with `Web\Application` naming
+- **Mongolian text fix** - `'products'` keyword translation changed from "Бүтээгдэхүүнүүд" to "Бүтээгдэхүүн" in `TextInitial`, `DashboardMenus`, and `PagesSamples` seed data
+
+### Documentation
+- All `*.md` files updated to reflect renamed paths and namespaces (`CLAUDE.md`, `README.md`, `docs/mn/`, `docs/en/`)
+
+---
+
 ## [1.8.0] - 2026-03-15
 [1.8.0]: https://github.com/codesaur-php/Raptor/compare/v1.7.1...v1.8.0
 
@@ -42,7 +57,7 @@ Major code review, refactoring, shared middleware consolidation, seed data extra
 - **Language dropdown** - Hidden when only one language is active (web navbar, dashboard login)
 
 ### Removed
-- **-read.html** - Unused template, route, and `PagesController::read()` `NewsController::read()` `ProductsController::read()` method removed
+- **products-read.html** - Unused template, route, and `ProductsController::read()` method removed
 - **Web\SessionMiddleware** - Replaced by shared `Raptor\SessionMiddleware`
 - **Web\LocalizationMiddleware** - Replaced by shared `Raptor\Localization\LocalizationMiddleware`
 

@@ -1,6 +1,6 @@
 <?php
 
-namespace Web\Seo;
+namespace Web\Service;
 
 use Web\Template\TemplateController;
 
@@ -19,7 +19,7 @@ use Dashboard\Shop\ProductsModel;
  *   - XML Sitemap (sitemapXml) - хайлтын системд зориулсан sitemap
  *   - RSS Feed (rss) - мэдээ болон бүтээгдэхүүний RSS feed
  *
- * @package Web\Seo
+ * @package Web\Service
  */
 class SeoController extends TemplateController
 {

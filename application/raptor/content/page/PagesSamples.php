@@ -103,10 +103,10 @@ class PagesSamples
                 . 'Монгол палеонтологийн нэн чухал олдвор юм.</p>'
         ]);
 
-        // Бүтээгдэхүүнүүд (link type)
+        // Бүтээгдэхүүн (link)
         $model->insert($seed + [
             'code' => 'mn',
-            'title' => '<i class="bi bi-box2-heart"></i> Бүтээгдэхүүнүүд',
+            'title' => '<i class="bi bi-box2-heart"></i> Бүтээгдэхүүн',
             'position' => 35,
             'link' => $path . '/products'
         ]);
@@ -193,7 +193,7 @@ class PagesSamples
                 . 'One of the most important finds in Mongolian paleontology.</p>'
         ]);
 
-        // Products (link type)
+        // Products (link)
         $model->insert($seed + [
             'code' => 'en',
             'title' => '<i class="bi bi-box2-heart"></i> Products',

@@ -639,11 +639,11 @@ Injects PSR-11 DI Container into request. Registers PDO, User ID, and `DiscordNo
 **Extends:** `codesaur\Http\Application\Application`
 
 Public website Application. Middleware pipeline:
-ExceptionHandler -> MySQL -> Container -> Session -> Localization -> Settings -> SiteRouter
+ExceptionHandler -> MySQL -> Container -> Session -> Localization -> Settings -> WebRouter
 
-### SiteRouter
+### WebRouter
 
-**File:** `application/web/SiteRouter.php`
+**File:** `application/web/WebRouter.php`
 
 | Route | Method | Name | Description |
 |-------|--------|------|-------------|
@@ -715,7 +715,7 @@ ExceptionHandler -> MySQL -> Container -> Session -> Localization -> Settings ->
 
 ### SeoController
 
-**File:** `application/web/seo/SeoController.php`
+**File:** `application/web/service/SeoController.php`
 **Extends:** `TemplateController`
 
 | Method | Description |

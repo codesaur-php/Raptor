@@ -239,7 +239,7 @@ public_html/index.php (Entry point)
 |
 \-- /* -> Web\Application (Нийтийн вэб сайт)
      |-- Middleware: ExceptionHandler -> MySQL -> Container -> Session -> Localization -> Settings
-     |-- Router: SiteRouter (/, /page, /news, /contact, /products, /order, /search, /sitemap, /rss, ...)
+     |-- Router: WebRouter (/, /page, /news, /contact, /products, /order, /search, /sitemap, /rss, ...)
      \-- Controllers -> Twig Templates -> HTML Response
 ```
 
@@ -292,11 +292,11 @@ raptor/
 |   |   \-- shop/                  # Дэлгүүр модуль (Бүтээгдэхүүн, Захиалга)
 |   \-- web/                       # Web Application
 |       |-- Application.php
-|       |-- SiteRouter.php         # Web маршрутууд
+|       |-- WebRouter.php         # Web маршрутууд
 |       |-- HomeController.php     # Нүүр, хэл солих
 |       |-- content/               # Хуудас, Мэдээ
 |       |-- shop/                  # Бүтээгдэхүүн, Захиалга
-|       |-- seo/                   # Хайлт, Sitemap, RSS
+|       |-- service/                   # Хайлт, Sitemap, RSS
 |       |-- *.html                 # Twig template-ууд
 |       \-- template/              # Web layout
 |           |-- TemplateController.php
@@ -535,7 +535,7 @@ $this->isUserCan('news_edit');
 - Хөгжүүлэлтийн хүсэлт хянах систем (хүсэлт илгээх, хариулах, түүх харах)
 - `development:development` RBAC эрхээр хамгаалагдсан
 
-### 6.17 SEO & Контент олох (Web)
+### 6.17 Site Service (Web)
 
 **Классууд:** `SeoController`
 
@@ -984,7 +984,7 @@ class Application extends \Raptor\Application
 ### Web хуудас нэмэх
 
 ```php
-// application/web/SiteRouter.php
+// application/web/WebRouter.php
 $this->GET('/products', [HomeController::class, 'products'])->name('products');
 ```
 

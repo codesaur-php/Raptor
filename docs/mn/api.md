@@ -639,11 +639,11 @@ PSR-11 DI Container-г request-д inject хийнэ. PDO, User ID, `DiscordNotif
 **Extends:** `codesaur\Http\Application\Application`
 
 Public вэб сайтын Application. Middleware pipeline:
-ExceptionHandler -> MySQL -> Container -> Session -> Localization -> Settings -> SiteRouter
+ExceptionHandler -> MySQL -> Container -> Session -> Localization -> Settings -> WebRouter
 
-### SiteRouter
+### WebRouter
 
-**Файл:** `application/web/SiteRouter.php`
+**Файл:** `application/web/WebRouter.php`
 
 | Маршрут | Метод | Нэр | Тайлбар |
 |---------|-------|-----|---------|
@@ -715,7 +715,7 @@ ExceptionHandler -> MySQL -> Container -> Session -> Localization -> Settings ->
 
 ### SeoController
 
-**Файл:** `application/web/seo/SeoController.php`
+**Файл:** `application/web/service/SeoController.php`
 **Extends:** `TemplateController`
 
 | Метод | Тайлбар |

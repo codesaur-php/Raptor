@@ -13,7 +13,7 @@ application/
   web/             # Public website
     content/       # Pages, News controllers + templates
     shop/          # Products, Orders controllers + templates
-    seo/           # Search, Sitemap, RSS controllers + templates
+    service/       # Search, Sitemap, RSS controllers + templates
     template/      # Web layout, exception handler
 public_html/       # Document root (index.php entry point, assets/)
 database/

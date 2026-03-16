@@ -49,8 +49,8 @@ namespace Web;
  * ---------------------------------------------------------
  * Router бүртгэх
  * ---------------------------------------------------------
- * `HomeRouter` - вэбийн үндсэн хуудсуудын маршрут  
- *    / -> /home, contact, language гэх мэт  
+ * `WebRouter` - вэбийн үндсэн хуудсуудын маршрут  
+ *    / -> /home, news, language гэх мэт  
  *
  * Хэрвээ та өөр Router нэмэх бол:
  *
@@ -107,6 +107,6 @@ class Application extends \codesaur\Http\Application\Application
         $this->use(new \Raptor\Content\SettingsMiddleware());
 
         // Вебийн үндсэн маршрут
-        $this->use(new SiteRouter());
+        $this->use(new WebRouter());
     }
 }

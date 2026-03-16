@@ -40,7 +40,7 @@
             "Web\\": "application/web/",
             "Web\\Content\\": "application/web/content/",
             "Web\\Shop\\": "application/web/shop/",
-            "Web\\Seo\\": "application/web/seo/",
+            "Web\\Service\\": "application/web/service/",
             "Web\\Template\\": "application/web/template/",
 
             "Dashboard\\": "application/dashboard/",

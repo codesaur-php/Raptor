@@ -226,7 +226,7 @@ class TextInitial
         $model->insert(['keyword' => 'privacy-policy', 'type' => 'sys-defined'], ['mn' => ['text' => 'хувийн нууцлалын бодлого'], 'en' => ['text' => 'privacy policy']]);
 
         $model->insert(['keyword' => 'product', 'type' => 'sys-defined'], ['mn' => ['text' => 'Бүтээгдэхүүн'], 'en' => ['text' => 'Product']]);
-        $model->insert(['keyword' => 'products', 'type' => 'sys-defined'], ['mn' => ['text' => 'Бүтээгдэхүүнүүд'], 'en' => ['text' => 'Products']]);
+        $model->insert(['keyword' => 'products', 'type' => 'sys-defined'], ['mn' => ['text' => 'Бүтээгдэхүүн'], 'en' => ['text' => 'Products']]);
         $model->insert(['keyword' => 'properties', 'type' => 'sys-defined'], ['mn' => ['text' => 'Шинж чанарууд'], 'en' => ['text' => 'Properties']]);
         $model->insert(['keyword' => 'publish', 'type' => 'sys-defined'], ['mn' => ['text' => 'Нийтлэх'], 'en' => ['text' => 'Publish']]);
         $model->insert(['keyword' => 'published', 'type' => 'sys-defined'], ['mn' => ['text' => 'нийтэлсэн'], 'en' => ['text' => 'published']]);

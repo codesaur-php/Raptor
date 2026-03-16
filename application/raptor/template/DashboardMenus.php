@@ -141,7 +141,7 @@ class DashboardMenus
                     'icon' => 'bi bi-box2-heart',
                     'href' => "$path/dashboard/products"
                 ],
-                ['mn' => ['title' => 'Бүтээгдэхүүнүүд'], 'en' => ['title' => 'Products']]
+                ['mn' => ['title' => 'Бүтээгдэхүүн'], 'en' => ['title' => 'Products']]
             );
             // Захиалгууд
             $model->insert(

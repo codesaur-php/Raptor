@@ -136,7 +136,7 @@ class CodeQualityTest extends TestCase
 
     public function testSeoControllerUnsetsLoopReference(): void
     {
-        $source = file_get_contents(self::$appDir . '/web/seo/SeoController.php');
+        $source = file_get_contents(self::$appDir . '/web/service/SeoController.php');
 
         // &$node reference ашигласан бол unset($node) байх ёстой
         if (str_contains($source, 'as &$node')) {
@@ -151,7 +151,7 @@ class CodeQualityTest extends TestCase
 
     public function testSeoControllerNoUnusedLanguagesInSitemapXml(): void
     {
-        $source = file_get_contents(self::$appDir . '/web/seo/SeoController.php');
+        $source = file_get_contents(self::$appDir . '/web/service/SeoController.php');
 
         // sitemapXml method дотор $languages = $this->getLanguages() байх ёсгүй
         $this->assertDoesNotMatchRegularExpression(

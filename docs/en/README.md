@@ -239,7 +239,7 @@ public_html/index.php (Entry point)
 |
 \-- /* -> Web\Application (Public Website)
      |-- Middleware: ExceptionHandler -> MySQL -> Container -> Session -> Localization -> Settings
-     |-- Router: SiteRouter (/, /page, /news, /contact, /products, /order, /search, /sitemap, /rss, ...)
+     |-- Router: WebRouter (/, /page, /news, /contact, /products, /order, /search, /sitemap, /rss, ...)
      \-- Controllers -> Twig Templates -> HTML Response
 ```
 
@@ -292,11 +292,11 @@ raptor/
 |   |   \-- shop/                  # Shop module (Products, Orders)
 |   \-- web/                       # Web Application
 |       |-- Application.php
-|       |-- SiteRouter.php         # Web routes
+|       |-- WebRouter.php         # Web routes
 |       |-- HomeController.php     # Home, language
 |       |-- content/               # Pages, News
 |       |-- shop/                  # Products, Orders
-|       |-- seo/                   # Search, Sitemap, RSS
+|       |-- service/                   # Search, Sitemap, RSS
 |       |-- *.html                 # Twig templates
 |       \-- template/              # Web layout
 |           |-- TemplateController.php
@@ -535,7 +535,7 @@ $this->isUserCan('news_edit');
 - Development request tracking system (submit requests, respond, view history)
 - Protected by `development:development` RBAC permission
 
-### 6.17 SEO & Content Discovery (Web)
+### 6.17 Site Service (Web)
 
 **Classes:** `SeoController`
 
@@ -984,7 +984,7 @@ class Application extends \Raptor\Application
 ### Adding a Public Web Page
 
 ```php
-// application/web/SiteRouter.php
+// application/web/WebRouter.php
 $this->GET('/products', [HomeController::class, 'products'])->name('products');
 ```
 

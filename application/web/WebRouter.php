@@ -6,12 +6,12 @@ use codesaur\Router\Router;
 
 use Web\Content\PageController;
 use Web\Content\NewsController;
+use Web\Service\SearchController;
+use Web\Service\SeoController;
 use Web\Shop\ShopController;
-use Web\Seo\SearchController;
-use Web\Seo\SeoController;
 
 /**
- * Class SiteRouter
+ * Class WebRouter
  * ---------------------------------------------------------------
  * Web Layer-ийн үндсэн маршрут тодорхойлогч класс.
  *
@@ -37,7 +37,7 @@ use Web\Seo\SeoController;
  *
  * @package Web
  */
-class SiteRouter extends Router
+class WebRouter extends Router
 {
     /**
      * Website маршрутуудыг бүртгэх.

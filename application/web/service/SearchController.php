@@ -1,6 +1,6 @@
 <?php
 
-namespace Web\Seo;
+namespace Web\Service;
 
 use Raptor\Content\NewsModel;
 use Raptor\Content\PagesModel;
@@ -15,7 +15,7 @@ use Web\Template\TemplateController;
  * Вэб сайтын хайлтын контроллер.
  * Pages, News, Products хүснэгтүүдээс LIKE хайлт хийж үр дүнг харуулна.
  *
- * @package Web\Seo
+ * @package Web\Service
  */
 class SearchController extends TemplateController
 {
