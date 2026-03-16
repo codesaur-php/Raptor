@@ -2,6 +2,8 @@
 
 namespace Web\Service;
 
+use Psr\Log\LogLevel;
+
 use Web\Template\TemplateController;
 
 use Raptor\Content\NewsModel;
@@ -112,6 +114,8 @@ class SeoController extends TemplateController
         ]);
         $template->set('record_title', $this->text('sitemap'));
         $template->render();
+
+        $this->log('web', LogLevel::NOTICE, '[{server_request.code}] HTML sitemap уншиж байна', ['action' => 'sitemap']);
     }
 
     /**

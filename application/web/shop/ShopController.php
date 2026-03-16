@@ -146,9 +146,7 @@ class ShopController extends TemplateController
      */
     public function order()
     {
-        $code = $this->getLanguageCode();
         $vars = [];
-
         $productId = $this->getQueryParams()['product_id'] ?? null;
         if ($productId) {
             $model = new ProductsModel($this->pdo);
@@ -177,6 +175,13 @@ class ShopController extends TemplateController
         $template = $this->template(__DIR__ . '/order.html', $vars);
         $template->set('record_title', $this->text('order'));
         $template->render();
+
+        $context = ['action' => 'order'];
+        if (isset($product)) {
+            $context['product_id'] = $product['id'];
+            $context['title'] = $product['title'];
+        }
+        $this->log('web', LogLevel::NOTICE, '[{server_request.code}] {title} - бүтээгдэхүүний захиалгын формыг нээж байна', $context);
     }
 
     /**

@@ -108,5 +108,4 @@ class HomeController extends TemplateController
         \header('Location: ' . $home, true, 302);
         exit;
     }
-
 }

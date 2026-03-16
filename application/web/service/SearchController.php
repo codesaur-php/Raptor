@@ -2,6 +2,8 @@
 
 namespace Web\Service;
 
+use Psr\Log\LogLevel;
+
 use Raptor\Content\NewsModel;
 use Raptor\Content\PagesModel;
 
@@ -38,7 +40,6 @@ class SearchController extends TemplateController
         $code = $this->getLanguageCode();
         $q = \trim($this->getQueryParams()['q'] ?? '');
         $results = [];
-
         if (\mb_strlen($q) >= 2) {
             $like = '%' . $q . '%';
 
@@ -118,6 +119,13 @@ class SearchController extends TemplateController
         ]);
         $template->set('record_title', $this->text('search'));
         $template->render();
+
+        $this->log(
+            'web',
+            LogLevel::NOTICE,
+            '[{server_request.code}] Хайлт хийж байна: {query} - {count} үр дүн',
+            ['action' => 'search', 'query' => $q, 'count' => \count($results)]
+        );
     }
 
     /**

@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 
 ---
 
+## [1.8.2] - 2026-03-16
+[1.8.2]: https://github.com/codesaur-php/Raptor/compare/v1.8.1...v1.8.2
+
+Web layer action logging for public-facing controllers.
+
+### Added
+- **ShopController::order()** - Log when order form is opened, includes product_id and title when a product is pre-selected
+- **SearchController::search()** - Log search queries with result count
+- **SeoController::sitemap()** - Log HTML sitemap page views
+- **NewsController::archive()** - Log news archive page views with selected year
+
+---
+
 ## [1.8.1] - 2026-03-16
 [1.8.1]: https://github.com/codesaur-php/Raptor/compare/v1.8.0...v1.8.1
 

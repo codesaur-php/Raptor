@@ -191,5 +191,12 @@ class NewsController extends TemplateController
         ]);
         $template->set('record_title', $this->text('news-archive'));
         $template->render();
+
+        $this->log(
+            'web',
+            LogLevel::NOTICE,
+            '[{server_request.code}] Мэдээний архив уншиж байна - {year} он',
+            ['action' => 'news-archive', 'year' => $selectedYear ?? '-']
+        );
     }
 }
