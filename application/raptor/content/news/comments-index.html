@@ -1,0 +1,60 @@
+<div class="d-flex justify-content-between align-items-center">
+    <h5 class="text-info text-uppercase"><i class="bi bi-chat-left-text"></i> {{ 'comments'|text }}</h5>
+</div>
+
+<table class="table table-sm table-hover table-striped table-bordered mt-3" id="comments">
+    <thead>
+        <tr class="text-uppercase">
+            <th scope="col"><span class="text-secondary">ID /</span> {{ 'date'|text }}</th>
+            <th scope="col">{{ 'name'|text }}</th>
+            <th scope="col">{{ 'comment'|text }}</th>
+            <th scope="col">{{ 'news'|text }}</th>
+            <th scope="col" style="width:3rem">{{ 'action'|text }}</th>
+        </tr>
+    </thead>
+</table>
+
+<script type="text/javascript">
+    document.addEventListener('DOMContentLoaded', function () {
+        const table = new motable('table#comments', { freezeColumns: [1] });
+        const commentsLink = `{{ 'comments'|link }}`;
+
+        fetch(
+            `{{ 'comments-list'|link }}`
+        ).then(res => {
+            if (res.headers.get('content-type')?.includes('application/json')) return res.json();
+            throw new Error(`HTTP [${res.status}]: ${res.statusText}`);
+        }).then(data => {
+            if (!data.list) throw new Error(data.message ?? 'Invalid response!');
+
+            let rowsHTML = '';
+            data.list.forEach(record => {
+                const id = record.id;
+                const isAdmin = record.created_by != null;
+                const isReply = record.parent_id != null;
+                const icon = isAdmin ? '<i class="bi bi-shield-check text-primary me-1"></i>' : '';
+                const replyIcon = isReply ? '<i class="bi bi-reply text-muted me-1"></i>' : '';
+                const msg = record.comment.length > 60
+                    ? record.comment.substring(0, 60) + '...'
+                    : record.comment;
+                const newsTitle = record.news_title
+                    ? `<small>${record.news_title}</small>`
+                    : `<small class="text-muted">#${record.news_id}</small>`;
+
+                const actions = `<a class="btn btn-sm btn-outline-info" href="${commentsLink}/news/${record.news_id}?comment_id=${id}" title="View Comment"><i class="bi bi-eye"></i></a>`;
+
+                rowsHTML += `<tr>
+                    <td>${id}<br><small class="text-muted">${record.created_at}</small></td>
+                    <td>${replyIcon}${icon}${record.name}</td>
+                    <td><small>${msg}</small></td>
+                    <td>${newsTitle}</td>
+                    <td>${actions}</td>
+                </tr>`;
+            });
+
+            table.setBody(rowsHTML);
+        }).catch(err => {
+            table.setBody(`<tr><td colspan="5" class="text-center text-danger">${err.message}</td></tr>`);
+        });
+    });
+</script>

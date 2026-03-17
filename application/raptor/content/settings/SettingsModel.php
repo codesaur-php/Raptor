@@ -128,6 +128,12 @@ class SettingsModel extends LocalizedModel
 
         $this->insert(
             [
+                'config' => \json_encode([
+                    'facebook' => '',
+                    'youtube' => '',
+                    'instagram' => '',
+                    'open-hours' => ['mn' => '', 'en' => '']
+                ], \JSON_UNESCAPED_UNICODE | \JSON_PRETTY_PRINT),
                 'created_at' => \date('Y-m-d H:i:s')
             ],
             [

@@ -1,0 +1,118 @@
+<div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-3 shadow bg-secondary">
+    <h3 class="px-2 my-auto fs-6 text-white">
+        <i class="bi bi-book"></i> Messages - Гарын авлага
+    </h3>
+    <a href="{{ 'manual' | link }}" class="btn btn-sm btn-light m-1">
+        <i class="bi bi-arrow-left"></i> {{ 'manual' | text }}
+    </a>
+</div>
+
+<!-- ==================== ТОЙМ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3">Messages (Мессеж) гэж юу вэ?</h4>
+        <p>
+            <strong>Messages</strong> нь вэбсайтын холбоо барих хуудаснаас ирсэн мессежүүдийг
+            удирдах Dashboard модуль юм. Зочдын илгээсэн мессежийг харах, хариулсан гэж
+            тэмдэглэх, устгах зэрэг үйлдлүүдийг хийнэ.
+        </p>
+        <p>Мессеж нь дараах мэдээлэлтэй:</p>
+        <ul>
+            <li><strong>Нэр</strong> - Илгээгчийн нэр</li>
+            <li><strong>Утас</strong> - Холбогдох утасны дугаар</li>
+            <li><strong>Имэйл</strong> - Имэйл хаяг (заавал биш)</li>
+            <li><strong>Мессеж</strong> - Мессежийн агуулга</li>
+            <li><strong>Төлөв</strong> - Шинэ / Уншсан / Хариулсан</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== ЖАГСААЛТ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-list-ul"></i> Мессежийн жагсаалт</h4>
+        <p>Dashboard цэснээс <strong>Мессежүүд</strong> дарахад жагсаалтын хуудас нээгдэнэ.</p>
+        <h5 class="mt-3">Шүүлтүүр</h5>
+        <p><strong>Төлөв</strong> шүүлтүүрээр мессежүүдийг ялгаж харж болно:</p>
+        <ul>
+            <li><span class="badge bg-success">Шинэ</span> - Уншаагүй мессеж</li>
+            <li><span class="badge bg-secondary">Уншсан</span> - Уншсан боловч хариулаагүй</li>
+            <li><span class="badge bg-primary">Хариулсан</span> - Хариулсан гэж тэмдэглэгдсэн</li>
+        </ul>
+        <h5 class="mt-3">Хүснэгтийн баганууд</h5>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Багана</th><th>Тайлбар</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>ID / Он сар</td><td>Мессежийн ID болон илгээсэн огноо</td></tr>
+                <tr><td>Нэр</td><td>Илгээгчийн нэр</td></tr>
+                <tr><td>Утас / Имэйл</td><td>Холбоо барих мэдээлэл</td></tr>
+                <tr><td>Мессеж</td><td>Мессежийн эхний 80 тэмдэгт</td></tr>
+                <tr><td>Төлөв</td><td>Шинэ / Уншсан / Хариулсан</td></tr>
+                <tr><td>Үйлдэл</td><td>Харах, Хариулах, Устгах товчнууд</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ==================== ДЭЛГЭРЭНГҮЙ ХАРАХ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-eye"></i> Мессеж харах</h4>
+        <p><strong>Харах</strong> (нүд) товчийг дарахад мессежийн дэлгэрэнгүй мэдээлэл modal цонхонд нээгдэнэ.</p>
+        <ul>
+            <li>Нэр, огноо, утас, имэйл мэдээлэл</li>
+            <li>Мессежийн бүтэн агуулга</li>
+            <li>Одоогийн төлөв (шинэ, уншсан, хариулсан)</li>
+            <li>Шинэ мессежийг нээхэд автоматаар <span class="badge bg-secondary">Уншсан</span> болно</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== ХАРИУЛСАН ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-reply"></i> Хариулсан гэж тэмдэглэх</h4>
+        <p><strong>Хариулах</strong> (reply) товчийг дарахад хариулах арга сонгох цонх нээгдэнэ.</p>
+        <h5 class="mt-3">Хариулах арга</h5>
+        <ul>
+            <li><strong>Утсаар холбогдсон</strong> - Утсаар ярьж хариулсан бол</li>
+            <li><strong>Имэйлээр холбогдсон</strong> - Имэйлээр хариулсан бол (мессежид имэйл байхгүй бол идэвхгүй)</li>
+        </ul>
+        <p>Наад зах нь нэг аргыг сонгох шаардлагатай. Нэмэлт тэмдэглэл бичих боломжтой.</p>
+        <div class="alert alert-info mb-0">
+            <i class="bi bi-info-circle"></i>
+            Хариулсан гэж тэмдэглэгдсэн мессежид дахин хариулах товч харагдахгүй.
+        </div>
+    </div>
+</div>
+
+<!-- ==================== УСТГАХ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-trash"></i> Мессеж устгах</h4>
+        <p><strong>Устгах</strong> (хогийн сав) товчийг дарахад баталгаажуулах цонх гарна.</p>
+        <ul>
+            <li>Зөөлөн устгалт (soft delete) - өгөгдөл хадгалагдана</li>
+            <li><code>system_content_delete</code> эрх шаардлагатай</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== ЭРХ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-shield-lock"></i> Шаардлагатай эрхүүд</h4>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Үйлдэл</th><th>Эрх</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Жагсаалт харах, Мессеж харах</td><td><code>system_content_index</code></td></tr>
+                <tr><td>Хариулсан гэж тэмдэглэх</td><td><code>system_content_index</code></td></tr>
+                <tr><td>Устгах</td><td><code>system_content_delete</code></td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>

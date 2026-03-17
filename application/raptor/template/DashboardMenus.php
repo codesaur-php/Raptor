@@ -47,6 +47,18 @@ class DashboardMenus
                 ],
                 ['mn' => ['title' => 'Веблүү очих'], 'en' => ['title' => 'Visit Website']]
             );
+            // Мессежүүд
+            $model->insert(
+                [
+                    'parent_id' => $contents['id'],
+                    'position' => '115',
+                    'alias' => 'system',
+                    'permission' => 'system_content_index',
+                    'icon' => 'bi bi-chat-dots',
+                    'href' => "$path/dashboard/messages"
+                ],
+                ['mn' => ['title' => 'Мессежүүд'], 'en' => ['title' => 'Messages']]
+            );
             // Хуудсууд
             $model->insert(
                 [
@@ -70,6 +82,18 @@ class DashboardMenus
                     'href' => "$path/dashboard/news"
                 ],
                 ['mn' => ['title' => 'Мэдээнүүд'], 'en' => ['title' => 'News']]
+            );
+            // Сэтгэгдлүүд
+            $model->insert(
+                [
+                    'parent_id' => $contents['id'],
+                    'position' => '135',
+                    'alias' => 'system',
+                    'permission' => 'system_content_index',
+                    'icon' => 'bi bi-chat-left-text',
+                    'href' => "$path/dashboard/comments"
+                ],
+                ['mn' => ['title' => 'Сэтгэгдлүүд'], 'en' => ['title' => 'Comments']]
             );
             // Файлууд
             $model->insert(

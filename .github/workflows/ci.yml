@@ -1,0 +1,63 @@
+# ======================================================================
+# CI - Code Quality Checks
+# ======================================================================
+#
+# Push болон pull request бүрт код чанарын шалгалт хийнэ.
+#
+# Шалгалтууд:
+#   - composer.json validation
+#   - PHP syntax check
+#   - Merge conflict markers
+#   - Debug statements (var_dump, dd, print_r)
+#   - Autoload verification
+# ======================================================================
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    name: Code Quality Checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup PHP 8.2
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: gd, intl, pdo_mysql
+
+      - name: Validate composer.json
+        run: composer validate --strict
+
+      - name: Install dependencies
+        run: composer install --no-interaction
+
+      - name: PHP syntax check
+        run: find application public -name "*.php" -print0 | xargs -0 -n1 php -l
+
+      - name: Check for merge conflict markers
+        run: |
+          if grep -rn "^<<<<<<< \|^=======$\|^>>>>>>> " --include="*.php" --include="*.html" --include="*.js" --include="*.css" --include="*.json" --include="*.yml" application public; then
+            echo "::error::Merge conflict markers found!"
+            exit 1
+          fi
+
+      - name: Check for debug statements
+        run: |
+          if grep -rn "\bvar_dump\b\|\bdd\b\|\bprint_r\b" --include="*.php" application; then
+            echo "::warning::Debug statements detected. Please review before deploying."
+          fi
+
+      - name: Verify autoload
+        run: composer dump-autoload --optimize --strict-psr

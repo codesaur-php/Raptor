@@ -1,3 +1,6 @@
+{% if turnstile_site_key is not empty %}
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+{% endif %}
 <div class="container mt-4" style="max-width:600px">
     <div class="text-center mb-4">
         <h2>{{ 'order-product'|text }}</h2>
@@ -50,8 +53,22 @@
             <textarea class="form-control" id="message" name="message" rows="3" maxlength="1000"></textarea>
         </div>
 
-        <button class="btn btn-success w-100" type="submit">
+        {% if turnstile_site_key is not empty %}
+        <div class="cf-turnstile mb-3" data-sitekey="{{ turnstile_site_key }}"></div>
+        {% endif %}
+        <button class="btn btn-success w-100" id="submit_order" type="submit">
             <i class="bi bi-cart-check me-1"></i>{{ 'submit-order'|text }}
         </button>
     </form>
 </div>
+<script type="text/javascript">
+    document.addEventListener('DOMContentLoaded', function () {
+        const form = document.getElementById('order_form');
+        const btn = document.getElementById('submit_order');
+        if (!form) return;
+        form.addEventListener('submit', function () {
+            btn.disabled = true;
+            btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>{{ 'sending'|text }}...`;
+        });
+    });
+</script>

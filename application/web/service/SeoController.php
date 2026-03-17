@@ -107,13 +107,12 @@ class SeoController extends TemplateController
         );
         $products = $stmt->execute([':code' => $code]) ? $stmt->fetchAll() : [];
 
-        $template = $this->template(__DIR__ . '/sitemap.html', [
+        $this->twigWebLayout(__DIR__ . '/sitemap.html', [
             'page_tree' => $page_tree,
             'news_by_type' => $news_by_type,
             'products' => $products,
-        ]);
-        $template->set('record_title', $this->text('sitemap'));
-        $template->render();
+            'title' => $this->text('sitemap')
+        ])->render();
 
         $this->log('web', LogLevel::NOTICE, '[{server_request.code}] HTML sitemap уншиж байна', ['action' => 'sitemap']);
     }

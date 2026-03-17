@@ -232,7 +232,8 @@ class DevRequestController extends FileController
                 $assignedUser = (new \Raptor\User\UsersModel($this->pdo))->getRowWhere(['id' => $assignedTo]);
                 $assignedName = $assignedUser ? \trim(($assignedUser['first_name'] ?? '') . ' ' . ($assignedUser['last_name'] ?? '')) : '';
             }
-            $this->getService('discord')?->newDevRequest($id, $payload['title'], $authorName, $assignedName);
+            $appUrl = \rtrim((string)$this->getRequest()->getUri()->withPath($this->getScriptPath()), '/') . '/dashboard';
+            $this->getService('discord')?->newDevRequest($id, $payload['title'], $authorName, $assignedName, $appUrl);
 
             $this->respondJSON([
                 'status' => 'success',
@@ -452,7 +453,8 @@ class DevRequestController extends FileController
 
             // Discord мэдэгдэл
             $authorName = \trim(($this->getUser()->profile['first_name'] ?? '') . ' ' . ($this->getUser()->profile['last_name'] ?? ''));
-            $this->getService('discord')?->devRequestUpdated($id, $record['title'], $authorName, $newStatus);
+            $appUrl = \rtrim((string)$this->getRequest()->getUri()->withPath($this->getScriptPath()), '/') . '/dashboard';
+            $this->getService('discord')?->devRequestUpdated($id, $record['title'], $authorName, $newStatus, $appUrl);
 
             $this->respondJSON([
                 'status' => 'success',

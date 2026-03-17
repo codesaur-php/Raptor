@@ -113,12 +113,11 @@ class SearchController extends TemplateController
         // HTML tag attribute дотроос олдсон буруу match-уудыг шүүх
         $results = $this->filterResults($results, $q);
 
-        $template = $this->template(__DIR__ . '/search.html', [
+        $this->twigWebLayout(__DIR__ . '/search.html', [
             'q' => $q,
-            'results' => $results
-        ]);
-        $template->set('record_title', $this->text('search'));
-        $template->render();
+            'results' => $results,
+            'title' => $this->text('search')
+        ])->render();
 
         $this->log(
             'web',

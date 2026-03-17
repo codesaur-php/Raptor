@@ -38,6 +38,7 @@ use Web\Template\TemplateController;
  */
 class ShopController extends TemplateController
 {
+    use \Raptor\SpamProtectionTrait;
     /**
      * Бүтээгдэхүүний жагсаалтыг харуулах.
      *
@@ -58,9 +59,10 @@ class ShopController extends TemplateController
         );
         $products = $stmt->execute([':code' => $code]) ? $stmt->fetchAll() : [];
 
-        $template = $this->template(__DIR__ . '/products.html', ['products' => $products]);
-        $template->set('record_title', $this->text('products'));
-        $template->render();
+        $this->twigWebLayout(__DIR__ . '/products.html', [
+            'products' => $products,
+            'title' => $this->text('products')
+        ])->render();
 
         $this->log('web', LogLevel::NOTICE, '[{server_request.code}] Бүтээгдэхүүний жагсаалтыг уншиж байна', ['action' => 'products']);
     }
@@ -117,12 +119,7 @@ class ShopController extends TemplateController
             'WHERE' => "record_id=$id AND is_active=1"
         ]);
 
-        $template = $this->template(__DIR__ . '/product.html', $record);
-        $template->set('record_code', $record['code'] ?? '');
-        $template->set('record_title', $record['title'] ?? '');
-        $template->set('record_description', $record['description'] ?? '');
-        $template->set('record_photo', $record['photo'] ?? '');
-        $template->render();
+        $this->twigWebLayout(__DIR__ . '/product.html', $record)->render();
 
         // Read count
         $this->exec("UPDATE $table SET read_count=read_count+1 WHERE id=$id");
@@ -162,19 +159,14 @@ class ShopController extends TemplateController
             }
         }
 
-        // Spam хамгаалалтын бүрдэл:
-        //  - order.html дотор нуугдмал honeypot талбар (name="website") байрлуулсан
-        //    -> бот автоматаар бөглөдөг, хэрэглэгч харахгүй
-        //    -> orderSubmit() дотор шалгаж хаядаг
-        //  - timestamp + HMAC token
         $ts = \time();
         $secret = $this->getJwtSecret();
         $vars['spam_ts'] = $ts;
         $vars['spam_token'] = \hash_hmac('sha256', "order-form-$ts", $secret);
+        $vars['turnstile_site_key'] = $this->getTurnstileSiteKey();
 
-        $template = $this->template(__DIR__ . '/order.html', $vars);
-        $template->set('record_title', $this->text('order'));
-        $template->render();
+        $vars['title'] = $this->text('order');
+        $this->twigWebLayout(__DIR__ . '/order.html', $vars)->render();
 
         $context = ['action' => 'order'];
         if (isset($product)) {
@@ -198,40 +190,7 @@ class ShopController extends TemplateController
         $payload = $this->getParsedBody();
         $code = $this->getLanguageCode();
 
-        // --- Spam хамгаалалт ---
-        // 1) Honeypot: бот бөглөсөн бол хаях
-        if (!empty($payload['website'])) {
-            throw new \Exception('Invalid request', 400);
-        }
-        // 2) Timestamp + HMAC token: хуурамч/хугацаа дууссан form хаях
-        $ts = (int)($payload['_ts'] ?? 0);
-        $token = $payload['_token'] ?? '';
-        $secret = $this->getJwtSecret();
-        $expected = \hash_hmac('sha256', "order-form-$ts", $secret);
-        if (!\hash_equals($expected, $token)) {
-            throw new \Exception('Invalid request', 403);
-        }
-        // 3) 3 секундээс хурдан бөглөсөн бол бот гэж үзэх
-        $elapsed = \time() - $ts;
-        if ($elapsed < 3) {
-            throw new \Exception('Invalid request', 429);
-        }
-        // 4) 1 цагаас хэтэрсэн form хүчингүй
-        if ($elapsed > 3600) {
-            throw new \Exception(
-                $code === 'mn' ? 'Формын хугацаа дууссан. Дахин оролдоно уу.' : 'Form expired. Please try again.',
-                400
-            );
-        }
-        // 5) Session rate limit: 10 секундэд 1-ээс илүү захиалга хаах
-        $now = \time();
-        $lastOrder = $_SESSION['_last_order_at'] ?? 0;
-        if ($now - $lastOrder < 10) {
-            throw new \Exception(
-                $code === 'mn' ? 'Хэт олон хүсэлт. Түр хүлээнэ үү.' : 'Too many requests. Please wait.',
-                429
-            );
-        }
+        $this->validateSpamProtection($payload, 'order-form', '_last_order_at', 10, 3);
 
         if (empty($payload['customer_name']) || empty($payload['customer_email'])) {
             throw new \Exception(
@@ -271,22 +230,23 @@ class ShopController extends TemplateController
             $code
         );
 
+        $appUrl = \rtrim((string)$this->getRequest()->getUri()->withPath($this->getScriptPath()), '/');
         $this->getService('discord')?->newOrder(
             (int)$record['id'],
             $payload['customer_name'],
             $payload['customer_email'],
             $payload['product_title'] ?? '',
             \max(1, (int)($payload['quantity'] ?? 1)),
-            $payload['customer_phone'] ?? ''
+            $payload['customer_phone'] ?? '',
+            $appUrl
         );
 
-        $template = $this->template(__DIR__ . '/order-success.html', [
+        $this->twigWebLayout(__DIR__ . '/order-success.html', [
             'order_id' => $record['id'],
             'customer_name' => $payload['customer_name'],
-            'product_title' => $payload['product_title'] ?? ''
-        ]);
-        $template->set('record_title', $code === 'mn' ? 'Захиалга амжилттай' : 'Order Success');
-        $template->render();
+            'product_title' => $payload['product_title'] ?? '',
+            'title' => $code === 'mn' ? 'Захиалга амжилттай' : 'Order Success'
+        ])->render();
 
         $this->log(
             'product',

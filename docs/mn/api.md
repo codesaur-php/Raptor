@@ -14,18 +14,21 @@
 6. [RBAC](#rbac)
 7. [Content - Files](#content--files)
 8. [Content - News](#content--news)
-9. [Content - Pages](#content--pages)
-10. [Content - References](#content--references)
-11. [Content - Settings](#content--settings)
-12. [Localization](#localization)
-13. [Log](#log)
-14. [Mail](#mail)
-15. [Database Middleware](#database-middleware)
-16. [Web Layer](#web-layer)
-17. [Shop](#shop)
-18. [Notification](#notification)
-19. [Development](#development)
-20. [Migration](#migration)
+9. [Content - Comments](#content--comments)
+10. [Content - Messages](#content--messages)
+11. [Content - Pages](#content--pages)
+12. [Content - References](#content--references)
+13. [Content - Settings](#content--settings)
+14. [Localization](#localization)
+15. [Log](#log)
+16. [Mail](#mail)
+17. [Database Middleware](#database-middleware)
+18. [SpamProtectionTrait](#spamprotectiontrait)
+19. [Web Layer](#web-layer)
+20. [Shop](#shop)
+21. [Notification](#notification)
+22. [Development](#development)
+23. [Migration](#migration)
 
 ---
 
@@ -385,6 +388,98 @@ HTML контентоос товч хураангуй гаргах.
 
 ---
 
+## Content - Comments
+
+### CommentsModel
+
+**Файл:** `application/raptor/content/news/CommentsModel.php`
+**Extends:** `codesaur\DataObject\Model`
+
+**Хүснэгт:** `news_comments`
+
+| Багана | Төрөл | Тайлбар |
+|--------|-------|---------|
+| `id` | bigint (PK) | Auto-increment |
+| `news_id` | bigint | Мэдээний холбоос (FK -> news) |
+| `parent_id` | bigint | Эцэг сэтгэгдэл, 1 түвшний хариулт (FK -> news_comments, self) |
+| `created_by` | bigint | Зохиогч хэрэглэгч (FK -> users, зочин бол null) |
+| `name` | varchar(128) | Сэтгэгдэл бичигчийн нэр |
+| `email` | varchar(128) | Сэтгэгдэл бичигчийн и-мэйл |
+| `comment` | text | Сэтгэгдлийн текст |
+| `is_active` | tinyint | Идэвхтэй эсэх |
+| `created_at` | datetime | Үүсгэсэн огноо |
+
+### CommentsController (Dashboard)
+
+**Файл:** `application/raptor/content/news/CommentsController.php`
+**Extends:** `Raptor\Controller`
+
+| Метод | Тайлбар |
+|-------|---------|
+| `index()` | Сэтгэгдлийн удирдлагын хуудас |
+| `list()` | JSON сэтгэгдлийн жагсаалт |
+| `view(int $id)` | Сэтгэгдлийн дэлгэрэнгүй |
+| `deactivate()` | Soft delete |
+
+### ContentsRouter - Comments маршрутууд
+
+| Маршрут | Метод | Нэр |
+|---------|-------|-----|
+| `/dashboard/comments` | GET | `comments` |
+| `/dashboard/comments/list` | GET | `comments-list` |
+| `/dashboard/comments/news/{uint:id}` | GET | - |
+| `/dashboard/comments/deactivate` | DELETE | `comments-deactivate` |
+| `/dashboard/news/comment/{uint:id}/reply` | GET | - |
+
+---
+
+## Content - Messages
+
+### MessagesModel
+
+**Файл:** `application/raptor/content/messages/MessagesModel.php`
+**Extends:** `codesaur\DataObject\Model`
+
+**Хүснэгт:** `messages`
+
+| Багана | Төрөл | Тайлбар |
+|--------|-------|---------|
+| `id` | bigint (PK) | Auto-increment |
+| `name` | varchar(128) | Илгээгчийн нэр |
+| `phone` | varchar(50) | Илгээгчийн утас |
+| `email` | varchar(128) | Илгээгчийн и-мэйл |
+| `message` | text | Мессежийн текст |
+| `code` | varchar(2) | Хэлний код |
+| `is_read` | tinyint | Уншсан эсэх (0=шинэ, 1=уншсан, 2=хариулсан) |
+| `replied_note` | text | Админы хариултын тэмдэглэл |
+| `is_active` | tinyint | Идэвхтэй эсэх |
+| `created_at` | datetime | Үүсгэсэн огноо |
+
+### MessagesController (Dashboard)
+
+**Файл:** `application/raptor/content/messages/MessagesController.php`
+**Extends:** `Raptor\Controller`
+
+| Метод | Тайлбар |
+|-------|---------|
+| `index()` | Мессежийн удирдлагын хуудас |
+| `list()` | JSON мессежийн жагсаалт |
+| `view(int $id)` | Мессеж харах (уншсан гэж тэмдэглэнэ) |
+| `markReplied(int $id)` | Хариулсан гэж тэмдэглэх |
+| `deactivate()` | Soft delete |
+
+### ContentsRouter - Messages маршрутууд
+
+| Маршрут | Метод | Нэр |
+|---------|-------|-----|
+| `/dashboard/messages` | GET | `messages` |
+| `/dashboard/messages/list` | GET | `messages-list` |
+| `/dashboard/messages/view/{uint:id}` | GET | `messages-view` |
+| `/dashboard/messages/replied/{uint:id}` | POST | `messages-replied` |
+| `/dashboard/messages/deactivate` | DELETE | `messages-deactivate` |
+
+---
+
 ## Content - Pages
 
 ### PagesModel
@@ -410,7 +505,6 @@ HTML контентоос товч хураангуй гаргах.
 | `position` | smallint (default: 100) | Эрэмбэ |
 | `link` | varchar(255) | Гадаад холбоос |
 | `is_featured` | tinyint (default: 0) | Онцлох хуудас |
-| `comment` | tinyint (default: 0) | Сэтгэгдэл идэвхтэй |
 | `read_count` | bigint (default: 0) | Үзэлтийн тоо |
 | `is_active` | tinyint (default: 1) | Идэвхтэй эсэх |
 | `published` | tinyint (default: 0) | Нийтлэгдсэн эсэх |
@@ -631,6 +725,32 @@ PSR-11 DI Container-г request-д inject хийнэ. PDO, User ID, `DiscordNotif
 
 ---
 
+## SpamProtectionTrait
+
+**Файл:** `application/raptor/SpamProtectionTrait.php`
+
+Cloudflare Turnstile болон линк-д суурилсан эвристик ашиглан спам хамгаалалтын методууд хангана.
+
+### Methods
+
+#### `getTurnstileSiteKey(): string`
+ENV тохиргооноос Turnstile site key буцаана. Тохируулаагүй бол хоосон string.
+
+#### `validateSpamProtection(): bool`
+Request-аас Cloudflare Turnstile токен шалгана. Баталгаажуулалт амжилттай эсвэл Turnstile тохируулаагүй бол `true` буцаана.
+
+#### `checkLinkSpam(string $text): bool`
+Текстэд сэжигтэй линк загвар байгаа эсэх шалгана. Спам илэрвэл `true` буцаана.
+
+### Хэрэглэдэг газрууд
+
+- `Web\Service\ContactController` - Холбоо барих форм илгээх
+- `Web\Content\NewsController` - Мэдээний сэтгэгдэл илгээх
+- `Web\Shop\ShopController` - Захиалга илгээх
+- `Raptor\Authentication\LoginController` - Бүртгүүлэх, нууц үг сэргээх
+
+---
+
 ## Web Layer
 
 ### Web\Application
@@ -666,6 +786,10 @@ ExceptionHandler -> MySQL -> Container -> Session -> Localization -> Settings ->
 | `/sitemap` | GET | `sitemap` | Sitemap хуудас |
 | `/sitemap.xml` | GET | - | XML sitemap |
 | `/rss` | GET | `rss` | RSS feed |
+| `/session/contact-send` | POST | `contact-send` | Холбоо барих мессеж илгээх |
+| `/session/order` | POST | - | Захиалга илгээх (session) |
+| `/session/language/{code}` | GET | - | Хэл солих (session) |
+| `/session/news/{uint:id}/comment` | POST | `news-comment` | Мэдээнд сэтгэгдэл бичих |
 
 ### HomeController
 
@@ -684,9 +808,18 @@ ExceptionHandler -> MySQL -> Container -> Session -> Localization -> Settings ->
 
 | Метод | Тайлбар |
 |-------|---------|
-| `contact()` | Холбоо барих хуудас (link LIKE '%/contact') |
 | `pageById(int $id)` | ID-р хуудас slug URL руу redirect |
 | `page(string $slug)` | Хуудас үзүүлэх + файлууд + read_count + OG meta |
+
+### ContactController
+
+**Файл:** `application/web/service/ContactController.php`
+**Extends:** `TemplateController`
+
+| Метод | Тайлбар |
+|-------|---------|
+| `contact()` | Холбоо барих хуудас (link LIKE '%/contact') |
+| `contactSend()` | Холбоо барих мессеж илгээх (AJAX, spam хамгаалалттай) |
 
 ### NewsController (Web)
 
@@ -732,7 +865,7 @@ ExceptionHandler -> MySQL -> Container -> Session -> Localization -> Settings ->
 
 | Метод | Тайлбар |
 |-------|---------|
-| `template(string $template, array $vars): TwigTemplate` | Web layout + content нэгтгэх |
+| `twigWebLayout(string $template, array $vars): TwigTemplate` | Web layout + content нэгтгэх. $vars доторх title, code, description, photo key-г index layout-ийн SEO meta-д автоматаар map хийнэ. |
 
 ### Moedit AI
 

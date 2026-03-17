@@ -1,0 +1,279 @@
+<!-- SweetAlert2 -->
+<script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<!-- Variables: filters -->
+<div class="d-flex justify-content-between align-items-center">
+    <h5 class="text-uppercase"><i class="bi bi-chat-dots"></i> {{ 'messages'|text }}</h5>
+</div>
+
+<style>
+.btn-filter {
+    --bs-btn-color: var(--bs-emphasis-color);
+    --bs-btn-border-color: var(--bs-emphasis-color);
+    --bs-btn-hover-color: var(--bs-body-bg);
+    --bs-btn-hover-bg: var(--bs-emphasis-color);
+    --bs-btn-hover-border-color: var(--bs-emphasis-color);
+    --bs-btn-active-color: var(--bs-body-bg);
+    --bs-btn-active-bg: var(--bs-emphasis-color);
+    --bs-btn-active-border-color: var(--bs-emphasis-color);
+}
+.btn-filter.active {
+    color: var(--bs-body-bg);
+    background-color: var(--bs-emphasis-color);
+    border-color: var(--bs-emphasis-color);
+}
+</style>
+<div class="d-flex align-items-center flex-wrap gap-2 mt-3 mb-2">
+    <button class="btn btn-sm btn-secondary text-uppercase ms-auto" id="filter_action" type="button">
+        <i class="bi bi-funnel"></i> {{ 'filter'|text }}
+    </button>
+    {% for name,filter in filters %}
+    <div class="dropdown">
+        <button class="btn btn-sm btn-filter dropdown-toggle content-filters" data-bs-toggle="dropdown" data-name="{{ name }}" aria-expanded="false" type="button">
+            {{ filter.title }}
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end shadow">
+            {% for val,label in filter.values %}
+                <li><button class="dropdown-item filter-values-{{ name }}" data-id="{{ val }}" type="button">{{ label }}</button></li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endfor %}
+</div>
+
+<table class="table table-sm table-hover table-striped table-bordered" id="messages">
+    <thead>
+        <tr class="text-uppercase">
+            <th scope="col"><span class="text-secondary">ID /</span> {{ 'date'|text }}</th>
+            <th scope="col">{{ 'name'|text }}</th>
+            <th scope="col">{{ 'phone'|text }} / {{ 'email'|text }}</th>
+            <th scope="col">{{ 'message'|text }}</th>
+            <th scope="col">{{ 'status'|text }}</th>
+            <th scope="col" style="width:8.5rem">{{ 'action'|text }}</th>
+        </tr>
+    </thead>
+</table>
+
+<!-- Modal: Мессеж харах -->
+<div class="modal fade" id="viewModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content" id="viewModalContent"></div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    const urlParams = new URLSearchParams(window.location.search);
+    const filterAction = document.getElementById('filter_action');
+    const filterBtns = document.querySelectorAll('button.content-filters');
+
+    function onFilterChange()
+    {
+        filterBtns.forEach(f => {
+            f.classList.toggle('active', !!f.dataset.id);
+        });
+        const currentParams = new URLSearchParams();
+        filterBtns.forEach(f => { if (f.dataset.id) currentParams.append(f.dataset.name, f.dataset.id); });
+        const hasFilter = currentParams.size > 0;
+        const matchesUrl = currentParams.toString() === urlParams.toString();
+        filterAction.classList.remove('btn-secondary', 'btn-danger', 'btn-dark');
+        if (!hasFilter && urlParams.size === 0) {
+            filterAction.classList.add('btn-secondary');
+            filterAction.innerHTML = '<i class="bi bi-funnel"></i> {{ "filter"|text }}';
+        } else if (hasFilter && matchesUrl) {
+            filterAction.classList.add('btn-dark');
+            filterAction.innerHTML = '<i class="bi bi-funnel-fill"></i> {{ "filter"|text }} <i class="bi bi-x-circle ms-1" data-reset></i>';
+        } else {
+            filterAction.classList.add('btn-danger');
+            filterAction.innerHTML = '<i class="bi bi-funnel-fill"></i> {{ "filter"|text }} <i class="bi bi-x-circle ms-1" data-reset></i>';
+        }
+        const resetIcon = filterAction.querySelector('[data-reset]');
+        if (resetIcon) {
+            resetIcon.addEventListener('click', function (e) {
+                e.stopPropagation();
+                window.location.href = window.location.pathname;
+            });
+        }
+    }
+
+    filterBtns.forEach(filter => {
+        document.querySelectorAll(`.filter-values-${filter.dataset.name}`).forEach(btn => {
+            btn.addEventListener('click', function (e) {
+                e.preventDefault();
+                filter.textContent = e.target.textContent;
+                filter.dataset.id = e.target.dataset?.id;
+                onFilterChange();
+            });
+        });
+    });
+
+    filterAction.addEventListener('click', function (e) {
+        e.preventDefault();
+        if (filterAction.classList.contains('btn-secondary')) {
+            return NotifyTop('warning', `{{ 'warning'|text|e }}`, `{{ 'select-at-least-one-filter'|text|e('js') }}`);
+        }
+        if (filterAction.classList.contains('btn-dark')) return;
+        const params = [];
+        filterBtns.forEach(filter => {
+            if (filter.dataset.id) params.push(`${filter.dataset.name}=${filter.dataset.id}`);
+        });
+        if (params.length === 0) return;
+        window.location.href = window.location.pathname + '?' + params.join('&');
+    });
+
+    document.addEventListener('DOMContentLoaded', function () {
+        if (urlParams?.size > 0) {
+            filterBtns.forEach(filter => {
+                const value = urlParams.get(filter.dataset.name);
+                if (value) {
+                    filter.dataset.id = value;
+                    const selector = `.filter-values-${filter.dataset.name}[data-id="${value}"]`;
+                    const titleElement = document.querySelector(selector);
+                    filter.textContent = titleElement?.textContent || value;
+                    filter.classList.add('active');
+                }
+            });
+            onFilterChange();
+        }
+
+        const table = new motable('table#messages', { freezeColumns: [1] });
+        const canReply = {{ user.can('system_content_index') ? 'true' : 'false' }};
+        const canDelete = {{ user.can('system_content_delete') ? 'true' : 'false' }};
+
+        fetch(
+            `{{ 'messages-list'|link }}` + window.location.search
+        ).then(res => {
+            if (res.headers.get('content-type')?.includes('application/json')) return res.json();
+            throw new Error(`HTTP [${res.status}]: ${res.statusText}`);
+        }).then(data => {
+            if (!data.list) throw new Error(data.message ?? 'Invalid response!');
+
+            let rowsHTML = '';
+            data.list.forEach(record => {
+                const id = record.id;
+                const readState = parseInt(record.is_read);
+                const bold = readState === 0 ? 'fw-bold' : '';
+                let badge;
+                if (readState === 0) {
+                    badge = '<span class="badge bg-success">{{ 'new'|text }}</span>';
+                } else if (readState === 2) {
+                    badge = '<span class="badge bg-primary">{{ 'replied'|text }}</span>';
+                } else {
+                    badge = '<span class="badge bg-secondary">{{ 'read'|text }}</span>';
+                }
+                const msg = record.message.length > 80
+                    ? record.message.substring(0, 80) + '...'
+                    : record.message;
+
+                let actions = `<button class="btn btn-sm btn-outline-info view-msg" data-id="${id}" title="{{ 'view'|text }}"><i class="bi bi-eye"></i></button>`;
+                if (canReply && readState !== 2) {
+                    actions += ` <button class="btn btn-sm btn-outline-primary reply-msg" data-id="${id}" data-email="${record.email || ''}" title="{{ 'replied'|text }}"><i class="bi bi-reply"></i></button>`;
+                }
+                if (canDelete) {
+                    actions += ` <button class="btn btn-sm btn-outline-danger delete-msg" data-id="${id}" title="{{ 'delete'|text }}"><i class="bi bi-trash"></i></button>`;
+                }
+
+                rowsHTML += `<tr class="${bold}">
+                    <td>${id}<br><small class="text-muted">${record.created_at}</small></td>
+                    <td>${record.name}</td>
+                    <td>${record.phone}<br><small>${record.email || ''}</small></td>
+                    <td><small>${msg}</small></td>
+                    <td>${badge}</td>
+                    <td>${actions}</td>
+                </tr>`;
+            });
+
+            table.setBody(rowsHTML);
+
+            document.querySelectorAll('.view-msg').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    const modal = document.getElementById('viewModal');
+                    const content = document.getElementById('viewModalContent');
+                    content.innerHTML = '<div class="text-center py-5"><span class="spinner-border"></span></div>';
+                    new bootstrap.Modal(modal).show();
+                    fetch(`{{ 'messages'|link }}/view/${this.dataset.id}`)
+                        .then(r => r.text())
+                        .then(html => { content.innerHTML = html; });
+                });
+            });
+
+            document.querySelectorAll('.delete-msg').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    const id = this.dataset.id;
+                    Swal.fire({
+                        title: `{{ 'confirm-delete'|text|e('js') }}`,
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#d33',
+                        confirmButtonText: `{{ 'delete'|text|e('js') }}`,
+                        cancelButtonText: `{{ 'cancel'|text|e('js') }}`
+                    }).then(result => {
+                        if (!result.isConfirmed) return;
+                        fetch(`{{ 'messages-deactivate'|link }}`, {
+                            method: 'DELETE',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ id })
+                        }).then(r => r.json()).then(res => {
+                            if (res.status === 'success') {
+                                location.reload();
+                            } else {
+                                Swal.fire(`{{ 'error'|text|e('js') }}`, res.message, 'error');
+                            }
+                        });
+                    });
+                });
+            });
+            document.querySelectorAll('.reply-msg').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    const id = this.dataset.id;
+                    const hasEmail = !!this.dataset.email;
+                    Swal.fire({
+                        title: `{{ 'reply-method'|text|e('js') }}`,
+                        html: `<div class="text-start">
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="swal-phone" checked>
+                                <label class="form-check-label" for="swal-phone">{{ 'contacted-by-phone'|text|e('js') }}</label>
+                            </div>
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="swal-email" ${hasEmail ? '' : 'disabled'}>
+                                <label class="form-check-label ${hasEmail ? '' : 'text-muted'}" for="swal-email">{{ 'contacted-by-email'|text|e('js') }}${hasEmail ? '' : ' ({{ "no-email"|text|e("js") }})'}</label>
+                            </div>
+                            <textarea class="form-control" id="swal-note" rows="3" placeholder="{{ 'additional-info'|text|e('js') }}"></textarea>
+                        </div>`,
+                        showCancelButton: true,
+                        confirmButtonText: `{{ 'confirm'|text|e('js') }}`,
+                        cancelButtonText: `{{ 'cancel'|text|e('js') }}`,
+                        preConfirm: () => {
+                            const phone = document.getElementById('swal-phone').checked;
+                            const email = document.getElementById('swal-email').checked;
+                            if (!phone && !email) {
+                                Swal.showValidationMessage(`{{ 'select-at-least-one-filter'|text|e('js') }}`);
+                                return false;
+                            }
+                            const parts = [];
+                            if (phone) parts.push(`{{ 'contacted-by-phone'|text|e('js') }}`);
+                            if (email) parts.push(`{{ 'contacted-by-email'|text|e('js') }}`);
+                            const extra = document.getElementById('swal-note').value.trim();
+                            if (extra) parts.push(extra);
+                            return parts.join('. ');
+                        }
+                    }).then(result => {
+                        if (!result.isConfirmed) return;
+                        fetch(`{{ 'messages'|link }}/replied/${id}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ note: result.value })
+                        }).then(r => r.json()).then(res => {
+                            if (res.status === 'success') {
+                                location.reload();
+                            } else {
+                                Swal.fire(`{{ 'error'|text|e('js') }}`, res.message, 'error');
+                            }
+                        });
+                    });
+                });
+            });
+        }).catch(err => {
+            table.setBody(`<tr><td colspan="6" class="text-center text-danger">${err.message}</td></tr>`);
+        });
+    });
+</script>

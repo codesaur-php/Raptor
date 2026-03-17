@@ -96,8 +96,7 @@ class Application extends \codesaur\Http\Application\Application
         // Session middleware
         $this->use(new \Raptor\SessionMiddleware(
             fn(string $path, string $method): bool =>
-                \str_starts_with($path, '/language/')
-                || ($path === '/order' && $method === 'POST')
+                \str_starts_with($path, '/session/')
         ));
 
         // Localization middleware (mn/en ...)

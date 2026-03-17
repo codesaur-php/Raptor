@@ -7,7 +7,7 @@ use codesaur\Router\Router;
 /**
  * Class ContentsRouter
  *
- * Контент модулийн бүх маршрутыг (files, news, pages, references, settings)
+ * Контент модулийн бүх маршрутыг (files, news, pages, references, settings, messages)
  * нэг дор бүртгэн удирддаг төв Router класс.
  *
  * Энэ класс нь Raptor-ийн Dashboard хэсэгт байрлах:
@@ -85,6 +85,25 @@ class ContentsRouter extends Router
         // Мэдээг харах UI
         $this->GET('/dashboard/news/view/{uint:id}', [NewsController::class, 'view']);
 
+        /* ------------------------------
+         * COMMENTS - Сэтгэгдлүүд (бүх мэдээний)
+         * ------------------------------ */
+
+        // Сэтгэгдлүүдийн жагсаалт
+        $this->GET('/dashboard/comments', [CommentsController::class, 'index'])->name('comments');
+
+        // Сэтгэгдлүүдийн JSON list
+        $this->GET('/dashboard/comments/list', [CommentsController::class, 'list'])->name('comments-list');
+
+        // Сэтгэгдэл дэлгэрэнгүй - news ID-аар (?comment_id= query param-аар focus)
+        $this->GET('/dashboard/comments/news/{uint:id}', [CommentsController::class, 'view'])->name('comments-view');
+
+        // Мэдээний сэтгэгдэлд хариулт бичих
+        $this->POST('/dashboard/news/comment/{uint:id}/reply', [CommentsController::class, 'reply'])->name('news-comment-reply');
+
+        // Сэтгэгдлийг идэвхгүй болгох
+        $this->DELETE('/dashboard/comments/deactivate', [CommentsController::class, 'deactivate'])->name('comments-deactivate');
+
         // Мэдээг идэвхгүй болгох SOFT DELETE
         $this->DELETE('/dashboard/news/deactivate', [NewsController::class, 'deactivate'])->name('news-deactivate');
 
@@ -154,6 +173,26 @@ class ContentsRouter extends Router
         // Тохиргооны файл upload хийх
         $this->POST('/dashboard/settings/files', [SettingsController::class, 'files'])->name('settings-files');
                 
+
+        /* ------------------------------
+         * MESSAGES - Холбоо барих мессежүүд
+         * ------------------------------ */
+
+        // Мессежүүдийн жагсаалтын хуудас
+        $this->GET('/dashboard/messages', [MessagesController::class, 'index'])->name('messages');
+
+        // Мессежүүдийн JSON list
+        $this->GET('/dashboard/messages/list', [MessagesController::class, 'list'])->name('messages-list');
+
+        // Мессежийг харах modal
+        $this->GET('/dashboard/messages/view/{uint:id}', [MessagesController::class, 'view'])->name('messages-view');
+
+        // Мессежийг хариулсан гэж тэмдэглэх
+        $this->PUT('/dashboard/messages/replied/{uint:id}', [MessagesController::class, 'markReplied'])->name('messages-replied');
+
+        // Мессежийг идэвхгүй болгох
+        $this->DELETE('/dashboard/messages/deactivate', [MessagesController::class, 'deactivate'])->name('messages-deactivate');
+
 
         /**
          * MOEDIT AI API

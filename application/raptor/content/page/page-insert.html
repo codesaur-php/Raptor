@@ -146,13 +146,6 @@
                     {{ 'feature-on-homepage'|text }}
                 </div>
             </div>
-            <div class="col-4">
-                <label class="form-label fw-bolder">{{ 'comment'|text }} <i class="bi bi-chat-dots"></i></label>
-                <div class="form-check form-switch">
-                    <input class="form-check-input" name="comment" type="checkbox" role="switch">
-                    {{ 'can-comment'|text }}
-                </div>
-            </div>
         </div>
     </div>
     {% endif %}
@@ -338,11 +331,6 @@ document.addEventListener('DOMContentLoaded', function () {
         if (isFeaturedCheckbox) {
             data.set('is_featured', isFeaturedCheckbox.checked ? '1' : '0');
         }
-        const commentCheckbox = this.querySelector('input[name="comment"]');
-        if (commentCheckbox) {
-            data.set('comment', commentCheckbox.checked ? '1' : '0');
-        }
-
         if (content?._moedit) {
             data.append('files', JSON.stringify(content._moedit.getFiles()));
         }

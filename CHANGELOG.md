@@ -6,6 +6,46 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 
 ---
 
+## [1.9.0] - 2026-03-17
+[1.9.0]: https://github.com/codesaur-php/Raptor/compare/v1.8.2...v1.9.0
+
+Messages, Comments, Spam Protection, Discord notifications, template refactoring.
+
+### Added
+- **Messages module** - Contact form submissions saved to `messages` DB table with dashboard management (index, view, delete). Admin can mark messages as New/Read/Replied with note (phone/email contacted). Dashboard menu under Contents
+- **Comments module** - News article comments with 1-level reply thread. `news_comments` table with `parent_id` (self FK) and `created_by` (admin/guest). Web visitors can post comments when `comment=1` on news. Admin can reply from dashboard
+- **CommentsController (Dashboard)** - View all comments across news, reply to comments, delete with cascade. Accessible from Contents -> Comments menu and news-index publish column
+- **Comments view news metadata** - Comments view page shows news article photo (if exists), publisher name, read count, published status, and full content so admin can read the article before replying to comments
+- **ContactController** - Extracted from PageController to `Web\Service\ContactController` as standalone controller with own template
+- **SpamProtectionTrait** - Unified spam protection: honeypot, HMAC token + timestamp, session rate limit, Cloudflare Turnstile (optional), link spam filter. Used by ContactController, NewsController, ShopController, LoginController
+- **Cloudflare Turnstile** - Optional CAPTCHA via `RAPTOR_TURNSTILE_SITE_KEY` / `RAPTOR_TURNSTILE_SECRET_KEY` env vars. When keys are empty, Turnstile is skipped. Applied to contact form, comment form, order form, signup form
+- **Link spam filter** - `checkLinkSpam()` blocks messages/comments with 3+ URLs
+- **Comment reply validation** - Backend enforces 1-level reply limit: reply-to-reply requests rejected with 400 error. Both web (`NewsController::comment`) and dashboard (`NewsController::commentReply`) validate that `parent_id` points to a root comment
+- **CI workflow** - `.github/workflows/ci.yml` default workflow runs on every push and PR: composer validate, PHP syntax check, merge conflict markers, debug statement detection, autoload verification
+- **cPanel deploy workflow** - `docs/conf.example/cpanel.deploy.yml` restructured to use `workflow_run` trigger - waits for CI to succeed before deploying. CI failure skips deploy automatically
+- **Discord notifications** - `settingsUpdated()` for settings changes (texts/files/options), `contentAction()` now shows changed fields on update. App URL shown in footer of all notifications
+- **DiscordNotifier app URL** - All notification methods accept `$appUrl` parameter, displayed as embed footer
+- **SettingsModel default config** - Initial settings include JSON structure for social media links and open hours
+- **TextInitial keywords** - `messages`, `read`, `replied`, `reply`, `reply-method`, `contacted-by-phone`, `contacted-by-email`, `comments`, `write-comment`, `contact-info`, `send-message`, `working-hours`, `social-media`, `thank-you`, `server-error`, `confirm-delete`, `delete-with-replies`, `view`, `no-email`
+- **Manual pages** - Comments manual (EN/MN) and Messages manual (EN/MN) added to `application/dashboard/manual/`. Covers overview, list view, actions (reply, delete), and required permissions for each module
+- **Unit tests** - 14 SpamProtectionTrait tests (honeypot, HMAC, timestamp, rate limit, Turnstile skip/verify, link spam)
+
+### Changed
+- **`template()` renamed to `twigWebLayout()`** - Web TemplateController method renamed to match `twigDashboard()` pattern. Auto-maps `title`, `code`, `description`, `photo` from `$vars` to index layout SEO meta. All web controllers updated
+- **Session routes use `/session/` prefix** - All web routes that write to `$_SESSION` now use `/session/` prefix (`/session/language/{code}`, `/session/contact-send`, `/session/order`, `/session/news/{id}/comment`). SessionMiddleware simplified to `str_starts_with($path, '/session/')`
+- **Discord `contentAction()` title simplified** - Removed redundant `(Updated)` / `(Deleted)` label from title since description already states the action. ID moved from separate field to description as `#ID`
+- **Contact form localization** - All hardcoded `lang == 'mn' ? ... : ...` text replaced with `|text` Twig filter using TextInitial keywords. JS text passed via Twig `{{ 'keyword'|text }}` directly
+- **Contact form error display** - `alert()` replaced with Bootstrap modal for both success and error messages
+- **Order form submit protection** - Submit button disabled with spinner while processing to prevent duplicate submissions
+- **Comment form UX** - Send button disabled until both name and comment fields are filled. Placeholder shows `*` for required fields. Prevents confusing silent failures
+- **Messages reply dialog** - "Contacted by email" checkbox disabled with "(No email)" label when message has no email address. Prevents admin from selecting an unavailable reply method
+- **Dev request view** - Response thread order changed to `flex-column-reverse` (oldest first at bottom, newest at top)
+
+### Removed
+- **Pages `comment` field** - Removed from PagesModel, PagesController permission checks, page-insert/update/view templates. Comments are a News-only feature per best practice
+
+---
+
 ## [1.8.2] - 2026-03-16
 [1.8.2]: https://github.com/codesaur-php/Raptor/compare/v1.8.1...v1.8.2
 
@@ -185,7 +225,7 @@ Pages module simplification: flexible type system, removed read mode, improved n
 
 ### Changed
 - **Pages** - Type system simplified: replaced rigid `nav`/`content`/`link` enum with flexible user-editable field; default changed from `content` to `menu`
-- **Pages** - All form fields (description, content, link, featured, comment) always visible regardless of type or children; removed all conditional field hiding
+- **Pages** - All form fields (description, content, link, featured) always visible regardless of type or children; removed all conditional field hiding
 - **Pages** - `type` field is now editable on update (previously locked after creation)
 - **Pages** - Navigation tree (`pages-nav.html`): folder icon based on `hasChildren` instead of `type=nav`; type and category shown as badges
 - **Pages** - Seed data updated to use `type='menu'` (relies on column default)
@@ -411,7 +451,7 @@ Codebase-wide cleanup enforcing old-school coding style. Codesaur dependency pat
 - **Pages** - "Parent page (navigation)" switch in page-insert form to create `type=nav` pages directly
 - **Pages** - `link` field with frontend (JS) and backend (`isValidLink()`) validation; supports URL, local path (`/path`), `mailto:`, `tel:`
 - **Pages** - `PagesController::read()` guards: published check (403), parent check (403), link redirect
-- **Pages** - Auto-reset `is_featured=0`, `comment=0` on parent page when a child is inserted or `parent_id` changes
+- **Pages** - Auto-reset `is_featured=0` on parent page when a child is inserted or `parent_id` changes
 - **Sample Data Reset** - Reset button in pages-index, pages-nav, news-index when sample data exists
   - `PagesController::reset()` and `NewsController::reset()` methods
   - Routes: `pages-sample-reset`, `news-sample-reset`
@@ -421,7 +461,7 @@ Codebase-wide cleanup enforcing old-school coding style. Codesaur dependency pat
 ### Changed
 - **Pages** - Removed page type wizard from page-insert; all fields (title, description, content, link) visible in a single form
 - **Pages** - Merged Content and Link types into one form; `link` input always visible below content editor
-- **Pages** - Parent pages (pages with children) hide description, content, link, featured, comment fields in page-update
+- **Pages** - Parent pages (pages with children) hide description, content, link, featured fields in page-update
 - **Pages** - page-view shows description/content/link conditionally (only when non-empty), link with `border-info`
 - **Pages / News** - Action buttons in index/nav: link button if `link` is set and not parent, read button if no link and not parent, neither if parent or unpublished
 - **Pages / News** - Seed data uses `category='sample'` instead of `'general'`, `created_by` and `published_by` are `NULL`

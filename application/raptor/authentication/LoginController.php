@@ -40,6 +40,7 @@ use Raptor\Organization\OrganizationUserModel;
  */
 class LoginController extends \Raptor\Controller
 {
+    use \Raptor\SpamProtectionTrait;
     // =========================================================================
     // Authentication: Login / Logout / Organization
     // =========================================================================
@@ -92,6 +93,7 @@ class LoginController extends \Raptor\Controller
         $secret = $_ENV['RAPTOR_JWT_SECRET'] ?? 'raptor-form-secret';
         $login->set('spam_ts', $ts);
         $login->set('spam_token', \hash_hmac('sha256', "login-form-$ts", $secret));
+        $login->set('turnstile_site_key', $this->getTurnstileSiteKey());
 
         // SettingsMiddleware -> request attributes -> 'settings'
         foreach ($this->getAttribute('settings', []) as $key => $value) {
@@ -620,8 +622,9 @@ class LoginController extends \Raptor\Controller
                 ]);
             }
 
+            $appUrl = \rtrim((string)$this->getRequest()->getUri()->withPath($this->getScriptPath()), '/');
             $this->getService('discord')?->userSignupRequest(
-                $profile['username'], $profile['email']
+                $profile['username'], $profile['email'], $appUrl
             );
         } catch (\Throwable $e) {
             // Error хэвлэнэ
@@ -1291,6 +1294,11 @@ class LoginController extends \Raptor\Controller
             throw new \Exception($this->text('invalid-request'), 429);
         }
         $_SESSION[$sessionKey] = $now;
+
+        // 6) Cloudflare Turnstile (signup form дээр байвал шалгана)
+        if ($sessionKey === '_last_signup_at') {
+            $this->verifyTurnstile($payload['cf-turnstile-response'] ?? '');
+        }
     }
 
     /**

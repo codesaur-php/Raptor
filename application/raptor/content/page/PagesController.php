@@ -271,8 +271,7 @@ class PagesController extends FileController
                 $isPublished = ($payload['published'] ?? 0) == 1;
                 $needsPublishPermission =
                     $isPublished ||
-                    ($payload['is_featured'] ?? 0) == 1 ||
-                    ($payload['comment'] ?? 0) == 1;
+                    ($payload['is_featured'] ?? 0) == 1;
                 if ($needsPublishPermission
                     && !$this->isUserCan('system_content_publish')
                 ) {
@@ -331,7 +330,8 @@ class PagesController extends FileController
 
                 $action = !empty($payload['published']) ? 'publish' : 'insert';
                 $adminName = \trim(($this->getUser()->profile['first_name'] ?? '') . ' ' . ($this->getUser()->profile['last_name'] ?? ''));
-                $this->getService('discord')?->contentAction('page', $action, $payload['title'] ?? '', $id, $adminName);
+                $appUrl = \rtrim((string)$this->getRequest()->getUri()->withPath($this->getScriptPath()), '/') . '/dashboard';
+                $this->getService('discord')?->contentAction('page', $action, $payload['title'] ?? '', $id, $adminName, $appUrl);
             } else {
                 $allInfos = $this->getInfos($table);
                 $codeParam = $this->getQueryParams()['code'] ?? '';
@@ -488,8 +488,7 @@ class PagesController extends FileController
                 $isPublished = ($payload['published'] ?? 0) == 1;
                 $needsPublishPermission =
                     $isPublished ||
-                    ($payload['is_featured'] ?? 0) == 1 ||
-                    ($payload['comment'] ?? 0) == 1;
+                    ($payload['is_featured'] ?? 0) == 1;
                 if ($needsPublishPermission
                     && !$this->isUserCan('system_content_publish')
                 ) {
@@ -583,7 +582,8 @@ class PagesController extends FileController
                 $nowPublished = !empty($payload['published']);
                 $action = (!$wasPublished && $nowPublished) ? 'publish' : 'update';
                 $adminName = \trim(($this->getUser()->profile['first_name'] ?? '') . ' ' . ($this->getUser()->profile['last_name'] ?? ''));
-                $this->getService('discord')?->contentAction('page', $action, $payload['title'] ?? $record['title'] ?? '', $id, $adminName);
+                $appUrl = \rtrim((string)$this->getRequest()->getUri()->withPath($this->getScriptPath()), '/') . '/dashboard';
+                $this->getService('discord')?->contentAction('page', $action, $payload['title'] ?? $record['title'] ?? '', $id, $adminName, $appUrl, $updates);
             } else {
                 $excludeIds = $this->getDescendantIds($id, $table);
                 $excludeIds[] = $id;
@@ -682,7 +682,8 @@ class PagesController extends FileController
             ]);
 
             $adminName = \trim(($this->getUser()->profile['first_name'] ?? '') . ' ' . ($this->getUser()->profile['last_name'] ?? ''));
-            $this->getService('discord')?->contentAction('page', 'delete', $payload['title'] ?? "#{$id}", $id, $adminName);
+            $appUrl = \rtrim((string)$this->getRequest()->getUri()->withPath($this->getScriptPath()), '/') . '/dashboard';
+            $this->getService('discord')?->contentAction('page', 'delete', $payload['title'] ?? "#{$id}", $id, $adminName, $appUrl);
         } catch (\Throwable $err) {
             $this->respondJSON([
                 'status'  => 'error',

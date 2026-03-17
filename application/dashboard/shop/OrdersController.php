@@ -215,8 +215,9 @@ class OrdersController extends \Raptor\Controller
             $this->sendStatusNotification($record, $payload['status']);
 
             $adminName = \trim(($this->getUser()->profile['first_name'] ?? '') . ' ' . ($this->getUser()->profile['last_name'] ?? ''));
+            $appUrl = \rtrim((string)$this->getRequest()->getUri()->withPath($this->getScriptPath()), '/') . '/dashboard';
             $this->getService('discord')?->orderStatusChanged(
-                $id, $record['customer_name'], $record['status'], $payload['status'], $adminName
+                $id, $record['customer_name'], $record['status'], $payload['status'], $adminName, $appUrl
             );
 
             $this->respondJSON([

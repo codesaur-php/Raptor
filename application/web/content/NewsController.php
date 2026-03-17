@@ -6,6 +6,7 @@ use Psr\Log\LogLevel;
 
 use Raptor\Content\NewsModel;
 use Raptor\Content\FilesModel;
+use Raptor\Content\CommentsModel;
 
 use Web\Template\TemplateController;
 
@@ -25,27 +26,7 @@ use Web\Template\TemplateController;
  */
 class NewsController extends TemplateController
 {
-    /**
-     * ID-аар мэдээ хайж slug-аар чиглүүлэх.
-     *
-     * @param int $id Мэдээний ID дугаар
-     * @return void
-     * @throws \Error Мэдээ олдохгүй бол 404 алдаа шидэнэ
-     */
-    public function newsById(int $id)
-    {
-        $model = new NewsModel($this->pdo);
-        $table = $model->getName();
-        $stmt = $this->prepare("SELECT slug FROM $table WHERE id=:id AND is_active=1");
-        $stmt->bindValue(':id', $id, \PDO::PARAM_INT);
-        $stmt->execute();
-        $row = $stmt->fetch();
-        if (empty($row)) {
-            throw new \Exception('Мэдээ олдсонгүй', 404);
-        }
-        return $this->news($row['slug']);
-    }
-
+    use \Raptor\SpamProtectionTrait;
     /**
      * Slug-аар мэдээг харуулах.
      *
@@ -77,13 +58,25 @@ class NewsController extends TemplateController
             'WHERE' => "record_id=$id AND is_active=1"
         ]);
 
+        // Сэтгэгдлүүдийг татах (comment=1 үед)
+        if (!empty($record['comment'])) {
+            $commentsModel = new CommentsModel($this->pdo);
+            $commentsTable = $commentsModel->getName();
+            $cstmt = $this->prepare(
+                "SELECT id, parent_id, created_by, name, comment, created_at FROM $commentsTable
+                 WHERE news_id=:nid AND is_active=1 ORDER BY created_at ASC"
+            );
+            $record['comments'] = $cstmt->execute([':nid' => $id]) ? $cstmt->fetchAll() : [];
+
+            $ts = \time();
+            $secret = $this->getJwtSecret();
+            $record['spam_ts'] = $ts;
+            $record['spam_token'] = \hash_hmac('sha256', "comment-$id-$ts", $secret);
+            $record['turnstile_site_key'] = $this->getTurnstileSiteKey();
+        }
+
         // Render template
-        $template = $this->template(__DIR__ . '/news.html', $record);
-        $template->set('record_code', $record['code'] ?? '');
-        $template->set('record_title', $record['title'] ?? '');
-        $template->set('record_description', $record['description'] ?? '');
-        $template->set('record_photo', $record['photo'] ?? '');
-        $template->render();
+        $this->twigWebLayout(__DIR__ . '/news.html', $record)->render();
 
         // Read count
         $this->exec("UPDATE $table SET read_count=read_count+1 WHERE id=$id");
@@ -95,6 +88,27 @@ class NewsController extends TemplateController
             '[{server_request.code} : /news/{slug}] {title} - мэдээг уншиж байна',
             ['action' => 'news', 'id' => $id, 'slug' => $slug, 'title' => $record['title']]
         );
+    }    
+    
+    /**
+     * ID-аар мэдээ хайж slug-аар чиглүүлэх.
+     *
+     * @param int $id Мэдээний ID дугаар
+     * @return void
+     * @throws \Error Мэдээ олдохгүй бол 404 алдаа шидэнэ
+     */
+    public function newsById(int $id)
+    {
+        $model = new NewsModel($this->pdo);
+        $table = $model->getName();
+        $stmt = $this->prepare("SELECT slug FROM $table WHERE id=:id AND is_active=1");
+        $stmt->bindValue(':id', $id, \PDO::PARAM_INT);
+        $stmt->execute();
+        $row = $stmt->fetch();
+        if (empty($row)) {
+            throw new \Exception('Мэдээ олдсонгүй', 404);
+        }
+        return $this->news($row['slug']);
     }
 
     /**
@@ -124,12 +138,11 @@ class NewsController extends TemplateController
             throw new \Exception('Мэдээ олдсонгүй', 404);
         }
 
-        $template = $this->template(__DIR__ . '/news-type.html', [
+        $this->twigWebLayout(__DIR__ . '/news-type.html', [
             'records' => $records,
-            'type' => $type
-        ]);
-        $template->set('record_title', $type);
-        $template->render();
+            'type' => $type,
+            'title' => $type
+        ])->render();
 
         $this->log(
             'web',
@@ -184,13 +197,12 @@ class NewsController extends TemplateController
             }
         }
 
-        $template = $this->template(__DIR__ . '/archive.html', [
+        $this->twigWebLayout(__DIR__ . '/archive.html', [
             'years' => $years,
             'selected_year' => $selectedYear,
             'months' => $months,
-        ]);
-        $template->set('record_title', $this->text('news-archive'));
-        $template->render();
+            'title' => $this->text('news-archive')
+        ])->render();
 
         $this->log(
             'web',
@@ -198,5 +210,92 @@ class NewsController extends TemplateController
             '[{server_request.code}] Мэдээний архив уншиж байна - {year} он',
             ['action' => 'news-archive', 'year' => $selectedYear ?? '-']
         );
+    }
+
+    /**
+     * Мэдээнд сэтгэгдэл бичих (AJAX).
+     *
+     * Spam хамгаалалт: honeypot, HMAC token, timestamp, rate limit, Cloudflare Turnstile.
+     *
+     * @param int $id Мэдээний ID
+     * @return void
+     */
+    public function commentSubmit(int $id)
+    {
+        try {
+            $parsed = $this->getParsedBody();
+            $code = $this->getLanguageCode();
+
+            // Мэдээ байгаа эсэх, comment идэвхтэй эсэх шалгах
+            $newsModel = new NewsModel($this->pdo);
+            $news = $newsModel->getRowWhere(['id' => $id, 'is_active' => 1]);
+            if (empty($news) || empty($news['comment'])) {
+                throw new \Exception('Invalid request', 400);
+            }
+
+            $this->validateSpamProtection($parsed, "comment-$id", '_last_comment_at', 5, 2);
+
+            $name = \trim($parsed['name'] ?? '');
+            $email = \trim($parsed['email'] ?? '');
+            $comment = \trim($parsed['comment'] ?? '');
+
+            if (empty($name)) {
+                throw new \InvalidArgumentException($code === 'mn' ? 'Нэрээ оруулна уу' : 'Please enter your name');
+            }
+            if (empty($comment)) {
+                throw new \InvalidArgumentException($code === 'mn' ? 'Сэтгэгдлээ бичнэ үү' : 'Please enter your comment');
+            }
+            $this->checkLinkSpam($comment);
+
+            $_SESSION['_last_comment_at'] = \time();
+
+            $parentId = !empty($parsed['parent_id']) ? (int)$parsed['parent_id'] : null;
+            $commentsModel = new CommentsModel($this->pdo);
+
+            // 1-level reply only: reply-д reply хийхийг хориглох
+            if ($parentId) {
+                $parentComment = $commentsModel->getRowWhere(['id' => $parentId, 'is_active' => 1]);
+                if (empty($parentComment) || !empty($parentComment['parent_id'])) {
+                    throw new \Exception('Invalid request', 400);
+                }
+            }
+
+            $commentsModel->insert([
+                'news_id' => $id,
+                'parent_id' => $parentId,
+                'name' => $name,
+                'email' => $email,
+                'comment' => $comment,
+                'created_at' => \date('Y-m-d H:i:s')
+            ]);
+
+            // Discord мэдэгдэл
+            $appUrl = \rtrim((string)$this->getRequest()->getUri()->withPath($this->getScriptPath()), '/');
+            $this->getService('discord')?->contentAction('comment', 'insert', $news['title'], $id, $name, $appUrl);
+
+            $this->respondJSON([
+                'status' => 'success',
+                'message' => $code === 'mn'
+                    ? 'Таны сэтгэгдэл амжилттай нэмэгдлээ!'
+                    : 'Your comment has been posted successfully!'
+            ]);
+        } catch (\Throwable $err) {
+            $this->respondJSON(['message' => $err->getMessage()], $err->getCode() ?: 500);
+        }
+    }
+
+    /**
+     * JWT secret авах.
+     *
+     * @return string JWT secret
+     * @throws \RuntimeException Environment variable тохируулаагүй бол
+     */
+    private function getJwtSecret(): string
+    {
+        $secret = $_ENV['RAPTOR_JWT_SECRET'] ?? '';
+        if (empty($secret)) {
+            throw new \RuntimeException('RAPTOR_JWT_SECRET environment variable is not set');
+        }
+        return $secret;
     }
 }

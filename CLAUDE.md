@@ -13,7 +13,7 @@ application/
   web/             # Public website
     content/       # Pages, News controllers + templates
     shop/          # Products, Orders controllers + templates
-    service/       # Search, Sitemap, RSS controllers + templates
+    service/       # Search, Sitemap, RSS, Contact controllers + templates
     template/      # Web layout, exception handler
 public_html/       # Document root (index.php entry point, assets/)
 database/
@@ -50,10 +50,41 @@ $this->isUserCan('system_rbac')     // Check permission
 $this->getUserId()                  // User ID (do NOT use for auth checks)
 $this->text('keyword')              // Get localized text
 $this->respondJSON($data, $code)    // JSON response
-$this->twigTemplate('file.html')    // Render Twig template
+$this->twigTemplate('file.html')    // Render a standalone template (no layout)
 $this->generateRouteLink('route')   // Generate URL
 $this->log('table', $level, $msg)   // PSR-3 logging
 $this->prepare($sql)                // PDO prepare
+```
+
+**Template rendering** has three levels:
+
+1. `twigTemplate('file.html', $vars)` - Renders a single standalone template without any layout wrapper. The template itself becomes the full output. Use for any response that does not need the standard layout: AJAX modal forms, error pages (e.g., page-404.html), custom standalone pages, partial HTML fragments, etc.
+
+2. `twigDashboard('module.html', $vars)` - Dashboard full-page render: wraps content inside `dashboard.html` layout with sidebar, settings. From DashboardTrait.
+
+3. `twigWebLayout('page.html', $vars)` - Web full-page render: wraps content inside `index.html` layout with navbar, footer, SEO meta. From TemplateController.
+
+**Rule:** When you need the standard layout (navbar/sidebar, footer, settings), use `twigDashboard()` or `twigWebLayout()`. These call `twigTemplate()` internally to build layout + content. When you need full control over the output without any layout, use `twigTemplate()` directly.
+
+```php
+// AJAX modal - standalone, no layout
+$this->twigTemplate(__DIR__ . '/role-insert-modal.html', $vars)->render();
+
+// Error page - standalone, own HTML structure
+$this->twigTemplate(__DIR__ . '/page-404.html')->render();
+```
+
+`twigWebLayout()` auto-maps SEO meta from `$vars` to the index layout: `title` -> `record_title`, `code` -> `record_code`, `description` -> `record_description`, `photo` -> `record_photo`. For content records (news, page, product) that already have these keys, no extra work is needed:
+
+```php
+// Record with title/code/description/photo - meta is auto-mapped
+$this->twigWebLayout(__DIR__ . '/page.html', $record)->render();
+
+// List page - pass title explicitly in $vars
+$this->twigWebLayout(__DIR__ . '/products.html', [
+    'products' => $products,
+    'title' => $this->text('products')
+])->render();
 ```
 
 ### 2. Create Model
@@ -158,7 +189,12 @@ After adding new files/namespaces, run `composer dump-autoload` to regenerate th
 
 `Raptor\SessionMiddleware` is shared by both apps. Constructor accepts a `needsWrite` closure. All other routes call `session_write_close()` early for concurrency.
 
-When adding a route that writes to `$_SESSION`, update the closure in the app's `Application.php`:
+- **Dashboard**: checks for `/login` path
+- **Web**: checks for `/session/` prefix - all routes that write to `$_SESSION` use `/session/` prefix (e.g., `/session/language/{code}`, `/session/contact-send`, `/session/order`)
+
+When adding a new Web route that writes to `$_SESSION`, register it with `/session/` prefix in `WebRouter.php`. No need to modify `Application.php`.
+
+For Dashboard, update the closure in `Application.php`:
 
 ```php
 new SessionMiddleware(fn($path, $method) => str_contains($path, '/login'));

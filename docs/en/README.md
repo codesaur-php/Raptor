@@ -14,7 +14,7 @@
 3. [Configuration (.env)](#3-configuration)
 4. [Architecture](#4-architecture)
 5. [Middleware Pipeline](#5-middleware-pipeline)
-6. [Modules](#6-modules) (6.1-6.13 Core | 6.14-6.19 New: Shop, Notification, Development, SEO, Spam Protection, Migration)
+6. [Modules](#6-modules) (6.1-6.13 Core | 6.14-6.21 New: Shop, Notification, Development, SEO, Spam Protection, Migration, Messages, Comments)
 7. [Twig Template System](#7-twig-template-system)
 8. [Routing](#8-routing)
 9. [Controller](#9-controller)
@@ -47,7 +47,9 @@
 - **Brevo** API email delivery
 - **Discord** webhook notifications
 - SEO: Search, Sitemap, XML Sitemap, RSS feed
-- Spam protection (honeypot, HMAC token, rate limiting)
+- Spam protection (honeypot, HMAC token, rate limiting, Cloudflare Turnstile)
+- Contact form with message management
+- News article comments with 1-level reply
 
 ### codesaur Ecosystem
 
@@ -171,6 +173,16 @@ RAPTOR_CONTENT_IMG_QUALITY=90
 
 - CMS image uploads are optimized using the GD extension
 
+### Cloudflare Turnstile
+
+```env
+#RAPTOR_TURNSTILE_SITE_KEY=
+#RAPTOR_TURNSTILE_SECRET_KEY=
+```
+
+- Optional: If not set, Turnstile widget is not shown and server-side check is skipped
+- Used by `SpamProtectionTrait` for CAPTCHA verification on public forms
+
 ### Discord Notifications
 
 ```env
@@ -191,16 +203,38 @@ Example configuration files for Apache and Nginx are available in [`docs/conf.ex
 | `.nginx.conf.example` | Nginx server block (HTTP, HTTPS, PHP-FPM) |
 | `cpanel.deploy.yml` | GitHub Actions cPanel FTP deploy workflow |
 
-### Deploying to cPanel
+### CI/CD
 
-The included `deploy.yml` is a GitHub Actions workflow that automatically deploys to a cPanel server via FTP when you push to the `main` branch.
+The framework includes 2 GitHub Actions workflows:
 
-#### Setup
+#### CI (`.github/workflows/ci.yml`)
+
+Default workflow included in the repository. Runs code quality checks on every push and pull request:
+
+- `composer validate --strict` - validate composer.json
+- PHP syntax check - all `.php` files
+- Merge conflict markers - detect `<<<<<<<`, `=======`, `>>>>>>>`
+- Debug statements - `var_dump`, `dd`, `print_r` warnings
+- `composer dump-autoload --strict-psr` - autoload verification
+
+#### cPanel Deploy (`docs/conf.example/cpanel.deploy.yml`)
+
+Optional workflow for automatic FTP deployment to cPanel. Enabled by the developer when needed.
+
+**Execution flow:**
+
+```
+Push to main -> CI workflow runs -> Success -> Deploy workflow starts
+                                 -> Failure -> Deploy is skipped
+```
+
+The deploy workflow uses a `workflow_run` trigger to wait for the CI workflow result. Deploy starts only when CI succeeds (`conclusion == 'success'`). If CI fails, deploy is `skipped` - broken code never reaches the server.
+
+**Setup:**
 
 1. Copy the workflow file:
 
 ```bash
-mkdir -p .github/workflows
 cp docs/conf.example/cpanel.deploy.yml .github/workflows/deploy.yml
 ```
 
@@ -213,14 +247,16 @@ cp docs/conf.example/cpanel.deploy.yml .github/workflows/deploy.yml
 | `FTP_PASSWORD` | cPanel FTP password | |
 | `FTP_SERVER_DIR` | Target directory on server | `/public_html/` |
 
-3. Push to `main` branch - deployment runs automatically.
+3. Push to `main` branch - CI and deploy run automatically in sequence.
 
-#### Important Notes
+**Note:** The deploy workflow requires CI (`ci.yml`) to exist. If CI workflow is removed, deploy will not trigger.
 
-- **`.env`** - Create and configure manually on the server (never deployed)
-- **`logs/`** - Created automatically by the application, not deployed
-- **`private/`** - Contains sensitive files (uploads), not deployed
-- **`docs/`** - Documentation only, not deployed
+#### Excluded from deployment
+
+- **`.env`** - Create and configure manually on the server
+- **`logs/`** - Created automatically by the application
+- **`private/`** - Sensitive files (uploads)
+- **`docs/`** - Documentation only
 - **`vendor/`** - Built during the workflow with `composer install --no-dev`
 
 ---
@@ -234,12 +270,12 @@ public_html/index.php (Entry point)
 |
 |-- /dashboard/* -> Dashboard\Application (Admin Panel)
 |    |-- Middleware: ErrorHandler -> MySQL -> Session -> JWT -> Container -> Localization -> Settings
-|    |-- Routers: Login, Users, Organization, RBAC, Localization, Contents, Logs, Template, Shop, Development, Migration
+|    |-- Routers: Login, Users, Organization, RBAC, Localization, Contents, Messages, Comments, Logs, Template, Shop, Development, Migration
 |    \-- Controllers -> Twig Templates -> HTML Response
 |
 \-- /* -> Web\Application (Public Website)
      |-- Middleware: ExceptionHandler -> MySQL -> Container -> Session -> Localization -> Settings
-     |-- Router: WebRouter (/, /page, /news, /contact, /products, /order, /search, /sitemap, /rss, ...)
+     |-- Router: WebRouter (/, /page, /news, /contact, /products, /order, /search, /sitemap, /rss, /session/language, /session/contact-send, /session/order, /session/news/{id}/comment, ...)
      \-- Controllers -> Twig Templates -> HTML Response
 ```
 
@@ -273,6 +309,7 @@ raptor/
 |   |   |   |-- file/              # File management
 |   |   |   |-- news/              # News
 |   |   |   |-- page/              # Pages
+|   |   |   |-- messages/           # Contact form messages
 |   |   |   |-- reference/         # References
 |   |   |   \-- settings/          # System settings
 |   |   |-- localization/          # Languages & translations
@@ -296,7 +333,7 @@ raptor/
 |       |-- HomeController.php     # Home, language
 |       |-- content/               # Pages, News
 |       |-- shop/                  # Products, Orders
-|       |-- service/                   # Search, Sitemap, RSS
+|       |-- service/               # Search, Sitemap, RSS, Contact
 |       |-- *.html                 # Twig templates
 |       \-- template/              # Web layout
 |           |-- TemplateController.php
@@ -318,6 +355,9 @@ raptor/
 |-- tests/                         # PHPUnit tests (unit, integration)
 |-- database/
 |   \-- migrations/                # SQL migration files
+|-- .github/
+|   \-- workflows/
+|       \-- ci.yml                 # CI code quality checks (push, PR)
 |-- logs/                          # Error log files
 |-- private/                       # Protected files
 |-- composer.json
@@ -446,7 +486,7 @@ $this->isUserCan('news_edit');
 - Parent-child structure (multi-level navigation menu)
 - `position` field for ordering
 - `type` field: `content` (default), `nav` (parent/navigation page created via "Parent page" switch)
-- Parent pages (pages with children) automatically hide content fields (description, content, link, featured, comment) in edit form
+- Parent pages (pages with children) automatically hide content fields (description, content, link, featured) in edit form
 - `is_featured` field: featured pages in footer (auto-reset to 0 when page becomes a parent)
 - `link` field: URL or local path with frontend + backend validation (`isValidLink()`)
 - `read()` guards: published check, parent check, link redirect
@@ -561,12 +601,16 @@ Sitemap: https://example.com/sitemap.xml
 
 ### 6.18 Spam Protection
 
+**Classes:** `SpamProtectionTrait`
+
 - Honeypot hidden field detection
 - HMAC token validation with timestamp
 - Rate limiting per action (login 2s, signup 5s, forgot 10s)
 - Form expiration (1 hour max)
 - Minimum fill speed check (1 second)
-- Applied to login, signup, forgot password, and order forms
+- Cloudflare Turnstile CAPTCHA support (enabled when `RAPTOR_TURNSTILE_SECRET_KEY` is set in `.env`)
+- Link spam filter (blocks text with excessive URLs)
+- Applied to login, signup, forgot password, contact, comment, and order forms
 
 ### 6.19 Database Migration
 
@@ -580,6 +624,31 @@ Sitemap: https://example.com/sitemap.xml
 - Dashboard UI for viewing migration status and SQL file contents
 - Protected: only `system_coder` users can access the dashboard
 - `.htaccess` protection blocks direct browser access to SQL files
+
+### 6.20 Messages (Contact Form)
+
+**Classes:** `MessagesController`, `MessagesModel` (dashboard), `ContactController` (web)
+
+- Public contact form (`/contact`) with spam protection
+- Contact form submissions stored in database
+- Dashboard interface for viewing and managing messages
+- View message details in modal dialog
+- Soft delete (deactivate) messages
+- Discord notification on new contact message
+- Web-side `ContactController` handles form display and submission via `/session/contact-send`
+
+### 6.21 Comments (News)
+
+**Classes:** `CommentsController`, `CommentsModel` (dashboard), `NewsController::commentSubmit()` (web)
+
+- Public comment form on news article pages
+- 1-level reply support (parent_id for replies to top-level comments)
+- Guest comments with name and email fields
+- Authenticated users auto-fill name/email from profile
+- Spam protection via `SpamProtectionTrait` (honeypot, HMAC, rate limiting, Turnstile)
+- Dashboard interface for viewing and managing comments
+- Soft delete (deactivate) comments
+- Web-side comment submission via `/session/news/{id}/comment`
 
 ---
 
@@ -994,7 +1063,7 @@ public function products()
 {
     $model = new ProductsModel($this->pdo);
     $products = $model->getRows(['WHERE' => 'is_active=1']);
-    $this->template(__DIR__ . '/products.html', ['products' => $products])->render();
+    $this->twigWebLayout(__DIR__ . '/products.html', ['products' => $products])->render();
 }
 ```
 

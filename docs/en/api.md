@@ -14,18 +14,21 @@
 6. [RBAC](#rbac)
 7. [Content - Files](#content--files)
 8. [Content - News](#content--news)
-9. [Content - Pages](#content--pages)
-10. [Content - References](#content--references)
-11. [Content - Settings](#content--settings)
-12. [Localization](#localization)
-13. [Log](#log)
-14. [Mail](#mail)
-15. [Database Middleware](#database-middleware)
-16. [Web Layer](#web-layer)
-17. [Shop](#shop)
-18. [Notification](#notification)
-19. [Development](#development)
-20. [Migration](#migration)
+9. [Content - Comments](#content--comments)
+10. [Content - Messages](#content--messages)
+11. [Content - Pages](#content--pages)
+12. [Content - References](#content--references)
+13. [Content - Settings](#content--settings)
+14. [Localization](#localization)
+15. [Log](#log)
+16. [Mail](#mail)
+17. [Database Middleware](#database-middleware)
+18. [SpamProtectionTrait](#spamprotectiontrait)
+19. [Web Layer](#web-layer)
+20. [Shop](#shop)
+21. [Notification](#notification)
+22. [Development](#development)
+23. [Migration](#migration)
 
 ---
 
@@ -385,6 +388,98 @@ Extracts a plain-text excerpt from HTML content.
 
 ---
 
+## Content - Comments
+
+### CommentsModel
+
+**File:** `application/raptor/content/news/CommentsModel.php`
+**Extends:** `codesaur\DataObject\Model`
+
+**Table:** `news_comments`
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | bigint (PK) | Auto-increment |
+| `news_id` | bigint | News article reference (FK -> news) |
+| `parent_id` | bigint | Parent comment for 1-level reply (FK -> news_comments, self) |
+| `created_by` | bigint | Author user (FK -> users, null for guest) |
+| `name` | varchar(128) | Commenter name |
+| `email` | varchar(128) | Commenter email |
+| `comment` | text | Comment text |
+| `is_active` | tinyint | Active status |
+| `created_at` | datetime | Created date |
+
+### CommentsController (Dashboard)
+
+**File:** `application/raptor/content/news/CommentsController.php`
+**Extends:** `Raptor\Controller`
+
+| Method | Description |
+|--------|-------------|
+| `index()` | Comments management page |
+| `list()` | JSON comment list |
+| `view(int $id)` | View comment detail |
+| `deactivate()` | Soft delete comment |
+
+### ContentsRouter - Comment Routes
+
+| Route | Method | Name |
+|-------|--------|------|
+| `/dashboard/comments` | GET | `comments` |
+| `/dashboard/comments/list` | GET | `comments-list` |
+| `/dashboard/comments/news/{uint:id}` | GET | - |
+| `/dashboard/comments/deactivate` | DELETE | `comments-deactivate` |
+| `/dashboard/news/comment/{uint:id}/reply` | GET | - |
+
+---
+
+## Content - Messages
+
+### MessagesModel
+
+**File:** `application/raptor/content/messages/MessagesModel.php`
+**Extends:** `codesaur\DataObject\Model`
+
+**Table:** `messages`
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | bigint (PK) | Auto-increment |
+| `name` | varchar(128) | Sender name |
+| `phone` | varchar(50) | Sender phone |
+| `email` | varchar(128) | Sender email |
+| `message` | text | Message text |
+| `code` | varchar(2) | Language code |
+| `is_read` | tinyint | Read status (0=new, 1=read, 2=replied) |
+| `replied_note` | text | Admin reply note |
+| `is_active` | tinyint | Active status |
+| `created_at` | datetime | Created date |
+
+### MessagesController (Dashboard)
+
+**File:** `application/raptor/content/messages/MessagesController.php`
+**Extends:** `Raptor\Controller`
+
+| Method | Description |
+|--------|-------------|
+| `index()` | Messages management page |
+| `list()` | JSON message list |
+| `view(int $id)` | View message detail (marks as read) |
+| `markReplied(int $id)` | Mark message as replied with note |
+| `deactivate()` | Soft delete message |
+
+### ContentsRouter - Message Routes
+
+| Route | Method | Name |
+|-------|--------|------|
+| `/dashboard/messages` | GET | `messages` |
+| `/dashboard/messages/list` | GET | `messages-list` |
+| `/dashboard/messages/view/{uint:id}` | GET | `messages-view` |
+| `/dashboard/messages/replied/{uint:id}` | POST | `messages-replied` |
+| `/dashboard/messages/deactivate` | DELETE | `messages-deactivate` |
+
+---
+
 ## Content - Pages
 
 ### PagesModel
@@ -410,7 +505,6 @@ Extracts a plain-text excerpt from HTML content.
 | `position` | smallint (default: 100) | Sort order |
 | `link` | varchar(255) | External link |
 | `is_featured` | tinyint (default: 0) | Featured page |
-| `comment` | tinyint (default: 0) | Comments enabled |
 | `read_count` | bigint (default: 0) | View count |
 | `is_active` | tinyint (default: 1) | Active status |
 | `published` | tinyint (default: 0) | Published status |
@@ -631,6 +725,32 @@ Injects PSR-11 DI Container into request. Registers PDO, User ID, and `DiscordNo
 
 ---
 
+## SpamProtectionTrait
+
+**File:** `application/raptor/SpamProtectionTrait.php`
+
+Provides spam protection methods using Cloudflare Turnstile and link-based heuristics.
+
+### Methods
+
+#### `getTurnstileSiteKey(): string`
+Returns the Turnstile site key from ENV configuration. Returns empty string if not configured.
+
+#### `validateSpamProtection(): bool`
+Validates the Cloudflare Turnstile token from the request. Returns `true` if verification passes or if Turnstile is not configured.
+
+#### `checkLinkSpam(string $text): bool`
+Checks if text contains suspicious link patterns. Returns `true` if spam is detected.
+
+### Used By
+
+- `Web\Service\ContactController` - Contact form submission
+- `Web\Content\NewsController` - News comment submission
+- `Web\Shop\ShopController` - Order submission
+- `Raptor\Authentication\LoginController` - Signup and forgot password
+
+---
+
 ## Web Layer
 
 ### Web\Application
@@ -666,6 +786,10 @@ ExceptionHandler -> MySQL -> Container -> Session -> Localization -> Settings ->
 | `/sitemap` | GET | `sitemap` | Sitemap page |
 | `/sitemap.xml` | GET | - | XML sitemap |
 | `/rss` | GET | `rss` | RSS feed |
+| `/session/contact-send` | POST | `contact-send` | Send contact message |
+| `/session/order` | POST | - | Submit order (session) |
+| `/session/language/{code}` | GET | - | Switch language (session) |
+| `/session/news/{uint:id}/comment` | POST | `news-comment` | Submit news comment |
 
 ### HomeController
 
@@ -684,9 +808,18 @@ ExceptionHandler -> MySQL -> Container -> Session -> Localization -> Settings ->
 
 | Method | Description |
 |--------|-------------|
-| `contact()` | Contact page (link LIKE '%/contact') |
 | `pageById(int $id)` | Redirect page by ID to slug URL |
 | `page(string $slug)` | Display page + files + read_count + OG meta |
+
+### ContactController
+
+**File:** `application/web/service/ContactController.php`
+**Extends:** `TemplateController`
+
+| Method | Description |
+|--------|-------------|
+| `contact()` | Contact page (link LIKE '%/contact') |
+| `contactSend()` | Send contact message (AJAX, spam-protected) |
 
 ### NewsController (Web)
 
@@ -732,7 +865,7 @@ ExceptionHandler -> MySQL -> Container -> Session -> Localization -> Settings ->
 
 | Method | Description |
 |--------|-------------|
-| `template(string $template, array $vars): TwigTemplate` | Merges web layout + content |
+| `twigWebLayout(string $template, array $vars): TwigTemplate` | Merges web layout + content. Auto-maps title, code, description, photo from $vars to index layout SEO meta. |
 
 ### Moedit AI
 

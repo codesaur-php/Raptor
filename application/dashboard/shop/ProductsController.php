@@ -205,7 +205,8 @@ class ProductsController extends FileController
 
                 $action = !empty($payload['published']) ? 'publish' : 'insert';
                 $adminName = \trim(($this->getUser()->profile['first_name'] ?? '') . ' ' . ($this->getUser()->profile['last_name'] ?? ''));
-                $this->getService('discord')?->contentAction('product', $action, $payload['title'] ?? '', $id, $adminName);
+                $appUrl = \rtrim((string)$this->getRequest()->getUri()->withPath($this->getScriptPath()), '/') . '/dashboard';
+                $this->getService('discord')?->contentAction('product', $action, $payload['title'] ?? '', $id, $adminName, $appUrl);
             } else {
                 $dashboard = $this->twigDashboard(
                     __DIR__ . '/products-insert.html',
@@ -350,7 +351,8 @@ class ProductsController extends FileController
                 $nowPublished = !empty($payload['published']);
                 $action = (!$wasPublished && $nowPublished) ? 'publish' : 'update';
                 $adminName = \trim(($this->getUser()->profile['first_name'] ?? '') . ' ' . ($this->getUser()->profile['last_name'] ?? ''));
-                $this->getService('discord')?->contentAction('product', $action, $payload['title'] ?? $record['title'] ?? '', $id, $adminName);
+                $appUrl = \rtrim((string)$this->getRequest()->getUri()->withPath($this->getScriptPath()), '/') . '/dashboard';
+                $this->getService('discord')?->contentAction('product', $action, $payload['title'] ?? $record['title'] ?? '', $id, $adminName, $appUrl, $updates);
             } else {
                 $files = $filesModel->getRows(['WHERE' => "record_id=$id AND is_active=1"]);
                 $dashboard = $this->twigDashboard(
@@ -632,7 +634,8 @@ class ProductsController extends FileController
             ]);
 
             $adminName = \trim(($this->getUser()->profile['first_name'] ?? '') . ' ' . ($this->getUser()->profile['last_name'] ?? ''));
-            $this->getService('discord')?->contentAction('product', 'delete', $payload['title'] ?? "#{$id}", $id, $adminName);
+            $appUrl = \rtrim((string)$this->getRequest()->getUri()->withPath($this->getScriptPath()), '/') . '/dashboard';
+            $this->getService('discord')?->contentAction('product', 'delete', $payload['title'] ?? "#{$id}", $id, $adminName, $appUrl);
         } catch (\Throwable $err) {
             $this->respondJSON([
                 'status'  => 'error',

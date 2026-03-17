@@ -1,0 +1,117 @@
+<div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-3 shadow bg-secondary">
+    <h3 class="px-2 my-auto fs-6 text-white">
+        <i class="bi bi-book"></i> Comments - User Manual
+    </h3>
+    <a href="{{ 'manual' | link }}" class="btn btn-sm btn-light m-1">
+        <i class="bi bi-arrow-left"></i> {{ 'manual' | text }}
+    </a>
+</div>
+
+<!-- ==================== OVERVIEW ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3">What is Comments?</h4>
+        <p>
+            <strong>Comments</strong> is the Dashboard module for managing news article comments.
+            You can view visitor comments, reply to them, and delete comments.
+        </p>
+        <p>Comment features:</p>
+        <ul>
+            <li><strong>1-level reply</strong> - Reply to root comments only (no nested replies)</li>
+            <li><strong>Admin reply</strong> - Admin can reply to comments from the Dashboard</li>
+            <li><strong>Guest / Admin distinction</strong> - Admin comments are marked with <i class="bi bi-shield-check text-primary"></i> icon</li>
+            <li><strong>News-linked</strong> - Comments depend on the news article's <code>comment=1</code> setting</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== LIST ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-list-ul"></i> Comments List</h4>
+        <p>Click <strong>Comments</strong> in the Dashboard sidebar to view all comments across all news articles.</p>
+        <h5 class="mt-3">Table Columns</h5>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Column</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>ID / Date</td><td>Comment ID and posted date</td></tr>
+                <tr><td>Name</td><td>Commenter's name</td></tr>
+                <tr><td>News</td><td>Title of the related news article</td></tr>
+                <tr><td>Comment</td><td>Beginning of the comment text</td></tr>
+                <tr><td>Actions</td><td>View details button</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ==================== VIEW ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-eye"></i> View News Comments</h4>
+        <p>Click a news article from the list to view all its comments.</p>
+        <h5 class="mt-3">News Information</h5>
+        <p>The top section shows the news article summary:</p>
+        <ul>
+            <li>News title and published date</li>
+            <li>Photo (if available)</li>
+            <li>Publisher name, read count, publication status</li>
+            <li>Full article content</li>
+        </ul>
+        <h5 class="mt-3">Comments Thread</h5>
+        <ul>
+            <li>Root comments and their replies in chronological order</li>
+            <li>Reply comments are indented with a blue left border</li>
+            <li>Admin comments show <i class="bi bi-shield-check text-primary"></i> icon with a light background</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== REPLY ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-reply"></i> Reply to Comment</h4>
+        <p>Click the <strong>reply</strong> button next to a root comment.</p>
+        <ul>
+            <li>A reply form opens showing who you are replying to</li>
+            <li>Write your reply and click <strong>Send</strong></li>
+            <li>The reply appears under the original comment</li>
+            <li>Admin name is automatically set</li>
+        </ul>
+        <div class="alert alert-warning mb-0">
+            <i class="bi bi-exclamation-triangle"></i>
+            Only root comments can be replied to. Replying to a reply is not allowed (1 level only).
+        </div>
+    </div>
+</div>
+
+<!-- ==================== DELETE ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-trash"></i> Delete Comment</h4>
+        <p>Click the <strong>delete</strong> (trash) button next to a comment.</p>
+        <ul>
+            <li>A confirmation dialog appears (SweetAlert2)</li>
+            <li>Deleting a root comment also deletes all its replies</li>
+            <li>Soft delete - data is preserved, only deactivated</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== PERMISSIONS ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-shield-lock"></i> Required Permissions</h4>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Action</th><th>Permission</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>View list, View comments</td><td><code>system_content_index</code></td></tr>
+                <tr><td>Reply to comment</td><td><code>system_content_update</code></td></tr>
+                <tr><td>Delete</td><td><code>system_content_delete</code></td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>

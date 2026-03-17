@@ -36,7 +36,7 @@ Clean architecture object-oriented web development framework
 - PSR-3 лог систем
 - Brevo API и-мэйл, Discord webhook мэдэгдэл
 - SEO: Хайлт, Sitemap, XML Sitemap, RSS feed
-- Спам хамгаалалт (honeypot, HMAC token, rate limiting)
+- Спам хамгаалалт (honeypot, HMAC token, rate limiting, Cloudflare Turnstile)
 
 ### Дэлгэрэнгүй мэдээлэл
 
@@ -67,7 +67,7 @@ The framework operates in two layers - **Web** (public website) and **Dashboard*
 - PSR-3 logging system
 - Brevo API email, Discord webhook notifications
 - SEO: Search, Sitemap, XML Sitemap, RSS feed
-- Spam protection (honeypot, HMAC token, rate limiting)
+- Spam protection (honeypot, HMAC token, rate limiting, Cloudflare Turnstile)
 
 ### Documentation
 
@@ -144,12 +144,13 @@ raptor/
 |-- application/
 |   |-- raptor/              # Core framework (Controllers, Models, Middleware)
 |   |   |-- authentication/  # Login, JWT, Session
-|   |   |-- content/         # CMS (files, news, pages, references, settings)
+|   |   |-- content/         # CMS (files, messages, news, pages, references, settings)
 |   |   |-- localization/    # Languages & translations
 |   |   |-- organization/    # Organization management
 |   |   |-- rbac/            # Roles & permissions
 |   |   |-- user/            # User management
 |   |   |-- template/        # Dashboard UI
+|   |   |-- exception/       # Exception handler
 |   |   |-- log/             # Logging
 |   |   |-- mail/            # Email
 |   |   |-- notification/    # Discord webhook notifications
@@ -157,12 +158,13 @@ raptor/
 |   |   \-- migration/       # Database migration system
 |   |-- dashboard/           # Dashboard application
 |   |   |-- home/            # Dashboard home
-|   |   \-- shop/            # Shop module (Products, Orders)
+|   |   |-- shop/            # Shop module (Products, Orders)
+|   |   \-- manual/          # Manual pages
 |   \-- web/                 # Public website application
 |       |-- WebRouter.php    # Web routes
 |       |-- content/         # Pages, News
 |       |-- shop/            # Products, Orders
-|       |-- service/         # Search, Sitemap, RSS
+|       |-- service/         # Search, Sitemap, RSS, Contact
 |       \-- template/        # Web layout, exception handler
 |-- public_html/             # Document root
 |   |-- index.php            # Entry point
@@ -176,8 +178,12 @@ raptor/
 |   |-- conf.example/        # Server config examples + cPanel deploy
 |   |-- en/                  # English documentation
 |   \-- mn/                  # Mongolian documentation
+|-- .github/
+|   \-- workflows/
+|       \-- ci.yml           # CI code quality checks (push, PR)
 |-- logs/                    # Error logs
 |-- private/                 # Protected files
+|-- .env.testing             # Test environment variables
 |-- composer.json            # Dependencies
 |-- phpunit.xml              # PHPUnit configuration
 \-- LICENSE                  # MIT License

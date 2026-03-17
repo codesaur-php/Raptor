@@ -90,13 +90,6 @@
                 {{ 'feature-on-homepage'|text }}
             </div>
         </div>
-        <div class="col-4">
-            <label class="form-label fw-bolder">{{ 'comment'|text }} <i class="bi bi-chat-dots"></i></label>
-            <div class="form-check form-switch">
-                <input class="form-check-input" name="comment"{{ record['comment'] == 1 ? ' checked' : '' }} disabled type="checkbox" role="switch">
-                {{ 'can-comment'|text }}
-            </div>
-        </div>
     </div>
 </div>
 {% if user.can('system_logger') %}

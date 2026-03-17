@@ -101,7 +101,7 @@
     {% if responses is empty %}
         <div class="text-body-secondary fst-italic mb-3">{{ 'no-responses-yet'|text }}</div>
     {% else %}
-        <div class="d-flex flex-column gap-3 mb-3">
+        <div class="d-flex flex-column-reverse gap-3 mb-3">
             {% for resp in responses %}
                 {% set is_owner = resp['created_by'] == record['created_by'] %}
                 <div class="card {{ is_owner ? 'border-primary' : 'border-success' }}">

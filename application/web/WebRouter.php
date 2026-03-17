@@ -6,6 +6,7 @@ use codesaur\Router\Router;
 
 use Web\Content\PageController;
 use Web\Content\NewsController;
+use Web\Service\ContactController;
 use Web\Service\SearchController;
 use Web\Service\SeoController;
 use Web\Shop\ShopController;
@@ -18,22 +19,9 @@ use Web\Shop\ShopController;
  * Энэ Router нь олон нийтэд харагдах вэб сайтын бүх хуудсуудын
  * HTTP маршрутуудыг бүртгэнэ.
  *
- * Бүртгэгдсэн маршрутууд:
- *   - / , /home             -> Нүүр хуудас
- *   - /language/{code}      -> Хэл солих
- *   - /page/{id|slug}       -> Динамик хуудас (ID эсвэл slug-аар)
- *   - /contact              -> Холбоо барих хуудас
- *   - /news/{id|slug}       -> Мэдээ (ID эсвэл slug-аар)
- *   - /news/type/{type}     -> Мэдээний төрлөөр жагсаалт
- *   - /archive              -> Мэдээний архив
- *   - /products             -> Бүтээгдэхүүний жагсаалт
- *   - /product/{id|slug}    -> Бүтээгдэхүүн (ID эсвэл slug-аар)
- *   - /order                -> Захиалгын форм (GET/POST)
- *   - /search               -> Хайлт
- *   - /sitemap              -> HTML Sitemap
- *   - /sitemap.xml          -> XML Sitemap (SEO)
- *   - /rss                  -> RSS Feed
- *   - /favicon.ico          -> Favicon (settings-ээс эсвэл default)
+ * Session write шаардлагатай route-ууд /session/ prefix-тэй.
+ * SessionMiddleware нь str_starts_with($path, '/session/') ашиглан
+ * session lock-г зөвхөн шаардлагатай үед нээнэ.
  *
  * @package Web
  */
@@ -48,15 +36,12 @@ class WebRouter extends Router
         $this->GET('/', [HomeController::class, 'index'])->name('home');
         $this->GET('/home', [HomeController::class, 'index']);
 
-        // Системийн хэл солих
-        $this->GET('/language/{code}', [HomeController::class, 'language'])->name('language');
-
         // Динамик Page (ID-аар болон slug-аар)
         $this->GET('/page/{uint:id}', [PageController::class, 'pageById']);
         $this->GET('/page/{slug}', [PageController::class, 'page'])->name('page');
 
         // Контакт пэйж
-        $this->GET('/contact', [PageController::class, 'contact'])->name('contact');
+        $this->GET('/contact', [ContactController::class, 'contact'])->name('contact');
 
         // Динамик News (ID-аар болон slug-аар)
         $this->GET('/news/{uint:id}', [NewsController::class, 'newsById']);
@@ -75,9 +60,8 @@ class WebRouter extends Router
         $this->GET('/product/{uint:id}', [ShopController::class, 'productById']);
         $this->GET('/product/{slug}', [ShopController::class, 'product'])->name('product');
 
-        // Захиалгын форм
+        // Захиалгын форм (GET нь session write шаардахгүй)
         $this->GET('/order', [ShopController::class, 'order'])->name('order');
-        $this->POST('/order', [ShopController::class, 'orderSubmit'])->name('order-submit');
 
         // Хайлт
         $this->GET('/search', [SearchController::class, 'search'])->name('search');
@@ -93,5 +77,25 @@ class WebRouter extends Router
 
         // Favicon
         $this->GET('/favicon.ico', [HomeController::class, 'favicon']);
+
+
+        /* ---------------------------------------------------------------
+         * SESSION WRITE - Дараах route-ууд $_SESSION-д бичдэг тул
+         * /session/ prefix ашиглана. SessionMiddleware нь
+         * str_starts_with($path, '/session/') ашиглан таниж
+         * session lock-г зөвхөн эдгээр route-уудад нээнэ.
+         * --------------------------------------------------------------- */
+
+        // Хэл солих
+        $this->GET('/session/language/{code}', [HomeController::class, 'language'])->name('language');
+
+        // Холбоо барих мессеж илгээх
+        $this->POST('/session/contact-send', [ContactController::class, 'contactSend'])->name('contact-send');
+
+        // Захиалга илгээх
+        $this->POST('/session/order', [ShopController::class, 'orderSubmit'])->name('order-submit');
+
+        // Мэдээний сэтгэгдэл
+        $this->POST('/session/news/{uint:id}/comment', [NewsController::class, 'commentSubmit'])->name('news-comment');
     }
 }

@@ -193,6 +193,17 @@ class SettingsController extends FileController
                 $notice = $this->text('record-insert-success');
             }
             $this->respondJSON(['status' => 'success', 'type' => $notify, 'message' => $notice]);
+
+            $adminName = \trim(($this->getUser()->profile['first_name'] ?? '') . ' ' . ($this->getUser()->profile['last_name'] ?? ''));
+            $appUrl = \rtrim((string)$this->getRequest()->getUri()->withPath($this->getScriptPath()), '/') . '/dashboard';
+            $configUpdates = \array_filter($updates, fn($u) => $u === 'config' || \str_starts_with($u, 'config'));
+            $textUpdates = \array_diff($updates, $configUpdates);
+            if (!empty($textUpdates)) {
+                $this->getService('discord')?->settingsUpdated('texts', $textUpdates, $adminName, $appUrl);
+            }
+            if (!empty($configUpdates)) {
+                $this->getService('discord')?->settingsUpdated('options', $configUpdates, $adminName, $appUrl);
+            }
         } catch (\Throwable $err) {
             $this->respondJSON(['message' => $err->getMessage()], $err->getCode());
         } finally {
@@ -339,6 +350,10 @@ class SettingsController extends FileController
                 $notice = $this->text('record-insert-success');
             }
             $this->respondJSON(['status' => 'success', 'type' => $notify, 'message' => $notice]);
+
+            $adminName = \trim(($this->getUser()->profile['first_name'] ?? '') . ' ' . ($this->getUser()->profile['last_name'] ?? ''));
+            $appUrl = \rtrim((string)$this->getRequest()->getUri()->withPath($this->getScriptPath()), '/') . '/dashboard';
+            $this->getService('discord')?->settingsUpdated('files', \array_unique($updates), $adminName, $appUrl);
         } catch (\Throwable $err) {
             $this->respondJSON(['message' => $err->getMessage()], $err->getCode());
         } finally {

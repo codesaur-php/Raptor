@@ -14,7 +14,7 @@
 3. [Тохиргоо (.env)](#3-тохиргоо)
 4. [Архитектур](#4-архитектур)
 5. [Middleware pipeline](#5-middleware-pipeline)
-6. [Модулиуд](#6-модулиуд) (6.1-6.13 Суурь | 6.14-6.19 Шинэ: Дэлгүүр, Мэдэгдэл, Хөгжүүлэлт, SEO, Спам хамгаалалт, Migration)
+6. [Модулиуд](#6-модулиуд) (6.1-6.13 Суурь | 6.14-6.21 Шинэ: Дэлгүүр, Мэдэгдэл, Хөгжүүлэлт, SEO, Спам хамгаалалт, Migration, Мессеж, Сэтгэгдэл)
 7. [Twig Template систем](#7-twig-template-систем)
 8. [Routing](#8-routing)
 9. [Controller](#9-controller)
@@ -47,7 +47,9 @@
 - **Brevo** API и-мэйл илгээх
 - **Discord** webhook мэдэгдэл
 - SEO: Хайлт, Sitemap, XML Sitemap, RSS feed
-- Спам хамгаалалт (honeypot, HMAC token, rate limiting)
+- Спам хамгаалалт (honeypot, HMAC token, rate limiting, Cloudflare Turnstile)
+- Холбоо барих форм, мессеж удирдлага
+- Мэдээний сэтгэгдэл, 1 түвшний хариулт
 
 ### codesaur экосистем
 
@@ -171,6 +173,16 @@ RAPTOR_CONTENT_IMG_QUALITY=90
 
 - CMS-д зураг upload хийхэд GD extension ашиглан optimize хийнэ
 
+### Cloudflare Turnstile
+
+```env
+#RAPTOR_TURNSTILE_SITE_KEY=
+#RAPTOR_TURNSTILE_SECRET_KEY=
+```
+
+- Заавал биш: тохируулаагүй бол Turnstile widget харагдахгүй, сервер талын шалгалт алгасна
+- `SpamProtectionTrait` ашиглан нийтийн формуудад CAPTCHA шалгалт хийнэ
+
 ### Discord мэдэгдэл
 
 ```env
@@ -191,16 +203,38 @@ Apache болон Nginx серверийн жишээ тохиргоонууд [
 | `.nginx.conf.example` | Nginx серверийн блок (HTTP, HTTPS, PHP-FPM) |
 | `cpanel.deploy.yml` | GitHub Actions cPanel FTP deploy workflow |
 
-### cPanel руу deploy хийх
+### CI/CD
 
-`deploy.yml` файл нь GitHub Actions workflow бөгөөд `main` branch руу push хийхэд cPanel сервер рүү FTP-ээр автоматаар deploy хийнэ.
+Framework нь 2 GitHub Actions workflow-тэй:
 
-#### Тохируулах
+#### CI (`.github/workflows/ci.yml`)
+
+Repo-д анхнаасаа орсон default workflow. Push болон pull request бүрт код чанарын шалгалт хийнэ:
+
+- `composer validate --strict` - composer.json шалгах
+- PHP syntax check - бүх `.php` файлын синтакс
+- Merge conflict markers - `<<<<<<<`, `=======`, `>>>>>>>` илрүүлэх
+- Debug statements - `var_dump`, `dd`, `print_r` анхааруулга
+- `composer dump-autoload --strict-psr` - autoload шалгах
+
+#### cPanel Deploy (`docs/conf.example/cpanel.deploy.yml`)
+
+cPanel сервер рүү FTP-ээр автомат deploy хийх workflow. Developer хүссэн үедээ идэвхжүүлнэ.
+
+**Ажиллах дараалал:**
+
+```
+Push to main -> CI workflow ажиллана -> Амжилттай бол -> Deploy workflow эхэлнэ
+                                     -> Амжилтгүй бол -> Deploy хийгдэхгүй
+```
+
+Deploy workflow нь `workflow_run` trigger ашиглан CI workflow-н дүнг хүлээнэ. CI амжилттай дуусвал (`conclusion == 'success'`) deploy эхэлнэ. CI fail болвол deploy `skipped` болно - алдаатай код серверт очихгүй.
+
+**Тохируулах:**
 
 1. Workflow файлыг хуулах:
 
 ```bash
-mkdir -p .github/workflows
 cp docs/conf.example/cpanel.deploy.yml .github/workflows/deploy.yml
 ```
 
@@ -213,14 +247,16 @@ cp docs/conf.example/cpanel.deploy.yml .github/workflows/deploy.yml
 | `FTP_PASSWORD` | cPanel FTP нууц үг | |
 | `FTP_SERVER_DIR` | Серверийн зорьсон хавтас | `/public_html/` |
 
-3. `main` branch руу push хийхэд deploy автоматаар ажиллана.
+3. `main` branch руу push хийхэд CI -> Deploy дараалан автоматаар ажиллана.
 
-#### Анхаарах зүйлс
+**Анхаарах:** Deploy workflow нь CI (`ci.yml`) байхыг шаарддаг. CI workflow-г устгасан бол deploy trigger хийгдэхгүй.
 
-- **`.env`** - Серверт гараар үүсгэж тохируулна (deploy хийгдэхгүй)
-- **`logs/`** - Аппликейшн автоматаар үүсгэнэ, deploy хийх шаардлагагүй
-- **`private/`** - Нууцлалтай файлууд (upload), deploy хийгдэхгүй
-- **`docs/`** - Зөвхөн баримтжуулалт, deploy хийгдэхгүй
+#### Deploy хийгдэхгүй файлууд
+
+- **`.env`** - Серверт гараар үүсгэж тохируулна
+- **`logs/`** - Аппликейшн автоматаар үүсгэнэ
+- **`private/`** - Нууцлалтай файлууд (upload)
+- **`docs/`** - Зөвхөн баримтжуулалт
 - **`vendor/`** - Workflow дотор `composer install --no-dev` ажиллуулж build хийнэ
 
 ---
@@ -234,12 +270,12 @@ public_html/index.php (Entry point)
 |
 |-- /dashboard/* -> Dashboard\Application (Админ панель)
 |    |-- Middleware: ErrorHandler -> MySQL -> Session -> JWT -> Container -> Localization -> Settings
-|    |-- Routers: Login, Users, Organization, RBAC, Localization, Contents, Logs, Template, Shop, Development, Migration
+|    |-- Routers: Login, Users, Organization, RBAC, Localization, Contents, Messages, Comments, Logs, Template, Shop, Development, Migration
 |    \-- Controllers -> Twig Templates -> HTML Response
 |
 \-- /* -> Web\Application (Нийтийн вэб сайт)
      |-- Middleware: ExceptionHandler -> MySQL -> Container -> Session -> Localization -> Settings
-     |-- Router: WebRouter (/, /page, /news, /contact, /products, /order, /search, /sitemap, /rss, ...)
+     |-- Router: WebRouter (/, /page, /news, /contact, /products, /order, /search, /sitemap, /rss, /session/language, /session/contact-send, /session/order, /session/news/{id}/comment, ...)
      \-- Controllers -> Twig Templates -> HTML Response
 ```
 
@@ -273,6 +309,7 @@ raptor/
 |   |   |   |-- file/              # Файлын менежмент
 |   |   |   |-- news/              # Мэдээ
 |   |   |   |-- page/              # Хуудас
+|   |   |   |-- messages/           # Холбоо барих мессежүүд
 |   |   |   |-- reference/         # Лавлагаа
 |   |   |   \-- settings/          # Системийн тохиргоо
 |   |   |-- localization/          # Хэл, орчуулга
@@ -296,7 +333,7 @@ raptor/
 |       |-- HomeController.php     # Нүүр, хэл солих
 |       |-- content/               # Хуудас, Мэдээ
 |       |-- shop/                  # Бүтээгдэхүүн, Захиалга
-|       |-- service/                   # Хайлт, Sitemap, RSS
+|       |-- service/               # Хайлт, Sitemap, RSS, Холбоо барих
 |       |-- *.html                 # Twig template-ууд
 |       \-- template/              # Web layout
 |           |-- TemplateController.php
@@ -318,6 +355,9 @@ raptor/
 |-- tests/                         # PHPUnit тестүүд (unit, integration)
 |-- database/
 |   \-- migrations/                # SQL migration файлууд
+|-- .github/
+|   \-- workflows/
+|       \-- ci.yml                 # CI код чанарын шалгалт (push, PR)
 |-- logs/                          # Алдааны лог файлууд
 |-- private/                       # Хамгаалагдсан файлууд
 |-- composer.json
@@ -446,7 +486,7 @@ $this->isUserCan('news_edit');
 - Parent-child бүтэц (олон түвшний навигацийн меню)
 - `position` талбараар эрэмбэлэх
 - `type` талбар: `content` (анхдагч), `nav` (эцэг/навигац хуудас - "Эцэг хуудас" switch ашиглан үүсгэнэ)
-- Эцэг хуудас (хүүхэдтэй хуудас) засах үед контент талбарууд (description, content, link, featured, comment) нуугдана
+- Эцэг хуудас (хүүхэдтэй хуудас) засах үед контент талбарууд (description, content, link, featured) нуугдана
 - `is_featured` талбар: Footer-д онцлох холбоос (хуудас эцэг болоход автоматаар 0 болно)
 - `link` талбар: URL эсвэл локал зам, frontend + backend шалгалттай (`isValidLink()`)
 - `read()` хамгаалалт: нийтлэгдсэн эсэх, эцэг хуудас эсэх, link redirect
@@ -561,12 +601,16 @@ Sitemap: https://example.com/sitemap.xml
 
 ### 6.18 Спам хамгаалалт
 
+**Классууд:** `SpamProtectionTrait`
+
 - Honeypot нууц талбарын илрүүлэлт
 - HMAC токен цаг хугацааны хамт шалгах
 - Үйлдэл тус бүрийн хурд хязгаарлалт (login 2s, signup 5s, forgot 10s)
 - Формын хугацаа дуусах шалгалт (1 цагийн дотор)
 - Бөглөх хурдны доод хязгаар (1 секунд)
-- Нэвтрэх, бүртгүүлэх, нууц үг сэргээх, захиалгын формуудад ашиглагдана
+- Cloudflare Turnstile CAPTCHA дэмжлэг (`.env` дотор `RAPTOR_TURNSTILE_SECRET_KEY` тохируулсан үед идэвхжинэ)
+- Линк спам шүүлтүүр (хэт олон URL агуулсан текстийг хаана)
+- Нэвтрэх, бүртгүүлэх, нууц үг сэргээх, холбоо барих, сэтгэгдэл, захиалгын формуудад ашиглагдана
 
 ### 6.19 Database Migration (Өгөгдлийн сангийн шилжүүлэг)
 
@@ -580,6 +624,31 @@ Sitemap: https://example.com/sitemap.xml
 - Dashboard UI-аар migration төлөв, SQL файлын агуулга харах
 - Зөвхөн `system_coder` эрхтэй хэрэглэгчид dashboard руу хандах боломжтой
 - `.htaccess` хамгаалалт SQL файлуудад шууд хандахыг хаана
+
+### 6.20 Messages (Холбоо барих мессеж)
+
+**Классууд:** `MessagesController`, `MessagesModel` (dashboard), `ContactController` (web)
+
+- Нийтийн холбоо барих форм (`/contact`), спам хамгаалалттай
+- Холбоо барих формын мессежүүдийг өгөгдлийн санд хадгална
+- Dashboard интерфэйс: мессежүүдийг харах, удирдах
+- Мессежийн дэлгэрэнгүйг modal цонхонд харуулна
+- Мессежийг идэвхгүй болгох (soft delete)
+- Шинэ мессежийн Discord мэдэгдэл
+- Web талын `ContactController` нь формыг харуулах болон `/session/contact-send`-ээр илгээхийг удирдана
+
+### 6.21 Comments (Мэдээний сэтгэгдэл)
+
+**Классууд:** `CommentsController`, `CommentsModel` (dashboard), `NewsController::commentSubmit()` (web)
+
+- Мэдээний хуудсан дээрх нийтийн сэтгэгдлийн форм
+- 1 түвшний хариулт (parent_id ашиглан дээд түвшний сэтгэгдэлд хариулах)
+- Зочин хэрэглэгч нэр, имэйлээ бичнэ
+- Нэвтэрсэн хэрэглэгчийн нэр/имэйл профайлаас автоматаар бөглөгдөнө
+- `SpamProtectionTrait` ашиглан спам хамгаалалт (honeypot, HMAC, rate limiting, Turnstile)
+- Dashboard интерфэйс: сэтгэгдлүүдийг харах, удирдах
+- Сэтгэгдлийг идэвхгүй болгох (soft delete)
+- Web талаас `/session/news/{id}/comment`-ээр сэтгэгдэл илгээнэ
 
 ---
 
@@ -994,7 +1063,7 @@ public function products()
 {
     $model = new ProductsModel($this->pdo);
     $products = $model->getRows(['WHERE' => 'is_active=1']);
-    $this->template(__DIR__ . '/products.html', ['products' => $products])->render();
+    $this->twigWebLayout(__DIR__ . '/products.html', ['products' => $products])->render();
 }
 ```
 

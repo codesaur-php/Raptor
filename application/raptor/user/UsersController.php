@@ -1131,8 +1131,9 @@ class UsersController extends FileController
             ]);
 
             $adminName = \trim(($this->getUser()->profile['first_name'] ?? '') . ' ' . ($this->getUser()->profile['last_name'] ?? ''));
+            $appUrl = \rtrim((string)$this->getRequest()->getUri()->withPath($this->getScriptPath()), '/') . '/dashboard';
             $this->getService('discord')?->userApproved(
-                $signup['username'], $signup['email'], $adminName
+                $signup['username'], $signup['email'], $adminName, $appUrl
             );
 
             // Баталгаажуулалтын и-мэйл загвар авах (templates хүснэгтээс)

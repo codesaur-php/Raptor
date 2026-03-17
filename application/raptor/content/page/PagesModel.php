@@ -55,7 +55,6 @@ class PagesModel extends Model
        (new Column('position', 'smallint'))->default(100),
         new Column('link', 'varchar', 255),
        (new Column('is_featured', 'tinyint'))->default(0),
-       (new Column('comment', 'tinyint'))->default(0),
        (new Column('read_count', 'bigint'))->default(0),
        (new Column('is_active', 'tinyint'))->default(1),
        (new Column('published', 'tinyint'))->default(0),

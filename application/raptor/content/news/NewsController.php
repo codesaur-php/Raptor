@@ -120,8 +120,10 @@ class NewsController extends FileController
             $where = \implode(' AND ', $conditions);
             // news хүснэгтийн нэрийг NewsModel::getName() ашиглан динамикаар авна. Ирээдүйд refactor хийхэд бэлэн байна.
             $table = (new NewsModel($this->pdo))->getName();
+            $commentsTable = (new CommentsModel($this->pdo))->getName();
             $select_pages =
-                'SELECT id, photo, title, slug, code, type, category, published, published_at, date(created_at) as created_date ' .
+                'SELECT id, photo, title, slug, code, type, category, comment, published, published_at, date(created_at) as created_date, ' .
+                "(SELECT COUNT(*) FROM $commentsTable c WHERE c.news_id=$table.id AND c.is_active=1) as comments_count " .
                 "FROM $table WHERE $where ORDER BY created_at desc";
             $news_stmt = $this->prepare($select_pages);
             foreach ($params as $name => $value) {
@@ -220,7 +222,8 @@ class NewsController extends FileController
 
                 $action = !empty($payload['published']) ? 'publish' : 'insert';
                 $adminName = \trim(($this->getUser()->profile['first_name'] ?? '') . ' ' . ($this->getUser()->profile['last_name'] ?? ''));
-                $this->getService('discord')?->contentAction('news', $action, $payload['title'] ?? '', $id, $adminName);
+                $appUrl = \rtrim((string)$this->getRequest()->getUri()->withPath($this->getScriptPath()), '/') . '/dashboard';
+                $this->getService('discord')?->contentAction('news', $action, $payload['title'] ?? '', $id, $adminName, $appUrl);
             } else {
                 $dashboard = $this->twigDashboard(
                     __DIR__ . '/news-insert.html',
@@ -377,7 +380,8 @@ class NewsController extends FileController
                 $nowPublished = !empty($payload['published']);
                 $action = (!$wasPublished && $nowPublished) ? 'publish' : 'update';
                 $adminName = \trim(($this->getUser()->profile['first_name'] ?? '') . ' ' . ($this->getUser()->profile['last_name'] ?? ''));
-                $this->getService('discord')?->contentAction('news', $action, $payload['title'] ?? $record['title'] ?? '', $id, $adminName);
+                $appUrl = \rtrim((string)$this->getRequest()->getUri()->withPath($this->getScriptPath()), '/') . '/dashboard';
+                $this->getService('discord')?->contentAction('news', $action, $payload['title'] ?? $record['title'] ?? '', $id, $adminName, $appUrl, $updates);
             } else {
                 $files = $filesModel->getRows(['WHERE' => "record_id=$id AND is_active=1"]);
                 $dashboard = $this->twigDashboard(
@@ -453,9 +457,18 @@ class NewsController extends FileController
             $filesModel = new FilesModel($this->pdo);
             $filesModel->setTable($table);
             $files = $filesModel->getRows(['WHERE' => "record_id=$id AND is_active=1"]);
+            $comments = [];
+            if (!empty($record['comment'])) {
+                $commentsTable = (new CommentsModel($this->pdo))->getName();
+                $cstmt = $this->prepare(
+                    "SELECT id, parent_id, created_by, name, email, comment, created_at FROM $commentsTable
+                     WHERE news_id=:nid AND is_active=1 ORDER BY created_at ASC"
+                );
+                $comments = $cstmt->execute([':nid' => $id]) ? $cstmt->fetchAll() : [];
+            }
             $dashboard = $this->twigDashboard(
                 __DIR__ . '/news-view.html',
-                ['table' => $table, 'record' => $record, 'files' => $files]
+                ['table' => $table, 'record' => $record, 'files' => $files, 'comments' => $comments]
             );
             $dashboard->set('title', $this->text('view-record') . ' | News');
             $dashboard->render();
@@ -681,7 +694,8 @@ class NewsController extends FileController
             ]);
 
             $adminName = \trim(($this->getUser()->profile['first_name'] ?? '') . ' ' . ($this->getUser()->profile['last_name'] ?? ''));
-            $this->getService('discord')?->contentAction('news', 'delete', $payload['title'] ?? "#{$id}", $id, $adminName);
+            $appUrl = \rtrim((string)$this->getRequest()->getUri()->withPath($this->getScriptPath()), '/') . '/dashboard';
+            $this->getService('discord')?->contentAction('news', 'delete', $payload['title'] ?? "#{$id}", $id, $adminName, $appUrl);
         } catch (\Throwable $err) {
             $this->respondJSON([
                 'status'  => 'error',
@@ -805,4 +819,5 @@ class NewsController extends FileController
             return [];
         }
     }
+
 }

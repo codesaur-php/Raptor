@@ -1,0 +1,230 @@
+<!-- Variables: record, spam_ts, spam_token, config, phone, email, address, turnstile_site_key -->
+{% if turnstile_site_key is not empty %}
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+{% endif %}
+
+<section class="bg-secondary py-4">
+    <div class="container">
+        <div class="text-center">
+            <h3 class="fw-bold text-white m-0">
+                {{ record['title'] is defined and record['title'] is not empty ? record['title'] : 'contact'|text }}
+            </h3>
+        </div>
+    </div>
+</section>
+
+<section class="py-5">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-7 mb-4 mb-lg-0">
+                {% if record['content'] is defined and record['content'] is not empty %}
+                <div class="page-article mb-4">
+                    {{ record['content']|raw }}
+                </div>
+                <hr>
+                {% endif %}
+
+                <h4 class="fw-bold text-secondary mb-4">
+                    <i class="bi bi-envelope me-2"></i>
+                    {{ 'send-message'|text }}
+                </h4>
+                <form class="needs-validation" id="contact_form" novalidate>
+                    <input type="hidden" name="_ts" value="{{ spam_ts }}">
+                    <input type="hidden" name="_token" value="{{ spam_token }}">
+                    <!-- Honeypot -->
+                    <div style="position:absolute;left:-9999px" aria-hidden="true">
+                        <input type="text" name="website" tabindex="-1" autocomplete="off">
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-semibold">
+                                {{ 'name'|text }} <span class="text-danger">*</span>
+                            </label>
+                            <input class="form-control" name="name" type="text" required maxlength="255"
+                                   placeholder="{{ 'name'|text }}" autocomplete="name">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-semibold">
+                                {{ 'phone'|text }} <span class="text-danger">*</span>
+                            </label>
+                            <input class="form-control" name="phone" type="tel" required maxlength="50"
+                                   placeholder="{{ 'phone'|text }}" autocomplete="tel">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">
+                            {{ 'email'|text }}
+                        </label>
+                        <input class="form-control" name="email" type="email" maxlength="255"
+                               placeholder="{{ 'email'|text }}" autocomplete="email">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">
+                            {{ 'message'|text }} <span class="text-danger">*</span>
+                        </label>
+                        <textarea class="form-control" name="message" rows="5" required
+                                  placeholder="{{ 'message'|text }}..."></textarea>
+                    </div>
+                    {% if turnstile_site_key is not empty %}
+                    <div class="cf-turnstile mb-3" data-sitekey="{{ turnstile_site_key }}"></div>
+                    {% endif %}
+                    <button class="btn btn-primary fw-semibold text-uppercase px-5 py-2" id="submit_contact" type="submit">
+                        <i class="bi bi-send me-2"></i>
+                        {{ 'send'|text }}
+                    </button>
+                </form>
+            </div>
+
+            <div class="col-lg-5">
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-body p-4">
+                        <h4 class="fw-bold text-secondary mb-4">
+                            {{ 'contact-info'|text }}
+                        </h4>
+                        <ul class="list-unstyled">
+                            {% if phone is not empty %}
+                            <li class="d-flex align-items-start mb-3">
+                                <i class="bi bi-telephone text-primary me-3 mt-1"></i>
+                                <div>
+                                    <strong>{{ 'phone'|text }}</strong><br>
+                                    <a href="tel:{{ phone }}">{{ phone }}</a>
+                                </div>
+                            </li>
+                            {% endif %}
+                            {% if email is not empty %}
+                            <li class="d-flex align-items-start mb-3">
+                                <i class="bi bi-envelope text-primary me-3 mt-1"></i>
+                                <div>
+                                    <strong>{{ 'email'|text }}</strong><br>
+                                    <a href="mailto:{{ email }}">{{ email }}</a>
+                                </div>
+                            </li>
+                            {% endif %}
+                            {% if address is not empty %}
+                            <li class="d-flex align-items-start mb-3">
+                                <i class="bi bi-building text-primary me-3 mt-1"></i>
+                                <div>
+                                    <strong>{{ 'address'|text }}</strong><br>
+                                    {{ address }}
+                                </div>
+                            </li>
+                            {% endif %}
+                            {% if config['open-hours'] is defined and config['open-hours'][localization.code ?? 'mn'] is not empty %}
+                            <li class="d-flex align-items-start mb-3">
+                                <i class="bi bi-clock text-primary me-3 mt-1"></i>
+                                <div>
+                                    <strong>{{ 'working-hours'|text }}</strong><br>
+                                    {{ config['open-hours'][localization.code ?? 'mn'] }}
+                                </div>
+                            </li>
+                            {% endif %}
+                        </ul>
+
+                        {% if config['facebook'] is not empty or config['instagram'] is not empty or config['youtube'] is not empty %}
+                        <hr>
+                        <h5 class="fw-semibold mb-3">{{ 'social-media'|text }}</h5>
+                        <div class="d-flex gap-3">
+                            {% if config['facebook'] is not empty %}
+                                <a href="{{ config['facebook'] }}" class="fs-4" target="_blank" title="Facebook"><i class="bi bi-facebook text-primary"></i></a>
+                            {% endif %}
+                            {% if config['instagram'] is not empty %}
+                                <a href="{{ config['instagram'] }}" class="fs-4" target="_blank" title="Instagram"><i class="bi bi-instagram text-danger"></i></a>
+                            {% endif %}
+                            {% if config['youtube'] is not empty %}
+                                <a href="{{ config['youtube'] }}" class="fs-4" target="_blank" title="YouTube"><i class="bi bi-youtube text-danger"></i></a>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% if record['photo'] is defined and record['photo'] is not empty %}
+                <img class="img-fluid rounded shadow-sm" src="{{ record['photo'] }}" alt="{{ record['title']|default('')|e }}">
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="modal fade" id="contactModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0">
+            <div class="modal-body text-center py-5">
+                <i id="contactModalIcon" style="font-size:4rem"></i>
+                <h4 class="fw-bold mt-3" id="contactModalTitle"></h4>
+                <p class="text-muted" id="contactModalMessage"></p>
+                <button type="button" class="btn btn-primary px-4 py-2 mt-2" data-bs-dismiss="modal">OK</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .page-article > p {
+        text-align: justify;
+        margin: 0;
+        color: black;
+    }
+</style>
+<script type="text/javascript">
+    document.addEventListener('DOMContentLoaded', function () {
+        const contactForm = document.getElementById('contact_form');
+        const submitBtn = document.getElementById('submit_contact');
+
+        if (!contactForm) return;
+
+        function showModal(type, title, message) {
+            const icon = document.getElementById('contactModalIcon');
+            icon.className = type === 'success'
+                ? 'bi bi-check-circle text-success'
+                : 'bi bi-exclamation-circle text-danger';
+            document.getElementById('contactModalTitle').textContent = title;
+            document.getElementById('contactModalMessage').textContent = message;
+            new bootstrap.Modal(document.getElementById('contactModal')).show();
+        }
+
+        contactForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            if (submitBtn.disabled) return;
+
+            const valid = this.checkValidity();
+            this.classList.add('was-validated');
+            if (!valid) {
+                e.stopPropagation();
+                return;
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>{{ 'sending'|text }}...`;
+
+            const data = new FormData(this);
+            fetch(
+                `{{ 'contact-send'|link }}`,
+                {
+                    method: 'POST',
+                    body: data
+                }
+            ).then(res => {
+                let contentType = res.headers.get('content-type') || '';
+                if (contentType.includes('application/json')) {
+                    return res.json();
+                }
+                throw new Error('{{ 'server-error'|text }}');
+            }).then(response => {
+                if (response.status !== 'success') {
+                    throw new Error(response.message || '{{ 'error'|text }}');
+                }
+
+                showModal('success', '{{ 'thank-you'|text }}', response.message);
+                contactForm.reset();
+                contactForm.classList.remove('was-validated');
+
+            }).catch(error => {
+                showModal('error', '{{ 'error'|text }}', error.message);
+            }).finally(() => {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = `<i class="bi bi-send me-2"></i>{{ 'send'|text }}`;
+            });
+        });
+    });
+</script>

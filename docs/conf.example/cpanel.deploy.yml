@@ -1,20 +1,25 @@
 # ======================================================================
-# GitHub Actions -> cPanel FTP Deploy
+# GitHub Actions -> cPanel FTP Deploy (CI workflow хамт ашиглах)
 # ======================================================================
 #
-# main branch-руу push хийхэд cPanel сервер рүү FTP-ээр автомат deploy хийнэ.
+# CI workflow (ci.yml) амжилттай дууссаны дараа cPanel сервер рүү
+# FTP-ээр автомат deploy хийнэ.
+#
+# Шаардлага:
+#   - .github/workflows/ci.yml байх ёстой (код чанарын шалгалт тэнд хийгдэнэ)
+#   - CI амжилтгүй бол deploy хийгдэхгүй
 #
 # Тохируулах:
 #   GitHub repo -> Settings -> Secrets and variables -> Actions:
-#     FTP_HOST      - cPanel серверийн FTP хаяг (жишээ: ftp.example.com)
-#     FTP_USERNAME  - cPanel FTP хэрэглэгчийн нэр
-#     FTP_PASSWORD  - cPanel FTP нууц үг
-#     FTP_SERVER_DIR - Серверийн зорьсон хавтас (жишээ: / гэвэл root хавтас гэсэн үг. Эсвэл /myapp/ гэдэг ч юмуу)
+#     FTP_HOST       - cPanel серверийн FTP хаяг (жишээ: ftp.example.com)
+#     FTP_USERNAME   - cPanel FTP хэрэглэгчийн нэр
+#     FTP_PASSWORD   - cPanel FTP нууц үг
+#     FTP_SERVER_DIR - Серверийн зорьсон хавтас (жишээ: /)
 #
 # Хэрэглээ:
-#   1. Энэ файлыг .github/workflows/deploy.yml руу хуулна
-#   2. GitHub Secrets-д FTP мэдээллээ оруулна
-#   3. main branch руу push хийхэд автоматаар deploy хийгдэнэ
+#   1. .github/workflows/ci.yml байгаа эсэхийг шалгана
+#   2. Энэ файлыг .github/workflows/deploy.yml руу хуулна
+#   3. GitHub Secrets-д FTP мэдээллээ оруулна
 #
 # Тэмдэглэл:
 #   - .env файл серверт гараар үүсгэж тохируулна (deploy хийгдэхгүй)
@@ -26,55 +31,16 @@
 name: Deploy to cPanel
 
 on:
-  push:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
     branches: [main]
 
 jobs:
-  validate:
-    name: Code Quality Checks
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Setup PHP 8.2
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.2'
-          extensions: gd, intl, pdo_mysql
-
-      - name: Validate composer.json
-        run: composer validate --strict
-
-      - name: Install dependencies
-        run: composer install --no-interaction
-
-      - name: PHP syntax check
-        run: find application public -name "*.php" -print0 | xargs -0 -n1 php -l
-
-      - name: Check for merge conflict markers
-        run: |
-          if grep -rn "^<<<<<<< \|^=======$\|^>>>>>>> " --include="*.php" --include="*.html" --include="*.js" --include="*.css" --include="*.json" --include="*.yml" application public; then
-            echo "::error::Merge conflict markers found!"
-            exit 1
-          fi
-
-      - name: Check for debug statements
-        run: |
-          if grep -rn "\bvar_dump\b\|\bdd\b\|\bprint_r\b" --include="*.php" application; then
-            echo "::warning::Debug statements detected. Please review before deploying."
-          fi
-
-      - name: Verify autoload
-        run: composer dump-autoload --optimize --strict-psr
-
   deploy:
     name: Deploy to cPanel
-    needs: validate
     runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
 
     steps:
       - name: Checkout repository

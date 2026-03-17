@@ -46,8 +46,7 @@ class HomeController extends TemplateController
             : [];
         $vars = ['recent' => $recent];
 
-        $home = $this->template(__DIR__ . '/home.html', $vars);
-        $home->render();
+        $this->twigWebLayout(__DIR__ . '/home.html', $vars)->render();
 
         $this->log(
             'web',
