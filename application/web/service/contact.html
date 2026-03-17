@@ -1,4 +1,6 @@
-<!-- Variables: record, spam_ts, spam_token, config, phone, email, address, turnstile_site_key -->
+<!-- Variables: record, photo, spam_ts, spam_token, config, phone, email, address, turnstile_site_key -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.css">
+<script defer src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.umd.js"></script>
 {% if turnstile_site_key is not empty %}
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 {% endif %}
@@ -16,72 +18,25 @@
 <section class="py-5">
     <div class="container">
         <div class="row">
-            <div class="col-lg-7 mb-4 mb-lg-0">
+            <div class="col-lg-7 mb-3 mb-lg-0">
+                {% if photo is not null and photo is not empty %}
+                <img class="img-fluid mb-3 rounded shadow-sm"
+                     file-data-fancybox
+                     src="{{ photo }}"
+                     alt="{{ title|e }}">
+                {% endif %}
+
                 {% if record['content'] is defined and record['content'] is not empty %}
                 <div class="page-article mb-4">
                     {{ record['content']|raw }}
                 </div>
-                <hr>
                 {% endif %}
-
-                <h4 class="fw-bold text-secondary mb-4">
-                    <i class="bi bi-envelope me-2"></i>
-                    {{ 'send-message'|text }}
-                </h4>
-                <form class="needs-validation" id="contact_form" novalidate>
-                    <input type="hidden" name="_ts" value="{{ spam_ts }}">
-                    <input type="hidden" name="_token" value="{{ spam_token }}">
-                    <!-- Honeypot -->
-                    <div style="position:absolute;left:-9999px" aria-hidden="true">
-                        <input type="text" name="website" tabindex="-1" autocomplete="off">
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label fw-semibold">
-                                {{ 'name'|text }} <span class="text-danger">*</span>
-                            </label>
-                            <input class="form-control" name="name" type="text" required maxlength="255"
-                                   placeholder="{{ 'name'|text }}" autocomplete="name">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label fw-semibold">
-                                {{ 'phone'|text }} <span class="text-danger">*</span>
-                            </label>
-                            <input class="form-control" name="phone" type="tel" required maxlength="50"
-                                   placeholder="{{ 'phone'|text }}" autocomplete="tel">
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">
-                            {{ 'email'|text }}
-                        </label>
-                        <input class="form-control" name="email" type="email" maxlength="255"
-                               placeholder="{{ 'email'|text }}" autocomplete="email">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">
-                            {{ 'message'|text }} <span class="text-danger">*</span>
-                        </label>
-                        <textarea class="form-control" name="message" rows="5" required
-                                  placeholder="{{ 'message'|text }}..."></textarea>
-                    </div>
-                    {% if turnstile_site_key is not empty %}
-                    <div class="cf-turnstile mb-3" data-sitekey="{{ turnstile_site_key }}"></div>
-                    {% endif %}
-                    <button class="btn btn-primary fw-semibold text-uppercase px-5 py-2" id="submit_contact" type="submit">
-                        <i class="bi bi-send me-2"></i>
-                        {{ 'send'|text }}
-                    </button>
-                </form>
             </div>
 
             <div class="col-lg-5">
-                <div class="card border-0 shadow-sm mb-4">
+                <div class="card bg-light border-0 shadow-sm mb-5">
                     <div class="card-body p-4">
-                        <h4 class="fw-bold text-secondary mb-4">
-                            {{ 'contact-info'|text }}
-                        </h4>
-                        <ul class="list-unstyled">
+                        <ul class="list-unstyled mb-0">
                             {% if phone is not empty %}
                             <li class="d-flex align-items-start mb-3">
                                 <i class="bi bi-telephone text-primary me-3 mt-1"></i>
@@ -138,9 +93,55 @@
                     </div>
                 </div>
 
-                {% if record['photo'] is defined and record['photo'] is not empty %}
-                <img class="img-fluid rounded shadow-sm" src="{{ record['photo'] }}" alt="{{ record['title']|default('')|e }}">
-                {% endif %}
+                <h4 class="fw-bold text-secondary mb-3">
+                    <i class="bi bi-envelope me-2"></i>
+                    {{ 'send-message'|text }}
+                </h4>
+                <form class="needs-validation" id="contact_form" novalidate>
+                    <input type="hidden" name="_ts" value="{{ spam_ts }}">
+                    <input type="hidden" name="_token" value="{{ spam_token }}">
+                    <!-- Honeypot -->
+                    <div style="position:absolute;left:-9999px" aria-hidden="true">
+                        <input type="text" name="website" tabindex="-1" autocomplete="off">
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-semibold">
+                                {{ 'name'|text }} <span class="text-danger">*</span>
+                            </label>
+                            <input class="form-control" name="name" type="text" required maxlength="255"
+                                   placeholder="{{ 'name'|text }}" autocomplete="name">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-semibold">
+                                {{ 'phone'|text }} <span class="text-danger">*</span>
+                            </label>
+                            <input class="form-control" name="phone" type="tel" required maxlength="50"
+                                   placeholder="{{ 'phone'|text }}" autocomplete="tel">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">
+                            {{ 'email'|text }}
+                        </label>
+                        <input class="form-control" name="email" type="email" maxlength="255"
+                               placeholder="{{ 'email'|text }}" autocomplete="email">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">
+                            {{ 'message'|text }} <span class="text-danger">*</span>
+                        </label>
+                        <textarea class="form-control" name="message" rows="5" required
+                                  placeholder="{{ 'message'|text }}..."></textarea>
+                    </div>
+                    {% if turnstile_site_key is not empty %}
+                    <div class="cf-turnstile mb-3" data-sitekey="{{ turnstile_site_key }}"></div>
+                    {% endif %}
+                    <button class="btn btn-primary fw-semibold text-uppercase px-5 py-2" id="submit_contact" type="submit">
+                        <i class="bi bi-send me-2"></i>
+                        {{ 'send'|text }}
+                    </button>
+                </form>
             </div>
         </div>
     </div>
@@ -225,6 +226,12 @@
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = `<i class="bi bi-send me-2"></i>{{ 'send'|text }}`;
             });
+        });
+    });
+
+    document.addEventListener('DOMContentLoaded', function () {
+        Fancybox.bind('[file-data-fancybox]', {
+            groupAll: true
         });
     });
 </script>

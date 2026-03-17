@@ -81,7 +81,6 @@ class TextInitial
         $model->insert(['keyword' => 'confirm-delete-request', 'type' => 'sys-defined'], ['mn' => ['text' => 'Та энэ хүсэлтийг устгахдаа итгэлтэй байна уу?'], 'en' => ['text' => 'Are you sure you want to delete this request?']]);
         $model->insert(['keyword' => 'confirm-open-file', 'type' => 'sys-defined'], ['mn' => ['text' => 'Та энэ файлыг нээхдээ итгэлтэй байна уу?'], 'en' => ['text' => 'Are you sure you want to open this file?']]);
         $model->insert(['keyword' => 'contact', 'type' => 'sys-defined'], ['mn' => ['text' => 'Холбоо барих'], 'en' => ['text' => 'Contact']]);
-        $model->insert(['keyword' => 'contact-info', 'type' => 'sys-defined'], ['mn' => ['text' => 'Холбогдох мэдээлэл'], 'en' => ['text' => 'Contact Information']]);
         $model->insert(['keyword' => 'contact-us', 'type' => 'sys-defined'], ['mn' => ['text' => 'Бидэнтэй холбогдох'], 'en' => ['text' => 'Contact Us']]);
         $model->insert(['keyword' => 'contacted-by-email', 'type' => 'sys-defined'], ['mn' => ['text' => 'Имэйлээр холбогдсон'], 'en' => ['text' => 'Contacted by email']]);
         $model->insert(['keyword' => 'contacted-by-phone', 'type' => 'sys-defined'], ['mn' => ['text' => 'Утсаар холбогдсон'], 'en' => ['text' => 'Contacted by phone']]);

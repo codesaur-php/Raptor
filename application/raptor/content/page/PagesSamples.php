@@ -117,8 +117,10 @@ class PagesSamples
             'title' => 'Холбоо барих',
             'position' => 40,
             'link' => $path . '/contact',
-            'content' => '<p>Бидэнтэй холбогдохыг хүсвэл доорх мэдээллийг ашиглана уу.</p>'
-                . '<p>Имэйл: info@example.com</p>',
+            'photo' => $assets . '/office-view.jpg',
+            'content' => '<p>Таны санал хүсэлт, хамтын ажиллагааны саналыг бид хүлээн авахдаа таатай байна.</p>'
+                . '<p>Маягтыг бөглөн бидэнтэй холбогдоорой.</p>'
+                . '<div class="ratio ratio-16x9 mt-4"><iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d87058.28493639703!2d106.84722955!3d47.92123465!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x5d96923d019e1c55%3A0x4c0e232915348968!2sUlaanbaatar%2C%20Mongolia!5e0!3m2!1sen!2s!4v1710700000000" style="border:0" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe></div>',
             'is_featured' => 1
         ]);
 
@@ -207,8 +209,10 @@ class PagesSamples
             'title' => 'Contact',
             'position' => 80,
             'link' => $path . '/contact',
-            'content' => '<p>Feel free to reach out to us using the information below.</p>'
-                . '<p>Email: info@example.com</p>',
+            'photo' => $assets . '/office-view.jpg',
+            'content' => '<p>We welcome your feedback, inquiries, and partnership proposals.</p>'
+                . '<p>Please fill out the form to get in touch with us.</p>'
+                . '<div class="ratio ratio-16x9 mt-4"><iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d87058.28493639703!2d106.84722955!3d47.92123465!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x5d96923d019e1c55%3A0x4c0e232915348968!2sUlaanbaatar%2C%20Mongolia!5e0!3m2!1sen!2s!4v1710700000000" style="border:0" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe></div>',
             'is_featured' => 1
         ]);
     }

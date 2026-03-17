@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 
 ---
 
+## [1.9.1] - 2026-03-18
+[1.9.1]: https://github.com/codesaur-php/Raptor/compare/v1.9.0...v1.9.1
+
+Contact page layout redesign, sample data improvements.
+
+### Changed
+- **Contact page layout** - Photo and content moved to left column, contact info card and message form to right column. Photo renders with Fancybox lightbox like other page templates
+- **Contact info card** - Removed "Холбогдох мэдээлэл" heading. Card hidden entirely when no contact info items exist
+- **Settings seed data** - Added sample phone, email, address, open-hours, and social media links so contact info card is visible on fresh install
+- **PagesSamples contact content** - Replaced email-centric text with generic message encouraging form use. Added Google Maps embed (Ulaanbaatar) as reference for developers. Added office-view.jpg as header image
+
+---
+
 ## [1.9.0] - 2026-03-17
 [1.9.0]: https://github.com/codesaur-php/Raptor/compare/v1.8.2...v1.9.0
 

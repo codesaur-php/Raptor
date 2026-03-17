@@ -128,11 +128,16 @@ class SettingsModel extends LocalizedModel
 
         $this->insert(
             [
+                'phone' => '+976 0000-0000',
+                'email' => 'info@example.com',
                 'config' => \json_encode([
-                    'facebook' => '',
-                    'youtube' => '',
-                    'instagram' => '',
-                    'open-hours' => ['mn' => '', 'en' => '']
+                    'facebook' => 'https://facebook.com',
+                    'youtube' => 'https://youtube.com',
+                    'instagram' => 'https://instagram.com',
+                    'open-hours' => [
+                        'mn' => 'Даваа - Баасан, 09:00 - 18:00',
+                        'en' => 'Mon - Fri, 09:00 - 18:00'
+                    ]
                 ], \JSON_UNESCAPED_UNICODE | \JSON_PRETTY_PRINT),
                 'created_at' => \date('Y-m-d H:i:s')
             ],
@@ -141,12 +146,14 @@ class SettingsModel extends LocalizedModel
                     'title' => 'Raptor',
                     'logo' => $logo,
                     'description' => 'Raptor Framework дээр суурилсан вэб сайт',
+                    'address' => 'Улаанбаатар хот, Сүхбаатар дүүрэг',
                     'copyright' => '© ' . \date('Y') . ' Raptor'
                 ],
                 'en' => [
                     'title' => 'Raptor',
                     'logo' => $logo,
                     'description' => 'Website powered by Raptor Framework',
+                    'address' => 'Ulaanbaatar, Sukhbaatar District',
                     'copyright' => '© ' . \date('Y') . ' Raptor'
                 ]
             ]
