@@ -140,7 +140,7 @@ class LanguageController extends \Raptor\Controller
                 $level = LogLevel::NOTICE;
                 $message = 'Хэл үүсгэх үйлдлийг эхлүүллээ';
             }
-            $this->log('localization', $level, $message, $context);
+            $this->log('content', $level, $message, $context);
         }
     }
 
@@ -192,7 +192,7 @@ class LanguageController extends \Raptor\Controller
                 $message = '{record.title} хэлний мэдээллийг үзэж байна';
                 $context += ['record' => $record];
             }
-            $this->log('localization', $level, $message, $context);
+            $this->log('content', $level, $message, $context);
         }
     }
 
@@ -305,7 +305,7 @@ class LanguageController extends \Raptor\Controller
                 $message = '[{record.title}] хэлний мэдээллийг шинэчлэхээр нээв';
                 $context += ['record' => $record];
             }
-            $this->log('localization', $level, $message, $context);
+            $this->log('content', $level, $message, $context);
         }
     }
 
@@ -390,7 +390,7 @@ class LanguageController extends \Raptor\Controller
                 $message = '{record.title} хэл дараах шалтгаанаар идэвхгүй боллоо: [{server_request.body.reason}]';
                 $context += ['record' => $record];
             }
-            $this->log('localization', $level, $message, $context);
+            $this->log('content', $level, $message, $context);
         }
     }
 

@@ -80,6 +80,9 @@ class ContactController extends TemplateController
      *   4) 1 цагаас хэтэрсэн form хүчингүй
      *   5) Session rate limit - 10 секундэд 1 мессеж
      *
+     * auth_user-г id-гүйгээр log context-д нэмнэ (badge системд
+     * web frontend хэрэглэгчийг admin-аас ялгах зорилготой).
+     *
      * @return void
      */
     public function contactSend()
@@ -100,6 +103,9 @@ class ContactController extends TemplateController
             }
             if (empty($phone)) {
                 throw new \InvalidArgumentException($code === 'mn' ? 'Утасны дугаараа оруулна уу' : 'Please enter your phone number');
+            }
+            if (!empty($email) && !\filter_var($email, \FILTER_VALIDATE_EMAIL)) {
+                throw new \InvalidArgumentException($code === 'mn' ? 'Зөв имэйл хаяг оруулна уу' : 'Please enter a valid email address');
             }
             if (empty($message)) {
                 throw new \InvalidArgumentException($code === 'mn' ? 'Мессежээ бичнэ үү' : 'Please enter your message');
@@ -123,7 +129,7 @@ class ContactController extends TemplateController
             $this->getService('discord')?->newContactMessage($name, $phone, $email, $message, $appUrl);
 
             $this->log(
-                'web',
+                'messages',
                 LogLevel::INFO,
                 '[{server_request.code}] Холбоо барих мессеж: {name} ({phone})',
                 [
@@ -131,7 +137,14 @@ class ContactController extends TemplateController
                     'name' => $name,
                     'phone' => $phone,
                     'email' => $email,
-                    'message' => $message
+                    'message' => $message,
+                    'auth_user' => [
+                        'username' => $name,
+                        'first_name' => $name,
+                        'last_name' => '',
+                        'phone' => $phone,
+                        'email' => $email
+                    ]
                 ]
             );
 

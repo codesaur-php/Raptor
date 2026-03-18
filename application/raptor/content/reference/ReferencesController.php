@@ -191,7 +191,7 @@ class ReferencesController extends \Raptor\Controller
             $this->log('content', $level, $message, $context);
         }
     }
-    
+
     /**
      * Лавлах контентийн дэлгэрэнгүй мэдээллийг харах (VIEW).
      *
@@ -369,7 +369,7 @@ class ReferencesController extends \Raptor\Controller
             $this->log('content', $level, $message, $context);
         }
     }
-    
+
     /**
      * Лавлах мэдээллийг идэвхгүй болгох (SOFT DELETE).
      *

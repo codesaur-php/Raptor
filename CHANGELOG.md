@@ -6,6 +6,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 
 ---
 
+## [2.0.0] - 2026-03-18
+[2.0.0]: https://github.com/codesaur-php/Raptor/compare/v1.9.1...v2.0.0
+
+Dashboard sidebar badge system - log-based activity notifications for admin users.
+
+### Added
+- **Badge system** - Dashboard sidebar menu items display colored badge pills showing unseen activity counts. Green = create/insert, blue = update, red = delete/deactivate. Multiple badges per module shown in green-blue-red order
+- **BadgeController** (`raptor/template/`) - BADGE_MAP constant maps log table + action pairs to sidebar modules with colors. PERMISSION_MAP controls per-module RBAC access. Queries `*_log` tables via JSON_EXTRACT to count actions since admin's last visit
+- **AdminBadgeSeenModel** (`raptor/template/`) - Tracks `checked_at` datetime per admin per module. `last_seen_count` for file-count badges (manual, migrations)
+- **BadgeRouter** (`raptor/template/`) - `GET /dashboard/badges` returns all badge counts as JSON, `POST /dashboard/badges/seen` marks a module as seen
+- **initSidebarBadges()** (`dashboard.js`) - AJAX badge loader. Fetches badge data on page load, renders colored pills on matching sidebar links, POSTs seen on click
+- **Sidebar badge CSS** (`dashboard.css`) - flex layout for nav-link with auto-margin badge positioning
+
+### Changed
+- **ContactController** - `contactSend()` log context now includes `auth_user` without `id` field so badge system distinguishes web visitors from admin users
+- **Web NewsController** - `commentSubmit()` log context now includes `auth_user` without `id` field for the same reason
+- **Dashboard Application** - Registered BadgeRouter
+- **dashboard.html** - Added `initSidebarBadges()` call on DOMContentLoaded, bumped CSS/JS versions to v=2
+- **CLAUDE.md** - Added "Dashboard Sidebar Badge System" section documenting architecture, BADGE_MAP, PERMISSION_MAP, and integration guide
+
+---
+
 ## [1.9.1] - 2026-03-18
 [1.9.1]: https://github.com/codesaur-php/Raptor/compare/v1.9.0...v1.9.1
 

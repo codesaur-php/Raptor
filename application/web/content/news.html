@@ -251,8 +251,14 @@
                 if (btn.disabled) return;
 
                 const name = form.querySelector('[name="name"]').value.trim();
+                const email = form.querySelector('[name="email"]').value.trim();
                 const comment = form.querySelector('[name="comment"]').value.trim();
                 if (!name || !comment) return;
+
+                if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                    showModal('error', '{{ 'error'|text }}', '{{ localization.code == 'mn' ? 'Зөв имэйл хаяг оруулна уу' : 'Please enter a valid email address' }}');
+                    return;
+                }
 
                 btn.disabled = true;
                 btn.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span>{{ 'sending'|text }}...`;

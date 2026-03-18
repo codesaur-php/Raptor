@@ -98,6 +98,9 @@ class ContentsRouter extends Router
         // Сэтгэгдэл дэлгэрэнгүй - news ID-аар (?comment_id= query param-аар focus)
         $this->GET('/dashboard/comments/news/{uint:id}', [CommentsController::class, 'view'])->name('comments-view');
 
+        // Мэдээнд админ сэтгэгдэл бичих
+        $this->POST('/dashboard/news/{uint:id}/comment', [CommentsController::class, 'comment'])->name('news-comment');
+
         // Мэдээний сэтгэгдэлд хариулт бичих
         $this->POST('/dashboard/news/comment/{uint:id}/reply', [CommentsController::class, 'reply'])->name('news-comment-reply');
 

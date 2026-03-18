@@ -216,6 +216,8 @@ class NewsController extends TemplateController
      * Мэдээнд сэтгэгдэл бичих (AJAX).
      *
      * Spam хамгаалалт: honeypot, HMAC token, timestamp, rate limit, Cloudflare Turnstile.
+     * auth_user-г id-гүйгээр log context-д нэмнэ (badge системд
+     * web frontend хэрэглэгчийг admin-аас ялгах зорилготой).
      *
      * @param int $id Мэдээний ID
      * @return void
@@ -244,6 +246,9 @@ class NewsController extends TemplateController
             }
             if (empty($comment)) {
                 throw new \InvalidArgumentException($code === 'mn' ? 'Сэтгэгдлээ бичнэ үү' : 'Please enter your comment');
+            }
+            if (!empty($email) && !\filter_var($email, \FILTER_VALIDATE_EMAIL)) {
+                throw new \InvalidArgumentException($code === 'mn' ? 'Зөв имэйл хаяг оруулна уу' : 'Please enter a valid email address');
             }
             $this->checkLinkSpam($comment);
 
@@ -278,6 +283,18 @@ class NewsController extends TemplateController
                 'message' => $code === 'mn'
                     ? 'Таны сэтгэгдэл амжилттай нэмэгдлээ!'
                     : 'Your comment has been posted successfully!'
+            ]);
+
+            $this->log('news', LogLevel::INFO, '{record_id} мэдээнд сэтгэгдэл бичлээ', [
+                'action' => 'comment-insert',
+                'record_id' => $id,
+                'auth_user' => [
+                    'username' => $name,
+                    'first_name' => $name,
+                    'last_name' => '',
+                    'phone' => '',
+                    'email' => $email
+                ]
             ]);
         } catch (\Throwable $err) {
             $this->respondJSON(['message' => $err->getMessage()], $err->getCode() ?: 500);

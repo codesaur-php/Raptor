@@ -27,8 +27,6 @@ class MessagesController extends \Raptor\Controller
             return;
         }
 
-        $table = (new MessagesModel($this->pdo))->getName();
-
         $filters = [];
         $filters['is_read'] = [
             'title' => $this->text('status'),
@@ -39,7 +37,7 @@ class MessagesController extends \Raptor\Controller
         $dashboard->set('title', $this->text('messages'));
         $dashboard->render();
 
-        $this->log($table, LogLevel::NOTICE, 'Мессежүүдийн жагсаалтыг үзэж байна', ['action' => 'index']);
+        $this->log('messages', LogLevel::NOTICE, 'Мессежүүдийн жагсаалтыг үзэж байна', ['action' => 'index']);
     }
 
     /**
@@ -113,7 +111,7 @@ class MessagesController extends \Raptor\Controller
 
         $this->twigTemplate(__DIR__ . '/messages-view-modal.html', ['record' => $record])->render();
 
-        $this->log($table, LogLevel::NOTICE, "#{$id} мессежийг үзэж байна", ['action' => 'view', 'id' => $id]);
+        $this->log('messages', LogLevel::NOTICE, '#{id} мессежийг нээж үзэж байна', ['action' => 'view', 'id' => $id]);
     }
 
     /**
@@ -148,7 +146,7 @@ class MessagesController extends \Raptor\Controller
                 'message' => $this->text('replied')
             ]);
 
-            $this->log($table, LogLevel::INFO, "#{$id} мессежид хариулсан гэж тэмдэглэлээ", ['action' => 'mark-replied', 'id' => $id]);
+            $this->log('messages', LogLevel::INFO, '#{id} мессежид хариулсан гэж тэмдэглэлээ', ['action' => 'mark-replied', 'id' => $id]);
         } catch (\Throwable $err) {
             $this->respondJSON([
                 'status' => 'error',
@@ -191,7 +189,7 @@ class MessagesController extends \Raptor\Controller
                 'message' => $this->text('record-successfully-deleted')
             ]);
 
-            $this->log($table, LogLevel::WARNING, "#{$id} мессежийг устгалаа", ['action' => 'deactivate', 'id' => $id]);
+            $this->log('messages', LogLevel::WARNING, '#{id} мессежийг устгалаа', ['action' => 'deactivate', 'id' => $id]);
         } catch (\Throwable $err) {
             $this->respondJSON([
                 'status' => 'error',

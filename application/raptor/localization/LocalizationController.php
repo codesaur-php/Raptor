@@ -70,7 +70,7 @@ class LocalizationController extends \Raptor\Controller
 
             // Аудитын лог үлдээх
             $this->log(
-                'localization',
+                'content',
                 LogLevel::NOTICE,
                 'Хэл ба Текстүүдийн жагсаалтыг үзэж байна',
                 ['action' => 'localization-index']

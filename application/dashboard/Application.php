@@ -28,6 +28,7 @@ class Application extends \Raptor\Application
      * Процесс:
      *  1) parent::__construct() -> Raptor Framework-ийн үндсэн engine асаана
      *  2) $this->use(Home\HomeRouter::class) -> Dashboard-ийн үндсэн router-ийг бүртгэнэ
+     *  3) BadgeRouter -> Badge системийн router-ийг бүртгэнэ
      *
      * Нэмэх боломж:
      *  - Хэрэв дараа нь SettingsRouter, UserRouter гэх мэт нэмэх бол
@@ -48,5 +49,8 @@ class Application extends \Raptor\Application
 
         // Гарын авлага
         $this->use(new Manual\ManualRouter());
+
+        // Badge систем
+        $this->use(new \Raptor\Template\BadgeRouter());
     }
 }

@@ -445,7 +445,7 @@ class UsersController extends FileController
             $this->log('users', $level, $message, $context);
         }
     }
-    
+
     /**
      * Хэрэглэгчийн мэдээллийг засварлах (Edit User).
      *
@@ -707,7 +707,7 @@ class UsersController extends FileController
             $this->log('users', $level, $message, $context);
         }
     }
-    
+
     /**
      * Хэрэглэгчийн дэлгэрэнгүй мэдээллийг харах
      * -------------------------------------------------------------
@@ -915,7 +915,7 @@ class UsersController extends FileController
             $this->log('users', $level, $message, $context);
         }
     }
-    
+
     /**
      * Бүртгүүлэх (signup) эсвэл Нууц үг мартсан (forgot) хүсэлтүүдийн модал
      * ----------------------------------------------------------------------
@@ -1179,7 +1179,7 @@ class UsersController extends FileController
             $this->log('users', $level, $message, $context);
         }
     }
-    
+
     /**
      * signupDeactivate()
      * -------------------
@@ -1259,7 +1259,7 @@ class UsersController extends FileController
             $this->log('users', $level, $message, $context);
         }
     }
-    
+
     /**
      * setPassword(int $id)
      * ---------------------
@@ -1385,7 +1385,7 @@ class UsersController extends FileController
             $this->log('users', $level, $message, $context);
         }
     }
-    
+
     /**
      * Хэрэглэгчийн байгууллагын харьяаллыг тохируулах (OrganizationUser)
      * ----------------------------------------------------------------------
@@ -1503,7 +1503,7 @@ class UsersController extends FileController
             $this->log('users', $level, $message, $context);
         }
     }
-    
+
     /**
      * Хэрэглэгчийн байгууллагын харьяаллыг (OrganizationUser) тооцоолж шинэчлэх үндсэн логик
      * ------------------------------------------------------------------------------------------
@@ -1758,7 +1758,7 @@ class UsersController extends FileController
             $this->log('users', $level, $message, $context);
         }
     }
-    
+
     /**
      * RBAC дүрүүдийг update хийх (add/remove) үндсэн backend функц.
      * --------------------------------------------------------------

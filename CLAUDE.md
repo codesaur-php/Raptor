@@ -110,7 +110,7 @@ Register routes in a Router class extending `codesaur\Router\Router`.
 - Never use `{{ }}` or `{% %}` inside comments - template may evaluate them. Document variables by name only
 - `|text` filter returns the keyword itself when not found, so do NOT add `|default` after it - `{{ 'keyword'|text }}` is always safe
 
-All steps (6-9) below must be completed for a module to be fully integrated. Do not skip any step.
+All steps (6-10) below must be completed for a module to be fully integrated. Do not skip any step.
 
 ```html
 <!-- Variables: max_file_size, record, files -->
@@ -149,7 +149,28 @@ Add the module's index link to `DashboardMenus.php` so it appears in the dashboa
 
 Seed files only run on fresh installs. If the system is already deployed, also write a migration SQL to insert the new menu entry into the live database. The migration must insert into the correct parent menu (use SELECT to find parent_id by title).
 
-### 9. Write Manual (dashboard modules)
+### 9. Register Badge (dashboard modules with sidebar link)
+
+If the module has a sidebar menu entry and uses `$this->log()` with an `action` context key, register it for badge tracking in `BadgeController`:
+
+1. Add entries to `BADGE_MAP` mapping log table + action to module path + color:
+```php
+'my_table' => [
+    'create'     => ['/dashboard/my-module', 'green'],
+    'update'     => ['/dashboard/my-module', 'blue'],
+    'deactivate' => ['/dashboard/my-module', 'red'],
+],
+```
+
+2. Add the module to `PERMISSION_MAP` with the permission required to view it:
+```php
+'/dashboard/my-module' => 'system_my_permission',
+```
+
+No controller changes needed - the badge system reads from the existing `*_log` tables that `$this->log()` already writes to. Just ensure log calls include `'action' => 'action-name'` in the context array.
+
+### 10. Write Manual (dashboard modules)
+
 
 Create `application/dashboard/manual/{module}-manual-{lang}.html` for both MN and EN. If the index page has a manual `?` button, the manual file MUST exist - do not link to non-existent files.
 
@@ -159,11 +180,11 @@ Create `application/dashboard/manual/{module}-manual-{lang}.html` for both MN an
 - Manual index cards use dark theme (`text-bg-dark`)
 - Link the manual from the module's index page with the `?` button (rightmost position)
 
-### 10. Write Tests (if needed)
+### 11. Write Tests (if needed)
 
 Place tests in `tests/Unit/` or `tests/Integration/`. Extend `Tests\Support\RaptorTestCase` (unit) or `Tests\Support\IntegrationTestCase` (DB required). Test security rules, business logic, and code quality - not trivial getters/setters.
 
-### 11. Run Composer Dump
+### 12. Run Composer Dump
 
 After adding new files/namespaces, run `composer dump-autoload` to regenerate the autoloader.
 
@@ -253,7 +274,7 @@ The current codebase uses these libraries, but none are required by the framewor
 
 - Bootstrap 5.3.6 (CDN), Bootstrap Icons 1.13.1
 - `motable.js` - Data table, `moedit.js` - Rich text editor
-- `dashboard.js` - AJAX modals, notifications, search
+- `dashboard.js` - AJAX modals, notifications, search, sidebar badges
 - SweetAlert2 - Confirmation dialogs
 
 ### Asset Versioning
@@ -267,6 +288,63 @@ When making significant changes to JS or CSS files, bump `?v=` in Twig templates
 - Tabs: use `<button>` with `data-bs-target`, not `<a href="#id">`
 - Delete: SweetAlert2, not Bootstrap modals
 - Language dropdown: hide with `localization.language|length > 1` when only one language
+
+## Dashboard Sidebar Badge System
+
+Colored badge pills on sidebar menu items showing unseen activity counts per admin. Reads directly from existing `*_log` tables - no separate event table.
+
+### Architecture
+
+- `BadgeController` (`raptor/template/`) - BADGE_MAP, PERMISSION_MAP, badge counting + seen API
+- `AdminBadgeSeenModel` (`raptor/template/`) - stores `checked_at` per admin per module
+- `BadgeRouter` (`raptor/template/`) - GET `/dashboard/badges`, POST `/dashboard/badges/seen`
+- `dashboard.js` - `initSidebarBadges()` AJAX fetch + DOM render
+- `dashboard.css` - sidebar badge flex layout + pill styles
+
+### Badge Colors
+
+- Green (`bg-success`) - create, insert
+- Blue (`bg-primary`) - update
+- Red (`bg-danger`) - delete, deactivate
+
+Up to 3 badges per module, shown left to right in green-blue-red order.
+
+### How It Works
+
+1. On dashboard page load, JS calls `GET /dashboard/badges`
+2. BadgeController builds a reverse map from BADGE_MAP: module -> [(log_table, action, color)]
+3. For each module, checks admin permission via PERMISSION_MAP. Skips unauthorized modules
+4. Queries `{table}_log` for entries after admin's `checked_at` using JSON_EXTRACT on the `context` column
+5. Filters out admin's own actions via `auth_user.id != admin_id`
+6. If no `admin_badge_seen` entry exists (new permission or first use), counts from last 30 days
+7. When admin clicks a sidebar link, JS removes the badge and POSTs `seen` -> `checked_at = NOW()`
+
+### BADGE_MAP
+
+`BadgeController::BADGE_MAP` is structured as `[log_table][action] => [module_path, color]`. To add badges for a new module, add entries here.
+
+### PERMISSION_MAP
+
+`BadgeController::PERMISSION_MAP` maps each module to its required permission:
+
+- `null` - any authenticated admin (e.g. `/dashboard/manual`)
+- `'system_content_index'` - checked via `isUserCan()`
+- `'role:system_coder'` - checked via `isUser()`
+
+### Web Frontend Log Context
+
+Web controllers (contact form, comment) add `auth_user` to log context without the `id` field. This makes `JSON_EXTRACT(context, '$.auth_user.id')` return NULL, so the action counts as a badge for all admins.
+
+```php
+$this->log('messages', LogLevel::INFO, 'message', [
+    'action' => 'contact-send',
+    'auth_user' => ['username' => $name, 'first_name' => $name, ...]
+]);
+```
+
+### File-count Badge
+
+For modules not tracked in logs (manual, migrations), badges are based on file count. The system compares current `glob()` count against `last_seen_count` stored in `admin_badge_seen`.
 
 ## Code Style
 

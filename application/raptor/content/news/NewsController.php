@@ -80,7 +80,7 @@ class NewsController extends FileController
         $dashboard->set('title', $this->text('news'));
         $dashboard->render();
         
-        $this->log($table, LogLevel::NOTICE, 'Мэдээний жагсаалтыг үзэж байна', ['action' => 'index']);
+        $this->log('news', LogLevel::NOTICE, 'Мэдээний жагсаалтыг үзэж байна', ['action' => 'index']);
     }
     
     /**
@@ -256,10 +256,10 @@ class NewsController extends FileController
                 $level = LogLevel::NOTICE;
                 $message = 'Мэдээ үүсгэх үйлдлийг эхлүүллээ';
             }
-            $this->log($table ?? 'news', $level, $message, $context);
+            $this->log('news', $level, $message, $context);
         }
     }
-    
+
     /**
      * Мэдээний бичлэгийг шинэчлэх.
      *
@@ -418,10 +418,10 @@ class NewsController extends FileController
                 $message = '{record.id} дугаартай [{record.title}] мэдээг шинэчлэхээр нээж байна';
                 $context += ['record' => $record, 'files' => $files];
             }
-            $this->log($table ?? 'news', $level, $message, $context);
+            $this->log('news', $level, $message, $context);
         }
     }
-    
+
     /**
      * Мэдээний дэлгэрэнгүй мэдээллийг dashboard-д харуулах.
      *
@@ -485,7 +485,7 @@ class NewsController extends FileController
                 $message = '{record.id} дугаартай [{record.title}] мэдээг үзэж байна';
                 $context += ['record' => $record, 'files' => $files];
             }
-            $this->log($table ?? 'news', $level, $message, $context);
+            $this->log('news', $level, $message, $context);
         }
     }
 
@@ -666,7 +666,6 @@ class NewsController extends FileController
             $id = \filter_var($payload['id'], \FILTER_VALIDATE_INT);
 
             $model = new NewsModel($this->pdo);
-            $table = $model->getName();
             if (!$this->isUserCan('system_content_delete')) {
                 $record = $model->getRowWhere(['id' => $id, 'is_active' => 1]);
                 if (empty($record)
@@ -713,10 +712,10 @@ class NewsController extends FileController
                 $message = '{record_id} дугаартай [{server_request.body.title}] мэдээг идэвхгүй болголоо';
                 $context += ['record_id' => $id];
             }
-            $this->log($table ?? 'news', $level, $message, $context);
+            $this->log('news', $level, $message, $context);
         }
     }
-    
+
     /**
      * Жишиг датаг цэвэрлэж production эхлүүлэх.
      *
@@ -791,7 +790,7 @@ class NewsController extends FileController
                 $level = LogLevel::ALERT;
                 $message = 'Мэдээний хүснэгтийг жишиг датанаас цэвэрлэж production горимд шилжүүллээ';
             }
-            $this->log($table ?? 'news', $level, $message, $context);
+            $this->log('news', $level, $message, $context);
         }
     }
 

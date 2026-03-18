@@ -39,12 +39,11 @@ class PagesController extends FileController
             return;
         }
 
-        $table = (new PagesModel($this->pdo))->getName();
         $dashboard = $this->twigDashboard(__DIR__ . '/pages-nav.html');
         $dashboard->set('title', $this->text('pages-navigation'));
         $dashboard->render();
 
-        $this->log($table, LogLevel::NOTICE, 'Хуудасны навигацийн модыг үзэж байна', ['action' => 'nav']);
+        $this->log('pages', LogLevel::NOTICE, 'Хуудасны навигацийн модыг үзэж байна', ['action' => 'nav']);
     }
 
     /**
@@ -100,7 +99,7 @@ class PagesController extends FileController
         $dashboard->set('title', $this->text('pages'));
         $dashboard->render();
 
-        $this->log($table, LogLevel::NOTICE, 'Хуудас жагсаалтыг үзэж байна', ['action' => 'index']);
+        $this->log('pages', LogLevel::NOTICE, 'Хуудас жагсаалтыг үзэж байна', ['action' => 'index']);
     }
     
     /**
@@ -238,7 +237,7 @@ class PagesController extends FileController
                 $level = LogLevel::ALERT;
                 $message = 'Хуудасны хүснэгтийг жишиг датанаас цэвэрлэж production горимд шилжүүллээ';
             }
-            $this->log($table ?? 'pages', $level, $message, $context);
+            $this->log('pages', $level, $message, $context);
         }
     }
 
@@ -368,7 +367,7 @@ class PagesController extends FileController
                 $level = LogLevel::NOTICE;
                 $message = 'Хуудас үүсгэх үйлдлийг эхлүүллээ';
             }
-            $this->log($table ?? 'pages', $level, $message, $context);
+            $this->log('pages', $level, $message, $context);
         }
     }
 
@@ -432,7 +431,7 @@ class PagesController extends FileController
                 $message = '{record.id} дугаартай [{record.title}] хуудасны мэдээллийг үзэж байна';
                 $context += ['record' => $record, 'files' => $files];
             }
-            $this->log($table ?? 'pages', $level, $message, $context);
+            $this->log('pages', $level, $message, $context);
         }
     }
 
@@ -630,7 +629,7 @@ class PagesController extends FileController
                 $message = '{record.id} дугаартай [{record.title}] хуудасны мэдээллийг шинэчлэхээр нээж байна';
                 $context += ['record' => $record, 'files' => $files];
             }
-            $this->log($table ?? 'pages', $level, $message, $context);
+            $this->log('pages', $level, $message, $context);
         }
     }
 
@@ -654,7 +653,6 @@ class PagesController extends FileController
             $id = \filter_var($payload['id'], \FILTER_VALIDATE_INT);
 
             $model = new PagesModel($this->pdo);
-            $table = $model->getName();
             if (!$this->isUserCan('system_content_delete')) {
                 $record = $model->getRowWhere(['id' => $id, 'is_active' => 1]);
                 if (empty($record)
@@ -701,7 +699,7 @@ class PagesController extends FileController
                 $message = '{record_id} дугаартай [{server_request.body.title}] хуудсыг идэвхгүй болголоо';
                 $context += ['record_id' => $id];
             }
-            $this->log($table ?? 'pages', $level, $message, $context);
+            $this->log('pages', $level, $message, $context);
         }
     }
 

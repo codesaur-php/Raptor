@@ -215,7 +215,7 @@ class FilesController extends FileController
             $this->log('files', $level, $message, $context);
         }
     }
-    
+
     /**
      * Файл upload хийх болон `{table}_files` хүснэгтэд бүртгэх.
      *

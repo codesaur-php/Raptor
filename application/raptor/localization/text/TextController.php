@@ -91,7 +91,7 @@ class TextController extends \Raptor\Controller
                 $level = LogLevel::NOTICE;
                 $message = 'Текст үүсгэх үйлдлийг эхлүүллээ';
             }
-            $this->log('localization', $level, $message, $context);
+            $this->log('content', $level, $message, $context);
         }
     }
 
@@ -135,7 +135,7 @@ class TextController extends \Raptor\Controller
                 $message = '[{record.keyword}] текст мэдээллийг үзэж байна';
                 $context += ['record' => $record];
             }
-            $this->log('localization', $level, $message, $context);
+            $this->log('content', $level, $message, $context);
         }
     }
 
@@ -234,7 +234,7 @@ class TextController extends \Raptor\Controller
                 $message = '[{record.keyword}] текст мэдээллийг шинэчлэхээр нээж байна';
                 $context += ['record' => $record];
             }
-            $this->log('localization', $level, $message, $context);
+            $this->log('content', $level, $message, $context);
         }
     }
 
@@ -292,7 +292,7 @@ class TextController extends \Raptor\Controller
                 $message = '{id} дугаартай [{server_request.body.keyword}] текст мэдээллийг идэвхгүй болголоо';
                 $context += ['id' => $id];
             }
-            $this->log('localization', $level, $message, $context);
+            $this->log('content', $level, $message, $context);
         }
     }
 

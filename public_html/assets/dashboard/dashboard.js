@@ -7,6 +7,7 @@
  *  Доорх функцууд нь: *
  *  AJAX Modal Loader
  *  Sidebar link activation
+ *  Sidebar badge system (initSidebarBadges)
  *  Top Notification (NotifyTop)
  *  Button Spinner (spinNstop / growNstop)
  *  Scroll-To-Top Button
@@ -422,6 +423,86 @@ function initTopbarSearch(searchUrl, basePath) {
             input.blur();
         }
     });
+}
+
+/**
+ * initSidebarBadges(badgesUrl)
+ * -- Sidebar-ийн цэсийн зүйлс дээр тоон badge (pill) харуулах.
+ *    Серверээс badge өгөгдлийг fetch-ээр авч, sidebar цэсийн холбоос бүрд
+ *    таарах module-ийн badge-уудыг өнгөт pill хэлбэрээр нэмнэ.
+ *
+ * @param {string} badgesUrl  GET хүсэлтийн URL (жишээ: /dashboard/badges).
+ *                            seenUrl-ийг badgesUrl + '/seen' гэж автоматаар гаргана.
+ *
+ * COLOR_MAP - badge өнгийг Bootstrap class руу хөрвүүлэх:
+ *   green -> bg-success, blue -> bg-primary, red -> bg-danger.
+ *   Тодорхойгүй өнгө -> bg-secondary (fallback).
+ *
+ * Badge дараалал:
+ *   Модуль бүрд олон badge байж болно. green -> blue -> red дарааллаар
+ *   зүүнээс баруун тийш жагсааж харуулна.
+ *
+ * Click handler:
+ *   Хэрэглэгч badge-тэй холбоос дээр дарахад эхний badge-ийг DOM-оос
+ *   устгаж, seenUrl руу POST хүсэлт илгээн серверт "харсан" гэдгийг мэдэгдэнэ.
+ *
+ * Алдааны удирдлага:
+ *   fetch болон seen POST хүсэлтийн алдааг чимээгүй (silent) алгасна --
+ *   badge ачаалагдахгүй байсан ч хэрэглэгчийн ажиллагаанд нөлөөлөхгүй.
+ */
+function initSidebarBadges(badgesUrl) {
+    if (!badgesUrl) return;
+
+    const seenUrl = badgesUrl + '/seen';
+    const COLOR_MAP = { green: 'bg-success', blue: 'bg-primary', red: 'bg-danger' };    
+    
+    fetch(badgesUrl)
+        .then(r => r.json())
+        .then(data => {
+            if (data.status !== 'success' || !data.badges) return;
+
+            document.querySelectorAll('.sidebar-menu a.nav-link').forEach(function (link) {
+                const href = link.getAttribute('href');
+                if (!href) return;
+
+                /* href-ийн замд badge module таарч байвал badge нэмэх */
+                Object.keys(data.badges).forEach(function (module) {
+                    if (href.endsWith(module) || href.endsWith(module + '/')) {
+                        var items = data.badges[module];
+                        /* green -> blue -> red дарааллаар badge бүрийг тусад нь харуулах */
+                        var order = ['green', 'blue', 'red'];
+                        order.forEach(function (color) {
+                            items.forEach(function (b) {
+                                if (b.color !== color) return;
+                                var badge = document.createElement('span');
+                                badge.className = 'badge rounded-pill ' + (COLOR_MAP[color] || 'bg-secondary');
+                                badge.textContent = b.count;
+                                badge.setAttribute('data-badge-module', module);
+                                link.appendChild(badge);
+                            });
+                        });
+                    }
+                });
+            });
+
+            /* Click дээр seen болгох */
+            document.querySelectorAll('.sidebar-menu a.nav-link').forEach(function (link) {
+                link.addEventListener('click', function () {
+                    const badge = link.querySelector('[data-badge-module]');
+                    if (!badge || !seenUrl) return;
+
+                    const module = badge.getAttribute('data-badge-module');
+                    badge.remove();
+
+                    fetch(seenUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ module: module })
+                    }).catch(function () { /* silent */ });
+                });
+            });
+        })
+        .catch(function () { /* silent - badge fetch failed */ });
 }
 
 /**
