@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 
 ---
 
+## [2.0.1] - 2026-03-18
+[2.0.1]: https://github.com/codesaur-php/Raptor/compare/v2.0.0...v2.0.1
+
+GitHub Actions Node.js 24 compatibility update.
+
+### Changed
+- **ci.yml** - `actions/checkout` v4 -> v6 (Node.js 24 support)
+- **cpanel.deploy.yml** (example) - `actions/checkout` v4 -> v6, `SamKirkland/FTP-Deploy-Action` v4.3.5 -> v4.3.6
+
+---
+
 ## [2.0.0] - 2026-03-18
 [2.0.0]: https://github.com/codesaur-php/Raptor/compare/v1.9.1...v2.0.0
 
