@@ -55,7 +55,7 @@ jobs:
   # Pre-check: FTP secrets тохируулсан эсэхийг шалгах
   # ====================================================================
   check-ftp:
-    name: Check FTP configuration
+    name: Detect deploy targets
     runs-on: ubuntu-latest
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     outputs:
