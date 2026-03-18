@@ -89,7 +89,7 @@ $this->twigWebLayout(__DIR__ . '/products.html', [
 
 ### 2. Create Model
 
-Extend `codesaur\DataObject\Model`. Define columns in constructor, set table name via `setTable()`. The framework automatically creates the table on model's first use - do NOT write CREATE TABLE in migration files. Use `__initial()` for FK constraints and indexes only. Do not create sample data (*Samples.php) for new modules - sample data only exists for the built-in modules (News, Pages, Products, Menu) that ship with the framework. Production seed data (permissions, translations, menu entries) is handled in steps 6-8 below.
+Extend `codesaur\DataObject\Model`. Define columns in constructor, set table name via `setTable()`. The framework automatically creates the table on model's first use - do NOT write CREATE TABLE in migration files. Use `__initial()` for FK constraints and indexes only. Do not create sample data (*Samples.php) for new modules - sample data only exists for the built-in modules (Pages, Reference, News, Products, Menu, Organization) that ship with the framework. Production seed data (permissions, translations, menu entries) is handled in steps 6-8 below.
 
 Migration files are ONLY for changing existing tables (ALTER, new indexes, data inserts into live databases). Never use migrations to create tables for new modules.
 

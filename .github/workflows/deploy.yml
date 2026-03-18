@@ -1,0 +1,117 @@
+# ======================================================================
+# GitHub Actions -> Auto Deploy (CI workflow хамт ашиглах)
+# ======================================================================
+#
+# CI workflow (ci.yml) амжилттай дууссаны дараа автомат deploy хийнэ.
+# Тохируулсан secrets/variables-аас хамаарч зөв арга автомат сонгогдоно.
+#
+# Шаардлага:
+#   - .github/workflows/ci.yml байх ёстой (код чанарын шалгалт тэнд хийгдэнэ)
+#   - CI амжилтгүй бол deploy хийгдэхгүй
+#   - Аль ч deploy тохируулаагүй бол хоёулаа алгасагдана (developer clone)
+#
+# ----------------------------------------------------------------------
+# A) cPanel FTP Deploy
+# ----------------------------------------------------------------------
+#   GitHub repo -> Settings -> Secrets and variables -> Actions -> Secrets:
+#     FTP_HOST       - cPanel серверийн FTP хаяг (жишээ: ftp.example.com)
+#     FTP_USERNAME   - cPanel FTP хэрэглэгчийн нэр
+#     FTP_PASSWORD   - cPanel FTP нууц үг
+#     FTP_SERVER_DIR - Серверийн зорьсон хавтас (жишээ: /)
+#
+# ----------------------------------------------------------------------
+# B) Windows Server Self-hosted Runner Deploy
+# ----------------------------------------------------------------------
+#   Windows Server дээр GitHub Actions self-hosted runner суулгах:
+#     GitHub repo -> Settings -> Actions -> Runners -> New self-hosted runner
+#     1. Windows сонгоно
+#     2. Заавар дагаж runner татаж суулгана
+#     3. Runner-г Windows service болгон бүртгэнэ:
+#        ./svc.sh install
+#        ./svc.sh start
+#     4. Runner дээр PHP, Composer PATH-д байх ёстой
+#
+#   GitHub repo -> Settings -> Secrets and variables -> Actions -> Variables:
+#     DEPLOY_PATH - XAMPP htdocs доторх project хавтас
+#                   (жишээ: C:\xampp\htdocs\myproject)
+#
+# Тэмдэглэл:
+#   - .env файл серверт гараар үүсгэж тохируулна (deploy хийгдэхгүй)
+#   - logs/ хавтас серверт автомат үүсдэг, deploy хийх шаардлагагүй
+#   - Хоёр deploy зэрэг тохируулж болно (жишээ: staging = Windows,
+#     production = cPanel) - тус тусдаа ажиллана
+# ======================================================================
+
+name: Deploy
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
+
+jobs:
+  # ====================================================================
+  # A) cPanel FTP Deploy
+  # ====================================================================
+  cpanel:
+    name: Deploy to cPanel
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' && secrets.FTP_HOST != '' }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup PHP 8.2
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: gd, intl, pdo_mysql
+
+      - name: Install production dependencies
+        run: composer install --no-dev --optimize-autoloader --no-interaction
+
+      - name: Deploy to cPanel via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.6
+        with:
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          server-dir: ${{ secrets.FTP_SERVER_DIR }}
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/.github/**
+            **/docs/**
+            **/tests/**
+            **/.env*
+            **/logs/**
+            **/nbproject/**
+            **/private/**
+            **/phpunit.xml
+
+  # ====================================================================
+  # B) Windows Server Self-hosted Runner Deploy
+  # ====================================================================
+  windows-server:
+    name: Deploy to Windows Server
+    runs-on: [self-hosted, windows]
+    if: ${{ github.event.workflow_run.conclusion == 'success' && vars.DEPLOY_PATH != '' }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Sync files to XAMPP
+        shell: cmd
+        run: |
+          robocopy "%GITHUB_WORKSPACE%" "${{ vars.DEPLOY_PATH }}" /MIR /XD .git .github docs tests logs nbproject private /XF .env .env.* phpunit.xml /NFL /NDL /NJH /NJS /R:3 /W:5
+          if %ERRORLEVEL% LEQ 7 (exit /b 0) else (exit /b 1)
+
+      - name: Install/update production dependencies
+        shell: cmd
+        working-directory: ${{ vars.DEPLOY_PATH }}
+        run: |
+          composer update --no-dev --optimize-autoloader --no-interaction
+          composer dump-autoload --optimize

@@ -39,7 +39,7 @@ if (localStorage.getItem('data-bs-theme') === 'dark') {
 
 /**
  * ajaxModal(link)
- * -- Modal-ийн агуулгыг AJAX-аар ачаалж харуулна
+ * - Modal-ийн агуулгыг AJAX-аар ачаалж харуулна
  *
  * @description
  *  data-bs-target="#static-modal" гэсэн modal руу HTML response 
@@ -111,7 +111,7 @@ function ajaxModal(link)
 
 /**
  * activateLink(href)
- * -- Sidebar-ийн идэвхтэй линк тодруулах
+ * - Sidebar-ийн идэвхтэй линк тодруулах
  * 
  * @param {string} href - Document link */
 function activateLink(href)
@@ -128,7 +128,7 @@ function activateLink(href)
 
 /** 
  * NotifyTop(type, title, content)
- * -- Дээд notification popup
+ * - Дээд notification popup
  *
  * @param {string} type - success, danger, warning, primary
  * @param {string} title - гарчиг
@@ -427,9 +427,9 @@ function initTopbarSearch(searchUrl, basePath) {
 
 /**
  * initSidebarBadges(badgesUrl)
- * -- Sidebar-ийн цэсийн зүйлс дээр тоон badge (pill) харуулах.
- *    Серверээс badge өгөгдлийг fetch-ээр авч, sidebar цэсийн холбоос бүрд
- *    таарах module-ийн badge-уудыг өнгөт pill хэлбэрээр нэмнэ.
+ * - Sidebar-ийн цэсийн зүйлс дээр тоон badge (pill) харуулах.
+ *   Серверээс badge өгөгдлийг fetch-ээр авч, sidebar цэсийн холбоос бүрд
+ *   таарах module-ийн badge-уудыг өнгөт pill хэлбэрээр нэмнэ.
  *
  * @param {string} badgesUrl  GET хүсэлтийн URL (жишээ: /dashboard/badges).
  *                            seenUrl-ийг badgesUrl + '/seen' гэж автоматаар гаргана.
@@ -454,7 +454,7 @@ function initSidebarBadges(badgesUrl) {
     if (!badgesUrl) return;
 
     const seenUrl = badgesUrl + '/seen';
-    const COLOR_MAP = { green: 'bg-success', blue: 'bg-primary', red: 'bg-danger' };    
+    const COLOR_MAP = { green: 'bg-success', blue: 'bg-primary', red: 'bg-danger', info: 'bg-info' };
     
     fetch(badgesUrl)
         .then(r => r.json())
@@ -470,7 +470,7 @@ function initSidebarBadges(badgesUrl) {
                     if (href.endsWith(module) || href.endsWith(module + '/')) {
                         var items = data.badges[module];
                         /* green -> blue -> red дарааллаар badge бүрийг тусад нь харуулах */
-                        var order = ['green', 'blue', 'red'];
+                        var order = ['green', 'info', 'blue', 'red'];
                         order.forEach(function (color) {
                             items.forEach(function (b) {
                                 if (b.color !== color) return;
@@ -507,9 +507,9 @@ function initSidebarBadges(badgesUrl) {
 
 /**
  * DOMContentLoaded:
- * -- Sidebar activate
- * -- static-modal reset
- * -- AJAX modal binding */
+ * - Sidebar activate
+ * - static-modal reset
+ * - AJAX modal binding */
 document.addEventListener('DOMContentLoaded', function () {
     activateLink(window.location.pathname);
 

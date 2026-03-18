@@ -4,9 +4,14 @@
 <!-- ========== ТОЛГОЙ ХЭСЭГ ========== -->
 <div class="d-flex justify-content-between align-items-center">
     <h5 class="text-info text-uppercase"><i class="bi bi-book"></i> {{ 'news'|text }}</h5>
-    <a class="btn btn-sm btn-outline-secondary" href="{{ 'manual-view'|link({'file': 'news-manual-' ~ localization.code ~ '.html'}) }}" title="{{ 'manual'|text }}" target="_blank">
-        <i class="bi bi-question-circle"></i>
-    </a>
+    <div class="ms-auto">
+        <a class="btn btn-outline-info shadow-sm me-1" href="{{ 'comments'|link }}">
+            <i class="bi bi-chat-left-text"></i> {{ 'comments'|text }}
+        </a>
+        <a class="btn btn-outline-secondary shadow-sm" href="{{ 'manual-view'|link({'file': 'news-manual-' ~ localization.code ~ '.html'}) }}" title="{{ 'manual'|text }}" target="_blank">
+            <i class="bi bi-question-circle"></i>
+        </a>
+    </div>
 </div>
 
 <!-- ========== ШҮҮЛТҮҮР + ШИНЭ ТОВЧ ========== -->

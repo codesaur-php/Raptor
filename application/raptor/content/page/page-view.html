@@ -6,11 +6,6 @@
     'legal': { 'mn': 'Хууль эрх зүй' },
     'reference': { 'mn': 'Лавлагаа' }
 } %}
-<!-- Mongolian WYSIWYG Editor -->
-<link href="{{ index }}/assets/moedit/moedit.css?v=1" rel="stylesheet">
-<link href="{{ index }}/assets/moedit/moedit-icons.css?v=1" rel="stylesheet">
-<script defer src="{{ index }}/assets/moedit/moedit.js?v=1"></script>
-<script defer src="{{ index }}/assets/moedit/moedit.ui.js?v=1"></script>
 <!-- Толгой хэсэг -->
 <div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-2 shadow">
     <h3 class="px-2 my-auto fs-6 text-info text-uppercase">
@@ -22,73 +17,113 @@
         </a>
     </div>
 </div>
-<!-- Хэл, Ангилал, Байрлал -->
-<div class="row mt-3">
-    <div class="col-4">
-        <label class="form-label">{{ 'language'|text }} <i class="bi bi-translate"></i></label>
-        <span class="form-control">
-            {% set flag = record['code'] == 'en' ? 'us' : record['code'] %}
-            {% set title = (localization.language[record['code']]['title'] ?? record['code'])|e %}
-            <img src="https://flagcdn.com/20x15/{{ flag }}.png" srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x" width="16" height="12" alt="{{ title }}">
-            {{ title }}
-        </span>
-    </div>
-    <div class="col-4">
-        <label class="form-label">{{ 'category'|text }} <i class="bi bi-bookmark"></i></label>
-        <input class="form-control" name="category" readonly type="text" value="{{ (categories[record['category']][localization.code] ?? record['category'])|e }}" maxlength="32">
-    </div>
-    <div class="col-4">
-        <label class="form-label">{{ 'position'|text }} <i class="bi bi-sort-numeric-down"></i></label>
-        <input class="form-control" readonly type="number" value="{{ record['position'] }}">
-    </div>
-</div>
-<!-- Гарчиг -->
-<div class="mt-3">
-    <label class="form-label">{{ 'title'|text }} <i class="bi bi-card-heading"></i></label>
-    <input class="form-control form-control-lg border-primary" name="title" readonly value="{{ record['title']|e }}" maxlength="255" type="text">
-</div>
-{% if has_children is defined and has_children %}
-<div class="alert alert-primary mt-3 mb-0" role="alert">
-    <i class="bi bi-exclamation-triangle"></i>
-    {{ 'parent-page-content-warning'|text }}
-</div>
-{% endif %}
-{% if record['link'] is not empty %}
-<div class="alert alert-info mt-3 mb-0" role="alert">
-    <i class="bi bi-info-circle"></i>
-    {{ 'link-page-content-warning'|text }}
-</div>
-{% endif %}
-<!-- Тайлбар -->
-<div class="mt-3">
-    <label class="form-label">{{ 'short-description'|text }} <i class="bi bi-card-text"></i></label>
-    <input class="form-control form-control-sm" name="description" readonly value="{{ record['description']|e }}" type="text">
-</div>
-<!-- Агуулга -->
-<div class="mt-3">
-    <textarea name="content" readonly>{{ record['content']|e }}</textarea>
-</div>
-<!-- Холбоос -->
-<div class="mt-3">
-    <label class="form-label">{{ 'link'|text }} <i class="bi bi-link-45deg"></i></label>
-    <input class="form-control border-info" name="link" readonly value="{{ record['link']|e }}" type="url">
-</div>
-<!-- Нийтлэх тохиргоо -->
-<div class="rounded border border-success mt-4 p-3">
-    <div class="row">
-        <div class="col-4">
-            <label class="form-label fw-bolder">{{ 'publish'|text }} <i class="bi bi-globe"></i></label>
-            <div class="form-check form-switch">
-                <input class="form-check-input" name="published"{{ record['published'] == 1 ? ' checked' : '' }} disabled type="checkbox" role="switch">
-                {{ 'visible-on-site'|text }}
+<div class="card shadow-sm border-info mt-3">
+    <div class="card-body">
+        <!-- Хэл, Ангилал, Байрлал -->
+        <div class="row mb-3">
+            <div class="col-4">
+                <label class="form-label text-muted">{{ 'language'|text }}</label>
+                <div>
+                    {% set flag = record['code'] == 'en' ? 'us' : record['code'] %}
+                    {% set title = (localization.language[record['code']]['title'] ?? record['code'])|e %}
+                    <img src="https://flagcdn.com/20x15/{{ flag }}.png" srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x" width="16" height="12" alt="{{ title }}">
+                    {{ title }}
+                </div>
+            </div>
+            <div class="col-4">
+                <label class="form-label text-muted">{{ 'category'|text }}</label>
+                <div>{{ (categories[record['category']][localization.code] ?? record['category'])|e }}</div>
+            </div>
+            <div class="col-4">
+                <label class="form-label text-muted">{{ 'position'|text }}</label>
+                <div>{{ record['position'] }}</div>
             </div>
         </div>
-        <div class="col-4">
-            <label class="form-label fw-bolder">{{ 'featured'|text }} <i class="bi bi-star"></i></label>
-            <div class="form-check form-switch">
-                <input class="form-check-input" name="is_featured"{{ record['is_featured'] == 1 ? ' checked' : '' }} disabled type="checkbox" role="switch">
-                {{ 'feature-on-homepage'|text }}
+        {% if record['photo'] is not empty %}
+        <div class="mb-3">
+            <img src="{{ record['photo']|e }}" alt="{{ record['title']|e }}" class="img-fluid rounded" style="max-height:300px">
+        </div>
+        {% endif %}
+        <!-- Гарчиг -->
+        <div class="mb-3">
+            <label class="form-label text-muted">{{ 'title'|text }}</label>
+            <div class="fs-5 fw-semibold">{{ record['title']|e }}</div>
+        </div>
+        {% if has_children is defined and has_children %}
+        <div class="alert alert-primary mb-3" role="alert">
+            <i class="bi bi-exclamation-triangle"></i>
+            {{ 'parent-page-content-warning'|text }}
+        </div>
+        {% endif %}
+        {% if record['link'] is not empty %}
+        <div class="alert alert-info mb-3" role="alert">
+            <i class="bi bi-info-circle"></i>
+            {{ 'link-page-content-warning'|text }}
+        </div>
+        {% endif %}
+        <!-- Тайлбар -->
+        {% if record['description'] is not empty %}
+        <div class="mb-3">
+            <label class="form-label text-muted">{{ 'short-description'|text }}</label>
+            <div>{{ record['description']|e }}</div>
+        </div>
+        {% endif %}
+        <!-- Агуулга -->
+        {% if record['content'] is not empty %}
+        <div class="mb-3">
+            <label class="form-label text-muted">{{ 'content'|text }}</label>
+            <div class="border rounded p-3 bg-light">{{ record['content']|raw }}</div>
+        </div>
+        {% endif %}
+        <!-- Холбоос -->
+        {% if record['link'] is not empty %}
+        <div class="mb-3">
+            <label class="form-label text-muted">{{ 'link'|text }}</label>
+            <div>
+                <a href="{{ record['link']|e }}" target="_blank" class="text-decoration-none">
+                    {{ record['link']|e }} <i class="bi bi-box-arrow-up-right"></i>
+                </a>
             </div>
+        </div>
+        {% endif %}
+        <!-- Хавсралт файлууд -->
+        {% if files is not empty %}
+        <div class="mb-3">
+            <label class="form-label text-muted">{{ 'files'|text }}</label>
+            <div class="list-group">
+                {% for file in files %}
+                {% set previewable = file.type in ['image', 'video', 'audio'] or file.mime_content_type == 'application/pdf' %}
+                <a href="{{ file.path|e }}" {{ previewable ? 'target="_blank"' : 'download' }} class="list-group-item list-group-item-action d-flex align-items-center gap-2">
+                    {% if file.type == 'image' %}
+                        <i class="bi bi-file-image text-success"></i>
+                    {% elseif file.type == 'video' %}
+                        <i class="bi bi-file-play text-primary"></i>
+                    {% elseif file.type == 'audio' %}
+                        <i class="bi bi-file-music text-info"></i>
+                    {% elseif file.mime_content_type == 'application/pdf' %}
+                        <i class="bi bi-file-pdf text-danger"></i>
+                    {% else %}
+                        <i class="bi bi-file-earmark text-secondary"></i>
+                    {% endif %}
+                    <span>{{ file.path|split('/')|last }}</span>
+                    {% if file.size %}
+                        <small class="text-muted ms-auto">{{ (file.size / 1024)|round(1) }} KB</small>
+                    {% endif %}
+                    <i class="bi bi-{{ previewable ? 'box-arrow-up-right' : 'download' }} text-muted"></i>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        <div class="d-flex flex-wrap gap-2 mt-3">
+            {% if record['published'] == 1 %}
+                <span class="badge bg-success"><i class="bi bi-globe me-1"></i>{{ 'publish'|text }}</span>
+            {% else %}
+                <span class="badge bg-secondary"><i class="bi bi-eye-slash me-1"></i>{{ 'draft'|text }}</span>
+            {% endif %}
+            {% if record['is_featured'] == 1 %}
+                <span class="badge bg-warning text-dark"><i class="bi bi-star-fill me-1"></i>{{ 'featured'|text }}</span>
+            {% endif %}
         </div>
     </div>
 </div>
@@ -110,19 +145,6 @@
         const fromPage = new URLSearchParams(window.location.search).get('from');
         if (fromPage === 'nav') {
             document.querySelectorAll('a.back-link').forEach(a => { a.href = `{{ 'pages'|link }}`; });
-        }
-        const content = document.querySelector('textarea[name="content"]');
-        if (content) {
-            new moedit(content, {
-                readonly: true,
-                titleSelector: 'input[name="title"]',
-                {% if record['photo'] is not empty %}headerImage: '{{ record['photo']|e }}',{% endif %}
-                attachments: [
-                    {% for file in files %}
-                    JSON.parse(`{{ file|json_encode|e('js') }}`),
-                    {% endfor %}
-                ]
-            });
         }
 
         const logger = document.querySelector('ul.logger-protocol');

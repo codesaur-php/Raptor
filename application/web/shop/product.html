@@ -34,14 +34,118 @@
 </style>
 
 <article class="container product-article mt-3">
-    {% if photo is not empty %}
-        <div class="mb-4 text-center">
-            <img class="img-fluid rounded shadow-sm"
-                 file-data-fancybox
-                 src="{{ photo }}"
-                 alt="{{ title|e }}"
-                 style="max-height:480px">
+
+    <!-- Media gallery: undsen photo + attachment media -->
+    {% set media_files = [] %}
+    {% set doc_files = [] %}
+    {% if files is defined and files is not empty %}
+        {% for file in files %}
+            {% if file['type'] in ['image', 'video', 'audio'] %}
+                {% set media_files = media_files|merge([file]) %}
+            {% else %}
+                {% set doc_files = doc_files|merge([file]) %}
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+    {% set has_gallery = photo is not empty or media_files is not empty %}
+
+    {% if has_gallery %}
+    <style>
+        .product-gallery-main {
+            background: #f8f9fa;
+            border-radius: .5rem;
+            min-height: 320px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        .product-gallery-main img {
+            max-height: 480px;
+            max-width: 100%;
+            object-fit: contain;
+            cursor: zoom-in;
+        }
+        .product-gallery-main video,
+        .product-gallery-main audio {
+            max-width: 100%;
+        }
+        .product-thumbs {
+            display: flex;
+            gap: .5rem;
+            overflow-x: auto;
+            padding: .5rem 0;
+        }
+        .product-thumb {
+            width: 72px;
+            height: 72px;
+            border-radius: .375rem;
+            border: 2px solid transparent;
+            cursor: pointer;
+            flex-shrink: 0;
+            object-fit: cover;
+            opacity: .6;
+            transition: opacity .2s, border-color .2s;
+        }
+        .product-thumb.active,
+        .product-thumb:hover {
+            border-color: var(--bs-primary);
+            opacity: 1;
+        }
+        .product-thumb-icon {
+            width: 72px;
+            height: 72px;
+            border-radius: .375rem;
+            border: 2px solid transparent;
+            cursor: pointer;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #e9ecef;
+            opacity: .6;
+            transition: opacity .2s, border-color .2s;
+        }
+        .product-thumb-icon.active,
+        .product-thumb-icon:hover {
+            border-color: var(--bs-primary);
+            opacity: 1;
+        }
+    </style>
+    <div class="mb-4">
+        <!-- Том preview -->
+        <div class="product-gallery-main shadow-sm" id="gallery-main">
+            {% if photo is not empty %}
+            <img src="{{ photo }}" alt="{{ title|e }}" data-fancybox="gallery" data-src="{{ photo }}" id="gallery-main-img">
+            {% endif %}
         </div>
+        <!-- Thumbnail strip -->
+        {% if photo is not empty or media_files is not empty %}
+        {% set total_items = (photo is not empty ? 1 : 0) + media_files|length %}
+        {% if total_items > 1 %}
+        <div class="product-thumbs" id="gallery-thumbs">
+            {% if photo is not empty %}
+            <img src="{{ photo }}" alt="{{ title|e }}" class="product-thumb active"
+                 data-type="image" data-src="{{ photo }}">
+            {% endif %}
+            {% for file in media_files %}
+                {% if file['type'] == 'image' %}
+                <img src="{{ file['path'] }}" alt="{{ file['path']|basename }}" class="product-thumb"
+                     data-type="image" data-src="{{ file['path'] }}">
+                {% elseif file['type'] == 'video' %}
+                <div class="product-thumb-icon" data-type="video" data-src="{{ file['path'] }}" data-mime="{{ file['mime_content_type'] }}">
+                    <i class="bi bi-play-circle text-danger fs-4"></i>
+                </div>
+                {% elseif file['type'] == 'audio' %}
+                <div class="product-thumb-icon" data-type="audio" data-src="{{ file['path'] }}" data-mime="{{ file['mime_content_type'] }}" data-name="{{ file['path']|basename }}">
+                    <i class="bi bi-music-note-beamed text-info fs-4"></i>
+                </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endif %}
+    </div>
     {% endif %}
 
     {% if sku is not empty or barcode is not empty or stock is defined or sizes is not empty or colors is not empty %}
@@ -68,62 +172,44 @@
         {{ content }}
     </div>
 
-    {% if files is defined and files is not empty %}
+    {% if doc_files is not empty %}
     <div class="mt-4">
         <hr>
         <h5><i class="bi bi-paperclip"></i> {{ 'attachments'|text }}</h5>
-        <table class="table table-striped table-hover">
-            <thead>
-                <tr>
-                    <th style="width:50px">#</th>
-                    <th>{{ 'file'|text }}</th>
-                    <th style="width:120px">{{ 'size'|text }}</th>
-                    <th style="width:100px">{{ 'type'|text }}</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for file in files %}
-                <tr>
-                    <td>{{ loop.index }}</td>
-                    <td>
-                        <a href="{{ file['path'] }}" target="_blank" class="text-decoration-none">
-                            {% if file['type'] == 'image' %}
-                                <i class="bi bi-file-image text-success"></i>
-                            {% elseif file['type'] == 'video' %}
-                                <i class="bi bi-file-play text-danger"></i>
-                            {% elseif file['type'] == 'audio' %}
-                                <i class="bi bi-file-music text-info"></i>
-                            {% elseif file['mime_content_type'] == 'application/pdf' %}
-                                <i class="bi bi-file-pdf text-danger"></i>
-                            {% elseif file['mime_content_type'] starts with 'application/vnd.ms-excel' or file['mime_content_type'] starts with 'application/vnd.openxmlformats-officedocument.spreadsheet' %}
-                                <i class="bi bi-file-excel text-success"></i>
-                            {% elseif file['mime_content_type'] starts with 'application/msword' or file['mime_content_type'] starts with 'application/vnd.openxmlformats-officedocument.wordprocessing' %}
-                                <i class="bi bi-file-word text-primary"></i>
-                            {% elseif file['mime_content_type'] starts with 'application/zip' or file['mime_content_type'] starts with 'application/x-rar' or file['mime_content_type'] starts with 'application/x-7z' %}
-                                <i class="bi bi-file-zip text-warning"></i>
-                            {% else %}
-                                <i class="bi bi-file-earmark"></i>
-                            {% endif %}
-                            {{ file['path']|basename }}
-                        </a>
-                        {% if file['description'] is not empty %}
-                            <small class="text-muted d-block">{{ file['description'] }}</small>
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if file['size'] < 1024 %}
-                            {{ file['size'] }} B
-                        {% elseif file['size'] < 1048576 %}
-                            {{ (file['size'] / 1024)|round(1) }} KB
-                        {% else %}
-                            {{ (file['size'] / 1048576)|round(2) }} MB
-                        {% endif %}
-                    </td>
-                    <td><span class="badge bg-secondary">{{ file['type'] }}</span></td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <div class="list-group">
+            {% for file in doc_files %}
+            {% set previewable = file['mime_content_type'] == 'application/pdf' %}
+            <a href="{{ file['path'] }}" {{ previewable ? 'target="_blank"' : 'download' }} class="list-group-item list-group-item-action d-flex align-items-center gap-2">
+                {% if file['mime_content_type'] == 'application/pdf' %}
+                    <i class="bi bi-file-pdf text-danger fs-5"></i>
+                {% elseif file['mime_content_type'] starts with 'application/vnd.ms-excel' or file['mime_content_type'] starts with 'application/vnd.openxmlformats-officedocument.spreadsheet' %}
+                    <i class="bi bi-file-excel text-success fs-5"></i>
+                {% elseif file['mime_content_type'] starts with 'application/msword' or file['mime_content_type'] starts with 'application/vnd.openxmlformats-officedocument.wordprocessing' %}
+                    <i class="bi bi-file-word text-primary fs-5"></i>
+                {% elseif file['mime_content_type'] starts with 'application/zip' or file['mime_content_type'] starts with 'application/x-rar' or file['mime_content_type'] starts with 'application/x-7z' %}
+                    <i class="bi bi-file-zip text-warning fs-5"></i>
+                {% else %}
+                    <i class="bi bi-file-earmark text-secondary fs-5"></i>
+                {% endif %}
+                <div class="flex-grow-1">
+                    <span>{{ file['path']|basename }}</span>
+                    {% if file['description'] is not empty %}
+                        <small class="text-muted d-block">{{ file['description']|e }}</small>
+                    {% endif %}
+                </div>
+                <small class="text-muted">
+                    {% if file['size'] < 1024 %}
+                        {{ file['size'] }} B
+                    {% elseif file['size'] < 1048576 %}
+                        {{ (file['size'] / 1024)|round(1) }} KB
+                    {% else %}
+                        {{ (file['size'] / 1048576)|round(2) }} MB
+                    {% endif %}
+                </small>
+                <i class="bi bi-{{ previewable ? 'box-arrow-up-right' : 'download' }} text-muted"></i>
+            </a>
+            {% endfor %}
+        </div>
     </div>
     {% endif %}
 
@@ -134,12 +220,242 @@
         </a>
     </div>
 
+    {% if review is defined and review %}
+    {% if turnstile_site_key is not empty %}
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+    {% endif %}
+    <div class="mt-5 pt-4 border-top">
+        <h4 class="fw-bold mb-4">
+            <i class="bi bi-star-half me-2"></i>{{ 'reviews'|text }}
+            {% if review_count is defined and review_count > 0 %}
+                <span class="badge bg-secondary">{{ review_count }}</span>
+            {% endif %}
+        </h4>
+
+        {% if avg_rating is defined and review_count > 0 %}
+        <div class="text-center mb-4">
+            <div class="fs-2 fw-bold text-warning">{{ avg_rating }}</div>
+            <div class="mb-1">
+                {% for i in 1..5 %}
+                    {% if i <= avg_rating|round(0, 'floor') %}
+                        <i class="bi bi-star-fill text-warning fs-5"></i>
+                    {% elseif i - avg_rating < 1 and i - avg_rating > 0 %}
+                        <i class="bi bi-star-half text-warning fs-5"></i>
+                    {% else %}
+                        <i class="bi bi-star text-muted fs-5"></i>
+                    {% endif %}
+                {% endfor %}
+            </div>
+            <small class="text-muted">{{ review_count }} {{ 'reviews'|text|lower }}</small>
+        </div>
+        {% endif %}
+
+        {% if reviews is defined and reviews is not empty %}
+        <div class="d-flex flex-column gap-3 mb-4">
+            {% for r in reviews %}
+            <div class="card border-0 bg-light">
+                <div class="card-body py-2 px-3">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <div>
+                            <i class="bi bi-person-circle me-1"></i>
+                            <strong>{{ r.name|e }}</strong>
+                        </div>
+                        <small class="text-muted">{{ r.created_at }}</small>
+                    </div>
+                    <div class="mb-1">
+                        {% for i in 1..5 %}
+                            {% if i <= r.rating %}
+                                <i class="bi bi-star-fill text-warning"></i>
+                            {% else %}
+                                <i class="bi bi-star text-muted"></i>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                    <div>{{ r.comment|nl2br }}</div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <h5 class="fw-semibold mb-3">{{ 'write-review'|text }}</h5>
+                <form id="review_form" novalidate>
+                    <input type="hidden" name="_ts" value="{{ spam_ts }}">
+                    <input type="hidden" name="_token" value="{{ spam_token }}">
+                    <div style="position:absolute;left:-9999px" aria-hidden="true">
+                        <input type="text" name="website" tabindex="-1" autocomplete="off">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">{{ 'rating'|text }} *</label>
+                        <div class="star-rating" id="star-selector">
+                            {% for i in 1..5 %}
+                            <i class="bi bi-star fs-4 text-muted" data-value="{{ i }}" style="cursor:pointer"></i>
+                            {% endfor %}
+                            <input type="hidden" name="rating" id="rating-input" value="0">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <input class="form-control" name="name" type="text" required maxlength="255" placeholder="{{ 'name'|text }} *">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <input class="form-control" name="email" type="email" maxlength="255" placeholder="{{ 'email'|text }}">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <textarea class="form-control" name="comment" rows="3" required placeholder="{{ 'write-review'|text }}... *"></textarea>
+                    </div>
+                    {% if turnstile_site_key is not empty %}
+                    <div class="cf-turnstile mb-3" data-sitekey="{{ turnstile_site_key }}"></div>
+                    {% endif %}
+                    <button class="btn btn-primary" id="submit_review" type="submit" disabled>
+                        <i class="bi bi-send me-1"></i>{{ 'send'|text }}
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="reviewModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0">
+                <div class="modal-body text-center py-5">
+                    <i id="reviewModalIcon" style="font-size:4rem"></i>
+                    <h4 class="fw-bold mt-3" id="reviewModalTitle"></h4>
+                    <p class="text-muted" id="reviewModalMessage"></p>
+                    <button type="button" class="btn btn-primary px-4 py-2 mt-2" data-bs-dismiss="modal">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        document.addEventListener('DOMContentLoaded', function () {
+            const form = document.getElementById('review_form');
+            const btn = document.getElementById('submit_review');
+            if (!form) return;
+
+            const ratingInput = document.getElementById('rating-input');
+            const stars = document.querySelectorAll('#star-selector .bi');
+            const nameInput = form.querySelector('[name="name"]');
+            const commentInput = form.querySelector('[name="comment"]');
+
+            function updateStars(value) {
+                stars.forEach((s, idx) => {
+                    if (idx < value) {
+                        s.classList.replace('bi-star', 'bi-star-fill');
+                        s.classList.replace('text-muted', 'text-warning');
+                    } else {
+                        s.classList.replace('bi-star-fill', 'bi-star');
+                        s.classList.replace('text-warning', 'text-muted');
+                    }
+                });
+            }
+
+            stars.forEach(s => {
+                s.addEventListener('click', function () {
+                    ratingInput.value = this.dataset.value;
+                    updateStars(parseInt(this.dataset.value));
+                    toggleSubmit();
+                });
+                s.addEventListener('mouseenter', function () {
+                    updateStars(parseInt(this.dataset.value));
+                });
+                s.addEventListener('mouseleave', function () {
+                    updateStars(parseInt(ratingInput.value) || 0);
+                });
+            });
+
+            function toggleSubmit() {
+                btn.disabled = !nameInput.value.trim() || !commentInput.value.trim() || parseInt(ratingInput.value) < 1;
+            }
+            nameInput.addEventListener('input', toggleSubmit);
+            commentInput.addEventListener('input', toggleSubmit);
+
+            function showModal(type, title, message) {
+                const icon = document.getElementById('reviewModalIcon');
+                icon.className = type === 'success'
+                    ? 'bi bi-check-circle text-success'
+                    : 'bi bi-exclamation-circle text-danger';
+                document.getElementById('reviewModalTitle').textContent = title;
+                document.getElementById('reviewModalMessage').textContent = message;
+                new bootstrap.Modal(document.getElementById('reviewModal')).show();
+            }
+
+            form.addEventListener('submit', function (e) {
+                e.preventDefault();
+                if (btn.disabled) return;
+
+                const name = nameInput.value.trim();
+                const email = form.querySelector('[name="email"]').value.trim();
+                const comment = commentInput.value.trim();
+                const rating = parseInt(ratingInput.value);
+                if (!name || !comment || rating < 1) return;
+
+                if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                    showModal('error', '{{ 'error'|text }}', '{{ localization.code == 'mn' ? 'Зөв имэйл хаяг оруулна уу' : 'Please enter a valid email address' }}');
+                    return;
+                }
+
+                btn.disabled = true;
+                btn.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span>{{ 'sending'|text }}...`;
+
+                fetch(`{{ 'product-review'|link({'id': id}) }}`, {
+                    method: 'POST',
+                    body: new FormData(form)
+                }).then(res => {
+                    if (res.headers.get('content-type')?.includes('application/json')) return res.json();
+                    throw new Error('{{ 'server-error'|text }}');
+                }).then(response => {
+                    if (response.status !== 'success') {
+                        throw new Error(response.message || '{{ 'error'|text }}');
+                    }
+                    showModal('success', '{{ 'thank-you'|text }}', response.message);
+                    form.reset();
+                    updateStars(0);
+                    ratingInput.value = 0;
+                    setTimeout(() => location.reload(), 2000);
+                }).catch(error => {
+                    showModal('error', '{{ 'error'|text }}', error.message);
+                }).finally(() => {
+                    btn.disabled = false;
+                    btn.innerHTML = `<i class="bi bi-send me-1"></i>{{ 'send'|text }}`;
+                });
+            });
+        });
+    </script>
+    {% endif %}
+
 </article>
 
 <script type="text/javascript">
     document.addEventListener('DOMContentLoaded', function () {
-        Fancybox.bind('[file-data-fancybox]', {
-            groupAll: true
+        Fancybox.bind('[data-fancybox="gallery"]', { groupAll: true });
+
+        const main = document.getElementById('gallery-main');
+        const thumbs = document.getElementById('gallery-thumbs');
+        if (!main || !thumbs) return;
+
+        thumbs.querySelectorAll('.product-thumb, .product-thumb-icon').forEach(thumb => {
+            thumb.addEventListener('click', function () {
+                thumbs.querySelectorAll('.product-thumb, .product-thumb-icon').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+
+                const type = this.dataset.type;
+                const src = this.dataset.src;
+
+                if (type === 'image') {
+                    main.innerHTML = `<img src="${src}" alt="" data-fancybox="gallery" data-src="${src}" style="max-height:480px;max-width:100%;object-fit:contain;cursor:zoom-in">`;
+                    Fancybox.bind('[data-fancybox="gallery"]', { groupAll: true });
+                } else if (type === 'video') {
+                    main.innerHTML = `<video controls autoplay style="max-height:480px;max-width:100%"><source src="${src}" type="${this.dataset.mime}"></video>`;
+                } else if (type === 'audio') {
+                    const name = this.dataset.name || '';
+                    main.innerHTML = `<div class="text-center py-4"><i class="bi bi-music-note-beamed text-info" style="font-size:3rem"></i><div class="mt-2 mb-3 small text-muted">${name}</div><audio controls autoplay><source src="${src}" type="${this.dataset.mime}"></audio></div>`;
+                }
+            });
         });
     });
 </script>

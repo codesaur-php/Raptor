@@ -1,0 +1,116 @@
+<div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-3 shadow bg-secondary">
+    <h3 class="px-2 my-auto fs-6 text-white">
+        <i class="bi bi-book"></i> Reviews - User Manual
+    </h3>
+    <a href="{{ 'manual' | link }}" class="btn btn-sm btn-light m-1">
+        <i class="bi bi-arrow-left"></i> {{ 'manual' | text }}
+    </a>
+</div>
+
+<!-- ==================== OVERVIEW ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3">What is Reviews?</h4>
+        <p>
+            <strong>Reviews</strong> is the Dashboard module for managing product reviews and ratings.
+            You can view visitor star ratings (1-5) and written reviews, and delete inappropriate reviews.
+        </p>
+        <p>Review features:</p>
+        <ul>
+            <li><strong>Star rating (1-5)</strong> - Visitors rate products with 1-5 stars</li>
+            <li><strong>Written review</strong> - Text review alongside the star rating</li>
+            <li><strong>Average rating</strong> - Average rating is automatically calculated per product</li>
+            <li><strong>Spam protection</strong> - Honeypot, HMAC, rate limit, and Turnstile protection</li>
+            <li><strong>Product-linked</strong> - Reviews depend on the product's <code>comment=1</code> setting</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== LIST ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-list-ul"></i> Reviews List</h4>
+        <p>Click <strong>Reviews</strong> in the Dashboard sidebar to view all product reviews.</p>
+        <h5 class="mt-3">Table Columns</h5>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Column</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>ID / Date</td><td>Review ID and posted date</td></tr>
+                <tr><td>Name</td><td>Reviewer's name</td></tr>
+                <tr><td>Rating</td><td>Star rating displayed as 1-5 stars</td></tr>
+                <tr><td>Comment</td><td>Beginning of the review text</td></tr>
+                <tr><td>Product</td><td>Product title the review belongs to</td></tr>
+                <tr><td>Actions</td><td>View details button</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ==================== VIEW ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-eye"></i> View Product Reviews</h4>
+        <p>Click a product from the list to view all its reviews.</p>
+        <h5 class="mt-3">Product Information</h5>
+        <p>The top section shows the product summary:</p>
+        <ul>
+            <li>Product title, photo</li>
+            <li>Price, publication status</li>
+        </ul>
+        <h5 class="mt-3">Average Rating</h5>
+        <ul>
+            <li>Average star rating displayed prominently</li>
+            <li>Total number of reviews</li>
+        </ul>
+        <h5 class="mt-3">Reviews List</h5>
+        <ul>
+            <li>Reviewer name and email</li>
+            <li>Star rating (1-5)</li>
+            <li>Written review text</li>
+            <li>Posted date</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== DELETE ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-trash"></i> Delete Review</h4>
+        <p>Click the <strong>delete</strong> (trash) button next to a review.</p>
+        <ul>
+            <li>A confirmation dialog appears (SweetAlert2)</li>
+            <li>Soft delete - data is preserved, only deactivated</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== WEBSITE ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-globe"></i> Website Reviews</h4>
+        <p>Visitors can submit reviews on the product detail page:</p>
+        <ul>
+            <li>Review form appears at the bottom of the product page</li>
+            <li>Visitors select stars (1-5), enter name, email (optional), and review text</li>
+            <li>Average star rating and review count are displayed on the products listing page</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== PERMISSIONS ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-shield-lock"></i> Required Permissions</h4>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Action</th><th>Permission</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>View list, View reviews</td><td><code>system_product_index</code></td></tr>
+                <tr><td>Delete</td><td><code>system_product_delete</code></td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>

@@ -45,7 +45,7 @@ class ProductsModel extends Model
            (new Column('type', 'varchar', 32))->default('product'),
            (new Column('category', 'varchar', 32))->default('general'),
            (new Column('is_featured', 'tinyint'))->default(0),
-           (new Column('comment', 'tinyint'))->default(1),
+           (new Column('review', 'tinyint'))->default(1),
            (new Column('read_count', 'bigint'))->default(0),
            (new Column('is_active', 'tinyint'))->default(1),
            (new Column('published', 'tinyint'))->default(0),

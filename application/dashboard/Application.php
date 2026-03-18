@@ -27,8 +27,10 @@ class Application extends \Raptor\Application
      *
      * Процесс:
      *  1) parent::__construct() -> Raptor Framework-ийн үндсэн engine асаана
-     *  2) $this->use(Home\HomeRouter::class) -> Dashboard-ийн үндсэн router-ийг бүртгэнэ
-     *  3) BadgeRouter -> Badge системийн router-ийг бүртгэнэ
+     *  2) Home\HomeRouter -> Dashboard-ийн үндсэн router-ийг бүртгэнэ
+     *  3) Shop\ProductsRouter, Shop\OrdersRouter, Shop\ReviewsRouter -> Дэлгүүрийн router-уудыг бүртгэнэ
+     *  4) Manual\ManualRouter -> Гарын авлагын router-ийг бүртгэнэ
+     *  5) BadgeRouter -> Badge системийн router-ийг бүртгэнэ
      *
      * Нэмэх боломж:
      *  - Хэрэв дараа нь SettingsRouter, UserRouter гэх мэт нэмэх бол
@@ -46,6 +48,7 @@ class Application extends \Raptor\Application
         // Shop модулийн Router-г бүртгэж байна
         $this->use(new Shop\ProductsRouter());
         $this->use(new Shop\OrdersRouter());
+        $this->use(new Shop\ReviewsRouter());
 
         // Гарын авлага
         $this->use(new Manual\ManualRouter());

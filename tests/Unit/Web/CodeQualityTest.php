@@ -7,7 +7,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * Кодын чанарын тест - бидний хийсэн засваруудыг source level-д шалгах.
  *
- * - throw new \Error → throw new \Exception болсон эсэх
+ * - throw new \Error -> throw new \Exception болсон эсэх
  * - htmlspecialchars ашигласан эсэх
  * - read_count атомик update болсон эсэх
  * - filter_var redirect-д ашигласан эсэх
@@ -23,7 +23,7 @@ class CodeQualityTest extends TestCase
     }
 
     // =============================================
-    // \Error → \Exception солигдсон эсэх
+    // \Error -> \Exception солигдсон эсэх
     // =============================================
 
     /**

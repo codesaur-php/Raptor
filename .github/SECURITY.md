@@ -33,8 +33,8 @@ When reporting, include:
 
 | Version  | Supported |
 | -------- | --------- |
-| >= 2.0.1 | Yes       |
-| < 2.0.1  | No        |
+| >= 2.1   | Yes       |
+| < 2.1    | No        |
 
 Security updates are provided for the latest stable release only.
 

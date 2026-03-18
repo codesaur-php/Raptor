@@ -25,6 +25,7 @@ class ProductsSamples
         }
         $now = \date('Y-m-d H:i:s');
         $seed = [
+            'review' => 1,
             'is_active' => 1,
             'published' => 1,
             'created_at' => $now,

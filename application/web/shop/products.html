@@ -26,6 +26,20 @@
                         {% endif %}
                     </p>
                     {% endif %}
+                    {% if product.review_count is defined and product.review_count > 0 %}
+                    <div class="mb-2">
+                        {% for i in 1..5 %}
+                            {% if i <= product.avg_rating|round(0, 'floor') %}
+                                <i class="bi bi-star-fill text-warning small"></i>
+                            {% elseif i - product.avg_rating < 1 and i - product.avg_rating > 0 %}
+                                <i class="bi bi-star-half text-warning small"></i>
+                            {% else %}
+                                <i class="bi bi-star text-muted small"></i>
+                            {% endif %}
+                        {% endfor %}
+                        <small class="text-muted ms-1">({{ product.review_count }})</small>
+                    </div>
+                    {% endif %}
                     <a href="{{ 'product'|link({ slug: product.slug }) }}" class="btn btn-outline-primary btn-sm">
                         {{ 'read-more'|text }} <i class="bi bi-arrow-right"></i>
                     </a>

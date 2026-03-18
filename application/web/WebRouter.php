@@ -97,5 +97,8 @@ class WebRouter extends Router
 
         // Мэдээний сэтгэгдэл
         $this->POST('/session/news/{uint:id}/comment', [NewsController::class, 'commentSubmit'])->name('news-comment');
+
+        // Бүтээгдэхүүний үнэлгээ
+        $this->POST('/session/product/{uint:id}/review', [ShopController::class, 'reviewSubmit'])->name('product-review');
     }
 }

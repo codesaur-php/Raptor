@@ -68,77 +68,16 @@ class CommentsController extends \Raptor\Controller
     }
 
     /**
-     * News ID-аар тухайн мэдээний сэтгэгдлүүдийг харуулах.
-     * ?comment_id= query param байвал тухайн comment focus-д байна.
+     * News ID-аар тухайн мэдээний view руу comments-д focus хийж чиглүүлэх.
      *
      * @param int $id News ID
      * @return void
      */
     public function view(int $id)
     {
-        try {
-            if (!$this->isUserCan('system_content_index')) {
-                throw new \Exception($this->text('system-no-permission'), 401);
-            }
-
-            $focusId = (int)($this->getQueryParams()['comment_id'] ?? 0) ?: null;
-            $this->renderCommentsView($id, $focusId);
-        } catch (\Throwable $err) {
-            $this->dashboardProhibited($err->getMessage(), $err->getCode())->render();
-        }
-    }
-
-    /**
-     * Мэдээний сэтгэгдлүүдийг comments-view template-ээр render хийх.
-     *
-     * @param int      $newsId         News ID
-     * @param int|null $focusCommentId Focus хийх comment ID
-     * @return void
-     */
-    private function renderCommentsView(int $newsId, ?int $focusCommentId = null): void
-    {
-        $newsModel = new NewsModel($this->pdo);
-        $newsTable = $newsModel->getName();
-        $record = $newsModel->getRowWhere(['id' => $newsId, 'is_active' => 1]);
-        if (empty($record)) {
-            throw new \Exception($this->text('no-record-selected'), 404);
-        }
-
-        // Үүсгэсэн болон нийтлэсэн admin-ий нэрийг авах
-        $userIds = \array_filter([
-            'created_by' => $record['created_by'] ?? null,
-            'published_by' => $record['published_by'] ?? null
-        ]);
-        if (!empty($userIds)) {
-            $usersTable = (new \Raptor\User\UsersModel($this->pdo))->getName();
-            $idList = \implode(',', \array_map('intval', $userIds));
-            $ustmt = $this->query("SELECT id, username FROM $usersTable WHERE id IN ($idList)");
-            $userNames = $ustmt ? \array_column($ustmt->fetchAll(), 'username', 'id') : [];
-            $record['creator_name'] = $userNames[$record['created_by'] ?? 0] ?? null;
-            $record['publisher_name'] = $userNames[$record['published_by'] ?? 0] ?? null;
-        }
-
-        $commentsModel = new CommentsModel($this->pdo);
-        $commentsTable = $commentsModel->getName();
-        $cstmt = $this->prepare(
-            "SELECT id, parent_id, created_by, name, email, comment, created_at FROM $commentsTable
-             WHERE news_id=:nid AND is_active=1 ORDER BY created_at ASC"
-        );
-        $comments = $cstmt->execute([':nid' => $newsId]) ? $cstmt->fetchAll() : [];
-
-        $dashboard = $this->twigDashboard(
-            __DIR__ . '/comments-view.html',
-            [
-                'table' => $newsTable,
-                'record' => $record,
-                'comments' => $comments,
-                'focus_comment_id' => $focusCommentId
-            ]
-        );
-        $dashboard->set('title', $this->text('comments') . ' | ' . $record['title']);
-        $dashboard->render();
-        
-        $this->log('news', LogLevel::WARNING, '{record_id} мэдээний сэтгэгдлийг нээж харж байна', ['action' => 'comment-view', 'record_id' => $newsId, 'focus_id' => $focusCommentId]);
+        $path = $this->getScriptPath();
+        \header("Location: $path/dashboard/news/view/$id#comments");
+        exit;
     }
 
     /**

@@ -7,6 +7,9 @@
         <i class="bi bi-box-seam"></i> {{ 'products'|text }}
     </h3>
     <div class="ms-auto">
+        <a class="btn btn-outline-info shadow-sm me-1" href="{{ 'reviews'|link }}">
+            <i class="bi bi-star-half"></i> {{ 'reviews'|text }}
+        </a>
         <a class="btn btn-outline-secondary shadow-sm" href="{{ 'manual-view'|link({'file': 'products-manual-' ~ localization.code ~ '.html'}) }}" title="{{ 'manual'|text }}" target="_blank">
             <i class="bi bi-question-circle"></i>
         </a>
@@ -67,7 +70,7 @@
             <th scope="col"><i class="bi bi-paperclip"></i></th>
             <th scope="col">{{ 'type'|text }} / {{ 'category'|text }}</th>
             <th scope="col">{{ 'publish'|text }}</th>
-            <th scope="col" style="width:10rem">{{ 'action'|text }}</th>                         <!-- Үйлдлийн товчнууд -->
+            <th scope="col" style="width:8.5rem">{{ 'action'|text }}</th>                         <!-- Үйлдлийн товчнууд -->
         </tr>
     </thead>
 </table>
@@ -217,11 +220,18 @@
                 type_category += ` <span class="badge bg-danger">${record.category}</span>`;
 
                 /* Нийтлэгдсэн төлөвийг харуулах */
-                const published = record.published == 1 ? `<i class="bi bi-emoji-heart-eyes-fill text-success"></i> ${published_text}<br/><small>${record['published_at']}</small>` : '<i class="bi bi-eye-slash"></i>';
+                let published = record.published == 1 ? `<i class="bi bi-emoji-heart-eyes-fill text-success"></i> ${published_text}<br/><small>${record['published_at']}</small>` : '<i class="bi bi-eye-slash"></i>';
+                if (record.review == 1 && record.review_count > 0) {
+                    let stars = '';
+                    const avg = parseFloat(record.avg_rating) || 0;
+                    for (let i = 1; i <= 5; i++) {
+                        stars += i <= avg ? '<i class="bi bi-star-fill text-warning"></i>' : '<i class="bi bi-star text-muted"></i>';
+                    }
+                    published += `<br/><small>${stars} <span class="text-muted">(${record.review_count})</span></small>`;
+                }
 
                 /* ========== ҮЙЛДЛИЙН ТОВЧНУУДЫГ ҮҮСГЭХ ========== */
-                const buttons = [`<a class="btn btn-sm btn-warning mt-1 shadow-sm" href="${indexLink}/read/${record.slug}"><i class="bi bi-book"></i></a>`];  /* Унших товч */
-                buttons.push(`<a class="btn btn-sm btn-info mt-1 shadow-sm" href="${indexLink}/view/${record.id}"><i class="bi bi-eye"></i></a>`);          /* Харах товч */
+                const buttons = [`<a class="btn btn-sm btn-info mt-1 shadow-sm" href="${indexLink}/view/${record.id}"><i class="bi bi-eye"></i></a>`];  /* Харах товч */
 
                 /* Засах эрхтэй бол засах товч нэмэх */
                 if (canUpdate) {

@@ -81,7 +81,7 @@ class ProductsController extends FileController
         $dashboard->set('title', $this->text('products'));
         $dashboard->render();
 
-        $this->log('product', LogLevel::NOTICE, 'Бүтээгдэхүүний жагсаалтыг үзэж байна', ['action' => 'index']);
+        $this->log('products', LogLevel::NOTICE, 'Бүтээгдэхүүний жагсаалтыг үзэж байна', ['action' => 'index']);
     }
 
     /**
@@ -109,16 +109,19 @@ class ProductsController extends FileController
             $allowed = ['code', 'type', 'category', 'published', 'is_active'];
             foreach (\array_keys($params) as $name) {
                 if (\in_array($name, $allowed)) {
-                    $conditions[] = "$name=:$name";
+                    $conditions[] = "p.$name=:$name";
                 } else {
                     unset($params[$name]);
                 }
             }
             $where = \implode(' AND ', $conditions);
             $table = (new ProductsModel($this->pdo))->getName();
+            $reviewsTable = (new ReviewsModel($this->pdo))->getName();
             $select_pages =
-                'SELECT id, photo, title, slug, code, type, category, price, published, published_at, date(created_at) as created_date ' .
-                "FROM $table WHERE $where ORDER BY created_at desc";
+                'SELECT p.id, p.photo, p.title, p.slug, p.code, p.type, p.category, p.price, p.review, p.published, p.published_at, date(p.created_at) as created_date, ' .
+                "(SELECT COUNT(*) FROM $reviewsTable r WHERE r.product_id=p.id AND r.is_active=1) as review_count, " .
+                "(SELECT AVG(rating) FROM $reviewsTable r WHERE r.product_id=p.id AND r.is_active=1) as avg_rating " .
+                "FROM $table p WHERE $where ORDER BY p.created_at desc";
             $products_stmt = $this->prepare($select_pages);
             foreach ($params as $name => $value) {
                 $products_stmt->bindValue(":$name", $value);
@@ -172,7 +175,7 @@ class ProductsController extends FileController
                 $needsPublishPermission =
                     $isPublished ||
                     ($parsedBody['is_featured'] ?? 0) == 1 ||
-                    ($parsedBody['comment'] ?? 0) == 1;
+                    ($parsedBody['review'] ?? 0) == 1;
                 if ($needsPublishPermission
                     && !$this->isUserCan('system_product_publish')
                 ) {
@@ -239,7 +242,7 @@ class ProductsController extends FileController
                 $level = LogLevel::NOTICE;
                 $message = 'Бүтээгдэхүүн үүсгэх үйлдлийг эхлүүллээ';
             }
-            $this->log('product', $level, $message, $context);
+            $this->log('products', $level, $message, $context);
         }
     }
 
@@ -292,7 +295,7 @@ class ProductsController extends FileController
                 $needsPublishPermission =
                     $isPublished ||
                     ($parsedBody['is_featured'] ?? 0) == 1 ||
-                    ($parsedBody['comment'] ?? 0) == 1;
+                    ($parsedBody['review'] ?? 0) == 1;
                 if ($needsPublishPermission
                     && !$this->isUserCan('system_product_publish')
                 ) {
@@ -389,7 +392,7 @@ class ProductsController extends FileController
                 $message = '{record.id} дугаартай [{record.title}] бүтээгдэхүүнийг шинэчлэхээр нээж байна';
                 $context += ['record' => $record, 'files' => $files];
             }
-            $this->log('product', $level, $message, $context);
+            $this->log('products', $level, $message, $context);
         }
     }
 
@@ -422,9 +425,31 @@ class ProductsController extends FileController
             $filesModel = new FilesModel($this->pdo);
             $filesModel->setTable($table);
             $files = $filesModel->getRows(['WHERE' => "record_id=$id AND is_active=1"]);
+            // Үнэлгээний мэдээлэл
+            $reviewsModel = new ReviewsModel($this->pdo);
+            $reviewsTable = $reviewsModel->getName();
+            $avgStmt = $this->prepare(
+                "SELECT AVG(rating) as avg_rating, COUNT(*) as review_count FROM $reviewsTable
+                 WHERE product_id=:pid AND is_active=1"
+            );
+            $avgStmt->execute([':pid' => $id]);
+            $stats = $avgStmt->fetch();
+            $rstmt = $this->prepare(
+                "SELECT id, created_by, name, email, rating, comment, created_at FROM $reviewsTable
+                 WHERE product_id=:pid AND is_active=1 ORDER BY created_at DESC"
+            );
+            $reviews = $rstmt->execute([':pid' => $id]) ? $rstmt->fetchAll() : [];
+
             $dashboard = $this->twigDashboard(
                 __DIR__ . '/products-view.html',
-                ['table' => $table, 'record' => $record, 'files' => $files]
+                [
+                    'table' => $table,
+                    'record' => $record,
+                    'files' => $files,
+                    'avg_rating' => \round((float)($stats['avg_rating'] ?? 0), 1),
+                    'review_count' => (int)($stats['review_count'] ?? 0),
+                    'reviews' => $reviews
+                ]
             );
             $dashboard->set('title', $this->text('view-record') . ' | Products');
             $dashboard->render();
@@ -441,7 +466,7 @@ class ProductsController extends FileController
                 $message = '{record.id} дугаартай [{record.title}] бүтээгдэхүүнийг үзэж байна';
                 $context += ['record' => $record, 'files' => $files];
             }
-            $this->log('product', $level, $message, $context);
+            $this->log('products', $level, $message, $context);
         }
     }
 
@@ -653,7 +678,7 @@ class ProductsController extends FileController
                 $message = '{record_id} дугаартай [{server_request.body.title}] бүтээгдэхүүнийг идэвхгүй болголоо';
                 $context += ['record_id' => $id];
             }
-            $this->log('product', $level, $message, $context);
+            $this->log('products', $level, $message, $context);
         }
     }
 
@@ -729,7 +754,7 @@ class ProductsController extends FileController
                 $level = LogLevel::ALERT;
                 $message = 'Бүтээгдэхүүний хүснэгтийг жишиг датанаас цэвэрлэж production горимд шилжүүллээ';
             }
-            $this->log('product', $level, $message, $context);
+            $this->log('products', $level, $message, $context);
         }
     }
 

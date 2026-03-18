@@ -157,12 +157,12 @@
                     {{ 'feature-on-homepage'|text }}
                 </div>
             </div>
-            <!-- Сэтгэгдэл авах эсэх сонголт -->
+            <!-- Үнэлгээ авах эсэх сонголт -->
             <div class="col-4">
-                <label class="form-label fw-bolder">{{ 'comment'|text }} <i class="bi bi-chat-dots"></i></label>
+                <label class="form-label fw-bolder">{{ 'reviews'|text }} <i class="bi bi-star-half"></i></label>
                 <div class="form-check form-switch">
-                    <input class="form-check-input" name="comment"{{ record['comment'] > 0 ? ' checked' : '' }} type="checkbox" role="switch">
-                    {{ 'can-comment'|text }}
+                    <input class="form-check-input" name="review"{{ record['review'] > 0 ? ' checked' : '' }} type="checkbox" role="switch">
+                    {{ 'can-review'|text }}
                 </div>
             </div>
         </div>
@@ -285,9 +285,9 @@
                 if (isFeaturedSwitch) {
                     data.set('is_featured', isFeaturedSwitch.checked ? 1 : 0);
                 }
-                const commentSwitch = formUpdate.querySelector('input[name="comment"]');
-                if (commentSwitch) {
-                    data.set('comment', commentSwitch.checked ? 1 : 0);
+                const reviewSwitch = formUpdate.querySelector('input[name="review"]');
+                if (reviewSwitch) {
+                    data.set('review', reviewSwitch.checked ? 1 : 0);
                 }
                 fetch(
                     this.action,

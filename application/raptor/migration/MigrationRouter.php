@@ -10,9 +10,9 @@ use codesaur\Router\Router;
  * Migration dashboard-ийн чиглүүлэгч (Router).
  *
  * Маршрутууд:
- *  - GET  /dashboard/migrations         → Migrations хуудас (index)
- *  - GET  /dashboard/migrations/status  → Төлөв байдал JSON (AJAX)
- *  - GET  /dashboard/migrations/view    → SQL файлын агуулга JSON (AJAX)
+ *  - GET  /dashboard/migrations         -> Migrations хуудас (index)
+ *  - GET  /dashboard/migrations/status  -> Төлөв байдал JSON (AJAX)
+ *  - GET  /dashboard/migrations/view    -> SQL файлын агуулга JSON (AJAX)
  *
  * @package Raptor\Migration
  */

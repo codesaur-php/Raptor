@@ -167,12 +167,12 @@
                     {{ 'feature-on-homepage'|text }}
                 </div>
             </div>
-            <!-- Сэтгэгдэл авах эсэх сонголт -->
+            <!-- Үнэлгээ авах эсэх сонголт -->
             <div class="col-4">
-                <label class="form-label fw-bolder">{{ 'comment'|text }} <i class="bi bi-chat-dots"></i></label>
+                <label class="form-label fw-bolder">{{ 'reviews'|text }} <i class="bi bi-star-half"></i></label>
                 <div class="form-check form-switch">
-                    <input class="form-check-input" name="comment" type="checkbox" role="switch">
-                    {{ 'can-comment'|text }}
+                    <input class="form-check-input" name="review" type="checkbox" role="switch">
+                    {{ 'can-review'|text }}
                 </div>
             </div>
         </div>
@@ -278,9 +278,9 @@
                 if (isFeaturedCheckbox) {
                     data.set('is_featured', isFeaturedCheckbox.checked ? '1' : '0');
                 }
-                const commentCheckbox = this.querySelector('input[name="comment"]');
-                if (commentCheckbox) {
-                    data.set('comment', commentCheckbox.checked ? '1' : '0');
+                const reviewCheckbox = this.querySelector('input[name="review"]');
+                if (reviewCheckbox) {
+                    data.set('review', reviewCheckbox.checked ? '1' : '0');
                 }
 
                 /* Бүх файлуудын мэдээллийг JSON хэлбэрээр илгээх */

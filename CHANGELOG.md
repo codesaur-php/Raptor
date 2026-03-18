@@ -6,6 +6,41 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 
 ---
 
+## [2.1.0] - 2026-03-18
+[2.1.0]: https://github.com/codesaur-php/Raptor/compare/v2.0.1...v2.1.0
+
+Product review/rating system, comments consolidation, and dashboard UX improvements.
+
+### Added
+- **Product Reviews** - Star rating (1-5) with written review on product detail pages. New model (`ReviewsModel`, table: `products_reviews`), controller (`ReviewsController`), and router (`ReviewsRouter`)
+- **Web review form** - Spam-protected review submission via `POST /session/product/{id}/review` with honeypot, HMAC, rate limiting, Turnstile support
+- **Web product media gallery** - Thumbnail strip + large preview replacing the old attachment table. Images open in Fancybox, video/audio play inline, documents download or open in new tab (PDF)
+- **Web products list ratings** - Average star rating and review count displayed on product cards
+- **Dashboard review management** - Reviews list accessible from products-index header, product reviews shown in products-view with delete (SweetAlert2 confirmation)
+- **Badge info color** - New `info` (`bg-info`, cyan) badge color for comment/review activity, distinct from `blue` (`bg-primary`) used for updates
+- **Translations** - `average-rating`, `can-review`, `rating`, `reviews`, `write-review` keywords added to TextInitial
+- **Manual** - `reviews-manual-mn.html`, `reviews-manual-en.html` for the reviews module
+
+### Changed
+- **ProductsModel** - `comment` column renamed to `review` (tinyint toggle for enabling reviews)
+- **ProductsController** - `list()` includes `review_count` and `avg_rating` via subquery; `view()` passes full reviews list to template
+- **OrdersController** - Log table changed from `'product'` to `'products_orders'` for dedicated order logging
+- **ShopController (web)** - `orderSubmit()` logs to `'products_orders'`; `product()` fetches reviews + spam tokens; `products()` LEFT JOINs review stats
+- **Comments consolidated into news-view** - `CommentsController::view()` now redirects to `/dashboard/news/view/{id}#comments` instead of rendering separate `comments-view.html`. Comments sidebar menu removed, link moved to news-index header
+- **Reviews consolidated into products-view** - No separate reviews-view page. Reviews sidebar menu removed, link moved to products-index header
+- **BadgeController BADGE_MAP** - Comment actions (`comment-insert`, `comment-reply`) now badge `/dashboard/news` with `info` color. Review actions (`review-insert`) badge `/dashboard/products` with `info` color. Order actions moved to `products_orders` log table key
+- **BadgeController PERMISSION_MAP** - Removed `/dashboard/comments` and `/dashboard/reviews` entries (no longer sidebar modules)
+- **DashboardMenus** - Removed Comments and Reviews sidebar menu entries
+- **dashboard.js** - `COLOR_MAP` and badge render order updated: `green -> info -> blue -> red`
+- **products-insert.html / products-update.html** - `comment` field renamed to `review`, label changed to `reviews` with `can-review` text, icon changed to `bi-star-half`
+- **products-view.html** - Comment badge replaced with review badge, full reviews section with scrollable list and delete buttons
+
+### Removed
+- **reviews-view.html** - Consolidated into products-view.html
+- **TextInitial unused keywords** - Removed 14 keywords not used via `|text` or `$this->text()`: `allow-write`, `clear`, `download`, `empty-directory`, `empty-result`, `items`, `lines`, `log-file-empty`, `network-error`, `newer`, `older`, `refresh`, `rows-found`, `running`
+
+---
+
 ## [2.0.1] - 2026-03-18
 [2.0.1]: https://github.com/codesaur-php/Raptor/compare/v2.0.0...v2.0.1
 
@@ -308,7 +343,7 @@ Log system consolidation, model rename, Discord notification improvement, automa
 
 ### Changed
 - **Shop RBAC** - Shop module (`ProductsController`, `OrdersController`, templates) now uses dedicated `system_product_*` permissions instead of shared `system_content_*`
-- **OrdersModel → ProductOrdersModel** - Renamed class and file; table name changed from `orders` to `products_orders`
+- **OrdersModel -> ProductOrdersModel** - Renamed class and file; table name changed from `orders` to `products_orders`
 - **Log consolidation** - All shop-related logs (orders CRUD, products CRUD, orderSubmit) now write to a single `'product'` log channel instead of dynamic `$table` names
 - **Log consolidation** - All development module logs (DevRequest, FileManager, SqlTerminal) now write to a single `'development'` log channel instead of separate `'dev_requests'`, `'file_manager'`, `'sql_terminal'` channels
 - **Error logging** - All non-critical `error_log()` calls across the application now only execute when `CODESAUR_DEVELOPMENT` is `true`; critical exception/error handlers remain unconditional

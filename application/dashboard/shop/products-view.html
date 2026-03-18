@@ -13,11 +13,6 @@
     'food': { 'mn': 'Хүнс' },
     'software': { 'mn': 'Программ хангамж' }
 } %}
-<!-- Mongolian WYSIWYG Editor - текст editor -->
-<link href="{{ index }}/assets/moedit/moedit.css?v=1" rel="stylesheet">
-<link href="{{ index }}/assets/moedit/moedit-icons.css?v=1" rel="stylesheet">
-<script defer src="{{ index }}/assets/moedit/moedit.js?v=1"></script>
-<script defer src="{{ index }}/assets/moedit/moedit.ui.js?v=1"></script>
 <div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-2 shadow">
     <h3 class="px-2 my-auto fs-6 text-info text-uppercase">
         <i class="bi bi-eye"></i> {{ record['title']|e }}
@@ -28,109 +23,233 @@
         </a>
     </div>
 </div>
-<div class="row mt-3">
-    <div class="col-4">
-        <label class="form-label">{{ 'language'|text }} <i class="bi bi-translate"></i></label>
-        <span class="form-control">
-            {% set flag = record['code'] == 'en' ? 'us' : record['code'] %}
-            {% set title = (localization.language[record['code']]['title'] ?? record['code'])|e %}
-            <img src="https://flagcdn.com/20x15/{{ flag }}.png" srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x" width="16" height="12" alt="{{ title }}">
-            {{ title }}
-        </span>
-    </div>
-    <div class="col-4">
-        <label class="form-label">{{ 'type'|text }} <i class="bi bi-tag"></i></label>
-        <input class="form-control" name="type" readonly value="{{ (types[record['type']][localization.code] ?? record['type'])|e }}" placeholder="" type="text" autocomplete="off">
-    </div>
-    <div class="col-4">
-        <label class="form-label">{{ 'category'|text }} <i class="bi bi-bookmark"></i></label>
-        <input class="form-control" name="category" readonly type="text" value="{{ (categories[record['category']][localization.code] ?? record['category'])|e }}" maxlength="32">
+<div class="card shadow-sm border-info mt-3">
+    <div class="card-body">
+        <div class="row mb-3">
+            <div class="col-4">
+                <label class="form-label text-muted">{{ 'language'|text }}</label>
+                <div>
+                    {% set flag = record['code'] == 'en' ? 'us' : record['code'] %}
+                    {% set title = (localization.language[record['code']]['title'] ?? record['code'])|e %}
+                    <img src="https://flagcdn.com/20x15/{{ flag }}.png" srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x" width="16" height="12" alt="{{ title }}">
+                    {{ title }}
+                </div>
+            </div>
+            <div class="col-4">
+                <label class="form-label text-muted">{{ 'type'|text }}</label>
+                <div>{{ (types[record['type']][localization.code] ?? record['type'])|e }}</div>
+            </div>
+            <div class="col-4">
+                <label class="form-label text-muted">{{ 'category'|text }}</label>
+                <div>{{ (categories[record['category']][localization.code] ?? record['category'])|e }}</div>
+            </div>
+        </div>
+        {% if record['photo'] is not empty %}
+        <div class="mb-3">
+            <img src="{{ record['photo']|e }}" alt="{{ record['title']|e }}" class="img-fluid rounded" style="max-height:300px">
+        </div>
+        {% endif %}
+        <div class="mb-3">
+            <label class="form-label text-muted">{{ 'title'|text }}</label>
+            <div class="fs-5 fw-semibold">{{ record['title']|e }}</div>
+        </div>
+        <!-- Үнэ, Хямдралтай үнэ, Нөөц -->
+        <div class="row mb-3">
+            <div class="col-md-4">
+                <label class="form-label text-muted">{{ 'price'|text }}</label>
+                <div class="fs-6 fw-semibold">{{ record['price']|default(0)|number_format(2) }}</div>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label text-muted">{{ 'sale-price'|text }}</label>
+                <div class="fs-6{% if record['sale_price'] is not empty %} text-danger fw-semibold{% endif %}">{{ record['sale_price'] is not empty ? record['sale_price']|number_format(2) : '-' }}</div>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label text-muted">{{ 'stock'|text }}</label>
+                <div>{{ record['stock']|default(0) }}</div>
+            </div>
+        </div>
+        <!-- Хэмжээ, Өнгө, SKU, Баркод -->
+        <div class="row mb-3">
+            <div class="col-md-3 col-sm-6">
+                <label class="form-label text-muted">{{ 'sizes'|text }}</label>
+                <div>{{ record['sizes']|default('-')|e }}</div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <label class="form-label text-muted">{{ 'colors'|text }}</label>
+                <div>{{ record['colors']|default('-')|e }}</div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <label class="form-label text-muted">SKU</label>
+                <div>{{ record['sku']|default('-')|e }}</div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <label class="form-label text-muted">{{ 'barcode'|text }}</label>
+                <div>{{ record['barcode']|default('-')|e }}</div>
+            </div>
+        </div>
+        {% if record['description'] is not empty %}
+        <div class="mb-3">
+            <label class="form-label text-muted">{{ 'short-description'|text }}</label>
+            <div>{{ record['description']|e }}</div>
+        </div>
+        {% endif %}
+        <!-- Агуулга -->
+        {% if record['content'] is not empty %}
+        <div class="mb-3">
+            <label class="form-label text-muted">{{ 'content'|text }}</label>
+            <div class="border rounded p-3 bg-light">{{ record['content']|raw }}</div>
+        </div>
+        {% endif %}
+        <!-- Холбоос -->
+        {% if record['link'] is not empty %}
+        <div class="mb-3">
+            <label class="form-label text-muted">{{ 'link'|text }}</label>
+            <div>
+                <a href="{{ record['link']|e }}" target="_blank" class="text-decoration-none">
+                    {{ record['link']|e }} <i class="bi bi-box-arrow-up-right"></i>
+                </a>
+            </div>
+        </div>
+        {% endif %}
+        <!-- Хавсралт файлууд -->
+        {% if files is not empty %}
+        <div class="mb-3">
+            <label class="form-label text-muted">{{ 'files'|text }}</label>
+            <div class="list-group">
+                {% for file in files %}
+                {% set previewable = file.type in ['image', 'video', 'audio'] or file.mime_content_type == 'application/pdf' %}
+                <a href="{{ file.path|e }}" {{ previewable ? 'target="_blank"' : 'download' }} class="list-group-item list-group-item-action d-flex align-items-center gap-2">
+                    {% if file.type == 'image' %}
+                        <i class="bi bi-file-image text-success"></i>
+                    {% elseif file.type == 'video' %}
+                        <i class="bi bi-file-play text-primary"></i>
+                    {% elseif file.type == 'audio' %}
+                        <i class="bi bi-file-music text-info"></i>
+                    {% elseif file.mime_content_type == 'application/pdf' %}
+                        <i class="bi bi-file-pdf text-danger"></i>
+                    {% else %}
+                        <i class="bi bi-file-earmark text-secondary"></i>
+                    {% endif %}
+                    <span>{{ file.path|split('/')|last }}</span>
+                    {% if file.size %}
+                        <small class="text-muted ms-auto">{{ (file.size / 1024)|round(1) }} KB</small>
+                    {% endif %}
+                    <i class="bi bi-{{ previewable ? 'box-arrow-up-right' : 'download' }} text-muted"></i>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        <div class="d-flex flex-wrap gap-2 mt-3">
+            {% if record['published'] == 1 %}
+                <span class="badge bg-success"><i class="bi bi-globe me-1"></i>{{ 'publish'|text }}</span>
+            {% else %}
+                <span class="badge bg-secondary"><i class="bi bi-eye-slash me-1"></i>{{ 'draft'|text }}</span>
+            {% endif %}
+            {% if record['is_featured'] == 1 %}
+                <span class="badge bg-warning text-dark"><i class="bi bi-star-fill me-1"></i>{{ 'featured'|text }}</span>
+            {% endif %}
+            {% if record['review'] == 1 %}
+                <span class="badge bg-info"><i class="bi bi-star-half me-1"></i>{{ 'reviews'|text }}</span>
+            {% endif %}
+        </div>
     </div>
 </div>
-<div class="mt-3">
-    <label class="form-label">{{ 'title'|text }} <i class="bi bi-card-heading"></i></label>
-    <input class="form-control form-control-lg" name="title" readonly value="{{ record['title']|e }}" maxlength="255" type="text">
+{% if record['review'] == 1 and review_count is defined %}
+<script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<div class="card mt-3" id="reviews-section">
+    <div class="card-header bg-body-tertiary d-flex justify-content-between align-items-center">
+        <div>
+            <i class="bi bi-star-half me-1"></i>
+            <strong>{{ 'reviews'|text }}</strong>
+            <span class="badge bg-secondary ms-1">{{ review_count }}</span>
+        </div>
+        {% if review_count > 0 %}
+        <div class="d-flex align-items-center gap-2">
+            <span class="fw-bold text-warning">{{ avg_rating }}</span>
+            {% for i in 1..5 %}
+                {% if i <= avg_rating|round(0, 'floor') %}
+                    <i class="bi bi-star-fill text-warning small"></i>
+                {% elseif i - avg_rating < 1 and i - avg_rating > 0 %}
+                    <i class="bi bi-star-half text-warning small"></i>
+                {% else %}
+                    <i class="bi bi-star text-muted small"></i>
+                {% endif %}
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+    {% if reviews is defined and reviews is not empty %}
+    <div class="list-group list-group-flush" style="max-height:400px; overflow-y:auto">
+        {% for r in reviews %}
+        <div class="list-group-item" id="review-{{ r.id }}">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <strong>{{ r.name|e }}</strong>
+                    {% if r.email %}<small class="text-muted ms-1">{{ r.email }}</small>{% endif %}
+                </div>
+                <div>
+                    <small class="text-muted">{{ r.created_at }}</small>
+                    {% if user.can('system_product_delete') %}
+                        <button class="btn btn-sm btn-outline-danger ms-1 delete-review" data-id="{{ r.id }}">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="mt-1 mb-1">
+                {% for i in 1..5 %}
+                    {% if i <= r.rating %}
+                        <i class="bi bi-star-fill text-warning small"></i>
+                    {% else %}
+                        <i class="bi bi-star text-muted small"></i>
+                    {% endif %}
+                {% endfor %}
+            </div>
+            <div class="small">{{ r.comment|nl2br }}</div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
 </div>
-<!-- Үнэ, Хямдралтай үнэ, Нөөц -->
-<div class="row mt-3">
-    <div class="col-md-4 mb-3">
-        <label class="form-label">{{ 'price'|text }} <i class="bi bi-currency-exchange"></i></label>
-        <input class="form-control" readonly value="{{ record['price']|default(0)|number_format(2) }}" type="text">
-    </div>
-    <div class="col-md-4 mb-3">
-        <label class="form-label">{{ 'sale-price'|text }} <i class="bi bi-tag"></i></label>
-        <input class="form-control" readonly value="{{ record['sale_price'] is not empty ? record['sale_price']|number_format(2) : '' }}" type="text">
-    </div>
-    <div class="col-md-4 mb-3">
-        <label class="form-label">{{ 'stock'|text }} <i class="bi bi-box-seam"></i></label>
-        <input class="form-control" readonly value="{{ record['stock']|default(0) }}" type="text">
-    </div>
-</div>
-<!-- Хэмжээ, Өнгө, SKU, Баркод -->
-<div class="row">
-    <div class="col-md-3 col-sm-6 mb-3">
-        <label class="form-label">{{ 'sizes'|text }} <i class="bi bi-rulers"></i></label>
-        <input class="form-control" readonly value="{{ record['sizes']|default('')|e }}" type="text">
-    </div>
-    <div class="col-md-3 col-sm-6 mb-3">
-        <label class="form-label">{{ 'colors'|text }} <i class="bi bi-palette"></i></label>
-        <input class="form-control" readonly value="{{ record['colors']|default('')|e }}" type="text">
-    </div>
-    <div class="col-md-3 col-sm-6 mb-3">
-        <label class="form-label">SKU <i class="bi bi-upc"></i></label>
-        <input class="form-control" readonly value="{{ record['sku']|default('')|e }}" type="text">
-    </div>
-    <div class="col-md-3 col-sm-6 mb-3">
-        <label class="form-label">{{ 'barcode'|text }} <i class="bi bi-upc-scan"></i></label>
-        <input class="form-control" readonly value="{{ record['barcode']|default('')|e }}" type="text">
-    </div>
-</div>
-<div class="mt-3">
-    <label class="form-label">{{ 'short-description'|text }} <i class="bi bi-card-text"></i></label>
-    <input class="form-control form-control-sm" name="description" readonly value="{{ record['description']|e }}" type="text">
-</div>
-<!-- Агуулга -->
-<div class="mt-3">
-    <textarea name="content" readonly>{{ record['content']|e }}</textarea>
-</div>
-<!-- Холбоос -->
-{% if record['link'] is not empty %}
-<div class="mt-3">
-    <label class="form-label">{{ 'link'|text }} <i class="bi bi-link-45deg"></i></label>
-    <div class="input-group">
-        <input class="form-control" readonly value="{{ record['link']|e }}" type="text">
-        <a class="btn btn-outline-secondary" href="{{ record['link']|e }}" target="_blank"><i class="bi bi-box-arrow-up-right"></i></a>
-    </div>
-</div>
+<script type="text/javascript">
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('.delete-review').forEach(b => {
+            b.addEventListener('click', function () {
+                const id = this.dataset.id;
+                Swal.fire({
+                    title: `{{ 'confirm-delete'|text|e('js') }}`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    confirmButtonText: `{{ 'delete'|text|e('js') }}`,
+                    cancelButtonText: `{{ 'cancel'|text|e('js') }}`
+                }).then(result => {
+                    if (!result.isConfirmed) return;
+                    fetch(`{{ 'reviews-deactivate'|link }}`, {
+                        method: 'DELETE',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ id })
+                    }).then(r => r.json()).then(res => {
+                        if (res.status === 'success') {
+                            location.reload();
+                        } else {
+                            Swal.fire(`{{ 'error'|text|e('js') }}`, res.message, 'error');
+                        }
+                    });
+                });
+            });
+        });
+
+        if (window.location.hash === '#reviews-section') {
+            const el = document.getElementById('reviews-section');
+            if (el) {
+                setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }), 300);
+            }
+        }
+    });
+</script>
 {% endif %}
-<div class="rounded border border-success mt-4 p-3">
-    <div class="row">
-        <!-- Нийтлэх эсэх -->
-        <div class="col-4">
-            <label class="form-label fw-bolder">{{ 'publish'|text }} <i class="bi bi-globe"></i></label>
-            <div class="form-check form-switch">
-                <input class="form-check-input" name="published"{{ record['published'] == 1 ? ' checked' : '' }} disabled type="checkbox" role="switch">
-                {{ 'visible-on-site'|text }}
-            </div>
-        </div>
-        <!-- Онцлох бүтээгдэхүүн эсэх -->
-        <div class="col-4">
-            <label class="form-label fw-bolder">{{ 'featured'|text }} <i class="bi bi-star"></i></label>
-            <div class="form-check form-switch">
-                <input class="form-check-input" name="is_featured"{{ record['is_featured'] == 1 ? ' checked' : '' }} disabled type="checkbox" role="switch">
-                {{ 'feature-on-homepage'|text }}
-            </div>
-        </div>
-        <!-- Сэтгэгдэл авах эсэх -->
-        <div class="col-4">
-            <label class="form-label fw-bolder">{{ 'comment'|text }} <i class="bi bi-chat-dots"></i></label>
-            <div class="form-check form-switch">
-                <input class="form-check-input" name="comment"{{ record['comment'] == 1 ? ' checked' : '' }} disabled type="checkbox" role="switch">
-                {{ 'can-comment'|text }}
-            </div>
-        </div>
-    </div>
-</div>
 {% if user.can('system_logger') %}
 <div class="mt-5">
     <hr>
@@ -146,19 +265,6 @@
 {% endif %}
 <script type="text/javascript">
     document.addEventListener('DOMContentLoaded', function () {
-        const content = document.querySelector('textarea[name="content"]');
-        new moedit(content, {
-            readonly: true,
-            titleSelector: 'input[name="title"]',
-            {% if record['type'] == 'embed' %}sourceMode: true,{% endif %}
-            {% if record['photo'] is not empty %}headerImage: '{{ record['photo']|e }}',{% endif %}
-            attachments: [
-                {% for file in files %}
-                JSON.parse(`{{ file|json_encode|e('js') }}`),
-                {% endfor %}
-            ]
-        });
-
         const logger = document.querySelector('ul.logger-protocol');
         if (logger && logger.tagName === 'UL') {
             const logsRetrieveLink = `{{ 'logs-retrieve'|link }}`;

@@ -14,7 +14,7 @@
 3. [Тохиргоо (.env)](#3-тохиргоо)
 4. [Архитектур](#4-архитектур)
 5. [Middleware pipeline](#5-middleware-pipeline)
-6. [Модулиуд](#6-модулиуд) (6.1-6.13 Суурь | 6.14-6.21 Шинэ: Дэлгүүр, Мэдэгдэл, Хөгжүүлэлт, SEO, Спам хамгаалалт, Migration, Мессеж, Сэтгэгдэл)
+6. [Модулиуд](#6-модулиуд) (6.1-6.13 Суурь | 6.14-6.22 Шинэ: Дэлгүүр, Үнэлгээ, Мэдэгдэл, Хөгжүүлэлт, SEO, Спам хамгаалалт, Migration, Мессеж, Сэтгэгдэл)
 7. [Twig Template систем](#7-twig-template-систем)
 8. [Routing](#8-routing)
 9. [Controller](#9-controller)
@@ -37,7 +37,7 @@
 - **RBAC** (Role-Based Access Control) эрхийн удирдлага
 - **Олон хэл** дэмжлэг (Localization)
 - CMS модулиуд: Мэдээ, Хуудас, Файл, Лавлах, Тохиргоо
-- **Дэлгүүр** модуль (Бүтээгдэхүүн, Захиалга)
+- **Дэлгүүр** модуль (Бүтээгдэхүүн, Захиалга, Үнэлгээ)
 - MySQL, PostgreSQL алийг нь ч дэмжинэ
 - SQL файл суурьтай **өгөгдлийн сангийн migration** систем
 - **Twig** template engine
@@ -50,6 +50,7 @@
 - Спам хамгаалалт (honeypot, HMAC token, rate limiting, Cloudflare Turnstile)
 - Холбоо барих форм, мессеж удирдлага
 - Мэдээний сэтгэгдэл, 1 түвшний хариулт
+- Бүтээгдэхүүний үнэлгээ, одтой үнэлгээ (1-5)
 
 ### codesaur экосистем
 
@@ -201,7 +202,6 @@ Apache болон Nginx серверийн жишээ тохиргоонууд [
 | `.env.example` | Орчны тохиргооны лавлагаа |
 | `.htaccess.example` | Apache URL rewrite болон HTTPS redirect |
 | `.nginx.conf.example` | Nginx серверийн блок (HTTP, HTTPS, PHP-FPM) |
-| `cpanel.deploy.yml` | GitHub Actions cPanel FTP deploy workflow |
 
 ### CI/CD
 
@@ -217,9 +217,9 @@ Repo-д анхнаасаа орсон default workflow. Push болон pull req
 - Debug statements - `var_dump`, `dd`, `print_r` анхааруулга
 - `composer dump-autoload --strict-psr` - autoload шалгах
 
-#### cPanel Deploy (`docs/conf.example/cpanel.deploy.yml`)
+#### Deploy (`.github/workflows/deploy.yml`)
 
-cPanel сервер рүү FTP-ээр автомат deploy хийх workflow. Developer хүссэн үедээ идэвхжүүлнэ.
+Нэгдсэн deploy workflow, 2 job-той: **cPanel FTP** болон **Windows Server self-hosted runner**. Job бүр зөвхөн шаардлагатай secrets/variables тохируулсан үед ажиллана. Хоёуланг нь тохируулсан бол зэрэг (parallel) ажиллана.
 
 **Ажиллах дараалал:**
 
@@ -228,26 +228,32 @@ Push to main -> CI workflow ажиллана -> Амжилттай бол -> Dep
                                      -> Амжилтгүй бол -> Deploy хийгдэхгүй
 ```
 
-Deploy workflow нь `workflow_run` trigger ашиглан CI workflow-н дүнг хүлээнэ. CI амжилттай дуусвал (`conclusion == 'success'`) deploy эхэлнэ. CI fail болвол deploy `skipped` болно - алдаатай код серверт очихгүй.
+Deploy workflow нь `workflow_run` trigger ашиглан CI workflow-н дүнг хүлээнэ. CI амжилттай дуусвал (`conclusion == 'success'`) deploy эхэлнэ. CI fail болвол deploy `skipped` болно - алдаатай код серверт очихгүй. Deploy-ийн secrets/variables тохируулаагүй бол (жишээ: developer clone) хоёр job хоёулаа чимээгүй алгасагдана.
 
-**Тохируулах:**
+**A) cPanel FTP Deploy**
 
-1. Workflow файлыг хуулах:
-
-```bash
-cp docs/conf.example/cpanel.deploy.yml .github/workflows/deploy.yml
-```
-
-2. GitHub репозиторийн **Settings -> Secrets and variables -> Actions** хэсэгт дараах secret-үүдийг нэмнэ:
+**Settings -> Secrets and variables -> Actions -> Secrets** хэсэгт дараах secret-үүдийг нэмнэ:
 
 | Secret | Тайлбар | Жишээ |
 |--------|---------|-------|
 | `FTP_HOST` | cPanel серверийн FTP хаяг | `ftp.example.com` |
 | `FTP_USERNAME` | cPanel FTP хэрэглэгчийн нэр | `user@example.com` |
 | `FTP_PASSWORD` | cPanel FTP нууц үг | |
-| `FTP_SERVER_DIR` | Серверийн зорьсон хавтас | `/public_html/` |
+| `FTP_SERVER_DIR` | Серверийн зорьсон хавтас | `/` |
 
-3. `main` branch руу push хийхэд CI -> Deploy дараалан автоматаар ажиллана.
+**B) Windows Server Self-hosted Runner Deploy**
+
+1. Windows Server дээр self-hosted runner суулгах:
+   - **Settings -> Actions -> Runners -> New self-hosted runner -> Windows**
+   - Runner-г Windows service болгон бүртгэж, сервер restart хийхэд автомат асдаг болгоно
+
+2. **Settings -> Secrets and variables -> Actions -> Variables** хэсэгт дараах variable нэмнэ:
+
+| Variable | Тайлбар | Жишээ |
+|----------|---------|-------|
+| `DEPLOY_PATH` | XAMPP htdocs доторх project хавтас | `C:\xampp\htdocs\myproject` |
+
+3. PHP болон Composer серверийн system PATH-д байх ёстой.
 
 **Анхаарах:** Deploy workflow нь CI (`ci.yml`) байхыг шаарддаг. CI workflow-г устгасан бол deploy trigger хийгдэхгүй.
 
@@ -257,7 +263,7 @@ cp docs/conf.example/cpanel.deploy.yml .github/workflows/deploy.yml
 - **`logs/`** - Аппликейшн автоматаар үүсгэнэ
 - **`private/`** - Нууцлалтай файлууд (upload)
 - **`docs/`** - Зөвхөн баримтжуулалт
-- **`vendor/`** - Workflow дотор `composer install --no-dev` ажиллуулж build хийнэ
+- **`vendor/`** - Workflow дотор `composer install/update --no-dev` ажиллуулж build хийнэ
 
 ---
 
@@ -275,7 +281,7 @@ public_html/index.php (Entry point)
 |
 \-- /* -> Web\Application (Нийтийн вэб сайт)
      |-- Middleware: ExceptionHandler -> MySQL -> Container -> Session -> Localization -> Settings
-     |-- Router: WebRouter (/, /page, /news, /contact, /products, /order, /search, /sitemap, /rss, /session/language, /session/contact-send, /session/order, /session/news/{id}/comment, ...)
+     |-- Router: WebRouter (/, /page, /news, /contact, /products, /order, /search, /sitemap, /rss, /session/language, /session/contact-send, /session/order, /session/news/{id}/comment, /session/product/{id}/review, ...)
      \-- Controllers -> Twig Templates -> HTML Response
 ```
 
@@ -309,7 +315,7 @@ raptor/
 |   |   |   |-- file/              # Файлын менежмент
 |   |   |   |-- news/              # Мэдээ
 |   |   |   |-- page/              # Хуудас
-|   |   |   |-- messages/           # Холбоо барих мессежүүд
+|   |   |   |-- messages/          # Холбоо барих мессежүүд
 |   |   |   |-- reference/         # Лавлагаа
 |   |   |   \-- settings/          # Системийн тохиргоо
 |   |   |-- localization/          # Хэл, орчуулга
@@ -326,13 +332,13 @@ raptor/
 |   |-- dashboard/                 # Dashboard Application
 |   |   |-- Application.php
 |   |   |-- home/                  # Dashboard Home Router
-|   |   \-- shop/                  # Дэлгүүр модуль (Бүтээгдэхүүн, Захиалга)
+|   |   \-- shop/                  # Дэлгүүр модуль (Бүтээгдэхүүн, Захиалга, Үнэлгээ)
 |   \-- web/                       # Web Application
 |       |-- Application.php
 |       |-- WebRouter.php         # Web маршрутууд
 |       |-- HomeController.php     # Нүүр, хэл солих
 |       |-- content/               # Хуудас, Мэдээ
-|       |-- shop/                  # Бүтээгдэхүүн, Захиалга
+|       |-- shop/                  # Бүтээгдэхүүн, Захиалга, Үнэлгээ
 |       |-- service/               # Хайлт, Sitemap, RSS, Холбоо барих
 |       |-- *.html                 # Twig template-ууд
 |       \-- template/              # Web layout
@@ -348,8 +354,7 @@ raptor/
 |   |-- conf.example/              # Серверийн тохиргооны жишээ
 |   |   |-- .env.example           # Орчны тохиргоо
 |   |   |-- .htaccess.example      # Apache rewrite дүрмүүд
-|   |   |-- .nginx.conf.example    # Nginx серверийн тохиргоо
-|   |   \-- cpanel.deploy.yml      # GitHub Actions cPanel FTP deploy
+|   |   \-- .nginx.conf.example    # Nginx серверийн тохиргоо
 |   |-- en/                        # Англи баримтжуулалт
 |   \-- mn/                        # Монгол баримтжуулалт
 |-- tests/                         # PHPUnit тестүүд (unit, integration)
@@ -357,7 +362,8 @@ raptor/
 |   \-- migrations/                # SQL migration файлууд
 |-- .github/
 |   \-- workflows/
-|       \-- ci.yml                 # CI код чанарын шалгалт (push, PR)
+|       |-- ci.yml                 # CI код чанарын шалгалт (push, PR)
+|       \-- deploy.yml             # Автомат deploy (cPanel FTP / Windows Server)
 |-- logs/                          # Алдааны лог файлууд
 |-- private/                       # Хамгаалагдсан файлууд
 |-- composer.json
@@ -550,15 +556,32 @@ $this->isUserCan('news_edit');
 
 ### 6.14 Shop (Дэлгүүр)
 
-**Классууд:** `ProductsController`, `ProductsRouter`, `ProductsModel`, `OrdersController`, `OrdersRouter`, `ProductOrdersModel`
+**Классууд:** `ProductsController`, `ProductsRouter`, `ProductsModel`, `OrdersController`, `OrdersRouter`, `ProductOrdersModel`, `ReviewsController`, `ReviewsRouter`, `ReviewsModel`
 
 - Бүтээгдэхүүний CRUD, slug үүсгэх, хураангуй гаргах
-- Бүтээгдэхүүний талбарууд: үнэ, хямдралын үнэ, SKU, barcode, хэмжээ, өнгө, нөөц, ангилал, онцлох
+- Бүтээгдэхүүний талбарууд: үнэ, хямдралын үнэ, SKU, barcode, хэмжээ, өнгө, нөөц, ангилал, онцлох, үнэлгээ зөвшөөрөх
 - Захиалгын удирдлага (`products_orders` хүснэгт) - хэрэглэгчийн мэдээлэл, статус хянах
+- Бүтээгдэхүүний үнэлгээ, одтой үнэлгээ (1-5), бичмэл сэтгэгдэл
+- Үнэлгээ products-view дотор харагдана (web болон dashboard)
+- Web бүтээгдэхүүний хуудсанд media gallery (thumbnail strip + том preview)
 - Жишиг дата анхны ачааллаар автоматаар үүсгэгдэнэ
-- Шинэ захиалга, статус өөрчлөлтийн Discord мэдэгдэл
+- Шинэ захиалга, статус өөрчлөлт, үнэлгээний Discord мэдэгдэл
 
-### 6.15 Notification (Мэдэгдэл)
+### 6.15 Reviews (Бүтээгдэхүүний үнэлгээ)
+
+**Классууд:** `ReviewsController`, `ReviewsRouter`, `ReviewsModel` (dashboard), `ShopController::reviewSubmit()` (web)
+
+- Бүтээгдэхүүний хуудсан дээрх нийтийн үнэлгээний форм (`review=1` үед)
+- Одтой үнэлгээ (1-5), бичмэл сэтгэгдэл
+- Зочин хэрэглэгч нэр, имэйлээ бичнэ (имэйл заавал биш)
+- `SpamProtectionTrait` ашиглан спам хамгаалалт (honeypot, HMAC, rate limiting, Turnstile)
+- Дундаж үнэлгээ, тоо бүтээгдэхүүний жагсаалтын карт дээр харагдана
+- Dashboard: products-view дотор үнэлгээний жагсаалт, устгах боломжтой
+- Dashboard: products-index толгой хэсгээс үнэлгээний жагсаалт руу очих линк
+- Badge: шинэ үнэлгээ `info` (усан цэнхэр) badge-ээр products sidebar дээр харагдана
+- Web талаас `/session/product/{id}/review`-ээр үнэлгээ илгээнэ
+
+### 6.16 Notification (Мэдэгдэл)
 
 **Классууд:** `DiscordNotifier`
 
@@ -568,14 +591,14 @@ $this->isUserCan('news_edit');
 - `RAPTOR_DISCORD_WEBHOOK_URL` орчны хувьсагчаар тохируулна
 - Webhook URL тохируулаагүй бол чимээгүй алгасна
 
-### 6.16 Development (Хөгжүүлэлтийн хэрэгсэл)
+### 6.17 Development (Хөгжүүлэлтийн хэрэгсэл)
 
 **Классууд:** `DevelopmentRouter`, `DevRequestController`, `DevRequestModel`, `DevResponseModel`
 
 - Хөгжүүлэлтийн хүсэлт хянах систем (хүсэлт илгээх, хариулах, түүх харах)
 - `development:development` RBAC эрхээр хамгаалагдсан
 
-### 6.17 Site Service (Web)
+### 6.18 Site Service (Web)
 
 **Классууд:** `SeoController`
 
@@ -599,7 +622,7 @@ $this->isUserCan('news_edit');
 Sitemap: https://example.com/sitemap.xml
 ```
 
-### 6.18 Спам хамгаалалт
+### 6.19 Спам хамгаалалт
 
 **Классууд:** `SpamProtectionTrait`
 
@@ -610,9 +633,9 @@ Sitemap: https://example.com/sitemap.xml
 - Бөглөх хурдны доод хязгаар (1 секунд)
 - Cloudflare Turnstile CAPTCHA дэмжлэг (`.env` дотор `RAPTOR_TURNSTILE_SECRET_KEY` тохируулсан үед идэвхжинэ)
 - Линк спам шүүлтүүр (хэт олон URL агуулсан текстийг хаана)
-- Нэвтрэх, бүртгүүлэх, нууц үг сэргээх, холбоо барих, сэтгэгдэл, захиалгын формуудад ашиглагдана
+- Нэвтрэх, бүртгүүлэх, нууц үг сэргээх, холбоо барих, сэтгэгдэл, үнэлгээ, захиалгын формуудад ашиглагдана
 
-### 6.19 Database Migration (Өгөгдлийн сангийн шилжүүлэг)
+### 6.20 Database Migration (Өгөгдлийн сангийн шилжүүлэг)
 
 **Классууд:** `MigrationRunner`, `MigrationMiddleware`, `MigrationController`, `MigrationRouter`
 
@@ -625,7 +648,7 @@ Sitemap: https://example.com/sitemap.xml
 - Зөвхөн `system_coder` эрхтэй хэрэглэгчид dashboard руу хандах боломжтой
 - `.htaccess` хамгаалалт SQL файлуудад шууд хандахыг хаана
 
-### 6.20 Messages (Холбоо барих мессеж)
+### 6.21 Messages (Холбоо барих мессеж)
 
 **Классууд:** `MessagesController`, `MessagesModel` (dashboard), `ContactController` (web)
 
@@ -637,7 +660,7 @@ Sitemap: https://example.com/sitemap.xml
 - Шинэ мессежийн Discord мэдэгдэл
 - Web талын `ContactController` нь формыг харуулах болон `/session/contact-send`-ээр илгээхийг удирдана
 
-### 6.21 Comments (Мэдээний сэтгэгдэл)
+### 6.22 Comments (Мэдээний сэтгэгдэл)
 
 **Классууд:** `CommentsController`, `CommentsModel` (dashboard), `NewsController::commentSubmit()` (web)
 
@@ -646,7 +669,9 @@ Sitemap: https://example.com/sitemap.xml
 - Зочин хэрэглэгч нэр, имэйлээ бичнэ
 - Нэвтэрсэн хэрэглэгчийн нэр/имэйл профайлаас автоматаар бөглөгдөнө
 - `SpamProtectionTrait` ашиглан спам хамгаалалт (honeypot, HMAC, rate limiting, Turnstile)
-- Dashboard интерфэйс: сэтгэгдлүүдийг харах, удирдах
+- Dashboard: news-view дотор сэтгэгдлийн жагсаалт, хариулах, устгах боломжтой
+- Dashboard: news-index толгой хэсгээс сэтгэгдлийн жагсаалт руу очих линк
+- Badge: шинэ сэтгэгдэл `info` (усан цэнхэр) badge-ээр news sidebar дээр харагдана
 - Сэтгэгдлийг идэвхгүй болгох (soft delete)
 - Web талаас `/session/news/{id}/comment`-ээр сэтгэгдэл илгээнэ
 

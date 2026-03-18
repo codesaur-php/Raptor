@@ -14,7 +14,7 @@
 3. [Configuration (.env)](#3-configuration)
 4. [Architecture](#4-architecture)
 5. [Middleware Pipeline](#5-middleware-pipeline)
-6. [Modules](#6-modules) (6.1-6.13 Core | 6.14-6.21 New: Shop, Notification, Development, SEO, Spam Protection, Migration, Messages, Comments)
+6. [Modules](#6-modules) (6.1-6.13 Core | 6.14-6.22 New: Shop, Reviews, Notification, Development, SEO, Spam Protection, Migration, Messages, Comments)
 7. [Twig Template System](#7-twig-template-system)
 8. [Routing](#8-routing)
 9. [Controller](#9-controller)
@@ -37,7 +37,7 @@
 - **RBAC** (Role-Based Access Control)
 - **Multi-language** support (Localization)
 - CMS modules: News, Pages, Files, References, Settings
-- **Shop** module (Products, Orders)
+- **Shop** module (Products, Orders, Reviews)
 - MySQL or PostgreSQL supported
 - SQL file-based **database migration** system
 - **Twig** template engine
@@ -50,6 +50,7 @@
 - Spam protection (honeypot, HMAC token, rate limiting, Cloudflare Turnstile)
 - Contact form with message management
 - News article comments with 1-level reply
+- Product reviews with star rating (1-5)
 
 ### codesaur Ecosystem
 
@@ -201,7 +202,6 @@ Example configuration files for Apache and Nginx are available in [`docs/conf.ex
 | `.env.example` | Environment variables reference |
 | `.htaccess.example` | Apache URL rewrite and HTTPS redirect |
 | `.nginx.conf.example` | Nginx server block (HTTP, HTTPS, PHP-FPM) |
-| `cpanel.deploy.yml` | GitHub Actions cPanel FTP deploy workflow |
 
 ### CI/CD
 
@@ -217,9 +217,9 @@ Default workflow included in the repository. Runs code quality checks on every p
 - Debug statements - `var_dump`, `dd`, `print_r` warnings
 - `composer dump-autoload --strict-psr` - autoload verification
 
-#### cPanel Deploy (`docs/conf.example/cpanel.deploy.yml`)
+#### Deploy (`.github/workflows/deploy.yml`)
 
-Optional workflow for automatic FTP deployment to cPanel. Enabled by the developer when needed.
+Unified deploy workflow with 2 jobs: **cPanel FTP** and **Windows Server self-hosted runner**. Each job runs only when its required secrets/variables are configured. Both can run in parallel if both are configured.
 
 **Execution flow:**
 
@@ -228,17 +228,11 @@ Push to main -> CI workflow runs -> Success -> Deploy workflow starts
                                  -> Failure -> Deploy is skipped
 ```
 
-The deploy workflow uses a `workflow_run` trigger to wait for the CI workflow result. Deploy starts only when CI succeeds (`conclusion == 'success'`). If CI fails, deploy is `skipped` - broken code never reaches the server.
+The deploy workflow uses a `workflow_run` trigger to wait for the CI workflow result. Deploy starts only when CI succeeds (`conclusion == 'success'`). If CI fails, deploy is `skipped` - broken code never reaches the server. If no deploy secrets/variables are configured (e.g. developer clone), both jobs are silently skipped.
 
-**Setup:**
+**A) cPanel FTP Deploy**
 
-1. Copy the workflow file:
-
-```bash
-cp docs/conf.example/cpanel.deploy.yml .github/workflows/deploy.yml
-```
-
-2. Add the following secrets in your GitHub repository (**Settings -> Secrets and variables -> Actions**):
+Add the following secrets in **Settings -> Secrets and variables -> Actions -> Secrets**:
 
 | Secret | Description | Example |
 |--------|-------------|---------|
@@ -247,7 +241,19 @@ cp docs/conf.example/cpanel.deploy.yml .github/workflows/deploy.yml
 | `FTP_PASSWORD` | cPanel FTP password | |
 | `FTP_SERVER_DIR` | Target directory on server | `/public_html/` |
 
-3. Push to `main` branch - CI and deploy run automatically in sequence.
+**B) Windows Server Self-hosted Runner Deploy**
+
+1. Install a self-hosted runner on your Windows Server:
+   - **Settings -> Actions -> Runners -> New self-hosted runner -> Windows**
+   - Register the runner as a Windows service for auto-start
+
+2. Add the following variable in **Settings -> Secrets and variables -> Actions -> Variables**:
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `DEPLOY_PATH` | XAMPP htdocs project directory | `C:\xampp\htdocs\myproject` |
+
+3. Ensure PHP and Composer are in the system PATH on the server.
 
 **Note:** The deploy workflow requires CI (`ci.yml`) to exist. If CI workflow is removed, deploy will not trigger.
 
@@ -257,7 +263,7 @@ cp docs/conf.example/cpanel.deploy.yml .github/workflows/deploy.yml
 - **`logs/`** - Created automatically by the application
 - **`private/`** - Sensitive files (uploads)
 - **`docs/`** - Documentation only
-- **`vendor/`** - Built during the workflow with `composer install --no-dev`
+- **`vendor/`** - Built during the workflow with `composer install/update --no-dev`
 
 ---
 
@@ -275,7 +281,7 @@ public_html/index.php (Entry point)
 |
 \-- /* -> Web\Application (Public Website)
      |-- Middleware: ExceptionHandler -> MySQL -> Container -> Session -> Localization -> Settings
-     |-- Router: WebRouter (/, /page, /news, /contact, /products, /order, /search, /sitemap, /rss, /session/language, /session/contact-send, /session/order, /session/news/{id}/comment, ...)
+     |-- Router: WebRouter (/, /page, /news, /contact, /products, /order, /search, /sitemap, /rss, /session/language, /session/contact-send, /session/order, /session/news/{id}/comment, /session/product/{id}/review, ...)
      \-- Controllers -> Twig Templates -> HTML Response
 ```
 
@@ -326,13 +332,13 @@ raptor/
 |   |-- dashboard/                 # Dashboard Application
 |   |   |-- Application.php
 |   |   |-- home/                  # Dashboard Home Router
-|   |   \-- shop/                  # Shop module (Products, Orders)
+|   |   \-- shop/                  # Shop module (Products, Orders, Reviews)
 |   \-- web/                       # Web Application
 |       |-- Application.php
 |       |-- WebRouter.php         # Web routes
 |       |-- HomeController.php     # Home, language
 |       |-- content/               # Pages, News
-|       |-- shop/                  # Products, Orders
+|       |-- shop/                  # Products, Orders, Reviews
 |       |-- service/               # Search, Sitemap, RSS, Contact
 |       |-- *.html                 # Twig templates
 |       \-- template/              # Web layout
@@ -348,8 +354,7 @@ raptor/
 |   |-- conf.example/              # Server configuration examples
 |   |   |-- .env.example           # Environment variables
 |   |   |-- .htaccess.example      # Apache rewrite rules
-|   |   |-- .nginx.conf.example    # Nginx server config
-|   |   \-- cpanel.deploy.yml      # GitHub Actions cPanel FTP deploy
+|   |   \-- .nginx.conf.example    # Nginx server config
 |   |-- en/                        # English documentation
 |   \-- mn/                        # Mongolian documentation
 |-- tests/                         # PHPUnit tests (unit, integration)
@@ -357,7 +362,8 @@ raptor/
 |   \-- migrations/                # SQL migration files
 |-- .github/
 |   \-- workflows/
-|       \-- ci.yml                 # CI code quality checks (push, PR)
+|       |-- ci.yml                 # CI code quality checks (push, PR)
+|       \-- deploy.yml             # Auto deploy (cPanel FTP / Windows Server)
 |-- logs/                          # Error log files
 |-- private/                       # Protected files
 |-- composer.json
@@ -550,15 +556,32 @@ $this->isUserCan('news_edit');
 
 ### 6.14 Shop (E-Commerce)
 
-**Classes:** `ProductsController`, `ProductsRouter`, `ProductsModel`, `OrdersController`, `OrdersRouter`, `ProductOrdersModel`
+**Classes:** `ProductsController`, `ProductsRouter`, `ProductsModel`, `OrdersController`, `OrdersRouter`, `ProductOrdersModel`, `ReviewsController`, `ReviewsRouter`, `ReviewsModel`
 
 - Product CRUD with slug generation, excerpt extraction
-- Product fields: price, sale_price, SKU, barcode, sizes, colors, stock, category, featured
+- Product fields: price, sale_price, SKU, barcode, sizes, colors, stock, category, featured, review toggle
 - Order management (`products_orders` table) with customer info and status tracking
+- Product reviews with star rating (1-5) and written comments
+- Reviews displayed in product detail view (both web and dashboard)
+- Media gallery on web product page (thumbnail strip + large preview for images/video/audio)
 - Sample product data seeded on first run
-- Discord notifications for new orders and status changes
+- Discord notifications for new orders, status changes, and reviews
 
-### 6.15 Notification
+### 6.15 Reviews (Product Reviews)
+
+**Classes:** `ReviewsController`, `ReviewsRouter`, `ReviewsModel` (dashboard), `ShopController::reviewSubmit()` (web)
+
+- Public review form on product detail pages (when `review=1`)
+- Star rating (1-5) with written review text
+- Guest reviews with name and optional email
+- Spam protection via `SpamProtectionTrait` (honeypot, HMAC, rate limiting, Turnstile)
+- Average rating and review count displayed on product listing cards
+- Dashboard: reviews shown in products-view with delete support
+- Dashboard: reviews index accessible from products-index header link
+- Badge: new reviews appear as `info` (cyan) badge on products sidebar item
+- Web-side review submission via `/session/product/{id}/review`
+
+### 6.16 Notification
 
 **Classes:** `DiscordNotifier`
 
@@ -568,14 +591,14 @@ $this->isUserCan('news_edit');
 - Configured via `RAPTOR_DISCORD_WEBHOOK_URL` env variable
 - Gracefully skips if webhook URL is not set
 
-### 6.16 Development Tools
+### 6.17 Development Tools
 
 **Classes:** `DevelopmentRouter`, `DevRequestController`, `DevRequestModel`, `DevResponseModel`
 
 - Development request tracking system (submit requests, respond, view history)
 - Protected by `development:development` RBAC permission
 
-### 6.17 Site Service (Web)
+### 6.18 Site Service (Web)
 
 **Classes:** `SeoController`
 
@@ -599,7 +622,7 @@ A pre-configured `robots.txt` is included at `public_html/robots.txt`. It contro
 Sitemap: https://example.com/sitemap.xml
 ```
 
-### 6.18 Spam Protection
+### 6.19 Spam Protection
 
 **Classes:** `SpamProtectionTrait`
 
@@ -610,9 +633,9 @@ Sitemap: https://example.com/sitemap.xml
 - Minimum fill speed check (1 second)
 - Cloudflare Turnstile CAPTCHA support (enabled when `RAPTOR_TURNSTILE_SECRET_KEY` is set in `.env`)
 - Link spam filter (blocks text with excessive URLs)
-- Applied to login, signup, forgot password, contact, comment, and order forms
+- Applied to login, signup, forgot password, contact, comment, review, and order forms
 
-### 6.19 Database Migration
+### 6.20 Database Migration
 
 **Classes:** `MigrationRunner`, `MigrationMiddleware`, `MigrationController`, `MigrationRouter`
 
@@ -625,7 +648,7 @@ Sitemap: https://example.com/sitemap.xml
 - Protected: only `system_coder` users can access the dashboard
 - `.htaccess` protection blocks direct browser access to SQL files
 
-### 6.20 Messages (Contact Form)
+### 6.21 Messages (Contact Form)
 
 **Classes:** `MessagesController`, `MessagesModel` (dashboard), `ContactController` (web)
 
@@ -637,7 +660,7 @@ Sitemap: https://example.com/sitemap.xml
 - Discord notification on new contact message
 - Web-side `ContactController` handles form display and submission via `/session/contact-send`
 
-### 6.21 Comments (News)
+### 6.22 Comments (News)
 
 **Classes:** `CommentsController`, `CommentsModel` (dashboard), `NewsController::commentSubmit()` (web)
 
@@ -646,7 +669,9 @@ Sitemap: https://example.com/sitemap.xml
 - Guest comments with name and email fields
 - Authenticated users auto-fill name/email from profile
 - Spam protection via `SpamProtectionTrait` (honeypot, HMAC, rate limiting, Turnstile)
-- Dashboard interface for viewing and managing comments
+- Dashboard: comments shown in news-view with reply and delete support
+- Dashboard: comments index accessible from news-index header link
+- Badge: new comments appear as `info` (cyan) badge on news sidebar item
 - Soft delete (deactivate) comments
 - Web-side comment submission via `/session/news/{id}/comment`
 

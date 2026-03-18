@@ -1,0 +1,70 @@
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h5 class="text-info text-uppercase"><i class="bi bi-star-half"></i> {{ 'reviews'|text }}</h5>
+    <div class="ms-auto">
+        <a class="btn btn-sm btn-info shadow-sm" href="{{ 'products'|link }}">
+            <i class="bi bi-arrow-left"></i> {{ 'products'|text }}
+        </a>
+    </div>
+</div>
+
+<table class="table table-sm table-hover table-striped table-bordered mt-3" id="reviews">
+    <thead>
+        <tr class="text-uppercase">
+            <th scope="col"><span class="text-secondary">ID /</span> {{ 'date'|text }}</th>
+            <th scope="col">{{ 'name'|text }}</th>
+            <th scope="col">{{ 'rating'|text }}</th>
+            <th scope="col">{{ 'comment'|text }}</th>
+            <th scope="col">{{ 'product'|text }}</th>
+            <th scope="col" style="width:3rem">{{ 'action'|text }}</th>
+        </tr>
+    </thead>
+</table>
+
+<script type="text/javascript">
+    document.addEventListener('DOMContentLoaded', function () {
+        const table = new motable('table#reviews', { freezeColumns: [1] });
+        const reviewsLink = `{{ 'reviews'|link }}`;
+
+        fetch(
+            `{{ 'reviews-list'|link }}`
+        ).then(res => {
+            if (res.headers.get('content-type')?.includes('application/json')) return res.json();
+            throw new Error(`HTTP [${res.status}]: ${res.statusText}`);
+        }).then(data => {
+            if (!data.list) throw new Error(data.message ?? 'Invalid response!');
+
+            let rowsHTML = '';
+            data.list.forEach(record => {
+                const id = record.id;
+                const msg = record.comment.length > 50
+                    ? record.comment.substring(0, 50) + '...'
+                    : record.comment;
+                const productTitle = record.product_title
+                    ? `<small>${record.product_title}</small>`
+                    : `<small class="text-muted">#${record.product_id}</small>`;
+
+                let stars = '';
+                for (let i = 1; i <= 5; i++) {
+                    stars += i <= record.rating
+                        ? '<i class="bi bi-star-fill text-warning"></i>'
+                        : '<i class="bi bi-star text-muted"></i>';
+                }
+
+                const actions = `<a class="btn btn-sm btn-outline-info" href="${reviewsLink}/product/${record.product_id}" title="View"><i class="bi bi-eye"></i></a>`;
+
+                rowsHTML += `<tr>
+                    <td>${id}<br><small class="text-muted">${record.created_at}</small></td>
+                    <td>${record.name}</td>
+                    <td>${stars}</td>
+                    <td><small>${msg}</small></td>
+                    <td>${productTitle}</td>
+                    <td>${actions}</td>
+                </tr>`;
+            });
+
+            table.setBody(rowsHTML);
+        }).catch(err => {
+            table.setBody(`<tr><td colspan="6" class="text-center text-danger">${err.message}</td></tr>`);
+        });
+    });
+</script>

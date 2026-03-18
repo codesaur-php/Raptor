@@ -27,7 +27,7 @@ Clean architecture object-oriented web development framework
 - RBAC (Role-Based Access Control) эрхийн удирдлага
 - Олон хэл дэмжлэг (Localization)
 - CMS модулиуд: Мэдээ, Хуудас, Файл, Лавлах, Тохиргоо
-- Дэлгүүр модуль: Бүтээгдэхүүн, Захиалга (e-commerce)
+- Дэлгүүр модуль: Бүтээгдэхүүн, Захиалга, Үнэлгээ (e-commerce)
 - MySQL, PostgreSQL алийг нь ч дэмжинэ
 - SQL файл суурьтай өгөгдлийн сангийн migration систем
 - Twig template engine
@@ -58,7 +58,7 @@ The framework operates in two layers - **Web** (public website) and **Dashboard*
 - RBAC (Role-Based Access Control)
 - Multi-language support (Localization)
 - CMS modules: News, Pages, Files, References, Settings
-- Shop module: Products, Orders (e-commerce)
+- Shop module: Products, Orders, Reviews (e-commerce)
 - MySQL or PostgreSQL supported
 - SQL file-based database migration system
 - Twig template engine
@@ -158,12 +158,12 @@ raptor/
 |   |   \-- migration/       # Database migration system
 |   |-- dashboard/           # Dashboard application
 |   |   |-- home/            # Dashboard home
-|   |   |-- shop/            # Shop module (Products, Orders)
+|   |   |-- shop/            # Shop module (Products, Orders, Reviews)
 |   |   \-- manual/          # Manual pages
 |   \-- web/                 # Public website application
 |       |-- WebRouter.php    # Web routes
 |       |-- content/         # Pages, News
-|       |-- shop/            # Products, Orders
+|       |-- shop/            # Products, Orders, Reviews
 |       |-- service/         # Search, Sitemap, RSS, Contact
 |       \-- template/        # Web layout, exception handler
 |-- public_html/             # Document root
@@ -175,12 +175,13 @@ raptor/
 |   \-- migrations/          # SQL migration files
 |-- tests/                   # PHPUnit tests (unit, integration)
 |-- docs/
-|   |-- conf.example/        # Server config examples + cPanel deploy
+|   |-- conf.example/        # Server config examples
 |   |-- en/                  # English documentation
 |   \-- mn/                  # Mongolian documentation
 |-- .github/
 |   \-- workflows/
-|       \-- ci.yml           # CI code quality checks (push, PR)
+|       |-- ci.yml           # CI code quality checks (push, PR)
+|       \-- deploy.yml       # Auto deploy (cPanel FTP / Windows Server self-hosted runner)
 |-- logs/                    # Error logs
 |-- private/                 # Protected files
 |-- .env.testing             # Test environment variables

@@ -266,10 +266,10 @@ body {
 }
 
 /* BADGE
-   nav-link-ийг flex болгож badge-уудыг баруун талд түлхэнэ.
-   first-of-type badge margin-left:auto авч текстээс зай үүсгэнэ,
-   дараагийн badge-ууд бага зай (.25rem) авна.
-   font-size .65rem -- жижиг pill хэлбэртэй харагдана. */
+    nav-link-ийг flex болгож badge-уудыг баруун талд түлхэнэ.
+    first-of-type badge margin-left:auto авч текстээс зай үүсгэнэ,
+    дараагийн badge-ууд бага зай (.25rem) авна.
+    font-size .65rem - жижиг pill хэлбэртэй харагдана. */
 .sidebar-menu .nav-link {
     display: flex;
     align-items: center;

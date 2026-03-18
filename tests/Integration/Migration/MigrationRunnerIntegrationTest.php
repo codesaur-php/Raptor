@@ -159,7 +159,7 @@ SQL);
 
     public function testMigratePartialFailureRunsDown(): void
     {
-        // UP: table үүсгээд, дараа нь буруу SQL → fail
+        // UP: table үүсгээд, дараа нь буруу SQL -> fail
         // DOWN: table устгах
         file_put_contents($this->tmpDir . '/fail_test.sql', <<<'SQL'
 -- [UP]

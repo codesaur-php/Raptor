@@ -25,7 +25,7 @@ namespace Raptor\Template;
  *   файлын тоогоор хянана. Сүүлд үзсэн үеийн файлын тооноос одоогийн
  *   файлын тоо их байвал шинэ badge харуулна.
  * Өнгөний код - green = шинэ бичлэг/create, blue = засвар/update,
- *   red = устгах/deactivate.
+ *   red = устгах/deactivate, info = сэтгэгдэл/үнэлгээ (comment/review).
  *
  * @package Raptor\Template
  */
@@ -45,7 +45,6 @@ class BadgeController extends \Raptor\Controller
         '/dashboard/messages'      => 'system_content_index',
         '/dashboard/pages'         => 'system_content_index',
         '/dashboard/news'          => 'system_content_index',
-        '/dashboard/comments'      => 'system_content_index',
         '/dashboard/files'         => 'system_content_index',
         '/dashboard/localization'  => 'system_localization_index',
         '/dashboard/settings'      => 'system_content_settings',
@@ -70,8 +69,9 @@ class BadgeController extends \Raptor\Controller
      *   color - badge-ийн өнгө: green (create/insert), blue (update), red (delete/deactivate)
      *
      * Нэг log хүснэгтээс олон module-руу badge үүсэх боломжтой.
-     * Жишээ: news_log доторх 'create' action нь /dashboard/news-руу,
-     * 'comment-insert' action нь /dashboard/comments-руу badge үүсгэнэ.
+     * Жишээ: news_log доторх 'create' action нь /dashboard/news-руу green badge,
+     * 'comment-insert' action нь /dashboard/news-руу info badge үүсгэнэ.
+     * products_orders_log доторх 'order' action нь /dashboard/orders-руу badge үүсгэнэ.
      *
      * @var array<string, array<string, array{0: string, 1: string}>>
      */
@@ -90,9 +90,9 @@ class BadgeController extends \Raptor\Controller
             'create'             => ['/dashboard/news', 'green'],
             'update'             => ['/dashboard/news', 'blue'],
             'deactivate'         => ['/dashboard/news', 'red'],
-            'comment-insert'     => ['/dashboard/comments', 'green'],
-            'comment-reply'      => ['/dashboard/comments', 'green'],
-            'comment-deactivate' => ['/dashboard/comments', 'red'],
+            'comment-insert'     => ['/dashboard/news', 'info'],
+            'comment-reply'      => ['/dashboard/news', 'info'],
+            'comment-deactivate' => ['/dashboard/news', 'red'],
         ],
         'files' => [
             'files-upload'     => ['/dashboard/files', 'green'],
@@ -112,12 +112,17 @@ class BadgeController extends \Raptor\Controller
             'reference-update'     => ['/dashboard/references', 'blue'],
             'reference-deactivate' => ['/dashboard/references', 'red'],
         ],
-        'product' => [
-            'create'        => ['/dashboard/products', 'green'],
-            'update'        => ['/dashboard/products', 'blue'],
-            'deactivate'    => ['/dashboard/products', 'red'],
+        'products' => [
+            'create'            => ['/dashboard/products', 'green'],
+            'update'            => ['/dashboard/products', 'blue'],
+            'deactivate'        => ['/dashboard/products', 'red'],
+            'review-insert'     => ['/dashboard/products', 'info'],
+            'review-deactivate' => ['/dashboard/products', 'red'],
+        ],
+        'products_orders' => [
             'order'         => ['/dashboard/orders', 'green'],
             'update-status' => ['/dashboard/orders', 'blue'],
+            'deactivate'    => ['/dashboard/orders', 'red'],
         ],
         'users' => [
             'create'             => ['/dashboard/users', 'green'],

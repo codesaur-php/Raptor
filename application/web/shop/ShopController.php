@@ -10,6 +10,7 @@ use Raptor\Content\FilesModel;
 
 use Dashboard\Shop\ProductsModel;
 use Dashboard\Shop\ProductOrdersModel;
+use Dashboard\Shop\ReviewsModel;
 
 use Web\Template\TemplateController;
 
@@ -20,9 +21,10 @@ use Web\Template\TemplateController;
  *
  * Энэ контроллер нь:
  *   - Бүтээгдэхүүний жагсаалт харуулах (products)
- *   - Бүтээгдэхүүнийг slug эсвэл ID-аар харуулах
+ *   - Бүтээгдэхүүнийг slug эсвэл ID-аар харуулах (review, rating мэдээлэлтэй)
  *   - Захиалгын форм харуулах (order)
  *   - Захиалга илгээх (orderSubmit) - spam хамгаалалттай
+ *   - Бүтээгдэхүүнд үнэлгээ илгээх (reviewSubmit) - spam хамгаалалттай
  *   - Захиалга амжилттай болсон тухай имэйл илгээх
  *
  * ---------------------------------------------------------------
@@ -51,11 +53,17 @@ class ShopController extends TemplateController
     {
         $code = $this->getLanguageCode();
         $table = (new ProductsModel($this->pdo))->getName();
+        $reviewsTable = (new ReviewsModel($this->pdo))->getName();
         $stmt = $this->prepare(
-            "SELECT id, title, slug, description, photo, price, sale_price
-             FROM $table
-             WHERE is_active=1 AND published=1 AND code=:code
-             ORDER BY published_at DESC"
+            "SELECT p.id, p.title, p.slug, p.description, p.photo, p.price, p.sale_price,
+                    rv.avg_rating, rv.review_count
+             FROM $table p
+             LEFT JOIN (
+                 SELECT product_id, AVG(rating) as avg_rating, COUNT(*) as review_count
+                 FROM $reviewsTable WHERE is_active=1 GROUP BY product_id
+             ) rv ON rv.product_id=p.id
+             WHERE p.is_active=1 AND p.published=1 AND p.code=:code
+             ORDER BY p.published_at DESC"
         );
         $products = $stmt->execute([':code' => $code]) ? $stmt->fetchAll() : [];
 
@@ -118,6 +126,32 @@ class ShopController extends TemplateController
         $record['files'] = $files->getRows([
             'WHERE' => "record_id=$id AND is_active=1"
         ]);
+
+        // Үнэлгээнүүдийг татах (review=1 үед)
+        if (!empty($record['review'])) {
+            $reviewsModel = new ReviewsModel($this->pdo);
+            $reviewsTable = $reviewsModel->getName();
+            $rstmt = $this->prepare(
+                "SELECT id, name, rating, comment, created_at FROM $reviewsTable
+                 WHERE product_id=:pid AND is_active=1 ORDER BY created_at DESC"
+            );
+            $record['reviews'] = $rstmt->execute([':pid' => $id]) ? $rstmt->fetchAll() : [];
+
+            $avgStmt = $this->prepare(
+                "SELECT AVG(rating) as avg_rating, COUNT(*) as review_count FROM $reviewsTable
+                 WHERE product_id=:pid AND is_active=1"
+            );
+            $avgStmt->execute([':pid' => $id]);
+            $stats = $avgStmt->fetch();
+            $record['avg_rating'] = \round((float)($stats['avg_rating'] ?? 0), 1);
+            $record['review_count'] = (int)($stats['review_count'] ?? 0);
+
+            $ts = \time();
+            $secret = $this->getJwtSecret();
+            $record['spam_ts'] = $ts;
+            $record['spam_token'] = \hash_hmac('sha256', "review-$id-$ts", $secret);
+            $record['turnstile_site_key'] = $this->getTurnstileSiteKey();
+        }
 
         $this->twigWebLayout(__DIR__ . '/product.html', $record)->render();
 
@@ -249,7 +283,7 @@ class ShopController extends TemplateController
         ])->render();
 
         $this->log(
-            'product',
+            'products_orders',
             LogLevel::INFO,
             '{auth_user.username} шинэ захиалга илгээлээ',
             [
@@ -265,6 +299,88 @@ class ShopController extends TemplateController
                 ]
             ]
         );
+    }
+
+    /**
+     * Бүтээгдэхүүнд үнэлгээ илгээх.
+     *
+     * Spam хамгаалалтын шалгалт хийсний дараа
+     * үнэлгээг DB-д хадгалж, Discord мэдэгдэл илгээнэ.
+     *
+     * @param int $id Бүтээгдэхүүний ID
+     * @return void
+     */
+    public function reviewSubmit(int $id)
+    {
+        try {
+            $parsed = $this->getParsedBody();
+            $code = $this->getLanguageCode();
+
+            // Бүтээгдэхүүн байгаа эсэх, comment идэвхтэй эсэх шалгах
+            $productsModel = new ProductsModel($this->pdo);
+            $product = $productsModel->getRowWhere(['id' => $id, 'is_active' => 1]);
+            if (empty($product) || empty($product['review'])) {
+                throw new \Exception('Invalid request', 400);
+            }
+
+            $this->validateSpamProtection($parsed, "review-$id", '_last_review_at', 10, 3);
+
+            $name = \trim($parsed['name'] ?? '');
+            $email = \trim($parsed['email'] ?? '');
+            $rating = (int)($parsed['rating'] ?? 0);
+            $comment = \trim($parsed['comment'] ?? '');
+
+            if (empty($name)) {
+                throw new \InvalidArgumentException($code === 'mn' ? 'Нэрээ оруулна уу' : 'Please enter your name');
+            }
+            if ($rating < 1 || $rating > 5) {
+                throw new \InvalidArgumentException($code === 'mn' ? 'Үнэлгээ сонгоно уу (1-5)' : 'Please select a rating (1-5)');
+            }
+            if (empty($comment)) {
+                throw new \InvalidArgumentException($code === 'mn' ? 'Сэтгэгдлээ бичнэ үү' : 'Please enter your review');
+            }
+            if (!empty($email) && !\filter_var($email, \FILTER_VALIDATE_EMAIL)) {
+                throw new \InvalidArgumentException($code === 'mn' ? 'Зөв имэйл хаяг оруулна уу' : 'Please enter a valid email address');
+            }
+            $this->checkLinkSpam($comment);
+
+            $_SESSION['_last_review_at'] = \time();
+
+            $reviewsModel = new ReviewsModel($this->pdo);
+            $reviewsModel->insert([
+                'product_id' => $id,
+                'name' => $name,
+                'email' => $email,
+                'rating' => $rating,
+                'comment' => $comment,
+                'created_at' => \date('Y-m-d H:i:s')
+            ]);
+
+            // Discord мэдэгдэл
+            $appUrl = \rtrim((string)$this->getRequest()->getUri()->withPath($this->getScriptPath()), '/');
+            $this->getService('discord')?->contentAction('review', 'insert', $product['title'], $id, $name, $appUrl);
+
+            $this->respondJSON([
+                'status' => 'success',
+                'message' => $code === 'mn'
+                    ? 'Таны үнэлгээ амжилттай нэмэгдлээ!'
+                    : 'Your review has been posted successfully!'
+            ]);
+
+            $this->log('products', LogLevel::INFO, '{record_id} бүтээгдэхүүнд үнэлгээ бичлээ', [
+                'action' => 'review-insert',
+                'record_id' => $id,
+                'auth_user' => [
+                    'username' => $name,
+                    'first_name' => $name,
+                    'last_name' => '',
+                    'phone' => '',
+                    'email' => $email
+                ]
+            ]);
+        } catch (\Throwable $err) {
+            $this->respondJSON(['message' => $err->getMessage()], $err->getCode() ?: 500);
+        }
     }
 
     /**

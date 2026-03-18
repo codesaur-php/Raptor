@@ -1,0 +1,116 @@
+<div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-3 shadow bg-secondary">
+    <h3 class="px-2 my-auto fs-6 text-white">
+        <i class="bi bi-book"></i> Reviews - Гарын авлага
+    </h3>
+    <a href="{{ 'manual' | link }}" class="btn btn-sm btn-light m-1">
+        <i class="bi bi-arrow-left"></i> {{ 'manual' | text }}
+    </a>
+</div>
+
+<!-- ==================== ТОЙМ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3">Reviews (Үнэлгээ) гэж юу вэ?</h4>
+        <p>
+            <strong>Reviews</strong> нь вэбсайтын бүтээгдэхүүний үнэлгээнүүдийг удирдах Dashboard модуль юм.
+            Зочдын бүтээгдэхүүнд бичсэн одтой үнэлгээ (1-5) болон сэтгэгдлийг харах, устгах зэрэг үйлдлүүдийг хийнэ.
+        </p>
+        <p>Үнэлгээний онцлогууд:</p>
+        <ul>
+            <li><strong>Одтой үнэлгээ (1-5)</strong> - Зочин бүтээгдэхүүнд 1-5 одоор үнэлгээ өгнө</li>
+            <li><strong>Бичмэл сэтгэгдэл</strong> - Одтой үнэлгээний хамт текст сэтгэгдэл бичнэ</li>
+            <li><strong>Дундаж үнэлгээ</strong> - Бүтээгдэхүүн бүрт дундаж үнэлгээ автоматаар тооцоолно</li>
+            <li><strong>Spam хамгаалалт</strong> - Honeypot, HMAC, rate limit, Turnstile хамгаалалттай</li>
+            <li><strong>Бүтээгдэхүүнтэй холбоотой</strong> - Үнэлгээ нь бүтээгдэхүүний <code>comment=1</code> тохиргооноос хамаарна</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== ЖАГСААЛТ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-list-ul"></i> Үнэлгээний жагсаалт</h4>
+        <p>Dashboard цэснээс <strong>Үнэлгээнүүд</strong> дарахад бүх бүтээгдэхүүний үнэлгээнүүдийн жагсаалт нээгдэнэ.</p>
+        <h5 class="mt-3">Хүснэгтийн баганууд</h5>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Багана</th><th>Тайлбар</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>ID / Он сар</td><td>Үнэлгээний ID болон бичсэн огноо</td></tr>
+                <tr><td>Нэр</td><td>Үнэлгээ бичсэн хүний нэр</td></tr>
+                <tr><td>Үнэлгээ</td><td>1-5 одоор илэрхийлсэн үнэлгээ</td></tr>
+                <tr><td>Сэтгэгдэл</td><td>Сэтгэгдлийн эхний хэсэг</td></tr>
+                <tr><td>Бүтээгдэхүүн</td><td>Үнэлгээ бичигдсэн бүтээгдэхүүний нэр</td></tr>
+                <tr><td>Үйлдэл</td><td>Дэлгэрэнгүй харах товч</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ==================== ДЭЛГЭРЭНГҮЙ ХАРАХ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-eye"></i> Бүтээгдэхүүний үнэлгээнүүд харах</h4>
+        <p>Жагсаалтаас тухайн бүтээгдэхүүнийг дарахад тэр бүтээгдэхүүний бүх үнэлгээнүүд нээгдэнэ.</p>
+        <h5 class="mt-3">Бүтээгдэхүүний мэдээлэл</h5>
+        <p>Хуудасны дээд хэсэгт бүтээгдэхүүний товч мэдээлэл харагдана:</p>
+        <ul>
+            <li>Бүтээгдэхүүний нэр, зураг</li>
+            <li>Үнэ, нийтлэлтийн төлөв</li>
+        </ul>
+        <h5 class="mt-3">Дундаж үнэлгээ</h5>
+        <ul>
+            <li>Бүх үнэлгээний дундаж одтой харагдана</li>
+            <li>Нийт үнэлгээний тоо</li>
+        </ul>
+        <h5 class="mt-3">Үнэлгээний жагсаалт</h5>
+        <ul>
+            <li>Үнэлгээ бичсэн хүний нэр, имэйл</li>
+            <li>Одтой үнэлгээ (1-5)</li>
+            <li>Бичмэл сэтгэгдэл</li>
+            <li>Бичсэн огноо</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== УСТГАХ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-trash"></i> Үнэлгээ устгах</h4>
+        <p>Үнэлгээний хажууд байрлах <strong>устгах</strong> (хогийн сав) товчийг дарна.</p>
+        <ul>
+            <li>Баталгаажуулах цонх гарна (SweetAlert2)</li>
+            <li>Зөөлөн устгалт (soft delete) - өгөгдөл хадгалагдана</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== ВЭБ САЙТ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-globe"></i> Вэб сайт дээрх үнэлгээ</h4>
+        <p>Вэб сайтын бүтээгдэхүүний хуудсан дээр зочид үнэлгээ бичих боломжтой:</p>
+        <ul>
+            <li>Бүтээгдэхүүний хуудасны доод хэсэгт үнэлгээний форм байрлана</li>
+            <li>Зочин одоор (1-5) үнэлгээ, нэр, имэйл (заавал биш), сэтгэгдэл бичнэ</li>
+            <li>Бүтээгдэхүүний жагсаалтад дундаж үнэлгээ одтойгоор харагдана</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== ЭРХ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-shield-lock"></i> Шаардлагатай эрхүүд</h4>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Үйлдэл</th><th>Эрх</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Жагсаалт харах, Үнэлгээнүүд харах</td><td><code>system_product_index</code></td></tr>
+                <tr><td>Устгах</td><td><code>system_product_delete</code></td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>

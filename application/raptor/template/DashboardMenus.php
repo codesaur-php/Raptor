@@ -83,18 +83,6 @@ class DashboardMenus
                 ],
                 ['mn' => ['title' => 'Мэдээнүүд'], 'en' => ['title' => 'News']]
             );
-            // Сэтгэгдлүүд
-            $model->insert(
-                [
-                    'parent_id' => $contents['id'],
-                    'position' => '135',
-                    'alias' => 'system',
-                    'permission' => 'system_content_index',
-                    'icon' => 'bi bi-chat-left-text',
-                    'href' => "$path/dashboard/comments"
-                ],
-                ['mn' => ['title' => 'Сэтгэгдлүүд'], 'en' => ['title' => 'Comments']]
-            );
             // Файлууд
             $model->insert(
                 [

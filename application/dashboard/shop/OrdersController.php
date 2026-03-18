@@ -65,7 +65,7 @@ class OrdersController extends \Raptor\Controller
         $dashboard->set('title', $this->text('orders'));
         $dashboard->render();
 
-        $this->log('product', LogLevel::NOTICE, 'Захиалгын жагсаалтыг үзэж байна', ['action' => 'index']);
+        $this->log('products_orders', LogLevel::NOTICE, 'Захиалгын жагсаалтыг үзэж байна', ['action' => 'index']);
     }
 
     /**
@@ -158,7 +158,7 @@ class OrdersController extends \Raptor\Controller
                 $message = '{record.id} дугаартай захиалгыг үзэж байна';
                 $context += ['record' => $record];
             }
-            $this->log('product', $level, $message, $context);
+            $this->log('products_orders', $level, $message, $context);
         }
     }
 
@@ -238,7 +238,7 @@ class OrdersController extends \Raptor\Controller
                 $message = '{record_id} дугаартай захиалгын статусыг амжилттай шинэчлэлээ';
                 $context += ['old_status' => $record['status'], 'new_status' => $payload['status'], 'record' => $updated];
             }
-            $this->log('product', $level, $message, $context);
+            $this->log('products_orders', $level, $message, $context);
         }
     }
 
@@ -296,7 +296,7 @@ class OrdersController extends \Raptor\Controller
                 $message = '{record_id} дугаартай захиалгыг идэвхгүй болголоо';
                 $context += ['record_id' => $id];
             }
-            $this->log('product', $level, $message, $context);
+            $this->log('products_orders', $level, $message, $context);
         }
     }
 

@@ -1366,7 +1366,7 @@ class LoginController extends \Raptor\Controller
             $entropy -= $p * \log($p, 2);
         }
         if ($len >= 8 && $entropy > 3.8) {
-            $score += 3; // Маш өндөр entropy → бараг гарцаагүй random
+            $score += 3; // Маш өндөр entropy -> бараг гарцаагүй random
         } elseif ($len >= 8 && $entropy > 3.5) {
             $score += 2;
         }
