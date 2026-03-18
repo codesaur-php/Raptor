@@ -57,22 +57,36 @@ jobs:
   cpanel:
     name: Deploy to cPanel
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' && secrets.FTP_HOST != '' }}
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
 
     steps:
+      - name: Check FTP configuration
+        id: check-ftp
+        run: |
+          if [ -z "${{ secrets.FTP_HOST }}" ]; then
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "FTP_HOST secret not set - skipping deploy"
+          else
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Checkout repository
+        if: steps.check-ftp.outputs.configured == 'true'
         uses: actions/checkout@v6
 
       - name: Setup PHP 8.2
+        if: steps.check-ftp.outputs.configured == 'true'
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.2'
           extensions: gd, intl, pdo_mysql
 
       - name: Install production dependencies
+        if: steps.check-ftp.outputs.configured == 'true'
         run: composer install --no-dev --optimize-autoloader --no-interaction
 
       - name: Deploy to cPanel via FTP
+        if: steps.check-ftp.outputs.configured == 'true'
         uses: SamKirkland/FTP-Deploy-Action@v4.3.6
         with:
           server: ${{ secrets.FTP_HOST }}
