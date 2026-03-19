@@ -273,7 +273,7 @@ if (!formUpdate) {
         const data = new FormData(this);
 
         /* Fetch PUT -> JSON хариу */
-        fetch(this.action, {
+        csrfFetch(this.action, {
             body: data,
             method: this.getAttribute('method') ?? 'PUT'
         })

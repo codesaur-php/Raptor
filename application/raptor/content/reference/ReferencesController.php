@@ -157,6 +157,10 @@ class ReferencesController extends \Raptor\Controller
                     'status' => 'success',
                     'message' => $this->text('record-insert-success')
                 ]);
+
+                $adminName = \trim(($this->getUser()->profile['first_name'] ?? '') . ' ' . ($this->getUser()->profile['last_name'] ?? ''));
+                $appUrl = \rtrim((string)$this->getRequest()->getUri()->withPath($this->getScriptPath()), '/') . '/dashboard';
+                $this->getService('discord')?->contentAction('reference', 'insert', $payload['keyword'] ?? '', $record['id'] ?? null, $adminName, $appUrl);
             } else {
                 $dashboard = $this->twigDashboard(
                     __DIR__ . '/reference-insert.html',
@@ -333,6 +337,10 @@ class ReferencesController extends \Raptor\Controller
                     'type' => 'primary',
                     'message' => $this->text('record-update-success')
                 ]);
+
+                $adminName = \trim(($this->getUser()->profile['first_name'] ?? '') . ' ' . ($this->getUser()->profile['last_name'] ?? ''));
+                $appUrl = \rtrim((string)$this->getRequest()->getUri()->withPath($this->getScriptPath()), '/') . '/dashboard';
+                $this->getService('discord')?->contentAction('reference', 'update', $record['keyword'] ?? '', $id, $adminName, $appUrl, $updates ?? []);
             } else {
                 $dashboard = $this->twigDashboard(
                     __DIR__ . '/reference-update.html',
@@ -426,6 +434,10 @@ class ReferencesController extends \Raptor\Controller
                 'title'   => $this->text('success'),
                 'message' => $this->text('record-successfully-deleted')
             ]);
+
+            $adminName = \trim(($this->getUser()->profile['first_name'] ?? '') . ' ' . ($this->getUser()->profile['last_name'] ?? ''));
+            $appUrl = \rtrim((string)$this->getRequest()->getUri()->withPath($this->getScriptPath()), '/') . '/dashboard';
+            $this->getService('discord')?->contentAction('reference', 'delete', $record['keyword'] ?? "#{$id}", $id, $adminName, $appUrl);
         } catch (\Throwable $err) {
             $this->respondJSON([
                 'status'  => 'error',

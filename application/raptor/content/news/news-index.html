@@ -172,7 +172,7 @@
         const news = new motable('table#news', { freezeColumns: [0] });
 
         /* Серверээс мэдээний жагсаалтыг татах */
-        fetch(
+        csrfFetch(
             `{{ 'news-list'|link }}` + window.location.search
         ).then(res => {
             /* Хариуны төрлийг шалгах */
@@ -266,7 +266,7 @@
                         showLoaderOnConfirm: true,
                         allowOutsideClick: () => !Swal.isLoading(),
                         preConfirm: () => {
-                            return fetch(`{{ 'news-sample-reset'|link }}`, {
+                            return csrfFetch(`{{ 'news-sample-reset'|link }}`, {
                                 method: 'DELETE',
                                 headers: { 'Content-Type': 'application/json' }
                             }).then(res => res.json()).then(response => {
@@ -341,7 +341,7 @@
                     backdrop: true,
                     preConfirm: () => {
                         /* Сервер рүү устгах хүсэлт илгээх */
-                        return fetch(
+                        return csrfFetch(
                             `{{ 'news-deactivate'|link }}`,
                             {
                                 method: 'DELETE',

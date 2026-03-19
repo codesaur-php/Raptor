@@ -128,11 +128,6 @@
                         <label>{{ 'code'|text }}</label>
                         <input class="form-control copy_code" readonly maxlength="2">
                     </div>
-
-                    <div class="mt-2">
-                        <label>{{ 'flag'|text }}</label>
-                        <p class="copy_flag"></p>
-                    </div>
                 </div>
 
                 <!-- 3-р TAB - Confirm Panel -->
@@ -195,166 +190,156 @@
 </div>
 
 <script type="text/javascript">
-const progressBar = document.querySelector('#collectProgress');
-const headGeneral = document.querySelector('#langInsertTab button[data-bs-target="#generalPanel"]');
-const headSettings = document.querySelector('#langInsertTab button[data-bs-target="#settingsPanel"]');
-const headConfirm = document.querySelector('#langInsertTab button[data-bs-target="#confirmPanel"]');
+(function () {
+    const progressBar = document.querySelector('#collectProgress');
+    const headGeneral = document.querySelector('#langInsertTab button[data-bs-target="#generalPanel"]');
+    const headSettings = document.querySelector('#langInsertTab button[data-bs-target="#settingsPanel"]');
+    const headConfirm = document.querySelector('#langInsertTab button[data-bs-target="#confirmPanel"]');
 
-const codeInput = document.querySelector('#generalPanel input.lang_code');
-const localeInput = document.querySelector('#generalPanel input.lang_locale');
-const flagInput = document.querySelector('#generalPanel p.lang_flag');
-const nameInput = document.querySelector('#generalPanel input.lang_title');
-const descriprionInput = document.querySelector('#generalPanel input.lang_description');
+    const codeInput = document.querySelector('#generalPanel input.lang_code');
+    const localeInput = document.querySelector('#generalPanel input.lang_locale');
+    const flagInput = document.querySelector('#generalPanel p.lang_flag');
+    const nameInput = document.querySelector('#generalPanel input.lang_title');
+    const descriprionInput = document.querySelector('#generalPanel input.lang_description');
 
-const copySelect = document.querySelector('#settingsPanel select.available_languages');
+    const copySelect = document.querySelector('#settingsPanel select.available_languages');
 
-const btnBack = document.querySelector('.modal-footer #back');
-const btnContinue = document.querySelector('.modal-footer #continue');
-const btnConfirm = document.querySelector('.modal-footer #confirm');
+    const btnBack = document.querySelector('.modal-footer #back');
+    const btnContinue = document.querySelector('.modal-footer #continue');
+    const btnConfirm = document.querySelector('.modal-footer #confirm');
 
-/* Live update for CODE -> FLAG */
-codeInput.addEventListener('input', function () {
-    const confirmFlag = document.querySelector('#confirmPanel p.lang_flag');
-    const confirmCode = document.querySelector('#confirmPanel input[name="code"]');
-    if (this.value.length === 2) {
-        // en тохиолдолд дэлгэц дээр us flag харуулна
-        const flagstr = this.value === 'en' ? 'us' : this.value;
-        const img = `<img src="https://flagcdn.com/40x30/${flagstr}.png" 
-                          srcset="https://flagcdn.com/80x60/${flagstr}.png 2x"
-                          width="40" height="30">`;
-        flagInput.innerHTML = img;
-        confirmFlag.innerHTML = img;
-        confirmCode.value = this.value;
-    } else {
-        flagInput.innerHTML = '';
-        confirmFlag.innerHTML = '';
-        confirmCode.value = '';
-    }
-});
-
-/* Mirror locale -> confirm panel */
-localeInput.addEventListener('input', function () {
-    document.querySelector('#confirmPanel input[name="locale"]').value = this.value;
-});
-
-/* Mirror name -> confirm panel */
-nameInput.addEventListener('input', function () {
-    document.querySelector('#confirmPanel input[name="title"]').value = this.value;
-});
-
-/* Mirror description -> confirm panel */
-descriprionInput.addEventListener('input', function () {
-    document.querySelector('#confirmPanel input[name="description"]').value = this.value;
-});
-
-/* Select mother language -> update flag + code */
-copySelect.onchange = function () {
-    const copyFlag = document.querySelector('#settingsPanel p.copy_flag');
-    const copyCode = document.querySelector('#settingsPanel input.copy_code');
-    const confirmCopyCode = document.querySelector('#confirmPanel input[name="copy"]');
-    if (this.value) {
-        const flagstr = this.value === 'en' ? 'us' : this.value;
-        copyFlag.innerHTML =
-            `<img src="https://flagcdn.com/40x30/${flagstr}.png" 
-                  srcset="https://flagcdn.com/80x60/${flagstr}.png 2x"
-                  width="40" height="30">`;
-        copyCode.value = this.value;
-        confirmCopyCode.value = this.value;
-    } else {
-        copyFlag.innerHTML = '';
-        copyCode.value = '';
-        confirmCopyCode.value = '';
-    }
-};
-
-/* Tab navigation */
-btnBack.addEventListener('click', function (e) {
-    e.preventDefault();
-
-    const id = document.querySelector('.modal-body .tab-content .active').id;
-
-    if (id === 'settingsPanel') headGeneral.click();
-    else if (id === 'confirmPanel') headSettings.click();
-});
-
-btnContinue.addEventListener('click', function (e) {
-    e.preventDefault();
-
-    const id = document.querySelector('.modal-body .tab-content .active').id;
-
-    if (id === 'generalPanel') headSettings.click();
-    else if (id === 'settingsPanel') headConfirm.click();
-});
-
-/* Tab header button behavior */
-headGeneral.addEventListener('click', function () {
-    btnBack.style.display = 'none';
-    btnContinue.style.display = 'block';
-    btnConfirm.style.display = 'none';
-    progressBar.style.width = '33%';
-});
-
-headSettings.addEventListener('click', function () {
-    btnBack.style.display = 'block';
-    btnContinue.style.display = 'block';
-    btnConfirm.style.display = 'none';
-    progressBar.style.width = '66%';
-});
-
-headConfirm.addEventListener('click', function () {
-    btnBack.style.display = 'block';
-    btnContinue.style.display = 'none';
-    btnConfirm.style.display = 'block';
-    progressBar.style.width = '99%';
-});
-
-headGeneral.click(); /* Initialize first tab */
-
-/* CONFIRM -> AJAX POST */
-btnConfirm.addEventListener('click', function (e) {
-    e.preventDefault();
-
-    btnConfirm.growNstop();
-
-    /* Show blocking overlay */
-    const requesting = document.querySelector('div.requesting');
-    if (requesting) requesting.style.display = 'block';
-
-    /* Collect data */
-    const formData = new FormData();
-    const inputs = document.querySelectorAll('#confirmPanel input');
-    inputs.forEach(input => formData.append(input.name, input.value));
-    
-    fetch(`{{ 'language-insert'|link }}`, {
-        method: 'POST',
-        body: formData
-    })
-    .then(res => {
-        const contentType = res.headers.get('content-type') || '';
-        if (contentType.includes('application/json')) return res.json();
-
-        throw new Error(`HTTP [${res.status}]: ${res.statusText}`);
-    })
-    .then(response => {
-        if (response.status !== 'success') {
-            throw new Error(response.message ?? 'Invalid response!');
+    /* Live update for CODE -> FLAG */
+    codeInput.addEventListener('input', function () {
+        const confirmFlag = document.querySelector('#confirmPanel p.lang_flag');
+        const confirmCode = document.querySelector('#confirmPanel input[name="code"]');
+        if (this.value.length === 2) {
+            // en тохиолдолд дэлгэц дээр us flag харуулна
+            const flagstr = this.value === 'en' ? 'us' : this.value;
+            const img = `<img src="https://flagcdn.com/40x30/${flagstr}.png" 
+                              srcset="https://flagcdn.com/80x60/${flagstr}.png 2x"
+                              width="40" height="30">`;
+            flagInput.innerHTML = img;
+            confirmFlag.innerHTML = img;
+            confirmCode.value = this.value;
+        } else {
+            flagInput.innerHTML = '';
+            confirmFlag.innerHTML = '';
+            confirmCode.value = '';
         }
+    });
 
-        /* Success -> reload localization page */
-        window.location.reload();
+    /* Mirror locale -> confirm panel */
+    localeInput.addEventListener('input', function () {
+        document.querySelector('#confirmPanel input[name="locale"]').value = this.value;
+    });
 
-        NotifyTop(
-            response.type ?? 'success',
-            response.title ?? `{{ 'success'|text|e }}`,
-            response.message ?? 'Language inserted'
-        );
-    })
-    .catch(error => {
-        NotifyTop('danger', `{{ 'error'|text|e }}`, error.message);
+    /* Mirror name -> confirm panel */
+    nameInput.addEventListener('input', function () {
+        document.querySelector('#confirmPanel input[name="title"]').value = this.value;
+    });
 
-        if (requesting) requesting.style.display = 'none';
+    /* Mirror description -> confirm panel */
+    descriprionInput.addEventListener('input', function () {
+        document.querySelector('#confirmPanel input[name="description"]').value = this.value;
+    });
+
+    /* Select mother language -> update code */
+    copySelect.onchange = function () {
+        const copyCode = document.querySelector('#settingsPanel input.copy_code');
+        const confirmCopyCode = document.querySelector('#confirmPanel input[name="copy"]');
+        copyCode.value = this.value || '';
+        confirmCopyCode.value = this.value || '';
+    };
+
+    /* Tab navigation */
+    btnBack.addEventListener('click', function (e) {
+        e.preventDefault();
+
+        const id = document.querySelector('.modal-body .tab-content .active').id;
+
+        if (id === 'settingsPanel') headGeneral.click();
+        else if (id === 'confirmPanel') headSettings.click();
+    });
+
+    btnContinue.addEventListener('click', function (e) {
+        e.preventDefault();
+
+        const id = document.querySelector('.modal-body .tab-content .active').id;
+
+        if (id === 'generalPanel') headSettings.click();
+        else if (id === 'settingsPanel') headConfirm.click();
+    });
+
+    /* Tab header button behavior */
+    headGeneral.addEventListener('click', function () {
+        btnBack.style.display = 'none';
+        btnContinue.style.display = 'block';
+        btnConfirm.style.display = 'none';
+        progressBar.style.width = '33%';
+    });
+
+    headSettings.addEventListener('click', function () {
+        btnBack.style.display = 'block';
+        btnContinue.style.display = 'block';
+        btnConfirm.style.display = 'none';
+        progressBar.style.width = '66%';
+    });
+
+    headConfirm.addEventListener('click', function () {
+        btnBack.style.display = 'block';
+        btnContinue.style.display = 'none';
+        btnConfirm.style.display = 'block';
+        progressBar.style.width = '99%';
+    });
+
+    headGeneral.click(); /* Initialize first tab */
+
+    /* CONFIRM -> AJAX POST */
+    btnConfirm.addEventListener('click', function (e) {
+        e.preventDefault();
 
         btnConfirm.growNstop();
+
+        /* Show blocking overlay */
+        const requesting = document.querySelector('div.requesting');
+        if (requesting) requesting.style.display = 'block';
+
+        /* Collect data */
+        const formData = new FormData();
+        const inputs = document.querySelectorAll('#confirmPanel input');
+        inputs.forEach(input => formData.append(input.name, input.value));
+
+        csrfFetch(`{{ 'language-insert'|link }}`, {
+            method: 'POST',
+            body: formData
+        })
+        .then(res => {
+            const contentType = res.headers.get('content-type') || '';
+            if (contentType.includes('application/json')) return res.json();
+
+            throw new Error(`HTTP [${res.status}]: ${res.statusText}`);
+        })
+        .then(response => {
+            if (response.status !== 'success') {
+                throw new Error(response.message ?? 'Invalid response!');
+            }
+
+            /* Success -> reload localization page */
+            window.location.reload();
+
+            NotifyTop(
+                response.type ?? 'success',
+                response.title ?? `{{ 'success'|text|e }}`,
+                response.message ?? 'Language inserted'
+            );
+        })
+        .catch(error => {
+            NotifyTop('danger', `{{ 'error'|text|e }}`, error.message);
+
+            if (requesting) requesting.style.display = 'none';
+
+            btnConfirm.growNstop();
+        });
     });
-});
+})();
 </script>

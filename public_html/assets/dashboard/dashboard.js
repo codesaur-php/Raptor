@@ -32,6 +32,29 @@
  * ================================================================
  */
 
+/**
+ * getCsrfToken()
+ * - Dashboard meta tag-аас CSRF token уншина */
+function getCsrfToken() {
+    const meta = document.querySelector('meta[name="csrf-token"]');
+    return meta ? meta.getAttribute('content') : '';
+}
+
+/**
+ * csrfFetch(url, options)
+ * - fetch() wrapper, CSRF token header автоматаар нэмнэ */
+function csrfFetch(url, options = {}) {
+    if (!options.headers) {
+        options.headers = {};
+    }
+    if (options.headers instanceof Headers) {
+        options.headers.append('X-CSRF-TOKEN', getCsrfToken());
+    } else {
+        options.headers['X-CSRF-TOKEN'] = getCsrfToken();
+    }
+    return fetch(url, options);
+}
+
 /* DARK MODE ИДЭВХЖҮҮЛЭХ */
 if (localStorage.getItem('data-bs-theme') === 'dark') {
     document.body.setAttribute('data-bs-theme', 'dark');
@@ -78,8 +101,9 @@ function ajaxModal(link)
                     newScript.src = script.src;
                     document.body.appendChild(newScript);
                 } else if (script.innerHTML.trim() !== '') {
-                    try { eval(script.innerHTML); }
-                    catch (e) { console.error('Modal script error:', e); }
+                    const newInlineScript = document.createElement('script');
+                    newInlineScript.textContent = script.innerHTML;
+                    document.body.appendChild(newInlineScript);
                 }
             });
 
@@ -494,7 +518,7 @@ function initSidebarBadges(badgesUrl) {
                     const module = badge.getAttribute('data-badge-module');
                     badge.remove();
 
-                    fetch(seenUrl, {
+                    csrfFetch(seenUrl, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ module: module })
@@ -526,4 +550,140 @@ document.addEventListener('DOMContentLoaded', function () {
         }));
         
     initScrollToTop();
+    initLoggerProtocol();
+    initInvalidTabFocus();
 });
+
+/**
+ * initInvalidTabFocus()
+ * - Form validation fail bolohod invalid input-iin tab ruu avtomataar shiljuulne
+ *
+ * Bootstrap tab-content dotorh nuugdsan (inactive) tab deer
+ * required input baival browser focus hiij chadahgui.
+ * Ene funkts form deer 'was-validated' class nemegdehiig ajiglaad
+ * ehnii invalid input-iin tab-iig idvehijuulne. */
+function initInvalidTabFocus() {
+    var observer = new MutationObserver(function (mutations) {
+        mutations.forEach(function (m) {
+            if (m.type !== 'attributes' || m.attributeName !== 'class') return;
+            var form = m.target;
+            if (!form.classList.contains('was-validated')) return;
+
+            var invalid = form.querySelector(':invalid');
+            if (!invalid) return;
+
+            /* tab-pane dotorh invalid input baiwal */
+            var pane = invalid.closest('.tab-pane');
+            if (!pane || pane.classList.contains('active')) {
+                invalid.focus();
+                return;
+            }
+
+            /* Tab-iin trigger oloh */
+            var paneId = pane.id;
+            if (!paneId) return;
+            var trigger = form.querySelector(
+                '[data-bs-toggle="tab"][href="#' + paneId + '"], ' +
+                '[data-bs-toggle="tab"][data-bs-target="#' + paneId + '"]'
+            );
+            if (trigger) {
+                trigger.click();
+                setTimeout(function () { invalid.focus(); }, 150);
+            }
+        });
+    });
+
+    document.querySelectorAll('form.needs-validation').forEach(function (form) {
+        observer.observe(form, { attributes: true, attributeFilter: ['class'] });
+    });
+}
+
+/**
+ * initLoggerProtocol()
+ * - ul.logger-protocol элементүүдийг олж, лог татаж харуулна
+ *
+ * HTML template-д зөвхөн data attribute тавихад хангалттай:
+ *   <ul class="logger-protocol"
+ *       id="logger-{table}"
+ *       data-retrieve="{{ 'logs-retrieve'|link }}"
+ *       data-view="{{ 'logs-view'|link }}"
+ *       data-context='{"record_id":"123"}'>
+ *   </ul>
+ */
+function initLoggerProtocol() {
+    document.querySelectorAll('ul.logger-protocol').forEach(function (logger) {
+        const retrieveUrl = logger.dataset.retrieve;
+        const viewUrl = logger.dataset.view;
+        if (!retrieveUrl || !viewUrl) return;
+
+        const loggerId = logger.id ?? '';
+        const table = loggerId.substring(loggerId.indexOf('-') + 1);
+        if (!table) return;
+
+        const context = logger.dataset.context ? JSON.parse(logger.dataset.context) : {};
+
+        logger.style.display = 'none';
+        const spinner = logger.previousElementSibling;
+        if (spinner) spinner.style.display = 'block';
+
+        csrfFetch(`${retrieveUrl}?table=${table}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                'ORDER BY': 'id Desc',
+                'CONTEXT': context,
+                'LIMIT': 10000
+            })
+        })
+        .then(function (res) {
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            return res.json();
+        })
+        .then(function (response) {
+            if (response.error) throw new Error(response.error);
+
+            logger.innerHTML = '';
+            const logModalLink = `${viewUrl}?table=${table}&id=`;
+            const levelMap = {
+                notice: 'light', info: 'primary', error: 'danger',
+                warning: 'warning', alert: 'info', debug: 'secondary'
+            };
+
+            Object.values(response).forEach(function (log) {
+                const li = document.createElement('li');
+                li.classList.add('list-group-item', 'list-group-item-action');
+                li.classList.add('list-group-item-' + (levelMap[log.level] ?? 'dark'));
+
+                const a = document.createElement('a');
+                a.textContent = `${log.created_at} [${log.id}]`;
+                a.href = logModalLink + log.id;
+                a.setAttribute('data-bs-target', '#static-modal');
+                a.setAttribute('data-bs-toggle', 'modal');
+                a.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    ajaxModal(a);
+                });
+                li.appendChild(a);
+                li.appendChild(document.createTextNode(' '));
+
+                const msg = document.createElement('span');
+                msg.innerHTML = log.message;
+                li.appendChild(msg);
+                li.appendChild(document.createTextNode(' '));
+
+                const who = document.createElement('span');
+                who.classList.add('text-muted', 'small');
+                const ctx = log.context ?? {};
+                who.innerHTML = `<u>${ctx.action ?? ''} by ${ctx.auth_user?.username ?? ''}</u>`;
+                li.appendChild(who);
+
+                logger.appendChild(li);
+            });
+        })
+        .catch(function (error) { console.log(error.message); })
+        .finally(function () {
+            logger.style.display = '';
+            if (spinner) spinner.style.display = 'none';
+        });
+    });
+}

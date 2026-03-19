@@ -175,7 +175,7 @@
         const products = new motable('table#products', { freezeColumns: [3] });
 
         /* Серверээс бүтээгдэхүүний жагсаалтыг татах */
-        fetch(
+        csrfFetch(
             `{{ 'products-list'|link }}` + window.location.search
         ).then(res => {
             /* Хариуны төрлийг шалгах */
@@ -274,7 +274,7 @@
                         showLoaderOnConfirm: true,
                         allowOutsideClick: () => !Swal.isLoading(),
                         preConfirm: () => {
-                            return fetch(`{{ 'products-sample-reset'|link }}`, {
+                            return csrfFetch(`{{ 'products-sample-reset'|link }}`, {
                                 method: 'DELETE',
                                 headers: { 'Content-Type': 'application/json' }
                             }).then(res => res.json()).then(response => {
@@ -351,7 +351,7 @@
                     backdrop: true,
                     preConfirm: () => {
                         /* Сервер рүү устгах хүсэлт илгээх */
-                        return fetch(
+                        return csrfFetch(
                             `{{ 'product-deactivate'|link }}`,
                             {
                                 method: 'DELETE',

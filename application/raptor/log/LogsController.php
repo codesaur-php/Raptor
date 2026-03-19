@@ -280,11 +280,29 @@ class LogsController extends \Raptor\Controller
             // Filter болон Query нөхцөл
             $condition = $this->getParsedBody();
             $context = $condition['CONTEXT'] ?? null;
-            unset($condition['CONTEXT']);
+
+            // Client-ээс ирсэн ORDER BY, LIMIT-ийг sanitize хийх
+            $safeCondition = [];
+            if (!empty($condition['ORDER BY']) && \preg_match('/^[a-zA-Z_]+\s+(ASC|DESC|asc|desc)$/i', $condition['ORDER BY'])) {
+                $safeCondition['ORDER BY'] = $condition['ORDER BY'];
+            }
+            if (!empty($condition['LIMIT']) && \filter_var($condition['LIMIT'], \FILTER_VALIDATE_INT)) {
+                $safeCondition['LIMIT'] = (int) $condition['LIMIT'];
+            }
+            $condition = $safeCondition;
 
             // JSON талбарын хайлтыг MySQL / PostgreSQL-д тааруулан хийх
             $wheres = [];
             foreach (\is_array($context) ? $context : [] as $field => $value) {
+                if (!\is_string($value) || !\is_string($field)) {
+                    continue;
+                }
+
+                // Field нэрийг sanitize (зөвхөн үсэг, тоо, доогуур зураас, цэг)
+                if (!\preg_match('/^[a-zA-Z0-9_.]+$/', $field)) {
+                    continue;
+                }
+
                 $isLike = \strpos($value, '*') !== false;
                 if ($isLike) {
                     $value = \str_replace('*', '%', $value);

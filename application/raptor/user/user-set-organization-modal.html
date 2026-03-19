@@ -119,7 +119,7 @@ if (!userOrgsForm) {
         const data = new FormData(this);
 
         /* fetch ашиглан backend рүү form илгээх */
-        fetch(this.action, {
+        csrfFetch(this.action, {
             body: data,
             method: this.getAttribute('method') ?? 'POST'
         })

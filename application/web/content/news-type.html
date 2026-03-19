@@ -1,45 +1,72 @@
+<!-- Variables: records, type, categories, title -->
 <div class="container mt-4">
     <h4 class="mb-4 pb-2 border-bottom">
-        <i class="bi bi-newspaper me-2"></i>{{ type }}
+        <i class="bi bi-newspaper me-2"></i>{{ title }}
         <span class="badge bg-secondary ms-1">{{ records|length }}</span>
     </h4>
 
-    {% if records is not empty %}
-        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
-            {% for item in records %}
-                <div class="col">
-                    <div class="card h-100 shadow-sm">
-                        {% if item.photo %}
-                            <a href="{{ 'news'|link({ slug: item.slug }) }}">
-                                <img src="{{ item.photo }}" class="card-img-top" alt="{{ item.title }}" style="height:200px;object-fit:cover">
-                            </a>
-                        {% endif %}
-                        <div class="card-body">
-                            <h6 class="card-title">
-                                <a href="{{ 'news'|link({ slug: item.slug }) }}" class="text-decoration-none text-dark">
-                                    {{ item.title }}
-                                </a>
-                            </h6>
-                            {% if item.description %}
-                                <p class="card-text text-muted small">{{ item.description }}</p>
-                            {% endif %}
+    <div class="row">
+        <!-- Мэдээний жагсаалт -->
+        <div class="col-lg-9">
+            {% if records is not empty %}
+                <div class="row row-cols-1 row-cols-md-2 g-4">
+                    {% for item in records %}
+                        <div class="col">
+                            <div class="card h-100 shadow-sm">
+                                {% if item.photo %}
+                                    <a href="{{ 'news'|link({ slug: item.slug }) }}">
+                                        <img src="{{ item.photo }}" class="card-img-top" alt="{{ item.title|e }}" style="height:200px;object-fit:cover">
+                                    </a>
+                                {% endif %}
+                                <div class="card-body">
+                                    <h6 class="card-title">
+                                        <a href="{{ 'news'|link({ slug: item.slug }) }}" class="text-decoration-none text-dark">
+                                            {{ item.title }}
+                                        </a>
+                                    </h6>
+                                    {% if item.description %}
+                                        <p class="card-text text-muted small">{{ item.description|length > 150 ? item.description|slice(0, 150) ~ '...' : item.description }}</p>
+                                    {% endif %}
+                                </div>
+                                <div class="card-footer bg-transparent d-flex justify-content-between align-items-center">
+                                    <small class="text-muted">
+                                        <i class="bi bi-calendar3 me-1"></i>{{ item.published_at|date('Y-m-d') }}
+                                    </small>
+                                    <small class="text-muted">
+                                        <i class="bi bi-eye me-1"></i>{{ item.read_count }}
+                                    </small>
+                                </div>
+                            </div>
                         </div>
-                        <div class="card-footer bg-transparent d-flex justify-content-between align-items-center">
-                            <small class="text-muted">
-                                <i class="bi bi-calendar3 me-1"></i>{{ item.published_at|date('Y-m-d') }}
-                            </small>
-                            <small class="text-muted">
-                                <i class="bi bi-eye me-1"></i>{{ item.read_count }}
-                            </small>
-                        </div>
-                    </div>
+                    {% endfor %}
                 </div>
-            {% endfor %}
+            {% else %}
+                <div class="text-center text-muted py-5">
+                    <i class="bi bi-newspaper fs-1 d-block mb-2"></i>
+                    {{ 'no-news-found'|text }}
+                </div>
+            {% endif %}
         </div>
-    {% else %}
-        <div class="text-center text-muted py-5">
-            <i class="bi bi-newspaper fs-1 d-block mb-2"></i>
-            {{ 'no-news-found'|text }}
+
+        <!-- Ангилал (sidebar) -->
+        <div class="col-lg-3 mt-4 mt-lg-0">
+            <div class="card shadow-sm">
+                <div class="card-header bg-secondary text-white fw-semibold">
+                    <i class="bi bi-tag me-1"></i>{{ 'category'|text }}
+                </div>
+                <div class="list-group list-group-flush">
+                    <a href="{{ 'news-type'|link({ type: 'all' }) }}"
+                       class="list-group-item list-group-item-action{{ type == 'all' ? ' active' : '' }}">
+                        <i class="bi bi-grid me-1"></i>{{ 'all'|text }}
+                    </a>
+                    {% for cat in categories %}
+                        <a href="{{ 'news-type'|link({ type: cat }) }}"
+                           class="list-group-item list-group-item-action{{ type == cat ? ' active' : '' }}">
+                            {{ cat|capitalize }}
+                        </a>
+                    {% endfor %}
+                </div>
+            </div>
         </div>
-    {% endif %}
+    </div>
 </div>

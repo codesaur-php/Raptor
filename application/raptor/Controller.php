@@ -311,7 +311,7 @@ abstract class Controller extends \codesaur\Http\Application\Controller
         $twig->set('user', $this->getUser());
         $twig->set('index', $this->getScriptPath());
         $twig->set('localization', $this->getAttribute('localization'));
-        $twig->set('request', \rawurldecode($this->getRequest()->getUri()->getPath()));
+        $twig->set('csrf_token', $this->getAttribute('csrf_token') ?? '');
 
         // Localization filter
         $twig->addFilter(new TwigFilter('text', function (string $key, $default = null): string {

@@ -110,7 +110,7 @@
                             {% endif %}
 
                             {% if can_delete %}
-                                <!-- Хэл идэвхгүй болгох товч -->
+                                <!-- Хэл устгах товч -->
                                 <button class="deactivate-language btn btn-sm btn-danger mt-1 shadow-sm"
                                         value="{{ language['id'] }}"
                                         type="button">
@@ -219,7 +219,10 @@
     </div>
 
     <!-- Логийн жагсаалт (динамик байдлаар дүүрнэ) -->
-    <ul class="list-group logger-protocol" id="logger-localization"
+    <ul class="list-group logger-protocol" id="logger-content"
+        data-retrieve="{{ 'logs-retrieve'|link }}"
+        data-view="{{ 'logs-view'|link }}"
+        data-context='{"action":"localization-*"}'
         style="max-height:240px; overflow-y:auto">
     </ul>
 </div>
@@ -267,16 +270,16 @@
                 /* Хэл устгах баталгаажуулах асуултын текст бэлдэх */
                 let questiondel;
                 if (document.documentElement.lang === 'mn') {
-                    /* Монгол хэл дээр */
                     questiondel =
                         `<p class="text-danger mb-3">
-                            Та ({0}) хэлийг идэвхгүй болгоход итгэлтэй байна уу?
+                            Та ({0}) хэлийг бүрэн устгахдаа итгэлтэй байна уу?
+                            <br/><small class="text-body-secondary">Энэ үйлдлийг буцаах боломжгүй.</small>
                         </p>`;
                 } else {
-                    /* Англи болон бусад хэл дээр */
                     questiondel =
                         `<p class="text-danger mb-3">
-                            Are you sure to deactivate the language ({0})?
+                            Are you sure you want to permanently delete the language ({0})?
+                            <br/><small class="text-body-secondary">This action cannot be undone.</small>
                         </p>`;
                 }
 
@@ -306,8 +309,8 @@
 
                     /* preConfirm -> сервер рүү DELETE хүсэлт илгээнэ */
                     preConfirm: (reason) => {
-                        return fetch(
-                            `{{ 'language-deactivate'|link }}`,
+                        return csrfFetch(
+                            `{{ 'delete-language'|link }}`,
                             {
                                 method: 'DELETE',
                                 headers: {
@@ -391,7 +394,7 @@
                         backdrop: true,
                         /* preConfirm -> сервер рүү DELETE хүсэлт илгээнэ */
                         preConfirm: () => {
-                            return fetch(
+                            return csrfFetch(
                                 `{{ 'text-deactivate'|link }}`,
                                 {
                                     method: 'DELETE',
@@ -431,108 +434,5 @@
             );
         }
 
-        /* LOGGER харуулах */
-        const logger = document.querySelector('ul.logger-protocol');
-        if (logger && logger.tagName === 'UL') {
-            const logsRetrieveLink = `{{ 'logs-retrieve'|link }}`;
-            const logsViewLink = `{{ 'logs-view'|link }}`;
-
-            let logger_id = logger.id ?? '';
-            let table = logger_id.substring(logger_id.indexOf('-') + 1);
-
-            if (!table) return;
-
-            /* Лог дуудах явцад эхлээд жагсаалтыг нууж spinner-г харуулна */
-            logger.style.display = 'none';
-
-            const spinner = logger.previousElementSibling;
-            spinner.style.display = 'block';
-
-            /* Серверээс лог татах */
-            fetch(
-                `${logsRetrieveLink}?table=${table}`,
-                {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        'ORDER BY': 'id Desc',
-                        'LIMIT': 10000
-                    })
-                }
-            )
-            .then(res => res.json())
-            .then(response => {
-                if (response.error) {
-                    throw new Error(response.error ?? `{{ 'something-went-wrong'|text|e }}`);
-                }
-
-                /* Хуучин контентыг цэвэрлэнэ */
-                logger.innerHTML = '';
-
-                /* Лог modal нээх линк */
-                const logModalLink = `${logsViewLink}?table=${table}&id=`;
-
-                /* Лог бүрийг <li> болон <a>, <span> элементүүдээр үүсгэнэ */
-                Object.values(response).forEach(log => {
-                    const log_li = document.createElement('li');
-                    log_li.classList.add('list-group-item', 'list-group-item-action');
-
-                    /* Логийн түвшнээс хамаарч өнгө өөрчлөгдөнө */
-                    switch (log.level) {
-                        case 'notice': log_li.classList.add('list-group-item-light'); break;
-                        case 'info': log_li.classList.add('list-group-item-primary'); break;
-                        case 'error': log_li.classList.add('list-group-item-danger'); break;
-                        case 'warning': log_li.classList.add('list-group-item-warning'); break;
-                        case 'alert': log_li.classList.add('list-group-item-info'); break;
-                        case 'debug': log_li.classList.add('list-group-item-secondary'); break;
-                        default: log_li.classList.add('list-group-item-dark'); break;
-                    }
-
-                    /* Лог дэлгэрэнгүй нээх холбоос */
-                    const a_link = document.createElement('a');
-                    a_link.textContent = `${log.created_at} [${log.id}]`;
-                    a_link.href = logModalLink + log.id;
-                    a_link.setAttribute('data-bs-target', '#static-modal');
-                    a_link.setAttribute('data-bs-toggle', 'modal');
-
-                    /* Modal AJAX-аар ачаалах */
-                    a_link.addEventListener('click', function (e) {
-                        e.preventDefault();
-                        ajaxModal(a_link);
-                    });
-
-                    log_li.appendChild(a_link);
-                    log_li.appendChild(document.createTextNode(' '));
-
-                    /* Логийн үндсэн мессеж */
-                    const span_msg = document.createElement('span');
-                    span_msg.innerHTML = log.message;
-                    log_li.appendChild(span_msg);
-                    log_li.appendChild(document.createTextNode(' '));
-
-                    /* Хэн ямар үйлдэл хийснийг харуулах */
-                    const span_user_action = document.createElement('span');
-                    span_user_action.innerHTML =
-                        `<span class="text-muted small">
-                            <u>${log.context.action ?? ''} by ${log.context.auth_user?.username ?? ''}</u>
-                         </span>`;
-                    span_user_action.classList.add('text-muted', 'small');
-
-                    log_li.appendChild(span_user_action);
-
-                    logger.appendChild(log_li);
-                });
-            })
-            .catch(error => {
-                console.log(error.message);
-            })
-            .finally(() => {
-                /* Лог татсаны дараа spinner-г нууж, жагсаалтыг харуулна */
-                logger.style.display = '';
-                spinner.style.display = 'none';
-            });
-        }
     });
 </script>

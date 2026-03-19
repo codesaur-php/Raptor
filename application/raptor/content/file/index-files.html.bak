@@ -223,7 +223,7 @@
         document.body.style.overflow = 'hidden';
 
         if (type === 'text') {
-            fetch(src)
+            csrfFetch(src)
                 .then(res => res.text())
                 .then(text => {
                     const pre = overlay.querySelector('pre');
@@ -531,7 +531,7 @@
                         backdrop: true,
                         preConfirm: () => {
                             const url = `{{ 'files-deactivate'|link({'table':table}) }}`;
-                            return fetch(url, {
+                            return csrfFetch(url, {
                                 method: 'DELETE',
                                 headers: {
                                     'Content-Type': 'application/json'
@@ -571,7 +571,7 @@
         );
 
         /* Файлын жагсаалтыг backend-ээс AJAX-р татах */
-        fetch(
+        csrfFetch(
             `{{ 'files-list'|link({'table': table}) }}`
         ).then(res => {
             const contentType = res.headers.get('content-type') || '';
@@ -727,7 +727,7 @@
                         formData.append('optimize', '1');
                     }
 
-                    const response = await fetch(uploadUrl, {
+                    const response = await csrfFetch(uploadUrl, {
                         method: 'POST',
                         body: formData
                     });

@@ -736,7 +736,11 @@ class ProductsController extends FileController
             // Auto increment тохируулах
             $maxId = $this->query("SELECT MAX(id) as max_id FROM $table")->fetch();
             $nextId = ((int)($maxId['max_id'] ?? 0)) + 1;
-            $this->exec("ALTER TABLE $table AUTO_INCREMENT = $nextId");
+            if ($this->getDriverName() === 'pgsql') {
+                $this->exec("SELECT setval(pg_get_serial_sequence('$table', 'id'), $nextId, false)");
+            } else {
+                $this->exec("ALTER TABLE $table AUTO_INCREMENT = $nextId");
+            }
 
             $this->respondJSON([
                 'status' => 'success',

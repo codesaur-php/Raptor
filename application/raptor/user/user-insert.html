@@ -258,7 +258,7 @@
              *  - this.action -> form action URL
              *  - method атрибут байвал ашиглана, үгүй бол POST
              * ---------------------------------------------- */
-            fetch(this.action, {
+            csrfFetch(this.action, {
                 body: data,
                 method: this.getAttribute('method') ?? 'POST'
             })

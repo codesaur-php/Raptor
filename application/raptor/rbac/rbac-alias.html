@@ -145,6 +145,9 @@
         <span class="visually-hidden">Loading logs...</span>
     </div>
     <ul class="list-group logger-protocol" id="logger-dashboard"
+        data-retrieve="{{ 'logs-retrieve'|link }}"
+        data-view="{{ 'logs-view'|link }}"
+        data-context='{"action":"rbac-*","alias":"{{ alias }}"}'
         style="max-height:240px; overflow-y:auto">
     </ul>
 </div>
@@ -175,7 +178,7 @@
             const formData = new FormData();
             formData.append('role_id', checkbox.dataset.role);
             formData.append('permission_id', checkbox.dataset.perm);
-            return fetch(apiUrl, {
+            return csrfFetch(apiUrl, {
                 method: checkbox.checked ? 'POST' : 'DELETE',
                 body: formData
             }).then(res => {
@@ -229,71 +232,5 @@
             });
         });
 
-        // Logger
-        const logger = document.querySelector('ul.logger-protocol');
-        if (logger && logger.tagName === 'UL') {
-            const logsRetrieveLink = `{{ 'logs-retrieve'|link }}`;
-            const logsViewLink = `{{ 'logs-view'|link }}`;
-            const loggerId = logger.id ?? '';
-            const table = loggerId.substring(loggerId.indexOf('-') + 1);
-            if (!table) return;
-
-            logger.style.display = 'none';
-            const spinner = logger.previousElementSibling;
-            spinner.style.display = 'block';
-
-            fetch(`${logsRetrieveLink}?table=${table}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    'ORDER BY': 'id Desc',
-                    'CONTEXT': { 'action': 'rbac-*', 'alias': `{{ alias }}` },
-                    'LIMIT': 10000
-                })
-            }).then(res => res.json()).then(response => {
-                if (response.error) throw new Error(response.error);
-                logger.innerHTML = '';
-                const logModalLink = `${logsViewLink}?table=${table}&id=`;
-
-                Object.values(response).forEach(log => {
-                    const li = document.createElement('li');
-                    li.classList.add('list-group-item', 'list-group-item-action');
-                    const levelClass = {
-                        notice: 'light', info: 'primary', error: 'danger',
-                        warning: 'warning', alert: 'info', debug: 'secondary'
-                    }[log.level] ?? 'dark';
-                    li.classList.add('list-group-item-' + levelClass);
-
-                    const a = document.createElement('a');
-                    a.textContent = `${log.created_at} [${log.id}]`;
-                    a.href = logModalLink + log.id;
-                    a.setAttribute('data-bs-target', '#static-modal');
-                    a.setAttribute('data-bs-toggle', 'modal');
-                    a.addEventListener('click', function (e) {
-                        e.preventDefault();
-                        ajaxModal(a);
-                    });
-                    li.appendChild(a);
-                    li.appendChild(document.createTextNode(' '));
-
-                    const msg = document.createElement('span');
-                    msg.innerHTML = log.message;
-                    li.appendChild(msg);
-                    li.appendChild(document.createTextNode(' '));
-
-                    const who = document.createElement('span');
-                    who.classList.add('text-muted', 'small');
-                    who.innerHTML = `<u>${log.context.action ?? ''} by ${log.context.auth_user?.username ?? ''}</u>`;
-                    li.appendChild(who);
-
-                    logger.appendChild(li);
-                });
-            }).catch(error => {
-                console.log(error.message);
-            }).finally(() => {
-                logger.style.display = '';
-                spinner.style.display = 'none';
-            });
-        }
     });
 </script>

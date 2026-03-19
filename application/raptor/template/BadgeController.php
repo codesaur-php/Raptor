@@ -100,12 +100,12 @@ class BadgeController extends \Raptor\Controller
             'files-deactivate' => ['/dashboard/files', 'red'],
         ],
         'content' => [
-            'language-create'      => ['/dashboard/localization', 'green'],
-            'language-update'      => ['/dashboard/localization', 'blue'],
-            'language-deactivate'  => ['/dashboard/localization', 'red'],
-            'text-create'          => ['/dashboard/localization', 'green'],
-            'text-update'          => ['/dashboard/localization', 'blue'],
-            'text-deactivate'      => ['/dashboard/localization', 'red'],
+            'localization-language-create'     => ['/dashboard/localization', 'green'],
+            'localization-language-update'     => ['/dashboard/localization', 'blue'],
+            'localization-language-delete'     => ['/dashboard/localization', 'red'],
+            'localization-text-create'         => ['/dashboard/localization', 'green'],
+            'localization-text-update'         => ['/dashboard/localization', 'blue'],
+            'localization-text-deactivate'     => ['/dashboard/localization', 'red'],
             'settings-post'        => ['/dashboard/settings', 'blue'],
             'settings-files'       => ['/dashboard/settings', 'blue'],
             'reference-create'     => ['/dashboard/references', 'green'],
@@ -149,7 +149,7 @@ class BadgeController extends \Raptor\Controller
             'template-menu-update'     => ['/dashboard/manage/menu', 'blue'],
             'template-menu-deactivate' => ['/dashboard/manage/menu', 'red'],
         ],
-        'development' => [
+        'dev_requests' => [
             'store'      => ['/dashboard/dev-requests', 'green'],
             'respond'    => ['/dashboard/dev-requests', 'blue'],
             'deactivate' => ['/dashboard/dev-requests', 'red'],
@@ -244,15 +244,27 @@ class BadgeController extends \Raptor\Controller
                     $colorByAction = \array_column($actionList, 'color', 'action');
                     $placeholders = \implode(',', \array_fill(0, \count($actionNames), '?'));
 
-                    $sql =
-                        "SELECT JSON_UNQUOTE(JSON_EXTRACT(context, '$.action')) as act, COUNT(*) as cnt " .
-                        "FROM $tableName " .
-                        "WHERE created_at > ? " .
-                        "AND level IN ('info', 'alert', 'warning') " .
-                        "AND JSON_UNQUOTE(JSON_EXTRACT(context, '$.action')) IN ($placeholders) " .
-                        "AND (JSON_EXTRACT(context, '$.auth_user.id') IS NULL " .
-                        "     OR JSON_EXTRACT(context, '$.auth_user.id') != ?) " .
-                        "GROUP BY act";
+                    if ($this->getDriverName() === 'pgsql') {
+                        $sql =
+                            "SELECT (context::jsonb)->>'action' as act, COUNT(*) as cnt " .
+                            "FROM $tableName " .
+                            "WHERE created_at > ? " .
+                            "AND level IN ('info', 'alert', 'warning') " .
+                            "AND (context::jsonb)->>'action' IN ($placeholders) " .
+                            "AND ((context::jsonb)->'auth_user'->>'id' IS NULL " .
+                            "     OR ((context::jsonb)->'auth_user'->>'id')::int != ?) " .
+                            "GROUP BY act";
+                    } else {
+                        $sql =
+                            "SELECT JSON_UNQUOTE(JSON_EXTRACT(context, '$.action')) as act, COUNT(*) as cnt " .
+                            "FROM $tableName " .
+                            "WHERE created_at > ? " .
+                            "AND level IN ('info', 'alert', 'warning') " .
+                            "AND JSON_UNQUOTE(JSON_EXTRACT(context, '$.action')) IN ($placeholders) " .
+                            "AND (JSON_EXTRACT(context, '$.auth_user.id') IS NULL " .
+                            "     OR JSON_EXTRACT(context, '$.auth_user.id') != ?) " .
+                            "GROUP BY act";
+                    }
 
                     $stmt = $this->prepare($sql);
                     $i = 1;

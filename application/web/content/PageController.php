@@ -38,15 +38,48 @@ class PageController extends TemplateController
     {
         $model = new PagesModel($this->pdo);
         $table = $model->getName();
-        $record = $model->getRowWhere([
-            'slug' => $slug,
-            'is_active' => 1
-        ]);
+        $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
+        $stmt = $this->prepare(
+            "SELECT p.*, " .
+            "CONCAT(c.first_name, ' ', c.last_name) as creator_name, " .
+            "CONCAT(pb.first_name, ' ', pb.last_name) as publisher_name " .
+            "FROM $table p " .
+            "LEFT JOIN $users c ON p.created_by = c.id " .
+            "LEFT JOIN $users pb ON p.published_by = pb.id " .
+            "WHERE p.slug = :slug AND p.is_active = 1 LIMIT 1"
+        );
+        $stmt->bindValue(':slug', $slug);
+        $stmt->execute();
+        $record = $stmt->fetch();
         if (empty($record)) {
             throw new \Exception('Хуудас олдсонгүй', 404);
         }
 
         $id = $record['id'];
+
+        // Үг тоолох ба уншихад шаардлагатай хугацаа
+        $plainText = \strip_tags($record['content'] ?? '');
+        $record['word_count'] = \str_word_count($plainText);
+        $record['read_time'] = \max(1, (int) \ceil($record['word_count'] / 200));
+
+        // Siblings (ижил parent_id-тэй хуудсууд) + parent title
+        $parentId = (int) ($record['parent_id'] ?? 0);
+        if ($parentId > 0) {
+            $parentStmt = $this->prepare("SELECT title FROM $table WHERE id = :id LIMIT 1");
+            $parentStmt->bindValue(':id', $parentId, \PDO::PARAM_INT);
+            $parentStmt->execute();
+            $parent = $parentStmt->fetch();
+            $record['parent_title'] = $parent['title'] ?? '';
+
+            $sibStmt = $this->prepare(
+                "SELECT id, slug, title FROM $table " .
+                "WHERE parent_id = :pid AND is_active = 1 AND published = 1 AND code = :code " .
+                "ORDER BY position ASC"
+            );
+            $sibStmt->bindValue(':pid', $parentId, \PDO::PARAM_INT);
+            $sibStmt->bindValue(':code', $record['code']);
+            $record['siblings'] = $sibStmt->execute() ? $sibStmt->fetchAll() : [];
+        }
 
         // Файлуудыг татах
         $files = new FilesModel($this->pdo);

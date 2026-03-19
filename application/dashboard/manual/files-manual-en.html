@@ -27,8 +27,8 @@
             Each table shows the file count and total size.
         </p>
         <ul>
-            <li><code>files</code> is the main table</li>
-            <li>Others are in <code>attachments</code> format</li>
+            <li><code>files</code> - Main file table. Full upload, edit, and delete capabilities.</li>
+            <li><code>attachments</code> - Attachment files from other modules (news, pages, products, etc.). View-only - adding and removing files is done from the respective module's edit page.</li>
         </ul>
     </div>
 </div>
@@ -90,6 +90,36 @@
     </div>
 </div>
 
+<!-- ==================== FILE UPLOAD ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-cloud-upload"></i> File Upload (files table only)</h4>
+        <p>
+            File upload is available when the <code>files</code> table is selected.
+        </p>
+        <ul>
+            <li><strong>Select files</strong> - Multiple files can be selected at once</li>
+            <li><strong>Optimize images</strong> - Automatically optimizes image files for web</li>
+            <li>Allowed file types: images, video, audio, documents, archives</li>
+            <li>File size limit depends on server configuration</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== EDIT / DELETE ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-pencil-square"></i> Edit / Delete (files table only)</h4>
+        <ul>
+            <li><strong>Edit</strong> - Modify file description, keywords (<code>system_content_update</code> permission required)</li>
+            <li><strong>Delete</strong> - Deactivates the file record. The actual file is not removed, only the metadata record is deactivated (<code>system_content_delete</code> permission required)</li>
+        </ul>
+        <div class="alert alert-info mb-0">
+            <i class="bi bi-info-circle"></i> Attachment table files can only be edited or removed from their respective module's (News, Pages, Products) edit page.
+        </div>
+    </div>
+</div>
+
 <!-- ==================== PERMISSIONS ==================== -->
 <div class="card shadow-sm mb-4">
     <div class="card-body">
@@ -100,6 +130,9 @@
             </thead>
             <tbody>
                 <tr><td>View file list</td><td><code>system_content_index</code></td></tr>
+                <tr><td>Upload files (files table)</td><td>Authenticated user</td></tr>
+                <tr><td>Edit file metadata</td><td><code>system_content_update</code></td></tr>
+                <tr><td>Deactivate file</td><td><code>system_content_delete</code></td></tr>
             </tbody>
         </table>
     </div>

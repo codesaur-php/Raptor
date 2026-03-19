@@ -16,6 +16,43 @@
                 {% endif %}
             </p>
             {% endif %}
+
+            <!-- Metadata -->
+            <div class="d-flex flex-wrap justify-content-center gap-2 mb-2">
+                {% if is_featured %}
+                    <span class="badge bg-warning text-dark"><i class="bi bi-star-fill me-1"></i>{{ 'featured'|text }}</span>
+                {% endif %}
+                {% if published_at is not empty %}
+                    <span class="badge bg-secondary"><i class="bi bi-calendar-event me-1"></i>{{ published_at|date('Y-m-d') }}</span>
+                {% endif %}
+                {% if type is not empty %}
+                    <span class="badge bg-info"><i class="bi bi-tag me-1"></i>{{ type }}</span>
+                {% endif %}
+                {% if creator_name is defined and creator_name is not empty %}
+                    <span class="badge bg-light text-dark"><i class="bi bi-person me-1"></i>{{ creator_name }}</span>
+                {% endif %}
+                {% if publisher_name is defined and publisher_name is not empty and publisher_name != creator_name %}
+                    <span class="badge bg-light text-dark"><i class="bi bi-check-circle me-1"></i>{{ publisher_name }}</span>
+                {% endif %}
+                <span class="badge bg-light text-dark"><i class="bi bi-eye me-1"></i>{{ read_count }}</span>
+                {% if word_count is defined %}
+                    <span class="badge bg-light text-dark"><i class="bi bi-body-text me-1"></i>{{ word_count }} {{ 'words'|text }}</span>
+                    <span class="badge bg-light text-dark"><i class="bi bi-clock me-1"></i>~{{ read_time }} {{ 'min'|text }}</span>
+                {% endif %}
+            </div>
+
+            <!-- Share + PDF -->
+            <div class="d-flex justify-content-center gap-2 mt-2">
+                <a class="btn btn-sm btn-outline-primary" href="https://www.facebook.com/sharer/sharer.php?u={{ current_url|url_encode }}" target="_blank" rel="noopener">
+                    <i class="bi bi-facebook"></i>
+                </a>
+                <a class="btn btn-sm btn-outline-info" href="https://twitter.com/intent/tweet?url={{ current_url|url_encode }}&text={{ title|url_encode }}" target="_blank" rel="noopener">
+                    <i class="bi bi-twitter-x"></i>
+                </a>
+                <button class="btn btn-sm btn-outline-danger" onclick="window.print()" title="PDF">
+                    <i class="bi bi-file-pdf"></i>
+                </button>
+            </div>
         </div>
     </div>
 </div>

@@ -423,7 +423,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const data = new FormData(this);
 
         /* UPDATE хүсэлт backend рүү илгээх */
-        fetch(this.action, {
+        csrfFetch(this.action, {
             method: this.getAttribute('method') ?? 'PUT',
             body: data
         })

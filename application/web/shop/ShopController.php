@@ -110,15 +110,29 @@ class ShopController extends TemplateController
     {
         $model = new ProductsModel($this->pdo);
         $table = $model->getName();
-        $record = $model->getRowWhere([
-            'slug' => $slug,
-            'is_active' => 1
-        ]);
+        $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
+        $stmt = $this->prepare(
+            "SELECT p.*, " .
+            "CONCAT(c.first_name, ' ', c.last_name) as creator_name, " .
+            "CONCAT(pb.first_name, ' ', pb.last_name) as publisher_name " .
+            "FROM $table p " .
+            "LEFT JOIN $users c ON p.created_by = c.id " .
+            "LEFT JOIN $users pb ON p.published_by = pb.id " .
+            "WHERE p.slug = :slug AND p.is_active = 1 LIMIT 1"
+        );
+        $stmt->bindValue(':slug', $slug);
+        $stmt->execute();
+        $record = $stmt->fetch();
         if (empty($record)) {
             throw new \Exception('Бүтээгдэхүүн олдсонгүй', 404);
         }
 
         $id = $record['id'];
+
+        // Үг тоолох ба уншихад шаардлагатай хугацаа
+        $plainText = \strip_tags($record['content'] ?? '');
+        $record['word_count'] = \str_word_count($plainText);
+        $record['read_time'] = \max(1, (int) \ceil($record['word_count'] / 200));
 
         // Файлуудыг татах
         $files = new FilesModel($this->pdo);

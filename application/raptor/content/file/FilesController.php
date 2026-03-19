@@ -84,12 +84,13 @@ class FilesController extends FileController
             $tables = ['files' => ['count' => 0, 'size' => 0]] + $tables;
         }
 
-        // Query параметрт table өгсөн эсэх
+        // Query параметрт table өгсөн эсэх, default = 'files'
         if (isset($this->getQueryParams()['table'])) {
             $table = \preg_replace('/[^A-Za-z0-9_-]/', '', $this->getQueryParams()['table']);
+        } elseif (isset($tables['files'])) {
+            $table = 'files';
         } elseif (!empty($tables)) {
-            $keys = \array_keys($tables);
-            $table = \reset($keys);
+            $table = \array_key_first($tables);
         } else {
             $this->dashboardProhibited('No file tables found!', 404)->render();
             return;
@@ -98,9 +99,7 @@ class FilesController extends FileController
         $total['total_bytes'] = (int) $total['sizes'];
         $total['sizes'] = $this->formatSizeUnits($total['sizes']);
 
-        // Тухайн хүснэгтэнд зориулсан тусгай template мөрдөх
-        $template = \file_exists(__DIR__ . "/index-$table.html")
-            ? __DIR__ . "/index-$table.html" : __DIR__ . '/index.html';
+        $template = __DIR__ . '/index.html';
 
         // Dashboard HTML render
         $dashboard = $this->twigDashboard($template, [
@@ -298,6 +297,11 @@ class FilesController extends FileController
             // Хэрэглэгч нэвтэрсэн байх ёстой
             if (!$this->isUserAuthorized()) {
                 throw new \Exception('Unauthorized', 401);
+            }
+
+            // Attachment хүснэгтэд шууд upload хийхийг хориглох (зөвхөн files table)
+            if ($table !== 'files' && $record_id === 0) {
+                throw new \Exception($this->text('invalid-request'), 403);
             }
             
             // Файл хадгалах фолдерийг тохируулах
@@ -549,6 +553,11 @@ class FilesController extends FileController
     public function deactivate(string $table)
     {
         try {
+            // Attachment хүснэгтээс шууд устгахыг хориглох (зөвхөн files table)
+            if ($table !== 'files') {
+                throw new \Exception($this->text('invalid-request'), 403);
+            }
+
             $payload = $this->getParsedBody();
             if (!isset($payload['id'])
                 || !\filter_var($payload['id'], \FILTER_VALIDATE_INT)

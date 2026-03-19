@@ -25,7 +25,7 @@
         const table = new motable('table#reviews', { freezeColumns: [1] });
         const reviewsLink = `{{ 'reviews'|link }}`;
 
-        fetch(
+        csrfFetch(
             `{{ 'reviews-list'|link }}`
         ).then(res => {
             if (res.headers.get('content-type')?.includes('application/json')) return res.json();

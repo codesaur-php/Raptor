@@ -6,6 +6,72 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 
 ---
 
+## [2.2.0] - 2026-03-19
+[2.2.0]: https://github.com/codesaur-php/Raptor/compare/v2.1.0...v2.2.0
+
+Security hardening (CSRF, login rate limiting, SQL injection protection), Discord notifications expansion, test coverage 3x increase, web content metadata and social sharing, news category listing, page sidebar, files module consolidation, and database compatibility improvements.
+
+### Added
+- **CsrfMiddleware** - Per-session CSRF token validation for all dashboard POST/PUT/DELETE requests. Token generated at login and auto-generated for existing sessions. Delivered to frontend via `<meta name="csrf-token">` tag
+- **csrfFetch() / getCsrfToken()** - JS wrapper in `dashboard.js` that auto-attaches `X-CSRF-TOKEN` header to fetch requests
+- **Login rate limiting** - `checkLoginAttempts()` queries `dashboard_log` for failed attempts by IP or username. 10+ failures within 15 minutes triggers 429 lockout
+- **Forgot password cooldown** - `checkForgotCooldown()` queries `forgot` table to prevent repeat requests within `RAPTOR_PASSWORD_RESET_MINUTES`
+- **initLoggerProtocol()** - Centralized log display function in `dashboard.js`. Templates only need `data-retrieve`, `data-view`, `data-context` attributes on `<ul>` element
+- **initInvalidTabFocus()** - Auto-focuses invalid form inputs in inactive Bootstrap tabs via MutationObserver
+- **SQL injection protection** - `LogsController::retrieve()` sanitizes CONTEXT field names (allowlist regex), ORDER BY (column + direction only), LIMIT (integer only). Client-supplied WHERE/HAVING/JOIN keys are stripped
+- **Discord notifications expanded** - `contentAction()` added to: ReferencesController (insert/update/delete), TextController (insert/update/delete), LanguageController (insert/update/delete), MessagesController (reply/delete), CommentsController (delete), ReviewsController (delete)
+- **News type listing page** - `NewsController::newsType()` supports `type=all` (all news) and specific type filtering. Two-column layout with news cards (left) and category sidebar (right). Route: `GET /news/type/{type}`
+- **PagesSamples news link** - "Мэдээлэл" / "News" navigation page entry with `link=/news/type/all` added for MN and EN
+- **NewsSamples categories** - Sample news now have distinct types: `technology`, `announcement`, `guide` for category sidebar demo
+- **Web content metadata** - News, Page, Product detail pages now display: published_at, creator, publisher, read_count, word_count, read_time, is_featured, category/type. Controllers JOIN users table for creator/publisher names
+- **Social share + PDF** - Facebook, Twitter/X share buttons and Print/PDF button added to news, page, and product detail pages
+- **OG meta improvements** - `og:url` added, `og:image` uses absolute URL via `base_url`. `TemplateController` now passes `base_url` and `current_url` to all web layouts
+- **Page sidebar** - Two-column layout with siblings navigation (parent title as header), metadata card, and share/PDF card
+- **Translations** - `too-many-login-attempts`, `password-reset-cooldown`, `optimize-images`, `all`, `share`, `words`, `min` keywords added to TextInitial
+- **Unit tests** - 372 new tests (189 -> 561 total, 1419 assertions) covering: CsrfMiddleware, Logger masking/interpolation, BadgeController structure, Controller permissions, LocalizationMiddleware, SettingsMiddleware, SessionMiddleware CSRF, ErrorHandler, LoginController helpers (normalizeEmail, isGibberishUsername), FileController validation, FilesController access control, published/draft access pattern, DiscordNotifier, SpamProtection edge cases, LogsRetrieve SQL injection sanitization
+
+### Changed
+- **dashboard.js** - `eval()` replaced with `createElement('script')` for AJAX modal scripts. Badge seen POST uses `csrfFetch()`. Version bumped to v3
+- **moedit.ui.js** - Upload uses `csrfFetch` when available, falls back to `fetch`. Version bumped to v2
+- **All dashboard/raptor templates** (53 files) - `fetch()` replaced with `csrfFetch()` for state-changing requests
+- **login.html** - Uses plain `fetch()` (login is CSRF-exempt, `dashboard.js` not loaded)
+- **web-log-stats.html** - Uses plain `fetch()` (GET-only, runs before `dashboard.js` defer)
+- **Files module consolidated** - `index-files.html` merged into `index.html`. Upload/delete/update only available on `files` table; attachments tables are list-only
+- **FilesController** - `post()` rejects non-files table with `record_id=0` (403). `deactivate()` rejects non-files table (403). Default table selection fixed to `files` instead of first alphabetical key
+- **Language insert modal** - Script wrapped in IIFE to prevent `const` redeclaration on reopen. Copy language flag display removed to avoid UX confusion
+- **Localization log actions** - Renamed from `text-*`/`language-*` to `localization-text-*`/`localization-language-*` prefix
+- **BadgeController** - `BADGE_MAP` localization actions updated with new prefix. JSON query now supports both MySQL (`JSON_EXTRACT`) and PostgreSQL (`::jsonb`) with driver detection
+- **Auto-increment reset** - `clearSamples()` in ProductsController, NewsController, PagesController now uses `setval()` for PostgreSQL, `AUTO_INCREMENT` for MySQL
+- **Dev requests naming** - Tables renamed: `development` -> `dev_requests`, `dev_request_responses` -> `dev_requests_responses`. Log table, files tables, and BadgeController updated accordingly
+- **Dev requests attachments** - Index list now shows combined attachment count (request + response files) via subquery
+- **SessionMiddleware** - Dashboard closure extended: session stays writable when `CSRF_TOKEN` is empty (for first-time token generation)
+- **Controller.php** - CSRF token passed to Twig via request attribute (`csrf_token`). Removed unused `request` Twig variable (was path-only, never used in templates)
+- **Application.php** - Middleware pipeline renumbered 1-9, CsrfMiddleware registered as step 6 after JWTAuth
+- **Files manual** (MN/EN) - Added upload, edit/delete sections with files vs attachments distinction and permission table
+- **SECURITY.md** - Added CSRF, login rate limiting, password reset cooldown, SQL injection documentation
+- **CLAUDE.md** - Added CsrfMiddleware, Logger Protocol sections. Updated SessionMiddleware and dashboard.js documentation
+- **Language delete** - Changed from soft delete (deactivate) to hard delete. Unique constraints on `code`, `locale`, `title` columns prevent soft delete. Route renamed: `/dashboard/language/deactivate` -> `/dashboard/language/delete`, method `deactivate()` -> `delete()`, log action `localization-language-delete`
+- **codesaur/http-message** upgraded to v3.0.2 - Fixed `initFromGlobal()` to populate `$this->headers` from `getallheaders()`, enabling `getHeaderLine()` for all HTTP headers
+
+### Removed
+- **index-files.html** - Merged into index.html (renamed to .bak for verification)
+- **Logger protocol duplication** - ~50-80 lines of duplicated JS log retrieval code removed from 13 template files
+
+### Fixed
+- **Language insert modal** - `Identifier already declared` error when reopening modal (IIFE fix)
+- **Language insert modal** - `aria-hidden` warning on focused element
+- **Files index default table** - URL without `?table=` parameter now correctly defaults to `files` instead of first alphabetical table
+- **Log protocol undefined** - `log.context` null check added to prevent `Cannot read properties of undefined` errors
+
+### Security
+- **CSRF protection** - All dashboard state-changing requests now require valid CSRF token via `X-CSRF-TOKEN` header
+- **Login brute force** - Rate limited via `dashboard_log` analysis (10 attempts / 15 min per IP or username)
+- **Forgot password abuse** - Cooldown enforced per email via `forgot` table timestamp check
+- **Log retrieve injection** - Context field names sanitized with `/^[a-zA-Z0-9_.]+$/`, ORDER BY validated as `column ASC|DESC`, LIMIT validated as integer, WHERE/HAVING/JOIN stripped from client input
+- **File upload restriction** - Attachment tables reject direct upload/delete from files index page (backend enforcement)
+
+---
+
 ## [2.1.0] - 2026-03-18
 [2.1.0]: https://github.com/codesaur-php/Raptor/compare/v2.0.1...v2.1.0
 

@@ -139,7 +139,7 @@
         const canReply = {{ user.can('system_content_index') ? 'true' : 'false' }};
         const canDelete = {{ user.can('system_content_delete') ? 'true' : 'false' }};
 
-        fetch(
+        csrfFetch(
             `{{ 'messages-list'|link }}` + window.location.search
         ).then(res => {
             if (res.headers.get('content-type')?.includes('application/json')) return res.json();
@@ -190,7 +190,7 @@
                     const content = document.getElementById('viewModalContent');
                     content.innerHTML = '<div class="text-center py-5"><span class="spinner-border"></span></div>';
                     new bootstrap.Modal(modal).show();
-                    fetch(`{{ 'messages'|link }}/view/${this.dataset.id}`)
+                    csrfFetch(`{{ 'messages'|link }}/view/${this.dataset.id}`)
                         .then(r => r.text())
                         .then(html => { content.innerHTML = html; });
                 });
@@ -208,7 +208,7 @@
                         cancelButtonText: `{{ 'cancel'|text|e('js') }}`
                     }).then(result => {
                         if (!result.isConfirmed) return;
-                        fetch(`{{ 'messages-deactivate'|link }}`, {
+                        csrfFetch(`{{ 'messages-deactivate'|link }}`, {
                             method: 'DELETE',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ id })
@@ -258,7 +258,7 @@
                         }
                     }).then(result => {
                         if (!result.isConfirmed) return;
-                        fetch(`{{ 'messages'|link }}/replied/${id}`, {
+                        csrfFetch(`{{ 'messages'|link }}/replied/${id}`, {
                             method: 'PUT',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ note: result.value })

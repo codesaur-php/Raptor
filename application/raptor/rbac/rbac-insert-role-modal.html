@@ -88,7 +88,7 @@
        ---------------------------------------------
        Гол үйлдлүүд:
          * HTML5 validation
-         * Submit -> fetch() ашиглан POST хийх
+         * Submit -> csrfFetch() ашиглан POST хийх
          * Success -> хуудсыг refresh
          * Error -> NotifyTop() ашиглан мэдэгдэл өгөх
     */
@@ -126,7 +126,7 @@
 
             const data = new FormData(this);
             /* AJAX POST -> сервер лүү илгээх */
-            fetch(
+            csrfFetch(
                 this.action,
                 {
                     body: data,

@@ -147,6 +147,10 @@ class MessagesController extends \Raptor\Controller
             ]);
 
             $this->log('messages', LogLevel::INFO, '#{id} мессежид хариулсан гэж тэмдэглэлээ', ['action' => 'mark-replied', 'id' => $id]);
+
+            $adminName = \trim(($this->getUser()->profile['first_name'] ?? '') . ' ' . ($this->getUser()->profile['last_name'] ?? ''));
+            $appUrl = \rtrim((string)$this->getRequest()->getUri()->withPath($this->getScriptPath()), '/') . '/dashboard';
+            $this->getService('discord')?->contentAction('message', 'update', $record['name'] ?? "#{$id}", $id, $adminName, $appUrl);
         } catch (\Throwable $err) {
             $this->respondJSON([
                 'status' => 'error',
@@ -190,6 +194,10 @@ class MessagesController extends \Raptor\Controller
             ]);
 
             $this->log('messages', LogLevel::WARNING, '#{id} мессежийг устгалаа', ['action' => 'deactivate', 'id' => $id]);
+
+            $adminName = \trim(($this->getUser()->profile['first_name'] ?? '') . ' ' . ($this->getUser()->profile['last_name'] ?? ''));
+            $appUrl = \rtrim((string)$this->getRequest()->getUri()->withPath($this->getScriptPath()), '/') . '/dashboard';
+            $this->getService('discord')?->contentAction('message', 'delete', $record['name'] ?? "#{$id}", $id, $adminName, $appUrl);
         } catch (\Throwable $err) {
             $this->respondJSON([
                 'status' => 'error',

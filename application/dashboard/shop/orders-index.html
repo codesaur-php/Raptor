@@ -163,7 +163,7 @@
         const orders = new motable('table#orders', { freezeColumns: [2] });
 
         /* Серверээс захиалгын жагсаалтыг татах */
-        fetch(
+        csrfFetch(
             `{{ 'orders-list'|link }}` + window.location.search
         ).then(res => {
             if (res.headers.get('content-type')?.includes('application/json')) return res.json();
@@ -243,7 +243,7 @@
                     allowOutsideClick: () => !Swal.isLoading(),
                     backdrop: true,
                     preConfirm: () => {
-                        return fetch(
+                        return csrfFetch(
                             `{{ 'order-deactivate'|link }}`,
                             {
                                 method: 'DELETE',

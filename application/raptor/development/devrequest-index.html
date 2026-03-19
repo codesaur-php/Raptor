@@ -162,7 +162,7 @@
         const devRequests = new motable('table#dev-requests', { freezeColumns: [1] });
         const indexLink = `{{ 'dev-requests'|link }}`;
 
-        fetch(
+        csrfFetch(
             `{{ 'dev-requests-list'|link }}` + window.location.search
         ).then(res => {
             if (res.headers.get('content-type')?.includes('application/json')) return res.json();
@@ -178,15 +178,10 @@
                 const createdAt = record.created_at ? record.created_at.substring(0, 16) : '';
                 const statusBadge = statusLabels[record.status] || `<span class="badge bg-light text-dark">${record.status}</span>`;
 
-                let attachCount = '';
-                if (record.attachments) {
-                    try {
-                        const att = JSON.parse(record.attachments);
-                        if (Array.isArray(att) && att.length > 0) {
-                            attachCount = `<span class="badge bg-secondary">${att.length}</span>`;
-                        }
-                    } catch(e) {}
-                }
+                const ac = parseInt(record.attachment_count) || 0;
+                const attachCount = ac > 0
+                    ? `<span class="badge bg-secondary">${ac}</span>`
+                    : '';
 
                 const buttons = [
                     `<a class="btn btn-sm btn-info mt-1 shadow-sm" href="${indexLink}/view/${id}"><i class="bi bi-eye"></i></a>`,
@@ -232,7 +227,7 @@
                     allowOutsideClick: () => !Swal.isLoading(),
                     backdrop: true,
                     preConfirm: () => {
-                        return fetch(
+                        return csrfFetch(
                             `{{ 'dev-requests-deactivate'|link }}`,
                             {
                                 method: 'DELETE',

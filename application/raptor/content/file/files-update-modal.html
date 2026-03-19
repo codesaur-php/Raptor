@@ -119,7 +119,7 @@
             /* FormData -> fetch PUT */
             const data = new FormData(this);
 
-            fetch(this.action, {
+            csrfFetch(this.action, {
                 body: data,
                 method: this.getAttribute('method') ?? 'PUT'
             })

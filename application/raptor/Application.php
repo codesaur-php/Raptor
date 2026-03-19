@@ -18,9 +18,10 @@ namespace Raptor;
  *   3) MigrationMiddleware    - Pending SQL migration автомат ажиллуулах
  *   4) SessionMiddleware      - PHP session удирдлага
  *   5) JWTAuthMiddleware      - JWT шалгаж User объект үүсгэх
- *   6) ContainerMiddleware    - DI Container inject
- *   7) LocalizationMiddleware - Хэл, орчуулга inject
- *   8) SettingsMiddleware     - Системийн тохиргоо inject
+ *   6) CsrfMiddleware         - CSRF token шалгах (POST/PUT/DELETE)
+ *   7) ContainerMiddleware    - DI Container inject
+ *   8) LocalizationMiddleware - Хэл, орчуулга inject
+ *   9) SettingsMiddleware     - Системийн тохиргоо inject
  *
  * Мөн дараах router-үүдийг бүртгэж өгнө:
  *
@@ -63,19 +64,23 @@ abstract class Application extends \codesaur\Http\Application\Application
 
         // 4. Session
         $this->use(new SessionMiddleware(
-            fn(string $path, string $method): bool => \str_contains($path, '/login')
+            fn(string $path, string $method): bool =>
+                \str_contains($path, '/login') || empty($_SESSION['CSRF_TOKEN'])
         ));
 
         // 5. JWT Authentication
         $this->use(new Authentication\JWTAuthMiddleware());
 
-        // 6. DI Container
+        // 6. CSRF Protection
+        $this->use(new CsrfMiddleware());
+
+        // 7. DI Container
         $this->use(new ContainerMiddleware());
 
-        // 7. Localization
+        // 8. Localization
         $this->use(new Localization\LocalizationMiddleware());
 
-        // 8. Settings
+        // 9. Settings
         $this->use(new Content\SettingsMiddleware());
 
         // Route mapping

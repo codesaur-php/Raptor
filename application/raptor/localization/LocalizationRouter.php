@@ -57,10 +57,10 @@ class LocalizationRouter extends Router
         $this->GET_PUT('/dashboard/language/{uint:id}', [LanguageController::class, 'update'])->name('language-update');
 
         /**
-         * Хэл идэвхгүй болгох (soft delete).
-         * Example: DELETE /dashboard/language/deactivate
+         * Хэл устгах (hard delete).
+         * Example: DELETE /dashboard/language/delete
          */
-        $this->DELETE('/dashboard/language/deactivate', [LanguageController::class, 'deactivate'])->name('language-deactivate');
+        $this->DELETE('/dashboard/language/delete', [LanguageController::class, 'delete'])->name('delete-language');
         
         /**
          * Орчуулгын текст шинээр нэмэх.

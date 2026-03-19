@@ -35,7 +35,7 @@ class HomeController extends TemplateController
         $code = $this->getLanguageCode();
         $news_table = (new NewsModel($this->pdo))->getName();
         $stmt_recent = $this->prepare(
-            "SELECT id, title, slug, photo, published_at
+            "SELECT id, title, description, slug, photo, published_at
              FROM $news_table
              WHERE is_active=1 AND published=1 AND code=:code
              ORDER BY published_at DESC

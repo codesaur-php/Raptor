@@ -29,7 +29,7 @@
         "phpmailer/phpmailer": "^7.0.1",
         "getbrevo/brevo-php": "^2.0.14",
         "firebase/php-jwt": "^7.0.2",
-        "codesaur/http-application": "^6.0.1",
+        "codesaur/http-application": "^6.0.2",
         "codesaur/dataobject": "^9.0.2",
         "codesaur/http-client": "^2.0.4",
         "codesaur/template": "^3.0.1",

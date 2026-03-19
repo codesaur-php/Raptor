@@ -53,13 +53,13 @@ class PagesSamples
         $mnAbout = $model->insert($seed + [
             'code' => 'mn',
             'title' => 'Бидний тухай',
-            'position' => 20
+            'position' => 100
         ]);
         $model->insert($seed + [
             'code' => 'mn',
             'parent_id' => $mnAbout['id'],
             'title' => 'Байгууллага',
-            'position' => 21,
+            'position' => 110,
             'photo' => $assets . '/organization.jpg',
             'content' => '<p>Байгууллагын танилцуулга энд байрлана.</p>'
                 . '<p>Энэ хуудсыг <a href="' . $path . '/dashboard">хянах самбар</a>аас засварлах боломжтой.</p>'
@@ -68,7 +68,7 @@ class PagesSamples
             'code' => 'mn',
             'parent_id' => $mnAbout['id'],
             'title' => 'Баг',
-            'position' => 22,
+            'position' => 120,
             'content' => '<p>Манай багийн гишүүдийн танилцуулга.</p>'
                 . '<p><img src="' . $assets . '/team.jpg" alt="Баг" class="img-fluid rounded shadow-sm"></p>'
         ]);
@@ -77,13 +77,13 @@ class PagesSamples
         $mnDino = $model->insert($seed + [
             'code' => 'mn',
             'title' => 'Динозаврууд',
-            'position' => 30
+            'position' => 200
         ]);
         $model->insert($seed + [
             'code' => 'mn',
             'parent_id' => $mnDino['id'],
             'title' => 'Велоцираптор',
-            'position' => 31,
+            'position' => 210,
             'is_featured' => 1,
             'source' => 'Википедиа',
             'photo' => $assets . '/velociraptor.jpg',
@@ -95,7 +95,7 @@ class PagesSamples
             'code' => 'mn',
             'parent_id' => $mnDino['id'],
             'title' => 'Тарбозавр',
-            'position' => 32,
+            'position' => 220,
             'is_featured' => 1,
             'photo' => $assets . '/tarbosaurus.jpg',
             'content' => '<p><strong>Tarbosaurus</strong> - Монголоос олдсон хамгийн алдартай махан идэшт динозавр.</p>'
@@ -103,11 +103,19 @@ class PagesSamples
                 . 'Монгол палеонтологийн нэн чухал олдвор юм.</p>'
         ]);
 
+        // Мэдээлэл (link)
+        $model->insert($seed + [
+            'code' => 'mn',
+            'title' => '<i class="bi bi-newspaper"></i> Мэдээлэл',
+            'position' => 300,
+            'link' => $path . '/news/type/all'
+        ]);
+        
         // Бүтээгдэхүүн (link)
         $model->insert($seed + [
             'code' => 'mn',
             'title' => '<i class="bi bi-box2-heart"></i> Бүтээгдэхүүн',
-            'position' => 35,
+            'position' => 350,
             'link' => $path . '/products'
         ]);
 
@@ -115,7 +123,7 @@ class PagesSamples
         $model->insert($seed + [
             'code' => 'mn',
             'title' => 'Холбоо барих',
-            'position' => 40,
+            'position' => 400,
             'link' => $path . '/contact',
             'photo' => $assets . '/office-view.jpg',
             'content' => '<p>Таны санал хүсэлт, хамтын ажиллагааны саналыг бид хүлээн авахдаа таатай байна.</p>'
@@ -130,7 +138,7 @@ class PagesSamples
         $model->insert($seed + [
             'code' => 'en',
             'title' => 'Introduction',
-            'position' => 50,
+            'position' => 500,
             'content' => '<p>This is a demo website built on the <a href="https://github.com/codesaur-php/Raptor" target="_blank">Raptor Framework</a>.</p>'
                 . '<p>You can edit this page from the <a href="' . $path . '/dashboard">admin dashboard</a>.</p>'
                 . '<p>Links:</p>'
@@ -145,13 +153,13 @@ class PagesSamples
         $enAbout = $model->insert($seed + [
             'code' => 'en',
             'title' => 'About Us',
-            'position' => 60
+            'position' => 600
         ]);
         $model->insert($seed + [
             'code' => 'en',
             'parent_id' => $enAbout['id'],
             'title' => 'Organization',
-            'position' => 61,
+            'position' => 610,
             'photo' => $assets . '/organization.jpg',
             'content' => '<p>Organization introduction goes here.</p>'
                 . '<p>You can edit this page from the <a href="' . $path . '/dashboard">admin dashboard</a>.</p>'
@@ -160,7 +168,7 @@ class PagesSamples
             'code' => 'en',
             'parent_id' => $enAbout['id'],
             'title' => 'Team',
-            'position' => 62,
+            'position' => 620,
             'content' => '<p>Meet our team members.</p>'
                 . '<p><img src="' . $assets . '/team.jpg" alt="Team" class="img-fluid rounded shadow-sm"></p>'
         ]);
@@ -169,13 +177,13 @@ class PagesSamples
         $enDino = $model->insert($seed + [
             'code' => 'en',
             'title' => 'Dinosaurs',
-            'position' => 70
+            'position' => 700
         ]);
         $model->insert($seed + [
             'code' => 'en',
             'parent_id' => $enDino['id'],
             'title' => 'Velociraptor',
-            'position' => 71,
+            'position' => 710,
             'is_featured' => 1,
             'source' => 'Wikipedia',
             'photo' => $assets . '/velociraptor.jpg',
@@ -187,7 +195,7 @@ class PagesSamples
             'code' => 'en',
             'parent_id' => $enDino['id'],
             'title' => 'Tarbosaurus',
-            'position' => 72,
+            'position' => 720,
             'is_featured' => 1,
             'photo' => $assets . '/tarbosaurus.jpg',
             'content' => '<p><strong>Tarbosaurus</strong> - The most famous carnivorous dinosaur discovered in Mongolia.</p>'
@@ -195,11 +203,19 @@ class PagesSamples
                 . 'One of the most important finds in Mongolian paleontology.</p>'
         ]);
 
+        // News (link)
+        $model->insert($seed + [
+            'code' => 'en',
+            'title' => '<i class="bi bi-newspaper"></i> News',
+            'position' => 800,
+            'link' => $path . '/news/type/all'
+        ]);
+
         // Products (link)
         $model->insert($seed + [
             'code' => 'en',
             'title' => '<i class="bi bi-box2-heart"></i> Products',
-            'position' => 75,
+            'position' => 850,
             'link' => $path . '/products'
         ]);
 
@@ -207,7 +223,7 @@ class PagesSamples
         $model->insert($seed + [
             'code' => 'en',
             'title' => 'Contact',
-            'position' => 80,
+            'position' => 900,
             'link' => $path . '/contact',
             'photo' => $assets . '/office-view.jpg',
             'content' => '<p>We welcome your feedback, inquiries, and partnership proposals.</p>'

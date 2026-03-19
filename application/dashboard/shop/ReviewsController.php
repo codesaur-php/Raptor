@@ -112,6 +112,10 @@ class ReviewsController extends \Raptor\Controller
             ]);
 
             $this->log('products', LogLevel::WARNING, '{record_id} бүтээгдэхүүний #{id} үнэлгээг устгалаа', ['action' => 'review-deactivate', 'record_id' => $record['product_id'], 'id' => $id]);
+
+            $adminName = \trim(($this->getUser()->profile['first_name'] ?? '') . ' ' . ($this->getUser()->profile['last_name'] ?? ''));
+            $appUrl = \rtrim((string)$this->getRequest()->getUri()->withPath($this->getScriptPath()), '/') . '/dashboard';
+            $this->getService('discord')?->contentAction('review', 'delete', "#{$id} by {$record['name']}", (int)($record['product_id'] ?? 0), $adminName, $appUrl);
         } catch (\Throwable $err) {
             $this->respondJSON([
                 'status' => 'error',

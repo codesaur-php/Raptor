@@ -131,7 +131,7 @@ if (!userRolesForm) {
         const data = new FormData(this);
 
         /* fetch API -> backend рүү илгээх */
-        fetch(this.action, {
+        csrfFetch(this.action, {
             body: data,
             method: this.getAttribute('method') ?? 'POST'
         })

@@ -5,17 +5,57 @@
     <div class="row mt-4">
         <div class="text-center mb-3 pb-2 border-bottom">
             <h2>{{ title }}</h2>
-            <p class="mb-1">
-                <span class="badge bg-secondary">
-                    <i class="bi bi-calendar-event me-1"></i>{{ published_at }}
-                </span>
-            </p>
 
-            {% if author is defined and author is not empty %}
-            <p class="text-muted small mb-2">
-                <i class="bi bi-person me-1"></i>{{ author }}
-            </p>
-            {% endif %}
+            <!-- Metadata -->
+            <div class="d-flex flex-wrap justify-content-center gap-2 mb-2">
+                {% if is_featured %}
+                    <span class="badge bg-warning text-dark">
+                        <i class="bi bi-star-fill me-1"></i>{{ 'featured'|text }}
+                    </span>
+                {% endif %}
+                <span class="badge bg-secondary">
+                    <i class="bi bi-calendar-event me-1"></i>{{ published_at|date('Y-m-d') }}
+                </span>
+                {% if type is not empty %}
+                    <a href="{{ 'news-type'|link({ type: type }) }}" class="badge bg-info text-decoration-none">
+                        <i class="bi bi-tag me-1"></i>{{ type }}
+                    </a>
+                {% endif %}
+                {% if creator_name is defined and creator_name is not empty %}
+                    <span class="badge bg-light text-dark">
+                        <i class="bi bi-person me-1"></i>{{ creator_name }}
+                    </span>
+                {% endif %}
+                {% if updater_name is defined and updater_name is not empty and updater_name != creator_name %}
+                    <span class="badge bg-light text-dark">
+                        <i class="bi bi-pencil me-1"></i>{{ updater_name }}
+                    </span>
+                {% endif %}
+                <span class="badge bg-light text-dark">
+                    <i class="bi bi-eye me-1"></i>{{ read_count }}
+                </span>
+                {% if word_count is defined %}
+                    <span class="badge bg-light text-dark">
+                        <i class="bi bi-body-text me-1"></i>{{ word_count }} {{ 'words'|text }}
+                    </span>
+                    <span class="badge bg-light text-dark">
+                        <i class="bi bi-clock me-1"></i>~{{ read_time }} {{ 'min'|text }}
+                    </span>
+                {% endif %}
+            </div>
+
+            <!-- Share + PDF -->
+            <div class="d-flex justify-content-center gap-2 mt-2">
+                <a class="btn btn-sm btn-outline-primary" href="https://www.facebook.com/sharer/sharer.php?u={{ current_url|url_encode }}" target="_blank" rel="noopener">
+                    <i class="bi bi-facebook"></i>
+                </a>
+                <a class="btn btn-sm btn-outline-info" href="https://twitter.com/intent/tweet?url={{ current_url|url_encode }}&text={{ title|url_encode }}" target="_blank" rel="noopener">
+                    <i class="bi bi-twitter-x"></i>
+                </a>
+                <button class="btn btn-sm btn-outline-danger" onclick="window.print()" title="PDF">
+                    <i class="bi bi-file-pdf"></i>
+                </button>
+            </div>
         </div>
     </div>
 </div>

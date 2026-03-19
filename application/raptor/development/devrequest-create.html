@@ -96,7 +96,7 @@
 
             const formData = new FormData(form);
 
-            fetch(`{{ 'dev-requests-store'|link }}`, {
+            csrfFetch(`{{ 'dev-requests-store'|link }}`, {
                 method: 'POST',
                 body: formData
             }).then(res => {

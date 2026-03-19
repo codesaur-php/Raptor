@@ -27,8 +27,8 @@
             Хүснэгт бүрт файлын тоо, нийт хэмжээ харуулна.
         </p>
         <ul>
-            <li><code>files</code> бол үндсэн хүснэгт</li>
-            <li>Бусад нь <code>attachments</code> хэлбэртэй</li>
+            <li><code>files</code> - Үндсэн файлын хүснэгт. Файл байршуулах, засварлах, устгах бүрэн боломжтой.</li>
+            <li><code>attachments</code> - Бусад модулиудын хавсралт файлууд (news, pages, products г.м.). Зөвхөн жагсаалт харах боломжтой - файл нэмэх, устгах нь тухайн модулийн засварлах хуудаснаас хийгдэнэ.</li>
         </ul>
     </div>
 </div>
@@ -90,6 +90,36 @@
     </div>
 </div>
 
+<!-- ==================== ФАЙЛ БАЙРШУУЛАХ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-cloud-upload"></i> Файл байршуулах (зөвхөн files хүснэгт)</h4>
+        <p>
+            <code>files</code> хүснэгт сонгогдсон үед файл байршуулах боломжтой.
+        </p>
+        <ul>
+            <li><strong>Файл сонгох</strong> - Олон файл зэрэг сонгож болно</li>
+            <li><strong>Зураг optimize</strong> - Зургийн файлыг автоматаар web-д зориулж optimize хийнэ</li>
+            <li>Зөвшөөрөгдөх файлын төрөл: зураг, видео, аудио, баримт бичиг, архив</li>
+            <li>Файлын хэмжээний хязгаарлалт серверийн тохиргооноос хамаарна</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== ФАЙЛ ЗАСВАРЛАХ / УСТГАХ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-pencil-square"></i> Засварлах / Устгах (зөвхөн files хүснэгт)</h4>
+        <ul>
+            <li><strong>Засварлах</strong> - Файлын тайлбар, түлхүүр үг зэргийг өөрчлөх (<code>system_content_update</code> эрх шаардлагатай)</li>
+            <li><strong>Устгах</strong> - Файлыг идэвхгүй болгоно. Бодит файл устахгүй, зөвхөн бичлэг идэвхгүй болно (<code>system_content_delete</code> эрх шаардлагатай)</li>
+        </ul>
+        <div class="alert alert-info mb-0">
+            <i class="bi bi-info-circle"></i> Attachments хүснэгтүүдийн файлуудыг засварлах, устгах нь тухайн модулийн (News, Pages, Products) засварлах хуудаснаас хийгдэнэ.
+        </div>
+    </div>
+</div>
+
 <!-- ==================== ЭРХ ==================== -->
 <div class="card shadow-sm mb-4">
     <div class="card-body">
@@ -100,6 +130,9 @@
             </thead>
             <tbody>
                 <tr><td>Файлын жагсаалт харах</td><td><code>system_content_index</code></td></tr>
+                <tr><td>Файл байршуулах (files хүснэгт)</td><td>Нэвтэрсэн хэрэглэгч</td></tr>
+                <tr><td>Файлын мэдээлэл засварлах</td><td><code>system_content_update</code></td></tr>
+                <tr><td>Файл идэвхгүй болгох</td><td><code>system_content_delete</code></td></tr>
             </tbody>
         </table>
     </div>

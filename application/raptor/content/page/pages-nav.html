@@ -36,7 +36,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const lang = document.documentElement.lang || 'en';
     const languages = {{ localization.language|json_encode|raw }};
 
-    fetch(`{{ 'pages-list'|link }}`).then(res => {
+    csrfFetch(`{{ 'pages-list'|link }}`).then(res => {
         if (res.headers.get('content-type')?.includes('application/json')) return res.json();
         throw new Error(`HTTP [${res.status}]: ${res.statusText}`);
     }).then(data => {
@@ -140,7 +140,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     : 'All sample data will be deleted. This action cannot be undone!';
                 if (!confirm(confirmText)) return;
                 this.disabled = true;
-                fetch(`{{ 'pages-sample-reset'|link }}`, {
+                csrfFetch(`{{ 'pages-sample-reset'|link }}`, {
                     method: 'DELETE',
                     headers: { 'Content-Type': 'application/json' }
                 }).then(res => res.json()).then(response => {
@@ -222,7 +222,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     allowOutsideClick: () => !Swal.isLoading(),
                     backdrop: true,
                     preConfirm: () => {
-                        return fetch(
+                        return csrfFetch(
                             `{{ 'page-deactivate'|link }}`,
                             {
                                 method: 'DELETE',

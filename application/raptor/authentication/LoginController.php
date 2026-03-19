@@ -163,6 +163,7 @@ class LoginController extends \Raptor\Controller
     {
         try {
             $this->spamCheck('_last_login_at', 2);
+            $this->checkLoginAttempts();
 
             // 1) Payload шалгах
             $payload = $this->getParsedBody();
@@ -225,6 +226,9 @@ class LoginController extends \Raptor\Controller
 
             // 6) JWT үүсгэх
             $_SESSION['RAPTOR_JWT'] = (new JWTAuthMiddleware())->generate($login_info);
+
+            // 6.5) CSRF token
+            $_SESSION['CSRF_TOKEN'] = \bin2hex(\random_bytes(32));
 
             // 7) JSON хариу
             $this->respondJSON([
@@ -412,6 +416,11 @@ class LoginController extends \Raptor\Controller
                 'organization_id' => $id
             ]);
             $_SESSION['RAPTOR_JWT'] = $jwt;
+
+            // CSRF token шинэчлэх
+            if (empty($_SESSION['CSRF_TOKEN'])) {
+                $_SESSION['CSRF_TOKEN'] = \bin2hex(\random_bytes(32));
+            }
 
             // Success log
             $this->log(
@@ -763,6 +772,7 @@ class LoginController extends \Raptor\Controller
 
             // 4) ForgotModel -> DB insert
             $forgot = new ForgotModel($this->pdo);
+            $this->checkForgotCooldown($forgot, $user['email']);
             $request = $forgot->insert([
                 'forgot_password' => \uniqid('forgot'),
                 'email'           => $user['email'],
@@ -1249,6 +1259,82 @@ class LoginController extends \Raptor\Controller
     // =========================================================================
     // Private Helpers
     // =========================================================================
+
+    /**
+     * Login оролдлогын тоог dashboard_log хүснэгтээс шалгах.
+     *
+     * Сүүлийн 15 минутад тухайн IP эсвэл username-аар 10+ удаа
+     * буруу оролдсон бол хаана.
+     */
+    private function checkLoginAttempts(): void
+    {
+        $payload = $this->getParsedBody();
+        $username = $payload['username'] ?? '';
+        $ip = $this->getRequest()->getServerParams()['REMOTE_ADDR'] ?? '';
+        if (empty($username) && empty($ip)) {
+            return;
+        }
+
+        $driver = $this->pdo->getAttribute(\PDO::ATTR_DRIVER_NAME);
+        if ($driver === 'pgsql') {
+            $sql = "SELECT COUNT(*) as cnt FROM dashboard_log " .
+                   "WHERE (context::jsonb)->>'action' = 'login' " .
+                   "AND level = 'error' " .
+                   "AND created_at > NOW() - INTERVAL '15 minutes' " .
+                   "AND (" .
+                   "  (context::jsonb)->'server_request'->>'remote_addr' = :ip " .
+                   "  OR (context::jsonb)->'server_request'->'body'->>'username' = :username" .
+                   ")";
+        } else {
+            $sql = "SELECT COUNT(*) as cnt FROM dashboard_log " .
+                   "WHERE JSON_UNQUOTE(JSON_EXTRACT(context, '$.action')) = 'login' " .
+                   "AND level = 'error' " .
+                   "AND created_at > DATE_SUB(NOW(), INTERVAL 15 MINUTE) " .
+                   "AND (" .
+                   "  JSON_UNQUOTE(JSON_EXTRACT(context, '$.server_request.remote_addr')) = :ip " .
+                   "  OR JSON_UNQUOTE(JSON_EXTRACT(context, '$.server_request.body.username')) = :username" .
+                   ")";
+        }
+
+        $stmt = $this->prepare($sql);
+        $stmt->bindValue(':ip', $ip);
+        $stmt->bindValue(':username', $username);
+        $stmt->execute();
+        $count = (int) ($stmt->fetch()['cnt'] ?? 0);
+
+        if ($count >= 10) {
+            throw new \Exception($this->text('too-many-login-attempts'), 429);
+        }
+    }
+
+    /**
+     * Forgot password cooldown шалгах.
+     *
+     * Тухайн email-д RAPTOR_PASSWORD_RESET_MINUTES дотор
+     * идэвхтэй хүсэлт байвал давтан хүсэлт хүлээж авахгүй.
+     *
+     * @param ForgotModel $forgot  ForgotModel instance
+     * @param string      $email   Шалгах email хаяг
+     */
+    private function checkForgotCooldown(ForgotModel $forgot, string $email): void
+    {
+        $stmt = $forgot->prepare(
+            "SELECT created_at FROM {$forgot->getName()} " .
+            'WHERE email=:email AND is_active=1 ORDER BY id DESC LIMIT 1'
+        );
+        $stmt->bindValue(':email', $email);
+        $stmt->execute();
+        $last = $stmt->fetch();
+        if (!empty($last['created_at'])) {
+            $created = new \DateTime($last['created_at']);
+            $diff = (new \DateTime())->getTimestamp() - $created->getTimestamp();
+            $cooldown = RAPTOR_PASSWORD_RESET_MINUTES * 60;
+            if ($diff < $cooldown) {
+                $remaining = (int) \ceil(($cooldown - $diff) / 60);
+                throw new \Exception($this->text('password-reset-cooldown'), 429);
+            }
+        }
+    }
 
     /**
      * Spam хамгаалалт шалгах.

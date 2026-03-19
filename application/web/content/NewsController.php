@@ -41,13 +41,27 @@ class NewsController extends TemplateController
     {
         $model = new NewsModel($this->pdo);
         $table = $model->getName();
-        $record = $model->getRowWhere([
-            'slug' => $slug,
-            'is_active' => 1
-        ]);
+        $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
+        $stmt = $this->prepare(
+            "SELECT n.*, " .
+            "CONCAT(c.first_name, ' ', c.last_name) as creator_name, " .
+            "CONCAT(u.first_name, ' ', u.last_name) as updater_name " .
+            "FROM $table n " .
+            "LEFT JOIN $users c ON n.created_by = c.id " .
+            "LEFT JOIN $users u ON n.updated_by = u.id " .
+            "WHERE n.slug = :slug AND n.is_active = 1 LIMIT 1"
+        );
+        $stmt->bindValue(':slug', $slug);
+        $stmt->execute();
+        $record = $stmt->fetch();
         if (empty($record)) {
             throw new \Exception('Мэдээ олдсонгүй', 404);
         }
+
+        // Үг тоолох ба уншихад шаардлагатай хугацаа
+        $plainText = \strip_tags($record['content'] ?? '');
+        $record['word_count'] = \str_word_count($plainText);
+        $record['read_time'] = \max(1, (int) \ceil($record['word_count'] / 200));
 
         $id = $record['id'];
 
@@ -125,23 +139,46 @@ class NewsController extends TemplateController
     {
         $code = $this->getLanguageCode();
         $news_table = (new NewsModel($this->pdo))->getName();
-        $stmt = $this->prepare(
-            "SELECT id, slug, title, description, photo, read_count, published_at
-             FROM $news_table
-             WHERE is_active=1 AND published=1 AND type=:type AND code=:code
-             ORDER BY published_at DESC"
+
+        // Ангилалуудын жагсаалт (sidebar-д ашиглана)
+        $typeStmt = $this->prepare(
+            "SELECT DISTINCT type FROM $news_table
+             WHERE is_active=1 AND published=1 AND code=:code AND type != ''
+             ORDER BY type ASC"
         );
-        $stmt->bindValue(':type', $type);
-        $stmt->bindValue(':code', $code);
+        $typeStmt->bindValue(':code', $code);
+        $categories = $typeStmt->execute() ? $typeStmt->fetchAll(\PDO::FETCH_COLUMN) : [];
+
+        // Мэдээний жагсаалт - бүгд эсвэл ангилалаар
+        if ($type === 'all') {
+            $stmt = $this->prepare(
+                "SELECT id, slug, title, description, photo, type, read_count, published_at
+                 FROM $news_table
+                 WHERE is_active=1 AND published=1 AND code=:code
+                 ORDER BY published_at DESC"
+            );
+            $stmt->bindValue(':code', $code);
+        } else {
+            $stmt = $this->prepare(
+                "SELECT id, slug, title, description, photo, type, read_count, published_at
+                 FROM $news_table
+                 WHERE is_active=1 AND published=1 AND type=:type AND code=:code
+                 ORDER BY published_at DESC"
+            );
+            $stmt->bindValue(':type', $type);
+            $stmt->bindValue(':code', $code);
+        }
         $records = $stmt->execute() ? $stmt->fetchAll() : [];
-        if (empty($records)) {
-            throw new \Exception('Мэдээ олдсонгүй', 404);
+
+        if (empty($records) && $type !== 'all') {
+            throw new \Exception($this->text('no-news-found'), 404);
         }
 
         $this->twigWebLayout(__DIR__ . '/news-type.html', [
-            'records' => $records,
-            'type' => $type,
-            'title' => $type
+            'records'    => $records,
+            'type'       => $type,
+            'categories' => $categories,
+            'title'      => $this->text('news')
         ])->render();
 
         $this->log(

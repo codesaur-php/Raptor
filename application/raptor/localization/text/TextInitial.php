@@ -47,6 +47,7 @@ class TextInitial
 
         $model->insert(['keyword' => 'add-record', 'type' => 'sys-defined'], ['mn' => ['text' => 'Бичлэг нэмэх'], 'en' => ['text' => 'Add Record']]);
         $model->insert(['keyword' => 'additional-info', 'type' => 'sys-defined'], ['mn' => ['text' => 'Нэмэлт мэдээлэл'], 'en' => ['text' => 'Additional Information']]);
+        $model->insert(['keyword' => 'all', 'type' => 'sys-defined'], ['mn' => ['text' => 'Бүх'], 'en' => ['text' => 'All']]);
 
         $model->insert(['keyword' => 'address', 'type' => 'sys-defined'], ['mn' => ['text' => 'Хаяг'], 'en' => ['text' => 'Address']]);
         $model->insert(['keyword' => 'archive', 'type' => 'sys-defined'], ['mn' => ['text' => 'Архив'], 'en' => ['text' => 'Archive']]);
@@ -171,6 +172,7 @@ class TextInitial
         $model->insert(['keyword' => 'message', 'type' => 'sys-defined'], ['mn' => ['text' => 'Зурвас'], 'en' => ['text' => 'Message']]);
         $model->insert(['keyword' => 'messages', 'type' => 'sys-defined'], ['mn' => ['text' => 'Мессежүүд'], 'en' => ['text' => 'Messages']]);
         $model->insert(['keyword' => 'meta', 'type' => 'sys-defined'], ['mn' => ['text' => 'Мета'], 'en' => ['text' => 'Meta']]);
+        $model->insert(['keyword' => 'min', 'type' => 'sys-defined'], ['mn' => ['text' => 'мин'], 'en' => ['text' => 'min']]);
 
         $model->insert(['keyword' => 'multiple-files-allowed', 'type' => 'sys-defined'], ['mn' => ['text' => 'Олон файл сонгох боломжтой'], 'en' => ['text' => 'Multiple files allowed']]);
         $model->insert(['keyword' => 'name', 'type' => 'sys-defined'], ['mn' => ['text' => 'Нэр'], 'en' => ['text' => 'Name']]);
@@ -193,6 +195,7 @@ class TextInitial
         $model->insert(['keyword' => 'no-results-found', 'type' => 'sys-defined'], ['mn' => ['text' => 'Үр дүн олдсонгүй'], 'en' => ['text' => 'No results found']]);
         $model->insert(['keyword' => 'notice', 'type' => 'sys-defined'], ['mn' => ['text' => 'Мэдэгдэл'], 'en' => ['text' => 'Notice']]);
         $model->insert(['keyword' => 'optional', 'type' => 'sys-defined'], ['mn' => ['text' => 'Заавал биш'], 'en' => ['text' => 'Optional']]);
+        $model->insert(['keyword' => 'optimize-images', 'type' => 'sys-defined'], ['mn' => ['text' => 'Зураг optimize хийх'], 'en' => ['text' => 'Optimize images']]);
         $model->insert(['keyword' => 'options', 'type' => 'sys-defined'], ['mn' => ['text' => 'Сонголтууд'], 'en' => ['text' => 'Options']]);
         $model->insert(['keyword' => 'order', 'type' => 'sys-defined'], ['mn' => ['text' => 'Захиалга'], 'en' => ['text' => 'Order']]);
         $model->insert(['keyword' => 'order-now', 'type' => 'sys-defined'], ['mn' => ['text' => 'Захиалах'], 'en' => ['text' => 'Order Now']]);
@@ -213,6 +216,7 @@ class TextInitial
         $model->insert(['keyword' => 'password-must-confirm', 'type' => 'sys-defined'], ['mn' => ['text' => 'Нууц үгийг давтан бичих хэрэгтэй'], 'en' => ['text' => 'Please re-enter the password']]);
         $model->insert(['keyword' => 'password-must-match', 'type' => 'sys-defined'], ['mn' => ['text' => 'Нууц үгийг давтан бичихдээ зөв оруулах хэрэгтэй'], 'en' => ['text' => 'Password entries must match']]);
         $model->insert(['keyword' => 'password-reset', 'type' => 'sys-defined'], ['mn' => ['text' => 'Нууц үг шинээр тааруулах'], 'en' => ['text' => 'Password reset']]);
+        $model->insert(['keyword' => 'password-reset-cooldown', 'type' => 'sys-defined'], ['mn' => ['text' => 'Нууц үг сэргээх хүсэлт илгээгдсэн байна. Түр хүлээнэ үү.'], 'en' => ['text' => 'Password reset already requested. Please wait before trying again.']]);
         $model->insert(['keyword' => 'pending', 'type' => 'sys-defined'], ['mn' => ['text' => 'Хүлээгдэж буй'], 'en' => ['text' => 'Pending']]);
         $model->insert(['keyword' => 'personal-info', 'type' => 'sys-defined'], ['mn' => ['text' => 'Хувийн мэдээлэл'], 'en' => ['text' => 'Personal Info']]);
         $model->insert(['keyword' => 'phone', 'type' => 'sys-defined'], ['mn' => ['text' => 'Утас'], 'en' => ['text' => 'Phone']]);
@@ -276,6 +280,7 @@ class TextInitial
         $model->insert(['keyword' => 'set-new-password', 'type' => 'sys-defined'], ['mn' => ['text' => 'Хэрэглэгчийн шинэ нууц үгийг тохируулна уу!'], 'en' => ['text' => 'Please set a new password for the user!']]);
         $model->insert(['keyword' => 'set-new-password-success', 'type' => 'sys-defined'], ['mn' => ['text' => 'Нууц үгийг шинээр тохирууллаа. Шинэ нууц үгээ ашиглана уу'], 'en' => ['text' => 'Your password has been changed successfully! Thank you']]);
         $model->insert(['keyword' => 'settings', 'type' => 'sys-defined'], ['mn' => ['text' => 'Тохиргоонууд'], 'en' => ['text' => 'Settings']]);
+        $model->insert(['keyword' => 'share', 'type' => 'sys-defined'], ['mn' => ['text' => 'Хуваалцах'], 'en' => ['text' => 'Share']]);
         $model->insert(['keyword' => 'short-description', 'type' => 'sys-defined'], ['mn' => ['text' => 'Товч тайлбар'], 'en' => ['text' => 'Short description']]);
         $model->insert(['keyword' => 'signin', 'type' => 'sys-defined'], ['mn' => ['text' => 'Нэвтрэх'], 'en' => ['text' => 'Sign In']]);
         $model->insert(['keyword' => 'signup', 'type' => 'sys-defined'], ['mn' => ['text' => 'Бүртгүүлэх'], 'en' => ['text' => 'Sign Up']]);
@@ -303,6 +308,7 @@ class TextInitial
         $model->insert(['keyword' => 'title', 'type' => 'sys-defined'], ['mn' => ['text' => 'Гарчиг'], 'en' => ['text' => 'Title']]);
 
         $model->insert(['keyword' => 'to-complete-registration-check-email', 'type' => 'sys-defined'], ['mn' => ['text' => 'Танд баярлалаа. Бүртгэлээ баталгаажуулахын тулд заасан имейлээ шалгана уу'], 'en' => ['text' => 'Thank you. To complete your registration please check your email']]);
+        $model->insert(['keyword' => 'too-many-login-attempts', 'type' => 'sys-defined'], ['mn' => ['text' => 'Нэвтрэх оролдлого хэт олон удаа хийгдсэн байна. Түр хүлээнэ үү.'], 'en' => ['text' => 'Too many login attempts. Please try again later.']]);
         $model->insert(['keyword' => 'type', 'type' => 'sys-defined'], ['mn' => ['text' => 'Төрөл'], 'en' => ['text' => 'Type']]);
         $model->insert(['keyword' => 'u-have-some-form-errors', 'type' => 'sys-defined'], ['mn' => ['text' => 'Та мэдээллийг алдаатай бөглөсөн байна. Доорх талбаруудаа шалгана уу'], 'en' => ['text' => 'You have some form errors. Please check below']]);
         $model->insert(['keyword' => 'update', 'type' => 'sys-defined'], ['mn' => ['text' => 'Шинэчлэх'], 'en' => ['text' => 'Update']]);
@@ -323,6 +329,7 @@ class TextInitial
         $model->insert(['keyword' => 'view-record', 'type' => 'sys-defined'], ['mn' => ['text' => 'Бичлэг харах'], 'en' => ['text' => 'View record']]);
         $model->insert(['keyword' => 'visible-on-site', 'type' => 'sys-defined'], ['mn' => ['text' => 'Сайт дээр харагдах'], 'en' => ['text' => 'Visible on site']]);
         $model->insert(['keyword' => 'warning', 'type' => 'sys-defined'], ['mn' => ['text' => 'Сануулга'], 'en' => ['text' => 'Warning']]);
+        $model->insert(['keyword' => 'words', 'type' => 'sys-defined'], ['mn' => ['text' => 'үг'], 'en' => ['text' => 'words']]);
         $model->insert(['keyword' => 'working-hours', 'type' => 'sys-defined'], ['mn' => ['text' => 'Ажлын цаг'], 'en' => ['text' => 'Working Hours']]);
         $model->insert(['keyword' => 'write-comment', 'type' => 'sys-defined'], ['mn' => ['text' => 'Сэтгэгдэл бичих'], 'en' => ['text' => 'Write a comment']]);
         $model->insert(['keyword' => 'write-review', 'type' => 'sys-defined'], ['mn' => ['text' => 'Үнэлгээ бичих'], 'en' => ['text' => 'Write a review']]);

@@ -210,7 +210,7 @@ After adding new files/namespaces, run `composer dump-autoload` to regenerate th
 
 `Raptor\SessionMiddleware` is shared by both apps. Constructor accepts a `needsWrite` closure. All other routes call `session_write_close()` early for concurrency.
 
-- **Dashboard**: checks for `/login` path
+- **Dashboard**: checks for `/login` path or empty CSRF token (to allow first-time token generation)
 - **Web**: checks for `/session/` prefix - all routes that write to `$_SESSION` use `/session/` prefix (e.g., `/session/language/{code}`, `/session/contact-send`, `/session/order`)
 
 When adding a new Web route that writes to `$_SESSION`, register it with `/session/` prefix in `WebRouter.php`. No need to modify `Application.php`.
@@ -218,8 +218,25 @@ When adding a new Web route that writes to `$_SESSION`, register it with `/sessi
 For Dashboard, update the closure in `Application.php`:
 
 ```php
-new SessionMiddleware(fn($path, $method) => str_contains($path, '/login'));
+new SessionMiddleware(fn($path, $method) =>
+    str_contains($path, '/login') || empty($_SESSION['CSRF_TOKEN'])
+);
 ```
+
+### CsrfMiddleware
+
+`Raptor\CsrfMiddleware` protects dashboard POST/PUT/DELETE requests against CSRF attacks.
+
+- Token is generated per-session at login and stored in `$_SESSION['CSRF_TOKEN']`
+- If no token exists (e.g. old session), the middleware auto-generates one (requires session write access from SessionMiddleware)
+- GET/HEAD/OPTIONS requests pass through without validation
+- `/login` routes are exempt (token is created there)
+- Client JS sends the token via `X-CSRF-TOKEN` header using `csrfFetch()` wrapper
+- Token is delivered to the frontend via `<meta name="csrf-token">` in `dashboard.html`
+
+**For new dashboard modules**: use `csrfFetch()` instead of `fetch()` for all POST/PUT/DELETE requests. GET requests can use either. `csrfFetch()` is defined in `dashboard.js` and auto-adds the CSRF header.
+
+**For standalone pages** (not using `dashboard.html` layout, e.g. login): use plain `fetch()` since `dashboard.js` is not loaded and login is CSRF-exempt anyway.
 
 ### LocalizationMiddleware
 
@@ -264,7 +281,7 @@ Rules:
 
 ### Soft Delete
 
-Records are deactivated (`is_active=0`), never physically deleted.
+Records are deactivated (`is_active=0`), never physically deleted. Exception: `LanguageModel` uses hard delete because `code`, `locale`, `title` columns have unique constraints that cannot accommodate deactivated rows.
 
 ## Frontend
 
@@ -274,7 +291,7 @@ The current codebase uses these libraries, but none are required by the framewor
 
 - Bootstrap 5.3.6 (CDN), Bootstrap Icons 1.13.1
 - `motable.js` - Data table, `moedit.js` - Rich text editor
-- `dashboard.js` - AJAX modals, notifications, search, sidebar badges
+- `dashboard.js` - AJAX modals, notifications, search, sidebar badges, CSRF fetch wrapper, log protocol loader
 - SweetAlert2 - Confirmation dialogs
 
 ### Asset Versioning
@@ -345,6 +362,39 @@ $this->log('messages', LogLevel::INFO, 'message', [
 ### File-count Badge
 
 For modules not tracked in logs (manual, migrations), badges are based on file count. The system compares current `glob()` count against `last_seen_count` stored in `admin_badge_seen`.
+
+## Logger Protocol (View/Update Page Log Display)
+
+`initLoggerProtocol()` in `dashboard.js` auto-loads log entries for view/update pages. No JS needed in templates - just add data attributes to the `<ul>` element:
+
+```html
+{% if user.can('system_logger') %}
+<div class="mt-5">
+    <hr>
+    <label class="form-label fw-bolder">
+        {{ 'log'|text }} <i class="bi bi-clock-history"></i>
+    </label>
+    <div class="spinner-grow mt-3" role="status" style="display:none">
+        <span class="visually-hidden">Loading logs...</span>
+    </div>
+    <ul class="list-group logger-protocol" id="logger-{table}"
+        data-retrieve="{{ 'logs-retrieve'|link }}"
+        data-view="{{ 'logs-view'|link }}"
+        data-context='{"record_id":"{{ record['id'] }}"}'
+        style="max-height:240px; overflow-y:auto">
+    </ul>
+</div>
+{% endif %}
+```
+
+- `id="logger-{table}"` - log table name (e.g. `logger-content`, `logger-localization`)
+- `data-retrieve` / `data-view` - route links (required)
+- `data-context` - JSON filter for log context (optional, omit for no filtering)
+
+Common context patterns:
+- Record-specific: `{"record_id":"{{ record['id'] }}"}`
+- Action-specific: `{"action":"reference-*","id":"{{ record['id'] }}"}`
+- No filter: omit `data-context` entirely
 
 ## Code Style
 

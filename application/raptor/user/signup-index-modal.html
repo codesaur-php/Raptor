@@ -149,7 +149,7 @@
 
                 /* Зөвшөөрөх үед API руу POST хийнэ */
                 preConfirm: () => {
-                    return fetch(
+                    return csrfFetch(
                         `{{ 'user-signup-approve'|link }}`,
                         {
                             method: 'POST',
@@ -223,7 +223,7 @@
 
                 /* DELETE API дуудна */
                 preConfirm: () => {
-                    return fetch(
+                    return csrfFetch(
                         `{{ 'user-signup-deactivate'|link }}`,
                         {
                             method: 'DELETE',

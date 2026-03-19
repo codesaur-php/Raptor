@@ -59,7 +59,7 @@
         window.usersTbl = users;
         
         /* Серверээс хэрэглэгчдийн жагсаалт татах (AJAX fetch) */
-        fetch(
+        csrfFetch(
             `{{ 'users-list'|link }}`
         ).then(res => {
             const contentType = res.headers.get('content-type') || '';
@@ -316,7 +316,7 @@
                     backdrop: true,
                     preConfirm: (reason) => {
                         /* AJAX -> deactivate */
-                        return fetch(
+                        return csrfFetch(
                             `{{ 'user-deactivate'|link }}`,
                             {
                                 method: 'DELETE',

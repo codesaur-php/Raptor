@@ -35,6 +35,7 @@ class NewsSamples
         // MN мэдээнүүд
         $model->insert($seed + [
             'code' => 'mn',
+            'type' => 'technology',
             'title' => 'Raptor Framework суулгагдлаа',
             'source' => 'codesaur.net, packagist.org, github.com',
             'photo' => $path . '/assets/images/code.jpg',
@@ -53,6 +54,7 @@ class NewsSamples
         ]);
         $model->insert($seed + [
             'code' => 'mn',
+            'type' => 'announcement',
             'title' => 'Тавтай морилно уу',
             'photo' => $path . '/assets/images/welcome.jpg',
             'content' => '<p>Манай вэб сайтад тавтай морилно уу. '
@@ -62,6 +64,7 @@ class NewsSamples
         ]);
         $model->insert($seed + [
             'code' => 'mn',
+            'type' => 'guide',
             'title' => 'CMS систем ашиглах заавар',
             'content' => '<p><a href="' . $path . '/dashboard">Хянах самбар</a>т нэвтэрч мэдээ болон хуудсуудыг удирдаарай. '
                 . 'Анхдагч нэвтрэх: admin / password</p>'
@@ -70,6 +73,7 @@ class NewsSamples
         // EN мэдээнүүд
         $model->insert($seed + [
             'code' => 'en',
+            'type' => 'technology',
             'title' => 'Raptor Framework Installed',
             'source' => 'codesaur.net, packagist.org, github.com',
             'photo' => $path . '/assets/images/code.jpg',
@@ -88,6 +92,7 @@ class NewsSamples
         ]);
         $model->insert($seed + [
             'code' => 'en',
+            'type' => 'announcement',
             'title' => 'Welcome to Our Website',
             'photo' => $path . '/assets/images/welcome.jpg',
             'content' => '<p>Welcome to our website. '
@@ -97,6 +102,7 @@ class NewsSamples
         ]);
         $model->insert($seed + [
             'code' => 'en',
+            'type' => 'guide',
             'title' => 'Getting Started with CMS',
             'content' => '<p>Log in to the <a href="' . $path . '/dashboard">admin dashboard</a> to manage news and pages. '
                 . 'Default credentials: admin / password</p>'

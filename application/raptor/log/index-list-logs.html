@@ -209,7 +209,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         try {
             /* logs-retrieve endpoint руу POST хүсэлт илгээх */
-            const res = await fetch(`${logsRetrieveLink}?table=${encodeURIComponent(table)}`, {
+            const res = await csrfFetch(`${logsRetrieveLink}?table=${encodeURIComponent(table)}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -362,7 +362,7 @@ document.addEventListener('DOMContentLoaded', function () {
             empty.classList.add('d-none');
             error.classList.add('d-none');
 
-            fetch(errorLogReadUrl + '?page=' + errorLogPage)
+            csrfFetch(errorLogReadUrl + '?page=' + errorLogPage)
             .then(r => r.json())
             .then(data => {
                 loading.classList.add('d-none');

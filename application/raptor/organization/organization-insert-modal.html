@@ -235,7 +235,7 @@
             const data = new FormData(this);
 
             /* FETCH - байгууллага үүсгэх */
-            fetch(this.action, {
+            csrfFetch(this.action, {
                 body: data,
                 method: this.getAttribute('method') ?? 'POST'
             })

@@ -16,7 +16,7 @@
 <link href="{{ index }}/assets/moedit/moedit.css?v=1" rel="stylesheet">
 <link href="{{ index }}/assets/moedit/moedit-icons.css?v=1" rel="stylesheet">
 <script defer src="{{ index }}/assets/moedit/moedit.js?v=1"></script>
-<script defer src="{{ index }}/assets/moedit/moedit.ui.js?v=1"></script>
+<script defer src="{{ index }}/assets/moedit/moedit.ui.js?v=2"></script>
 <!-- Толгой хэсэг -->
 <div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-2 shadow">
     <h3 class="px-2 my-auto fs-6 text-primary text-uppercase">
@@ -179,7 +179,11 @@
     <div class="spinner-grow mt-3" role="status" style="display:none">
         <span class="visually-hidden">Loading logs...</span>
     </div>
-    <ul class="list-group logger-protocol" id="logger-{{ table }}" style="max-height:240px; overflow-y:auto">
+    <ul class="list-group logger-protocol" id="logger-{{ table }}"
+        data-retrieve="{{ 'logs-retrieve'|link }}"
+        data-view="{{ 'logs-view'|link }}"
+        data-context='{"record_id":"{{ record['id'] }}"}'
+        style="max-height:240px; overflow-y:auto">
     </ul>
 </div>
 {% endif %}
@@ -290,7 +294,7 @@
                 if (isFeaturedSwitch) {
                     data.set('is_featured', isFeaturedSwitch.checked ? 1 : 0);
                 }
-                fetch(
+                csrfFetch(
                     this.action,
                     {
                         body: data,
@@ -315,86 +319,5 @@
             });
         }
 
-        const logger = document.querySelector('ul.logger-protocol');
-        if (logger && logger.tagName === 'UL') {
-            const logsRetrieveLink = `{{ 'logs-retrieve'|link }}`;
-            const logsViewLink = `{{ 'logs-view'|link }}`;
-            let logger_id = logger.id ?? '';
-            let table = logger_id.substring(logger_id.indexOf('-') + 1);
-            if (!table) return;
-
-            logger.style.display = 'none';
-            let spinner = logger.previousElementSibling;
-            spinner.style.display = 'block';
-            fetch(
-                `${logsRetrieveLink}?table=${table}`,
-                {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        'ORDER BY': 'id Desc',
-                        'CONTEXT': {
-                            'record_id': '{{ record['id'] }}'
-                        },
-                        'LIMIT':  10000
-                    })
-                }
-            ).then(res => {
-                return res.json();
-            }).then(response => {
-                if (response.error) {
-                    throw new Error(response.error ?? `{{ 'something-went-wrong'|text|e }}`);
-                }
-
-                logger.innerHTML = '';
-
-                let logModalLink = `${logsViewLink}?table=${table}&id=`;
-                Object.values(response).forEach(log => {
-                    let log_li = document.createElement('li');
-                    log_li.classList.add('list-group-item', 'list-group-item-action');
-                    switch (log.level) {
-                        case 'notice': log_li.classList.add('list-group-item-light'); break;
-                        case 'info': log_li.classList.add('list-group-item-primary'); break;
-                        case 'error': log_li.classList.add('list-group-item-danger'); break;
-                        case 'warning': log_li.classList.add('list-group-item-warning'); break;
-                        case 'alert': log_li.classList.add('list-group-item-info'); break;
-                        case 'debug': log_li.classList.add('list-group-item-secondary'); break;
-                        default: log_li.classList.add('list-group-item-dark'); break;
-                    }
-
-                    let a_link = document.createElement('a');
-                    a_link.textContent = `${log.created_at} [${log.id}]`;
-                    a_link.href = logModalLink + log.id;
-                    a_link.setAttribute('data-bs-target', '#static-modal');
-                    a_link.setAttribute('data-bs-toggle', 'modal');
-                    a_link.addEventListener('click', function (e) {
-                        e.preventDefault();
-                        ajaxModal(a_link);
-                    });
-                    log_li.appendChild(a_link);
-                    log_li.appendChild(document.createTextNode(' '));
-
-                    let span_msg = document.createElement('span');
-                    span_msg.innerHTML = log.message;
-                    log_li.appendChild(span_msg);
-                    log_li.appendChild(document.createTextNode(' '));
-
-                    let span_user_action = document.createElement('span');
-                    span_user_action.innerHTML = `<span class="text-muted small"><u>${log.context.action ?? ''} by ${log.context.auth_user?.username ?? ''}</u></span>`;
-                    span_user_action.classList.add('text-muted', 'small');
-                    log_li.appendChild(span_user_action);
-
-                    logger.appendChild(log_li);
-                });
-
-            }).catch(error => {
-                console.log(error.message);
-            }).finally(() => {
-                logger.style.display = '';
-                spinner.style.display = 'none';
-            });
-        }
     });
 </script>

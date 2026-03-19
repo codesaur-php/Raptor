@@ -52,7 +52,7 @@ class DevRequestController extends FileController
         $dashboard->set('title', $this->text('dev-requests'));
         $dashboard->render();
 
-        $this->log('development', LogLevel::NOTICE, 'Хөгжүүлэлтийн хүсэлтүүдийн жагсаалтыг үзэж байна', ['action' => 'index']);
+        $this->log('dev_requests', LogLevel::NOTICE, 'Хөгжүүлэлтийн хүсэлтүүдийн жагсаалтыг үзэж байна', ['action' => 'index']);
     }
 
     /**
@@ -97,10 +97,24 @@ class DevRequestController extends FileController
             $model = new DevRequestModel($this->pdo);
             $table = $model->getName();
             $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
+            $reqFilesModel = new FilesModel($this->pdo);
+            $reqFilesModel->setTable('dev_requests');
+            $reqFilesTable = $reqFilesModel->getName();
+            $respModel = new DevResponseModel($this->pdo);
+            $respTable = $respModel->getName();
+            $respFilesModel = new FilesModel($this->pdo);
+            $respFilesModel->setTable('dev_requests_responses');
+            $respFilesTable = $respFilesModel->getName();
             $sql =
                 "SELECT t.id, t.title, t.status, t.created_at, t.created_by, t.assigned_to, " .
                 "CONCAT(u.first_name, ' ', u.last_name) as created_user, " .
-                "CONCAT(a.first_name, ' ', a.last_name) as assigned_user " .
+                "CONCAT(a.first_name, ' ', a.last_name) as assigned_user, " .
+                "(" .
+                    "(SELECT COUNT(*) FROM $reqFilesTable f WHERE f.record_id = t.id AND f.is_active = 1) + " .
+                    "(SELECT COUNT(*) FROM $respFilesTable rf " .
+                        "INNER JOIN $respTable r ON rf.record_id = r.id " .
+                        "WHERE r.request_id = t.id AND rf.is_active = 1)" .
+                ") as attachment_count " .
                 "FROM $table t LEFT JOIN $users u ON t.created_by = u.id " .
                 "LEFT JOIN $users a ON t.assigned_to = a.id " .
                 "WHERE $where ORDER BY t.created_at DESC";
@@ -210,7 +224,7 @@ class DevRequestController extends FileController
                 $this->setFolder("/dev-requests/$id");
                 $this->setSizeLimit(10485760); // 10MB
                 $filesModel = new FilesModel($this->pdo);
-                $filesModel->setTable('development');
+                $filesModel->setTable('dev_requests');
                 foreach ($files as $file) {
                     $uploaded = $this->moveUploaded($file);
                     if ($uploaded) {
@@ -252,7 +266,7 @@ class DevRequestController extends FileController
                 $message = '{record_id} дугаартай хөгжүүлэлтийн хүсэлт амжилттай бүртгэгдлээ';
                 $context += ['record_id' => $id ?? null];
             }
-            $this->log('development', $level, $message, $context);
+            $this->log('dev_requests', $level, $message, $context);
         }
     }
 
@@ -301,7 +315,7 @@ class DevRequestController extends FileController
 
             // Хүсэлтийн хавсралтуудыг FilesModel-ээс татах
             $filesModel = new FilesModel($this->pdo);
-            $filesModel->setTable('development');
+            $filesModel->setTable('dev_requests');
             $filesTable = $filesModel->getName();
             $attachStmt = $this->prepare(
                 "SELECT id, path, size, type, mime_content_type FROM $filesTable " .
@@ -325,7 +339,7 @@ class DevRequestController extends FileController
 
             // Хариулт бүрийн хавсралтуудыг FilesModel-ээс татах
             $respFilesModel = new FilesModel($this->pdo);
-            $respFilesModel->setTable('dev_request_responses');
+            $respFilesModel->setTable('dev_requests_responses');
             $respFilesTable = $respFilesModel->getName();
             foreach ($responses as &$resp) {
                 $rfStmt = $this->prepare(
@@ -362,7 +376,7 @@ class DevRequestController extends FileController
                 $message = '{record_id} дугаартай хөгжүүлэлтийн хүсэлтийг үзэж байна';
                 $context += ['record' => $record];
             }
-            $this->log('development', $level, $message, $context);
+            $this->log('dev_requests', $level, $message, $context);
         }
     }
 
@@ -429,7 +443,7 @@ class DevRequestController extends FileController
                 $this->setFolder("/dev-requests/$id/responses/$responseId");
                 $this->setSizeLimit(10485760); // 10MB
                 $filesModel = new FilesModel($this->pdo);
-                $filesModel->setTable('dev_request_responses');
+                $filesModel->setTable('dev_requests_responses');
                 foreach ($files as $file) {
                     $uploaded = $this->moveUploaded($file);
                     if ($uploaded) {
@@ -478,7 +492,7 @@ class DevRequestController extends FileController
                 $message = '{record_id} дугаартай хүсэлтэд хариулт бичлээ';
                 $context += ['record_id' => $id];
             }
-            $this->log('development', $level, $message, $context);
+            $this->log('dev_requests', $level, $message, $context);
         }
     }
 
@@ -547,7 +561,7 @@ class DevRequestController extends FileController
                 $message = '{record_id} дугаартай хөгжүүлэлтийн хүсэлтийг идэвхгүй болголоо';
                 $context += ['record_id' => $id];
             }
-            $this->log('development', $level, $message, $context);
+            $this->log('dev_requests', $level, $message, $context);
         }
     }
 

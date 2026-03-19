@@ -197,7 +197,7 @@
                         allowOutsideClick: () => !Swal.isLoading(),
                         backdrop: true,
                         preConfirm: () => {
-                            return fetch(
+                            return csrfFetch(
                                 `{{ 'reference-deactivate'|link }}`,
                                 {
                                     method: 'DELETE',

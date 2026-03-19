@@ -190,7 +190,7 @@
                 const data = new FormData(this);
 
                 /* SEND REQUEST */
-                fetch(this.action, {
+                csrfFetch(this.action, {
                     body: data,
                     method: this.getAttribute('method') ?? 'POST'
                 })

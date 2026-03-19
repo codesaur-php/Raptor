@@ -66,6 +66,10 @@ class TextController extends \Raptor\Controller
                     'status' => 'success',
                     'message' => $this->text('record-insert-success')
                 ]);
+
+                $adminName = \trim(($this->getUser()->profile['first_name'] ?? '') . ' ' . ($this->getUser()->profile['last_name'] ?? ''));
+                $appUrl = \rtrim((string)$this->getRequest()->getUri()->withPath($this->getScriptPath()), '/') . '/dashboard';
+                $this->getService('discord')?->contentAction('text', 'insert', $payload['keyword'] ?? '', null, $adminName, $appUrl);
             } else {
                 $this->twigTemplate(
                     __DIR__ . '/text-insert-modal.html'
@@ -78,7 +82,7 @@ class TextController extends \Raptor\Controller
                 $this->modalProhibited($err->getMessage(), $err->getCode())->render();
             }
         } finally {
-            $context = ['action' => 'text-create'];
+            $context = ['action' => 'localization-text-create'];
             if (isset($err) && $err instanceof \Throwable) {
                 $level = LogLevel::ERROR;
                 $message = 'Текст үүсгэх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
@@ -123,7 +127,7 @@ class TextController extends \Raptor\Controller
             $this->modalProhibited($err->getMessage(), $err->getCode())->render();
         } finally {
             $context = [
-                'action' => 'text-view',
+                'action' => 'localization-text-view',
                 'id' => $id
             ];
             if (isset($err) && $err instanceof \Throwable) {
@@ -204,6 +208,10 @@ class TextController extends \Raptor\Controller
                     'status' => 'success',
                     'message' => $this->text('record-update-success')
                 ]);
+
+                $adminName = \trim(($this->getUser()->profile['first_name'] ?? '') . ' ' . ($this->getUser()->profile['last_name'] ?? ''));
+                $appUrl = \rtrim((string)$this->getRequest()->getUri()->withPath($this->getScriptPath()), '/') . '/dashboard';
+                $this->getService('discord')?->contentAction('text', 'update', $record['keyword'] ?? '', $id, $adminName, $appUrl);
             } else {
                 $this->twigTemplate(
                     __DIR__ . '/text-update-modal.html',
@@ -218,7 +226,7 @@ class TextController extends \Raptor\Controller
             }
         } finally {
             $context = [
-                'action' => 'text-update',
+                'action' => 'localization-text-update',
                 'id' => $id
             ];
             if (isset($err) && $err instanceof \Throwable) {
@@ -275,6 +283,10 @@ class TextController extends \Raptor\Controller
                 'title'   => $this->text('success'),
                 'message' => $this->text('record-successfully-deleted')
             ]);
+
+            $adminName = \trim(($this->getUser()->profile['first_name'] ?? '') . ' ' . ($this->getUser()->profile['last_name'] ?? ''));
+            $appUrl = \rtrim((string)$this->getRequest()->getUri()->withPath($this->getScriptPath()), '/') . '/dashboard';
+            $this->getService('discord')?->contentAction('text', 'delete', $payload['keyword'] ?? "#{$id}", $id ?? null, $adminName, $appUrl);
         } catch (\Throwable $err) {
             $this->respondJSON([
                 'status'  => 'error',
@@ -282,7 +294,7 @@ class TextController extends \Raptor\Controller
                 'message' => $err->getMessage()
             ], $err->getCode());
         } finally {
-            $context = ['action' => 'text-deactivate'];
+            $context = ['action' => 'localization-text-deactivate'];
             if (isset($err) && $err instanceof \Throwable) {
                 $level = LogLevel::ERROR;
                 $message = 'Текст мэдээлэл идэвхгүй болгох үйлдлийг гүйцэтгэх явцад алдаа гарч зогслоо';

@@ -171,7 +171,8 @@ moedit.prototype._uploadFileToServer = function(file) {
   fd.append('folder', this.opts.upload.folder || 'moedit');
   const isImage = file.type && file.type.startsWith('image/');
   fd.append('optimize', isImage && this._optimizeImages ? '1' : '0');
-  return fetch(this.opts.upload.url, { method: 'POST', body: fd })
+  var doFetch = typeof csrfFetch === 'function' ? csrfFetch : fetch;
+  return doFetch(this.opts.upload.url, { method: 'POST', body: fd })
     .then(res => {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return res.json();

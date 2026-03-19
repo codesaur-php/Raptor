@@ -78,6 +78,13 @@ class TemplateController extends \Raptor\Controller
             }
         }
 
+        // Base URL (OG meta, canonical, share URL-д ашиглагдана)
+        $uri = $this->getRequest()->getUri();
+        $baseUrl = $uri->getScheme() . '://' . $uri->getHost()
+            . ($uri->getPort() && !\in_array($uri->getPort(), [80, 443]) ? ':' . $uri->getPort() : '');
+        $index->set('base_url', $baseUrl);
+        $index->set('current_url', (string) $uri);
+
         // System settings (favicon, SEO, branding...)
         foreach ($this->getAttribute('settings', []) as $key => $value) {
             $index->set($key, $value);

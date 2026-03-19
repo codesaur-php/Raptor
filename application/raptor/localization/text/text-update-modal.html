@@ -117,7 +117,7 @@
             /* FormData -> PUT хүсэлтэд илгээгдэнэ */
             const data = new FormData(this);
             
-            fetch(
+            csrfFetch(
                 this.action,
                 {
                     body: data,

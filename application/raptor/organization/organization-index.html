@@ -39,7 +39,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const organizations = new motable('table#organizations', {freezeColumns: [0]});
 
     /* Байгууллагын жагсаалтыг серверээс авах (GET /dashboard/organizations/list ) */
-    fetch(`{{ 'organizations-list'|link }}`)
+    csrfFetch(`{{ 'organizations-list'|link }}`)
         .then(res => {
             const contentType = res.headers.get('content-type') || '';
             if (contentType.includes('application/json')) return res.json();
@@ -211,7 +211,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
                         /* Идэвхгүй болгох хүсэлт сервер рүү илгээх */
                         preConfirm: (reason) => {
-                            return fetch(
+                            return csrfFetch(
                                 `{{ 'organization-deactivate'|link }}`,
                                 {
                                     method: 'DELETE',

@@ -198,7 +198,7 @@
             -----------------------------------------------------
               * HTML5 validation
               * Хэрвээ алдаа байвал NotifyTop()
-              * fetch() -> server рүү POST хүсэлт
+              * csrfFetch() -> server рүү POST хүсэлт
               * Success -> хуудсыг refresh
         */
         formInsert.addEventListener('submit', function (event) {
@@ -221,7 +221,7 @@
 
             const data = new FormData(this);
             /* Permission insert ajax request */
-            fetch(
+            csrfFetch(
                 this.action,
                 {
                     body: data,

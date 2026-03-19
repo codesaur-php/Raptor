@@ -155,7 +155,7 @@
         }
 
         const pages = new motable('table#pages', { freezeColumns: [0] });
-        fetch(
+        csrfFetch(
             `{{ 'pages-list'|link }}` + window.location.search
         ).then(res => {
             if (res.headers.get('content-type')?.includes('application/json')) return res.json();
@@ -234,7 +234,7 @@
                         showLoaderOnConfirm: true,
                         allowOutsideClick: () => !Swal.isLoading(),
                         preConfirm: () => {
-                            return fetch(`{{ 'pages-sample-reset'|link }}`, {
+                            return csrfFetch(`{{ 'pages-sample-reset'|link }}`, {
                                 method: 'DELETE',
                                 headers: { 'Content-Type': 'application/json' }
                             }).then(res => res.json()).then(response => {
@@ -296,7 +296,7 @@
                     allowOutsideClick: () => !Swal.isLoading(),
                     backdrop: true,
                     preConfirm: () => {
-                        return fetch(
+                        return csrfFetch(
                             `{{ 'page-deactivate'|link }}`,
                             {
                                 method: 'DELETE',

@@ -21,7 +21,7 @@ class DevResponseModel extends Model
      * DevResponseModel constructor.
      *
      * PDO instance-г оноож, хариултын хүснэгтийн бүх багануудыг тодорхойлно.
-     * Хүснэгтийн нэрийг 'dev_request_responses' гэж тохируулна.
+     * Хүснэгтийн нэрийг 'dev_requests_responses' гэж тохируулна.
      *
      * @param \PDO $pdo Database connection instance
      */
@@ -38,7 +38,7 @@ class DevResponseModel extends Model
             new Column('created_by', 'bigint')
         ]);
 
-        $this->setTable('dev_request_responses');
+        $this->setTable('dev_requests_responses');
     }
 
     /**

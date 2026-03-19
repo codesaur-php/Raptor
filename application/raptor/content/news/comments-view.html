@@ -156,7 +156,7 @@
             btn.disabled = true;
             btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
 
-            fetch(`{{ 'news'|link }}/comment/${parentInput.value}/reply`, {
+            csrfFetch(`{{ 'news'|link }}/comment/${parentInput.value}/reply`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ comment })
@@ -187,7 +187,7 @@
                     cancelButtonText: `{{ 'cancel'|text|e('js') }}`
                 }).then(result => {
                     if (!result.isConfirmed) return;
-                    fetch(`{{ 'comments-deactivate'|link }}`, {
+                    csrfFetch(`{{ 'comments-deactivate'|link }}`, {
                         method: 'DELETE',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ id })

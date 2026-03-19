@@ -108,6 +108,10 @@ class LanguageController extends \Raptor\Controller
                     'message' => $this->text('record-insert-success')
                 ]);
 
+                $adminName = \trim(($this->getUser()->profile['first_name'] ?? '') . ' ' . ($this->getUser()->profile['last_name'] ?? ''));
+                $appUrl = \rtrim((string)$this->getRequest()->getUri()->withPath($this->getScriptPath()), '/') . '/dashboard';
+                $this->getService('discord')?->contentAction('language', 'insert', $payload['title'] ?? $payload['code'] ?? '', $record['id'] ?? null, $adminName, $appUrl);
+
                 // Амжилттай үүссэн хэлний хувьд localized content мөрүүдийг хуулж үүсгэх
                 $copied = $this->copyLocalizedContent($mother['code'], $payload['code']);
             } else {
@@ -123,7 +127,7 @@ class LanguageController extends \Raptor\Controller
             }
         } finally {
             // Лог бичих
-            $context = ['action' => 'language-create'];
+            $context = ['action' => 'localization-language-create'];
             if (isset($err)) {
                 $level = LogLevel::ERROR;
                 $message = 'Хэлний бичлэг үүсгэх үед алдаа гарлаа';
@@ -177,7 +181,7 @@ class LanguageController extends \Raptor\Controller
         } catch (\Throwable $err) {
             $this->modalProhibited($err->getMessage(), $err->getCode())->render();
         } finally {
-            $context = ['action' => 'language-view', 'id' => $id];
+            $context = ['action' => 'localization-language-view', 'id' => $id];
             if (isset($err)) {
                 $level = LogLevel::ERROR;
                 $message = '{id} дугаартай хэлний мэдээлэл нээх үед алдаа гарлаа';
@@ -270,6 +274,10 @@ class LanguageController extends \Raptor\Controller
                     'message' => $this->text('record-update-success')
                 ]);
 
+                $adminName = \trim(($this->getUser()->profile['first_name'] ?? '') . ' ' . ($this->getUser()->profile['last_name'] ?? ''));
+                $appUrl = \rtrim((string)$this->getRequest()->getUri()->withPath($this->getScriptPath()), '/') . '/dashboard';
+                $this->getService('discord')?->contentAction('language', 'update', $record['title'] ?? '', $id, $adminName, $appUrl, $updates ?? []);
+
                 // Default хэл бол бусдаас default-г буулгана
                 if ($updated['is_default'] == 1) {
                     $model->exec(
@@ -291,7 +299,7 @@ class LanguageController extends \Raptor\Controller
                 $this->modalProhibited($err->getMessage(), $err->getCode())->render();
             }
         } finally {
-            $context = ['action' => 'language-update', 'id' => $id];
+            $context = ['action' => 'localization-language-update', 'id' => $id];
             if (isset($err)) {
                 $level = LogLevel::ERROR;
                 $message = 'Хэлний мэдээлэл шинэчлэх үед алдаа гарлаа';
@@ -310,9 +318,9 @@ class LanguageController extends \Raptor\Controller
     }
 
     /**
-     * Хэл идэвхгүй болгох (зөөлөн устгал).
+     * Хэл устгах (hard delete).
      *
-     * POST / DELETE -> JSON хариутай ажиллана
+     * DELETE -> JSON хариутай ажиллана
      *
      * Шаардлага:
      *  - Хэрэглэгч system_localization_delete эрхтэй байх
@@ -324,7 +332,7 @@ class LanguageController extends \Raptor\Controller
      *
      * @return void JSON
      */
-    public function deactivate()
+    public function delete()
     {
         try {
             if (!$this->isUserCan('system_localization_delete')) {
@@ -347,19 +355,16 @@ class LanguageController extends \Raptor\Controller
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));
             }
-            
+
             if ($record['is_default'] == 1) {
                 throw new \Exception('Cannot remove default language!', 403);
             }
 
-            $deactivated = $model->deactivateById(
-                $id,
-                [
-                    'updated_by' => $this->getUserId(),
-                    'updated_at' => \date('Y-m-d H:i:s')
-                ]
+            $stmt = $model->prepare(
+                "DELETE FROM {$model->getName()} WHERE id=:id"
             );
-            if (!$deactivated) {
+            $stmt->bindValue(':id', $id, \PDO::PARAM_INT);
+            if (!$stmt->execute()) {
                 throw new \Exception($this->text('no-record-selected'));
             }
 
@@ -368,6 +373,12 @@ class LanguageController extends \Raptor\Controller
                 'title'   => $this->text('success'),
                 'message' => $this->text('record-successfully-deleted')
             ]);
+
+            $adminName = \trim(($this->getUser()->profile['first_name'] ?? '') . ' ' . ($this->getUser()->profile['last_name'] ?? ''));
+            $appUrl = \rtrim((string)$this->getRequest()->getUri()->withPath($this->getScriptPath()), '/') . '/dashboard';
+            $this->getService('discord')?->contentAction(
+                'language', 'delete', $record['title'], $id, $adminName, $appUrl
+            );
         } catch (\Throwable $err) {
             $this->respondJSON([
                 'status'  => 'error',
@@ -375,10 +386,10 @@ class LanguageController extends \Raptor\Controller
                 'message' => $err->getMessage()
             ], $err->getCode());
         } finally {
-            $context = ['action' => 'language-deactivate'];
+            $context = ['action' => 'localization-language-delete'];
             if (isset($err)) {
                 $level = LogLevel::ERROR;
-                $message = 'Хэл идэвхгүй болгох үед алдаа гарлаа';
+                $message = 'Хэл устгах үед алдаа гарлаа';
                 $context += [
                     'error' => [
                         'code' => $err->getCode(),
@@ -387,7 +398,7 @@ class LanguageController extends \Raptor\Controller
                 ];
             } else {
                 $level = LogLevel::ALERT;
-                $message = '{record.title} хэл дараах шалтгаанаар идэвхгүй боллоо: [{server_request.body.reason}]';
+                $message = '{record.title} хэлийг устгалаа';
                 $context += ['record' => $record];
             }
             $this->log('content', $level, $message, $context);
