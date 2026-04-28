@@ -3,7 +3,7 @@
     "type": "project",
     "description": "Цэвэр архитектуртай объект хандалттай веб хөгжүүлэлтийн фреймворк",
     "keywords": [
-        "raptor", "framework", "фреймворк", "application", "http application", "router", "server request handler", "psr-3", "psr-7", "psr-15", "rbac", "role based access control", "хэрэглэгчийн эрхийн зохицуулалт", "logger", "протокол", "mongol", "mongolia", "монгол", "codesaur", "narankhuu", "coden", "кодзавр", "наранхүү", "коден"
+        "raptor", "framework", "фреймворк", "application", "http application", "router", "server request handler", "psr-3", "psr-7", "psr-14", "psr-15", "psr-16", "rbac", "role based access control", "хэрэглэгчийн эрхийн зохицуулалт", "logger", "протокол", "trash", "хогийн сав", "cache", "кэш", "event dispatcher", "mailer", "smtp", "и-мэйл", "mongol", "mongolia", "монгол", "codesaur", "narankhuu", "coden", "кодзавр", "наранхүү", "коден"
     ],
     "homepage": "https://codesaur.net",
     "authors": [
