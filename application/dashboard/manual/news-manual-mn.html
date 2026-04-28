@@ -2,8 +2,8 @@
     <h3 class="px-2 my-auto fs-6 text-white">
         <i class="bi bi-book"></i> News - Гарын авлага
     </h3>
-    <a href="{{ 'manual' | link }}" class="btn btn-sm btn-light m-1">
-        <i class="bi bi-arrow-left"></i> {{ 'manual' | text }}
+    <a href="{{ 'manual'|link }}" class="btn btn-sm btn-light m-1">
+        <i class="bi bi-arrow-left"></i> {{ 'manual'|text }}
     </a>
 </div>
 
@@ -74,11 +74,19 @@
                 <tr><td><strong>Ангилал</strong></td><td>general, activity, press, event, report, policy, fun</td><td>Тийм</td></tr>
                 <tr><td><strong>Гарчиг</strong></td><td>Мэдээний нэр (255 тэмдэгт хүртэл)</td><td>Тийм</td></tr>
                 <tr><td><strong>Тайлбар</strong></td><td>Товч тайлбар (хоосон бол контентоос автомат үүснэ)</td><td>Үгүй</td></tr>
-                <tr><td><strong>Контент</strong></td><td>Бүтэн агуулга - <a href="{{ 'manual-view' | link({'file': 'moedit-manual-mn.html'}) }}" title="moedit manual харах">moedit</a> засварлагчаар бичнэ</td><td>Үгүй</td></tr>
+                <tr><td><strong>Контент</strong></td><td>Бүтэн агуулга - <a href="{{ 'manual-view'|link({'file': 'moedit-manual-mn.html'}) }}" title="moedit manual харах">moedit</a> засварлагчаар бичнэ</td><td>Үгүй</td></tr>
                 <tr><td><strong>Эх сурвалж</strong></td><td>Мэдээний эх сурвалжийн мэдээлэл</td><td>Үгүй</td></tr>
                 <tr><td><strong>Толгой зураг</strong></td><td>Мэдээний толгой зураг (1 ширхэг)</td><td>Үгүй</td></tr>
             </tbody>
         </table>
+
+        <h5 class="mt-3">HTML контент шалгалт</h5>
+        <div class="alert alert-warning">
+            <i class="bi bi-shield-check"></i>
+            Контентын HTML бүтэц эвдэрсэн бол хадгалахгүй. Хаагдаагүй HTML comment (<code>&lt;!-- ... </code>)
+            эсвэл эвдэрсэн tag-аас болж контентын ихэнх хэсэг алга болсон тохиолдолд алдааны мэдэгдэл
+            харуулна. Source горимд HTML кодоо засаад дахин оролдоно уу.
+        </div>
 
         <h5 class="mt-3">Нийтлэх тохиргоо</h5>
         <p><code>system_content_publish</code> эрхтэй хэрэглэгчдэд дараах сонголтууд харагдана:</p>
@@ -106,6 +114,7 @@
             <li>Толгой зургийг солих эсвэл устгах боломжтой</li>
             <li>Хавсралт файлуудын тайлбарыг засах, шинэ файл нэмэх, устгах</li>
             <li>Нийтлэгдсэн мэдээг засварлахад <code>system_content_publish</code> эрх шаардлагатай</li>
+            <li>Контентын HTML бүтэц эвдэрсэн бол хадгалахгүй (алдааны мэдэгдэл харуулна)</li>
             <li>Ямар нэг өөрчлөлт байхгүй бол хадгалахгүй ("No update!" алдаа)</li>
         </ul>
 
@@ -148,7 +157,7 @@
         <p>
             Бүх мэдээний сэтгэгдлийг нэг дороос удирдахыг хүсвэл
             <strong>Сэтгэгдлүүд</strong> цэсийг ашиглана.
-            Дэлгэрэнгүй: <a href="{{ 'manual-view' | link({'file': 'comments-manual-mn.html'}) }}" title="Comments manual харах">Comments гарын авлага</a>.
+            Дэлгэрэнгүй: <a href="{{ 'manual-view'|link({'file': 'comments-manual-mn.html'}) }}" title="Comments manual харах">Comments гарын авлага</a>.
         </p>
     </div>
 </div>
@@ -160,7 +169,7 @@
         <p>Жагсаалтаас <strong>устгах</strong> (хогийн сав) товчийг дарна.</p>
         <ul>
             <li>Баталгаажуулах цонх гарна (SweetAlert2) - мэдээний зурагтай</li>
-            <li>Зөөлөн устгалт (soft delete) - өгөгдөл хадгалагдана</li>
+            <li>Мэдээллийн сангаас бүрмөсөн устгагдана; нөөц хуулбар нь Trash хүснэгтэд хадгалагдана</li>
             <li><code>system_content_delete</code> эрх шаардлагатай</li>
         </ul>
     </div>

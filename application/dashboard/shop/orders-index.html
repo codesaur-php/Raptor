@@ -6,7 +6,20 @@
     <h3 class="px-2 my-auto fs-5 text-primary text-uppercase">
         <i class="bi bi-cart3"></i> {{ 'orders'|text }}
     </h3>
-    <div class="ms-auto">
+    <div class="ms-auto d-flex align-items-center gap-2">
+        {% if user.is('system_coder') %}
+        <div class="form-check form-switch" title="Email {{ 'notify'|text }}">
+            <input class="form-check-input" type="checkbox" role="switch" id="orderEmailToggle"
+                   {{ order_email_notify ? 'checked' : '' }}>
+            <label class="form-check-label small" for="orderEmailToggle">
+                <i class="bi bi-envelope"></i> Email {{ 'notify'|text }}
+            </label>
+        </div>
+        <button class="btn btn-sm btn-outline-secondary py-0 px-1" type="button" id="orderEmailEdit" title="Email">
+            <small id="orderEmailDisplay">{{ notify_email ?: '-' }}</small>
+            <i class="bi bi-pencil-square"></i>
+        </button>
+        {% endif %}
         <a class="btn btn-outline-secondary shadow-sm" href="{{ 'manual-view'|link({'file': 'orders-manual-' ~ localization.code ~ '.html'}) }}" title="{{ 'manual'|text }}" target="_blank">
             <i class="bi bi-question-circle"></i>
         </a>
@@ -89,13 +102,13 @@
 
         if (!hasFilter && urlParams.size === 0) {
             filterAction.classList.add('btn-secondary');
-            filterAction.innerHTML = '<i class="bi bi-funnel"></i> {{ "filter"|text }}';
+            filterAction.innerHTML = '<i class="bi bi-funnel"></i> {{ 'filter'|text }}';
         } else if (hasFilter && matchesUrl) {
             filterAction.classList.add('btn-dark');
-            filterAction.innerHTML = '<i class="bi bi-funnel-fill"></i> {{ "filter"|text }} <i class="bi bi-x-circle ms-1" data-reset></i>';
+            filterAction.innerHTML = '<i class="bi bi-funnel-fill"></i> {{ 'filter'|text }} <i class="bi bi-x-circle ms-1" data-reset></i>';
         } else {
             filterAction.classList.add('btn-danger');
-            filterAction.innerHTML = '<i class="bi bi-funnel-fill"></i> {{ "filter"|text }} <i class="bi bi-x-circle ms-1" data-reset></i>';
+            filterAction.innerHTML = '<i class="bi bi-funnel-fill"></i> {{ 'filter'|text }} <i class="bi bi-x-circle ms-1" data-reset></i>';
         }
 
         const resetIcon = filterAction.querySelector('[data-reset]');
@@ -123,7 +136,7 @@
     filterAction.addEventListener('click', function (e) {
         e.preventDefault();
         if (filterAction.classList.contains('btn-secondary')) {
-            return NotifyTop('warning', `{{ 'warning'|text|e }}`, '{{ localization.code == "mn" ? "Шүүлтүүрээс ядаж нэгийг сонгоорой" : "Select at least one filter" }}');
+            return Notify('warning', `{{ 'warning'|text|e }}`, '{{ localization.code == "mn" ? "Шүүлтүүрээс ядаж нэгийг сонгоорой" : "Select at least one filter" }}');
         }
         if (filterAction.classList.contains('btn-dark')) return;
         const params = [];
@@ -200,7 +213,7 @@
                 buttons.push(`<a class="btn btn-sm btn-info mt-1 shadow-sm" href="${indexLink}/view/${id}"><i class="bi bi-eye"></i></a>`);
 
                 if (canDelete) {
-                    buttons.push(`<button class="deactivate-order btn btn-sm btn-danger mt-1 shadow-sm" type="button" value="${id}"><i class="bi bi-trash"></i></button>`);
+                    buttons.push(`<button class="delete-order btn btn-sm btn-danger mt-1 shadow-sm" type="button" value="${id}"><i class="bi bi-trash"></i></button>`);
                 }
                 const actions = `<div class="mb-1">${buttons.join(' ')}</div>`;
 
@@ -214,22 +227,22 @@
         }).catch(err => {
             orders.error(err);
         }).finally(() => {
-            /* ========== ЗАХИАЛГА ИДЭВХГҮЙ БОЛГОХ (УСТГАХ) ТОВЧНУУДАД EVENT НЭМЭХ ========== */
-            const deactivates = orders.table.querySelectorAll('.deactivate-order');
-            deactivates.forEach(btn => btn.addEventListener('click', function (e) {
+            /* ========== ЗАХИАЛГА УСТГАХ ТОВЧНУУДЫН EVENT ========== */
+            const deletes = orders.table.querySelectorAll('.delete-order');
+            deletes.forEach(btn => btn.addEventListener('click', function (e) {
                 e.preventDefault();
 
                 const thisRow = btn.closest('tr');
                 if (!thisRow) {
-                    return NotifyTop('warning', `{{ 'error'|text|e }}`, 'Cannot select row!');
+                    return Notify('warning', `{{ 'error'|text|e }}`, 'Cannot select row!');
                 }
 
                 const id = btn.value;
-                const customer = thisRow.children[2].textContent.trim();
+                const customer = thisRow.children[2].querySelector('strong')?.textContent?.trim() ?? '';
 
                 let question = document.documentElement.lang === 'mn'
-                    ? `<p class="text-danger mb-3">Та (${customer}) захиалгыг идэвхгүй болгохдоо итгэлтэй байна уу?</p>`
-                    : `<p class="text-danger mb-3">Are you sure to deactivate the order #${id} (${customer})?</p>`;
+                    ? `<p class="text-danger mb-3">Та (${customer}) захиалгыг устгахдаа итгэлтэй байна уу?</p>`
+                    : `<p class="text-danger mb-3">Are you sure to delete the order #${id} (${customer})?</p>`;
 
                 question = `<i class="bi bi-question-circle text-danger mb-4" style="font-size:3rem"></i><p>${question}</p>`;
 
@@ -244,7 +257,7 @@
                     backdrop: true,
                     preConfirm: () => {
                         return csrfFetch(
-                            `{{ 'order-deactivate'|link }}`,
+                            `{{ 'order-delete'|link }}`,
                             {
                                 method: 'DELETE',
                                 headers: {
@@ -264,7 +277,7 @@
                             thisRow.remove();
                             orders.setReady();
 
-                            NotifyTop('success', `{{ 'success'|text|e }}`, response.message ?? `Order:${id} deactivated`);
+                            Notify('success', `{{ 'success'|text|e }}`, response.message ?? `Order:${id} deleted`);
                         }).catch(error => {
                             Swal.showValidationMessage(error.message);
                         });
@@ -272,5 +285,92 @@
                 });
             }));
         });
+        // Order email мэдэгдэл toggle (ON = email тохируулах, OFF = email хоослох)
+        const orderEmailToggle = document.getElementById('orderEmailToggle');
+        if (orderEmailToggle) {
+            orderEmailToggle.addEventListener('change', function () {
+                if (orderEmailToggle.checked) {
+                    // ON -> email оруулах
+                    orderEmailToggle.checked = false;
+                    Swal.fire({
+                        title: 'Email',
+                        text: `{{ 'email'|text|e('js') }}`,
+                        input: 'email',
+                        inputValue: `{{ settings_email|e('js') }}`,
+                        inputPlaceholder: 'email@example.com',
+                        showCancelButton: true,
+                        confirmButtonText: `{{ 'save'|text|e('js') }}`,
+                        cancelButtonText: `{{ 'cancel'|text|e('js') }}`,
+                        inputValidator: v => !v ? `{{ 'email'|text|e('js') }}` : null
+                    }).then(result => {
+                        if (!result.isConfirmed) return;
+                        csrfFetch(`{{ 'settings-env'|link }}`, {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ name: 'RAPTOR_ORDER_EMAIL_TO', value: result.value, type: 'email' })
+                        }).then(r => r.json()).then(res => {
+                            if (res.status !== 'success') return Notify('danger', res.title, res.message);
+                            document.getElementById('orderEmailDisplay').textContent = res.value;
+                            orderEmailToggle.checked = true;
+                            Notify('success', res.title, res.message);
+                        }).catch(err => Notify('danger', `{{ 'error'|text|e('js') }}`, err.message));
+                    });
+                } else {
+                    // OFF -> email хоослох
+                    csrfFetch(`{{ 'settings-env'|link }}`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name: 'RAPTOR_ORDER_EMAIL_TO', value: '', type: 'email' })
+                    }).then(r => r.json()).then(res => {
+                        if (res.status === 'success') {
+                            document.getElementById('orderEmailDisplay').textContent = '-';
+                            orderEmailToggle.checked = false;
+                            Notify('success', res.title, res.message);
+                        } else {
+                            orderEmailToggle.checked = true;
+                            Notify('danger', res.title ?? `{{ 'error'|text|e('js') }}`, res.message);
+                        }
+                    }).catch(err => {
+                        orderEmailToggle.checked = true;
+                        Notify('danger', `{{ 'error'|text|e('js') }}`, err.message);
+                    });
+                }
+            });
+        }
+
+        const orderEmailEdit = document.getElementById('orderEmailEdit');
+        if (orderEmailEdit) {
+            orderEmailEdit.addEventListener('click', function () {
+                const current = document.getElementById('orderEmailDisplay').textContent.trim();
+                Swal.fire({
+                    title: 'Email',
+                    input: 'email',
+                    inputValue: current === '-' ? '' : current,
+                    inputPlaceholder: 'email@example.com',
+                    showCancelButton: true,
+                    confirmButtonText: `{{ 'save'|text|e('js') }}`,
+                    cancelButtonText: `{{ 'cancel'|text|e('js') }}`
+                }).then(result => {
+                    if (!result.isConfirmed) return;
+                    csrfFetch(`{{ 'settings-env'|link }}`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name: 'RAPTOR_ORDER_EMAIL_TO', value: result.value, type: 'email' })
+                    }).then(r => r.json()).then(res => {
+                        if (res.status === 'success') {
+                            document.getElementById('orderEmailDisplay').textContent = res.value || '-';
+                            if (orderEmailToggle) {
+                                orderEmailToggle.checked = !!res.value;
+                            }
+                            Notify('success', res.title, res.message);
+                        } else {
+                            Notify('danger', res.title ?? `{{ 'error'|text|e('js') }}`, res.message);
+                        }
+                    }).catch(err => {
+                        Notify('danger', `{{ 'error'|text|e('js') }}`, err.message);
+                    });
+                });
+            });
+        }
     });
 </script>

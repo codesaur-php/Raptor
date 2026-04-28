@@ -94,13 +94,13 @@
 
         if (!hasFilter && urlParams.size === 0) {
             filterAction.classList.add('btn-secondary');
-            filterAction.innerHTML = '<i class="bi bi-funnel"></i> {{ "filter"|text }}';
+            filterAction.innerHTML = '<i class="bi bi-funnel"></i> {{ 'filter'|text }}';
         } else if (hasFilter && matchesUrl) {
             filterAction.classList.add('btn-dark');
-            filterAction.innerHTML = '<i class="bi bi-funnel-fill"></i> {{ "filter"|text }} <i class="bi bi-x-circle ms-1" data-reset></i>';
+            filterAction.innerHTML = '<i class="bi bi-funnel-fill"></i> {{ 'filter'|text }} <i class="bi bi-x-circle ms-1" data-reset></i>';
         } else {
             filterAction.classList.add('btn-danger');
-            filterAction.innerHTML = '<i class="bi bi-funnel-fill"></i> {{ "filter"|text }} <i class="bi bi-x-circle ms-1" data-reset></i>';
+            filterAction.innerHTML = '<i class="bi bi-funnel-fill"></i> {{ 'filter'|text }} <i class="bi bi-x-circle ms-1" data-reset></i>';
         }
 
         const resetIcon = filterAction.querySelector('[data-reset]');
@@ -126,7 +126,7 @@
     filterAction.addEventListener('click', function (e) {
         e.preventDefault();
         if (filterAction.classList.contains('btn-secondary')) {
-            return NotifyTop('warning', `{{ 'warning'|text|e }}`, `{{ 'select-at-least-one-filter'|text|e('js') }}`);
+            return Notify('warning', `{{ 'warning'|text|e }}`, `{{ 'select-at-least-one-filter'|text|e('js') }}`);
         }
         if (filterAction.classList.contains('btn-dark')) return;
         const params = [];
@@ -205,7 +205,7 @@
                     buttons.push(`<a class="btn btn-sm btn-primary mt-1 shadow-sm" href="${indexLink}/${page.id}?from=index"><i class="bi bi-pencil-square"></i></a>`);
                 }
                 if (canDelete) {
-                    buttons.push(`<button class="deactivate-page btn btn-sm btn-danger mt-1 shadow-sm" type="button" value="${page.id}"><i class="bi bi-trash"></i></button>`);
+                    buttons.push(`<button class="delete-page btn btn-sm btn-danger mt-1 shadow-sm" type="button" value="${page.id}"><i class="bi bi-trash"></i></button>`);
                 }
                 const actions = `<div class="mb-1">${buttons.join(' ')}</div>`;
 
@@ -248,7 +248,7 @@
                         }
                     }).then(result => {
                         if (result.isConfirmed) {
-                            NotifyTop('success', `{{ 'success'|text|e }}`, result.value.message);
+                            Notify('success', `{{ 'success'|text|e }}`, result.value.message);
                             setTimeout(() => window.location.reload(), 1000);
                         }
                     });
@@ -265,17 +265,17 @@
                 ajaxModal(a);
             }));
 
-            const deactivates = pages.table.querySelectorAll('.deactivate-page');
-            deactivates.forEach(btn => btn.addEventListener('click', function (e) {
+            const deletes = pages.table.querySelectorAll('.delete-page');
+            deletes.forEach(btn => btn.addEventListener('click', function (e) {
                 e.preventDefault();
 
                 const thisRow = btn.closest('tr');
                 if (!thisRow) {
-                    return NotifyTop('warning', `{{ 'error'|text|e }}`, 'Cannot select row!');
+                    return Notify('warning', `{{ 'error'|text|e }}`, 'Cannot select row!');
                 }
                 const id = btn.value;
                 const title = thisRow.children[3].textContent.replace(/<\/?[^>]+(>|$)/g, '');
-                let question = `<h5>${title}</h5><p class="text-danger mb-3">{{ 'confirm-deactivate'|text|e('js') }}?</p>`;
+                let question = `<h5>${title}</h5><p class="text-danger mb-3">{{ 'confirm-delete'|text|e('js') }}?</p>`;
 
                 let src = '';
                 const photo = thisRow.children[2].querySelector('img');
@@ -297,7 +297,7 @@
                     backdrop: true,
                     preConfirm: () => {
                         return csrfFetch(
-                            `{{ 'page-deactivate'|link }}`,
+                            `{{ 'page-delete'|link }}`,
                             {
                                 method: 'DELETE',
                                 headers: {
@@ -317,7 +317,7 @@
                             thisRow.remove();
                             pages.setReady();
 
-                            NotifyTop('success', `{{ 'success'|text|e }}`, response.message ?? `Page:${id} deactivated`);
+                            Notify('success', `{{ 'success'|text|e }}`, response.message ?? `Page:${id} deleted`);
                         }).catch(error => {
                             Swal.showValidationMessage(error.message);
                         });

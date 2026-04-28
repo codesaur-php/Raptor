@@ -22,7 +22,7 @@ abstract class IntegrationTestCase extends RaptorTestCase
         }
 
         $host     = $_ENV['RAPTOR_DB_HOST'] ?? 'localhost';
-        $dbname   = $_ENV['RAPTOR_DB_NAME'] ?? 'raptor12_test';
+        $dbname   = $_ENV['RAPTOR_DB_NAME'] ?? 'raptor_test';
         $username = $_ENV['RAPTOR_DB_USERNAME'] ?? 'root';
         $password = $_ENV['RAPTOR_DB_PASSWORD'] ?? '';
         $charset  = $_ENV['RAPTOR_DB_CHARSET'] ?? 'utf8mb4';

@@ -83,6 +83,7 @@ class TextInitial
         $model->insert(['keyword' => 'confirm-open-file', 'type' => 'sys-defined'], ['mn' => ['text' => 'Та энэ файлыг нээхдээ итгэлтэй байна уу?'], 'en' => ['text' => 'Are you sure you want to open this file?']]);
         $model->insert(['keyword' => 'contact', 'type' => 'sys-defined'], ['mn' => ['text' => 'Холбоо барих'], 'en' => ['text' => 'Contact']]);
         $model->insert(['keyword' => 'contact-us', 'type' => 'sys-defined'], ['mn' => ['text' => 'Бидэнтэй холбогдох'], 'en' => ['text' => 'Contact Us']]);
+        $model->insert(['keyword' => 'contact-email-notify', 'type' => 'sys-defined'], ['mn' => ['text' => 'Мессежийг и-мэйлээр мэдэгдэх'], 'en' => ['text' => 'Notify contact messages by email']]);
         $model->insert(['keyword' => 'contacted-by-email', 'type' => 'sys-defined'], ['mn' => ['text' => 'Имэйлээр холбогдсон'], 'en' => ['text' => 'Contacted by email']]);
         $model->insert(['keyword' => 'contacted-by-phone', 'type' => 'sys-defined'], ['mn' => ['text' => 'Утсаар холбогдсон'], 'en' => ['text' => 'Contacted by phone']]);
         $model->insert(['keyword' => 'content', 'type' => 'sys-defined'], ['mn' => ['text' => 'Агуулга'], 'en' => ['text' => 'Content']]);
@@ -143,6 +144,7 @@ class TextInitial
         $model->insert(['keyword' => 'group', 'type' => 'sys-defined'], ['mn' => ['text' => 'Бүлэг'], 'en' => ['text' => 'Group']]);
 
         $model->insert(['keyword' => 'home', 'type' => 'sys-defined'], ['mn' => ['text' => 'Нүүр'], 'en' => ['text' => 'Home']]);
+        $model->insert(['keyword' => 'html-tag-broken', 'type' => 'sys-defined'], ['mn' => ['text' => 'HTML контентын tag бүтэц эвдэрсэн байна!'], 'en' => ['text' => 'HTML content has broken tags!']]);
 
         $model->insert(['keyword' => 'image', 'type' => 'sys-defined'], ['mn' => ['text' => 'Зураг'], 'en' => ['text' => 'Image']]);
         $model->insert(['keyword' => 'in-progress', 'type' => 'sys-defined'], ['mn' => ['text' => 'Хийгдэж буй'], 'en' => ['text' => 'In progress']]);
@@ -184,6 +186,7 @@ class TextInitial
         $model->insert(['keyword' => 'news-archive', 'type' => 'sys-defined'], ['mn' => ['text' => 'Мэдээний архив'], 'en' => ['text' => 'News Archive']]);
 
         $model->insert(['keyword' => 'no', 'type' => 'sys-defined'], ['mn' => ['text' => 'Үгүй'], 'en' => ['text' => 'No']]);
+        $model->insert(['keyword' => 'notify', 'type' => 'sys-defined'], ['mn' => ['text' => 'мэдэгдэл'], 'en' => ['text' => 'notify']]);
         $model->insert(['keyword' => 'no-change', 'type' => 'sys-defined'], ['mn' => ['text' => 'Өөрчлөхгүй'], 'en' => ['text' => 'No change']]);
         $model->insert(['keyword' => 'no-data-found', 'type' => 'sys-defined'], ['mn' => ['text' => 'Мэдээлэл олдсонгүй'], 'en' => ['text' => 'No data found']]);
         $model->insert(['keyword' => 'no-email', 'type' => 'sys-defined'], ['mn' => ['text' => 'Имэйл байхгүй'], 'en' => ['text' => 'No email']]);
@@ -197,6 +200,8 @@ class TextInitial
         $model->insert(['keyword' => 'optional', 'type' => 'sys-defined'], ['mn' => ['text' => 'Заавал биш'], 'en' => ['text' => 'Optional']]);
         $model->insert(['keyword' => 'optimize-images', 'type' => 'sys-defined'], ['mn' => ['text' => 'Зураг optimize хийх'], 'en' => ['text' => 'Optimize images']]);
         $model->insert(['keyword' => 'options', 'type' => 'sys-defined'], ['mn' => ['text' => 'Сонголтууд'], 'en' => ['text' => 'Options']]);
+        $model->insert(['keyword' => 'off', 'type' => 'sys-defined'], ['mn' => ['text' => 'Унтраасан'], 'en' => ['text' => 'Off']]);
+        $model->insert(['keyword' => 'on', 'type' => 'sys-defined'], ['mn' => ['text' => 'Асаасан'], 'en' => ['text' => 'On']]);
         $model->insert(['keyword' => 'order', 'type' => 'sys-defined'], ['mn' => ['text' => 'Захиалга'], 'en' => ['text' => 'Order']]);
         $model->insert(['keyword' => 'order-now', 'type' => 'sys-defined'], ['mn' => ['text' => 'Захиалах'], 'en' => ['text' => 'Order Now']]);
         $model->insert(['keyword' => 'order-product', 'type' => 'sys-defined'], ['mn' => ['text' => 'Бүтээгдэхүүн захиалах'], 'en' => ['text' => 'Order Product']]);

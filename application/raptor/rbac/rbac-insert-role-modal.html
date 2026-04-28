@@ -90,13 +90,13 @@
          * HTML5 validation
          * Submit -> csrfFetch() ашиглан POST хийх
          * Success -> хуудсыг refresh
-         * Error -> NotifyTop() ашиглан мэдэгдэл өгөх
+         * Error -> Notify() ашиглан мэдэгдэл өгөх
     */
 
     const formInsert = document.querySelector('form#rbac_role_insert');
     if (!formInsert) {
         /* Form олдохгүй бол хэрэглэгчид мэдэгдэнэ */
-        NotifyTop('danger', `{{ 'error'|text|e }}`, 'Form not found!');
+        Notify('danger', `{{ 'error'|text|e }}`, 'Form not found!');
     } else {
         /* Submit товч -> requestSubmit() ашиглана */
         const submitter = document.querySelector('button.submit-new-role');
@@ -114,7 +114,7 @@
             this.classList.add('was-validated');
             if (!_valid) {
                 event.stopPropagation();
-                return NotifyTop(
+                return Notify(
                     'danger',
                     `{{ 'error'|text|e }}`,
                     `{{ 'u-have-some-form-errors'|text|e }}`
@@ -147,14 +147,14 @@
                 /* Role амжилттай бүртгэгдсэн -> хуудсыг refresh */
                 window.location.reload();
 
-                NotifyTop(
+                Notify(
                     response.type ?? 'success',
                     response.title ?? `{{ 'success'|text|e }}`,
                     response.message ?? 'Role created'
                 );
             }).catch(error => {
                 /* Алдааны мэдэгдэл */
-                NotifyTop('danger', `{{ 'error'|text|e }}`, error.message);
+                Notify('danger', `{{ 'error'|text|e }}`, error.message);
                 submitter.growNstop();
             });
         });

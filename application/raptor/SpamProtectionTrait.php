@@ -95,14 +95,18 @@ trait SpamProtectionTrait
             throw new \Exception('Invalid request', 400);
         }
 
-        $response = (new \codesaur\Http\Client\CurlClient())->request(
+        $response = (new \codesaur\Http\Client\CurlClient())->send(
             'https://challenges.cloudflare.com/turnstile/v0/siteverify',
             'POST',
             \http_build_query(['secret' => $secret, 'response' => $token]),
             [\CURLOPT_HTTPHEADER => ['Content-Type: application/x-www-form-urlencoded']]
         );
 
-        $result = \json_decode($response, true);
+        if ($response->isError()) {
+            throw new \Exception('Invalid request', 403);
+        }
+
+        $result = $response->json();
         if (empty($result['success'])) {
             throw new \Exception('Invalid request', 403);
         }

@@ -70,7 +70,12 @@ class BadgeControllerTest extends RaptorTestCase
             'text-create', 'reference-create', 'store', 'signup-approve',
             'rbac-create-role', 'rbac-create-permission', 'template-menu-create'];
 
+        // 'trash' module-ийн 'store' нь үнэндээ "устгасан бичлэг хогийн савд оров"
+        // гэсэн утгатай тул create биш, улаанаар тэмдэглэгдсэн (зориудаар).
         foreach (BadgeController::BADGE_MAP as $logTable => $actions) {
+            if ($logTable === 'trash') {
+                continue;
+            }
             foreach ($actions as $action => [$module, $color]) {
                 if (in_array($action, $createActions, true)) {
                     $this->assertEquals(

@@ -2,21 +2,21 @@
 
 namespace Raptor\Mail;
 
-use GuzzleHttp\Client;
-use Brevo\Client\Configuration;
-use Brevo\Client\Api\TransactionalEmailsApi;
-use Brevo\Client\Model\SendSmtpEmail;
-use PHPMailer\PHPMailer\PHPMailer;
 use Psr\Log\LogLevel;
+
+use codesaur\Http\Client\JSONClient;
 
 use Raptor\Log\Logger;
 
 /**
  * Raptor Framework-ийн и-мэйл илгээх сервис.
  *
- * И-мэйл илгээх хоёр аргыг дэмждэг:
- *   - send()     - Brevo (SendInBlue) Transactional Email API ашиглан илгээнэ
- *   - sendSMTP() - PHPMailer ашиглан SMTP серверээр дамжуулан илгээнэ
+ * RAPTOR_MAIL_TRANSPORT .env тохиргоогоор гурван аргаас сонгоно:
+ *   - send()                   - .env-ээс transport сонгон илгээнэ (brevo/smtp/mail)
+ *   - sendBrevoTransactional() - Brevo Transactional Email API (JSONClient)
+ *   - sendSMTP()               - stream_socket_client ашиглан SMTP серверээр илгээнэ
+ *   - sendMail()               - PHP mail() функц, cPanel/VPS серверийн sendmail/postfix
+ *                                (Mail эцэг класст тодорхойлогдсон)
  *
  * Онцлогууд:
  *   - .env файлаас илгээгч (From), хариу хүлээн авагч (Reply-To) тохиргоог автомат уншина
@@ -24,8 +24,9 @@ use Raptor\Log\Logger;
  *   - send() дуудагдах бүрд илгээлтийг `mailer` хүснэгтэд бүртгэнэ (амжилттай ба алдаатай аль аль нь)
  *
  * Attachment ялгаа:
- *   - Brevo API: URL болон base64 content дэмждэг, локал файл дэмжигдэхгүй
- *   - SMTP:     Локал файл болон base64 content дэмждэг, URL дэмжигдэхгүй
+ *   - Brevo API:  URL болон base64 content дэмждэг, локал файл дэмжигдэхгүй
+ *   - SMTP:       Локал файл болон base64 content дэмждэг, URL дэмжигдэхгүй
+ *   - sendMail(): Бүх төрөл дэмждэг (path, URL, content) - Mail эцэг класс хариуцна
  *
  * .env хувьсагчууд:
  *   RAPTOR_MAIL_FROM           - Илгээгч и-мэйл хаяг (заавал)
@@ -33,13 +34,19 @@ use Raptor\Log\Logger;
  *   RAPTOR_MAIL_REPLY_TO       - Хариу авах и-мэйл
  *   RAPTOR_MAIL_REPLY_TO_NAME  - Хариу авах нэр
  *   RAPTOR_MAIL_BREVO_APIKEY   - Brevo API түлхүүр (send() ашиглахад заавал)
+ *   RAPTOR_MAIL_TRANSPORT      - Илгээх арга: 'brevo' (анхдагч), 'smtp', 'mail'
+ *   RAPTOR_SMTP_HOST           - SMTP серверийн хаяг (transport=smtp үед заавал)
+ *   RAPTOR_SMTP_PORT           - SMTP порт (анхдагч: 465)
+ *   RAPTOR_SMTP_USERNAME       - SMTP нэвтрэх нэр
+ *   RAPTOR_SMTP_PASSWORD       - SMTP нууц үг
+ *   RAPTOR_SMTP_SECURE         - Шифрлэлт: 'ssl' (анхдагч) эсвэл 'tls'
  *
  * @package Raptor\Mail
  */
 class Mailer extends \codesaur\Http\Client\Mail
 {
     use \codesaur\DataObject\PDOTrait;
-    
+
     /**
      * Mailer constructor.
      *
@@ -57,13 +64,13 @@ class Mailer extends \codesaur\Http\Client\Mail
         ?string $replyTo = null, ?string $replyToName = null
     ) {
         $this->setInstance($pdo);
-        
+
         // Илгээгчийг тохируулах
         $this->setFrom(
             $from ?? $_ENV['RAPTOR_MAIL_FROM'] ?? '',
             $fromName ?? $_ENV['RAPTOR_MAIL_FROM_NAME'] ?? ''
         );
-        
+
         // Reply-To (хэрэв өгөгдсөн бол)
         if (!empty($replyTo ?? $_ENV['RAPTOR_MAIL_REPLY_TO'] ?? '')) {
             $this->setReplyTo(
@@ -72,7 +79,7 @@ class Mailer extends \codesaur\Http\Client\Mail
             );
         }
     }
-    
+
     /**
      * Email ачаалах тохиргоо (subject, message, recipients, attachments).
      *
@@ -94,37 +101,52 @@ class Mailer extends \codesaur\Http\Client\Mail
         $this->setSubject($subject);
         $this->setMessage($message);
         $this->targetTo($to, $toName ?? '');
-        
+
         if (\is_array($attachments)) {
             foreach ($attachments as $attachment) {
                 $this->addAttachment($attachment);
             }
         }
-        
+
         return $this;
     }
-    
+
     /**
      * И-мэйл илгээх үндсэн функц.
      *
-     * Алхамууд:
-     * -------------------------
-     * 1) .env -> RAPTOR_MAIL_BREVO_APIKEY шалгана
-     * 2) Brevo API ашиглан transactional e-mail илгээнэ
-     * 3) Амжилттай эсвэл алдаа гарсан нөхцөл бүхэнд logger бичнэ
+     * RAPTOR_MAIL_TRANSPORT .env тохиргоогоор илгээх аргыг сонгоно:
+     *   - 'brevo' (анхдагч) - Brevo Transactional Email API
+     *   - 'smtp'  - SMTP сервер (RAPTOR_SMTP_* тохиргоо шаардана)
+     *   - 'mail'  - PHP mail() функц (серверийн sendmail/postfix)
      *
      * @return bool Илгээсэн эсэх
      */
     public function send(): bool
     {
         try {
-            if (empty($_ENV['RAPTOR_MAIL_BREVO_APIKEY'] ?? '')) {
-                throw new \Exception('Mailer BREVO API KEY not found from environment variables!');
-            }
-
-            $result = $this->sendBrevoTransactional($_ENV['RAPTOR_MAIL_BREVO_APIKEY']);
-            if (empty($result)) {
-                throw new \RuntimeException('Email sending failed!');
+            $transport = \strtolower($_ENV['RAPTOR_MAIL_TRANSPORT'] ?? 'brevo');
+            switch ($transport) {
+                case 'smtp':
+                    $this->sendSMTP(
+                        $_ENV['RAPTOR_SMTP_HOST'] ?? throw new \Exception('RAPTOR_SMTP_HOST is not set!'),
+                        (int) ($_ENV['RAPTOR_SMTP_PORT'] ?? 465),
+                        $_ENV['RAPTOR_SMTP_USERNAME'] ?? '',
+                        $_ENV['RAPTOR_SMTP_PASSWORD'] ?? '',
+                        $_ENV['RAPTOR_SMTP_SECURE'] ?? 'ssl'
+                    );
+                    break;
+                case 'mail':
+                    $this->sendMail();
+                    break;
+                default: // brevo
+                    if (empty($_ENV['RAPTOR_MAIL_BREVO_APIKEY'] ?? '')) {
+                        throw new \Exception('RAPTOR_MAIL_BREVO_APIKEY is not set!');
+                    }
+                    $result = $this->sendBrevoTransactional($_ENV['RAPTOR_MAIL_BREVO_APIKEY']);
+                    if (empty($result) || isset($result['error'])) {
+                        throw new \RuntimeException($result['error']['message'] ?? 'Email sending failed!');
+                    }
+                    break;
             }
             return true;
         } catch (\Throwable $err) {
@@ -133,166 +155,302 @@ class Mailer extends \codesaur\Http\Client\Mail
             }
             return false;
         } finally {
-            $context = ['action' => 'mail-send'];
-            $context['To'] = $this->getRecipients('To');
-            $cc = $this->getRecipients('Cc');
-            if (!empty($cc)) {
-                $context['Cc'] = $cc;
+            try {
+                $context = ['action' => 'mail-send'];
+                $context['To'] = $this->getRecipients('To');
+                $cc = $this->getRecipients('Cc');
+                if (!empty($cc)) {
+                    $context['Cc'] = $cc;
+                }
+                $bcc = $this->getRecipients('Bcc');
+                if (!empty($bcc)) {
+                    $context['Bcc'] = $bcc;
+                }
+                if (isset($err) && $err instanceof \Throwable) {
+                    $level = LogLevel::ERROR;
+                    $context['status'] = 'error';
+                    $context['code'] = $err->getCode();
+                    $context['message'] = $err->getMessage();
+                } else {
+                    $level = LogLevel::NOTICE;
+                    $context['status'] = 'success';
+                    $context['message'] = 'Email successfully sent to destination';
+                }
+                $context['remote_addr'] = $_SERVER['REMOTE_ADDR'] ?? '';
+                $logger = new Logger($this->pdo);
+                $logger->setTable('mailer');
+                $toEmail = \reset($context['To'])['email'] ?? '';
+                $mailSubject = $this->subject ?? '';
+                $logger->log($level, "[$toEmail] - $mailSubject", $context);
+            } catch (\Throwable $logErr) {
+                if (CODESAUR_DEVELOPMENT) {
+                    \error_log('Mailer log failed: ' . $logErr->getMessage());
+                }
             }
-            $bcc = $this->getRecipients('Bcc');
-            if (!empty($bcc)) {
-                $context['Bcc'] = $bcc;
-            }
-            if (isset($err) && $err instanceof \Throwable) {
-                $level = LogLevel::ERROR;
-                $context['status'] = 'error';
-                $context['code'] = $err->getCode();
-                $context['message'] = $err->getMessage();
-            } else {
-                $level = LogLevel::NOTICE;
-                $context['status'] = 'success';
-                $context['message'] = 'Email successfully sent to destination';
-            }
-            $context['remote_addr'] = $_SERVER['REMOTE_ADDR'] ?? '';
-            $logger = new Logger($this->pdo);
-            $logger->setTable('mailer');
-            $toEmail = \reset($context['To'])['email'] ?? '';            
-            $mailSubject = $this->subject ?? '';
-            $logger->log($level, "[$toEmail] - $mailSubject", $context);
         }
     }
-    
+
     /**
-     * PHPMailer ашиглан SMTP-ээр и-мэйл илгээх.
+     * SMTP серверээр и-мэйл илгээх.
      *
-     * SMTP серверээр дамжуулан шууд илгээх боломж олгоно.
-     * Attachment-д локал файл (path) болон base64 контент (content) дэмждэг.
-     * URL хавсралт дэмжигдэхгүй - PHPMailer нь HTTP client биш.
+     * stream_socket_client ашиглан SMTP серверт шууд холбогдон илгээнэ.
      *
      * @param string $host         SMTP серверийн хаяг (жнь: smtp.gmail.com)
      * @param int    $port         SMTP порт (25, 465, 587)
      * @param string $username     SMTP нэвтрэх нэр
      * @param string $password     SMTP нууц үг
      * @param string $smtp_secure  Шифрлэлтийн төрөл: 'ssl' эсвэл 'tls'
-     * @param array  $smtp_options PHPMailer SMTPOptions тохиргоо
      *
      * @return bool Амжилттай илгээсэн эсэх
-     * @throws \Exception URL attachment ашиглахыг оролдсон үед
+     * @throws \RuntimeException SMTP холболт эсвэл илгээх явцад алдаа гарвал
      */
-    public function sendSMTP(
-        $host, $port, $username, $password, 
-        $smtp_secure = 'ssl', 
-        $smtp_options = [
-            'ssl' => [
-                'verify_peer' => false,
-                'verify_peer_name' => false,
-                'allow_self_signed' => true
-            ]
-        ]
-    ): bool {   
+    protected function sendSMTP(
+        string $host,
+        int $port,
+        string $username,
+        string $password,
+        string $smtp_secure = 'ssl'
+    ): bool {
         $this->assertValues();
 
-        $phpMailer = new PHPMailer(CODESAUR_DEVELOPMENT ? true : null);
-        $phpMailer->isSMTP();
-        $phpMailer->CharSet = 'UTF-8';
-        $phpMailer->SMTPAuth = true;
-        $phpMailer->SMTPSecure = $smtp_secure;
-        $phpMailer->Host = $host;
-        $phpMailer->Port = $port;
-        $phpMailer->Username = $username;
-        $phpMailer->Password = $password;
-        $phpMailer->setFrom($this->from, $this->fromName);
-        if (empty($this->replyTo)) {
-            $replyTo = $this->from;
-            $replyToName = $this->fromName;
-        } else {
-            $replyTo = $this->replyTo;
-            $replyToName = $this->replyToName;
-        }
-        $phpMailer->addReplyTo($replyTo, $replyToName);
-        $phpMailer->SMTPOptions = $smtp_options;
-        $phpMailer->msgHTML($this->message);
-        $phpMailer->Subject = $this->subject;
-        foreach ($this->getRecipients('To') as $to) {
-            $phpMailer->addAddress($to['email'], $to['name'] ?? '');
-        }
-        foreach ($this->getRecipients('Cc') as $cc) {
-            $phpMailer->addCC($cc['email'], $cc['name'] ?? '');
-        }
-        foreach ($this->getRecipients('Bcc') as $bcc) {
-            $phpMailer->addBCC($bcc['email'], $bcc['name'] ?? '');
+        // SSL/TLS холболт
+        $context = \stream_context_create(['ssl' => [
+            'verify_peer' => false,
+            'verify_peer_name' => false,
+            'allow_self_signed' => true
+        ]]);
+        $prefix = $smtp_secure === 'ssl' ? 'ssl://' : 'tcp://';
+        $socket = @\stream_socket_client(
+            $prefix . $host . ':' . $port,
+            $errno, $errstr, 30,
+            \STREAM_CLIENT_CONNECT, $context
+        );
+        if (!$socket) {
+            throw new \RuntimeException("SMTP connection failed: $errstr ($errno)");
         }
 
-        foreach ($this->getAttachments() as $attachment) {
-            if (isset($attachment['path'])) {
-                $phpMailer->addAttachment($attachment['path'], $attachment['name']);
-            } elseif (isset($attachment['url'])) {
-                throw new \Exception('Explicitly *does not* support passing URLs; PHPMailer is not an HTTP client.');
-            } elseif (isset($attachment['content'])) {
-                $phpMailer->addStringAttachment($attachment['content'], $attachment['name']);
+        try {
+            $this->smtpRead($socket);
+            $this->smtpCommand($socket, "EHLO " . \gethostname());
+
+            // STARTTLS (port 587)
+            if ($smtp_secure === 'tls') {
+                $this->smtpCommand($socket, "STARTTLS", 220);
+                \stream_socket_enable_crypto($socket, true, \STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT);
+                $this->smtpCommand($socket, "EHLO " . \gethostname());
             }
-        }
 
-        return $phpMailer->send();
+            // AUTH LOGIN
+            $this->smtpCommand($socket, "AUTH LOGIN", 334);
+            $this->smtpCommand($socket, \base64_encode($username), 334);
+            $this->smtpCommand($socket, \base64_encode($password), 235);
+
+            // Envelope
+            $this->smtpCommand($socket, "MAIL FROM:<{$this->from}>");
+            foreach (['To', 'Cc', 'Bcc'] as $type) {
+                foreach ($this->getRecipients($type) as $r) {
+                    $this->smtpCommand($socket, "RCPT TO:<{$r['email']}>");
+                }
+            }
+
+            // DATA - MIME message
+            $this->smtpCommand($socket, "DATA", 354);
+            $mime = $this->buildMimeMessage();
+            // SMTP: мөр бүрийн эхний цэгийг давхар цэгээр солино (dot-stuffing)
+            $mime = \str_replace("\r\n.", "\r\n..", $mime);
+            \fwrite($socket, $mime . "\r\n.\r\n");
+            $this->smtpExpect($socket, 250);
+
+            $this->smtpCommand($socket, "QUIT", 221);
+            return true;
+        } finally {
+            \fclose($socket);
+        }
     }
-    
+
     /**
      * Brevo Transactional Email API ашиглаж илгээх.
      *
      * @param string $apiKey Brevo API key (.env -> RAPTOR_MAIL_BREVO_APIKEY)
      *
      * @return array API response
-     * @throws Exception Brevo local file attachment дэмждэггүй
+     * @throws \Exception Brevo local file attachment дэмжигдэхгүй
      */
-    protected function sendBrevoTransactional($apiKey): array
+    protected function sendBrevoTransactional(string $apiKey): array
     {
         $this->assertValues();
-        
-        $credentials = Configuration::getDefaultConfiguration()->setApiKey(
-            'api-key', $apiKey // your Brevo API key
-        );
-        $apiInstance = new TransactionalEmailsApi(new Client(), $credentials);
-        $options = [
+
+        $payload = [
             'subject' => $this->subject,
             'htmlContent' => $this->message,
             'to' => $this->getRecipients('To')
         ];
+
         $cc = $this->getRecipients('Cc');
         if (!empty($cc)) {
-            $options['cc'] = $cc;
+            $payload['cc'] = $cc;
         }
         $bcc = $this->getRecipients('Bcc');
         if (!empty($bcc)) {
-            $options['bcc'] = $bcc;
-        }        
-        if (!empty($this->fromName)) {
-            $options['sender'] = ['name' => $this->fromName, 'email' => $this->from];
-        } else {
-            $options['sender'] = ['email' => $this->from];
+            $payload['bcc'] = $bcc;
         }
+
+        $payload['sender'] = !empty($this->fromName)
+            ? ['name' => $this->fromName, 'email' => $this->from]
+            : ['email' => $this->from];
+
         if (!empty($this->replyTo)) {
-            if (!empty($this->replyToName)) {
-                $options['replyTo'] = ['name' => $this->replyToName, 'email' => $this->replyTo];
-            } else {
-                $options['replyTo'] = ['email' => $this->replyTo];
-            }
+            $payload['replyTo'] = !empty($this->replyToName)
+                ? ['name' => $this->replyToName, 'email' => $this->replyTo]
+                : ['email' => $this->replyTo];
         }
-        
+
         $attachments = [];
         foreach ($this->getAttachments() as $attachment) {
             if (isset($attachment['path'])) {
-                throw new \Exception("Brevo's SendSmtpEmail doesn't support local file!");
+                throw new \Exception("Brevo API does not support local file attachments!");
             } elseif (isset($attachment['url'])) {
                 $attachments[] = ['url' => $attachment['url'], 'name' => $attachment['name']];
             } elseif (isset($attachment['content'])) {
-                $attachments[] = ['content' => $attachment['content'], 'name' => $attachment['name']];
+                $attachments[] = ['content' => \base64_encode($attachment['content']), 'name' => $attachment['name']];
             }
         }
         if (!empty($attachments)) {
-            $options['attachment'] = $attachments;
+            $payload['attachment'] = $attachments;
         }
-        
-        $sendSmtpEmail = new SendSmtpEmail($options);
-        return (array) $apiInstance->sendTransacEmail($sendSmtpEmail);
+
+        return (new JSONClient())->post(
+            'https://api.brevo.com/v3/smtp/email',
+            $payload,
+            ['api-key' => $apiKey]
+        );
+    }
+
+    // ==================== SMTP HELPERS ====================
+
+    /**
+     * SMTP серверээс хариу унших.
+     */
+    private function smtpRead($socket): string
+    {
+        $response = '';
+        while ($line = \fgets($socket, 512)) {
+            $response .= $line;
+            // 4-р тэмдэгт нь зай бол сүүлийн мөр (RFC 5321)
+            if (isset($line[3]) && $line[3] === ' ') {
+                break;
+            }
+        }
+        return $response;
+    }
+
+    /**
+     * SMTP команд илгээж, хариу шалгах.
+     */
+    private function smtpCommand($socket, string $command, int $expect = 250): string
+    {
+        \fwrite($socket, $command . "\r\n");
+        return $this->smtpExpect($socket, $expect);
+    }
+
+    /**
+     * SMTP хариуны код шалгах.
+     */
+    private function smtpExpect($socket, int $expect): string
+    {
+        $response = $this->smtpRead($socket);
+        $code = (int) \substr($response, 0, 3);
+        if ($code !== $expect) {
+            throw new \RuntimeException("SMTP error (expected $expect, got $code): $response");
+        }
+        return $response;
+    }
+
+    /**
+     * MIME форматтай имэйл мессеж бүтээх (SMTP DATA-д ашиглана).
+     */
+    private function buildMimeMessage(): string
+    {
+        $boundary = 'Boundary_' . \md5(\uniqid());
+        $headers = [];
+        $headers[] = "From: " . $this->formatAddress($this->from, $this->fromName);
+        $headers[] = "Subject: =?UTF-8?B?" . \base64_encode($this->subject) . "?=";
+        $headers[] = "MIME-Version: 1.0";
+        $headers[] = "Date: " . \date('r');
+
+        // To
+        $toList = [];
+        foreach ($this->getRecipients('To') as $r) {
+            $toList[] = $this->formatAddress($r['email'], $r['name'] ?? '');
+        }
+        $headers[] = "To: " . \implode(', ', $toList);
+
+        // Cc
+        $ccList = [];
+        foreach ($this->getRecipients('Cc') as $r) {
+            $ccList[] = $this->formatAddress($r['email'], $r['name'] ?? '');
+        }
+        if (!empty($ccList)) {
+            $headers[] = "Cc: " . \implode(', ', $ccList);
+        }
+
+        // Reply-To
+        if (!empty($this->replyTo)) {
+            $headers[] = "Reply-To: " . $this->formatAddress($this->replyTo, $this->replyToName);
+        }
+
+        $attachments = $this->getAttachments();
+        if (empty($attachments)) {
+            $headers[] = "Content-Type: text/html; charset=UTF-8";
+            $headers[] = "Content-Transfer-Encoding: base64";
+            return \implode("\r\n", $headers) . "\r\n\r\n" . \chunk_split(\base64_encode($this->message));
+        }
+
+        $headers[] = "Content-Type: multipart/mixed; boundary=\"$boundary\"";
+        $body = \implode("\r\n", $headers) . "\r\n\r\n";
+
+        // HTML body
+        $body .= "--$boundary\r\n";
+        $body .= "Content-Type: text/html; charset=UTF-8\r\n";
+        $body .= "Content-Transfer-Encoding: base64\r\n\r\n";
+        $body .= \chunk_split(\base64_encode($this->message)) . "\r\n";
+
+        // Attachments
+        foreach ($attachments as $att) {
+            if (isset($att['url'])) {
+                throw new \RuntimeException('SMTP does not support URL attachments');
+            }
+            if (isset($att['path'])) {
+                $data = \file_get_contents($att['path']);
+                $mime = \mime_content_type($att['path']);
+            } elseif (isset($att['content'])) {
+                $data = $att['content'];
+                $finfo = new \finfo(\FILEINFO_MIME_TYPE);
+                $mime = $finfo->buffer($data);
+            } else {
+                continue;
+            }
+            $name = "=?UTF-8?B?" . \base64_encode($att['name']) . "?=";
+            $body .= "--$boundary\r\n";
+            $body .= "Content-Type: $mime; name=\"$name\"\r\n";
+            $body .= "Content-Transfer-Encoding: base64\r\n";
+            $body .= "Content-Disposition: attachment; filename=\"$name\"\r\n\r\n";
+            $body .= \chunk_split(\base64_encode($data)) . "\r\n";
+        }
+
+        $body .= "--$boundary--";
+        return $body;
+    }
+
+    /**
+     * Имэйл хаягийг MIME форматаар бичих.
+     */
+    private function formatAddress(string $email, string $name = ''): string
+    {
+        if (empty($name)) {
+            return $email;
+        }
+        $encoded = "=?UTF-8?B?" . \base64_encode($name) . "?=";
+        return "$encoded <$email>";
     }
 }

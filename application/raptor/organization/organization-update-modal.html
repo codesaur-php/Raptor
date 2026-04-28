@@ -2,7 +2,7 @@
     ORGANIZATION UPDATE MODAL
     ------------------------------------------------------------
     Энэ modal нь байгууллагын бүртгэлд засвар хийх боломж олгодог.
-    Форм нь PUT дүрмээр ажиллана (Twig -> Router нь correct mapping хийдэг).
+    Форм нь PUT дүрмээр ажиллана.
 
     Агуулга:
       - Parent organization сонгох
@@ -246,7 +246,7 @@ logo.addEventListener('change', function (e) {
 /* FORM SUBMISSION (fetch API) */
 const formUpdate = document.querySelector('form#organization_update');
 if (!formUpdate) {
-    NotifyTop('danger', `{{ 'error'|text|e }}`, 'Form not found!');
+    Notify('danger', `{{ 'error'|text|e }}`, 'Form not found!');
 } else {
     const submitter = document.querySelector('button.submit-organization');
 
@@ -265,7 +265,7 @@ if (!formUpdate) {
         this.classList.add('was-validated');
         if (!_valid) {
             event.stopPropagation();
-            return NotifyTop('danger', `{{ 'error'|text|e }}`, `{{ 'u-have-some-form-errors'|text|e }}`);
+            return Notify('danger', `{{ 'error'|text|e }}`, `{{ 'u-have-some-form-errors'|text|e }}`);
         }
 
         submitter.growNstop();
@@ -290,12 +290,12 @@ if (!formUpdate) {
 
             window.location.reload();
 
-            NotifyTop(response.type ?? 'success',
+            Notify(response.type ?? 'success',
                       response.title ?? `{{ 'success'|text|e }}`,
                       response.message ?? 'Organization updated');
         })
         .catch(error => {
-            NotifyTop('danger', `{{ 'error'|text|e }}`, error.message);
+            Notify('danger', `{{ 'error'|text|e }}`, error.message);
             submitter.growNstop();
         });
     });

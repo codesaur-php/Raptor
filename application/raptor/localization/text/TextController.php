@@ -8,7 +8,7 @@ use Psr\Log\LogLevel;
  * Class TextController
  *
  * Нутагшуулалтын (Localization) системийн орчуулгын текстүүдийг
- * үүсгэх, үзэх, засварлах болон идэвхгүй болгох CRUD ажиллагааг
+ * үүсгэх, үзэх, засварлах болон устгах CRUD ажиллагааг
  * хариуцдаг Controller класс.
  */
 class TextController extends \Raptor\Controller
@@ -62,16 +62,17 @@ class TextController extends \Raptor\Controller
                 if (empty($record)) {
                     throw new \Exception($this->text('record-insert-error'));
                 }
+                $this->invalidateCache('texts.{code}');
                 $this->respondJSON([
                     'status' => 'success',
                     'message' => $this->text('record-insert-success')
                 ]);
 
-                $adminName = \trim(($this->getUser()->profile['first_name'] ?? '') . ' ' . ($this->getUser()->profile['last_name'] ?? ''));
-                $appUrl = \rtrim((string)$this->getRequest()->getUri()->withPath($this->getScriptPath()), '/') . '/dashboard';
-                $this->getService('discord')?->contentAction('text', 'insert', $payload['keyword'] ?? '', null, $adminName, $appUrl);
+                $this->dispatch(new \Raptor\Notification\ContentEvent(
+                    'insert', 'text', $payload['keyword'] ?? '', null
+                ));
             } else {
-                $this->twigTemplate(
+                $this->template(
                     __DIR__ . '/text-insert-modal.html'
                 )->render();
             }
@@ -90,7 +91,7 @@ class TextController extends \Raptor\Controller
             } elseif ($this->getRequest()->getMethod() == 'POST') {
                 $level = LogLevel::INFO;
                 $message = '[{record.keyword}] текст амжилттай үүслээ';
-                $context += ['id' => $record['id'], 'record' => $record];
+                $context += ['record_id' => $record['id'], 'record' => $record];
             } else {
                 $level = LogLevel::NOTICE;
                 $message = 'Текст үүсгэх үйлдлийг эхлүүллээ';
@@ -112,14 +113,11 @@ class TextController extends \Raptor\Controller
             }
 
             $model = new TextModel($this->pdo);
-            $record = $model->getRowWhere([
-                'p.id' => $id,
-                'p.is_active' => 1
-            ]);
+            $record = $model->getById($id);
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));
             }
-            $this->twigTemplate(
+            $this->template(
                 __DIR__ . '/text-retrieve-modal.html',
                 ['record' => $record]
             )->render();
@@ -155,10 +153,7 @@ class TextController extends \Raptor\Controller
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
             $model = new TextModel($this->pdo);
-            $record = $model->getRowWhere([
-                'p.id' => $id,
-                'p.is_active' => 1
-            ]);
+            $record = $model->getById($id);
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));
             }
@@ -203,17 +198,18 @@ class TextController extends \Raptor\Controller
                 if (empty($updated)) {
                     throw new \Exception($this->text('no-record-selected'));
                 }
+                $this->invalidateCache('texts.{code}');
                 $this->respondJSON([
                     'type' => 'primary',
                     'status' => 'success',
                     'message' => $this->text('record-update-success')
                 ]);
 
-                $adminName = \trim(($this->getUser()->profile['first_name'] ?? '') . ' ' . ($this->getUser()->profile['last_name'] ?? ''));
-                $appUrl = \rtrim((string)$this->getRequest()->getUri()->withPath($this->getScriptPath()), '/') . '/dashboard';
-                $this->getService('discord')?->contentAction('text', 'update', $record['keyword'] ?? '', $id, $adminName, $appUrl);
+                $this->dispatch(new \Raptor\Notification\ContentEvent(
+                    'update', 'text', $record['keyword'] ?? '', $id
+                ));
             } else {
-                $this->twigTemplate(
+                $this->template(
                     __DIR__ . '/text-update-modal.html',
                     ['record' => $record]
                 )->render();
@@ -227,11 +223,11 @@ class TextController extends \Raptor\Controller
         } finally {
             $context = [
                 'action' => 'localization-text-update',
-                'id' => $id
+                'record_id' => $id
             ];
             if (isset($err) && $err instanceof \Throwable) {
                 $level = LogLevel::ERROR;
-                $message = '{id} дугаартай текст мэдээллийг өөрчлөх үед алдаа гарч зогслоо';
+                $message = '{record_id} дугаартай текст мэдээллийг өөрчлөх үед алдаа гарч зогслоо';
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } elseif ($this->getRequest()->getMethod() == 'PUT') {
                 $level = LogLevel::INFO;
@@ -247,14 +243,14 @@ class TextController extends \Raptor\Controller
     }
 
     /**
-     * Орчуулгын текст мэдээллийг идэвхгүй болгох (SOFT DELETE).
+     * Орчуулгын текст мэдээллийг устгах.
      *
-     * DELETE хүсэлтээр is_active=0 болгож JSON хариу буцаана.
+     * DELETE хүсэлтээр устгаж JSON хариу буцаана.
      *
      * @return void
      * @throws \Exception Эрх хүрэлцэхгүй эсвэл алдаа гарвал
      */
-    public function deactivate()
+    public function delete()
     {
         try {
             if (!$this->isUserCan('system_localization_delete')) {
@@ -268,25 +264,23 @@ class TextController extends \Raptor\Controller
             }
             $model = new TextModel($this->pdo);
             $id = \filter_var($payload['id'], \FILTER_VALIDATE_INT);
-            $deactivated = $model->deactivateById(
-                $id,
-                [
-                    'updated_by' => $this->getUserId(),
-                    'updated_at' => \date('Y-m-d H:i:s')
-                ]
-            );
-            if (!$deactivated) {
-                throw new \Exception($this->text('no-record-selected'));
+            $record = $model->getById($id);
+            $model->deleteById($id);
+            if (!empty($record)) {
+                (new \Raptor\Trash\TrashModel($this->pdo))->store(
+                    'content', $model->getName(), $id, $record, $this->getUserId()
+                );
             }
+            $this->invalidateCache('texts.{code}');
             $this->respondJSON([
                 'status'  => 'success',
                 'title'   => $this->text('success'),
                 'message' => $this->text('record-successfully-deleted')
             ]);
 
-            $adminName = \trim(($this->getUser()->profile['first_name'] ?? '') . ' ' . ($this->getUser()->profile['last_name'] ?? ''));
-            $appUrl = \rtrim((string)$this->getRequest()->getUri()->withPath($this->getScriptPath()), '/') . '/dashboard';
-            $this->getService('discord')?->contentAction('text', 'delete', $payload['keyword'] ?? "#{$id}", $id ?? null, $adminName, $appUrl);
+            $this->dispatch(new \Raptor\Notification\ContentEvent(
+                'delete', 'text', $payload['keyword'] ?? "#{$id}", $id ?? null
+            ));
         } catch (\Throwable $err) {
             $this->respondJSON([
                 'status'  => 'error',
@@ -294,15 +288,15 @@ class TextController extends \Raptor\Controller
                 'message' => $err->getMessage()
             ], $err->getCode());
         } finally {
-            $context = ['action' => 'localization-text-deactivate'];
+            $context = ['action' => 'localization-text-delete'];
             if (isset($err) && $err instanceof \Throwable) {
                 $level = LogLevel::ERROR;
-                $message = 'Текст мэдээлэл идэвхгүй болгох үйлдлийг гүйцэтгэх явцад алдаа гарч зогслоо';
+                $message = 'Текст мэдээлэл устгах үйлдлийг гүйцэтгэх явцад алдаа гарч зогслоо';
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } else {
                 $level = LogLevel::ALERT;
-                $message = '{id} дугаартай [{server_request.body.keyword}] текст мэдээллийг идэвхгүй болголоо';
-                $context += ['id' => $id];
+                $message = '{record_id} дугаартай [{server_request.body.keyword}] текст мэдээллийг устгалаа';
+                $context += ['record_id' => $id];
             }
             $this->log('content', $level, $message, $context);
         }
@@ -313,7 +307,7 @@ class TextController extends \Raptor\Controller
      *
      * @param TextModel $model
      * @param string $keyword
-     * @return array|false
+     * @return array
      */
     private function findByKeyword(TextModel $model, string $keyword): array|false
     {

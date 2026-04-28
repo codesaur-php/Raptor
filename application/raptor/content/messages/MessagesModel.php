@@ -3,6 +3,7 @@
 namespace Raptor\Content;
 
 use codesaur\DataObject\Column;
+use codesaur\DataObject\Constants;
 use codesaur\DataObject\Model;
 
 /**
@@ -24,10 +25,9 @@ class MessagesModel extends Model
             new Column('phone', 'varchar', 50),
             new Column('email', 'varchar', 255),
             new Column('message', 'text'),
-            new Column('code', 'varchar', 2),
+            new Column('code', 'varchar', Constants::DEFAULT_CODE_LENGTH),
            (new Column('is_read', 'tinyint'))->default(0),
             new Column('replied_note', 'text'),
-           (new Column('is_active', 'tinyint'))->default(1),
             new Column('created_at', 'datetime')
         ]);
 
@@ -42,7 +42,18 @@ class MessagesModel extends Model
     protected function __initial()
     {
         $table = $this->getName();
-        $this->exec("CREATE INDEX {$table}_idx_active_read ON $table (is_active, is_read)");
+        $this->exec("CREATE INDEX {$table}_idx_read ON $table (is_read)");
         $this->exec("CREATE INDEX {$table}_idx_created ON $table (created_at DESC)");
+    }
+
+    /**
+     * {@inheritdoc}
+     *
+     * created_at талбарыг автоматаар тохируулна.
+     */
+    public function insert(array $record, ?array $content = null): array
+    {
+        $record['created_at'] = \date('Y-m-d H:i:s');
+        return parent::insert($record, $content);
     }
 }

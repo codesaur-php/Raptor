@@ -35,7 +35,6 @@ class TextModel extends LocalizedModel
      *    id           - анхдагч түлхүүр
      *    keyword      - текстийн түлхүүр нэр (жишээ: accept)
      *    type         - текстийн төрөл (sys-defined, user-defined ...)
-     *    is_active    - идэвхтэй эсэх
      *    created_at / created_by
      *    updated_at / updated_by
      *
@@ -52,7 +51,6 @@ class TextModel extends LocalizedModel
            (new Column('id', 'bigint'))->primary(),
            (new Column('keyword', 'varchar', 128))->unique(),
             new Column('type', 'varchar', 16),
-           (new Column('is_active', 'tinyint'))->default(1),
             new Column('created_at', 'timestamp'),
             new Column('created_by', 'bigint'),
             new Column('updated_at', 'timestamp'),
@@ -99,7 +97,7 @@ class TextModel extends LocalizedModel
             // Бүх хэлээр татах
             $stmt = $this->select(
                 "p.keyword as keyword, c.code as code, c.text as text",
-                ['WHERE' => 'p.is_active=1', 'ORDER BY' => 'p.keyword']
+                ['ORDER BY' => 'p.keyword']
             );
             // keyword -> code -> text
             while ($row = $stmt->fetch()) {
@@ -108,7 +106,7 @@ class TextModel extends LocalizedModel
         } else {
             // Зөвхөн 1 хэлний текст татах
             $condition = [
-                'WHERE' => "c.code=:code AND p.is_active=1",
+                'WHERE' => "c.code=:code",
                 'ORDER BY' => 'p.keyword',
                 'PARAM' => [':code' => $code]
             ];
@@ -164,11 +162,11 @@ class TextModel extends LocalizedModel
      * @param array $record   Parent хүснэгтэд орох мэдээлэл
      * @param array $content  Content хүснэгтэд орчуулгын мэдээлэл
      *
-     * @return array|false    Оруулсан мөрийг нийлүүлсэн (parent+content) бүтэцтэй буцаана эсвэл false
+     * @return array    Оруулсан мөрийг нийлүүлсэн (parent+content) бүтэцтэй буцаана
      *
      * created_at талбарыг ирүүлээгүй бол автомат онооно.
      */
-    public function insert(array $record, array $content): array|false
+    public function insert(array $record, array $content): array
     {
         $record['created_at'] ??= \date('Y-m-d H:i:s');
         return parent::insert($record, $content);
@@ -181,11 +179,11 @@ class TextModel extends LocalizedModel
      * @param array $record   Parent хүснэгтийн шинэ мэдээлэл
      * @param array $content  Content хүснэгтийн шинэ текстүүд
      *
-     * @return array|false    Шинэчлэгдсэн мөрийг нийлүүлсэн (parent+content) бүтэцтэй буцаана эсвэл false
+     * @return array    Шинэчлэгдсэн мөрийг нийлүүлсэн (parent+content) бүтэцтэй буцаана
      *
      * updated_at талбарыг ирүүлээгүй бол автомат онооно.
      */
-    public function updateById(int $id, array $record, array $content): array|false
+    public function updateById(int $id, array $record, array $content): array
     {
         $record['updated_at'] ??= \date('Y-m-d H:i:s');
         return parent::updateById($id, $record, $content);

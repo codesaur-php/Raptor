@@ -9,7 +9,7 @@ use Tests\Support\RaptorTestCase;
  *
  * Source code шинжлэлд суурилсан тест:
  * - post() attachment хамгаалалт (non-files table + record_id=0)
- * - deactivate() non-files table хориглох
+ * - delete() non-files table хориглох
  * - Permission шалгалтууд
  * - Table name sanitization
  * - Default table сонголтын логик
@@ -74,74 +74,72 @@ class FilesAccessControlTest extends RaptorTestCase
     }
 
     // =============================================
-    // deactivate() - non-files table хориглох
+    // delete() - non-files table хориглох
     // =============================================
 
     /**
-     * deactivate() нь files-ээс өөр хүснэгтийг хориглох.
+     * delete() нь files-ээс өөр хүснэгтийг хориглох.
      */
-    public function testDeactivateRejectsNonFilesTable(): void
+    public function testDeleteRejectsNonFilesTable(): void
     {
-        \preg_match('/function\s+deactivate\s*\(.*?\{(.+?)(?=\n    public\s|\n\})/s', self::$source, $m);
-        $this->assertNotEmpty($m, 'deactivate() method not found');
+        \preg_match('/function\s+delete\s*\(.*?\{(.+?)(?=\n    public\s|\n\})/s', self::$source, $m);
+        $this->assertNotEmpty($m, 'delete() method not found');
         $body = $m[1];
 
         $this->assertStringContainsString("table !== 'files'", $body,
-            'deactivate() must reject non-files table');
+            'delete() must reject non-files table');
     }
 
     /**
-     * deactivate() нь 403 error code шиддэг.
+     * delete() нь 403 error code шиддэг.
      */
-    public function testDeactivateThrows403ForNonFilesTable(): void
+    public function testDeleteThrows403ForNonFilesTable(): void
     {
-        \preg_match('/function\s+deactivate\s*\(.*?\{(.+?)(?=\n    public\s|\n\})/s', self::$source, $m);
+        \preg_match('/function\s+delete\s*\(.*?\{(.+?)(?=\n    public\s|\n\})/s', self::$source, $m);
         $body = $m[1];
 
         $this->assertStringContainsString('403', $body,
-            'deactivate() must throw 403 for non-files table');
+            'delete() must throw 403 for non-files table');
     }
 
     /**
-     * deactivate() нь system_content_delete эрх шалгадаг.
+     * delete() нь system_content_delete эрх шалгадаг.
      */
-    public function testDeactivateChecksDeletePermission(): void
+    public function testDeleteChecksDeletePermission(): void
     {
-        \preg_match('/function\s+deactivate\s*\(.*?\{(.+?)(?=\n    public\s|\n\})/s', self::$source, $m);
+        \preg_match('/function\s+delete\s*\(.*?\{(.+?)(?=\n    public\s|\n\})/s', self::$source, $m);
         $this->assertStringContainsString("isUserCan('system_content_delete')", $m[1],
-            'deactivate() must check system_content_delete permission');
+            'delete() must check system_content_delete permission');
     }
 
     /**
-     * deactivate() эрхгүй хэрэглэгч зөвхөн өөрийн upload-ыг устгах боломжтой.
+     * delete() эрхгүй хэрэглэгч зөвхөн өөрийн upload-ыг устгах боломжтой.
      */
-    public function testDeactivateOwnerAccessChecksCreatedBy(): void
+    public function testDeleteOwnerAccessChecksCreatedBy(): void
     {
-        \preg_match('/function\s+deactivate\s*\(.*?\{(.+?)(?=\n    public\s|\n\})/s', self::$source, $m);
+        \preg_match('/function\s+delete\s*\(.*?\{(.+?)(?=\n    public\s|\n\})/s', self::$source, $m);
         $this->assertStringContainsString("record['created_by']", $m[1],
-            'deactivate() must check created_by for owner access');
+            'delete() must check created_by for owner access');
     }
 
     /**
-     * deactivate() эрхгүй хэрэглэгч record-д холбогдсон файлыг устгах боломжгүй.
+     * delete() эрхгүй хэрэглэгч record-д холбогдсон файлыг устгах боломжгүй.
      */
-    public function testDeactivateOwnerAccessChecksRecordId(): void
+    public function testDeleteOwnerAccessChecksRecordId(): void
     {
-        \preg_match('/function\s+deactivate\s*\(.*?\{(.+?)(?=\n    public\s|\n\})/s', self::$source, $m);
+        \preg_match('/function\s+delete\s*\(.*?\{(.+?)(?=\n    public\s|\n\})/s', self::$source, $m);
         $this->assertStringContainsString("record['record_id']", $m[1],
-            'deactivate() must check record_id - only unattached files can be deleted by owner');
+            'delete() must check record_id - only unattached files can be deleted by owner');
     }
 
     /**
-     * deactivate() нь soft delete ашигладаг.
+     * delete() нь deleteById ашигладаг.
      */
-    public function testDeactivateUsesSoftDelete(): void
+    public function testDeleteUsesDeleteById(): void
     {
-        \preg_match('/function\s+deactivate\s*\(.*?\{(.+?)(?=\n    public\s|\n\})/s', self::$source, $m);
-        $this->assertStringContainsString('deactivateById', $m[1],
-            'deactivate() must use deactivateById for soft delete');
-        $this->assertStringNotContainsString('DELETE FROM', $m[1],
-            'deactivate() must NOT physically delete records');
+        \preg_match('/function\s+delete\s*\(.*?\{(.+?)(?=\n    public\s|\n\})/s', self::$source, $m);
+        $this->assertStringContainsString('deleteById', $m[1],
+            'delete() must use deleteById');
     }
 
     // =============================================
@@ -261,11 +259,11 @@ class FilesAccessControlTest extends RaptorTestCase
             'post() must log with action context');
     }
 
-    public function testDeactivateLogsAction(): void
+    public function testDeleteLogsAction(): void
     {
-        \preg_match('/function\s+deactivate\s*\(.*?\{(.+?)(?=\n    public\s|\n\})/s', self::$source, $m);
-        $this->assertStringContainsString("'action' => 'files-deactivate'", $m[1],
-            'deactivate() must log with action context');
+        \preg_match('/function\s+delete\s*\(.*?\{(.+?)(?=\n    public\s|\n\})/s', self::$source, $m);
+        $this->assertStringContainsString("'action' => 'files-delete'", $m[1],
+            'delete() must log with action context');
     }
 
     public function testUpdateLogsAction(): void

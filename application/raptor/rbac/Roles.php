@@ -55,7 +55,7 @@ use codesaur\DataObject\Column;
  * Security онцлогууд:
  * ---------------------------------------------------------------
  * - name нь unique -> давхардсан роль үүсэхгүй
- * - coder rôle нь системийн "root super admin"
+ * - coder role нь системийн "root super admin"
  * - created_by FK -> audit trail хадгална
  *
  *
@@ -136,9 +136,9 @@ class Roles extends Model
      * insert() - Role үүсгэх үед created_at автоматаар тохируулах.
      *
      * @param array $record
-     * @return array|false
+     * @return array
      */
-    public function insert(array $record): array|false
+    public function insert(array $record): array
     {
         $record['created_at'] ??= \date('Y-m-d H:i:s');
         return parent::insert($record);

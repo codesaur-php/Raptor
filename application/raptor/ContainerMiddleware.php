@@ -184,6 +184,21 @@ class ContainerMiddleware implements MiddlewareInterface
         ContainerInterface &$container,
         ServerRequestInterface $request
     ): void {
+        // File-based cache service (DB query хэмнэх)
+        // Cache үүсгэх боломжгүй бол (permission, disk гэх мэт) null буцааж,
+        // систем cache-гүйгээр хэвийн ажиллана
+        $container->set('cache', function(ContainerInterface $c) {
+            try {
+                $cacheDir = \dirname($_SERVER['SCRIPT_FILENAME'], 2) . '/private/cache';
+                return new CacheService($cacheDir, 43200);
+            } catch (\Throwable $e) {
+                if (CODESAUR_DEVELOPMENT) {
+                    \error_log('Cache service unavailable: ' . $e->getMessage());
+                }
+                return null;
+            }
+        });
+
         // Mailer service бүртгэе (Dashboard-оос хэрэглэгчдэд мэдэгдэл шуудан илгээхэд ашиглана)
         $container->set('mailer', function(ContainerInterface $c) use ($request) {
             $pdo = $request->getAttribute('pdo');
@@ -191,14 +206,40 @@ class ContainerMiddleware implements MiddlewareInterface
         });
 
         // Template service бүртгэх (templates хүснэгтээс keyword-аар орчуулга татах)
+        // Cache service-ийг inject хийнэ - байхгүй (null) бол DB-ээс шууд уншина
         $container->set('template_service', function(ContainerInterface $c) use ($request) {
             $pdo = $request->getAttribute('pdo');
-            return new \Raptor\Content\TemplateService($pdo);
+            $cache = $c->has('cache') ? $c->get('cache') : null;
+            return new \Raptor\Content\TemplateService($pdo, $cache);
         });
         
         // Discord webhook notification service
-        $container->set('discord', function(ContainerInterface $c) {
-            return new \Raptor\Notification\DiscordNotifier();
+        $container->set('discord', function(ContainerInterface $c) use ($request) {
+            $authUser = $request->getAttribute('user');
+            $userName = \trim(
+                ($authUser?->profile['first_name'] ?? '') . ' '
+                . ($authUser?->profile['last_name'] ?? '')
+            );
+            $host = $request->getUri()->getHost();
+            return new \Raptor\Notification\DiscordNotifier($userName, $host);
+        });
+
+        // PSR-14 Event Dispatcher
+        $container->set('events', function(ContainerInterface $c) {
+            $provider = new \Raptor\Notification\ListenerProvider();
+
+            // Discord listener бүртгэх
+            $discord = new \Raptor\Notification\DiscordListener($c->get('discord'));
+            $provider->listen(\Raptor\Notification\ContentEvent::class, [$discord, 'onContentEvent']);
+            $provider->listen(\Raptor\Notification\UserEvent::class, [$discord, 'onUserEvent']);
+            $provider->listen(\Raptor\Notification\OrderEvent::class, [$discord, 'onOrderEvent']);
+            $provider->listen(\Raptor\Notification\DevRequestEvent::class, [$discord, 'onDevRequestEvent']);
+
+            // Ирээдүйд энд нэмэлт listener бүртгэнэ:
+            // $provider->listen(ContentEvent::class, [$slackListener, 'onContent']);
+            // $provider->listen(ContentEvent::class, [$emailListener, 'onContent']);
+
+            return new \Raptor\Notification\EventDispatcher($provider);
         });
 
         // ============================================================

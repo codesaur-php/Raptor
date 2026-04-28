@@ -33,7 +33,7 @@
                   novalidate
                   id="files_update"
                   action="{{ 'files-update'|link({'table':table, 'id':record['id']}) }}"
-                  method="PUT"
+                  method="PATCH"
                   enctype="multipart/form-data">
 
                 <!-- KEYWORD -->
@@ -86,7 +86,7 @@
     const formUpdate = document.querySelector('form#files_update');
 
     if (!formUpdate) {
-        NotifyTop('danger', `{{ 'error'|text|e }}`, 'Form not found!');
+        Notify('danger', `{{ 'error'|text|e }}`, 'Form not found!');
     } else {
         /* Save товч -> form.submit() биш requestSubmit() ашиглана */
         const submitter = document.querySelector('button.update-files-submit');
@@ -106,7 +106,7 @@
 
             if (!_valid) {
                 event.stopPropagation();
-                return NotifyTop(
+                return Notify(
                     'danger',
                     `{{ 'error'|text|e }}`,
                     `{{ 'u-have-some-form-errors'|text|e }}`
@@ -116,12 +116,12 @@
             /* Save товч дээр grow animation үзүүлэх */
             submitter.growNstop();
 
-            /* FormData -> fetch PUT */
+            /* FormData -> fetch PATCH */
             const data = new FormData(this);
 
             csrfFetch(this.action, {
                 body: data,
-                method: this.getAttribute('method') ?? 'PUT'
+                method: this.getAttribute('method') ?? 'PATCH'
             })
             .then(res => {
                 const contentType = res.headers.get('content-type') || '';
@@ -148,7 +148,7 @@
                 row.children[3].innerHTML = resp.record.keyword;
 
                 /* Амжилттай мэдэгдэл */
-                NotifyTop(
+                Notify(
                     resp.type ?? 'success',
                     resp.title ?? `{{ 'success'|text|e }}`,
                     resp.message ?? 'File record successfully updated'
@@ -156,7 +156,7 @@
             })
             .catch(error => {
                 /* Алдааны мэдэгдэл */
-                NotifyTop('danger', `{{ 'error'|text|e }}`, error.message);
+                Notify('danger', `{{ 'error'|text|e }}`, error.message);
             })
             .finally(() => {
                 submitter.growNstop();

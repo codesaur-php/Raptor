@@ -93,7 +93,7 @@
     /* Form болон submit товч */
     const formUpdate = document.querySelector('form#language_update');
     if (!formUpdate) {
-        NotifyTop('danger', `{{ 'error'|text|e }}`, 'Form not found!');
+        Notify('danger', `{{ 'error'|text|e }}`, 'Form not found!');
     } else {
         const submitter = document.querySelector('button.submit-language');
 
@@ -112,7 +112,7 @@
             this.classList.add('was-validated');
             if (!valid) {
                 event.stopPropagation();
-                return NotifyTop(
+                return Notify(
                     'danger',
                     `{{ 'error'|text|e }}`,
                     `{{ 'u-have-some-form-errors'|text|e }}`
@@ -151,14 +151,14 @@
                 /* Амжилттай -> reload localization dashboard */
                 window.location.reload();
 
-                NotifyTop(
+                Notify(
                     response.type ?? 'success',
                     response.title ?? `{{ 'success'|text|e }}`,
                     response.message ?? 'Language updated'
                 );
             })
             .catch(error => {
-                NotifyTop('danger', `{{ 'error'|text|e }}`, error.message);
+                Notify('danger', `{{ 'error'|text|e }}`, error.message);
                 submitter.growNstop();
             });
         });

@@ -67,10 +67,15 @@ class PrivateFilesController extends FilesController
      * private файлуудыг public URL-аар шууд гаргахгүй!
      *   -> зөвхөн read() function-аар дамжина.
      *
+     * cache/ хавтас хамгаалагдсан - RuntimeException (403) шиднэ.
+     *
      * @param string $folder     Файл хадгалах хавтас
      */
     public function setFolder(string $folder)
     {
+        if (\str_starts_with(\trim($folder, '/'), 'cache')) {
+            throw new \RuntimeException('Cache folder is protected', 403);
+        }
         $this->local_folder = $this->getDocumentPath("/../private{$folder}");
         $this->public_path = "{$this->getScriptPath()}/private/file?name=$folder";
     }
@@ -101,11 +106,11 @@ class PrivateFilesController extends FilesController
      * ----------------------------------------------------------
      * Security Notes
      * ----------------------------------------------------------
-     *  - Private файлуудыг шууд /uploads/ гэх мэт замаар өгдөггүй  
-     *  - Зөвхөн read() -> authentication -> файлыг унших -> буцаах  
+     *  - Private файлуудыг шууд /uploads/ гэх мэт замаар өгдөггүй
+     *  - Зөвхөн read() -> authentication -> файлыг унших -> буцаах
      *  - Directory traversal халдлагаас хамгаална
-     *
-     *      ../ болон бусад тэмдэгтүүдийг getDocumentPath() автоматаар цэвэрлэдэг.
+     *      ../ болон бусад тэмдэгтүүдийг getDocumentPath() автоматаар цэвэрлэдэг
+     *  - private/cache/ хавтас руу хандахыг хориглоно
      *
      * ----------------------------------------------------------
      * @throws Exception:
@@ -128,6 +133,13 @@ class PrivateFilesController extends FilesController
             $filePath = $this->getDocumentPath('/../private' . $fileName);
             if (empty($fileName) || !\file_exists($filePath)) {
                 throw new \Exception('Not Found', 404);
+            }
+
+            // Cache folder-т хандахыг хориглох
+            $privateDir = $this->getDocumentPath('/../private');
+            $cacheDir = $privateDir . '/cache';
+            if (\str_starts_with(\realpath($filePath) ?: $filePath, \realpath($cacheDir) ?: $cacheDir)) {
+                throw new \Exception('Forbidden', 403);
             }
 
             // Системийн чухал файлуудыг уншихаас хамгаалах

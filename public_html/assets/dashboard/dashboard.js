@@ -8,10 +8,9 @@
  *  AJAX Modal Loader
  *  Sidebar link activation
  *  Sidebar badge system (initSidebarBadges)
- *  Top Notification (NotifyTop)
+ *  Top Notification (Notify)
  *  Button Spinner (spinNstop / growNstop)
  *  Scroll-To-Top Button
- *  copyContent() - текст copy хийх
  *  Dark mode auto-apply
  *
  * Raptor Dashboard бүхэн энэ файлыг залгаж ашиглана.
@@ -27,7 +26,7 @@
  *      гэсэн линкүүд дээр AJAX ачаалалт ажиллана
  *  * Inline болон external <script> tag-уудыг response дотороос 
  *      автоматаар execution хийнэ
- *  * NotifyTop() нь системийн бүх popup notification-ийг орлодог
+ *  * Notify() нь системийн бүх popup notification-ийг орлодог
  *  * Button-ууд дээр .spinNstop() ашиглахад илүү амар
  * ================================================================
  */
@@ -150,77 +149,61 @@ function activateLink(href)
     });
 }
 
-/** 
- * NotifyTop(type, title, content)
- * - Дээд notification popup
+/**
+ * Notify(type, title, content)
+ * - Дэлгэцийн төвөөс гарч ирээд автоматаар алга болох notification
  *
  * @param {string} type - success, danger, warning, primary
  * @param {string} title - гарчиг
  * @param {string} content - доторх текст
- * @param {number} velocity - хөдөлж харагдах хурд
- * @param {number} delay - автоматаар хаагдах хугацаа
+ * @param {number} _velocity - (unused, backward compat)
+ * @param {number} delay - автоматаар хаагдах хугацаа (ms)
  */
-function NotifyTop(type, title, content, velocity = 5, delay = 2500)
+function Notify(type, title, content, _velocity = 5, delay = 2500)
 {
     const previous = document.querySelector('.notifyTop');
-    if (previous?.parentNode) {
-        previous.parentNode.removeChild(previous);
-    }
+    if (previous) previous.remove();
 
-    /* өнгө сонгох... */
-    const bgColorHex =
-        type === 'success' ? '#15cc1f' :
-        type === 'warning' ? '#ffc107' :
-        type === 'danger'  ? '#f32750' :
-        type === 'primary' ? '#0d6efd' :
-                             '#17a2b8';
+    const bgColor = {
+        success: '#198754', danger: '#dc3545',
+        warning: '#ffc107', primary: '#0d6efd'
+    }[type] || '#0dcaf0';
+    const textColor = type === 'warning' ? '#000' : '#fff';
 
-    const section = document.createElement('section');
-    section.classList.add('notifyTop');
-    section.style.cssText =
-        `z-index:11500;position:fixed;padding:1rem;color:#fff;
-         background:${bgColorHex};right:0;left:0;top:0`;
-
-    const h5 = document.createElement('h5');
-    h5.style.cssText = 'margin:5px 0;font-weight:300;color:#fff;text-transform:uppercase;';
-    h5.innerHTML = title;
-
-    const closeX = document.createElement('a');
-    closeX.innerHTML = 'x';
-    closeX.style.cssText =
-        'cursor:pointer;position:absolute;right:0;top:0;color:#fff;padding:10px 15px;font-size:16px';
-
-    const contentDiv = document.createElement('div');
-    contentDiv.innerHTML = content;
-
-    section.append(h5, closeX, contentDiv);
-    document.body.appendChild(section);
-
-    /* анимэйшн ... */
-    const notifyHeight = section.offsetHeight;
-    section.style.top = -notifyHeight + 'px';
-
-    let top = -notifyHeight;
-    let interv = setInterval(function () {
-        top += 10;
-        section.style.top = top + 'px';
-        if (top > -10) clearInterval(interv);
-    }, velocity);
-
-    let close = function () {
-        closeX.style.display = 'none';
-        const interv2 = setInterval(function () {
-            top -= 10;
-            section.style.top = top + 'px';
-            if (top < -notifyHeight) {
-                section.remove();
-                clearInterval(interv2);
-            }
-        }, velocity);
+    const iconMap = {
+        success: 'bi-check-circle-fill',
+        danger:  'bi-exclamation-triangle-fill',
+        warning: 'bi-exclamation-circle-fill',
+        primary: 'bi-info-circle-fill'
     };
+    const icon = iconMap[type] || 'bi-info-circle-fill';
 
-    closeX.onclick = e => { e.preventDefault(); close(); };
-    setTimeout(close, delay);
+    const el = document.createElement('div');
+    el.className = 'notifyTop';
+    el.style.cssText =
+        `position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);
+         z-index:11500;padding:1.25rem 2rem;border-radius:.75rem;
+         background:${bgColor};color:${textColor};
+         box-shadow:0 8px 32px rgba(0,0,0,.25);
+         text-align:center;max-width:min(420px,90vw);width:max-content;
+         opacity:0;transition:transform .3s ease,opacity .3s ease;pointer-events:none`;
+    el.innerHTML =
+        `<div style="font-size:1.5rem;margin-bottom:.25rem"><i class="bi ${icon}"></i></div>
+         <div style="font-weight:600;text-transform:uppercase;margin-bottom:.25rem">${title}</div>
+         <div style="font-size:.9rem;opacity:.9">${content}</div>`;
+
+    document.body.appendChild(el);
+
+    requestAnimationFrame(() => {
+        el.style.transform = 'translate(-50%,-50%) scale(1)';
+        el.style.opacity = '1';
+    });
+
+    setTimeout(() => {
+        el.style.transform = 'translate(-50%,-50%) scale(0)';
+        el.style.opacity = '0';
+        el.addEventListener('transitionend', () => el.remove(), { once: true });
+    }, delay);
 }
 
 /**
@@ -262,7 +245,7 @@ Element.prototype.growNstop = function (block = true) {
     spinStop(this, 'grow', block);
 };
 
-/* ⬆ Scroll-To-Top Button */
+/* Scroll-To-Top Button */
 function initScrollToTop(options = {}) {
     /* Default options */
     const config = {
@@ -322,29 +305,6 @@ function initScrollToTop(options = {}) {
     btnScroll.addEventListener('mouseout', () => {
         btnScroll.style.backgroundColor = config.bgColor;
     });
-}
-
-/** 
- * copyContent(elementId)
- * @description
- *  DOM текстийг clipboard руу хуулна
- *  
- * @param {HTMLElement} elem - текстийг агуулсан element */
-function copyContent(elem)
-{
-    const text = document.getElementById(elem);
-    if (document.body.createTextRange) {
-        const range = document.body.createTextRange();
-        range.moveToElementText(text);
-        range.select();
-    } else if (window.getSelection) {
-        const selection = window.getSelection();
-        const range = document.createRange();
-        range.selectNodeContents(text);
-        selection.removeAllRanges();
-        selection.addRange(range);
-    }
-    document.execCommand('copy');
 }
 
 /**
@@ -611,7 +571,12 @@ function initInvalidTabFocus() {
  *   </ul>
  */
 function initLoggerProtocol() {
-    document.querySelectorAll('ul.logger-protocol').forEach(function (logger) {
+    document.querySelectorAll('ul.logger-protocol:not([data-loaded])').forEach(function (logger) {
+        /* Idempotent guard: initLoggerProtocol-г олон удаа дуудсан ч UL-г нэг л
+         * удаа татна. Үүнгүй бол ajaxModal эсвэл бусад нөхцөлд давхар fetch хийгээд
+         * UL дотор log давхардаж scroll хэт уртасах эрсдэлтэй. */
+        logger.setAttribute('data-loaded', '1');
+
         const retrieveUrl = logger.dataset.retrieve;
         const viewUrl = logger.dataset.view;
         if (!retrieveUrl || !viewUrl) return;
@@ -626,13 +591,14 @@ function initLoggerProtocol() {
         const spinner = logger.previousElementSibling;
         if (spinner) spinner.style.display = 'block';
 
+        const LOG_LIMIT = 100;
         csrfFetch(`${retrieveUrl}?table=${table}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 'ORDER BY': 'id Desc',
                 'CONTEXT': context,
-                'LIMIT': 10000
+                'LIMIT': LOG_LIMIT
             })
         })
         .then(function (res) {
@@ -649,7 +615,8 @@ function initLoggerProtocol() {
                 warning: 'warning', alert: 'info', debug: 'secondary'
             };
 
-            Object.values(response).forEach(function (log) {
+            const logs = Object.values(response);
+            logs.forEach(function (log) {
                 const li = document.createElement('li');
                 li.classList.add('list-group-item', 'list-group-item-action');
                 li.classList.add('list-group-item-' + (levelMap[log.level] ?? 'dark'));
@@ -679,6 +646,14 @@ function initLoggerProtocol() {
 
                 logger.appendChild(li);
             });
+
+            /* LIMIT-д хүрсэн бол хэрэглэгчид мэдэгдэх */
+            if (logs.length >= LOG_LIMIT) {
+                const note = document.createElement('li');
+                note.classList.add('list-group-item', 'list-group-item-secondary', 'text-center', 'small', 'fst-italic');
+                note.textContent = `... (showing latest ${LOG_LIMIT} entries)`;
+                logger.appendChild(note);
+            }
         })
         .catch(function (error) { console.log(error.message); })
         .finally(function () {

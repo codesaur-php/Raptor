@@ -2,8 +2,8 @@
     <h3 class="px-2 my-auto fs-6 text-white">
         <i class="bi bi-book"></i> Products - Manual
     </h3>
-    <a href="{{ 'manual' | link }}" class="btn btn-sm btn-light m-1">
-        <i class="bi bi-arrow-left"></i> {{ 'manual' | text }}
+    <a href="{{ 'manual'|link }}" class="btn btn-sm btn-light m-1">
+        <i class="bi bi-arrow-left"></i> {{ 'manual'|text }}
     </a>
 </div>
 
@@ -76,12 +76,20 @@
                 <tr><td><strong>Category</strong></td><td>Product category</td><td>Yes</td><td></td></tr>
                 <tr><td><strong>Title</strong></td><td>Product name</td><td>Yes</td><td>Up to 255 characters</td></tr>
                 <tr><td><strong>Description</strong></td><td>Short description (auto-generated from content if empty)</td><td>No</td><td>Auto excerpt</td></tr>
-                <tr><td><strong>Content</strong></td><td>Full content - written using <a href="{{ 'manual-view' | link({'file': 'moedit-manual-en.html'}) }}" title="view moedit manual">moedit</a> editor</td><td>No</td><td>moedit</td></tr>
+                <tr><td><strong>Content</strong></td><td>Full content - written using <a href="{{ 'manual-view'|link({'file': 'moedit-manual-en.html'}) }}" title="view moedit manual">moedit</a> editor</td><td>No</td><td>moedit</td></tr>
                 <tr><td><strong>Price</strong></td><td>Product price</td><td>No</td><td></td></tr>
                 <tr><td><strong>Source</strong></td><td>Product source information</td><td>No</td><td></td></tr>
                 <tr><td><strong>Header image</strong></td><td>Product header image (1 file)</td><td>No</td><td></td></tr>
             </tbody>
         </table>
+
+        <h5 class="mt-3">HTML Content Validation</h5>
+        <div class="alert alert-warning">
+            <i class="bi bi-shield-check"></i>
+            Content with broken HTML structure will not be saved. If unclosed HTML comments (<code>&lt;!-- ... </code>)
+            or broken tags cause significant content loss, an error message is displayed.
+            Fix the HTML in Source mode and try again.
+        </div>
 
         <h5 class="mt-3">Publish Settings</h5>
         <p>Users with <code>system_content_publish</code> permission will see the following options:</p>
@@ -107,6 +115,7 @@
             <li>All fields can be modified (except slug)</li>
             <li>File attachment management - add new files, edit descriptions, delete</li>
             <li>Editing a published product requires <code>system_content_publish</code> permission</li>
+            <li>Content with broken HTML structure will not be saved (error message is displayed)</li>
             <li>If no changes are made, saving is skipped ("No update!" error)</li>
         </ul>
 
@@ -139,7 +148,7 @@
         <p>Click the <strong>delete</strong> (trash) button from the list.</p>
         <ul>
             <li>A confirmation dialog appears (SweetAlert2)</li>
-            <li>Soft delete - data is preserved</li>
+            <li>Permanently deleted from the database; a backup copy is stored in the Trash table for recovery</li>
             <li><code>system_product_delete</code> permission is required</li>
         </ul>
     </div>

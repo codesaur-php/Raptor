@@ -102,6 +102,13 @@ class OrganizationRouter extends Router
 
         /**
          * --------------------------------------------------------------
+         * Идэвхгүй байгууллагыг бүрэн устгах (HARD DELETE)
+         * --------------------------------------------------------------
+         */
+        $this->DELETE('/dashboard/organizations/delete', [OrganizationController::class, 'delete'])->name('organization-delete');
+
+        /**
+         * --------------------------------------------------------------
          * Хэрэглэгчийн бүртгэлтэй байгууллага жагсаалт
          * --------------------------------------------------------------
          * URL:      /dashboard/organization/user/list

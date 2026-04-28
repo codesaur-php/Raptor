@@ -2,8 +2,8 @@
     <h3 class="px-2 my-auto fs-6 text-white">
         <i class="bi bi-book"></i> moedit - Гарын авлага
     </h3>
-    <a href="{{ 'manual' | link }}" class="btn btn-sm btn-light m-1">
-        <i class="bi bi-arrow-left"></i> {{ 'manual' | text }}
+    <a href="{{ 'manual'|link }}" class="btn btn-sm btn-light m-1">
+        <i class="bi bi-arrow-left"></i> {{ 'manual'|text }}
     </a>
 </div>
 
@@ -438,6 +438,37 @@
                 <tr><td><kbd>Backspace</kbd></td><td>Эхний нүд хоосон үед тухайн мөрийг устгана (2+ мөртэй үед)</td></tr>
             </tbody>
         </table>
+    </div>
+</div>
+
+<!-- ==================== HTML БҮТЭЦ ШАЛГАЛТ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-shield-check text-success"></i> HTML бүтэц шалгалт</h4>
+        <p>
+            moedit нь контентын HTML бүтцийг хоёр түвшинд шалгаж, эвдэрсэн HTML-ээс хамгаална:
+        </p>
+        <h5 class="mt-3">1. Editor дотоод шалгалт (Source -> Visual)</h5>
+        <p>Source горимоос Visual горим руу шилжих үед HTML бүтцийг автоматаар шалгана:</p>
+        <ul>
+            <li>Хаагдаагүй HTML comment (<code>&lt;!-- ... </code>) илрүүлнэ</li>
+            <li>Эвдэрсэн tag-аас болж контентын 20%-аас дээш хэсэг алга болсон бол анхааруулна</li>
+            <li>Асуудал илэрвэл Visual горим руу шилжилгүйгээр Source горимд үлдэж, хэрэглэгчид засах боломж олгоно</li>
+            <li>Built-in popup мэдэгдлээр анхааруулга харуулна</li>
+        </ul>
+        <h5 class="mt-3">2. Сервер талын шалгалт (Хадгалах үед)</h5>
+        <p>Хуудас, мэдээ, бүтээгдэхүүн хадгалах үед сервер дээр HTML контентыг дахин шалгана:</p>
+        <ul>
+            <li>Хаагдаагүй HTML comment илрүүлнэ</li>
+            <li>DOMDocument-ээр parse хийж контент алга болсон эсэхийг шалгана</li>
+            <li>Эвдэрсэн HTML илэрвэл хадгалахгүй, алдааны мэдэгдэл харуулна</li>
+        </ul>
+        <div class="alert alert-warning mb-0">
+            <i class="bi bi-exclamation-triangle"></i>
+            <strong>Анхааруулга:</strong> Source горимд HTML код засварлахдаа бүх tag-ийг зөв хааж,
+            comment-ийг (<code>&lt;!-- ... --&gt;</code>) бүтэн бичихэд анхаарна уу.
+            Эвдэрсэн HTML нь контентыг "залгидаг" тул шалгалт зайлшгүй шаардлагатай.
+        </div>
     </div>
 </div>
 

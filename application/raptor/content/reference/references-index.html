@@ -95,8 +95,8 @@
                                 {% endif %}
 
                                 <!-- ----------------- DELETE ---------------- -->
-                                {% if can_delete and row['is_active'] !=0 %}
-                                    <button class="deactivate-reference btn btn-sm btn-danger mt-1 shadow-sm"
+                                {% if can_delete %}
+                                    <button class="delete-reference btn btn-sm btn-danger mt-1 shadow-sm"
                                             value="{{ row['id'] }}" type="button">
                                         <i class="bi bi-trash"></i>
                                     </button>
@@ -164,15 +164,15 @@
             const name = reference.table.getAttribute('data-table');
             if (!name) return;
 
-            /* SOFT DELETE - deactivate товчлуурууд */
-            const deactivateRef = reference.table.querySelectorAll('.deactivate-reference');
-            deactivateRef.forEach(btn =>
+            /* DELETE товчлуурууд */
+            const deleteRef = reference.table.querySelectorAll('.delete-reference');
+            deleteRef.forEach(btn =>
                 btn.addEventListener('click', function (e) {
                     e.preventDefault();
 
                     const thisRow = btn.closest('tr');
                     if (!thisRow) {
-                        return NotifyTop('warning', `{{ 'error'|text|e }}`, 'Cannot select row!');
+                        return Notify('warning', `{{ 'error'|text|e }}`, 'Cannot select row!');
                     }
 
                     /* Keyword цэвэрлэх */
@@ -181,9 +181,9 @@
 
                     let question;
                     if (document.documentElement.lang === 'mn') {
-                        question = `<p class="text-danger mb-3">Та [${cleanKey}] түлхүүртэй бичлэгийг идэвхгүй болгоход итгэлтэй байна уу?</p>`;
+                        question = `<p class="text-danger mb-3">Та [${cleanKey}] түлхүүртэй бичлэгийг устгахдаа итгэлтэй байна уу?</p>`;
                     } else {
-                        question = `<p class="text-danger mb-3">Are you sure to deactivate the reference with keyword [${cleanKey}]?</p>`;
+                        question = `<p class="text-danger mb-3">Are you sure to delete the reference with keyword [${cleanKey}]?</p>`;
                     }
 
                     /* SweetAlert Confirm */
@@ -198,7 +198,7 @@
                         backdrop: true,
                         preConfirm: () => {
                             return csrfFetch(
-                                `{{ 'reference-deactivate'|link }}`,
+                                `{{ 'reference-delete'|link }}`,
                                 {
                                     method: 'DELETE',
                                     headers: { 'Content-Type': 'application/json' },
@@ -221,10 +221,10 @@
                                 thisRow.remove();
                                 reference.setReady();
 
-                                NotifyTop(
+                                Notify(
                                     'success',
                                     `{{ 'success'|text|e }}`,
-                                    response.message ?? `Reference ${keyword} deactivated`
+                                    response.message ?? `Reference ${keyword} deleted`
                                 );
 
                             })

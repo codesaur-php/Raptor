@@ -4,9 +4,12 @@ namespace Web\Content;
 
 use Psr\Log\LogLevel;
 
+use codesaur\Template\MemoryTemplate;
+
 use Raptor\Content\NewsModel;
 use Raptor\Content\FilesModel;
 use Raptor\Content\CommentsModel;
+use Raptor\Content\ReadNewsTrait;
 
 use Web\Template\TemplateController;
 
@@ -27,6 +30,7 @@ use Web\Template\TemplateController;
 class NewsController extends TemplateController
 {
     use \Raptor\SpamProtectionTrait;
+    use ReadNewsTrait;
     /**
      * Slug-аар мэдээг харуулах.
      *
@@ -49,7 +53,7 @@ class NewsController extends TemplateController
             "FROM $table n " .
             "LEFT JOIN $users c ON n.created_by = c.id " .
             "LEFT JOIN $users u ON n.updated_by = u.id " .
-            "WHERE n.slug = :slug AND n.is_active = 1 LIMIT 1"
+            "WHERE n.slug = :slug LIMIT 1"
         );
         $stmt->bindValue(':slug', $slug);
         $stmt->execute();
@@ -60,7 +64,7 @@ class NewsController extends TemplateController
 
         // Үг тоолох ба уншихад шаардлагатай хугацаа
         $plainText = \strip_tags($record['content'] ?? '');
-        $record['word_count'] = \str_word_count($plainText);
+        $record['word_count'] = \preg_match_all('/[\p{L}\p{N}]+/u', $plainText);
         $record['read_time'] = \max(1, (int) \ceil($record['word_count'] / 200));
 
         $id = $record['id'];
@@ -69,7 +73,7 @@ class NewsController extends TemplateController
         $files = new FilesModel($this->pdo);
         $files->setTable($table);
         $record['files'] = $files->getRows([
-            'WHERE' => "record_id=$id AND is_active=1"
+            'WHERE' => "record_id=$id"
         ]);
 
         // Сэтгэгдлүүдийг татах (comment=1 үед)
@@ -78,7 +82,7 @@ class NewsController extends TemplateController
             $commentsTable = $commentsModel->getName();
             $cstmt = $this->prepare(
                 "SELECT id, parent_id, created_by, name, comment, created_at FROM $commentsTable
-                 WHERE news_id=:nid AND is_active=1 ORDER BY created_at ASC"
+                 WHERE news_id=:nid ORDER BY created_at ASC"
             );
             $record['comments'] = $cstmt->execute([':nid' => $id]) ? $cstmt->fetchAll() : [];
 
@@ -89,8 +93,11 @@ class NewsController extends TemplateController
             $record['turnstile_site_key'] = $this->getTurnstileSiteKey();
         }
 
+        // Cookie: мэдээг уншсан гэж тэмдэглэе
+        $this->markNewsAsRead((int)$id);
+
         // Render template
-        $this->twigWebLayout(__DIR__ . '/news.html', $record)->render();
+        $this->webTemplate(__DIR__ . '/news.html', $record)->render();
 
         // Read count
         $this->exec("UPDATE $table SET read_count=read_count+1 WHERE id=$id");
@@ -100,7 +107,7 @@ class NewsController extends TemplateController
             'web',
             LogLevel::NOTICE,
             '[{server_request.code} : /news/{slug}] {title} - мэдээг уншиж байна',
-            ['action' => 'news', 'id' => $id, 'slug' => $slug, 'title' => $record['title']]
+            ['action' => 'news', 'record_id' => $id, 'slug' => $slug, 'title' => $record['title']]
         );
     }    
     
@@ -115,7 +122,7 @@ class NewsController extends TemplateController
     {
         $model = new NewsModel($this->pdo);
         $table = $model->getName();
-        $stmt = $this->prepare("SELECT slug FROM $table WHERE id=:id AND is_active=1");
+        $stmt = $this->prepare("SELECT slug FROM $table WHERE id=:id");
         $stmt->bindValue(':id', $id, \PDO::PARAM_INT);
         $stmt->execute();
         $row = $stmt->fetch();
@@ -143,7 +150,7 @@ class NewsController extends TemplateController
         // Ангилалуудын жагсаалт (sidebar-д ашиглана)
         $typeStmt = $this->prepare(
             "SELECT DISTINCT type FROM $news_table
-             WHERE is_active=1 AND published=1 AND code=:code AND type != ''
+             WHERE published=1 AND code=:code AND type != ''
              ORDER BY type ASC"
         );
         $typeStmt->bindValue(':code', $code);
@@ -154,7 +161,7 @@ class NewsController extends TemplateController
             $stmt = $this->prepare(
                 "SELECT id, slug, title, description, photo, type, read_count, published_at
                  FROM $news_table
-                 WHERE is_active=1 AND published=1 AND code=:code
+                 WHERE published=1 AND code=:code
                  ORDER BY published_at DESC"
             );
             $stmt->bindValue(':code', $code);
@@ -162,7 +169,7 @@ class NewsController extends TemplateController
             $stmt = $this->prepare(
                 "SELECT id, slug, title, description, photo, type, read_count, published_at
                  FROM $news_table
-                 WHERE is_active=1 AND published=1 AND type=:type AND code=:code
+                 WHERE published=1 AND type=:type AND code=:code
                  ORDER BY published_at DESC"
             );
             $stmt->bindValue(':type', $type);
@@ -174,7 +181,9 @@ class NewsController extends TemplateController
             throw new \Exception($this->text('no-news-found'), 404);
         }
 
-        $this->twigWebLayout(__DIR__ . '/news-type.html', [
+        $this->decorateReadNews($records);
+
+        $this->webTemplate(__DIR__ . '/news-type.html', [
             'records'    => $records,
             'type'       => $type,
             'categories' => $categories,
@@ -206,7 +215,7 @@ class NewsController extends TemplateController
         // Жилүүдийн жагсаалт
         $stmt = $this->prepare(
             "SELECT DISTINCT YEAR(published_at) AS y FROM $news_table
-             WHERE is_active=1 AND published=1 AND code=:code
+             WHERE published=1 AND code=:code
              ORDER BY y DESC"
         );
         $years = $stmt->execute([':code' => $code]) ? $stmt->fetchAll(\PDO::FETCH_COLUMN) : [];
@@ -221,7 +230,7 @@ class NewsController extends TemplateController
             $stmt = $this->prepare(
                 "SELECT id, title, slug, published_at, MONTH(published_at) AS m
                  FROM $news_table
-                 WHERE is_active=1 AND published=1 AND code=:code
+                 WHERE published=1 AND code=:code
                    AND YEAR(published_at) = :year
                  ORDER BY published_at DESC"
             );
@@ -234,7 +243,7 @@ class NewsController extends TemplateController
             }
         }
 
-        $this->twigWebLayout(__DIR__ . '/archive.html', [
+        $this->webTemplate(__DIR__ . '/archive.html', [
             'years' => $years,
             'selected_year' => $selectedYear,
             'months' => $months,
@@ -267,7 +276,7 @@ class NewsController extends TemplateController
 
             // Мэдээ байгаа эсэх, comment идэвхтэй эсэх шалгах
             $newsModel = new NewsModel($this->pdo);
-            $news = $newsModel->getRowWhere(['id' => $id, 'is_active' => 1]);
+            $news = $newsModel->getById($id);
             if (empty($news) || empty($news['comment'])) {
                 throw new \Exception('Invalid request', 400);
             }
@@ -296,7 +305,7 @@ class NewsController extends TemplateController
 
             // 1-level reply only: reply-д reply хийхийг хориглох
             if ($parentId) {
-                $parentComment = $commentsModel->getRowWhere(['id' => $parentId, 'is_active' => 1]);
+                $parentComment = $commentsModel->getById($parentId);
                 if (empty($parentComment) || !empty($parentComment['parent_id'])) {
                     throw new \Exception('Invalid request', 400);
                 }
@@ -307,13 +316,8 @@ class NewsController extends TemplateController
                 'parent_id' => $parentId,
                 'name' => $name,
                 'email' => $email,
-                'comment' => $comment,
-                'created_at' => \date('Y-m-d H:i:s')
+                'comment' => $comment
             ]);
-
-            // Discord мэдэгдэл
-            $appUrl = \rtrim((string)$this->getRequest()->getUri()->withPath($this->getScriptPath()), '/');
-            $this->getService('discord')?->contentAction('comment', 'insert', $news['title'], $id, $name, $appUrl);
 
             $this->respondJSON([
                 'status' => 'success',
@@ -333,6 +337,14 @@ class NewsController extends TemplateController
                     'email' => $email
                 ]
             ]);
+
+            $this->dispatch(new \Raptor\Notification\ContentEvent(
+                'insert', 'comment', $comment, $id,
+                $name, ['news_title' => $news['title'] ?? '']
+            ));
+            
+            // Админд email мэдэгдэл
+            $this->sendCommentNotifyEmail($name, $email, $comment, $news['title']);
         } catch (\Throwable $err) {
             $this->respondJSON(['message' => $err->getMessage()], $err->getCode() ?: 500);
         }
@@ -351,5 +363,61 @@ class NewsController extends TemplateController
             throw new \RuntimeException('RAPTOR_JWT_SECRET environment variable is not set');
         }
         return $secret;
+    }
+
+    /**
+     * Шинэ сэтгэгдэл ирсэн тухай админд email мэдэгдэл.
+     */
+    private function sendCommentNotifyEmail(
+        string $name,
+        string $email,
+        string $comment,
+        string $newsTitle
+    ) {
+        try {
+            $notifyEmail = $_ENV['RAPTOR_COMMENT_EMAIL_TO'] ?? '';
+            if (empty($notifyEmail)) {
+                return;
+            }
+
+            $mailer = $this->getService('mailer');
+            if (empty($mailer)) {
+                return;
+            }
+
+            $code = $this->getLanguageCode() ?: 'en';
+            $templateService = $this->getService('template_service');
+            $template = $templateService?->getByKeyword('comment-notify', $code);
+            if (empty($template)) {
+                return;
+            }
+
+            $appUrl = \rtrim((string)$this->getRequest()->getUri()->withPath($this->getScriptPath()), '/');
+            $commentsLink = $appUrl . '/dashboard/news/comments';
+
+            $subjectTemplate = new MemoryTemplate();
+            $subjectTemplate->source($template['title']);
+            $subjectTemplate->set('news_title', $newsTitle);
+            $subject = $subjectTemplate->output();
+
+            $bodyTemplate = new MemoryTemplate();
+            $bodyTemplate->source($template['content']);
+            $bodyTemplate->set('name', \htmlspecialchars($name));
+            $bodyTemplate->set('email', \htmlspecialchars($email));
+            $bodyTemplate->set('comment', \nl2br(\htmlspecialchars($comment)));
+            $bodyTemplate->set('news_title', \htmlspecialchars($newsTitle));
+            $bodyTemplate->set('comments_link', $commentsLink);
+            $body = $bodyTemplate->output();
+
+            $mailer->mail($notifyEmail, null, $subject, $body);
+            if (!empty($email)) {
+                $mailer->setReplyTo($email, $name);
+            }
+            $mailer->send();
+        } catch (\Throwable $e) {
+            if (CODESAUR_DEVELOPMENT) {
+                \error_log("CommentNotifyEmail: {$e->getMessage()}");
+            }
+        }
     }
 }

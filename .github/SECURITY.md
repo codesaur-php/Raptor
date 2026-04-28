@@ -43,7 +43,7 @@ When contributing to or deploying Raptor, be mindful of:
 - **Database credentials** - Store all credentials in `.env`, never hardcode them
 - **File uploads** - The framework validates file types and sizes; do not bypass these checks
 - **RBAC permissions** - Always verify user permissions before granting access to protected resources
-- **CSRF protection** - Dashboard POST/PUT/DELETE requests are protected by CsrfMiddleware. Use `csrfFetch()` for all state-changing requests in dashboard JS
+- **CSRF protection** - Dashboard POST/PUT/PATCH/DELETE requests are protected by CsrfMiddleware. Use `csrfFetch()` for all state-changing requests in dashboard JS
 - **Login rate limiting** - Failed login attempts are tracked in logs; 10+ failures within 15 minutes triggers lockout
 - **Password reset cooldown** - Forgot password requests are rate-limited per email address via `RAPTOR_PASSWORD_RESET_MINUTES`
 - **SQL injection** - All user input in JSON context filters is sanitized with allowlist regex; ORDER BY and LIMIT are validated

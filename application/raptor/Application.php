@@ -18,7 +18,7 @@ namespace Raptor;
  *   3) MigrationMiddleware    - Pending SQL migration автомат ажиллуулах
  *   4) SessionMiddleware      - PHP session удирдлага
  *   5) JWTAuthMiddleware      - JWT шалгаж User объект үүсгэх
- *   6) CsrfMiddleware         - CSRF token шалгах (POST/PUT/DELETE)
+ *   6) CsrfMiddleware         - CSRF token шалгах (POST/PUT/PATCH/DELETE)
  *   7) ContainerMiddleware    - DI Container inject
  *   8) LocalizationMiddleware - Хэл, орчуулга inject
  *   9) SettingsMiddleware     - Системийн тохиргоо inject
@@ -33,6 +33,7 @@ namespace Raptor;
  *   - ContentsRouter       -> File, News, Page, Reference, Settings модулиуд
  *   - LogsRouter           -> Системийн логийн индекс, харах
  *   - TemplateRouter       -> Dashboard UI-ийн template харгалзах маршрут
+ *   - BadgeRouter          -> Sidebar badge систем (unseen activity counts)
  *
  * Энэхүү Application нь Dashboard талын бүх маршрут + middleware-г
  * нэг дор авч, Raptor-ийн бүрэн backend pipeline-г босгодог.
@@ -93,6 +94,8 @@ abstract class Application extends \codesaur\Http\Application\Application
         $this->use(new Log\LogsRouter());
         $this->use(new Development\DevelopmentRouter());
         $this->use(new Migration\MigrationRouter());
+        $this->use(new Trash\TrashRouter());
         $this->use(new Template\TemplateRouter());
+        $this->use(new Template\BadgeRouter());
     }
 }

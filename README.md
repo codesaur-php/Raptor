@@ -30,13 +30,19 @@ Clean architecture object-oriented web development framework
 - Дэлгүүр модуль: Бүтээгдэхүүн, Захиалга, Үнэлгээ (e-commerce)
 - MySQL, PostgreSQL алийг нь ч дэмжинэ
 - SQL файл суурьтай өгөгдлийн сангийн migration систем
-- Twig template engine
+- codesaur/template engine
 - OpenAI интеграци (moedit editor)
 - Зураг optimize хийх (GD)
 - PSR-3 лог систем
-- Brevo API и-мэйл, Discord webhook мэдэгдэл
+- И-мэйл (Brevo API, SMTP, PHP mail), Discord webhook мэдэгдэл
+- PSR-14 Event Dispatcher систем
 - SEO: Хайлт, Sitemap, XML Sitemap, RSS feed
 - Спам хамгаалалт (honeypot, HMAC token, rate limiting, Cloudflare Turnstile)
+- CSRF хамгаалалт (CsrfMiddleware, csrfFetch)
+- File-based DB cache (PSR-16 SimpleCache) - автомат invalidation-тэй
+- Устгасан бичлэгийг сэргээх Trash систем
+- Dashboard sidebar badge систем (уншаагүй үйлдлийн тоолуур)
+- Админ имэйл мэдэгдэл: мессеж, захиалга, сэтгэгдэл, үнэлгээ (суваг тус бүрд тохируулах)
 
 ### Дэлгэрэнгүй мэдээлэл
 
@@ -61,13 +67,19 @@ The framework operates in two layers - **Web** (public website) and **Dashboard*
 - Shop module: Products, Orders, Reviews (e-commerce)
 - MySQL or PostgreSQL supported
 - SQL file-based database migration system
-- Twig template engine
+- codesaur/template engine
 - OpenAI integration (moedit editor)
 - Image optimization (GD)
 - PSR-3 logging system
-- Brevo API email, Discord webhook notifications
+- Email (Brevo API, SMTP, PHP mail), Discord webhook notifications
+- PSR-14 Event Dispatcher system
 - SEO: Search, Sitemap, XML Sitemap, RSS feed
 - Spam protection (honeypot, HMAC token, rate limiting, Cloudflare Turnstile)
+- CSRF protection (CsrfMiddleware, csrfFetch)
+- File-based DB cache (PSR-16 SimpleCache) with auto-invalidation
+- Trash system for deleted records recovery
+- Dashboard sidebar badge system (unseen activity counters)
+- Admin email notifications for contact messages, orders, comments, reviews (per-channel config)
 
 ### Documentation
 
@@ -125,14 +137,14 @@ RAPTOR_JWT_LIFETIME=2592000
 ```
 public_html/index.php
  |-- /dashboard/* -> Dashboard\Application (Admin Panel)
- |    |-- Middleware stack (Session, JWT, RBAC, Localization, Settings)
+ |    |-- Middleware stack (Session, JWT, CSRF, RBAC, Localization, Settings)
  |    |-- Routers (Login, Users, Organization, RBAC, Content, Logs, Shop, Development, Migration)
- |    \-- Controllers -> Twig Templates
+ |    \-- Controllers -> Templates
  |
  \-- /* -> Web\Application (Public Website)
       |-- Middleware stack (Session, Localization, Settings)
       |-- WebRouter (/, /page/{id}, /news/{id}, /contact, /language/{code})
-      \-- TemplateController -> Twig Templates
+      \-- TemplateController -> Templates
 ```
 
 **Request Flow:** index.php -> Application -> Middleware chain -> Router match -> Controller -> Response
@@ -143,17 +155,22 @@ public_html/index.php
 raptor/
 |-- application/
 |   |-- raptor/              # Core framework (Controllers, Models, Middleware)
+|   |   |-- Application.php, Controller.php           # Dashboard app + base controller
+|   |   |-- *ConnectMiddleware.php (MySQL, Postgres)  # DB connection middleware
+|   |   |-- SessionMiddleware.php, ContainerMiddleware.php, CsrfMiddleware.php  # PSR-15 middleware
+|   |   |-- CacheService.php, SpamProtectionTrait.php # Cache + spam helpers
 |   |   |-- authentication/  # Login, JWT, Session
-|   |   |-- content/         # CMS (files, messages, news, pages, references, settings)
+|   |   |-- content/         # CMS (files, messages, news, pages, references, settings, AI)
 |   |   |-- localization/    # Languages & translations
 |   |   |-- organization/    # Organization management
 |   |   |-- rbac/            # Roles & permissions
 |   |   |-- user/            # User management
-|   |   |-- template/        # Dashboard UI
+|   |   |-- template/        # Dashboard UI, menu, badges
 |   |   |-- exception/       # Exception handler
 |   |   |-- log/             # Logging
-|   |   |-- mail/            # Email
-|   |   |-- notification/    # Discord webhook notifications
+|   |   |-- mail/            # Email (Brevo API, SMTP, PHP mail)
+|   |   |-- notification/    # PSR-14 events, Discord webhook notifications
+|   |   |-- trash/           # Trash system for deleted records recovery
 |   |   |-- development/     # Dev request tracking
 |   |   \-- migration/       # Database migration system
 |   |-- dashboard/           # Dashboard application
@@ -181,9 +198,9 @@ raptor/
 |-- .github/
 |   \-- workflows/
 |       |-- ci.yml           # CI code quality checks (push, PR)
-|       \-- deploy.yml       # Auto deploy (cPanel FTP / Windows Server self-hosted runner)
+|       \-- deploy.yml       # Auto deploy (FTP / SSH / Windows Server)
 |-- logs/                    # Error logs
-|-- private/                 # Protected files
+|-- private/                 # Protected files (uploads, cache)
 |-- .env.testing             # Test environment variables
 |-- composer.json            # Dependencies
 |-- phpunit.xml              # PHPUnit configuration
@@ -246,7 +263,7 @@ This project is licensed under the MIT License.
 
 **Narankhuu**  
 Email: codesaur@gmail.com  
-Phone: [+976 99000287](https://wa.me/97699000287)  
+Phone: +976 99000287  
 Web: https://github.com/codesaur
 
 **codesaur ecosystem:** https://codesaur.net

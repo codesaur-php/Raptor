@@ -14,10 +14,10 @@
     'software': { 'mn': 'Программ хангамж' }
 } %}
 <!-- Mongolian WYSIWYG Editor - текст editor -->
-<link href="{{ index }}/assets/moedit/moedit.css?v=1" rel="stylesheet">
-<link href="{{ index }}/assets/moedit/moedit-icons.css?v=1" rel="stylesheet">
-<script defer src="{{ index }}/assets/moedit/moedit.js?v=1"></script>
-<script defer src="{{ index }}/assets/moedit/moedit.ui.js?v=2"></script>
+<link href="{{ index }}/assets/moedit/moedit.css?v=3" rel="stylesheet">
+<link href="{{ index }}/assets/moedit/moedit-icons.css?v=3" rel="stylesheet">
+<script defer src="{{ index }}/assets/moedit/moedit.js?v=3"></script>
+<script defer src="{{ index }}/assets/moedit/moedit.ui.js?v=3"></script>
 <!-- Хуудасны толгой хэсэг -->
 <div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-2 shadow">
     <h3 class="px-2 my-auto fs-6 text-success">
@@ -240,7 +240,7 @@
         /* Форм илгээх функц */
         const formInsert = document.querySelector('form#product_insert');
         if (!formInsert) {
-            NotifyTop('danger', `{{ 'error'|text|e }}`, 'Form not found!');
+            Notify('danger', `{{ 'error'|text|e }}`, 'Form not found!');
         } else {
             /* Хадгалах товчнууд дээр дарахад форм илгээх */
             const submitters = document.querySelectorAll('button.submit-insert');
@@ -260,7 +260,7 @@
                 this.classList.add('was-validated');
                 if (!_valid) {
                     event.stopPropagation();
-                    return NotifyTop('danger', `{{ 'error'|text|e }}`, `{{ 'u-have-some-form-errors'|text|e }}`);
+                    return Notify('danger', `{{ 'error'|text|e }}`, `{{ 'u-have-some-form-errors'|text|e }}`);
                 }
 
                 /* Товчнуудыг disable хийх (spinner харуулах) */
@@ -305,10 +305,10 @@
                     /* Амжилттай бол бүтээгдэхүүний жагсаалт руу шилжих */
                     window.location.href = `{{ 'products'|link }}`;
 
-                    NotifyTop(response.type ?? 'success', response.title ?? `{{ 'success'|text|e }}`, response.message ?? 'Product created');
+                    Notify(response.type ?? 'success', response.title ?? `{{ 'success'|text|e }}`, response.message ?? 'Product created');
                 }).catch(error => {
                     /* Алдаа гарсан тохиолдолд */
-                    NotifyTop('danger', `{{ 'error'|text|e }}`, error.message);
+                    Notify('danger', `{{ 'error'|text|e }}`, error.message);
                     submitters.forEach(function (btn) { btn.growNstop();});
                 });
             });

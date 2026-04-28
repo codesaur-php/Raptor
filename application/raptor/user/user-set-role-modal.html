@@ -48,7 +48,7 @@
                                 <optgroup label="{{ rbacs[key]|e }}" alias="{{ key|e }}">
                                     {% for value,name in data %}
                                         <option value="{{ value|e }}"
-                                                {% if value in current_role %}selected{% endif %}>
+                                                {% if current_role[value] %}selected{% endif %}>
                                             [{{ name[0]|e }}] {{ name[1]|e }}
                                         </option>
                                     {% endfor %}
@@ -94,7 +94,7 @@ const userRolesForm = document.querySelector('form#set_user_role');
 if (!userRolesForm) {
 
     /* Form олдохгүй бол алдаа */
-    NotifyTop('danger', `{{ 'error'|text|e }}`, 'Form not found!');
+    Notify('danger', `{{ 'error'|text|e }}`, 'Form not found!');
 
 } else {
 
@@ -117,7 +117,7 @@ if (!userRolesForm) {
 
         if (!isValid) {
             event.stopPropagation();
-            return NotifyTop(
+            return Notify(
                 'danger',
                 `{{ 'error'|text|e }}`,
                 `{{ 'u-have-some-form-errors'|text|e }}`
@@ -152,7 +152,7 @@ if (!userRolesForm) {
             /* Амжилттай -> Хуудсыг refresh хийх */
             window.location.reload();
 
-            NotifyTop(
+            Notify(
                 response.type ?? 'success',
                 response.title ?? `{{ 'success'|text|e }}`,
                 response.message ?? 'User role set'
@@ -160,7 +160,7 @@ if (!userRolesForm) {
         })
         .catch(error => {
             /* Алдаа гарвал */
-            NotifyTop('danger', `{{ 'error'|text|e }}`, error.message);
+            Notify('danger', `{{ 'error'|text|e }}`, error.message);
 
             /* Loading эффектийг зогсоох */
             submitter.growNstop();

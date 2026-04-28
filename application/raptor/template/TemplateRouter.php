@@ -12,7 +12,7 @@ use codesaur\Router\Router;
  *
  * Гүйцэтгэх үндсэн үүргүүд:
  *   - Хэрэглэгчийн UI тохиргоонуудыг (хэл, харагдах байдал гэх мэт) авах
- *   - Dashboard менюг удирдах (үүсгэх, засах, идэвхгүй болгох)
+ *   - Dashboard менюг удирдах (үүсгэх, засах, устгах)
  *
  * Энэ Router нь TemplateController-т холбогддог.
  *
@@ -30,7 +30,7 @@ class TemplateRouter extends Router
      *   GET    /dashboard/manage/menu             -> Меню удирдлага хуудас
      *   POST   /dashboard/manage/menu/insert      -> Шинэ меню үүсгэх
      *   PUT    /dashboard/manage/menu/update      -> Одоогийн менюг шинэчлэх
-     *   DELETE /dashboard/manage/menu/deactivate  -> Менюг идэвхгүй болгох
+     *   DELETE /dashboard/manage/menu/delete       -> Менюг устгах
      */
     public function __construct()
     {
@@ -64,10 +64,10 @@ class TemplateRouter extends Router
             [TemplateController::class, 'manageMenuUpdate']
         )->name('manage-menu-update');
 
-        // Меню идэвхгүй болгох
+        // Меню устгах
         $this->DELETE(
-            '/dashboard/manage/menu/deactivate',
-            [TemplateController::class, 'manageMenuDeactivate']
-        )->name('manage-menu-deactivate');
+            '/dashboard/manage/menu/delete',
+            [TemplateController::class, 'manageMenuDelete']
+        )->name('manage-menu-delete');
     }
 }

@@ -23,13 +23,12 @@ class PagesSamples
         if ($path == '\\' || $path == '/' || $path == '.') {
             $path = '';
         }
-        $now = \date('Y-m-d H:i:s');
         $assets = $path . '/assets/images';
+        
         $seed = [
+            'category' => '_raptor_sample_',
             'published' => 1,
-            'created_at' => $now,
-            'published_at' => $now,
-            'category' => '_raptor_sample_'
+            'published_at' => \date('Y-m-d H:i:s')
         ];
 
         // ============ MN хуудсууд ============

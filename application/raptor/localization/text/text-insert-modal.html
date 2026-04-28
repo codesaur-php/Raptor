@@ -64,7 +64,7 @@
     const formInsert = document.querySelector('form#text_insert');
     if (!formInsert) {
         /* Форм олдоогүй бол алдаа харуулна */
-        NotifyTop('danger', `{{ 'error'|text|e }}`, 'Form not found!');
+        Notify('danger', `{{ 'error'|text|e }}`, 'Form not found!');
     } else {
         /* Илгээх товч -> form.requestSubmit() хийх */
         const submitter = document.querySelector('button.new-text-submit');
@@ -82,7 +82,7 @@
             this.classList.add('was-validated');
             if (!_valid) {
                 event.stopPropagation();
-                return NotifyTop('danger',
+                return Notify('danger',
                     `{{ 'error'|text|e }}`,
                     `{{ 'u-have-some-form-errors'|text|e }}`
                 );
@@ -110,10 +110,12 @@
                     throw new Error(response.message ? response.message : 'Invalid response!');
                 }
 
-                /* Амжилттай -> localization dashboard хуудсыг refresh хийнэ */
+                /* Амжилттай -> localization dashboard хуудсыг refresh хийнэ.
+                 * Текстийн таб дээр буцаж очих байдлаар hash тохируулна. */
+                window.location.hash = '#tab-text';
                 window.location.reload();
 
-                NotifyTop(
+                Notify(
                     response.type ?? 'success',
                     response.title ?? `{{ 'success'|text|e }}`,
                     response.message ?? 'Text created'
@@ -121,7 +123,7 @@
             })
             .catch(error => {
                 /* Backend болон client-side алдаа бүгд энд баригдана */
-                NotifyTop('danger', `{{ 'error'|text|e }}`, error.message);
+                Notify('danger', `{{ 'error'|text|e }}`, error.message);
                 submitter.growNstop();
             });
         });

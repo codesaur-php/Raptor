@@ -238,7 +238,7 @@
                 COPYRIGHT (олон хэл дээр)
                 ----------------------------------------------------
                 - Footer хэсэгт харагдах зохиогчийн эрхийн текст.
-                - Жишээ: "© 2025 Company Name. All rights reserved."
+                - Жишээ: "&copy; 2025 Company Name. All rights reserved." (HTML entity)
                 - Вэбсайтын олон хэлт орчинд тохируулах боломжтой.
                 - Үүнд HTML бичих боломжтой
             -->
@@ -522,8 +522,8 @@
         </form>
     </div> <!-- END LOGO TAB -->
     
-    <!-- 
-        CONFIG TAB  
+    <!--
+        CONFIG TAB
         ----------------------------------------------------
         Энэ tab нь JSON хэлбэртэй сайтын нэмэлт тохиргоог оруулах хэсэг.
         Жишээ:
@@ -641,7 +641,7 @@
         -------------------------
         - config textarea-г олно
         - JSON parse -> stringify(4 space indent)
-        - Алдааны үед NotifyTop хэрэглэнэ
+        - Алдааны үед Notify хэрэглэнэ
     */
     const prettyPrint = function () {
         try {
@@ -657,7 +657,7 @@
                 configEditor.value = pretty;
             }
         } catch (e) {
-            NotifyTop('danger', `{{ 'error'|text|e }}`, e.message);
+            Notify('danger', `{{ 'error'|text|e }}`, e.message);
         }
     };
 
@@ -674,7 +674,7 @@
         /* ID шалгах */
         const id = fileInput.id;
         if (!id) {
-            return NotifyTop('warning', `{{ 'error'|text|e }}`, 'Please set file input id!');
+            return Notify('warning', `{{ 'error'|text|e }}`, 'Please set file input id!');
         }
 
         /* Файлын нэрийг текст input-д харуулах */
@@ -785,7 +785,7 @@
 
             const form = this.closest('form');
             if (!form) {
-                return NotifyTop('danger', `{{ 'error'|text|e }}`, 'Form not found!');
+                return Notify('danger', `{{ 'error'|text|e }}`, 'Form not found!');
             }
             
             form.requestSubmit();
@@ -810,7 +810,21 @@
 
             if (!valid) {
                 event.stopPropagation();
-                return NotifyTop('danger', `{{ 'error'|text|e }}`, `{{ 'u-have-some-form-errors'|text|e }}`);
+
+                /* Эхний invalid input-ыг олж, хамаарах таб руу шилжээд focus хийнэ */
+                const firstInvalid = this.querySelector(':invalid');
+                if (firstInvalid) {
+                    const tabPane = firstInvalid.closest('.tab-pane');
+                    if (tabPane) {
+                        const tabBtn = document.querySelector(`a.nav-link[href="#${tabPane.id}"], button.nav-link[data-bs-target="#${tabPane.id}"]`);
+                        if (tabBtn) {
+                            bootstrap.Tab.getOrCreateInstance(tabBtn).show();
+                        }
+                    }
+                    setTimeout(() => firstInvalid.focus(), 200);
+                }
+
+                return Notify('danger', `{{ 'error'|text|e }}`, `{{ 'u-have-some-form-errors'|text|e }}`);
             }
 
             submitters.forEach(function (btn) { btn.spinNstop(); });
@@ -832,7 +846,7 @@
                     throw new Error(response.message ? response.message : 'Invalid response!');
                 }
 
-                NotifyTop(
+                Notify(
                     response.type ?? 'success',
                     response.title ?? `{{ 'success'|text|e }}`,
                     response.message ?? 'Settings updated'
@@ -840,7 +854,7 @@
 
                 window.location.reload();
             }).catch(error => {
-                NotifyTop('danger', `{{ 'error'|text|e }}`, error.message);
+                Notify('danger', `{{ 'error'|text|e }}`, error.message);
             }).finally(() => {
                 submitters.forEach(function (btn) { btn.spinNstop(); });
             });

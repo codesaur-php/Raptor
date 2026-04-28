@@ -55,7 +55,7 @@ class MigrationController extends \Raptor\Controller
             return;
         }
 
-        $this->twigDashboard(__DIR__ . '/migration-index.html')->render();
+        $this->dashboardTemplate(__DIR__ . '/migration-index.html')->render();
     }
 
     /**

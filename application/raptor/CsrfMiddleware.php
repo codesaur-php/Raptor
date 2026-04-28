@@ -10,7 +10,7 @@ use Psr\Http\Server\RequestHandlerInterface;
 /**
  * Class CsrfMiddleware
  *
- * Dashboard-ийн POST/PUT/DELETE хүсэлтүүдэд CSRF token шалгах middleware.
+ * Dashboard-ийн POST/PUT/PATCH/DELETE хүсэлтүүдэд CSRF token шалгах middleware.
  *
  * Token нь login үед $_SESSION['CSRF_TOKEN'] дотор үүсэж хадгалагдана.
  * Клиент тал (JS) нь X-CSRF-TOKEN header-аар дамжуулна.

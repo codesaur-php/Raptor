@@ -2,8 +2,8 @@
     <h3 class="px-2 my-auto fs-6 text-white">
         <i class="bi bi-folder2-open"></i> Files - Гарын авлага
     </h3>
-    <a href="{{ 'manual' | link }}" class="btn btn-sm btn-light m-1">
-        <i class="bi bi-arrow-left"></i> {{ 'manual' | text }}
+    <a href="{{ 'manual'|link }}" class="btn btn-sm btn-light m-1">
+        <i class="bi bi-arrow-left"></i> {{ 'manual'|text }}
     </a>
 </div>
 
@@ -112,7 +112,7 @@
         <h4 class="text-primary mb-3"><i class="bi bi-pencil-square"></i> Засварлах / Устгах (зөвхөн files хүснэгт)</h4>
         <ul>
             <li><strong>Засварлах</strong> - Файлын тайлбар, түлхүүр үг зэргийг өөрчлөх (<code>system_content_update</code> эрх шаардлагатай)</li>
-            <li><strong>Устгах</strong> - Файлыг идэвхгүй болгоно. Бодит файл устахгүй, зөвхөн бичлэг идэвхгүй болно (<code>system_content_delete</code> эрх шаардлагатай)</li>
+            <li><strong>Устгах</strong> - Файлын бичлэгийг мэдээллийн сангаас бүрмөсөн устгана; нөөц хуулбар нь Trash хүснэгтэд хадгалагдана. Бодит файл санах ойгоос устахгүй (<code>system_content_delete</code> эрх шаардлагатай)</li>
         </ul>
         <div class="alert alert-info mb-0">
             <i class="bi bi-info-circle"></i> Attachments хүснэгтүүдийн файлуудыг засварлах, устгах нь тухайн модулийн (News, Pages, Products) засварлах хуудаснаас хийгдэнэ.
@@ -132,7 +132,7 @@
                 <tr><td>Файлын жагсаалт харах</td><td><code>system_content_index</code></td></tr>
                 <tr><td>Файл байршуулах (files хүснэгт)</td><td>Нэвтэрсэн хэрэглэгч</td></tr>
                 <tr><td>Файлын мэдээлэл засварлах</td><td><code>system_content_update</code></td></tr>
-                <tr><td>Файл идэвхгүй болгох</td><td><code>system_content_delete</code></td></tr>
+                <tr><td>Файл устгах</td><td><code>system_content_delete</code></td></tr>
             </tbody>
         </table>
     </div>

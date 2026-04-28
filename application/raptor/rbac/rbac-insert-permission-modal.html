@@ -170,7 +170,7 @@
     const formInsert = document.querySelector('form#rbac_permission_insert');
     if (!formInsert) {
         /* Form олдохгүй бол хэрэглэгчид мэдэгдэнэ */
-        NotifyTop('danger', `{{ 'error'|text|e }}`, 'Form not found!');
+        Notify('danger', `{{ 'error'|text|e }}`, 'Form not found!');
     } else {
         /*
             MODULE dropdown -> module input-д утга хийх
@@ -197,7 +197,7 @@
             FORM submit handler
             -----------------------------------------------------
               * HTML5 validation
-              * Хэрвээ алдаа байвал NotifyTop()
+              * Хэрвээ алдаа байвал Notify()
               * csrfFetch() -> server рүү POST хүсэлт
               * Success -> хуудсыг refresh
         */
@@ -209,7 +209,7 @@
 
             if (!_valid) {
                 event.stopPropagation();
-                return NotifyTop(
+                return Notify(
                     'danger',
                     `{{ 'error'|text|e }}`,
                     `{{ 'u-have-some-form-errors'|text|e }}`
@@ -241,14 +241,14 @@
                 /* Permission үүссэн -> refresh */
                 window.location.reload();
 
-                NotifyTop(
+                Notify(
                     response.type ?? 'success',
                     response.title ?? `{{ 'success'|text|e }}`,
                     response.message ?? 'Permission created'
                 );
             }).catch(error => {
                 /* Алдаа мэдэгдэх */
-                NotifyTop('danger', `{{ 'error'|text|e }}`, error.message);
+                Notify('danger', `{{ 'error'|text|e }}`, error.message);
                 submitter.growNstop();
             });
         });

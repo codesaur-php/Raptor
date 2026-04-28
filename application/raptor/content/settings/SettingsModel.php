@@ -21,7 +21,7 @@ use codesaur\DataObject\LocalizedModel;
  *   - Холбоо барих мэдээлэл (утас, имэйл, хаяг)
  *   - Favicon, Apple Touch Icon
  *   - Нэмэлт config JSON / TEXT
- * - `retrieve()` функцээр хамгийн сүүлд идэвхтэй (`is_active=1`) бичлэгийг авах
+ * - `retrieve()` функцээр хамгийн сүүлийн бичлэгийг авах
  *
  * Анхаарах зүйл:
  * - `created_by`, `updated_by` нь Raptor-ийн хэрэглэгчийн хүснэгт
@@ -56,7 +56,6 @@ class SettingsModel extends LocalizedModel
             new Column('favicon', 'varchar', 255),           // Favicon файлын харгалзах зам
             new Column('apple_touch_icon', 'varchar', 255),  // Apple touch icon зам
             new Column('config', 'text'),                    // Нэмэлт тохиргоо (ихэвчлэн JSON)
-           (new Column('is_active', 'tinyint'))->default(1), // Тухайн мөр идэвхтэй эсэх (1=идэвхтэй)
             new Column('created_at', 'datetime'),            // Бичлэг үүсгэсэн огноо
             new Column('created_by', 'bigint'),              // Үүсгэсэн хэрэглэгчийн ID (FK)
             new Column('updated_at', 'datetime'),            // Сүүлд шинэчилсэн огноо
@@ -138,8 +137,7 @@ class SettingsModel extends LocalizedModel
                         'mn' => 'Даваа - Баасан, 09:00 - 18:00',
                         'en' => 'Mon - Fri, 09:00 - 18:00'
                     ]
-                ], \JSON_UNESCAPED_UNICODE | \JSON_PRETTY_PRINT),
-                'created_at' => \date('Y-m-d H:i:s')
+                ], \JSON_UNESCAPED_UNICODE | \JSON_PRETTY_PRINT)
             ],
             [
                 'mn' => [
@@ -147,14 +145,14 @@ class SettingsModel extends LocalizedModel
                     'logo' => $logo,
                     'description' => 'Raptor Framework дээр суурилсан вэб сайт',
                     'address' => 'Улаанбаатар хот, Сүхбаатар дүүрэг',
-                    'copyright' => '© ' . \date('Y') . ' Raptor'
+                    'copyright' => '&copy; ' . \date('Y') . ' Raptor'
                 ],
                 'en' => [
                     'title' => 'Raptor',
                     'logo' => $logo,
                     'description' => 'Website powered by Raptor Framework',
                     'address' => 'Ulaanbaatar, Sukhbaatar District',
-                    'copyright' => '© ' . \date('Y') . ' Raptor'
+                    'copyright' => '&copy; ' . \date('Y') . ' Raptor'
                 ]
             ]
         );
@@ -165,25 +163,24 @@ class SettingsModel extends LocalizedModel
      *
      * @param array $record
      *      Үндсэн хүснэгтийн өгөгдөл:
-     *      - email, phone, favicon, apple_touch_icon, config, is_active, created_by г.м
+     *      - email, phone, favicon, apple_touch_icon, config, created_by г.м
      * @param array $content
      *      Хэл тус бүрийн контент:
      *      - title, logo, description, urgent, contact, address, copyright
      *      - LocalizedModel-ийн форматтай (жишээ нь: ['mn_MN' => [...], 'en_US' => [...]] )
      *
-     * @return array|false
-     *      - Амжилттай байвал:
+     * @return array
+     *      Амжилттай байвал:
      *          [
      *              'record'  => [...], // үндсэн мөр
      *              'content' => [...]  // контент мөрүүд
      *          ]
-     *      - Амжилтгүй бол `false`
      *
      * Тайлбар:
      *  - Хэрэв `$record['created_at']` ирээгүй бол автоматаар одоогийн цагийг онооно.
      *  - Дараа нь `parent::insert()` дуудагдана (LocalizedModel).
      */
-    public function insert(array $record, array $content): array|false
+    public function insert(array $record, array $content): array
     {
         // created_at ирээгүй бол автомат огноо онооно
         $record['created_at'] ??= \date('Y-m-d H:i:s');
@@ -197,20 +194,19 @@ class SettingsModel extends LocalizedModel
      *      Шинэчлэх гэж буй үндсэн мөрийн ID (`raptor_settings.id`)
      * @param array $record
      *      Үндсэн хүснэгтийн шинэ утгууд:
-     *      - phone, email, config, is_active, updated_by г.м
+     *      - phone, email, config, updated_by г.м
      * @param array $content
      *      Хэл тус бүрийн шинэ контент:
      *      - title, description, logo, address, contact г.м
      *
-     * @return array|false
-     *      - Амжилттай бол шинэчлэгдсэн өгөгдөлтэй массив
-     *      - Алдаа эсвэл олдоогүй бол `false`
+     * @return array
+     *      Амжилттай бол шинэчлэгдсэн өгөгдөлтэй массив
      *
      * Тайлбар:
      *  - `$record['updated_at']` параметр ирээгүй бол автоматаар одоогийн цаг онооно.
      *  - LocalizedModel-ийн `updateById()`-ыг ашиглаж, үндсэн + контент хүснэгтийг зэрэг шинэчилнэ.
      */
-    public function updateById(int $id, array $record, array $content): array|false
+    public function updateById(int $id, array $record, array $content): array
     {
         // updated_at ирээгүй тохиолдолд автоматаар одоогийн цаг онооно
         $record['updated_at'] ??= \date('Y-m-d H:i:s');        
@@ -221,13 +217,12 @@ class SettingsModel extends LocalizedModel
      * Идэвхтэй settings тохиргоог авах.
      *
      * @return array
-     *      - `is_active=1` нөхцөлтэй мөрүүдээс хамгийн сүүлийнхийг нь буцаана
+     *      - Хамгийн сүүлийнх мөрийг буцаана
      *      - Хоосон байвал хоосон массив `[]`
      *
      * Тайлбар:
-     *  - `getRows(['WHERE' => 'p.is_active=1'])` нь:
-     *      - `p` нь ихэвчлэн primary table-ийн alias (LocalizedModel дотор)
-     *      - Хэрэв олон идэвхтэй бичлэг байвал `end($record)` ашиглаж хамгийн
+     *  - `getRows()` нь бүх мөрийг авна.
+     *      - Хэрэв олон бичлэг байвал `end($record)` ашиглаж хамгийн
      *        сүүлд орсон/уншсан мөрийг буцаана.
      *  - UI талд: 
      *      - header, footer, contact page, SEO мета мэдээлэл г.м бүх газар
@@ -235,7 +230,7 @@ class SettingsModel extends LocalizedModel
      */
     public function retrieve(): array
     {
-        $record = $this->getRows(['WHERE' => 'p.is_active=1']) ?? [];
+        $record = $this->getRows() ?? [];
         // Хоосон байвал [] буцаана, байвал хамгийн сүүлийнх мөрийг буцаана
         return \end($record) ?: [];
     }

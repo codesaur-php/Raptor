@@ -4,6 +4,7 @@ namespace Dashboard\Shop;
 
 use codesaur\DataObject\Model;
 use codesaur\DataObject\Column;
+use codesaur\DataObject\Constants;
 
 /**
  * Class ProductsModel
@@ -41,13 +42,12 @@ class ProductsModel extends Model
            (new Column('stock', 'int'))->default(0),
             new Column('link', 'varchar', 255),
             new Column('photo', 'varchar', 255),
-            new Column('code', 'varchar', 2),
+            new Column('code', 'varchar', Constants::DEFAULT_CODE_LENGTH),
            (new Column('type', 'varchar', 32))->default('product'),
            (new Column('category', 'varchar', 32))->default('general'),
            (new Column('is_featured', 'tinyint'))->default(0),
            (new Column('review', 'tinyint'))->default(1),
            (new Column('read_count', 'bigint'))->default(0),
-           (new Column('is_active', 'tinyint'))->default(1),
            (new Column('published', 'tinyint'))->default(0),
             new Column('published_at', 'datetime'),
             new Column('published_by', 'bigint'),
@@ -70,18 +70,15 @@ class ProductsModel extends Model
      */
     protected function __initial()
     {
-        $table = $this->getName();
-
         $this->setForeignKeyChecks(false);
 
+        $table = $this->getName();
         $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
-
         $constraints = [
             'published_by' => "{$table}_fk_published_by",
             'created_by'   => "{$table}_fk_created_by",
             'updated_by'   => "{$table}_fk_updated_by"
         ];
-
         foreach ($constraints as $column => $constraint) {
             $this->exec(
                 "ALTER TABLE $table " .
@@ -96,8 +93,9 @@ class ProductsModel extends Model
         $this->setForeignKeyChecks(true);
 
         // Хайлт, шүүлтийн гүйцэтгэлийг сайжруулах индексүүд
-        $this->exec("CREATE INDEX {$table}_idx_active_published ON $table (is_active, published)");
-        $this->exec("CREATE INDEX {$table}_idx_code_active_published ON $table (code, is_active, published, published_at)");
+        $this->exec("CREATE INDEX {$table}_idx_published ON $table (published)");
+        $this->exec("CREATE INDEX {$table}_idx_code_published ON $table (code, published, published_at)");
+        $this->exec("CREATE INDEX {$table}_idx_created ON $table (created_at DESC)");
 
         ProductsSamples::seed($this);
     }
@@ -109,12 +107,10 @@ class ProductsModel extends Model
      * автоматаар бөглөнө (хэрэв өгөгдөөгүй бол).
      *
      * @param array $record Бүтээгдэхүүний мэдээлэл
-     * @return array|false Амжилттай бол үүссэн бичлэгийн массив, бусад тохиолдолд false
+     * @return array Амжилттай бол үүссэн бичлэгийн массив
      */
-    public function insert(array $record): array|false
+    public function insert(array $record): array
     {
-        $record['created_at'] ??= \date('Y-m-d H:i:s');
-
         if (empty($record['slug']) && !empty($record['title'])) {
             $record['slug'] = $this->generateSlug($record['title']);
         }
@@ -126,6 +122,7 @@ class ProductsModel extends Model
             $record['description'] = $desc;
         }
 
+        $record['created_at'] ??= \date('Y-m-d H:i:s');
         return parent::insert($record);
     }
 

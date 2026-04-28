@@ -2,8 +2,8 @@
     <h3 class="px-2 my-auto fs-6 text-white">
         <i class="bi bi-folder2-open"></i> Files - Manual
     </h3>
-    <a href="{{ 'manual' | link }}" class="btn btn-sm btn-light m-1">
-        <i class="bi bi-arrow-left"></i> {{ 'manual' | text }}
+    <a href="{{ 'manual'|link }}" class="btn btn-sm btn-light m-1">
+        <i class="bi bi-arrow-left"></i> {{ 'manual'|text }}
     </a>
 </div>
 
@@ -112,7 +112,7 @@
         <h4 class="text-primary mb-3"><i class="bi bi-pencil-square"></i> Edit / Delete (files table only)</h4>
         <ul>
             <li><strong>Edit</strong> - Modify file description, keywords (<code>system_content_update</code> permission required)</li>
-            <li><strong>Delete</strong> - Deactivates the file record. The actual file is not removed, only the metadata record is deactivated (<code>system_content_delete</code> permission required)</li>
+            <li><strong>Delete</strong> - Permanently deletes the file record from the database; a backup copy is stored in the Trash table for recovery. The actual file is not removed from storage (<code>system_content_delete</code> permission required)</li>
         </ul>
         <div class="alert alert-info mb-0">
             <i class="bi bi-info-circle"></i> Attachment table files can only be edited or removed from their respective module's (News, Pages, Products) edit page.
@@ -132,7 +132,7 @@
                 <tr><td>View file list</td><td><code>system_content_index</code></td></tr>
                 <tr><td>Upload files (files table)</td><td>Authenticated user</td></tr>
                 <tr><td>Edit file metadata</td><td><code>system_content_update</code></td></tr>
-                <tr><td>Deactivate file</td><td><code>system_content_delete</code></td></tr>
+                <tr><td>Delete file</td><td><code>system_content_delete</code></td></tr>
             </tbody>
         </table>
     </div>

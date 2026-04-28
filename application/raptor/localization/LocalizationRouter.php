@@ -81,9 +81,9 @@ class LocalizationRouter extends Router
         $this->GET('/dashboard/text/view/{uint:id}', [TextController::class, 'view'])->name('text-view');
 
         /**
-         * Орчуулгын текст идэвхгүй болгох (зөөлөн устгал).
-         * Example: DELETE /dashboard/text/deactivate
+         * Орчуулгын текст устгах.
+         * Example: DELETE /dashboard/text/delete
          */
-        $this->DELETE('/dashboard/text/deactivate', [TextController::class, 'deactivate'])->name('text-deactivate');
+        $this->DELETE('/dashboard/text/delete', [TextController::class, 'delete'])->name('text-delete');
     }
 }

@@ -4,6 +4,7 @@ namespace Dashboard\Shop;
 
 use codesaur\DataObject\Model;
 use codesaur\DataObject\Column;
+use codesaur\DataObject\Constants;
 
 /**
  * Class ProductOrdersModel
@@ -26,7 +27,6 @@ use codesaur\DataObject\Column;
  *   - quantity (int, default: 1) - Тоо ширхэг
  *   - code (varchar 2) - Хэлний код
  *   - status (varchar 32, default: 'new') - Захиалгын төлөв
- *   - is_active (tinyint, default: 1) - Идэвхтэй эсэх
  *
  * @package Dashboard\Shop
  */
@@ -53,9 +53,8 @@ class ProductOrdersModel extends Model
             new Column('customer_phone', 'varchar', 32),
             new Column('message', 'text'),
            (new Column('quantity', 'int'))->default(1),
-            new Column('code', 'varchar', 2),
+            new Column('code', 'varchar', Constants::DEFAULT_CODE_LENGTH),
            (new Column('status', 'varchar', 32))->default('new'),
-           (new Column('is_active', 'tinyint'))->default(1),
             new Column('created_at', 'datetime'),
             new Column('created_by', 'bigint'),
             new Column('updated_at', 'datetime'),
@@ -76,10 +75,9 @@ class ProductOrdersModel extends Model
      */
     protected function __initial()
     {
-        $table = $this->getName();
-
         $this->setForeignKeyChecks(false);
 
+        $table = $this->getName();
         $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
         $products = (new ProductsModel($this->pdo))->getName();
         $constraints = [
@@ -107,7 +105,7 @@ class ProductOrdersModel extends Model
 
         $this->setForeignKeyChecks(true);
 
-        $this->exec("CREATE INDEX {$table}_idx_active_status ON $table (is_active, status)");
+        $this->exec("CREATE INDEX {$table}_idx_status ON $table (status)");
         $this->exec("CREATE INDEX {$table}_idx_product_id ON $table (product_id)");
     }
 
@@ -117,12 +115,11 @@ class ProductOrdersModel extends Model
      * Захиалгын бичлэг үүсгэх үед created_at талбарыг автоматаар бөглөнө.
      *
      * @param array $record Захиалгын мэдээлэл
-     * @return array|false Амжилттай бол үүссэн бичлэгийн массив, бусад тохиолдолд false
+     * @return array Амжилттай бол үүссэн бичлэгийн массив
      */
-    public function insert(array $record): array|false
+    public function insert(array $record): array
     {
         $record['created_at'] ??= \date('Y-m-d H:i:s');
-
         return parent::insert($record);
     }
 }

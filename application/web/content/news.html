@@ -45,7 +45,7 @@
             </div>
 
             <!-- Share + PDF -->
-            <div class="d-flex justify-content-center gap-2 mt-2">
+            <div class="d-flex justify-content-center gap-2 mt-2 no-print">
                 <a class="btn btn-sm btn-outline-primary" href="https://www.facebook.com/sharer/sharer.php?u={{ current_url|url_encode }}" target="_blank" rel="noopener">
                     <i class="bi bi-facebook"></i>
                 </a>
@@ -184,7 +184,7 @@
                     </div>
                     <div>{{ c.comment|nl2br }}</div>
                     {% if not c.parent_id %}
-                    <button class="btn btn-sm btn-link text-muted p-0 mt-1 reply-toggle" data-id="{{ c.id }}" data-name="{{ c.name|e }}">
+                    <button class="btn btn-sm btn-link text-muted p-0 mt-1 reply-toggle no-print" data-id="{{ c.id }}" data-name="{{ c.name|e }}">
                         <i class="bi bi-reply me-1"></i>{{ 'reply'|text }}
                     </button>
                     {% endif %}
@@ -194,7 +194,7 @@
         </div>
         {% endif %}
 
-        <div class="card border-0 shadow-sm">
+        <div class="card border-0 shadow-sm no-print">
             <div class="card-body">
                 <h5 class="fw-semibold mb-3">{{ 'write-comment'|text }}</h5>
                 <div class="alert alert-info py-2 d-none" id="reply-info">

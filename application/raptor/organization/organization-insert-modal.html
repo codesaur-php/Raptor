@@ -204,7 +204,7 @@
     /* Байгууллага үүсгэх form submit */
     const formInsert = document.querySelector('form#organization_insert');
     if (!formInsert) {
-        NotifyTop('danger', `{{ 'error'|text|e }}`, 'Form not found!');
+        Notify('danger', `{{ 'error'|text|e }}`, 'Form not found!');
     } else {
         /* submit товч */
         const submitter = document.querySelector('button.submit-new-organization');
@@ -223,7 +223,7 @@
 
             if (!_valid) {
                 event.stopPropagation();
-                return NotifyTop(
+                return Notify(
                     'danger',
                     `{{ 'error'|text|e }}`,
                     `{{ 'u-have-some-form-errors'|text|e }}`
@@ -253,14 +253,14 @@
                 /* шинээр амжилттай үүссэн тул refresh */
                 window.location.reload();
 
-                NotifyTop(
+                Notify(
                     response.type ?? 'success',
                     response.title ?? `{{ 'success'|text|e }}`,
                     response.message ?? 'Organization created'
                 );
             })
             .catch(error => {
-                NotifyTop('danger', `{{ 'error'|text|e }}`, error.message);
+                Notify('danger', `{{ 'error'|text|e }}`, error.message);
                 submitter.growNstop();
             });
         });

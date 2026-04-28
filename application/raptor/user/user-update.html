@@ -215,7 +215,7 @@
 
                     {% for organization in organizations %}
                         <option value="{{ organization['id'] }}"
-                                {% if organization['id'] in current_organizations %} selected{% endif %}>
+                                {% if current_organizations[organization['id']] %} selected{% endif %}>
                             {{ organization['name'] }}
                         </option>
                     {% endfor %}
@@ -239,7 +239,7 @@
                         <optgroup label="{{ rbacs[key]|e }}" alias="{{ key|e }}">
                             {% for value,name in data %}
                                 <option value="{{ value|e }}"
-                                        {% if value in current_roles %} selected{% endif %}>
+                                        {% if current_roles[value] %} selected{% endif %}>
                                     [{{ name[0]|e }}] {{ name[1]|e }}
                                 </option>
                             {% endfor %}
@@ -274,7 +274,7 @@ const onFileInput = function (fileInput) {
     /* file input-д id байх ёстой */
     const id = fileInput?.id;
     if (!id) {
-        return NotifyTop('warning', `{{ 'error'|text|e }}`, 'File input ID заагдаагүй байна!');
+        return Notify('warning', `{{ 'error'|text|e }}`, 'File input ID заагдаагүй байна!');
     }
 
     /* Сонгосон файл */
@@ -385,7 +385,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const formUpdate = document.getElementById('user_update');
 
     if (!formUpdate) {
-        return NotifyTop('danger', `{{ 'error'|text|e }}`, 'Form not found!');
+        return Notify('danger', `{{ 'error'|text|e }}`, 'Form not found!');
     }
 
     /* Submit товчнууд (дээр/доор хоёулаа) */
@@ -409,7 +409,22 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (!isValid) {
             event.stopPropagation();
-            return NotifyTop(
+
+            /* Эхний invalid input-ыг олж, хамаарах таб руу шилжээд focus хийнэ */
+            const firstInvalid = this.querySelector(':invalid');
+            if (firstInvalid) {
+                const tabPane = firstInvalid.closest('.tab-pane');
+                if (tabPane) {
+                    const tabBtn = document.querySelector(`a.nav-link[href="#${tabPane.id}"], button.nav-link[data-bs-target="#${tabPane.id}"]`);
+                    if (tabBtn) {
+                        bootstrap.Tab.getOrCreateInstance(tabBtn).show();
+                    }
+                }
+                /* Tab transition дууссаны дараа focus хийхээр setTimeout */
+                setTimeout(() => firstInvalid.focus(), 200);
+            }
+
+            return Notify(
                 'danger',
                 `{{ 'error'|text|e }}`,
                 `{{ 'u-have-some-form-errors'|text|e }}`
@@ -445,14 +460,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 window.location.href = `{{ 'home'|link }}`;
             {% endif %}
 
-            NotifyTop(
+            Notify(
                 response.type ?? 'success',
                 response.title ?? `{{ 'success'|text|e }}`,
                 response.message ?? 'User updated'
             );
         })
         .catch(error => {
-            NotifyTop('danger', `{{ 'error'|text|e }}`, error.message);
+            Notify('danger', `{{ 'error'|text|e }}`, error.message);
 
             /* Submit анимэйшн зогсоож товчлууруудын блок арилна */
             submitButtons.forEach(btn => btn.growNstop());

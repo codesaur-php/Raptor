@@ -29,8 +29,9 @@ class ContentsRouter extends Router
      * Маршрут бүр нь RESTful зарчмыг дагаж:
      *  - GET     -> мэдээлэл авах
      *  - POST    -> шинэ мэдээлэл нэмэх / файл илгээх
-     *  - PUT     -> засварлах
-     *  - DELETE  -> идэвхгүй болгох (soft delete)
+     *  - PUT     -> бүтнээр засварлах
+     *  - PATCH   -> хэсэгчлэн шинэчлэх (status, toggle, нэг талбар)
+     *  - DELETE  -> устгах
      *  - GET_POST, GET_PUT -> формтой хуудсууд
      *
      * Энэ router нь Raptor-ийн Contents удирлага интерфэйсийг бүрдүүлдэг үндсэн бүртгэгч юм.
@@ -56,11 +57,11 @@ class ContentsRouter extends Router
         // Файл сонгох modal UI
         $this->GET('/dashboard/files/modal/{table}', [FilesController::class, 'modal'])->name('files-modal');
 
-        // Файлын мэдээлэл шинэчлэх
-        $this->PUT('/dashboard/files/{table}/{uint:id}', [FilesController::class, 'update'])->name('files-update');
+        // Файлын мэдээлэл шинэчлэх (partial update)
+        $this->PATCH('/dashboard/files/{table}/{uint:id}', [FilesController::class, 'update'])->name('files-update');
 
-        // Файлыг идэвхгүй болгох (soft delete)
-        $this->DELETE('/dashboard/files/{table}/deactivate', [FilesController::class, 'deactivate'])->name('files-deactivate');
+        // Файлыг устгах
+        $this->DELETE('/dashboard/files/{table}/delete', [FilesController::class, 'delete'])->name('files-delete');
 
         // Private файл унших (зөвхөн нэвтэрсэн хэрэглэгчдэд, PUBLIC web дээр харагдахгүй гэсэн үг)
         $this->GET('/dashboard/private/file', [PrivateFilesController::class, 'read']);
@@ -90,13 +91,13 @@ class ContentsRouter extends Router
          * ------------------------------ */
 
         // Сэтгэгдлүүдийн жагсаалт
-        $this->GET('/dashboard/comments', [CommentsController::class, 'index'])->name('comments');
+        $this->GET('/dashboard/news/comments', [CommentsController::class, 'index'])->name('comments');
 
         // Сэтгэгдлүүдийн JSON list
-        $this->GET('/dashboard/comments/list', [CommentsController::class, 'list'])->name('comments-list');
+        $this->GET('/dashboard/news/comments/list', [CommentsController::class, 'list'])->name('comments-list');
 
         // Сэтгэгдэл дэлгэрэнгүй - news ID-аар (?comment_id= query param-аар focus)
-        $this->GET('/dashboard/comments/news/{uint:id}', [CommentsController::class, 'view'])->name('comments-view');
+        $this->GET('/dashboard/news/comments/{uint:id}', [CommentsController::class, 'view'])->name('comments-view');
 
         // Мэдээнд админ сэтгэгдэл бичих
         $this->POST('/dashboard/news/{uint:id}/comment', [CommentsController::class, 'comment'])->name('news-comment');
@@ -104,11 +105,11 @@ class ContentsRouter extends Router
         // Мэдээний сэтгэгдэлд хариулт бичих
         $this->POST('/dashboard/news/comment/{uint:id}/reply', [CommentsController::class, 'reply'])->name('news-comment-reply');
 
-        // Сэтгэгдлийг идэвхгүй болгох
-        $this->DELETE('/dashboard/comments/deactivate', [CommentsController::class, 'deactivate'])->name('comments-deactivate');
+        // Сэтгэгдлийг устгах
+        $this->DELETE('/dashboard/news/comments/delete', [CommentsController::class, 'delete'])->name('comments-delete');
 
-        // Мэдээг идэвхгүй болгох SOFT DELETE
-        $this->DELETE('/dashboard/news/deactivate', [NewsController::class, 'deactivate'])->name('news-deactivate');
+        // Мэдээг устгах
+        $this->DELETE('/dashboard/news/delete', [NewsController::class, 'delete'])->name('news-delete');
 
         // Мэдээний жишиг датаг цэвэрлэж production эхлүүлэх
         $this->DELETE('/dashboard/news/reset', [NewsController::class, 'reset'])->name('news-sample-reset');
@@ -136,8 +137,8 @@ class ContentsRouter extends Router
         // Хуудас харах
         $this->GET('/dashboard/pages/view/{uint:id}', [PagesController::class, 'view']);
 
-        // Хуудас идэвхгүй болгох SOFT DELETE
-        $this->DELETE('/dashboard/pages/deactivate', [PagesController::class, 'deactivate'])->name('page-deactivate');
+        // Хуудас устгах
+        $this->DELETE('/dashboard/pages/delete', [PagesController::class, 'delete'])->name('page-delete');
 
         // Хуудасны жишиг датаг цэвэрлэж production эхлүүлэх
         $this->DELETE('/dashboard/pages/reset', [PagesController::class, 'reset'])->name('pages-sample-reset');
@@ -159,8 +160,8 @@ class ContentsRouter extends Router
         // Лавлагааны хүснэгтийн мөр харах
         $this->GET('/dashboard/references/view/{table}/{uint:id}', [ReferencesController::class, 'view'])->name('reference-view');
 
-        // Лавлагаанг идэвхгүй болгох SOFT DELETE
-        $this->DELETE('/dashboard/references/deactivate', [ReferencesController::class, 'deactivate'])->name('reference-deactivate');
+        // Лавлагааг устгах
+        $this->DELETE('/dashboard/references/delete', [ReferencesController::class, 'delete'])->name('reference-delete');
 
 
         /* ------------------------------
@@ -175,7 +176,10 @@ class ContentsRouter extends Router
 
         // Тохиргооны файл upload хийх
         $this->POST('/dashboard/settings/files', [SettingsController::class, 'files'])->name('settings-files');
-                
+
+        // .env утга шинэчлэх (email notify toggle, хаяг)
+        $this->PATCH('/dashboard/settings/env', [SettingsController::class, 'updateEnv'])->name('settings-env');
+
 
         /* ------------------------------
          * MESSAGES - Холбоо барих мессежүүд
@@ -190,11 +194,11 @@ class ContentsRouter extends Router
         // Мессежийг харах modal
         $this->GET('/dashboard/messages/view/{uint:id}', [MessagesController::class, 'view'])->name('messages-view');
 
-        // Мессежийг хариулсан гэж тэмдэглэх
-        $this->PUT('/dashboard/messages/replied/{uint:id}', [MessagesController::class, 'markReplied'])->name('messages-replied');
+        // Мессежийг хариулсан гэж тэмдэглэх (partial update)
+        $this->PATCH('/dashboard/messages/replied/{uint:id}', [MessagesController::class, 'markReplied'])->name('messages-replied');
 
-        // Мессежийг идэвхгүй болгох
-        $this->DELETE('/dashboard/messages/deactivate', [MessagesController::class, 'deactivate'])->name('messages-deactivate');
+        // Мессежийг устгах
+        $this->DELETE('/dashboard/messages/delete', [MessagesController::class, 'delete'])->name('messages-delete');
 
 
         /**

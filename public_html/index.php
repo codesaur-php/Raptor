@@ -26,7 +26,6 @@
  *  @author     Narankhuu <codesaur@gmail.com>
  *  @copyright  Copyright (c) 2012-present codesaur (Narankhuu)
  *  @license    MIT
- *  @since      1.0.0
  *
  *   СЕРВЕРИЙН ТОХИРГООНЫ ТАЙЛБАР:
  *  -----------------------------------
@@ -140,7 +139,7 @@ try {
         default:              $error = 'Unknown error'; break;
     }
     \error_log("$error #$errno: $errstr in $errfile on line $errline");
-    return true; // Default PHP handler руу дамжуулахгүй
+    return true;
 });
 
 // ---------------------------------------------------------------------------

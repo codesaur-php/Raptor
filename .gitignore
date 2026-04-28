@@ -8,8 +8,6 @@
 
 # Composer vendor - автоматаар татагддаг тул оруулахгүй
 /vendor/
-
-# Composer lock - фреймворк төслийн хувьд lock commit хийхгүй
 composer.lock
 
 # Environment variables - серверийн нууц тохиргоо (DB нууц үг, API key, JWT secret гэх мэт)

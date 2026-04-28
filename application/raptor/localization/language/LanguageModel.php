@@ -4,6 +4,7 @@ namespace Raptor\Localization;
 
 use codesaur\DataObject\Model;
 use codesaur\DataObject\Column;
+use codesaur\DataObject\Constants;
 
 /**
  * Class LanguageModel
@@ -38,7 +39,6 @@ class LanguageModel extends Model
      *  - title: хэлний нэр
      *  - description: тайлбар
      *  - is_default: уг хэл default эсэх
-     *  - is_active: идэвхтэй эсэх
      *  - created_at / created_by: бүтээгдсэн огноо, хэрэглэгч
      *  - updated_at / updated_by: шинэчлэгдсэн огноо, хэрэглэгч
      */
@@ -48,12 +48,11 @@ class LanguageModel extends Model
 
         $this->setColumns([
            (new Column('id', 'bigint'))->primary(),
-           (new Column('code', 'varchar', 2))->unique(),
+           (new Column('code', 'varchar', Constants::DEFAULT_CODE_LENGTH))->unique(),
            (new Column('locale', 'varchar', 11))->unique(),
            (new Column('title', 'varchar', 128))->unique(),
             new Column('description', 'varchar', 255),
            (new Column('is_default', 'tinyint'))->default(0),
-           (new Column('is_active', 'tinyint'))->default(1),
             new Column('created_at', 'datetime'),
             new Column('created_by', 'bigint'),
             new Column('updated_at', 'datetime'),
@@ -66,17 +65,15 @@ class LanguageModel extends Model
     /**
      * Хэлүүдийн жагсаалт авах.
      *
-     * @param int $is_active  Идэвхтэй хэл эсэх (default: 1)
-     * @return array          Хэлүүдийг [code => ['locale'=>..., 'title'=>...]] хэлбэрээр буцаана
+     * @return array Хэлүүдийг [code => ['locale'=>..., 'title'=>...]] хэлбэрээр буцаана
      *
-     * Хүснэгтээс идэвхтэй хэлүүдийг кодын дагуу татан авч,
+     * Хүснэгтээс хэлүүдийг кодын дагуу татан авч,
      * locale болон title мэдээллийг агуулсан массив болгон буцаана.
      */
-    public function retrieve(int $is_active = 1)
+    public function retrieve()
     {
         $languages = [];
         $condition = [
-            'WHERE' => "is_active=$is_active",
             'ORDER BY' => 'is_default Desc'
         ];
         $stmt = $this->selectStatement($this->getName(), '*', $condition);
@@ -92,15 +89,13 @@ class LanguageModel extends Model
     /**
      * Кодын дагуу нэг хэлний мэдээлэл авах.
      *
-     * @param string $code        Хэлний код (mn, en гэх мэт)
-     * @param int    $is_active   Хэл идэвхтэй эсэх
-     * @return array|false        Олдсон мөр эсвэл false буцаана
+     * @param string $code Хэлний код (mn, en гэх мэт)
+     * @return array Олдсон мөр буцаана
      */
-    public function getByCode(string $code, int $is_active = 1)
+    public function getByCode(string $code)
     {
         return $this->getRowWhere([
-            'code' => $code,
-            'is_active' => $is_active
+            'code' => $code
         ]);
     }
 
@@ -154,9 +149,9 @@ class LanguageModel extends Model
      * created_at утга дамжаагүй бол автоматаар системийн огноо нэмнэ.
      *
      * @param array $record  Оруулах өгөгдлийн массив
-     * @return array|false   Амжилттай бол оруулсан мөр, эсвэл false
+     * @return array   Амжилттай бол оруулсан мөр
      */
-    public function insert(array $record): array|false
+    public function insert(array $record): array
     {
         $record['created_at'] ??= \date('Y-m-d H:i:s');
         return parent::insert($record);
@@ -169,9 +164,9 @@ class LanguageModel extends Model
      *
      * @param int   $id      Шинэчлэх мөрийн дугаар
      * @param array $record  Шинэчлэгдэх талбарууд
-     * @return array|false   Амжилттай бол шинэчлэгдсэн мөр, эсвэл false
+     * @return array   Амжилттай бол шинэчлэгдсэн мөр
      */
-    public function updateById(int $id, array $record): array|false
+    public function updateById(int $id, array $record): array
     {
         $record['updated_at'] ??= \date('Y-m-d H:i:s');
         return parent::updateById($id, $record);

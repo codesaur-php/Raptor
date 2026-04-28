@@ -213,7 +213,7 @@
 
             const responseText = form.querySelector('#response').value.trim();
             if (!responseText) {
-                return NotifyTop('warning', `{{ 'warning'|text|e }}`, `{{ 'invalid-request'|text|e }}`);
+                return Notify('warning', `{{ 'warning'|text|e }}`, `{{ 'invalid-request'|text|e }}`);
             }
 
             respondBtn.disabled = true;
@@ -241,10 +241,10 @@
                     throw new Error(data.message || 'Error');
                 }
             }).catch(err => {
-                NotifyTop('error', `{{ 'error'|text|e }}`, err.message);
+                Notify('error', `{{ 'error'|text|e }}`, err.message);
             }).finally(() => {
                 respondBtn.disabled = false;
-                respondBtn.innerHTML = '<i class="bi bi-send"></i> {{ "send"|text|e }}';
+                respondBtn.innerHTML = '<i class="bi bi-send"></i> {{ 'send'|text|e }}';
             });
         });
     });

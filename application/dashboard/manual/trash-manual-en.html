@@ -1,0 +1,229 @@
+<div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-3 shadow bg-secondary">
+    <h3 class="px-2 my-auto fs-6 text-white">
+        <i class="bi bi-book"></i> Trash - User Manual
+    </h3>
+    <a href="{{ 'manual'|link }}" class="btn btn-sm btn-light m-1">
+        <i class="bi bi-arrow-left"></i> {{ 'manual'|text }}
+    </a>
+</div>
+
+<!-- ==================== OVERVIEW ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3">What is Trash?</h4>
+        <p>
+            <strong>Trash</strong> is a centralized recycle bin that stores records deleted from
+            content modules (News, Pages, Products, Reviews, Comments, References, etc.).
+            When a content record is deleted, its full data is JSON-serialized into the
+            <code>trash</code> table before being removed from the original table.
+        </p>
+        <p class="mb-0">
+            <span class="badge bg-warning text-dark"><i class="bi bi-shield-exclamation"></i> Permission</span>
+            Trash is accessible only to users with the <code>system_coder</code> role.
+            Other admins won't see it in the sidebar.
+        </p>
+    </div>
+</div>
+
+<!-- ==================== HOW IT WORKS ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-arrow-down-circle"></i> How records end up in Trash</h4>
+        <p>
+            When you click the <i class="bi bi-trash text-danger"></i> delete button on any content module,
+            the following happens:
+        </p>
+        <ol>
+            <li><strong>Removed from main table</strong> - `deleteById($id)` removes the record from its source table</li>
+            <li><strong>Stored in Trash</strong> - the full record (before deletion) is JSON-encoded into the <code>trash</code> table</li>
+            <li><strong>Discord/Sidebar notification</strong> - other admins see a red badge on the "trash" sidebar item</li>
+        </ol>
+        <p class="alert alert-info mb-0">
+            <i class="bi bi-info-circle"></i> Records deleted by other admins appear in your Trash too.
+            Records you delete yourself also appear (unlike other modules, Trash does NOT filter out your own actions).
+        </p>
+    </div>
+</div>
+
+<!-- ==================== LIST PAGE ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-list-ul"></i> Trash list page</h4>
+        <p>Click <strong>Trash</strong> in the Dashboard sidebar to open the list of all deleted records.</p>
+
+        <h5 class="mt-3">Table filter</h5>
+        <p>The dropdown at the top filters records by source <strong>table</strong>. Choose <code>All tables</code> to see everything.</p>
+
+        <h5 class="mt-3">Table columns</h5>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Column</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>#</td><td>Trash record ID</td></tr>
+                <tr><td>Table</td><td>Source table name (e.g. <code>news</code>, <code>products</code>, <code>files</code>)</td></tr>
+                <tr><td>Original ID</td><td>The ID this record had in the source table</td></tr>
+                <tr><td>Deleted by</td><td>Admin who performed the deletion</td></tr>
+                <tr><td>Deleted at</td><td>Date/time of deletion</td></tr>
+                <tr><td>Actions</td><td>View / Restore / Permanently delete buttons</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ==================== ACTIONS ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-tools"></i> Actions</h4>
+
+        <h5 class="mt-3"><i class="bi bi-eye text-info"></i> View record detail</h5>
+        <p>
+            Click the <button class="btn btn-sm btn-outline-info" type="button"><i class="bi bi-eye"></i></button>
+            button on a row to open a modal showing the full deleted record as formatted JSON.
+            Useful for inspecting content before restoring or for confirming what was deleted.
+        </p>
+
+        <h5 class="mt-3"><i class="bi bi-arrow-counterclockwise text-success"></i> Restore a record</h5>
+        <p>
+            Click the <button class="btn btn-sm btn-outline-success" type="button"><i class="bi bi-arrow-counterclockwise"></i></button>
+            button to open a SweetAlert confirmation. Clicking <strong>"Restore"</strong> sends the
+            record back to its source table - first attempting the original ID, falling back to a
+            fresh auto-increment ID if the original is taken. UNIQUE field collisions (slug, keyword,
+            code, sku, etc.) abort the restore with a clear error. The full algorithm and the messages
+            you may see are documented in <em>"Restoring a record"</em> below.
+        </p>
+
+        <h5 class="mt-3"><i class="bi bi-fire text-danger"></i> Permanently delete one record</h5>
+        <p>
+            Click the <button class="btn btn-sm btn-outline-danger" type="button"><i class="bi bi-fire"></i></button>
+            button to permanently remove a single trash record. A SweetAlert confirmation appears;
+            click <strong>"Delete"</strong> to confirm. <strong>This is irreversible.</strong>
+        </p>
+
+        <h5 class="mt-3"><i class="bi bi-trash3 text-danger"></i> Empty entire Trash</h5>
+        <p>
+            The <button class="btn btn-sm btn-danger" type="button"><i class="bi bi-trash3"></i> Empty Trash</button>
+            button at the top right permanently deletes <strong>all</strong> trash records at once.
+            A confirmation dialog requires clicking <strong>"Empty Trash"</strong> before proceeding.
+        </p>
+        <p class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle"></i>
+            <strong>Warning!</strong> Empty Trash is irreversible. Use only when freeing disk space or after archiving.
+        </p>
+    </div>
+</div>
+
+<!-- ==================== DATA STRUCTURE ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-database"></i> Data structure</h4>
+        <p>The <code>trash</code> table fields:</p>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><code>id</code></td><td>bigint, primary</td><td>Trash record ID</td></tr>
+                <tr><td><code>table_name</code></td><td>varchar(128)</td><td>Source table name</td></tr>
+                <tr><td><code>log_table</code></td><td>varchar(64)</td><td>Log channel name to write the "restored" row to (e.g. <code>products</code>, <code>news</code>, <code>content</code>)</td></tr>
+                <tr><td><code>original_id</code></td><td>bigint</td><td>Original ID in source table</td></tr>
+                <tr><td><code>record_data</code></td><td>mediumtext (JSON)</td><td>Full record snapshot</td></tr>
+                <tr><td><code>deleted_by</code></td><td>bigint</td><td>Deleting user's ID</td></tr>
+                <tr><td><code>deleted_at</code></td><td>datetime</td><td>Deletion timestamp</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ==================== RESTORE ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-arrow-counterclockwise text-success"></i> Restoring a record</h4>
+        <p>
+            Click the <button class="btn btn-sm btn-outline-success" type="button"><i class="bi bi-arrow-counterclockwise"></i></button>
+            button on a row to restore the record back into its original table. The flow:
+        </p>
+
+        <h5 class="mt-3">1. UNIQUE field pre-flight check</h5>
+        <p>
+            UNIQUE columns (slug, keyword, code, sku, etc.) are detected from the schema and each is checked
+            against the live table. If a conflict exists (for example, the deleted record's <code>slug</code>
+            is already used by an active record), restore aborts with a clear error:
+        </p>
+        <pre class="bg-light p-2 rounded small mb-2">Cannot restore - the following UNIQUE field(s) already have a record with the same value: slug='about-us'. Either delete the conflicting record(s) first or rename their unique value(s), then try again.</pre>
+        <p class="text-muted small">In that case, delete or rename the conflicting record, then retry restore.</p>
+
+        <h5 class="mt-3">2. Restore with original ID</h5>
+        <p>
+            If no UNIQUE conflict, the system tries to insert with the <strong>original ID</strong> first.
+            On success, you'll see <em>"Restored with original ID #X"</em>. This is the ideal case because
+            FK references (e.g. <code>comments.news_id</code>) remain valid.
+        </p>
+
+        <h5 class="mt-3">3. Auto-increment fallback</h5>
+        <p>
+            If the original ID is already taken (PRIMARY KEY conflict), the system retries the insert
+            without the ID, letting the DB assign a fresh auto-increment value. A
+            <span class="badge bg-warning text-dark">Warning</span> appears:
+        </p>
+        <pre class="bg-light p-2 rounded small mb-2">Original ID #12 is already in use. Restored with new ID #45. WARNING: Foreign key references (e.g. comments referencing this record) still point to ID #12 and need manual update.</pre>
+        <p class="text-muted small">
+            Child records (comments, etc.) still reference the old ID and need manual SQL update:
+            <code>UPDATE comments SET news_id=45 WHERE news_id=12;</code>
+        </p>
+
+        <h5 class="mt-3">4. Localized content (LocalizedModel)</h5>
+        <p>
+            Multilingual modules (<code>news</code>, <code>pages</code>, <code>products</code>,
+            <code>references</code>, <code>texts</code>, etc.) restore both the primary table row
+            and all <code>_content</code> rows (mn, en, etc.) atomically.
+        </p>
+
+        <h5 class="mt-3">5. Audit log (written to two channels)</h5>
+        <p>
+            Each restore is recorded into <strong>two</strong> log channels:
+        </p>
+        <ol>
+            <li>
+                <code>trash_log</code> with <code>action='trash-restore'</code> - the global Trash
+                audit trail. Context includes <code>restored_by</code>, <code>restored_at</code>,
+                <code>original_id</code>, <code>new_id</code>, and <code>used_original_id</code>.
+            </li>
+            <li>
+                The restored module's own log channel with <code>action='restore'</code> and
+                <code>record_id=&lt;new_id&gt;</code>. This entry shows up directly on the record's
+                view/update page via the <em>Logger Protocol</em>. For example, a restored pages
+                record is logged in <code>pages_log</code>; a restored review goes to <code>products_log</code>.
+            </li>
+        </ol>
+        <p class="text-muted small">
+            Controllers store the log channel name directly in the <code>log_table</code> column
+            when calling <code>TrashModel::store()</code> (e.g. ReviewsController passes
+            <code>'products'</code>, ReferencesController passes <code>'content'</code>),
+            and <code>restore()</code> uses that value as the log channel.
+        </p>
+    </div>
+</div>
+
+<!-- ==================== SECURITY ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-shield-check"></i> Security & permissions</h4>
+        <ul>
+            <li>Trash page, routes, and API all require the <code>system_coder</code> role.</li>
+            <li>Any admin with <code>system_*_delete</code> permission triggers a Trash entry when deleting content.</li>
+            <li>Records contain JSON of the original row - sensitive fields (token, password, etc.) must be masked by the source module before deletion.</li>
+            <li>If disk fills up, use <strong>Empty Trash</strong> to free space.</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== WARNINGS ==================== -->
+<div class="alert alert-warning shadow-sm">
+    <h5><i class="bi bi-exclamation-triangle"></i> Warnings</h5>
+    <ul class="mb-0">
+        <li><strong>Permanently deleting from Trash is irreversible.</strong></li>
+        <li><strong>Empty Trash</strong> wipes all entries at once - use carefully.</li>
+        <li>Don't drop the <code>trash</code> table manually - the UI will error trying to read from it.</li>
+    </ul>
+</div>

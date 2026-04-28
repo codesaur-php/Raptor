@@ -1,5 +1,5 @@
 /**
- * moedit - Mongolian WYSIWYG Editor v1
+ * moedit - Mongolian WYSIWYG Editor
  *
  * Контент засварлах rich text editor.
  *
@@ -54,7 +54,6 @@ class moedit {
    * @param {Object} [opts.imageUploadModal] - Image upload modal тохиргоо
    * @param {Object} [opts.linkModal] - Link modal тохиргоо
    * @param {Object} [opts.tableModal] - Table modal тохиргоо
-   * @param {Function} [opts.notify] - Notification функц (type, message)
    * @throws {Error} root element байхгүй бол
    */
   constructor(root, opts = {}) {
@@ -312,8 +311,6 @@ Instructions:
       },
       /* Shine API URL */
       ai_helper: null,
-      /* Notify function - optional */
-      notify: null,
       /* Header image */
       headerImage: true,
       /* Header image modal */
@@ -866,13 +863,23 @@ Instructions:
       /* Cursor байрлал руу scroll хийх */
       this._scrollTextareaToCursor();
     } else {
+      /* Source -> Editor: HTML бүтцийг шалгах */
+      const sourceValue = this.source.value || '';
+      const validation = this._validateHTML(sourceValue);
+      if (!validation.valid) {
+        this.isSource = true;
+        const msg = validation.errors.join('\n');
+        this._notify('warning', msg);
+        this.source.focus();
+        return;
+      }
+
       /* Source -> Editor: cursor байрлалыг тооцоолох */
       const sourcePos = this.source.selectionStart;
       const sourceLength = this.source.value.length;
       const cursorRatio = sourceLength > 0 ? sourcePos / sourceLength : 0;
 
-      /* Source утгыг editor-т оноох (хоосон бол хоосон string) */
-      const sourceValue = this.source.value || '';
+      /* Source утгыг editor-т оноох */
       this.editor.innerHTML = sourceValue;
       this.root.classList.remove("is-source");
       this._focusEditor();
@@ -2249,12 +2256,63 @@ Instructions:
 
   /* UI functions are in moedit.ui.js */
 
+  /* _notify нь moedit.ui.js дээр тодорхойлогдсон (prototype override) */
+
   _ensureVisualMode() {
     if (this.isSource) this.toggleSource(false);
   }
 
   _focusEditor() {
     this.editor.focus();
+  }
+
+  /**
+   * HTML tag-ийн бүрэн бүтэн байдлыг шалгах.
+   * Дутуу comment, эвдэрсэн tag-аас болж контент алга болсон эсэхийг илрүүлнэ.
+   * @private
+   * @param {string} html - Шалгах HTML string
+   * @returns {{valid: boolean, errors: string[]}} Шалгалтын үр дүн
+   */
+  _validateHTML(html) {
+    if (!html || !html.trim()) return { valid: true, errors: [] };
+    const errors = [];
+
+    /* 1. Дутуу хаалттай HTML comment шалгах: <!-- ... --> */
+    const commentOpen = (html.match(/<!--/g) || []).length;
+    const commentClose = (html.match(/-->/g) || []).length;
+    if (commentOpen > commentClose) {
+      errors.push(this._isMn
+        ? 'HTML comment хаагдаагүй байна (<!-- ... --> дутуу)'
+        : 'Unclosed HTML comment (missing -->)');
+    }
+
+    /* 2. DOMParser-ээр parse хийж контент алга болсон эсэхийг шалгах.
+       Эвдэрсэн tag/comment нь browser-д parse хийхэд контентыг "залгидаг"
+       тул эх текстийн уртыг parse хийсэн текстийн урттай харьцуулна. */
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+
+    /* Эх HTML-ээс tag, comment, entity арилгаж цэвэр текст авах */
+    const originalText = html
+      .replace(/<!--[\s\S]*?-->/g, '')  /* comment */
+      .replace(/<[^>]*>/g, '')          /* tag */
+      .replace(/&[a-zA-Z0-9#]+;/g, ' ') /* entity */
+      .replace(/\s+/g, ' ').trim();
+
+    /* DOMParser-ийн гаралтын цэвэр текст */
+    const parsedText = (doc.body.textContent || '').replace(/\s+/g, ' ').trim();
+
+    /* Эх текстийн 20%-аас дээш хэсэг алга болсон бол контент эвдэрсэн */
+    if (originalText.length > 20) {
+      const lostRatio = 1 - (parsedText.length / originalText.length);
+      if (lostRatio > 0.2) {
+        errors.push(this._isMn
+          ? 'HTML tag эвдэрснээс болж контентын нэг хэсэг алга болж байна'
+          : 'Broken HTML tags are causing content loss');
+      }
+    }
+
+    return { valid: errors.length === 0, errors };
   }
 
   /**

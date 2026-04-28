@@ -4,6 +4,8 @@ namespace Raptor\Template;
 
 use Psr\Log\LogLevel;
 
+use codesaur\DataObject\Constants;
+
 use Raptor\Organization\OrganizationModel;
 use Raptor\RBAC\Permissions;
 
@@ -16,7 +18,7 @@ use Raptor\RBAC\Permissions;
  *
  * Үндсэн боломжууд:
  *   - Хэрэглэгчийн UI тохиргооны modal харуулах
- *   - Dashboard менюг харах, үүсгэх, засах, идэвхгүй болгох
+ *   - Dashboard менюг харах, үүсгэх, засах, устгах
  *   - LocalizedModel-ын бүтэцтэй меню дээр олон хэлтэй контент удирдах
  *   - RBAC эрх дээр тулгуурлан зөвшөөрөл шалгах
  *   - Бүх үйлдлийг Logger (log) ашиглан протоколд бүртгэх
@@ -34,7 +36,7 @@ class TemplateController extends \Raptor\Controller
      */
     public function userOption()
     {
-        $this->twigTemplate(__DIR__ . '/user-option-modal.html')->render();
+        $this->template(__DIR__ . '/user-option-modal.html')->render();
     }
 
     /**
@@ -58,7 +60,7 @@ class TemplateController extends \Raptor\Controller
 
             // Меню жагсаалт
             $model = new MenuModel($this->pdo);
-            $menu = $model->getRows(['ORDER BY' => 'p.position', 'WHERE' => 'p.is_active=1']);
+            $menu = $model->getRows(['ORDER BY' => 'p.position']);
 
             // Хэрэглэгчдийн нэр, имэйл илүү ойлгомжтой болгох
             $users = $this->retrieveUsersDetail();
@@ -86,7 +88,7 @@ class TemplateController extends \Raptor\Controller
             $permissions = [];
             // permissions хүснэгтийн нэрийг Permissions::getName() ашиглан динамикаар авна. Ирээдүйд refactor хийхэд бэлэн байна.
             $permissions_table = (new Permissions($this->pdo))->getName();
-            $concat_expr = ($this->getDriverName() == 'pgsql')
+            $concat_expr = ($this->getDriverName() == Constants::DRIVER_PGSQL)
                 ? "alias || '_' || name"
                 : "CONCAT(alias, '_', name)";
             $permission_results = $this->query(
@@ -97,7 +99,7 @@ class TemplateController extends \Raptor\Controller
             }
 
             // Dashboard руу дамжуулах
-            $this->twigDashboard(
+            $this->dashboardTemplate(
                 __DIR__ . '/manage-menu.html',
                 ['menu' => $menu, 'aliases' => $aliases, 'permissions' => $permissions]
             )->render();
@@ -168,6 +170,7 @@ class TemplateController extends \Raptor\Controller
                 throw new \Exception($this->text('record-insert-error'));
             }
 
+            $this->invalidateCache('menu.{code}');
             $this->respondJSON([
                 'status' => 'success',
                 'message' => $this->text('record-insert-success')
@@ -225,10 +228,7 @@ class TemplateController extends \Raptor\Controller
 
             // Record-н хуучин мэдээллийг авах
             $model = new MenuModel($this->pdo);
-            $record = $model->getRowWhere([
-                'p.id' => $id,
-                'p.is_active' => 1
-            ]);
+            $record = $model->getById($id);
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));
             }
@@ -268,6 +268,7 @@ class TemplateController extends \Raptor\Controller
                 throw new \Exception($this->text('no-record-selected'));
             }
 
+            $this->invalidateCache('menu.{code}');
             $this->respondJSON([
                 'type' => 'primary',
                 'status' => 'success',
@@ -296,20 +297,20 @@ class TemplateController extends \Raptor\Controller
     }
 
     /**
-     * Цэсийг идэвхгүй болгох (soft delete).
+     * Цэсийг устгах.
      *
      * Анхаарах зүйл:
      *   - system_coder role шаардлагатай
-     *   - Идэвхтэй цэс дээр л идэвхгүй болгох боломжтой
+     *   - Идэвхтэй цэс дээр л устгах боломжтой
      *
      * @return void
      */
-    public function manageMenuDeactivate()
+    public function manageMenuDelete()
     {
         try {
             if (!$this->isUser('system_coder')) {
                 throw new \Exception(
-                    'No permission for an action [deactivate]!',
+                    'No permission for an action [delete]!',
                     401
                 );
             }
@@ -323,26 +324,17 @@ class TemplateController extends \Raptor\Controller
             $id = (int) $payload['id'];
 
             $model = new MenuModel($this->pdo);
-            $record = $model->getRowWhere([
-                'p.id' => $id,
-                'p.is_active' => 1
-            ]);
+            $record = $model->getById($id);
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));
             }
 
-            // Идэвхгүй болгох
-            $deactivated = $model->deactivateById(
-                $id,
-                [
-                    'updated_by' => $this->getUserId(),
-                    'updated_at' => \date('Y-m-d H:i:s')
-                ]
+            $model->deleteById($id);
+            (new \Raptor\Trash\TrashModel($this->pdo))->store(
+                'dashboard', $model->getName(), $id, $record, $this->getUserId()
             );
-            if (!$deactivated) {
-                throw new \Exception($this->text('no-record-selected'));
-            }
 
+            $this->invalidateCache('menu.{code}');
             $this->respondJSON([
                 'status'  => 'success',
                 'title'   => $this->text('success'),
@@ -355,19 +347,19 @@ class TemplateController extends \Raptor\Controller
                 'message' => $err->getMessage()
             ], $err->getCode());
         } finally {
-            $context = ['action' => 'template-menu-deactivate'];
+            $context = ['action' => 'template-menu-delete'];
             if (isset($err)) {
                 $this->log(
                     'dashboard',
                     LogLevel::ERROR,
-                    'Цэс устгах/идэвхгүй болгох үед алдаа гарлаа',
+                    'Цэс устгах үед алдаа гарлаа',
                     $context + ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]]
                 );
             } else {
                 $this->log(
                     'dashboard',
                     LogLevel::ALERT,
-                    '[{server_request.body.caption}] цэсийг [{server_request.body.reason}] шалтгаанаар устгаж/идэвхгүй болголоо',
+                    '[{server_request.body.caption}] цэсийг [{server_request.body.reason}] шалтгаанаар устгалаа',
                     $context + ['record' => $record]
                 );
             }

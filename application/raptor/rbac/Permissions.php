@@ -129,10 +129,10 @@ class Permissions extends Model
      * үүсвэл sidebar-ийн `system_coder` permission filter буруу ажиллах эрсдэлтэй.
      *
      * @param array $record
-     * @return array|false
+     * @return array
      * @throws \RuntimeException system_coder permission үүсгэх оролдлого хийвэл
      */
-    public function insert(array $record): array|false
+    public function insert(array $record): array
     {
         if (($record['alias'] ?? '') === 'system' && ($record['name'] ?? '') === 'coder') {
             throw new \RuntimeException(
@@ -148,10 +148,10 @@ class Permissions extends Model
      *
      * @param int   $id
      * @param array $record
-     * @return array|false
+     * @return array
      * @throws \RuntimeException system_coder permission болгох оролдлого хийвэл
      */
-    public function updateById(int $id, array $record): array|false
+    public function updateById(int $id, array $record): array
     {
         if (($record['alias'] ?? '') === 'system' && ($record['name'] ?? '') === 'coder') {
             throw new \RuntimeException(

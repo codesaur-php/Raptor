@@ -46,7 +46,7 @@ class PageController extends TemplateController
             "FROM $table p " .
             "LEFT JOIN $users c ON p.created_by = c.id " .
             "LEFT JOIN $users pb ON p.published_by = pb.id " .
-            "WHERE p.slug = :slug AND p.is_active = 1 LIMIT 1"
+            "WHERE p.slug = :slug LIMIT 1"
         );
         $stmt->bindValue(':slug', $slug);
         $stmt->execute();
@@ -59,7 +59,7 @@ class PageController extends TemplateController
 
         // Үг тоолох ба уншихад шаардлагатай хугацаа
         $plainText = \strip_tags($record['content'] ?? '');
-        $record['word_count'] = \str_word_count($plainText);
+        $record['word_count'] = \preg_match_all('/[\p{L}\p{N}]+/u', $plainText);
         $record['read_time'] = \max(1, (int) \ceil($record['word_count'] / 200));
 
         // Siblings (ижил parent_id-тэй хуудсууд) + parent title
@@ -73,7 +73,7 @@ class PageController extends TemplateController
 
             $sibStmt = $this->prepare(
                 "SELECT id, slug, title FROM $table " .
-                "WHERE parent_id = :pid AND is_active = 1 AND published = 1 AND code = :code " .
+                "WHERE parent_id = :pid AND published = 1 AND code = :code " .
                 "ORDER BY position ASC"
             );
             $sibStmt->bindValue(':pid', $parentId, \PDO::PARAM_INT);
@@ -85,11 +85,11 @@ class PageController extends TemplateController
         $files = new FilesModel($this->pdo);
         $files->setTable($table);
         $record['files'] = $files->getRows([
-            'WHERE' => "record_id=$id AND is_active=1"
+            'WHERE' => "record_id=$id"
         ]);
 
         // Render page template
-        $this->twigWebLayout(__DIR__ . '/page.html', $record)->render();
+        $this->webTemplate(__DIR__ . '/page.html', $record)->render();
 
         // Read count нэмэгдүүлэх
         $this->exec("UPDATE $table SET read_count=read_count+1 WHERE id=$id");
@@ -99,7 +99,7 @@ class PageController extends TemplateController
             'web',
             LogLevel::NOTICE,
             '[{server_request.code} : /page/{slug}] {title} - хуудсыг уншиж байна',
-            ['action' => 'page', 'id' => $id, 'slug' => $slug, 'title' => $record['title']]
+            ['action' => 'page', 'record_id' => $id, 'slug' => $slug, 'title' => $record['title']]
         );
     }
     
@@ -114,7 +114,7 @@ class PageController extends TemplateController
     {
         $model = new PagesModel($this->pdo);
         $table = $model->getName();
-        $stmt = $this->prepare("SELECT slug FROM $table WHERE id=:id AND is_active=1");
+        $stmt = $this->prepare("SELECT slug FROM $table WHERE id=:id");
         $stmt->bindValue(':id', $id, \PDO::PARAM_INT);
         $stmt->execute();
         $row = $stmt->fetch();

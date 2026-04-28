@@ -77,7 +77,7 @@
     {% set doc_files = [] %}
     {% if files is defined and files is not empty %}
         {% for file in files %}
-            {% if file['type'] in ['image', 'video', 'audio'] %}
+            {% if file['type'] == 'image' or file['type'] == 'video' or file['type'] == 'audio' %}
                 {% set media_files = media_files|merge([file]) %}
             {% else %}
                 {% set doc_files = doc_files|merge([file]) %}
@@ -273,7 +273,7 @@
         <div class="text-center mb-4">
             <div class="fs-2 fw-bold text-warning">{{ avg_rating }}</div>
             <div class="mb-1">
-                {% for i in 1..5 %}
+                {% for i in range(1, 5) %}
                     {% if i <= avg_rating|round(0, 'floor') %}
                         <i class="bi bi-star-fill text-warning fs-5"></i>
                     {% elseif i - avg_rating < 1 and i - avg_rating > 0 %}
@@ -300,7 +300,7 @@
                         <small class="text-muted">{{ r.created_at }}</small>
                     </div>
                     <div class="mb-1">
-                        {% for i in 1..5 %}
+                        {% for i in range(1, 5) %}
                             {% if i <= r.rating %}
                                 <i class="bi bi-star-fill text-warning"></i>
                             {% else %}
@@ -327,7 +327,7 @@
                     <div class="mb-3">
                         <label class="form-label fw-semibold">{{ 'rating'|text }} *</label>
                         <div class="star-rating" id="star-selector">
-                            {% for i in 1..5 %}
+                            {% for i in range(1, 5) %}
                             <i class="bi bi-star fs-4 text-muted" data-value="{{ i }}" style="cursor:pointer"></i>
                             {% endfor %}
                             <input type="hidden" name="rating" id="rating-input" value="0">
@@ -347,7 +347,7 @@
                     {% if turnstile_site_key is not empty %}
                     <div class="cf-turnstile mb-3" data-sitekey="{{ turnstile_site_key }}"></div>
                     {% endif %}
-                    <button class="btn btn-primary" id="submit_review" type="submit" disabled>
+                    <button class="btn btn-primary" id="submit_review" type="submit">
                         <i class="bi bi-send me-1"></i>{{ 'send'|text }}
                     </button>
                 </form>
@@ -395,7 +395,6 @@
                 s.addEventListener('click', function () {
                     ratingInput.value = this.dataset.value;
                     updateStars(parseInt(this.dataset.value));
-                    toggleSubmit();
                 });
                 s.addEventListener('mouseenter', function () {
                     updateStars(parseInt(this.dataset.value));
@@ -404,12 +403,6 @@
                     updateStars(parseInt(ratingInput.value) || 0);
                 });
             });
-
-            function toggleSubmit() {
-                btn.disabled = !nameInput.value.trim() || !commentInput.value.trim() || parseInt(ratingInput.value) < 1;
-            }
-            nameInput.addEventListener('input', toggleSubmit);
-            commentInput.addEventListener('input', toggleSubmit);
 
             function showModal(type, title, message) {
                 const icon = document.getElementById('reviewModalIcon');
@@ -429,8 +422,19 @@
                 const email = form.querySelector('[name="email"]').value.trim();
                 const comment = commentInput.value.trim();
                 const rating = parseInt(ratingInput.value);
-                if (!name || !comment || rating < 1) return;
 
+                if (rating < 1) {
+                    showModal('error', '{{ 'error'|text }}', '{{ localization.code == 'mn' ? 'Үнэлгээ сонгоно уу' : 'Please select a rating' }}');
+                    return;
+                }
+                if (!name) {
+                    showModal('error', '{{ 'error'|text }}', '{{ localization.code == 'mn' ? 'Нэрээ оруулна уу' : 'Please enter your name' }}');
+                    return;
+                }
+                if (!comment) {
+                    showModal('error', '{{ 'error'|text }}', '{{ localization.code == 'mn' ? 'Сэтгэгдлээ бичнэ үү' : 'Please write your review' }}');
+                    return;
+                }
                 if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
                     showModal('error', '{{ 'error'|text }}', '{{ localization.code == 'mn' ? 'Зөв имэйл хаяг оруулна уу' : 'Please enter a valid email address' }}');
                     return;

@@ -32,8 +32,13 @@ class MessagesController extends \Raptor\Controller
             'title' => $this->text('status'),
             'values' => [0 => $this->text('new'), 1 => $this->text('read'), 2 => $this->text('replied')]
         ];
-
-        $dashboard = $this->twigDashboard(__DIR__ . '/messages-index.html', ['filters' => $filters]);
+        $settings = $this->getAttribute('settings', []);
+        $dashboard = $this->dashboardTemplate(__DIR__ . '/messages-index.html', [
+            'filters' => $filters,
+            'contact_email_notify' => !empty($_ENV['RAPTOR_CONTACT_EMAIL_TO'] ?? ''),
+            'notify_email' => $_ENV['RAPTOR_CONTACT_EMAIL_TO'] ?? '',
+            'settings_email' => $settings['email'] ?? ''
+        ]);
         $dashboard->set('title', $this->text('messages'));
         $dashboard->render();
 
@@ -53,11 +58,8 @@ class MessagesController extends \Raptor\Controller
             }
 
             $params = $this->getQueryParams();
-            if (!isset($params['is_active'])) {
-                $params['is_active'] = 1;
-            }
             $conditions = [];
-            $allowed = ['is_read', 'is_active'];
+            $allowed = ['is_read'];
             foreach (\array_keys($params) as $name) {
                 if (\in_array($name, $allowed)) {
                     $conditions[] = "$name=:$name";
@@ -98,7 +100,7 @@ class MessagesController extends \Raptor\Controller
 
         $model = new MessagesModel($this->pdo);
         $table = $model->getName();
-        $record = $model->getRowWhere(['id' => $id]);
+        $record = $model->getById($id);
         if (empty($record)) {
             throw new \Exception($this->text('no-record-selected'), 404);
         }
@@ -109,14 +111,22 @@ class MessagesController extends \Raptor\Controller
             $record['is_read'] = 1;
         }
 
-        $this->twigTemplate(__DIR__ . '/messages-view-modal.html', ['record' => $record])->render();
+        $this->template(__DIR__ . '/messages-view-modal.html', ['record' => $record])->render();
 
-        $this->log('messages', LogLevel::NOTICE, '#{id} мессежийг нээж үзэж байна', ['action' => 'view', 'id' => $id]);
+        $this->log('messages', LogLevel::NOTICE, '#{record_id} ({name}) мессежийг нээж үзэж байна', ['action' => 'view', 'record_id' => $id, 'name' => $record['name']]);
     }
 
     /**
-     * Мессежийг хариулсан гэж тэмдэглэх.
+     * Мессежийг хариулсан гэж тэмдэглэх (partial update).
      *
+     * PATCH /dashboard/messages/replied/{id}
+     * Body: { "note": "..." }
+     *
+     * Зөвхөн is_read болон replied_note талбаруудыг шинэчилнэ.
+     *
+     * Permission: system_content_index
+     *
+     * @param int $id Мессежийн ID
      * @return void
      */
     public function markReplied(int $id)
@@ -128,7 +138,7 @@ class MessagesController extends \Raptor\Controller
 
             $model = new MessagesModel($this->pdo);
             $table = $model->getName();
-            $record = $model->getRowWhere(['id' => $id]);
+            $record = $model->getById($id);
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'), 404);
             }
@@ -146,11 +156,11 @@ class MessagesController extends \Raptor\Controller
                 'message' => $this->text('replied')
             ]);
 
-            $this->log('messages', LogLevel::INFO, '#{id} мессежид хариулсан гэж тэмдэглэлээ', ['action' => 'mark-replied', 'id' => $id]);
+            $this->log('messages', LogLevel::INFO, '#{record_id} ({name}) мессежид хариулсан гэж тэмдэглэлээ', ['action' => 'mark-replied', 'record_id' => $id, 'name' => $record['name']]);
 
-            $adminName = \trim(($this->getUser()->profile['first_name'] ?? '') . ' ' . ($this->getUser()->profile['last_name'] ?? ''));
-            $appUrl = \rtrim((string)$this->getRequest()->getUri()->withPath($this->getScriptPath()), '/') . '/dashboard';
-            $this->getService('discord')?->contentAction('message', 'update', $record['name'] ?? "#{$id}", $id, $adminName, $appUrl);
+            $this->dispatch(new \Raptor\Notification\ContentEvent(
+                'update', 'message', $record['name'] ?? "#{$id}", $id
+            ));
         } catch (\Throwable $err) {
             $this->respondJSON([
                 'status' => 'error',
@@ -161,11 +171,11 @@ class MessagesController extends \Raptor\Controller
     }
 
     /**
-     * Мессежийг идэвхгүй болгох (soft delete).
+     * Мессежийг устгах.
      *
      * @return void
      */
-    public function deactivate()
+    public function delete()
     {
         try {
             if (!$this->isUserCan('system_content_delete')) {
@@ -179,13 +189,15 @@ class MessagesController extends \Raptor\Controller
             }
 
             $model = new MessagesModel($this->pdo);
-            $table = $model->getName();
-            $record = $model->getRowWhere(['id' => $id]);
+            $record = $model->getById($id);
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'), 404);
             }
 
-            $this->exec("UPDATE $table SET is_active=0 WHERE id=$id");
+            $model->deleteById($id);
+            (new \Raptor\Trash\TrashModel($this->pdo))->store(
+                'messages', $model->getName(), $id, $record, $this->getUserId()
+            );
 
             $this->respondJSON([
                 'status' => 'success',
@@ -193,11 +205,11 @@ class MessagesController extends \Raptor\Controller
                 'message' => $this->text('record-successfully-deleted')
             ]);
 
-            $this->log('messages', LogLevel::WARNING, '#{id} мессежийг устгалаа', ['action' => 'deactivate', 'id' => $id]);
+            $this->log('messages', LogLevel::WARNING, '#{record_id} ({name}) мессежийг устгалаа', ['action' => 'delete', 'record_id' => $id, 'name' => $record['name']]);
 
-            $adminName = \trim(($this->getUser()->profile['first_name'] ?? '') . ' ' . ($this->getUser()->profile['last_name'] ?? ''));
-            $appUrl = \rtrim((string)$this->getRequest()->getUri()->withPath($this->getScriptPath()), '/') . '/dashboard';
-            $this->getService('discord')?->contentAction('message', 'delete', $record['name'] ?? "#{$id}", $id, $adminName, $appUrl);
+            $this->dispatch(new \Raptor\Notification\ContentEvent(
+                'delete', 'message', $record['name'] ?? "#{$id}", $id
+            ));
         } catch (\Throwable $err) {
             $this->respondJSON([
                 'status' => 'error',

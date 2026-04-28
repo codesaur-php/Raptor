@@ -164,11 +164,11 @@
                 if (res.status === 'success') {
                     location.reload();
                 } else {
-                    NotifyTop('error', res.title, res.message);
+                    Notify('error', res.title, res.message);
                 }
             }).finally(() => {
                 btn.disabled = false;
-                btn.innerHTML = '<i class="bi bi-send me-1"></i>{{ "send"|text }}';
+                btn.innerHTML = '<i class="bi bi-send me-1"></i>{{ 'send'|text }}';
             });
         });
 
@@ -187,7 +187,7 @@
                     cancelButtonText: `{{ 'cancel'|text|e('js') }}`
                 }).then(result => {
                     if (!result.isConfirmed) return;
-                    csrfFetch(`{{ 'comments-deactivate'|link }}`, {
+                    csrfFetch(`{{ 'comments-delete'|link }}`, {
                         method: 'DELETE',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ id })

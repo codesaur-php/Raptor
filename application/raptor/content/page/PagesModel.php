@@ -4,6 +4,7 @@ namespace Raptor\Content;
 
 use codesaur\DataObject\Model;
 use codesaur\DataObject\Column;
+use codesaur\DataObject\Constants;
 
 /**
  * Class PagesModel
@@ -49,14 +50,13 @@ class PagesModel extends Model
         new Column('content', 'mediumtext'),
         new Column('source', 'varchar', 255),
         new Column('photo', 'varchar', 255),
-        new Column('code', 'varchar', 2),
+        new Column('code', 'varchar', Constants::DEFAULT_CODE_LENGTH),
        (new Column('type', 'varchar', 32))->default('menu'),
        (new Column('category', 'varchar', 32))->default('general'),
        (new Column('position', 'smallint'))->default(100),
         new Column('link', 'varchar', 255),
        (new Column('is_featured', 'tinyint'))->default(0),
        (new Column('read_count', 'bigint'))->default(0),
-       (new Column('is_active', 'tinyint'))->default(1),
        (new Column('published', 'tinyint'))->default(0),
         new Column('published_at', 'datetime'),
         new Column('published_by', 'bigint'),
@@ -103,8 +103,8 @@ class PagesModel extends Model
 
         // Хайлт, шүүлтийн гүйцэтгэлийг сайжруулах индексүүд
         $this->exec("CREATE INDEX {$table}_idx_parent_id ON $table (parent_id)");
-        $this->exec("CREATE INDEX {$table}_idx_active_published ON $table (is_active, published)");
-        $this->exec("CREATE INDEX {$table}_idx_code_active_published ON $table (code, is_active, published, position)");
+        $this->exec("CREATE INDEX {$table}_idx_published ON $table (published)");
+        $this->exec("CREATE INDEX {$table}_idx_code_published ON $table (code, published, position)");
 
         PagesSamples::seed($this);
     }
@@ -116,12 +116,10 @@ class PagesModel extends Model
      * - slug хоосон бол title-аас generateSlug() ашиглан автоматаар үүсгэнэ.
      *
      * @param array $record Хуудасны өгөгдөл (title, content, parent_id, ...).
-     * @return array|false Амжилттай бол оруулсан бичлэгийн мэдээлэл, алдаатай бол false.
+     * @return array Амжилттай бол оруулсан бичлэгийн мэдээлэл.
      */
-    public function insert(array $record): array|false
+    public function insert(array $record): array
     {
-        $record['created_at'] ??= \date('Y-m-d H:i:s');
-
         // Slug автоматаар үүсгэх (title-аас)
         if (empty($record['slug']) && !empty($record['title'])) {
             $record['slug'] = $this->generateSlug($record['title']);
@@ -135,6 +133,7 @@ class PagesModel extends Model
             $record['description'] = $desc;
         }
 
+        $record['created_at'] ??= \date('Y-m-d H:i:s');
         return parent::insert($record);
     }
 
@@ -213,7 +212,7 @@ class PagesModel extends Model
         $stmt = $this->pdo->prepare(
             'SELECT id, parent_id, title, slug, type, link ' .
             "FROM $table " .
-            "WHERE code=:code AND is_active=1 AND published=1 AND (type='menu' OR type LIKE '%-menu') " .
+            "WHERE code=:code AND published=1 AND (type='menu' OR type LIKE '%-menu') " .
             'ORDER BY position, id'
         );
         $stmt->bindParam(':code', $code, \PDO::PARAM_STR);
@@ -257,16 +256,17 @@ class PagesModel extends Model
      * өөртөө ямар нэгэн child агуулаагүй (leaf) хуудсуудыг буцаана.
      *
      * @param string $code Хэлний код (mn, en...)
-     * @return array id => [id, title, slug, link] бүтэцтэй массив
+     * @return array id => row бүтэцтэй массив
      */
     public function getFeaturedLeafPages(string $code): array
     {
         $table = $this->getName();
         $stmt = $this->pdo->prepare(
-            'SELECT p.id, p.title, p.slug, p.link ' .
+            'SELECT p.id, p.title, p.description, p.slug, p.photo, p.code, ' .
+            'p.type, p.category, p.position, p.link, p.published_at, p.created_at ' .
             "FROM $table p " .
             "LEFT JOIN $table c ON c.parent_id = p.id " .
-            'WHERE p.code = :code AND p.is_active = 1 AND p.published = 1 AND p.is_featured = 1 ' .
+            'WHERE p.code = :code AND p.published = 1 AND p.is_featured = 1 ' .
             'AND c.id IS NULL ' .
             'ORDER BY p.position, p.id'
         );

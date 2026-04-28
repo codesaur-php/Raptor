@@ -4,6 +4,8 @@ namespace Dashboard\Shop;
 
 use Psr\Log\LogLevel;
 
+use codesaur\DataObject\Constants;
+
 use Raptor\Content\FileController;
 use Raptor\Content\FilesModel;
 
@@ -18,7 +20,7 @@ use Raptor\Content\FilesModel;
  *   - Бүтээгдэхүүн шинэчлэх (update)
  *   - Бүтээгдэхүүн унших (read)
  *   - Бүтээгдэхүүний дэлгэрэнгүй харуулах (view)
- *   - Бүтээгдэхүүнийг идэвхгүй болгох (deactivate)
+ *   - Бүтээгдэхүүнийг устгах (delete)
  *   - Жишиг дата цэвэрлэх (reset)
  *   зэрэг үйлдлүүдийг гүйцэтгэнэ.
  *
@@ -27,6 +29,7 @@ use Raptor\Content\FilesModel;
 class ProductsController extends FileController
 {
     use \Raptor\Template\DashboardTrait;
+    use \Raptor\Content\HtmlValidationTrait;
 
     /**
      * Бүтээгдэхүүний жагсаалтын dashboard хуудсыг харуулах.
@@ -47,7 +50,7 @@ class ProductsController extends FileController
         $filters = [];
         $table = (new ProductsModel($this->pdo))->getName();
         $codes_result = $this->query(
-            "SELECT DISTINCT code FROM $table WHERE is_active=1"
+            "SELECT DISTINCT code FROM $table"
         )->fetchAll();
         $languages = $this->getLanguages();
         $filters['code']['title'] = $this->text('language');
@@ -55,14 +58,14 @@ class ProductsController extends FileController
             $filters['code']['values'][$row['code']] = "{$languages[$row['code']]['title']} [{$row['code']}]";
         }
         $types_result = $this->query(
-            "SELECT DISTINCT type FROM $table WHERE is_active=1"
+            "SELECT DISTINCT type FROM $table"
          )->fetchAll();
         $filters['type']['title'] = $this->text('type');
         foreach ($types_result as $row) {
             $filters['type']['values'][$row['type']] = $row['type'];
         }
         $categories_result = $this->query(
-            "SELECT DISTINCT category FROM $table WHERE is_active=1"
+            "SELECT DISTINCT category FROM $table"
         )->fetchAll();
         $filters['category']['title'] = $this->text('category');
         foreach ($categories_result as $row) {
@@ -77,7 +80,7 @@ class ProductsController extends FileController
                 ]
             ]
         ];
-        $dashboard = $this->twigDashboard(__DIR__ . '/products-index.html', ['filters' => $filters]);
+        $dashboard = $this->dashboardTemplate(__DIR__ . '/products-index.html', ['filters' => $filters]);
         $dashboard->set('title', $this->text('products'));
         $dashboard->render();
 
@@ -102,11 +105,8 @@ class ProductsController extends FileController
             }
 
             $params = $this->getQueryParams();
-            if (!isset($params['is_active'])) {
-                $params['is_active'] = 1;
-            }
             $conditions = [];
-            $allowed = ['code', 'type', 'category', 'published', 'is_active'];
+            $allowed = ['code', 'type', 'category', 'published'];
             foreach (\array_keys($params) as $name) {
                 if (\in_array($name, $allowed)) {
                     $conditions[] = "p.$name=:$name";
@@ -114,14 +114,15 @@ class ProductsController extends FileController
                     unset($params[$name]);
                 }
             }
-            $where = \implode(' AND ', $conditions);
+            $where = !empty($conditions) ? 'WHERE ' . \implode(' AND ', $conditions) : '';
             $table = (new ProductsModel($this->pdo))->getName();
             $reviewsTable = (new ReviewsModel($this->pdo))->getName();
             $select_pages =
                 'SELECT p.id, p.photo, p.title, p.slug, p.code, p.type, p.category, p.price, p.review, p.published, p.published_at, date(p.created_at) as created_date, ' .
-                "(SELECT COUNT(*) FROM $reviewsTable r WHERE r.product_id=p.id AND r.is_active=1) as review_count, " .
-                "(SELECT AVG(rating) FROM $reviewsTable r WHERE r.product_id=p.id AND r.is_active=1) as avg_rating " .
-                "FROM $table p WHERE $where ORDER BY p.created_at desc";
+                "COALESCE(rv.review_count, 0) as review_count, rv.avg_rating " .
+                "FROM $table p " .
+                "LEFT JOIN (SELECT product_id, COUNT(*) as review_count, AVG(rating) as avg_rating FROM $reviewsTable GROUP BY product_id) rv ON rv.product_id=p.id " .
+                "$where ORDER BY p.created_at desc";
             $products_stmt = $this->prepare($select_pages);
             foreach ($params as $name => $value) {
                 $products_stmt->bindValue(":$name", $value);
@@ -131,7 +132,7 @@ class ProductsController extends FileController
             $sampleCheck = $this->query(
                 "SELECT COUNT(*) as total, " .
                 "SUM(CASE WHEN created_by IS NULL AND created_at = published_at AND category='_raptor_sample_' THEN 1 ELSE 0 END) as sample " .
-                "FROM $table WHERE is_active=1"
+                "FROM $table"
             )->fetch();
             $isSample = (int)$sampleCheck['sample'] > 0;
 
@@ -171,6 +172,11 @@ class ProductsController extends FileController
                     throw new \InvalidArgumentException($this->text('invalid-request'), 400);
                 }
 
+                // HTML контент tag бүтэц шалгах
+                if (!empty($parsedBody['content'])) {
+                    $this->validateHtmlContent($parsedBody['content']);
+                }
+
                 $isPublished = ($parsedBody['published'] ?? 0) == 1;
                 $needsPublishPermission =
                     $isPublished ||
@@ -207,11 +213,11 @@ class ProductsController extends FileController
                 ]);
 
                 $action = !empty($payload['published']) ? 'publish' : 'insert';
-                $adminName = \trim(($this->getUser()->profile['first_name'] ?? '') . ' ' . ($this->getUser()->profile['last_name'] ?? ''));
-                $appUrl = \rtrim((string)$this->getRequest()->getUri()->withPath($this->getScriptPath()), '/') . '/dashboard';
-                $this->getService('discord')?->contentAction('product', $action, $payload['title'] ?? '', $id, $adminName, $appUrl);
+                $this->dispatch(new \Raptor\Notification\ContentEvent(
+                    $action, 'product', $payload['title'] ?? '', $id
+                ));
             } else {
-                $dashboard = $this->twigDashboard(
+                $dashboard = $this->dashboardTemplate(
                     __DIR__ . '/products-insert.html',
                     [
                         'table' => $table,
@@ -266,8 +272,7 @@ class ProductsController extends FileController
             $filesModel = new FilesModel($this->pdo);
             $filesModel->setTable($table);
             $record = $model->getRowWhere([
-                'id' => $id,
-                'is_active' => 1
+                'id' => $id
             ]);
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));
@@ -289,6 +294,11 @@ class ProductsController extends FileController
                 $parsedBody = $this->getParsedBody();
                 if (empty($parsedBody['title'])) {
                     throw new \InvalidArgumentException($this->text('invalid-request'), 400);
+                }
+
+                // HTML контент tag бүтэц шалгах
+                if (!empty($parsedBody['content'])) {
+                    $this->validateHtmlContent($parsedBody['content']);
                 }
 
                 $isPublished = ($parsedBody['published'] ?? 0) == 1;
@@ -353,12 +363,13 @@ class ProductsController extends FileController
                 $wasPublished = !empty($record['published']);
                 $nowPublished = !empty($payload['published']);
                 $action = (!$wasPublished && $nowPublished) ? 'publish' : 'update';
-                $adminName = \trim(($this->getUser()->profile['first_name'] ?? '') . ' ' . ($this->getUser()->profile['last_name'] ?? ''));
-                $appUrl = \rtrim((string)$this->getRequest()->getUri()->withPath($this->getScriptPath()), '/') . '/dashboard';
-                $this->getService('discord')?->contentAction('product', $action, $payload['title'] ?? $record['title'] ?? '', $id, $adminName, $appUrl, $updates);
+                $this->dispatch(new \Raptor\Notification\ContentEvent(
+                    $action, 'product', $payload['title'] ?? $record['title'] ?? '', $id,
+                    updates: $updates
+                ));
             } else {
-                $files = $filesModel->getRows(['WHERE' => "record_id=$id AND is_active=1"]);
-                $dashboard = $this->twigDashboard(
+                $files = $filesModel->getRows(['WHERE' => "record_id=$id"]);
+                $dashboard = $this->dashboardTemplate(
                     __DIR__ . '/products-update.html',
                     [
                         'table' => $table,
@@ -411,8 +422,7 @@ class ProductsController extends FileController
             $model = new ProductsModel($this->pdo);
             $table = $model->getName();
             $record = $model->getRowWhere([
-                'id' => $id,
-                'is_active' => 1
+                'id' => $id
             ]);
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));
@@ -424,23 +434,23 @@ class ProductsController extends FileController
             }
             $filesModel = new FilesModel($this->pdo);
             $filesModel->setTable($table);
-            $files = $filesModel->getRows(['WHERE' => "record_id=$id AND is_active=1"]);
+            $files = $filesModel->getRows(['WHERE' => "record_id=$id"]);
             // Үнэлгээний мэдээлэл
             $reviewsModel = new ReviewsModel($this->pdo);
             $reviewsTable = $reviewsModel->getName();
             $avgStmt = $this->prepare(
                 "SELECT AVG(rating) as avg_rating, COUNT(*) as review_count FROM $reviewsTable
-                 WHERE product_id=:pid AND is_active=1"
+                 WHERE product_id=:pid"
             );
             $avgStmt->execute([':pid' => $id]);
             $stats = $avgStmt->fetch();
             $rstmt = $this->prepare(
                 "SELECT id, created_by, name, email, rating, comment, created_at FROM $reviewsTable
-                 WHERE product_id=:pid AND is_active=1 ORDER BY created_at DESC"
+                 WHERE product_id=:pid ORDER BY created_at DESC"
             );
             $reviews = $rstmt->execute([':pid' => $id]) ? $rstmt->fetchAll() : [];
 
-            $dashboard = $this->twigDashboard(
+            $dashboard = $this->dashboardTemplate(
                 __DIR__ . '/products-view.html',
                 [
                     'table' => $table,
@@ -585,7 +595,7 @@ class ProductsController extends FileController
 
         $currentDescriptions = [];
         if (!empty($files['attachments']['existing'])) {
-            $currentFiles = $filesModel->getRows(['WHERE' => "record_id={$record['id']} AND is_active=1"]);
+            $currentFiles = $filesModel->getRows(['WHERE' => "record_id={$record['id']}"]);
             $currentDescriptions = \array_column($currentFiles, 'description', 'id');
         }
         foreach ($files['attachments']['existing'] ?? [] as $att) {
@@ -602,10 +612,13 @@ class ProductsController extends FileController
         }
 
         foreach ($files['attachments']['deleted'] ?? [] as $fileId) {
-            $filesModel->deactivateById((int)$fileId, [
-                'updated_at' => \date('Y-m-d H:i:s'),
-                'updated_by' => $userId
-            ]);
+            $fileRecord = $filesModel->getById((int)$fileId);
+            $filesModel->deleteById((int)$fileId);
+            if ($fileRecord) {
+                (new \Raptor\Trash\TrashModel($this->pdo))->store(
+                    'products', $filesModel->getName(), (int)$fileId, $fileRecord, $userId
+                );
+            }
             $changes[] = "attachment deleted: #$fileId";
         }
 
@@ -613,14 +626,14 @@ class ProductsController extends FileController
     }
 
     /**
-     * Бүтээгдэхүүний бичлэгийг идэвхгүй болгох.
+     * Бүтээгдэхүүний бичлэгийг устгах.
      *
      * Permission: system_product_delete
      * Эсвэл: өөрийн үүсгэсэн, нийтлэгдээгүй бичлэгийг устгах боломжтой
      *
      * @return void JSON response буцаана
      */
-    public function deactivate()
+    public function delete()
     {
         try {
             $payload = $this->getParsedBody();
@@ -633,7 +646,7 @@ class ProductsController extends FileController
 
             $model = new ProductsModel($this->pdo);
             if (!$this->isUserCan('system_product_delete')) {
-                $record = $model->getRowWhere(['id' => $id, 'is_active' => 1]);
+                $record = $model->getById($id);
                 if (empty($record)
                     || (int)$record['created_by'] !== $this->getUserId()
                     || (int)$record['published'] !== 0
@@ -642,15 +655,14 @@ class ProductsController extends FileController
                 }
             }
 
-            $deactivated = $model->deactivateById(
-                $id,
-                [
-                    'updated_by' => $this->getUserId(),
-                    'updated_at' => \date('Y-m-d H:i:s')
-                ]
-            );
-            if (!$deactivated) {
-                throw new \Exception($this->text('no-record-selected'));
+            if (!isset($record)) {
+                $record = $model->getById($id);
+            }
+            $model->deleteById($id);
+            if (!empty($record)) {
+                (new \Raptor\Trash\TrashModel($this->pdo))->store(
+                    'products', $model->getName(), $id, $record, $this->getUserId()
+                );
             }
             $this->respondJSON([
                 'status'  => 'success',
@@ -658,9 +670,9 @@ class ProductsController extends FileController
                 'message' => $this->text('record-successfully-deleted')
             ]);
 
-            $adminName = \trim(($this->getUser()->profile['first_name'] ?? '') . ' ' . ($this->getUser()->profile['last_name'] ?? ''));
-            $appUrl = \rtrim((string)$this->getRequest()->getUri()->withPath($this->getScriptPath()), '/') . '/dashboard';
-            $this->getService('discord')?->contentAction('product', 'delete', $payload['title'] ?? "#{$id}", $id, $adminName, $appUrl);
+            $this->dispatch(new \Raptor\Notification\ContentEvent(
+                'delete', 'product', $payload['title'] ?? "#{$id}", $id
+            ));
         } catch (\Throwable $err) {
             $this->respondJSON([
                 'status'  => 'error',
@@ -668,14 +680,14 @@ class ProductsController extends FileController
                 'message' => $err->getMessage()
             ], $err->getCode());
         } finally {
-            $context = ['action' => 'deactivate'];
+            $context = ['action' => 'delete'];
             if (isset($err) && $err instanceof \Throwable) {
                 $level = LogLevel::ERROR;
-                $message = 'Бүтээгдэхүүнийг идэвхгүй болгох үйлдлийг гүйцэтгэх явцад алдаа гарч зогслоо';
+                $message = 'Бүтээгдэхүүнийг устгах үйлдлийг гүйцэтгэх явцад алдаа гарч зогслоо';
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } else {
                 $level = LogLevel::ALERT;
-                $message = '{record_id} дугаартай [{server_request.body.title}] бүтээгдэхүүнийг идэвхгүй болголоо';
+                $message = '{record_id} дугаартай [{server_request.body.title}] бүтээгдэхүүнийг устгалаа';
                 $context += ['record_id' => $id];
             }
             $this->log('products', $level, $message, $context);
@@ -701,7 +713,7 @@ class ProductsController extends FileController
 
             $check = $this->query(
                 "SELECT COUNT(*) as sample FROM $table " .
-                "WHERE is_active=1 AND created_by IS NULL AND created_at = published_at AND category='_raptor_sample_'"
+                "WHERE created_by IS NULL AND created_at = published_at AND category='_raptor_sample_'"
             )->fetch();
             if ((int)$check['sample'] === 0) {
                 throw new \Exception(
@@ -723,20 +735,10 @@ class ProductsController extends FileController
                 $this->exec("DELETE FROM $table WHERE id IN ($idList)");
             }
 
-            // Идэвхгүй (is_active=0) бичлэгүүдийг устгах
-            $inactiveIds = $this->query(
-                "SELECT id FROM $table WHERE is_active=0"
-            )->fetchAll(\PDO::FETCH_COLUMN);
-            if (!empty($inactiveIds)) {
-                $idList = \implode(',', \array_map('intval', $inactiveIds));
-                try { $this->exec("DELETE FROM {$table}_files WHERE record_id IN ($idList)"); } catch (\Throwable) {}
-                $this->exec("DELETE FROM $table WHERE id IN ($idList)");
-            }
-
             // Auto increment тохируулах
             $maxId = $this->query("SELECT MAX(id) as max_id FROM $table")->fetch();
             $nextId = ((int)($maxId['max_id'] ?? 0)) + 1;
-            if ($this->getDriverName() === 'pgsql') {
+            if ($this->getDriverName() === Constants::DRIVER_PGSQL) {
                 $this->exec("SELECT setval(pg_get_serial_sequence('$table', 'id'), $nextId, false)");
             } else {
                 $this->exec("ALTER TABLE $table AUTO_INCREMENT = $nextId");
@@ -774,7 +776,6 @@ class ProductsController extends FileController
             $sql =
                 'SELECT record_id, COUNT(*) as cnt ' .
                 "FROM {$table}_files " .
-                'WHERE is_active=1 ' .
                 'GROUP BY record_id';
             $result = $this->query($sql)->fetchAll();
             $counts = [];

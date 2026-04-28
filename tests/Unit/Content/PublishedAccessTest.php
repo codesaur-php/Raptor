@@ -10,7 +10,7 @@ use Tests\Support\RaptorTestCase;
  * CLAUDE.md: "Controllers with published field allow users without
  * _update/_delete permission to edit/delete their own unpublished records."
  *
- * Энэ тест нь update() болон deactivate() дахь owner access логикийг
+ * Энэ тест нь update() болон delete() дахь owner access логикийг
  * source code шинжлэлээр шалгана.
  */
 class PublishedAccessTest extends RaptorTestCase
@@ -72,48 +72,48 @@ class PublishedAccessTest extends RaptorTestCase
     }
 
     // =============================================
-    // NewsController::deactivate() - owner access
+    // NewsController::delete() - owner access
     // =============================================
 
     /**
-     * NewsController::deactivate() нь system_content_delete эрх шалгадаг.
+     * NewsController::delete() нь system_content_delete эрх шалгадаг.
      */
-    public function testNewsDeactivateChecksDeletePermission(): void
+    public function testNewsDeleteChecksDeletePermission(): void
     {
         $this->assertMethodChecksPermission(
-            self::$newsSource, 'deactivate', 'system_content_delete',
-            'NewsController::deactivate()'
+            self::$newsSource, 'delete', 'system_content_delete',
+            'NewsController::delete()'
         );
     }
 
     /**
-     * NewsController::deactivate() эрхгүй хэрэглэгч өөрийн unpublished бичлэгийг устгах боломжтой.
+     * NewsController::delete() эрхгүй хэрэглэгч өөрийн unpublished бичлэгийг устгах боломжтой.
      */
-    public function testNewsDeactivateAllowsOwnerUnpublished(): void
+    public function testNewsDeleteAllowsOwnerUnpublished(): void
     {
-        $body = $this->extractMethodBody(self::$newsSource, 'deactivate');
-        $this->assertNotEmpty($body, 'deactivate() not found in NewsController');
+        $body = $this->extractMethodBody(self::$newsSource, 'delete');
+        $this->assertNotEmpty($body, 'delete() not found in NewsController');
 
         $this->assertStringContainsString("record['created_by']", $body,
-            'NewsController::deactivate() must check created_by');
+            'NewsController::delete() must check created_by');
         $this->assertStringContainsString("record['published']", $body,
-            'NewsController::deactivate() must check published status');
+            'NewsController::delete() must check published status');
     }
 
     /**
-     * NewsController::deactivate() published бичлэгийг эрхгүй хэрэглэгч устгах боломжгүй.
+     * NewsController::delete() published бичлэгийг эрхгүй хэрэглэгч устгах боломжгүй.
      * published !== 0 байвал permission error шидэх ёстой.
      */
-    public function testNewsDeactivateBlocksOwnerOnPublished(): void
+    public function testNewsDeleteBlocksOwnerOnPublished(): void
     {
-        $body = $this->extractMethodBody(self::$newsSource, 'deactivate');
+        $body = $this->extractMethodBody(self::$newsSource, 'delete');
 
         // The condition is: created_by !== userId || published !== 0
         // This means if published !== 0, the check fails even if user owns it
         $this->assertMatchesRegularExpression(
             '/\(int\)\$record\[.published.\]\s*!==\s*0/',
             $body,
-            'NewsController::deactivate() must reject owner access on published records'
+            'NewsController::delete() must reject owner access on published records'
         );
     }
 
@@ -157,74 +157,70 @@ class PublishedAccessTest extends RaptorTestCase
     }
 
     // =============================================
-    // PagesController::deactivate() - owner access
+    // PagesController::delete() - owner access
     // =============================================
 
     /**
-     * PagesController::deactivate() нь system_content_delete эрх шалгадаг.
+     * PagesController::delete() нь system_content_delete эрх шалгадаг.
      */
-    public function testPagesDeactivateChecksDeletePermission(): void
+    public function testPagesDeleteChecksDeletePermission(): void
     {
         $this->assertMethodChecksPermission(
-            self::$pagesSource, 'deactivate', 'system_content_delete',
-            'PagesController::deactivate()'
+            self::$pagesSource, 'delete', 'system_content_delete',
+            'PagesController::delete()'
         );
     }
 
     /**
-     * PagesController::deactivate() эрхгүй хэрэглэгч өөрийн unpublished бичлэгийг устгах боломжтой.
+     * PagesController::delete() эрхгүй хэрэглэгч өөрийн unpublished бичлэгийг устгах боломжтой.
      */
-    public function testPagesDeactivateAllowsOwnerUnpublished(): void
+    public function testPagesDeleteAllowsOwnerUnpublished(): void
     {
-        $body = $this->extractMethodBody(self::$pagesSource, 'deactivate');
-        $this->assertNotEmpty($body, 'deactivate() not found in PagesController');
+        $body = $this->extractMethodBody(self::$pagesSource, 'delete');
+        $this->assertNotEmpty($body, 'delete() not found in PagesController');
 
         $this->assertStringContainsString("record['created_by']", $body,
-            'PagesController::deactivate() must check created_by');
+            'PagesController::delete() must check created_by');
         $this->assertStringContainsString("record['published']", $body,
-            'PagesController::deactivate() must check published status');
+            'PagesController::delete() must check published status');
     }
 
     /**
-     * PagesController::deactivate() published бичлэгийг эрхгүй хэрэглэгч устгах боломжгүй.
+     * PagesController::delete() published бичлэгийг эрхгүй хэрэглэгч устгах боломжгүй.
      */
-    public function testPagesDeactivateBlocksOwnerOnPublished(): void
+    public function testPagesDeleteBlocksOwnerOnPublished(): void
     {
-        $body = $this->extractMethodBody(self::$pagesSource, 'deactivate');
+        $body = $this->extractMethodBody(self::$pagesSource, 'delete');
 
         $this->assertMatchesRegularExpression(
             '/\(int\)\$record\[.published.\]\s*!==\s*0/',
             $body,
-            'PagesController::deactivate() must reject owner access on published records'
+            'PagesController::delete() must reject owner access on published records'
         );
     }
 
     // =============================================
-    // Soft delete - бүх deactivate нь is_active=0
+    // Delete - бүх delete нь deleteById ашигладаг
     // =============================================
 
     /**
-     * NewsController::deactivate() нь deactivateById ашигладаг (soft delete).
+     * NewsController::delete() нь deleteById ашигладаг.
      */
-    public function testNewsDeactivateUsesSoftDelete(): void
+    public function testNewsDeleteUsesDeleteById(): void
     {
-        $body = $this->extractMethodBody(self::$newsSource, 'deactivate');
-        $this->assertStringContainsString('deactivateById', $body,
-            'NewsController::deactivate() must use deactivateById (soft delete)');
-        $this->assertStringNotContainsString('DELETE FROM', $body,
-            'NewsController::deactivate() must NOT physically delete records');
+        $body = $this->extractMethodBody(self::$newsSource, 'delete');
+        $this->assertStringContainsString('deleteById', $body,
+            'NewsController::delete() must use deleteById');
     }
 
     /**
-     * PagesController::deactivate() нь deactivateById ашигладаг (soft delete).
+     * PagesController::delete() нь deleteById ашигладаг.
      */
-    public function testPagesDeactivateUsesSoftDelete(): void
+    public function testPagesDeleteUsesDeleteById(): void
     {
-        $body = $this->extractMethodBody(self::$pagesSource, 'deactivate');
-        $this->assertStringContainsString('deactivateById', $body,
-            'PagesController::deactivate() must use deactivateById (soft delete)');
-        $this->assertStringNotContainsString('DELETE FROM', $body,
-            'PagesController::deactivate() must NOT physically delete records');
+        $body = $this->extractMethodBody(self::$pagesSource, 'delete');
+        $this->assertStringContainsString('deleteById', $body,
+            'PagesController::delete() must use deleteById');
     }
 
     // =============================================

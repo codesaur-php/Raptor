@@ -4,11 +4,13 @@ namespace Raptor\Content;
 
 use Psr\Log\LogLevel;
 
+use codesaur\DataObject\Constants;
+
 /**
  * Class PagesController
  *
  * Хуудас (Pages) модулийн Dashboard Controller.
- * Хуудас үүсгэх, засварлах, харах, идэвхгүй болгох
+ * Хуудас үүсгэх, засварлах, харах, устгах
  * зэрэг CRUD үйлдлийг гүйцэтгэнэ.
  *
  * Онцлог:
@@ -23,6 +25,7 @@ use Psr\Log\LogLevel;
 class PagesController extends FileController
 {
     use \Raptor\Template\DashboardTrait;
+    use HtmlValidationTrait;
 
     /**
      * Хуудасны навигацийн мод бүтцийн Dashboard хуудас.
@@ -39,7 +42,7 @@ class PagesController extends FileController
             return;
         }
 
-        $dashboard = $this->twigDashboard(__DIR__ . '/pages-nav.html');
+        $dashboard = $this->dashboardTemplate(__DIR__ . '/pages-nav.html');
         $dashboard->set('title', $this->text('pages-navigation'));
         $dashboard->render();
 
@@ -65,7 +68,7 @@ class PagesController extends FileController
         // pages хүснэгтийн нэрийг PagesModel::getName() ашиглан динамикаар авна. Ирээдүйд refactor хийхэд бэлэн байна.
         $table = (new PagesModel($this->pdo))->getName();
         $codes_result = $this->query(
-            "SELECT DISTINCT code FROM $table WHERE is_active=1"
+            "SELECT DISTINCT code FROM $table"
         )->fetchAll();
         $languages = $this->getLanguages();
         $filters['code']['title'] = $this->text('language');
@@ -73,14 +76,14 @@ class PagesController extends FileController
             $filters['code']['values'][$row['code']] = "{$languages[$row['code']]['title']} [{$row['code']}]";
         }
         $types_result = $this->query(
-            "SELECT DISTINCT type FROM $table WHERE is_active=1"
+            "SELECT DISTINCT type FROM $table"
         )->fetchAll();
         $filters['type']['title'] = $this->text('type');
         foreach ($types_result as $row) {
             $filters['type']['values'][$row['type']] = $row['type'];
         }
         $categories_result = $this->query(
-            "SELECT DISTINCT category FROM $table WHERE is_active=1"
+            "SELECT DISTINCT category FROM $table"
         )->fetchAll();
         $filters['category']['title'] = $this->text('category');
         foreach ($categories_result as $row) {
@@ -95,7 +98,7 @@ class PagesController extends FileController
                 ]
             ]
         ];
-        $dashboard = $this->twigDashboard(__DIR__ . '/pages-table.html', ['filters' => $filters]);
+        $dashboard = $this->dashboardTemplate(__DIR__ . '/pages-table.html', ['filters' => $filters]);
         $dashboard->set('title', $this->text('pages'));
         $dashboard->render();
 
@@ -106,7 +109,7 @@ class PagesController extends FileController
      * Хуудасны жагсаалтыг JSON хэлбэрээр буцаана.
      *
      * Query параметрүүдээр шүүлтүүр хийх боломжтой:
-     * code, type, category, published, is_active
+     * code, type, category, published
      *
      * Permission: system_content_index
      */
@@ -118,11 +121,8 @@ class PagesController extends FileController
             }
 
             $params = $this->getQueryParams();
-            if (!isset($params['is_active'])) {
-                $params['is_active'] = 1;
-            }
             $conditions = [];
-            $allowed = ['code', 'type', 'category', 'published', 'is_active'];
+            $allowed = ['code', 'type', 'category', 'published'];
             foreach (\array_keys($params) as $name) {
                 if (\in_array($name, $allowed)) {
                     $conditions[] = "$name=:$name";
@@ -130,12 +130,12 @@ class PagesController extends FileController
                     unset($params[$name]);
                 }
             }
-            $where = \implode(' AND ', $conditions);
+            $whereClause = empty($conditions) ? '' : ' WHERE ' . \implode(' AND ', $conditions);
             // pages хүснэгтийн нэрийг PagesModel::getName() ашиглан динамикаар авна. Ирээдүйд refactor хийхэд бэлэн байна.
             $table = (new PagesModel($this->pdo))->getName();
             $select_pages =
-                'SELECT id, photo, title, slug, code, type, category, position, link, published, published_at, is_active ' .
-                "FROM $table WHERE $where ORDER BY position, id";
+                'SELECT id, photo, title, slug, code, type, category, position, link, published, published_at ' .
+                "FROM $table$whereClause ORDER BY position, id";
             $pages_stmt = $this->prepare($select_pages);
             foreach ($params as $name => $value) {
                 $pages_stmt->bindValue(":$name", $value);
@@ -147,7 +147,7 @@ class PagesController extends FileController
             $sampleCheck = $this->query(
                 "SELECT COUNT(*) as total, " .
                 "SUM(CASE WHEN created_by IS NULL AND created_at = published_at AND category='_raptor_sample_' THEN 1 ELSE 0 END) as sample " .
-                "FROM $table WHERE is_active=1"
+                "FROM $table"
             )->fetch();
             $isSample = (int)$sampleCheck['sample'] > 0;
 
@@ -184,7 +184,7 @@ class PagesController extends FileController
             // Жишиг дата байгаа эсэхийг давхар шалгах
             $check = $this->query(
                 "SELECT COUNT(*) as sample FROM $table " .
-                "WHERE is_active=1 AND created_by IS NULL AND created_at = published_at AND category='_raptor_sample_'"
+                "WHERE created_by IS NULL AND created_at = published_at AND category='_raptor_sample_'"
             )->fetch();
             if ((int)$check['sample'] === 0) {
                 throw new \Exception(
@@ -206,25 +206,16 @@ class PagesController extends FileController
                 $this->exec("DELETE FROM $table WHERE id IN ($idList)");
             }
 
-            // Идэвхгүй (is_active=0) бичлэгүүдийг устгах
-            $inactiveIds = $this->query(
-                "SELECT id FROM $table WHERE is_active=0"
-            )->fetchAll(\PDO::FETCH_COLUMN);
-            if (!empty($inactiveIds)) {
-                $idList = \implode(',', \array_map('intval', $inactiveIds));
-                try { $this->exec("DELETE FROM {$table}_files WHERE record_id IN ($idList)"); } catch (\Throwable) {}
-                $this->exec("DELETE FROM $table WHERE id IN ($idList)");
-            }
-
             // Auto increment тохируулах
             $maxId = $this->query("SELECT MAX(id) as max_id FROM $table")->fetch();
             $nextId = ((int)($maxId['max_id'] ?? 0)) + 1;
-            if ($this->getDriverName() === 'pgsql') {
+            if ($this->getDriverName() === Constants::DRIVER_PGSQL) {
                 $this->exec("SELECT setval(pg_get_serial_sequence('$table', 'id'), $nextId, false)");
             } else {
                 $this->exec("ALTER TABLE $table AUTO_INCREMENT = $nextId");
             }
 
+            $this->invalidateCache('pages_nav.{code}', 'featured_pages.{code}');
             $this->respondJSON([
                 'status' => 'success',
                 'message' => $this->text('sample-data-cleared')
@@ -270,6 +261,11 @@ class PagesController extends FileController
                     throw new \InvalidArgumentException($this->text('invalid-request'), 400);
                 }
 
+                // HTML контент tag бүтэц шалгах
+                if (!empty($payload['content'])) {
+                    $this->validateHtmlContent($payload['content']);
+                }
+
                 // Нийтлэх эрх шаардлагатай талбарууд
                 $isPublished = ($payload['published'] ?? 0) == 1;
                 $needsPublishPermission =
@@ -297,7 +293,7 @@ class PagesController extends FileController
                 // Parent хэлний шалгалт
                 $parentId = (int)($payload['parent_id'] ?? 0);
                 if ($parentId > 0 && !empty($payload['code'])) {
-                    $parentRow = $model->getRowWhere(['id' => $parentId, 'is_active' => 1]);
+                    $parentRow = $model->getById($parentId);
                     if (empty($parentRow) || $parentRow['code'] !== $payload['code']) {
                         throw new \InvalidArgumentException(
                             $this->text('invalid-request'),
@@ -326,19 +322,20 @@ class PagesController extends FileController
                 // Файлуудыг нэгдсэн аргаар боловсруулах
                 $fileChanges = $this->processFiles($record, $files, true);
 
+                $this->invalidateCache('pages_nav.{code}', 'featured_pages.{code}');
                 $this->respondJSON([
                     'status' => 'success',
                     'message' => $this->text('record-insert-success')
                 ]);
 
                 $action = !empty($payload['published']) ? 'publish' : 'insert';
-                $adminName = \trim(($this->getUser()->profile['first_name'] ?? '') . ' ' . ($this->getUser()->profile['last_name'] ?? ''));
-                $appUrl = \rtrim((string)$this->getRequest()->getUri()->withPath($this->getScriptPath()), '/') . '/dashboard';
-                $this->getService('discord')?->contentAction('page', $action, $payload['title'] ?? '', $id, $adminName, $appUrl);
+                $this->dispatch(new \Raptor\Notification\ContentEvent(
+                    $action, 'page', $payload['title'] ?? '', $id
+                ));
             } else {
                 $allInfos = $this->getInfos($table);
                 $codeParam = $this->getQueryParams()['code'] ?? '';
-                $dashboard = $this->twigDashboard(
+                $dashboard = $this->dashboardTemplate(
                     __DIR__ . '/page-insert.html',
                     [
                         'table' => $table,
@@ -391,10 +388,7 @@ class PagesController extends FileController
         try {
             $model = new PagesModel($this->pdo);
             $table = $model->getName();
-            $record = $model->getRowWhere([
-                'id' => $id,
-                'is_active' => 1
-            ]);
+            $record = $model->getById($id);
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));
             }
@@ -405,12 +399,12 @@ class PagesController extends FileController
             }
             $filesModel = new FilesModel($this->pdo);
             $filesModel->setTable($table);
-            $files = $filesModel->getRows(['WHERE' => "record_id=$id AND is_active=1"]);
+            $files = $filesModel->getRows(['WHERE' => "record_id=$id"]);
             $infos = $this->getInfos($table, "(id=$id OR id={$record['parent_id']})");
             $childCount = $this->query(
-                "SELECT COUNT(*) as cnt FROM $table WHERE parent_id=$id AND is_active=1"
+                "SELECT COUNT(*) as cnt FROM $table WHERE parent_id=$id"
             )->fetch();
-            $dashboard = $this->twigDashboard(
+            $dashboard = $this->dashboardTemplate(
                 __DIR__ . '/page-view.html',
                 [
                     'table' => $table,
@@ -461,10 +455,7 @@ class PagesController extends FileController
             $table = $model->getName();
             $filesModel = new FilesModel($this->pdo);
             $filesModel->setTable($table);
-            $record = $model->getRowWhere([
-                'id' => $id,
-                'is_active' => 1
-            ]);
+            $record = $model->getById($id);
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));
             }
@@ -487,6 +478,11 @@ class PagesController extends FileController
                     throw new \InvalidArgumentException($this->text('invalid-request'), 400);
                 }
 
+                // HTML контент tag бүтэц шалгах
+                if (!empty($payload['content'])) {
+                    $this->validateHtmlContent($payload['content']);
+                }
+
                 // Нийтлэх эрх шаардлагатай талбарууд
                 $isPublished = ($payload['published'] ?? 0) == 1;
                 $needsPublishPermission =
@@ -507,7 +503,7 @@ class PagesController extends FileController
                 // Parent circular reference + хэлний шалгалт
                 $parentId = (int)($payload['parent_id'] ?? 0);
                 if ($parentId > 0) {
-                    $parentRow = $model->getRowWhere(['id' => $parentId, 'is_active' => 1]);
+                    $parentRow = $model->getById($parentId);
                     if (empty($parentRow) || $parentRow['code'] !== $record['code']) {
                         throw new \InvalidArgumentException(
                             $this->text('invalid-request'),
@@ -575,6 +571,7 @@ class PagesController extends FileController
                     throw new \Exception($this->text('no-record-selected'));
                 }
 
+                $this->invalidateCache('pages_nav.{code}', 'featured_pages.{code}');
                 $this->respondJSON([
                     'status' => 'success',
                     'type' => 'primary',
@@ -584,20 +581,21 @@ class PagesController extends FileController
                 $wasPublished = !empty($record['published']);
                 $nowPublished = !empty($payload['published']);
                 $action = (!$wasPublished && $nowPublished) ? 'publish' : 'update';
-                $adminName = \trim(($this->getUser()->profile['first_name'] ?? '') . ' ' . ($this->getUser()->profile['last_name'] ?? ''));
-                $appUrl = \rtrim((string)$this->getRequest()->getUri()->withPath($this->getScriptPath()), '/') . '/dashboard';
-                $this->getService('discord')?->contentAction('page', $action, $payload['title'] ?? $record['title'] ?? '', $id, $adminName, $appUrl, $updates);
+                $this->dispatch(new \Raptor\Notification\ContentEvent(
+                    $action, 'page', $payload['title'] ?? $record['title'] ?? '', $id,
+                    updates: $updates
+                ));
             } else {
                 $excludeIds = $this->getDescendantIds($id, $table);
                 $excludeIds[] = $id;
                 $excludeList = \implode(',', $excludeIds);
                 $codeQuoted = $this->quote($record['code']);
                 $infos = $this->getInfos($table, "id NOT IN ($excludeList) AND code=$codeQuoted");
-                $files = $filesModel->getRows(['WHERE' => "record_id=$id AND is_active=1"]);
+                $files = $filesModel->getRows(['WHERE' => "record_id=$id"]);
                 $childCount = $this->query(
-                    "SELECT COUNT(*) as cnt FROM $table WHERE parent_id=$id AND is_active=1"
+                    "SELECT COUNT(*) as cnt FROM $table WHERE parent_id=$id"
                 )->fetch();
-                $dashboard = $this->twigDashboard(
+                $dashboard = $this->dashboardTemplate(
                     __DIR__ . '/page-update.html',
                     [
                         'table' => $table,
@@ -638,14 +636,12 @@ class PagesController extends FileController
     }
 
     /**
-     * Хуудсын бичлэгийг идэвхгүй болгоно (soft delete).
-     *
-     * Бодит файл устахгүй, is_active=0 болгоно.
+     * Хуудсын бичлэгийг устгах.
      *
      * Permission: system_content_delete
      * Эсвэл: өөрийн үүсгэсэн, нийтлэгдээгүй бичлэгийг устгах боломжтой
      */
-    public function deactivate()
+    public function delete()
     {
         try {
             $payload = $this->getParsedBody();
@@ -658,7 +654,7 @@ class PagesController extends FileController
 
             $model = new PagesModel($this->pdo);
             if (!$this->isUserCan('system_content_delete')) {
-                $record = $model->getRowWhere(['id' => $id, 'is_active' => 1]);
+                $record = $model->getById($id);
                 if (empty($record)
                     || (int)$record['created_by'] !== $this->getUserId()
                     || (int)$record['published'] !== 0
@@ -667,25 +663,25 @@ class PagesController extends FileController
                 }
             }
 
-            $deactivated = $model->deactivateById(
-                $id,
-                [
-                    'updated_by' => $this->getUserId(),
-                    'updated_at' => \date('Y-m-d H:i:s')
-                ]
-            );
-            if (!$deactivated) {
-                throw new \Exception($this->text('no-record-selected'));
+            if (!isset($record)) {
+                $record = $model->getById($id);
             }
+            $model->deleteById($id);
+            if (!empty($record)) {
+                (new \Raptor\Trash\TrashModel($this->pdo))->store(
+                    'pages', $model->getName(), $id, $record, $this->getUserId()
+                );
+            }
+            $this->invalidateCache('pages_nav.{code}', 'featured_pages.{code}');
             $this->respondJSON([
                 'status'  => 'success',
                 'title'   => $this->text('success'),
                 'message' => $this->text('record-successfully-deleted')
             ]);
 
-            $adminName = \trim(($this->getUser()->profile['first_name'] ?? '') . ' ' . ($this->getUser()->profile['last_name'] ?? ''));
-            $appUrl = \rtrim((string)$this->getRequest()->getUri()->withPath($this->getScriptPath()), '/') . '/dashboard';
-            $this->getService('discord')?->contentAction('page', 'delete', $payload['title'] ?? "#{$id}", $id, $adminName, $appUrl);
+            $this->dispatch(new \Raptor\Notification\ContentEvent(
+                'delete', 'page', $payload['title'] ?? "#{$id}", $id
+            ));
         } catch (\Throwable $err) {
             $this->respondJSON([
                 'status'  => 'error',
@@ -693,14 +689,14 @@ class PagesController extends FileController
                 'message' => $err->getMessage()
             ], $err->getCode());
         } finally {
-            $context = ['action' => 'deactivate'];
+            $context = ['action' => 'delete'];
             if (isset($err) && $err instanceof \Throwable) {
                 $level = LogLevel::ERROR;
-                $message = 'Хуудсыг идэвхгүй болгох үйлдлийг гүйцэтгэх явцад алдаа гарч зогслоо';
+                $message = 'Хуудсыг устгах үйлдлийг гүйцэтгэх явцад алдаа гарч зогслоо';
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } else {
                 $level = LogLevel::ALERT;
-                $message = '{record_id} дугаартай [{server_request.body.title}] хуудсыг идэвхгүй болголоо';
+                $message = '{record_id} дугаартай [{server_request.body.title}] хуудсыг устгалаа';
                 $context += ['record_id' => $id];
             }
             $this->log('pages', $level, $message, $context);
@@ -717,7 +713,7 @@ class PagesController extends FileController
     private function getDescendantIds(int $id, string $table): array
     {
         $allPages = $this->query(
-            "SELECT id, parent_id FROM $table WHERE is_active=1"
+            "SELECT id, parent_id FROM $table"
         )->fetchAll();
 
         $childrenMap = [];
@@ -743,7 +739,7 @@ class PagesController extends FileController
      * Хуудасны шатлалтай мэдээллийг авах.
      *
      * Хуудас бүрийн parent_id-г дагаж parent_titles
-     * (жишээ: "Нүүр » Бидний тухай » ") бүрдүүлнэ.
+     * (жишээ: "Нүүр > Бидний тухай > ") бүрдүүлнэ.
      *
      * @param string $table  Хүснэгтийн нэр
      * @param string $condition  Нэмэлт WHERE нөхцөл (хоосон бол бүгдийг авна)
@@ -755,7 +751,7 @@ class PagesController extends FileController
         try {
             $select_pages =
                 'SELECT id, parent_id, title, position, code ' .
-                "FROM $table WHERE is_active=1";
+                "FROM $table WHERE 1=1";
             $result = $this->query("$select_pages ORDER BY position, id")->fetchAll();
             foreach ($result as $record) {
                 $pages[$record['id']] = $record;
@@ -789,7 +785,7 @@ class PagesController extends FileController
             $path = '';
             $ancestry_keys = \array_flip($ancestry);
             for ($i = \count($ancestry_keys); $i > 0; $i--) {
-                $path .= "{$pages[$ancestry_keys[$i]]['title']} » ";
+                $path .= "{$pages[$ancestry_keys[$i]]['title']} > ";
             }
             $pages[$id]['parent_titles'] = $path;
             if (isset($pages_specified[$id])) {
@@ -861,7 +857,6 @@ class PagesController extends FileController
             $sql =
                 'SELECT record_id, COUNT(*) as cnt ' .
                 "FROM {$table}_files " .
-                'WHERE is_active=1 ' .
                 'GROUP BY record_id';
             $result = $this->query($sql)->fetchAll();
             $counts = [];
@@ -997,7 +992,7 @@ class PagesController extends FileController
         // 4. Attachments - Update existing (description only)
         $currentDescriptions = [];
         if (!empty($files['attachments']['existing'])) {
-            $currentFiles = $filesModel->getRows(['WHERE' => "record_id={$record['id']} AND is_active=1"]);
+            $currentFiles = $filesModel->getRows(['WHERE' => "record_id={$record['id']}"]);
             $currentDescriptions = \array_column($currentFiles, 'description', 'id');
         }
         foreach ($files['attachments']['existing'] ?? [] as $att) {
@@ -1013,12 +1008,15 @@ class PagesController extends FileController
             }
         }
 
-        // 5. Attachments - Delete (soft delete)
+        // 5. Attachments - Delete
         foreach ($files['attachments']['deleted'] ?? [] as $fileId) {
-            $filesModel->deactivateById((int)$fileId, [
-                'updated_at' => \date('Y-m-d H:i:s'),
-                'updated_by' => $userId
-            ]);
+            $fileRecord = $filesModel->getById((int)$fileId);
+            $filesModel->deleteById((int)$fileId);
+            if ($fileRecord) {
+                (new \Raptor\Trash\TrashModel($this->pdo))->store(
+                    'pages', $filesModel->getName(), (int)$fileId, $fileRecord, $userId
+                );
+            }
             $changes[] = "attachment deleted: #$fileId";
         }
 

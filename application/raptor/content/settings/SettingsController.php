@@ -37,7 +37,7 @@ class SettingsController extends FileController
      *      физик файл нь public/settings хавтсанд байвал
      *      файлын хэмжээг bytes -> KB/MB форматад хөрвүүлж record массивт inject хийнэ.
      *
-     * - Twig dashboard template рүү дамжуулж render хийнэ.
+     * - Dashboard template рүү дамжуулж render хийнэ.
      * - Нэвтрүүлэлтийн лог (log) үлдээнэ.
      */
     public function index()
@@ -88,7 +88,7 @@ class SettingsController extends FileController
         }
 
         /* Dashboard template рүү record дамжуулж render хийх */
-        $dashboard = $this->twigDashboard(__DIR__ . '/settings.html', ['record' => $record]);
+        $dashboard = $this->dashboardTemplate(__DIR__ . '/settings.html', ['record' => $record]);
         $dashboard->set('title', $this->text('settings'));
         $dashboard->render();
 
@@ -192,17 +192,22 @@ class SettingsController extends FileController
                 $notify = 'success';
                 $notice = $this->text('record-insert-success');
             }
+            $this->invalidateCache('settings.{code}');
             $this->respondJSON(['status' => 'success', 'type' => $notify, 'message' => $notice]);
 
-            $adminName = \trim(($this->getUser()->profile['first_name'] ?? '') . ' ' . ($this->getUser()->profile['last_name'] ?? ''));
-            $appUrl = \rtrim((string)$this->getRequest()->getUri()->withPath($this->getScriptPath()), '/') . '/dashboard';
             $configUpdates = \array_filter($updates, fn($u) => $u === 'config' || \str_starts_with($u, 'config'));
             $textUpdates = \array_diff($updates, $configUpdates);
             if (!empty($textUpdates)) {
-                $this->getService('discord')?->settingsUpdated('texts', $textUpdates, $adminName, $appUrl);
+                $this->dispatch(new \Raptor\Notification\ContentEvent(
+                    'update', 'settings', 'texts', null,
+                    updates: $textUpdates
+                ));
             }
             if (!empty($configUpdates)) {
-                $this->getService('discord')?->settingsUpdated('options', $configUpdates, $adminName, $appUrl);
+                $this->dispatch(new \Raptor\Notification\ContentEvent(
+                    'update', 'settings', 'options', null,
+                    updates: $configUpdates
+                ));
             }
         } catch (\Throwable $err) {
             $this->respondJSON(['message' => $err->getMessage()], $err->getCode());
@@ -349,11 +354,13 @@ class SettingsController extends FileController
                 $notify = 'success';
                 $notice = $this->text('record-insert-success');
             }
+            $this->invalidateCache('settings.{code}');
             $this->respondJSON(['status' => 'success', 'type' => $notify, 'message' => $notice]);
 
-            $adminName = \trim(($this->getUser()->profile['first_name'] ?? '') . ' ' . ($this->getUser()->profile['last_name'] ?? ''));
-            $appUrl = \rtrim((string)$this->getRequest()->getUri()->withPath($this->getScriptPath()), '/') . '/dashboard';
-            $this->getService('discord')?->settingsUpdated('files', \array_unique($updates), $adminName, $appUrl);
+            $this->dispatch(new \Raptor\Notification\ContentEvent(
+                'update', 'settings', 'files', null,
+                updates: \array_unique($updates)
+            ));
         } catch (\Throwable $err) {
             $this->respondJSON(['message' => $err->getMessage()], $err->getCode());
         } finally {
@@ -368,6 +375,106 @@ class SettingsController extends FileController
                 $message = 'Тохируулга файлуудыг амжилттай шинэчиллээ';
             }
             $this->log('content', $level, $message, $context);
+        }
+    }
+
+    /**
+     * .env файлын нэг утгыг хэсэгчлэн шинэчлэх.
+     *
+     * PATCH /dashboard/settings/env
+     * Body: { "name": "RAPTOR_...", "value": "...", "type": "bool|email|string" }
+     *
+     * Нэг удаад зөвхөн нэг key-value pair солино.
+     * bool төрөлд одоогийн утгыг toggle хийнэ.
+     *
+     * Зөвшөөрөгдсөн .env нэрс:
+     *   RAPTOR_CONTACT_EMAIL_TO, RAPTOR_ORDER_EMAIL_TO,
+     *   RAPTOR_COMMENT_EMAIL_TO, RAPTOR_REVIEW_EMAIL_TO
+     *
+     * Permission: system_coder role
+     *
+     * @return void
+     */
+    public function updateEnv()
+    {
+        try {
+            if (!$this->isUser('system_coder')) {
+                throw new \Exception($this->text('system-no-permission'), 401);
+            }
+
+            $payload = $this->getParsedBody();
+            $name = \trim($payload['name'] ?? '');
+            $value = \trim($payload['value'] ?? '');
+            $type = \trim($payload['type'] ?? 'string');
+
+            $allowed = [
+                'RAPTOR_CONTACT_EMAIL_TO',
+                'RAPTOR_ORDER_EMAIL_TO',
+                'RAPTOR_COMMENT_EMAIL_TO',
+                'RAPTOR_REVIEW_EMAIL_TO',
+            ];
+            if (!\in_array($name, $allowed, true)) {
+                throw new \Exception($this->text('invalid-request'), 403);
+            }
+
+            if ($type === 'bool') {
+                $current = \filter_var($_ENV[$name] ?? 'false', \FILTER_VALIDATE_BOOLEAN);
+                $value = !$current ? 'true' : 'false';
+            } elseif ($type === 'email') {
+                if (!empty($value) && !\filter_var($value, \FILTER_VALIDATE_EMAIL)) {
+                    throw new \Exception('Invalid email address', 400);
+                }
+            }
+
+            $this->writeEnvValue($name, $value);
+            $_ENV[$name] = $value;
+
+            $this->respondJSON([
+                'status' => 'success',
+                'title' => $this->text('success'),
+                'message' => $type === 'bool'
+                    ? ($value === 'true' ? $this->text('on') : $this->text('off'))
+                    : (!empty($value) ? $value : $this->text('off')),
+                'value' => $type === 'bool' ? $value === 'true' : $value
+            ]);
+
+            $this->log('content', LogLevel::INFO, "$name -> $value", [
+                'action' => 'update-env', $name => $value
+            ]);
+        } catch (\Throwable $err) {
+            $this->respondJSON([
+                'status' => 'error',
+                'title' => $this->text('error'),
+                'message' => $err->getMessage()
+            ], $err->getCode());
+        }
+    }
+
+    /**
+     * .env файлд тодорхой түлхүүрийн утгыг бичих.
+     */
+    private function writeEnvValue(string $key, string $value): void
+    {
+        $envPath = \dirname($_SERVER['SCRIPT_FILENAME'], 2) . '/.env';
+        if (!\is_file($envPath)) {
+            throw new \RuntimeException('.env file not found');
+        }
+
+        $content = \file_get_contents($envPath);
+        $escaped = \preg_quote($key, '/');
+        $activePattern = '/^' . $escaped . '=.*/m';
+        $commentedPattern = '/^#\s*' . $escaped . '=.*/m';
+
+        if (\preg_match($activePattern, $content)) {
+            $content = \preg_replace($activePattern, "$key=$value", $content);
+        } elseif (\preg_match($commentedPattern, $content)) {
+            $content = \preg_replace($commentedPattern, "$key=$value\n$0", $content);
+        } else {
+            $content = \rtrim($content) . "\n$key=$value\n";
+        }
+
+        if (\file_put_contents($envPath, $content) === false) {
+            throw new \RuntimeException('.env file write failed');
         }
     }
 }

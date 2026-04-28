@@ -22,7 +22,7 @@
 
             <article class="page-article">
                 {% if photo is not null and photo is not empty %}
-                    <img class="img-fluid mb-3 rounded shadow-sm"
+                    <img class="img-fluid d-block mb-3 rounded shadow-sm"
                          file-data-fancybox
                          src="{{ photo }}"
                          alt="{{ title|e }}">
@@ -164,7 +164,7 @@
             </div>
 
             <!-- Share + PDF -->
-            <div class="card shadow-sm">
+            <div class="card shadow-sm no-print">
                 <div class="card-header bg-secondary text-white fw-semibold">
                     <i class="bi bi-share me-1"></i>{{ 'share'|text }}
                 </div>

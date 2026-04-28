@@ -4,6 +4,8 @@ namespace Raptor\Localization;
 
 use Psr\Log\LogLevel;
 
+use codesaur\DataObject\Constants;
+
 /**
  * Class LanguageController
  *
@@ -68,8 +70,7 @@ class LanguageController extends \Raptor\Controller
                 // Localized контент хуулбарлах source хэлийг авах
                 $model = new LanguageModel($this->pdo);
                 $mother = $model->getRowWhere([
-                    'code' => $payload['copy'],
-                    'is_active' => 1
+                    'code' => $payload['copy']
                 ]);
                 if (!isset($mother['code'])) {
                     throw new \InvalidArgumentException($this->text('invalid-request'), 400);
@@ -103,20 +104,21 @@ class LanguageController extends \Raptor\Controller
                 if (empty($record)) {
                     throw new \Exception($this->text('record-insert-error'));
                 }
+                $this->invalidateCache('languages', 'texts.{code}');
                 $this->respondJSON([
                     'status' => 'success',
                     'message' => $this->text('record-insert-success')
                 ]);
 
-                $adminName = \trim(($this->getUser()->profile['first_name'] ?? '') . ' ' . ($this->getUser()->profile['last_name'] ?? ''));
-                $appUrl = \rtrim((string)$this->getRequest()->getUri()->withPath($this->getScriptPath()), '/') . '/dashboard';
-                $this->getService('discord')?->contentAction('language', 'insert', $payload['title'] ?? $payload['code'] ?? '', $record['id'] ?? null, $adminName, $appUrl);
+                $this->dispatch(new \Raptor\Notification\ContentEvent(
+                    'insert', 'language', $payload['title'] ?? $payload['code'] ?? '', $record['id'] ?? null
+                ));
 
                 // Амжилттай үүссэн хэлний хувьд localized content мөрүүдийг хуулж үүсгэх
                 $copied = $this->copyLocalizedContent($mother['code'], $payload['code']);
             } else {
                 // GET -> modal form рендерлэх
-                $this->twigTemplate(__DIR__ . '/language-insert-modal.html')->render();
+                $this->template(__DIR__ . '/language-insert-modal.html')->render();
             }
         } catch (\Throwable $err) {
             // Алдааг POST -> JSON, GET -> modal хэлбэрээр
@@ -170,18 +172,15 @@ class LanguageController extends \Raptor\Controller
             }
 
             $model = new LanguageModel($this->pdo);
-            $record = $model->getRowWhere([
-                'id' => $id,
-                'is_active' => 1
-            ]);
-            $this->twigTemplate(
+            $record = $model->getById($id);
+            $this->template(
                 __DIR__ . '/language-retrieve-modal.html',
                 ['record' => $record]
             )->render();
         } catch (\Throwable $err) {
             $this->modalProhibited($err->getMessage(), $err->getCode())->render();
         } finally {
-            $context = ['action' => 'localization-language-view', 'id' => $id];
+            $context = ['action' => 'localization-language-view', 'record_id' => $id];
             if (isset($err)) {
                 $level = LogLevel::ERROR;
                 $message = '{id} дугаартай хэлний мэдээлэл нээх үед алдаа гарлаа';
@@ -228,14 +227,11 @@ class LanguageController extends \Raptor\Controller
             }
             
             $model = new LanguageModel($this->pdo);
-            $record = $model->getRowWhere([
-                'id' => $id,
-                'is_active' => 1
-            ]);
+            $record = $model->getById($id);
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));
             }
-            
+
             if ($this->getRequest()->getMethod() == 'PUT') {
                 $payload = $this->getParsedBody();
                 if (empty($payload['code']) || empty($payload['title'])) {
@@ -268,15 +264,17 @@ class LanguageController extends \Raptor\Controller
                 if (empty($updated)) {
                     throw new \Exception($this->text('no-record-selected'));
                 }
+                $this->invalidateCache('languages', 'texts.{code}');
                 $this->respondJSON([
                     'status' => 'success',
                     'type' => 'primary',
                     'message' => $this->text('record-update-success')
                 ]);
 
-                $adminName = \trim(($this->getUser()->profile['first_name'] ?? '') . ' ' . ($this->getUser()->profile['last_name'] ?? ''));
-                $appUrl = \rtrim((string)$this->getRequest()->getUri()->withPath($this->getScriptPath()), '/') . '/dashboard';
-                $this->getService('discord')?->contentAction('language', 'update', $record['title'] ?? '', $id, $adminName, $appUrl, $updates ?? []);
+                $this->dispatch(new \Raptor\Notification\ContentEvent(
+                    'update', 'language', $record['title'] ?? '', $id,
+                    updates: $updates ?? []
+                ));
 
                 // Default хэл бол бусдаас default-г буулгана
                 if ($updated['is_default'] == 1) {
@@ -287,7 +285,7 @@ class LanguageController extends \Raptor\Controller
                     );
                 }
             } else {
-                $this->twigTemplate(
+                $this->template(
                     __DIR__ . '/language-update-modal.html',
                     ['record' => $record]
                 )->render();
@@ -299,7 +297,7 @@ class LanguageController extends \Raptor\Controller
                 $this->modalProhibited($err->getMessage(), $err->getCode())->render();
             }
         } finally {
-            $context = ['action' => 'localization-language-update', 'id' => $id];
+            $context = ['action' => 'localization-language-update', 'record_id' => $id];
             if (isset($err)) {
                 $level = LogLevel::ERROR;
                 $message = 'Хэлний мэдээлэл шинэчлэх үед алдаа гарлаа';
@@ -348,10 +346,7 @@ class LanguageController extends \Raptor\Controller
             $id = (int)$payload['id'];
 
             $model = new LanguageModel($this->pdo);
-            $record = $model->getRowWhere([
-                'id' => $id,
-                'is_active' => 1
-            ]);
+            $record = $model->getById($id);
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));
             }
@@ -367,18 +362,20 @@ class LanguageController extends \Raptor\Controller
             if (!$stmt->execute()) {
                 throw new \Exception($this->text('no-record-selected'));
             }
+            (new \Raptor\Trash\TrashModel($this->pdo))->store(
+                'content', $model->getName(), $id, $record, $this->getUserId()
+            );
 
+            $this->invalidateCache('languages', 'texts.{code}');
             $this->respondJSON([
                 'status'  => 'success',
                 'title'   => $this->text('success'),
                 'message' => $this->text('record-successfully-deleted')
             ]);
 
-            $adminName = \trim(($this->getUser()->profile['first_name'] ?? '') . ' ' . ($this->getUser()->profile['last_name'] ?? ''));
-            $appUrl = \rtrim((string)$this->getRequest()->getUri()->withPath($this->getScriptPath()), '/') . '/dashboard';
-            $this->getService('discord')?->contentAction(
-                'language', 'delete', $record['title'], $id, $adminName, $appUrl
-            );
+            $this->dispatch(new \Raptor\Notification\ContentEvent(
+                'delete', 'language', $record['title'], $id
+            ));
         } catch (\Throwable $err) {
             $this->respondJSON([
                 'status'  => 'error',
@@ -418,13 +415,13 @@ class LanguageController extends \Raptor\Controller
      * @param string $from Эх хэлний код (жишээ: en)
      * @param string $to   Хуулах шинэ хэлний код (жишээ: pl)
      *
-     * @return array|false Амжилттай хуулсан хүснэгтүүдийн жагсаалт,
+     * @return array Амжилттай хуулсан хүснэгтүүдийн жагсаалт,
      *                     амжилтгүй бол false
      */
     private function copyLocalizedContent(string $from, string $to): array|false
     {
         try {
-            if ($this->getDriverName() == 'pgsql') {
+            if ($this->getDriverName() == Constants::DRIVER_PGSQL) {
                 $query =
                     'SELECT tablename FROM pg_catalog.pg_tables ' .
                     "WHERE schemaname != 'pg_catalog' AND schemaname != 'information_schema' AND tablename like '%_content'";
@@ -442,15 +439,27 @@ class LanguageController extends \Raptor\Controller
                 $contentTable = \current($rows);
                 
                 // Хүснэгтийн баганууд
-                $query = $this->query("SHOW COLUMNS FROM $contentTable");
-                $columns = $query->fetchAll();
+                if ($this->getDriverName() == Constants::DRIVER_PGSQL) {
+                    $colQuery = $this->query(
+                        "SELECT column_name, column_default FROM information_schema.columns " .
+                        "WHERE table_schema = 'public' AND table_name = " . $this->quote($contentTable) .
+                        " ORDER BY ordinal_position"
+                    );
+                } else {
+                    $colQuery = $this->query("SHOW COLUMNS FROM $contentTable");
+                }
+                $columns = $colQuery->fetchAll();
                 $id = $parent_id = $code = false;
                 $field = $param = [];
 
                 // Багануудыг ангилах
                 foreach ($columns as $column) {
-                    $name = $column['Field'];
-                    if ($name == 'id' && $column['Extra'] == 'auto_increment') {
+                    $name = $this->getDriverName() == Constants::DRIVER_PGSQL
+                        ? $column['column_name'] : $column['Field'];
+                    $isAutoIncrement = $this->getDriverName() == Constants::DRIVER_PGSQL
+                        ? \str_contains($column['column_default'] ?? '', 'nextval')
+                        : ($column['Extra'] ?? '') == 'auto_increment';
+                    if ($name == 'id' && $isAutoIncrement) {
                         $id = true;
                     } elseif ($name == 'parent_id') {
                         $parent_id = true;

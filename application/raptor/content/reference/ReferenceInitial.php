@@ -31,8 +31,12 @@ class ReferenceInitial
      *  - approve-new-user         - Бүртгэл баталгаажсан имэйл
      *  - dev-request-new          - Шинэ хөгжүүлэлтийн хүсэлт имэйл
      *  - dev-request-response     - Хүсэлтийн хариулт имэйл
+     *  - contact-message-notify    - Холбоо барих мессеж админд мэдэгдэх имэйл
      *  - order-status-update      - Захиалгын төлөв шинэчлэгдсэн имэйл
      *  - order-confirmation       - Захиалга баталгаажсан имэйл
+     *  - order-notify             - Шинэ захиалга ирсэн тухай админд мэдэгдэх имэйл
+     *  - comment-notify           - Шинэ сэтгэгдэл ирсэн тухай админд мэдэгдэх имэйл
+     *  - review-notify            - Шинэ үнэлгээ ирсэн тухай админд мэдэгдэх имэйл
      *
      * @param ReferenceModel $model
      */
@@ -361,7 +365,62 @@ class ReferenceInitial
         );
 
         // -------------------------------------------------------
-        // 9. Захиалга баталгаажсан имэйл
+        // 9. Холбоо барих мессеж админд мэдэгдэх имэйл
+        // -------------------------------------------------------
+        $model->insert(
+            ['keyword' => 'contact-message-notify', 'category' => 'email'],
+            [
+                'mn' => [
+                    'title' => 'Холбоо барих мессеж - {{ name }}',
+                    'content' =>
+                        '<div style="font-family:Arial,sans-serif;max-width:600px">'
+                        . '<h2 style="color:#333">Холбоо барих мессеж</h2>'
+                        . '<table style="width:100%;border-collapse:collapse">'
+                        . '<tr><td style="padding:8px;font-weight:bold;border-bottom:1px solid #eee">Нэр</td>'
+                            . '<td style="padding:8px;border-bottom:1px solid #eee">{{ name }}</td></tr>'
+                        . '<tr><td style="padding:8px;font-weight:bold;border-bottom:1px solid #eee">Утас</td>'
+                            . '<td style="padding:8px;border-bottom:1px solid #eee">{{ phone }}</td></tr>'
+                        . '<tr><td style="padding:8px;font-weight:bold;border-bottom:1px solid #eee">И-мэйл</td>'
+                            . '<td style="padding:8px;border-bottom:1px solid #eee">{{ email }}</td></tr>'
+                        . '<tr><td style="padding:8px;font-weight:bold;border-bottom:1px solid #eee">Мессеж</td>'
+                            . '<td style="padding:8px;border-bottom:1px solid #eee">{{ message }}</td></tr>'
+                        . '</table>'
+                        . '<p style="margin-top:20px;padding:12px;background:#f8f9fa;border-radius:6px;color:#555">'
+                            . 'Та энэ мессежийн имэйл хаяг руу шууд хариулж (Reply) болно, '
+                            . 'эсвэл дугаар руу нь залгаж утсаар холбогдож болно. '
+                            . 'Хариулт өгсний дараа <a href="{{ messages_link }}">удирдлагын самбар - мессежүүд</a> '
+                            . 'хэсэгт орж хариулсан гэдгээ тэмдэглэнэ үү.'
+                        . '</p>'
+                        . '</div>'
+                ],
+                'en' => [
+                    'title' => 'Contact message - {{ name }}',
+                    'content' =>
+                        '<div style="font-family:Arial,sans-serif;max-width:600px">'
+                        . '<h2 style="color:#333">Contact message</h2>'
+                        . '<table style="width:100%;border-collapse:collapse">'
+                        . '<tr><td style="padding:8px;font-weight:bold;border-bottom:1px solid #eee">Name</td>'
+                            . '<td style="padding:8px;border-bottom:1px solid #eee">{{ name }}</td></tr>'
+                        . '<tr><td style="padding:8px;font-weight:bold;border-bottom:1px solid #eee">Phone</td>'
+                            . '<td style="padding:8px;border-bottom:1px solid #eee">{{ phone }}</td></tr>'
+                        . '<tr><td style="padding:8px;font-weight:bold;border-bottom:1px solid #eee">Email</td>'
+                            . '<td style="padding:8px;border-bottom:1px solid #eee">{{ email }}</td></tr>'
+                        . '<tr><td style="padding:8px;font-weight:bold;border-bottom:1px solid #eee">Message</td>'
+                            . '<td style="padding:8px;border-bottom:1px solid #eee">{{ message }}</td></tr>'
+                        . '</table>'
+                        . '<p style="margin-top:20px;padding:12px;background:#f8f9fa;border-radius:6px;color:#555">'
+                            . 'You can reply directly to this email to respond to the visitor, '
+                            . 'or call them by phone using the number above. '
+                            . 'After responding, please visit <a href="{{ messages_link }}">dashboard - messages</a> '
+                            . 'to mark the message as replied.'
+                        . '</p>'
+                        . '</div>'
+                ]
+            ]
+        );
+
+        // -------------------------------------------------------
+        // 10. Захиалга баталгаажсан имэйл
         // -------------------------------------------------------
         $model->insert(
             ['keyword' => 'order-confirmation', 'category' => 'email'],
@@ -393,6 +452,152 @@ class ReferenceInitial
                         . '<p>We have received your order and will contact you shortly.</p>'
                         . '<p> </p>'
                         . '<p>Thank you!</p>'
+                ]
+            ]
+        );
+        // -------------------------------------------------------
+        // 11. Шинэ захиалга ирсэн тухай админд мэдэгдэх имэйл
+        // -------------------------------------------------------
+        $model->insert(
+            ['keyword' => 'order-notify', 'category' => 'email'],
+            [
+                'mn' => [
+                    'title' => 'Шинэ захиалга #{{ order_id }} - {{ customer_name }}',
+                    'content' =>
+                        '<div style="font-family:Arial,sans-serif;max-width:600px">'
+                        . '<h2 style="color:#333">Шинэ захиалга</h2>'
+                        . '<table style="width:100%;border-collapse:collapse">'
+                        . '<tr><td style="padding:8px;font-weight:bold;border-bottom:1px solid #eee">Захиалгын дугаар</td>'
+                            . '<td style="padding:8px;border-bottom:1px solid #eee">#{{ order_id }}</td></tr>'
+                        . '<tr><td style="padding:8px;font-weight:bold;border-bottom:1px solid #eee">Захиалагч</td>'
+                            . '<td style="padding:8px;border-bottom:1px solid #eee">{{ customer_name }}</td></tr>'
+                        . '<tr><td style="padding:8px;font-weight:bold;border-bottom:1px solid #eee">И-мэйл</td>'
+                            . '<td style="padding:8px;border-bottom:1px solid #eee">{{ customer_email }}</td></tr>'
+                        . '<tr><td style="padding:8px;font-weight:bold;border-bottom:1px solid #eee">Утас</td>'
+                            . '<td style="padding:8px;border-bottom:1px solid #eee">{{ customer_phone }}</td></tr>'
+                        . '<tr><td style="padding:8px;font-weight:bold;border-bottom:1px solid #eee">Бүтээгдэхүүн</td>'
+                            . '<td style="padding:8px;border-bottom:1px solid #eee">{{ product_title }}</td></tr>'
+                        . '<tr><td style="padding:8px;font-weight:bold;border-bottom:1px solid #eee">Тоо ширхэг</td>'
+                            . '<td style="padding:8px;border-bottom:1px solid #eee">{{ quantity }}</td></tr>'
+                        . '</table>'
+                        . '<p style="margin-top:20px"><a href="{{ orders_link }}">Захиалгууд руу очих &rarr;</a></p>'
+                        . '</div>'
+                ],
+                'en' => [
+                    'title' => 'New Order #{{ order_id }} - {{ customer_name }}',
+                    'content' =>
+                        '<div style="font-family:Arial,sans-serif;max-width:600px">'
+                        . '<h2 style="color:#333">New Order</h2>'
+                        . '<table style="width:100%;border-collapse:collapse">'
+                        . '<tr><td style="padding:8px;font-weight:bold;border-bottom:1px solid #eee">Order ID</td>'
+                            . '<td style="padding:8px;border-bottom:1px solid #eee">#{{ order_id }}</td></tr>'
+                        . '<tr><td style="padding:8px;font-weight:bold;border-bottom:1px solid #eee">Customer</td>'
+                            . '<td style="padding:8px;border-bottom:1px solid #eee">{{ customer_name }}</td></tr>'
+                        . '<tr><td style="padding:8px;font-weight:bold;border-bottom:1px solid #eee">Email</td>'
+                            . '<td style="padding:8px;border-bottom:1px solid #eee">{{ customer_email }}</td></tr>'
+                        . '<tr><td style="padding:8px;font-weight:bold;border-bottom:1px solid #eee">Phone</td>'
+                            . '<td style="padding:8px;border-bottom:1px solid #eee">{{ customer_phone }}</td></tr>'
+                        . '<tr><td style="padding:8px;font-weight:bold;border-bottom:1px solid #eee">Product</td>'
+                            . '<td style="padding:8px;border-bottom:1px solid #eee">{{ product_title }}</td></tr>'
+                        . '<tr><td style="padding:8px;font-weight:bold;border-bottom:1px solid #eee">Quantity</td>'
+                            . '<td style="padding:8px;border-bottom:1px solid #eee">{{ quantity }}</td></tr>'
+                        . '</table>'
+                        . '<p style="margin-top:20px"><a href="{{ orders_link }}">View orders &rarr;</a></p>'
+                        . '</div>'
+                ]
+            ]
+        );
+
+        // -------------------------------------------------------
+        // 12. Шинэ сэтгэгдэл ирсэн тухай админд мэдэгдэх имэйл
+        // -------------------------------------------------------
+        $model->insert(
+            ['keyword' => 'comment-notify', 'category' => 'email'],
+            [
+                'mn' => [
+                    'title' => 'Шинэ сэтгэгдэл - {{ news_title }}',
+                    'content' =>
+                        '<div style="font-family:Arial,sans-serif;max-width:600px">'
+                        . '<h2 style="color:#333">Шинэ сэтгэгдэл</h2>'
+                        . '<table style="width:100%;border-collapse:collapse">'
+                        . '<tr><td style="padding:8px;font-weight:bold;border-bottom:1px solid #eee">Мэдээ</td>'
+                            . '<td style="padding:8px;border-bottom:1px solid #eee">{{ news_title }}</td></tr>'
+                        . '<tr><td style="padding:8px;font-weight:bold;border-bottom:1px solid #eee">Нэр</td>'
+                            . '<td style="padding:8px;border-bottom:1px solid #eee">{{ name }}</td></tr>'
+                        . '<tr><td style="padding:8px;font-weight:bold;border-bottom:1px solid #eee">И-мэйл</td>'
+                            . '<td style="padding:8px;border-bottom:1px solid #eee">{{ email }}</td></tr>'
+                        . '<tr><td style="padding:8px;font-weight:bold;border-bottom:1px solid #eee">Сэтгэгдэл</td>'
+                            . '<td style="padding:8px;border-bottom:1px solid #eee">{{ comment }}</td></tr>'
+                        . '</table>'
+                        . '<p style="margin-top:20px"><a href="{{ comments_link }}">Сэтгэгдлүүд руу очих &rarr;</a></p>'
+                        . '</div>'
+                ],
+                'en' => [
+                    'title' => 'New Comment - {{ news_title }}',
+                    'content' =>
+                        '<div style="font-family:Arial,sans-serif;max-width:600px">'
+                        . '<h2 style="color:#333">New Comment</h2>'
+                        . '<table style="width:100%;border-collapse:collapse">'
+                        . '<tr><td style="padding:8px;font-weight:bold;border-bottom:1px solid #eee">News</td>'
+                            . '<td style="padding:8px;border-bottom:1px solid #eee">{{ news_title }}</td></tr>'
+                        . '<tr><td style="padding:8px;font-weight:bold;border-bottom:1px solid #eee">Name</td>'
+                            . '<td style="padding:8px;border-bottom:1px solid #eee">{{ name }}</td></tr>'
+                        . '<tr><td style="padding:8px;font-weight:bold;border-bottom:1px solid #eee">Email</td>'
+                            . '<td style="padding:8px;border-bottom:1px solid #eee">{{ email }}</td></tr>'
+                        . '<tr><td style="padding:8px;font-weight:bold;border-bottom:1px solid #eee">Comment</td>'
+                            . '<td style="padding:8px;border-bottom:1px solid #eee">{{ comment }}</td></tr>'
+                        . '</table>'
+                        . '<p style="margin-top:20px"><a href="{{ comments_link }}">View comments &rarr;</a></p>'
+                        . '</div>'
+                ]
+            ]
+        );
+
+        // -------------------------------------------------------
+        // 13. Шинэ үнэлгээ ирсэн тухай админд мэдэгдэх имэйл
+        // -------------------------------------------------------
+        $model->insert(
+            ['keyword' => 'review-notify', 'category' => 'email'],
+            [
+                'mn' => [
+                    'title' => 'Шинэ үнэлгээ - {{ product_title }}',
+                    'content' =>
+                        '<div style="font-family:Arial,sans-serif;max-width:600px">'
+                        . '<h2 style="color:#333">Шинэ үнэлгээ</h2>'
+                        . '<table style="width:100%;border-collapse:collapse">'
+                        . '<tr><td style="padding:8px;font-weight:bold;border-bottom:1px solid #eee">Бүтээгдэхүүн</td>'
+                            . '<td style="padding:8px;border-bottom:1px solid #eee">{{ product_title }}</td></tr>'
+                        . '<tr><td style="padding:8px;font-weight:bold;border-bottom:1px solid #eee">Нэр</td>'
+                            . '<td style="padding:8px;border-bottom:1px solid #eee">{{ name }}</td></tr>'
+                        . '<tr><td style="padding:8px;font-weight:bold;border-bottom:1px solid #eee">И-мэйл</td>'
+                            . '<td style="padding:8px;border-bottom:1px solid #eee">{{ email }}</td></tr>'
+                        . '<tr><td style="padding:8px;font-weight:bold;border-bottom:1px solid #eee">Үнэлгээ</td>'
+                            . '<td style="padding:8px;border-bottom:1px solid #eee">{{ rating }} / 5</td></tr>'
+                        . '<tr><td style="padding:8px;font-weight:bold;border-bottom:1px solid #eee">Сэтгэгдэл</td>'
+                            . '<td style="padding:8px;border-bottom:1px solid #eee">{{ comment }}</td></tr>'
+                        . '</table>'
+                        . '<p style="margin-top:20px"><a href="{{ reviews_link }}">Үнэлгээнүүд руу очих &rarr;</a></p>'
+                        . '</div>'
+                ],
+                'en' => [
+                    'title' => 'New Review - {{ product_title }}',
+                    'content' =>
+                        '<div style="font-family:Arial,sans-serif;max-width:600px">'
+                        . '<h2 style="color:#333">New Review</h2>'
+                        . '<table style="width:100%;border-collapse:collapse">'
+                        . '<tr><td style="padding:8px;font-weight:bold;border-bottom:1px solid #eee">Product</td>'
+                            . '<td style="padding:8px;border-bottom:1px solid #eee">{{ product_title }}</td></tr>'
+                        . '<tr><td style="padding:8px;font-weight:bold;border-bottom:1px solid #eee">Name</td>'
+                            . '<td style="padding:8px;border-bottom:1px solid #eee">{{ name }}</td></tr>'
+                        . '<tr><td style="padding:8px;font-weight:bold;border-bottom:1px solid #eee">Email</td>'
+                            . '<td style="padding:8px;border-bottom:1px solid #eee">{{ email }}</td></tr>'
+                        . '<tr><td style="padding:8px;font-weight:bold;border-bottom:1px solid #eee">Rating</td>'
+                            . '<td style="padding:8px;border-bottom:1px solid #eee">{{ rating }} / 5</td></tr>'
+                        . '<tr><td style="padding:8px;font-weight:bold;border-bottom:1px solid #eee">Comment</td>'
+                            . '<td style="padding:8px;border-bottom:1px solid #eee">{{ comment }}</td></tr>'
+                        . '</table>'
+                        . '<p style="margin-top:20px"><a href="{{ reviews_link }}">View reviews &rarr;</a></p>'
+                        . '</div>'
                 ]
             ]
         );

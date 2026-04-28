@@ -1,4 +1,4 @@
-<!-- SweetAlert2 - files table only (deactivate confirmation) -->
+<!-- SweetAlert2 - files table only (delete confirmation) -->
 {% if table == 'files' %}
 <script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 {% endif %}
@@ -151,6 +151,24 @@
 </table>
 
 <script type="text/javascript">
+    /* Copy element text to clipboard - used by AJAX tag/location modals */
+    function copyContent(elem)
+    {
+        const text = document.getElementById(elem);
+        if (document.body.createTextRange) {
+            const range = document.body.createTextRange();
+            range.moveToElementText(text);
+            range.select();
+        } else if (window.getSelection) {
+            const selection = window.getSelection();
+            const range = document.createRange();
+            range.selectNodeContents(text);
+            selection.removeAllRanges();
+            selection.addRange(range);
+        }
+        document.execCommand('copy');
+    }
+
     const _t = {
         loading: `{{ 'loading'|text|e('js') }}`,
         fileLoadFailed: `{{ 'file-load-failed'|text|e('js') }}`,
@@ -365,10 +383,10 @@
                     </a>`;
             }
 
-            /* Delete (deactivate) button (files table only, with permission) */
+            /* Delete button (files table only, with permission) */
             if (userCanDelete) {
                 fileAction += `
-                    <button class="deactivate-file btn btn-sm btn-danger shadow-sm"
+                    <button class="delete-file btn btn-sm btn-danger shadow-sm"
                         value="${file['id']}" type="button">
                         <i class="bi bi-trash"></i>
                     </button>`;
@@ -447,19 +465,19 @@
                 });
             }
 
-            /* DEACTIVATE FILE (Soft Delete) - files table only
+            /* DELETE FILE - files table only
                --------------------------------------------------------------- */
             if (isFilesTable) {
                 const thisTable = this;
 
-                const deactivateFileBtn = row.querySelector('.deactivate-file');
-                if (deactivateFileBtn) {
-                    deactivateFileBtn.addEventListener('click', function (e) {
+                const deleteFileBtn = row.querySelector('.delete-file');
+                if (deleteFileBtn) {
+                    deleteFileBtn.addEventListener('click', function (e) {
                         e.preventDefault();
 
-                        const id = deactivateFileBtn.value;
+                        const id = deleteFileBtn.value;
                         const rawTitle = row.children[0].textContent.trim();
-                        let question = `<h5>${escapeStr(rawTitle)}</h5><p class="text-danger mb-3">{{ 'confirm-deactivate'|text|e('js') }}?</p>`;
+                        let question = `<h5>${escapeStr(rawTitle)}</h5><p class="text-danger mb-3">{{ 'confirm-delete'|text|e('js') }}?</p>`;
 
                         /* Show thumbnail in confirm dialog if image */
                         const imgNode = row.children[0].querySelector('img');
@@ -486,7 +504,7 @@
                             allowOutsideClick: () => !Swal.isLoading(),
                             backdrop: true,
                             preConfirm: () => {
-                                const url = `{{ 'files-deactivate'|link({'table':table}) }}`;
+                                const url = `{{ 'files-delete'|link({'table':table}) }}`;
                                 return csrfFetch(url, {
                                     method: 'DELETE',
                                     headers: {
@@ -501,7 +519,7 @@
                                     }
 
                                     Swal.close();
-                                    NotifyTop(
+                                    Notify(
                                         'success',
                                         `{{ 'success'|text|e }}`,
                                         response.message ?? `{{ 'success'|text|e }}`
@@ -686,7 +704,7 @@
                             files.setReady();
                             updateStats(res.size || 0);
 
-                            NotifyTop(
+                            Notify(
                                 'primary',
                                 `{{ 'success'|text|e }}`,
                                 `[${escapeStr(file.name)}]`
@@ -694,7 +712,7 @@
                         } else {
                             const errorMessage = (res && res.error && res.error.message)
                                 ? res.error.message
-                                : '{{ "error"|text|e("js") }}';
+                                : '{{ 'error'|text|e("js") }}';
 
                             if (rowEl) {
                                 const b = rowEl.querySelector('b');
@@ -702,7 +720,7 @@
                                 rowEl.classList.add('text-danger');
                             }
 
-                            NotifyTop('danger', `{{ 'error'|text|e }}`, errorMessage);
+                            Notify('danger', `{{ 'error'|text|e }}`, errorMessage);
                         }
                     } catch (err) {
                         if (rowEl) {
@@ -711,7 +729,7 @@
                             rowEl.classList.add('text-danger');
                         }
 
-                        NotifyTop('danger', `{{ 'error'|text|e }}`, err.message);
+                        Notify('danger', `{{ 'error'|text|e }}`, err.message);
                     }
                 }
 

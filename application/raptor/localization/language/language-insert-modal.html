@@ -327,14 +327,14 @@
             /* Success -> reload localization page */
             window.location.reload();
 
-            NotifyTop(
+            Notify(
                 response.type ?? 'success',
                 response.title ?? `{{ 'success'|text|e }}`,
                 response.message ?? 'Language inserted'
             );
         })
         .catch(error => {
-            NotifyTop('danger', `{{ 'error'|text|e }}`, error.message);
+            Notify('danger', `{{ 'error'|text|e }}`, error.message);
 
             if (requesting) requesting.style.display = 'none';
 

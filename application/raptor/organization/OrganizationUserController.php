@@ -71,7 +71,7 @@ class OrganizationUserController extends \Raptor\Controller
             }
 
             // Dashboard HTML рүү өгөгдөл дамжуулж render хийх
-            $dashboard = $this->twigDashboard(
+            $dashboard = $this->dashboardTemplate(
                 __DIR__ . '/organization-user.html',
                 ['organizations' => $this->query($select_org)->fetchAll()]
             );

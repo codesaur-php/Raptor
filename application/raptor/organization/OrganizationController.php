@@ -50,7 +50,7 @@ class OrganizationController extends FileController
             return;
         }
 
-        $dashboard = $this->twigDashboard(__DIR__ . '/organization-index.html');
+        $dashboard = $this->dashboardTemplate(__DIR__ . '/organization-index.html');
         $dashboard->set('title', $this->text('organizations'));
         $dashboard->render();
 
@@ -150,7 +150,7 @@ class OrganizationController extends FileController
                 ]);
             } else {
                 // GET -> Modal form render
-                $this->twigTemplate(
+                $this->template(
                     __DIR__ . '/organization-insert-modal.html',
                     ['parents' => $model->fetchAllPotentialParents()]
                 )->render();
@@ -178,7 +178,7 @@ class OrganizationController extends FileController
             } elseif ($this->getRequest()->getMethod() == 'POST') {
                 $level = LogLevel::INFO;
                 $message = 'Байгууллага [{record.name}] амжилттай үүслээ';
-                $context += ['id' => $id, 'record' => $record];
+                $context += ['record_id' => $id, 'record' => $record];
             } else {
                 $level = LogLevel::NOTICE;
                 $message = 'Байгууллага үүсгэх үйлдлийг эхлүүллээ';
@@ -233,17 +233,17 @@ class OrganizationController extends FileController
                 $record['parent_name'] = $parent['name'];
             }
 
-            $this->twigTemplate(
+            $this->template(
                 __DIR__ . '/organization-retrieve-modal.html',
                 ['record' => $record]
             )->render();
         } catch (\Throwable $err) {
             $this->modalProhibited($err->getMessage(), $err->getCode())->render();
         } finally {
-            $context = ['action' => 'view', 'id' => $id];
+            $context = ['action' => 'view', 'record_id' => $id];
             if (isset($err) && $err instanceof \Throwable) {
                 $level = LogLevel::ERROR;
-                $message = '{id} дугаартай байгууллагын мэдээллийг нээх үед алдаа гарлаа';
+                $message = '{record_id} дугаартай байгууллагын мэдээллийг нээх үед алдаа гарлаа';
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } else {
                 $level = LogLevel::NOTICE;
@@ -355,7 +355,7 @@ class OrganizationController extends FileController
                 ]);
             } else {
                 // GET -> Update form modal
-                $this->twigTemplate(
+                $this->template(
                     __DIR__ . '/organization-update-modal.html',
                     [
                         'record'  => $record,
@@ -372,10 +372,10 @@ class OrganizationController extends FileController
             }
         } finally {
             // Лог бүртгэх
-            $context = ['action' => 'update', 'id' => $id];
+            $context = ['action' => 'update', 'record_id' => $id];
             if (isset($err)) {
                 $level = LogLevel::ERROR;
-                $message = '{id} дугаартай байгууллагыг шинэчлэх үед алдаа гарлаа';
+                $message = '{record_id} дугаартай байгууллагыг шинэчлэх үед алдаа гарлаа';
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } elseif ($this->getRequest()->getMethod() == 'PUT') {
                 $level = LogLevel::INFO;
@@ -436,16 +436,13 @@ class OrganizationController extends FileController
             //   * Хэрэв бүрэн устгах (hard delete) үйлдэл бол logo файлыг бас устгах хэрэгтэй.
             //
             $model = new OrganizationModel($this->pdo);
-            $deactivated = $model->deactivateById(
+            $model->deactivateById(
                 $id,
                 [
                     'updated_by' => $this->getUserId(),
                     'updated_at' => \date('Y-m-d H:i:s')
                 ]
             );
-            if (!$deactivated) {
-                throw new \Exception($this->text('no-record-selected'));
-            }
 
             $this->respondJSON([
                 'status'  => 'success',
@@ -469,6 +466,87 @@ class OrganizationController extends FileController
                 $message =
                     '{server_request.body.id} дугаартай [{server_request.body.name}] байгууллагыг ' .
                     '[{server_request.body.reason}] шалтгаанаар идэвхгүй болголоо';
+            }
+            $this->log('organizations', $level, $message, $context);
+        }
+    }
+
+    /**
+     * Идэвхгүй болсон байгууллагыг бүрэн устгах (HARD DELETE).
+     *
+     * Зөвхөн is_active=0 болсон байгууллагыг устгана.
+     * FK constraint-уудыг түр унтрааж устгана.
+     *
+     * Permission: system_organization_delete
+     *
+     * @return void JSON response
+     */
+    public function delete()
+    {
+        try {
+            if (!$this->isUserCan('system_organization_delete')) {
+                throw new \Exception('No permission for an action [delete]!', 401);
+            }
+
+            $payload = $this->getParsedBody();
+            if (!isset($payload['id'])
+                || !\filter_var($payload['id'], \FILTER_VALIDATE_INT)
+            ) {
+                throw new \InvalidArgumentException($this->text('invalid-request'), 400);
+            }
+            $id = (int) $payload['id'];
+
+            if ($id == 1) {
+                throw new \Exception('Cannot remove first organization!', 403);
+            }
+            if ($this->getUser()->organization['id'] == $id) {
+                throw new \Exception('Cannot remove currently active organization!', 403);
+            }
+
+            $model = new OrganizationModel($this->pdo);
+            $org = $model->getById($id);
+            if (empty($org)) {
+                throw new \Exception($this->text('no-record-selected'), 404);
+            }
+            if ((int)($org['is_active'] ?? 1) !== 0) {
+                throw new \Exception('Only deactivated organizations can be permanently deleted!', 403);
+            }
+
+            // Logo файлыг устгах
+            if (!empty($org['logo'])) {
+                $logoPath = $this->getPublicPath() . $org['logo'];
+                if (\file_exists($logoPath)) {
+                    \unlink($logoPath);
+                }
+            }
+
+            // FK constraint түр унтрааж устгана
+            $model->setForeignKeyChecks(false);
+            $model->deleteById($id);
+            $model->setForeignKeyChecks(true);
+
+            $this->respondJSON([
+                'status'  => 'success',
+                'title'   => $this->text('success'),
+                'message' => $this->text('record-successfully-deleted')
+            ]);
+        } catch (\Throwable $err) {
+            $this->respondJSON([
+                'status'  => 'error',
+                'title'   => $this->text('error'),
+                'message' => $err->getMessage()
+            ], $err->getCode());
+        } finally {
+            $context = ['action' => 'delete'];
+            if (isset($err)) {
+                $level = LogLevel::ERROR;
+                $message = 'Байгууллагыг бүрэн устгах явцад алдаа гарлаа';
+                $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
+            } else {
+                $level = LogLevel::CRITICAL;
+                $message =
+                    '{server_request.body.id} дугаартай [{server_request.body.name}] байгууллагыг ' .
+                    '[{server_request.body.reason}] шалтгаанаар бүрэн устгалаа';
             }
             $this->log('organizations', $level, $message, $context);
         }

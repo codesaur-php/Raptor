@@ -76,9 +76,9 @@ class DevResponseModel extends Model
      * автоматаар бөглөнө (хэрэв өгөгдөөгүй бол).
      *
      * @param array $record Хариултын мэдээлэл
-     * @return array|false Амжилттай бол үүссэн бичлэгийн массив, бусад тохиолдолд false
+     * @return array Амжилттай бол үүссэн бичлэгийн массив
      */
-    public function insert(array $record): array|false
+    public function insert(array $record): array
     {
         $record['created_at'] ??= \date('Y-m-d H:i:s');
         return parent::insert($record);

@@ -2,7 +2,8 @@
 
 namespace Raptor\Log;
 
-use codesaur\Template\TwigTemplate;
+use codesaur\DataObject\Constants;
+use codesaur\Template\FileTemplate;
 
 /**
  * Class LogsController
@@ -48,7 +49,7 @@ class LogsController extends \Raptor\Controller
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
 
-            if ($this->getDriverName() == 'pgsql') {
+            if ($this->getDriverName() == Constants::DRIVER_PGSQL) {
                 $query =
                     'SELECT tablename FROM pg_catalog.pg_tables ' .
                     "WHERE schemaname != 'pg_catalog' AND schemaname != 'information_schema' AND tablename like '%_log'";
@@ -81,7 +82,7 @@ class LogsController extends \Raptor\Controller
                 }
             }
 
-            $dashboard = $this->twigDashboard(
+            $dashboard = $this->dashboardTemplate(
                 __DIR__ . '/index-list-logs.html',
                 [
                     'log_tables' => $log_tables,
@@ -136,7 +137,7 @@ class LogsController extends \Raptor\Controller
             $logger->setTable($table);
             $log = $logger->getLogById($id);
 
-            (new TwigTemplate(
+            (new FileTemplate(
                 __DIR__ . '/retrieve-log-modal.html',
                 [
                     'id' => (int) $id,
@@ -281,13 +282,19 @@ class LogsController extends \Raptor\Controller
             $condition = $this->getParsedBody();
             $context = $condition['CONTEXT'] ?? null;
 
-            // Client-ээс ирсэн ORDER BY, LIMIT-ийг sanitize хийх
+            // Client-ээс ирсэн ORDER BY, LIMIT, OFFSET-ийг sanitize хийх
             $safeCondition = [];
             if (!empty($condition['ORDER BY']) && \preg_match('/^[a-zA-Z_]+\s+(ASC|DESC|asc|desc)$/i', $condition['ORDER BY'])) {
                 $safeCondition['ORDER BY'] = $condition['ORDER BY'];
             }
-            if (!empty($condition['LIMIT']) && \filter_var($condition['LIMIT'], \FILTER_VALIDATE_INT)) {
-                $safeCondition['LIMIT'] = (int) $condition['LIMIT'];
+            // LIMIT-ийг хязгаарлах: client ямар ч утга илгээсэн дээд тал нь 200.
+            $clientLimit = (int) ($condition['LIMIT'] ?? 0);
+            $safeCondition['LIMIT'] = $clientLimit > 0 ? \min($clientLimit, 200) : 100;
+            // OFFSET - pagination-д шаардлагатай. Үгүй бол infinite scroll
+            // ижил мөрүүдийг буцааж, JS-ийн "items.length < limit" stop нөхцөлд хэзээ ч хүрэхгүй.
+            $clientOffset = (int) ($condition['OFFSET'] ?? 0);
+            if ($clientOffset > 0) {
+                $safeCondition['OFFSET'] = $clientOffset;
             }
             $condition = $safeCondition;
 
@@ -311,7 +318,7 @@ class LogsController extends \Raptor\Controller
 
                 $keys = \explode('.', $field);
 
-                if ($this->getDriverName() == 'pgsql') {
+                if ($this->getDriverName() == Constants::DRIVER_PGSQL) {
                     // PostgreSQL JSONB -> a->'b'->>'c'
                     $expr = '(context::jsonb)';
                     $lastKey = \array_pop($keys);

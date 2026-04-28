@@ -2,8 +2,8 @@
     <h3 class="px-2 my-auto fs-6 text-white">
         <i class="bi bi-book"></i> References - Гарын авлага
     </h3>
-    <a href="{{ 'manual' | link }}" class="btn btn-sm btn-light m-1">
-        <i class="bi bi-arrow-left"></i> {{ 'manual' | text }}
+    <a href="{{ 'manual'|link }}" class="btn btn-sm btn-light m-1">
+        <i class="bi bi-arrow-left"></i> {{ 'manual'|text }}
     </a>
 </div>
 
@@ -134,7 +134,7 @@
         <ul>
             <li>Keyword, ангилал</li>
             <li>Хэл бүрийн гарчиг, контент</li>
-            <li>Зөвхөн идэвхтэй (<code>is_active = 1</code>) бичлэгийг харуулна</li>
+            <li>Зөвхөн одоо байгаа бичлэгүүдийг харуулна (устгагдсан бичлэгүүд Trash руу шилжинэ)</li>
         </ul>
     </div>
 </div>
@@ -159,7 +159,7 @@
         <p>Жагсаалтаас <strong>устгах</strong> (хогийн сав) товчийг дарна.</p>
         <ul>
             <li>Баталгаажуулах цонх гарна (SweetAlert2)</li>
-            <li>Зөөлөн устгалт (soft delete) - <code>is_active = 0</code> болгоно, өгөгдөл хадгалагдана</li>
+            <li>Мэдээллийн сангаас бүрмөсөн устгагдана; нөөц хуулбар нь Trash хүснэгтэд хадгалагдана</li>
             <li><code>system_content_delete</code> эрх шаардлагатай</li>
         </ul>
     </div>

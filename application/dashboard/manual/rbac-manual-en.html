@@ -2,8 +2,8 @@
     <h3 class="px-2 my-auto fs-6 text-white">
         <i class="bi bi-book"></i> RBAC - Manual
     </h3>
-    <a href="{{ 'manual' | link }}" class="btn btn-sm btn-light m-1">
-        <i class="bi bi-arrow-left"></i> {{ 'manual' | text }}
+    <a href="{{ 'manual'|link }}" class="btn btn-sm btn-light m-1">
+        <i class="bi bi-arrow-left"></i> {{ 'manual'|text }}
     </a>
 </div>
 
@@ -48,7 +48,7 @@
             <li><code>system</code> - The default system alias</li>
             <li><code>common</code> - A shared alias for multiple organizations; users in organizations with the common alias share the same access rights</li>
             <li>Organization alias (e.g., <code>university</code>) - A separate permission group</li>
-            <li>Clicking an alias in the organization list navigates to the RBAC matrix (Details: <a href="{{ 'manual-view' | link({'file': 'organizations-manual-' ~ localization.code ~ '.html'}) }}">Organizations manual</a>)</li>
+            <li>Clicking an alias in the organization list navigates to the RBAC matrix (Details: <a href="{{ 'manual-view'|link({'file': 'organizations-manual-' ~ localization.code ~ '.html'}) }}">Organizations manual</a>)</li>
         </ul>
     </div>
 </div>

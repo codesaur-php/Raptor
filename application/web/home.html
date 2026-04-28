@@ -14,7 +14,7 @@
                     {% endif %}
                     <div class="card-body">
                         <h5 class="card-title">
-                            <a href="{{ href }}" class="text-decoration-none text-dark">
+                            <a href="{{ href }}" class="text-decoration-none {% if news['is_read'] %}text-muted fw-normal{% else %}text-dark fw-bold{% endif %}">
                                 {{ news['title'] }}
                             </a>
                         </h5>

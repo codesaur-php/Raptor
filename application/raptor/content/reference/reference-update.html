@@ -171,7 +171,7 @@
     <ul class="list-group logger-protocol" id="logger-content"
         data-retrieve="{{ 'logs-retrieve'|link }}"
         data-view="{{ 'logs-view'|link }}"
-        data-context='{"action":"reference-*","id":"{{ record['id'] }}"}'
+        data-context='{"action":"reference-*","record_id":"{{ record['id'] }}"}'
         style="max-height:240px; overflow-y:auto"></ul>
 </div>
 {% endif %}
@@ -191,7 +191,7 @@
         const formUpdate = document.querySelector('form#reference_update');
         if (!formUpdate) {
             /* Форм олдохгүй үед алдаа мэдэгдэнэ */
-            NotifyTop('danger', `{{ 'error'|text|e }}`, 'Form not found!');
+            Notify('danger', `{{ 'error'|text|e }}`, 'Form not found!');
         } else {
             /* Submit товч -> form.requestSubmit() */
             const submitters = document.querySelectorAll('button.submit-update');
@@ -211,7 +211,21 @@
                 this.classList.add('was-validated');
                 if (!_valid) {
                     event.stopPropagation();
-                    return NotifyTop('danger',
+
+                    /* Эхний invalid input-ыг олж, хамаарах таб руу шилжээд focus хийнэ */
+                    const firstInvalid = this.querySelector(':invalid');
+                    if (firstInvalid) {
+                        const tabPane = firstInvalid.closest('.tab-pane');
+                        if (tabPane) {
+                            const tabBtn = document.querySelector(`a.nav-link[href="#${tabPane.id}"], button.nav-link[data-bs-target="#${tabPane.id}"]`);
+                            if (tabBtn) {
+                                bootstrap.Tab.getOrCreateInstance(tabBtn).show();
+                            }
+                        }
+                        setTimeout(() => firstInvalid.focus(), 200);
+                    }
+
+                    return Notify('danger',
                         `{{ 'error'|text|e }}`,
                         `{{ 'u-have-some-form-errors'|text|e }}`
                     );
@@ -246,7 +260,7 @@
                     /* Амжилттай бол жагсаалт руу буцаана */
                     window.location.href = `{{ 'references'|link }}`;
 
-                    NotifyTop(
+                    Notify(
                         response.type ?? 'success',
                         response.title ?? `{{ 'success'|text|e }}`,
                         response.message ?? 'Reference updated'
@@ -254,7 +268,7 @@
                 })
                 .catch(error => {
                     /* Серверийн болон Fetch алдаа */
-                    NotifyTop('danger', `{{ 'error'|text|e }}`, error.message);
+                    Notify('danger', `{{ 'error'|text|e }}`, error.message);
 
                     submitters.forEach(btn => btn.growNstop());
                 });

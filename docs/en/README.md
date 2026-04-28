@@ -14,8 +14,8 @@
 3. [Configuration (.env)](#3-configuration)
 4. [Architecture](#4-architecture)
 5. [Middleware Pipeline](#5-middleware-pipeline)
-6. [Modules](#6-modules) (6.1-6.13 Core | 6.14-6.22 New: Shop, Reviews, Notification, Development, SEO, Spam Protection, Migration, Messages, Comments)
-7. [Twig Template System](#7-twig-template-system)
+6. [Modules](#6-modules) (6.1-6.13 Core | 6.14-6.29 Shop, Reviews, Event/Notification, Development, SEO, Spam, CSRF, Migration, Messages, Comments, Badges, Home, Manual, AI, Seed, Trash)
+7. [Template System](#7-template-system)
 8. [Routing](#8-routing)
 9. [Controller](#9-controller)
 10. [Model](#10-model)
@@ -40,17 +40,22 @@
 - **Shop** module (Products, Orders, Reviews)
 - MySQL or PostgreSQL supported
 - SQL file-based **database migration** system
-- **Twig** template engine
+- **codesaur/template** custom template engine (Twig-style syntax)
 - **OpenAI** integration (moedit editor)
 - Image optimization (GD)
 - PSR-3 logging system
-- **Brevo** API email delivery
-- **Discord** webhook notifications
+- Email delivery (**Brevo** API, SMTP, PHP mail)
+- **PSR-14** Event Dispatcher system (Discord, email, logging via listeners)
+- **Discord** webhook notifications (via event listener)
 - SEO: Search, Sitemap, XML Sitemap, RSS feed
 - Spam protection (honeypot, HMAC token, rate limiting, Cloudflare Turnstile)
+- CSRF protection (CsrfMiddleware, csrfFetch)
+- File-based DB cache (PSR-16 SimpleCache) with auto-invalidation
 - Contact form with message management
 - News article comments with 1-level reply
 - Product reviews with star rating (1-5)
+- Admin email notifications for contact messages, orders, comments, reviews (configurable per channel)
+- **Trash** module for recovering deleted content records
 
 ### codesaur Ecosystem
 
@@ -60,7 +65,7 @@ Raptor works together with these codesaur packages:
 |---------|---------|
 | `codesaur/http-application` | PSR-15 Application, Router, Middleware base |
 | `codesaur/dataobject` | PDO-based ORM (Model, LocalizedModel) |
-| `codesaur/template` | Twig template engine wrapper |
+| `codesaur/template` | Template engine wrapper |
 | `codesaur/http-client` | HTTP client (OpenAI API calls) |
 | `codesaur/container` | PSR-11 Dependency Injection Container |
 
@@ -151,11 +156,21 @@ RAPTOR_JWT_SECRET=auto-generated
 ```env
 RAPTOR_MAIL_FROM=noreply@codesaur.domain
 #RAPTOR_MAIL_FROM_NAME="Raptor Notification"
-#RAPTOR_MAIL_BREVO_APIKEY=""
 #RAPTOR_MAIL_REPLY_TO=
+
+# Transport: brevo (default), smtp, mail
+#RAPTOR_MAIL_TRANSPORT=brevo
+#RAPTOR_MAIL_BREVO_APIKEY=
+
+# SMTP settings (when transport=smtp)
+#RAPTOR_SMTP_HOST=smtp.gmail.com
+#RAPTOR_SMTP_PORT=465
+#RAPTOR_SMTP_USERNAME=
+#RAPTOR_SMTP_PASSWORD=
+#RAPTOR_SMTP_SECURE=ssl
 ```
 
-- Sends email via Brevo (SendInBlue) API
+- `send()` selects transport based on `RAPTOR_MAIL_TRANSPORT` env var (brevo/smtp/mail)
 
 ### OpenAI
 
@@ -219,7 +234,7 @@ Default workflow included in the repository. Runs code quality checks on every p
 
 #### Deploy (`.github/workflows/deploy.yml`)
 
-Unified deploy workflow with 2 jobs: **cPanel FTP** and **Windows Server self-hosted runner**. Each job runs only when its required secrets/variables are configured. Both can run in parallel if both are configured.
+Unified deploy workflow with 3 jobs: **FTP**, **SSH**, and **Windows Server self-hosted runner**. Each job runs only when its required secrets/variables are configured. All configured jobs run in parallel.
 
 **Execution flow:**
 
@@ -228,20 +243,32 @@ Push to main -> CI workflow runs -> Success -> Deploy workflow starts
                                  -> Failure -> Deploy is skipped
 ```
 
-The deploy workflow uses a `workflow_run` trigger to wait for the CI workflow result. Deploy starts only when CI succeeds (`conclusion == 'success'`). If CI fails, deploy is `skipped` - broken code never reaches the server. If no deploy secrets/variables are configured (e.g. developer clone), both jobs are silently skipped.
+The deploy workflow uses a `workflow_run` trigger to wait for the CI workflow result. Deploy starts only when CI succeeds (`conclusion == 'success'`). If CI fails, deploy is `skipped` - broken code never reaches the server. If no deploy secrets/variables are configured (e.g. developer clone), all jobs are silently skipped.
 
-**A) cPanel FTP Deploy**
+**A) FTP Deploy**
 
-Add the following secrets in **Settings -> Secrets and variables -> Actions -> Secrets**:
+For any server with FTP access (shared hosting, VPS, dedicated). Add the following secrets in **Settings -> Secrets and variables -> Actions -> Secrets**:
 
 | Secret | Description | Example |
 |--------|-------------|---------|
-| `FTP_HOST` | cPanel FTP server address | `ftp.example.com` |
-| `FTP_USERNAME` | cPanel FTP username | `user@example.com` |
-| `FTP_PASSWORD` | cPanel FTP password | |
+| `FTP_HOST` | FTP server address | `ftp.example.com` |
+| `FTP_USERNAME` | FTP username | `user@example.com` |
+| `FTP_PASSWORD` | FTP password | |
 | `FTP_SERVER_DIR` | Target directory on server | `/public_html/` |
 
-**B) Windows Server Self-hosted Runner Deploy**
+**B) SSH Deploy**
+
+For Linux servers with SSH access (VPS, cloud VM, dedicated). Add the following secrets in **Settings -> Secrets and variables -> Actions -> Secrets**:
+
+| Secret | Description | Example |
+|--------|-------------|---------|
+| `SSH_HOST` | Server address | `example.com` or `1.2.3.4` |
+| `SSH_USERNAME` | SSH username | `deploy` |
+| `SSH_KEY` | SSH private key (full content of id_rsa) | |
+| `SSH_DEPLOY_DIR` | Target directory on server | `/var/www/myproject` |
+| `SSH_PORT` | (optional) SSH port, default: 22 | `22` |
+
+**C) Windows Self-hosted Runner Deploy**
 
 1. Install a self-hosted runner on your Windows Server:
    - **Settings -> Actions -> Runners -> New self-hosted runner -> Windows**
@@ -251,7 +278,7 @@ Add the following secrets in **Settings -> Secrets and variables -> Actions -> S
 
 | Variable | Description | Example |
 |----------|-------------|---------|
-| `DEPLOY_PATH` | XAMPP htdocs project directory | `C:\xampp\htdocs\myproject` |
+| `DEPLOY_PATH` | Server project directory | `C:\xampp\htdocs\myproject` |
 
 3. Ensure PHP and Composer are in the system PATH on the server.
 
@@ -275,14 +302,14 @@ Add the following secrets in **Settings -> Secrets and variables -> Actions -> S
 public_html/index.php (Entry point)
 |
 |-- /dashboard/* -> Dashboard\Application (Admin Panel)
-|    |-- Middleware: ErrorHandler -> MySQL -> Session -> JWT -> Container -> Localization -> Settings
+|    |-- Middleware: ErrorHandler -> MySQL -> Session -> JWT -> CSRF -> Container -> Localization -> Settings
 |    |-- Routers: Login, Users, Organization, RBAC, Localization, Contents, Messages, Comments, Logs, Template, Shop, Development, Migration
-|    \-- Controllers -> Twig Templates -> HTML Response
+|    \-- Controllers -> Templates -> HTML Response
 |
 \-- /* -> Web\Application (Public Website)
      |-- Middleware: ExceptionHandler -> MySQL -> Container -> Session -> Localization -> Settings
      |-- Router: WebRouter (/, /page, /news, /contact, /products, /order, /search, /sitemap, /rss, /session/language, /session/contact-send, /session/order, /session/news/{id}/comment, /session/product/{id}/review, ...)
-     \-- Controllers -> Twig Templates -> HTML Response
+     \-- Controllers -> Templates -> HTML Response
 ```
 
 ### Request Flow
@@ -294,7 +321,7 @@ Browser -> index.php -> .env -> ServerRequest
       -> Router match
         -> Controller::action()
           -> Model (DB)
-          -> TwigTemplate -> render()
+          -> FileTemplate (codesaur/template) -> render()
             -> HTML Response -> Browser
 ```
 
@@ -306,32 +333,41 @@ raptor/
 |   |-- raptor/                    # Core framework (Dashboard + shared)
 |   |   |-- Application.php        # Dashboard Application base
 |   |   |-- Controller.php         # Base Controller for all controllers
-|   |   |-- MySQLConnectMiddleware.php
-|   |   |-- PostgresConnectMiddleware.php
-|   |   |-- ContainerMiddleware.php
-|   |   |-- SessionMiddleware.php  # Shared session management
+|   |   |-- CacheService.php       # File-based DB cache (PSR-16 SimpleCache)
+|   |   |-- CsrfMiddleware.php     # CSRF token validation
+|   |   |-- SpamProtectionTrait.php # Honeypot, HMAC, rate limit, Turnstile
+|   |   |-- MySQLConnectMiddleware.php    # MySQL PDO connection (auto-creates DB on localhost)
+|   |   |-- PostgresConnectMiddleware.php # PostgreSQL PDO connection (UTF8 client encoding)
+|   |   |-- ContainerMiddleware.php       # PSR-11 DI container wiring (events, cache, mailer, Discord)
+|   |   |-- SessionMiddleware.php         # Shared session lifecycle (write-close optimization)
 |   |   |-- authentication/        # Login, JWT
 |   |   |-- content/               # CMS modules
-|   |   |   |-- file/              # File management
+|   |   |   |-- AIHelper.php       # OpenAI integration (moedit)
+|   |   |   |-- ContentsRouter.php # Central content router
+|   |   |   |-- HtmlValidationTrait.php # Server-side HTML validation
+|   |   |   |-- file/              # File management + upload base
 |   |   |   |-- news/              # News
 |   |   |   |-- page/              # Pages
-|   |   |   |-- messages/           # Contact form messages
-|   |   |   |-- reference/         # References
+|   |   |   |-- messages/          # Contact form messages
+|   |   |   |-- reference/         # References + email templates
 |   |   |   \-- settings/          # System settings
 |   |   |-- localization/          # Languages & translations
 |   |   |-- organization/          # Organization management
-|   |   |-- rbac/                  # Access control
+|   |   |-- rbac/                  # Access control + seed data
 |   |   |-- user/                  # User management
-|   |   |-- template/              # Dashboard UI template
+|   |   |-- template/              # Dashboard UI, menu, badges
 |   |   |-- log/                   # PSR-3 logging
-|   |   |-- mail/                  # Email
-|   |   |-- notification/          # Discord webhook notifications
+|   |   |-- mail/                  # Email (Brevo API, SMTP, PHP mail)
+|   |   |-- event/                 # PSR-14 Event Dispatcher system
+|   |   |-- notification/          # Discord webhook listener
+|   |   |-- trash/                 # Trash module (deleted record recovery)
 |   |   |-- migration/             # Database migration system
 |   |   |-- development/           # Dev request tracking
 |   |   \-- exception/             # Error handling
 |   |-- dashboard/                 # Dashboard Application
 |   |   |-- Application.php
-|   |   |-- home/                  # Dashboard Home Router
+|   |   |-- home/                  # Dashboard Home, search, stats
+|   |   |-- manual/                # Help documentation viewer
 |   |   \-- shop/                  # Shop module (Products, Orders, Reviews)
 |   \-- web/                       # Web Application
 |       |-- Application.php
@@ -340,7 +376,6 @@ raptor/
 |       |-- content/               # Pages, News
 |       |-- shop/                  # Products, Orders, Reviews
 |       |-- service/               # Search, Sitemap, RSS, Contact
-|       |-- *.html                 # Twig templates
 |       \-- template/              # Web layout
 |           |-- TemplateController.php
 |           |-- ExceptionHandler.php
@@ -363,9 +398,9 @@ raptor/
 |-- .github/
 |   \-- workflows/
 |       |-- ci.yml                 # CI code quality checks (push, PR)
-|       \-- deploy.yml             # Auto deploy (cPanel FTP / Windows Server)
+|       \-- deploy.yml             # Auto deploy (FTP / SSH / Windows Server)
 |-- logs/                          # Error log files
-|-- private/                       # Protected files
+|-- private/                       # Protected files (uploads, cache)
 |-- composer.json
 |-- phpunit.xml                    # PHPUnit configuration
 \-- LICENSE
@@ -386,9 +421,10 @@ Middleware are PSR-15 standard layers that process request/response. Registratio
 | 3 | `MigrationMiddleware` | Auto-runs pending SQL migrations |
 | 4 | `SessionMiddleware` | Starts and manages PHP session |
 | 5 | `JWTAuthMiddleware` | Validates JWT and creates `User` object |
-| 6 | `ContainerMiddleware` | Injects DI Container |
-| 7 | `LocalizationMiddleware` | Determines language and translations |
-| 8 | `SettingsMiddleware` | Injects system settings |
+| 6 | `CsrfMiddleware` | CSRF token validation for POST/PUT/PATCH/DELETE |
+| 7 | `ContainerMiddleware` | Injects DI Container |
+| 8 | `LocalizationMiddleware` | Determines language and translations |
+| 9 | `SettingsMiddleware` | Injects system settings |
 
 ### Web Middleware
 
@@ -431,7 +467,7 @@ $this->use(new \Raptor\PostgresConnectMiddleware());
 
 **Classes:** `UsersRouter`, `UsersController`, `UsersModel`
 
-- User CRUD (Create, Read, Update, Deactivate)
+- User CRUD (Create, Read, Update, Deactivate/soft delete)
 - Passwords stored using bcrypt hash
 - Profile fields: username, email, phone, first_name, last_name
 - Avatar image upload
@@ -476,7 +512,7 @@ $this->isUserCan('news_edit');
 
 **Classes:** `NewsController`, `NewsModel`
 
-- News CRUD
+- News CRUD (hard delete with Trash backup)
 - Cover image upload
 - File attachments
 - Publish date management
@@ -488,7 +524,7 @@ $this->isUserCan('news_edit');
 
 **Classes:** `PagesController`, `PagesModel`
 
-- Page CRUD with simplified single-form interface (no type wizard)
+- Page CRUD (hard delete with Trash backup) with simplified single-form interface (no type wizard)
 - Parent-child structure (multi-level navigation menu)
 - `position` field for ordering
 - `type` field: `content` (default), `nav` (parent/navigation page created via "Parent page" switch)
@@ -526,7 +562,7 @@ $this->isUserCan('news_edit');
 - Add / edit / remove languages
 - Translation text management (key -> value)
 - Session-based language selection
-- Use in Twig templates: `{{ 'key'|text }}`
+- Use in Templates: `{{ 'key'|text }}`
 
 ### 6.11 Logging
 
@@ -543,33 +579,37 @@ $this->isUserCan('news_edit');
 
 **Classes:** `Mailer`
 
-- Brevo (SendInBlue) API email sending
-- Template-based email sending
+- `send()` selects transport via `RAPTOR_MAIL_TRANSPORT` env var (brevo/smtp/mail)
+- HTML messages, CC/BCC, attachments
 
 ### 6.13 Template (Dashboard UI)
 
-**Classes:** `TemplateRouter`, `TemplateController`
+**Classes:** `TemplateRouter`, `TemplateController`, `DashboardTrait`, `MenuModel`, `FileController`
 
-- Dashboard layout (sidebar, header, content area)
+- Dashboard layout rendering via `DashboardTrait::dashboardTemplate()`
+- Sidebar menu with i18n, permissions, parent/child hierarchy (`MenuModel`)
+- Menu management CRUD (insert, update, deactivate)
+- File upload, validation, image optimization via `FileController` base class
 - SweetAlert2, motable, moedit JS components
 - Responsive Bootstrap 5 design
 
 ### 6.14 Shop (E-Commerce)
 
-**Classes:** `ProductsController`, `ProductsRouter`, `ProductsModel`, `OrdersController`, `OrdersRouter`, `ProductOrdersModel`, `ReviewsController`, `ReviewsRouter`, `ReviewsModel`
+**Classes:** `ProductsController`, `OrdersController`, `ReviewsController`, `ShopRouter` (unified router for products + orders + reviews), `ProductsModel`, `ProductOrdersModel`, `ReviewsModel`
 
-- Product CRUD with slug generation, excerpt extraction
+- Product CRUD (hard delete with Trash backup) with slug generation, excerpt extraction
 - Product fields: price, sale_price, SKU, barcode, sizes, colors, stock, category, featured, review toggle
 - Order management (`products_orders` table) with customer info and status tracking
 - Product reviews with star rating (1-5) and written comments
 - Reviews displayed in product detail view (both web and dashboard)
 - Media gallery on web product page (thumbnail strip + large preview for images/video/audio)
 - Sample product data seeded on first run
-- Discord notifications for new orders, status changes, and reviews
+- PSR-14 event-driven notifications for new orders, status changes, and reviews
+- Admin email notification for new orders (configurable: toggle + recipient email, `system_coder` only)
 
 ### 6.15 Reviews (Product Reviews)
 
-**Classes:** `ReviewsController`, `ReviewsRouter`, `ReviewsModel` (dashboard), `ShopController::reviewSubmit()` (web)
+**Classes:** `ReviewsController`, `ReviewsModel` (dashboard, registered via `ShopRouter`), `ShopController::reviewSubmit()` (web)
 
 - Public review form on product detail pages (when `review=1`)
 - Star rating (1-5) with written review text
@@ -579,17 +619,23 @@ $this->isUserCan('news_edit');
 - Dashboard: reviews shown in products-view with delete support
 - Dashboard: reviews index accessible from products-index header link
 - Badge: new reviews appear as `info` (cyan) badge on products sidebar item
+- Admin email notification (configurable: toggle + recipient email, `system_coder` only, disabled by default)
 - Web-side review submission via `/session/product/{id}/review`
 
-### 6.16 Notification
+### 6.16 Event System & Notification
 
-**Classes:** `DiscordNotifier`
+**Classes:** `EventDispatcher`, `ListenerProvider`, `ContentEvent`, `UserEvent`, `OrderEvent`, `DevRequestEvent`, `DiscordListener`
 
-- Discord webhook integration for system events
-- Notification types: user signup, user approval, new order, order status change, content actions
-- Color-coded embed messages
+- **PSR-14 Event Dispatcher** system replaces direct Discord calls
+- Event classes: `ContentEvent`, `UserEvent`, `OrderEvent`, `DevRequestEvent`
+- `ListenerProvider` registers listeners (currently `DiscordListener`)
+- `DiscordListener` sends Discord webhook notifications for all event types
+- Controllers dispatch events via `$this->dispatch(new ContentEvent(...))` helper
+- `DiscordNotifier` stores admin name and dashboard URL (injected via `ContainerMiddleware`)
+- Notification types: user signup, user approval, new order, order status change, content actions (insert, update, delete, publish)
+- Color-coded Discord embed messages
 - Configured via `RAPTOR_DISCORD_WEBHOOK_URL` env variable
-- Gracefully skips if webhook URL is not set
+- Gracefully skips if webhook URL is not set or listener is unavailable
 
 ### 6.17 Development Tools
 
@@ -635,7 +681,20 @@ Sitemap: https://example.com/sitemap.xml
 - Link spam filter (blocks text with excessive URLs)
 - Applied to login, signup, forgot password, contact, comment, review, and order forms
 
-### 6.20 Database Migration
+### 6.20 CSRF Protection
+
+**Classes:** `CsrfMiddleware`
+
+- Per-session CSRF token validation for all dashboard POST/PUT/PATCH/DELETE requests
+- Token generated at login, stored in `$_SESSION['CSRF_TOKEN']`
+- Auto-generated for existing sessions missing a token (requires writable session)
+- GET/HEAD/OPTIONS requests pass through without validation
+- `/login` routes are exempt (token is created there)
+- Client JS sends token via `X-CSRF-TOKEN` header using `csrfFetch()` wrapper
+- Token delivered to frontend via `<meta name="csrf-token">` in `dashboard.html`
+- For new modules: use `csrfFetch()` instead of `fetch()` for all state-changing requests
+
+### 6.21 Database Migration
 
 **Classes:** `MigrationRunner`, `MigrationMiddleware`, `MigrationController`, `MigrationRouter`
 
@@ -648,7 +707,7 @@ Sitemap: https://example.com/sitemap.xml
 - Protected: only `system_coder` users can access the dashboard
 - `.htaccess` protection blocks direct browser access to SQL files
 
-### 6.21 Messages (Contact Form)
+### 6.22 Messages (Contact Form)
 
 **Classes:** `MessagesController`, `MessagesModel` (dashboard), `ContactController` (web)
 
@@ -656,11 +715,12 @@ Sitemap: https://example.com/sitemap.xml
 - Contact form submissions stored in database
 - Dashboard interface for viewing and managing messages
 - View message details in modal dialog
-- Soft delete (deactivate) messages
-- Discord notification on new contact message
+- Hard delete with Trash backup (replaced soft delete/deactivate)
+- Event-driven notification on new contact message (Discord via PSR-14 listener)
+- Admin email notification (configurable: toggle + recipient email, `system_coder` only)
 - Web-side `ContactController` handles form display and submission via `/session/contact-send`
 
-### 6.22 Comments (News)
+### 6.23 Comments (News)
 
 **Classes:** `CommentsController`, `CommentsModel` (dashboard), `NewsController::commentSubmit()` (web)
 
@@ -672,18 +732,86 @@ Sitemap: https://example.com/sitemap.xml
 - Dashboard: comments shown in news-view with reply and delete support
 - Dashboard: comments index accessible from news-index header link
 - Badge: new comments appear as `info` (cyan) badge on news sidebar item
-- Soft delete (deactivate) comments
+- Hard delete with Trash backup (replaced soft delete/deactivate)
+- Admin email notification (configurable: toggle + recipient email, `system_coder` only, disabled by default)
 - Web-side comment submission via `/session/news/{id}/comment`
+
+### 6.24 Badge System (Sidebar Badges)
+
+**Classes:** `BadgeController`, `BadgeRouter`, `AdminBadgeSeenModel`
+
+- Colored badge pills on sidebar menu items showing unseen activity counts per admin
+- Reads from existing `*_log` tables - no separate event table
+- Badge colors: green (create), blue (update), red (delete)
+- Up to 3 badges per module, shown left to right in green-blue-red order
+- Filters by admin permissions (PERMISSION_MAP) and excludes admin's own actions
+- First-time users get 30-day lookback
+- File-count badges for manual and migrations (non-log based)
+- JS: `initSidebarBadges()` in `dashboard.js` fetches and renders badges on page load
+
+### 6.25 Dashboard Home
+
+**Classes:** `HomeRouter`, `SearchController`, `WebLogStatsController`, `WebLogStats`
+
+- Dashboard home page with system overview
+- Global search across news, pages, products, orders, and users (RBAC-filtered)
+- Web visit statistics with chart data, top pages/news/products, IP addresses
+- System log statistics per `*_log` table (today/week/total counts)
+- `web_log_cache` table for performance optimization
+
+### 6.26 Dashboard Manual
+
+**Classes:** `ManualRouter`, `ManualController`
+
+- Lists all help/manual HTML files grouped by module with language variants
+- Displays specific manual with language fallback to English
+- Manual files stored in `application/dashboard/manual/` as `{name}-manual-{lang}.html`
+
+### 6.27 AI Helper (moedit)
+
+**Classes:** `AIHelper`
+
+- OpenAI API integration for moedit WYSIWYG editor
+- HTML mode: content enhancement using GPT-4o-mini (Bootstrap 5 components)
+- Vision mode: OCR/image text recognition using GPT-4o
+- Endpoint: `POST /dashboard/content/moedit/ai`
+- Requires `RAPTOR_OPENAI_API_KEY` in `.env`
+
+### 6.28 Seed and Initial Data
+
+**Classes:** `PermissionsSeed`, `RolePermissionSeed`, `MenuSeed`, `TextInitial`, `ReferenceInitial`, `NewsSamples`, `PagesSamples`, `ProductsSamples`
+
+- Automatically populate database on fresh installs via Model `__initial()` methods
+- Permissions: 18+ system permissions with `system_` prefix
+- Roles: coder, admin, manager, editor, viewer with permission assignments
+- Menu: 3-section dashboard sidebar (Contents, Shop, System) with i18n titles
+- Translations: 100+ system UI keywords in MN/EN
+- Reference templates: 11+ email templates (password reset, notifications, order confirmation) + ToS/PP
+- Sample data: demo news (6), pages (14+), products (4) - removable via dashboard "Reset" button
+
+### 6.29 Trash
+
+**Classes:** `TrashRouter`, `TrashController`, `TrashModel`
+
+- Stores deleted content records as JSON snapshots before hard deletion
+- Replaces the old soft delete (`is_active=0`) pattern for content modules
+- 15 models lost the `is_active` column; `deactivateById()` replaced with `deleteById()` for: News, Pages, Products, Orders, Reviews, Comments, Messages, Files, References, Settings, DevRequests, DevResponses, Menus, Texts, Languages
+- Users and Organizations still use soft delete (`is_active` column retained)
+- Dashboard interface for viewing, inspecting, and managing deleted records
+- **Restore**: returns a record to its source table. Tries the original ID first to preserve FK references, falls back to auto-increment on PRIMARY KEY conflict; aborts with an admin-friendly message on UNIQUE collisions (slug, keyword, code, sku, etc.); LocalizedModel `_content` rows are restored alongside the primary row
+- **Dual restore audit logging**: each restore writes to both `trash_log` (full audit) and the channel named by the trash record's `log_table` column, so the entry shows up in Logger Protocol on the record's view/update page. Controllers pass the log channel name directly to `TrashModel::store()` (e.g. `ReviewsController` -> `'products'`, `ReferencesController` -> `'content'`)
+- Empty trash to permanently remove all records
+- Restricted to the `system_coder` role
 
 ---
 
-## 7. Twig Template System
+## 7. Template System
 
-Raptor uses the `TwigTemplate` class from the `codesaur/template` package.
+Raptor uses the `FileTemplate` class from the `codesaur/template` package - a lightweight custom engine with Twig-style syntax (NOT the actual `twig/twig` library).
 
 ### Base Variables
 
-When calling `twigTemplate()` from a controller, these variables are automatically added:
+When calling `template()` from a controller, these variables are automatically added:
 
 | Variable | Description |
 |----------|-------------|
@@ -692,7 +820,7 @@ When calling `twigTemplate()` from a controller, these variables are automatical
 | `localization` | Language and translation data |
 | `request` | Current URL path |
 
-### Twig Filters
+### Custom Filters (registered by Controller)
 
 | Filter | Usage | Description |
 |--------|-------|-------------|
@@ -700,21 +828,36 @@ When calling `twigTemplate()` from a controller, these variables are automatical
 | `link` | `{{ 'route'\|link({'id': 5}) }}` | Generate URL from route name |
 | `basename` | `{{ path\|basename }}` | Extract filename (Web templates) |
 
+### Twig features NOT supported
+
+Use these alternatives in `codesaur/template`:
+
+| Twig (unsupported) | Replacement |
+|--------------------|-------------|
+| `{% for i in 1..5 %}` | `{% for i in range(1, 5) %}` |
+| `{% if x in list %}` | `{% if list[x] is defined %}` (use lookup map) or explicit `or` chain |
+| `ends with`, `matches` | not available (only `starts with` works) |
+| `**`, `//` operators | use `*`, `/` |
+| `is odd/even/divisible/same` | not available |
+| `loop.revindex`, `loop.parent` | not available (use `loop.length - loop.index0`) |
+| `{% verbatim %}`, `{% include %}`, `{% extends %}` | not available |
+| `\|date(format='Y-m-d')` | `\|date('Y-m-d')` (positional only) |
+
 ### Example
 
-```twig
-{# Translation #}
+```html
+<!-- Translation -->
 <h1>{{ 'welcome'|text }}</h1>
 
-{# Route link #}
+<!-- Route link -->
 <a href="{{ 'page'|link({'id': page.id}) }}">{{ page.title }}</a>
 
-{# User check #}
-{% if user is not null %}
+<!-- User check (object method calls supported) -->
+{% if user is not null and user.can('system_content_index') %}
     <p>Hello, {{ user.profile.first_name }}!</p>
 {% endif %}
 
-{# Language switcher #}
+<!-- Language switcher -->
 {% for code, language in localization.language %}
     <a href="{{ 'language'|link({'code': code}) }}">{{ language.title }}</a>
 {% endfor %}
@@ -739,8 +882,11 @@ class MyRouter extends \codesaur\Router\Router
         // POST route
         $this->POST('/path', [Controller::class, 'method'])->name('route-name');
 
-        // PUT route
+        // PUT route (full resource update)
         $this->PUT('/path/{uint:id}', [Controller::class, 'method'])->name('route-name');
+
+        // PATCH route (partial update - single field, status toggle)
+        $this->PATCH('/path/{uint:id}/status', [Controller::class, 'method'])->name('route-name');
 
         // DELETE route
         $this->DELETE('/path', [Controller::class, 'method'])->name('route-name');
@@ -773,7 +919,7 @@ $this->use(new MyRouter());
 ### Route Name Optimization
 
 Only use `->name('route-name')` when the route name is actually referenced via:
-- `{{ 'route-name'|link }}` in Twig templates
+- `{{ 'route-name'|link }}` in Templates
 - `$this->redirectTo('route-name')` in PHP controllers
 
 Routes that are never referenced by name do not need `->name()`, reducing unnecessary overhead.
@@ -797,10 +943,11 @@ All controllers extend `Raptor\Controller`. Available methods:
 | `getLanguageCode()` | Active language code |
 | `getLanguages()` | All languages list |
 | `text($key)` | Translation text |
-| `twigTemplate($file, $vars)` | Twig template object |
+| `template($file, $vars)` | Template object |
 | `respondJSON($data, $code)` | JSON response |
 | `redirectTo($route, $params)` | Redirect |
 | `log($table, $level, $msg)` | Write log entry |
+| `dispatch($event)` | Dispatch a PSR-14 event |
 | `generateRouteLink($name, $params)` | Generate URL |
 | `getContainer()` | DI Container |
 | `getService($id)` | Get service |
@@ -821,13 +968,13 @@ class ProductsController extends \Raptor\Controller
 
         // Use model
         $model = new ProductsModel($this->pdo);
-        $products = $model->getRows(['WHERE' => 'is_active=1']);
+        $products = $model->getRows();
 
         // Render template
-        $twig = $this->twigTemplate(__DIR__ . '/index.html', [
+        $tpl = $this->template(__DIR__ . '/index.html', [
             'products' => $products
         ]);
-        $twig->render();
+        $tpl->render();
     }
 
     public function store()
@@ -836,9 +983,11 @@ class ProductsController extends \Raptor\Controller
         $model = new ProductsModel($this->pdo);
         $id = $model->insert($body);
 
-        // Write log
+        // Write log - use the standard `record_id` key so the entry shows up
+        // in the record's Logger Protocol on its view/update page.
         $this->log('products', \Psr\Log\LogLevel::INFO, 'Product added', [
-            'product_id' => $id
+            'action'    => 'create',
+            'record_id' => $id
         ]);
 
         // JSON response
@@ -911,8 +1060,8 @@ class CategoriesModel extends LocalizedModel
 |--------|-------------|
 | `insert($record)` | Insert a record |
 | `updateById($id, $record)` | Update by ID |
-| `deleteById($id)` | Delete by ID |
-| `deactivateById($id, $record)` | Deactivate a record by ID (soft delete) |
+| `deleteById($id)` | Hard delete by ID (used for content modules) |
+| `deactivateById($id, $record)` | Soft delete by ID (used only for Users/Organizations) |
 | `getRowWhere($with_values)` | Get single row by WHERE key=value conditions |
 | `getRow($condition)` | Get single row with SELECT condition |
 | `getRows($condition)` | Get multiple rows with SELECT condition |
@@ -1029,15 +1178,15 @@ class MyTest extends RaptorTestCase
 1. Create the Router class:
 
 ```php
-// application/dashboard/products/ProductsRouter.php
-namespace Dashboard\Products;
+// application/dashboard/mymodule/MyModuleRouter.php
+namespace Dashboard\MyModule;
 
-class ProductsRouter extends \codesaur\Router\Router
+class MyModuleRouter extends \codesaur\Router\Router
 {
     public function __construct()
     {
-        $this->GET('/dashboard/products', [ProductsController::class, 'index'])->name('products');
-        $this->GET_POST('/dashboard/products/insert', [ProductsController::class, 'insert'])->name('product-insert');
+        $this->GET('/dashboard/mymodule', [MyModuleController::class, 'index'])->name('mymodule');
+        $this->GET_POST('/dashboard/mymodule/insert', [MyModuleController::class, 'insert'])->name('mymodule-insert');
     }
 }
 ```
@@ -1048,7 +1197,7 @@ class ProductsRouter extends \codesaur\Router\Router
 {
     "autoload": {
         "psr-4": {
-            "Dashboard\\Products\\": "application/dashboard/products/"
+            "Dashboard\\MyModule\\": "application/dashboard/mymodule/"
         }
     }
 }
@@ -1070,7 +1219,7 @@ class Application extends \Raptor\Application
     {
         parent::__construct();
         $this->use(new Home\HomeRouter());
-        $this->use(new Products\ProductsRouter());  // New router
+        $this->use(new MyModule\MyModuleRouter());  // New router
     }
 }
 ```
@@ -1087,8 +1236,8 @@ $this->GET('/products', [HomeController::class, 'products'])->name('products');
 public function products()
 {
     $model = new ProductsModel($this->pdo);
-    $products = $model->getRows(['WHERE' => 'is_active=1']);
-    $this->twigWebLayout(__DIR__ . '/products.html', ['products' => $products])->render();
+    $products = $model->getRows(['WHERE' => "published=1 AND code='$code'"]);
+    $this->webTemplate(__DIR__ . '/products.html', ['products' => $products])->render();
 }
 ```
 

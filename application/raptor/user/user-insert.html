@@ -209,7 +209,7 @@
 
         /* Хэрэв form олдохгүй бол алдаа мэдэгдэл харуулаад зогсооно */
         if (!formInsert) {
-            NotifyTop('danger', `{{ 'error'|text|e }}`, 'Form not found!');
+            Notify('danger', `{{ 'error'|text|e }}`, 'Form not found!');
             return;
         }
 
@@ -225,7 +225,7 @@
         /* --------------------------------------------------
          *  FORM submit event:
          *   - HTML5 validation шалгах
-         *   - Алдаа байвал NotifyTop-р мэдэгдэх
+         *   - Алдаа байвал Notify-р мэдэгдэх
          *   - Зөв бол fetch ашиглан backend рүү илгээх
          * -------------------------------------------------- */
         formInsert.addEventListener('submit', function (event) {
@@ -237,7 +237,21 @@
 
             if (!isValid) {
                 event.stopPropagation();
-                NotifyTop(
+
+                /* Эхний invalid input-ыг олж, хамаарах таб руу шилжээд focus хийнэ */
+                const firstInvalid = this.querySelector(':invalid');
+                if (firstInvalid) {
+                    const tabPane = firstInvalid.closest('.tab-pane');
+                    if (tabPane) {
+                        const tabBtn = document.querySelector(`a.nav-link[href="#${tabPane.id}"], button.nav-link[data-bs-target="#${tabPane.id}"]`);
+                        if (tabBtn) {
+                            bootstrap.Tab.getOrCreateInstance(tabBtn).show();
+                        }
+                    }
+                    setTimeout(() => firstInvalid.focus(), 200);
+                }
+
+                Notify(
                     'danger',
                     `{{ 'error'|text|e }}`,
                     `{{ 'u-have-some-form-errors'|text|e }}`
@@ -280,7 +294,7 @@
                 window.location.href = `{{ 'users'|link }}`;
 
                 /* Амжилтын мэдэгдэл */
-                NotifyTop(
+                Notify(
                     response.type ?? 'success',
                     response.title ?? `{{ 'success'|text|e }}`,
                     response.message ?? 'User created'
@@ -288,7 +302,7 @@
             })
             .catch(function (error) {
                 /* Сүлжээний эсвэл backend-ээс ирсэн алдаа */
-                NotifyTop('danger', `{{ 'error'|text|e }}`, error.message);
+                Notify('danger', `{{ 'error'|text|e }}`, error.message);
 
                 /* Алдаа гарсан үед loading animation-үүдийг зогсоох */
                 submitters.forEach(function (btn) {

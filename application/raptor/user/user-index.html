@@ -227,11 +227,19 @@
 
                     /* Устгах */
                     if (canDelete) {
-                        buttons.push(`
-                            <button class="deactivate-user btn btn-sm btn-danger mt-1 shadow-sm"
-                                    type="button" value="${profile.id}">
-                                    <i class="bi bi-trash"></i>
-                            </button>`);
+                        if (profile.is_active == 0) {
+                            buttons.push(`
+                                <button class="delete-user btn btn-sm btn-danger mt-1 shadow-sm"
+                                        type="button" value="${profile.id}">
+                                        <i class="bi bi-fire"></i>
+                                </button>`);
+                        } else {
+                            buttons.push(`
+                                <button class="deactivate-user btn btn-sm btn-danger mt-1 shadow-sm"
+                                        type="button" value="${profile.id}">
+                                        <i class="bi bi-trash"></i>
+                                </button>`);
+                        }
                     }
                 }
                 const actions = `<div class="mb-1">${buttons.join(' ')}</div>`;
@@ -285,7 +293,7 @@
                 
                 const thisRow = btn.closest('tr');
                 if (!thisRow) {
-                    return NotifyTop('warning', `{{ 'error'|text|e }}`, 'Cannot select row!');
+                    return Notify('warning', `{{ 'error'|text|e }}`, 'Cannot select row!');
                 }
                 
                 /* Устгах гэж буй хэрэглэгчийн нэр */
@@ -342,7 +350,72 @@
                             thisRow.remove();
                             users.setReady();
 
-                            NotifyTop('success', `{{ 'success'|text|e }}`, response.message ?? `User (${name}) deactivated`);
+                            Notify('success', `{{ 'success'|text|e }}`, response.message ?? `User (${name}) deactivated`);
+                        }).catch(error => {
+                            Swal.showValidationMessage(error.message);
+                        });
+                    }
+                });
+            }));
+
+            /* Идэвхгүй хэрэглэгчийг бүрэн устгах (hard delete) товч */
+            let questionHardDelete;
+            if (document.documentElement.lang === 'mn') {
+                questionHardDelete = name =>
+                    `<p class="text-danger mb-3"><strong>АНХААРУУЛГА!</strong> Та (${name}) хэрэглэгчийг бүрэн устгахдаа итгэлтэй байна уу?</p><p class="text-muted">Энэ үйлдлийг буцаах боломжгүй. Шалтгаан бичнэ үү</p>`;
+            } else {
+                questionHardDelete = name =>
+                    `<p class="text-danger mb-3"><strong>WARNING!</strong> Are you sure to permanently delete this user (${name})?</p><p class="text-muted">This action cannot be undone. Please provide a reason</p>`;
+            }
+
+            const hardDeletes = users.table.querySelectorAll('.delete-user');
+            hardDeletes.forEach(btn => btn.addEventListener('click', function (e) {
+                e.preventDefault();
+
+                const thisRow = btn.closest('tr');
+                if (!thisRow) {
+                    return Notify('warning', `{{ 'error'|text|e }}`, 'Cannot select row!');
+                }
+
+                const name = thisRow.children[2]?.querySelector('strong')?.innerHTML;
+                let ask = questionHardDelete(name);
+                let photo = thisRow.children[1].querySelector('img');
+                let src;
+                if (photo) {
+                    src = photo.src;
+                } else {
+                    src = '';
+                    ask = `<p><i class="bi bi-person-x-fill text-danger mb-2" style="font-size:3rem"></i></p>${ask}`;
+                }
+                Swal.fire({
+                    imageUrl: src,
+                    imageHeight: 64,
+                    html: ask,
+                    input: 'text',
+                    showCancelButton: true,
+                    cancelButtonText: `{{ 'cancel'|text|e }}`,
+                    confirmButtonText: `<i class="bi bi-fire"></i> {{ 'delete'|text|e }}`,
+                    confirmButtonColor: '#dc3545',
+                    showLoaderOnConfirm: true,
+                    allowOutsideClick: () => !Swal.isLoading(),
+                    backdrop: true,
+                    preConfirm: (reason) => {
+                        return csrfFetch(
+                            `{{ 'user-delete'|link }}`,
+                            {
+                                method: 'DELETE',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ name, reason, id: btn.value })
+                            }
+                        ).then(res => res.json())
+                        .then(response => {
+                            if (response.status !== 'success') {
+                                throw new Error(response.message ?? 'Invalid response!');
+                            }
+                            Swal.close();
+                            thisRow.remove();
+                            users.setReady();
+                            Notify('success', `{{ 'success'|text|e }}`, response.message ?? `User (${name}) permanently deleted`);
                         }).catch(error => {
                             Swal.showValidationMessage(error.message);
                         });

@@ -23,13 +23,11 @@ class NewsSamples
         if ($path == '\\' || $path == '/' || $path == '.') {
             $path = '';
         }
-        $now = \date('Y-m-d H:i:s');
+        
         $seed = [
-            'is_active' => 1,
+            'category' => '_raptor_sample_',
             'published' => 1,
-            'created_at' => $now,
-            'published_at' => $now,
-            'category' => '_raptor_sample_'
+            'published_at' => \date('Y-m-d H:i:s')
         ];
 
         // MN мэдээнүүд
@@ -47,7 +45,7 @@ class NewsSamples
                 . '<li><a href="https://github.com/codesaur-php/router" target="_blank">codesaur/router</a> - URL Router</li>'
                 . '<li><a href="https://github.com/codesaur-php/http-message" target="_blank">codesaur/http-message</a> - PSR-7 HTTP Message</li>'
                 . '<li><a href="https://github.com/codesaur-php/dataobject" target="_blank">codesaur/dataobject</a> - PDO суурьтай ORM (Model, LocalizedModel)</li>'
-                . '<li><a href="https://github.com/codesaur-php/template" target="_blank">codesaur/template</a> - Twig Template Engine Wrapper</li>'
+                . '<li><a href="https://github.com/codesaur-php/template" target="_blank">codesaur/template</a> - Template Engine</li>'
                 . '<li><a href="https://github.com/codesaur-php/http-client" target="_blank">codesaur/http-client</a> - HTTP Client (OpenAI API)</li>'
                 . '<li><a href="https://github.com/codesaur-php/container" target="_blank">codesaur/container</a> - PSR-11 DI Container</li>'
                 . '</ul>'
@@ -85,7 +83,7 @@ class NewsSamples
                 . '<li><a href="https://github.com/codesaur-php/router" target="_blank">codesaur/router</a> - URL Router</li>'
                 . '<li><a href="https://github.com/codesaur-php/http-message" target="_blank">codesaur/http-message</a> - PSR-7 HTTP Message</li>'
                 . '<li><a href="https://github.com/codesaur-php/dataobject" target="_blank">codesaur/dataobject</a> - PDO-based ORM (Model, LocalizedModel)</li>'
-                . '<li><a href="https://github.com/codesaur-php/template" target="_blank">codesaur/template</a> - Twig Template Engine Wrapper</li>'
+                . '<li><a href="https://github.com/codesaur-php/template" target="_blank">codesaur/template</a> - Template Engine</li>'
                 . '<li><a href="https://github.com/codesaur-php/http-client" target="_blank">codesaur/http-client</a> - HTTP Client (OpenAI API)</li>'
                 . '<li><a href="https://github.com/codesaur-php/container" target="_blank">codesaur/container</a> - PSR-11 DI Container</li>'
                 . '</ul>'

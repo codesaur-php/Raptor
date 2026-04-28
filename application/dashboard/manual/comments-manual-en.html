@@ -2,8 +2,8 @@
     <h3 class="px-2 my-auto fs-6 text-white">
         <i class="bi bi-book"></i> Comments - User Manual
     </h3>
-    <a href="{{ 'manual' | link }}" class="btn btn-sm btn-light m-1">
-        <i class="bi bi-arrow-left"></i> {{ 'manual' | text }}
+    <a href="{{ 'manual'|link }}" class="btn btn-sm btn-light m-1">
+        <i class="bi bi-arrow-left"></i> {{ 'manual'|text }}
     </a>
 </div>
 
@@ -94,8 +94,38 @@
         <ul>
             <li>A confirmation dialog appears (SweetAlert2)</li>
             <li>Deleting a root comment also deletes all its replies</li>
-            <li>Soft delete - data is preserved, only deactivated</li>
+            <li>Permanently deleted from the database; a backup copy is stored in the Trash table for recovery</li>
         </ul>
+    </div>
+</div>
+
+<!-- ==================== EMAIL NOTIFICATION ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-envelope-at"></i> Admin Email Notification</h4>
+        <p>
+            An automatic email notification can be sent to an admin whenever a new comment is posted
+            on a news article. This setting is located at the top of the list page
+            (visible only to users with <code>system_coder</code> role).
+        </p>
+        <h5 class="mt-3">Settings</h5>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Setting</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Enable / Disable</strong></td>
+                    <td>Toggle switch ON = sets the email address, OFF = clears the email address</td>
+                </tr>
+            </tbody>
+        </table>
+        <p>Notification emails include the commenter's name, email, comment content, and news article title.</p>
+        <div class="alert alert-info mb-0">
+            <i class="bi bi-info-circle"></i>
+            This setting directly modifies the <code>RAPTOR_COMMENT_EMAIL_TO</code> value in the <code>.env</code> file.
+            Email set = notifications on, empty = notifications off.
+        </div>
     </div>
 </div>
 

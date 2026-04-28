@@ -1,6 +1,21 @@
+<script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h5 class="text-info text-uppercase"><i class="bi bi-star-half"></i> {{ 'reviews'|text }}</h5>
-    <div class="ms-auto">
+    <div class="ms-auto d-flex align-items-center gap-2">
+        {% if user.is('system_coder') %}
+        <div class="form-check form-switch" title="Email {{ 'notify'|text }}">
+            <input class="form-check-input" type="checkbox" role="switch" id="reviewEmailToggle"
+                   {{ review_email_notify ? 'checked' : '' }}>
+            <label class="form-check-label small" for="reviewEmailToggle">
+                <i class="bi bi-envelope"></i> Email {{ 'notify'|text }}
+            </label>
+        </div>
+        <button class="btn btn-sm btn-outline-secondary py-0 px-1" type="button" id="reviewEmailEdit" title="Email">
+            <small id="reviewEmailDisplay">{{ notify_email ?: '-' }}</small>
+            <i class="bi bi-pencil-square"></i>
+        </button>
+        {% endif %}
         <a class="btn btn-sm btn-info shadow-sm" href="{{ 'products'|link }}">
             <i class="bi bi-arrow-left"></i> {{ 'products'|text }}
         </a>
@@ -23,10 +38,11 @@
 <script type="text/javascript">
     document.addEventListener('DOMContentLoaded', function () {
         const table = new motable('table#reviews', { freezeColumns: [1] });
-        const reviewsLink = `{{ 'reviews'|link }}`;
+        const productsLink = `{{ 'products'|link }}`;
 
         csrfFetch(
-            `{{ 'reviews-list'|link }}`
+            `{{ 'products-reviews'|link }}`,
+            { method: 'POST' }
         ).then(res => {
             if (res.headers.get('content-type')?.includes('application/json')) return res.json();
             throw new Error(`HTTP [${res.status}]: ${res.statusText}`);
@@ -50,7 +66,7 @@
                         : '<i class="bi bi-star text-muted"></i>';
                 }
 
-                const actions = `<a class="btn btn-sm btn-outline-info" href="${reviewsLink}/product/${record.product_id}" title="View"><i class="bi bi-eye"></i></a>`;
+                const actions = `<a class="btn btn-sm btn-outline-info" href="${productsLink}/view/${record.product_id}#reviews-section" title="View"><i class="bi bi-eye"></i></a>`;
 
                 rowsHTML += `<tr>
                     <td>${id}<br><small class="text-muted">${record.created_at}</small></td>
@@ -66,5 +82,92 @@
         }).catch(err => {
             table.setBody(`<tr><td colspan="6" class="text-center text-danger">${err.message}</td></tr>`);
         });
+        // Review email мэдэгдэл toggle (ON = email тохируулах, OFF = email хоослох)
+        const reviewEmailToggle = document.getElementById('reviewEmailToggle');
+        if (reviewEmailToggle) {
+            reviewEmailToggle.addEventListener('change', function () {
+                if (reviewEmailToggle.checked) {
+                    // ON -> email оруулах
+                    reviewEmailToggle.checked = false;
+                    Swal.fire({
+                        title: 'Email',
+                        text: `{{ 'email'|text|e('js') }}`,
+                        input: 'email',
+                        inputValue: `{{ settings_email|e('js') }}`,
+                        inputPlaceholder: 'email@example.com',
+                        showCancelButton: true,
+                        confirmButtonText: `{{ 'save'|text|e('js') }}`,
+                        cancelButtonText: `{{ 'cancel'|text|e('js') }}`,
+                        inputValidator: v => !v ? `{{ 'email'|text|e('js') }}` : null
+                    }).then(result => {
+                        if (!result.isConfirmed) return;
+                        csrfFetch(`{{ 'settings-env'|link }}`, {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ name: 'RAPTOR_REVIEW_EMAIL_TO', value: result.value, type: 'email' })
+                        }).then(r => r.json()).then(res => {
+                            if (res.status !== 'success') return Notify('danger', res.title, res.message);
+                            document.getElementById('reviewEmailDisplay').textContent = res.value;
+                            reviewEmailToggle.checked = true;
+                            Notify('success', res.title, res.message);
+                        }).catch(err => Notify('danger', `{{ 'error'|text|e('js') }}`, err.message));
+                    });
+                } else {
+                    // OFF -> email хоослох
+                    csrfFetch(`{{ 'settings-env'|link }}`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name: 'RAPTOR_REVIEW_EMAIL_TO', value: '', type: 'email' })
+                    }).then(r => r.json()).then(res => {
+                        if (res.status === 'success') {
+                            document.getElementById('reviewEmailDisplay').textContent = '-';
+                            reviewEmailToggle.checked = false;
+                            Notify('success', res.title, res.message);
+                        } else {
+                            reviewEmailToggle.checked = true;
+                            Notify('danger', res.title ?? `{{ 'error'|text|e('js') }}`, res.message);
+                        }
+                    }).catch(err => {
+                        reviewEmailToggle.checked = true;
+                        Notify('danger', `{{ 'error'|text|e('js') }}`, err.message);
+                    });
+                }
+            });
+        }
+
+        const reviewEmailEdit = document.getElementById('reviewEmailEdit');
+        if (reviewEmailEdit) {
+            reviewEmailEdit.addEventListener('click', function () {
+                const current = document.getElementById('reviewEmailDisplay').textContent.trim();
+                Swal.fire({
+                    title: 'Email',
+                    input: 'email',
+                    inputValue: current === '-' ? '' : current,
+                    inputPlaceholder: 'email@example.com',
+                    showCancelButton: true,
+                    confirmButtonText: `{{ 'save'|text|e('js') }}`,
+                    cancelButtonText: `{{ 'cancel'|text|e('js') }}`
+                }).then(result => {
+                    if (!result.isConfirmed) return;
+                    csrfFetch(`{{ 'settings-env'|link }}`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name: 'RAPTOR_REVIEW_EMAIL_TO', value: result.value, type: 'email' })
+                    }).then(r => r.json()).then(res => {
+                        if (res.status === 'success') {
+                            document.getElementById('reviewEmailDisplay').textContent = res.value || '-';
+                            if (reviewEmailToggle) {
+                                reviewEmailToggle.checked = !!res.value;
+                            }
+                            Notify('success', res.title, res.message);
+                        } else {
+                            Notify('danger', res.title ?? `{{ 'error'|text|e('js') }}`, res.message);
+                        }
+                    }).catch(err => {
+                        Notify('danger', `{{ 'error'|text|e('js') }}`, err.message);
+                    });
+                });
+            });
+        }
     });
 </script>

@@ -100,15 +100,15 @@
         if (!hasFilter && urlParams.size === 0) {
             /* Горим 1: Фильтргүй */
             filterAction.classList.add('btn-secondary');
-            filterAction.innerHTML = '<i class="bi bi-funnel"></i> {{ "filter"|text }}';
+            filterAction.innerHTML = '<i class="bi bi-funnel"></i> {{ 'filter'|text }}';
         } else if (hasFilter && matchesUrl) {
             /* Горим 3: Set хийгдсэн фильтертэй */
             filterAction.classList.add('btn-dark');
-            filterAction.innerHTML = '<i class="bi bi-funnel-fill"></i> {{ "filter"|text }} <i class="bi bi-x-circle ms-1" data-reset></i>';
+            filterAction.innerHTML = '<i class="bi bi-funnel-fill"></i> {{ 'filter'|text }} <i class="bi bi-x-circle ms-1" data-reset></i>';
         } else {
             /* Горим 2: Өөрчлөгдсөн, set хийхэд бэлэн */
             filterAction.classList.add('btn-danger');
-            filterAction.innerHTML = '<i class="bi bi-funnel-fill"></i> {{ "filter"|text }} <i class="bi bi-x-circle ms-1" data-reset></i>';
+            filterAction.innerHTML = '<i class="bi bi-funnel-fill"></i> {{ 'filter'|text }} <i class="bi bi-x-circle ms-1" data-reset></i>';
         }
 
         const resetIcon = filterAction.querySelector('[data-reset]');
@@ -137,7 +137,7 @@
         e.preventDefault();
         /* Фильтргүй үед анхааруулга */
         if (filterAction.classList.contains('btn-secondary')) {
-            return NotifyTop('warning', `{{ 'warning'|text|e }}`, `{{ 'select-at-least-one-filter'|text|e('js') }}`);
+            return Notify('warning', `{{ 'warning'|text|e }}`, `{{ 'select-at-least-one-filter'|text|e('js') }}`);
         }
         /* Set хийгдсэн горимд дахин ачаалахгүй */
         if (filterAction.classList.contains('btn-dark')) return;
@@ -235,7 +235,7 @@
                 }
                 /* Устгах эрхтэй бол устгах товч нэмэх */
                 if (canDelete) {
-                    buttons.push(`<button class="deactivate-news btn btn-sm btn-danger mt-1 shadow-sm" type="button" value="${record.id}"><i class="bi bi-trash"></i></button>`);
+                    buttons.push(`<button class="delete-news btn btn-sm btn-danger mt-1 shadow-sm" type="button" value="${record.id}"><i class="bi bi-trash"></i></button>`);
                 }
                 const actions = `<div class="mb-1">${buttons.join(' ')}</div>`;
 
@@ -280,7 +280,7 @@
                         }
                     }).then(result => {
                         if (result.isConfirmed) {
-                            NotifyTop('success', `{{ 'success'|text|e }}`, result.value.message);
+                            Notify('success', `{{ 'success'|text|e }}`, result.value.message);
                             setTimeout(() => window.location.reload(), 1000);
                         }
                     });
@@ -300,15 +300,15 @@
                 ajaxModal(a);
             }));
 
-            /* ========== МЭДЭЭ ИДЭВХГҮЙ БОЛГОХ (УСТГАХ) ТОВЧНУУДАД EVENT НЭМЭХ ========== */
-            const deactivates = news.table.querySelectorAll('.deactivate-news');
-            deactivates.forEach(btn => btn.addEventListener('click', function (e) {
+            /* ========== МЭДЭЭ УСТГАХ ТОВЧНУУДЫН EVENT ========== */
+            const deletes = news.table.querySelectorAll('.delete-news');
+            deletes.forEach(btn => btn.addEventListener('click', function (e) {
                 e.preventDefault();
 
                 /* Хүснэгтийн мөрийг олох */
                 const thisRow = btn.closest('tr');
                 if (!thisRow) {
-                    return NotifyTop('warning', `{{ 'error'|text|e }}`, 'Cannot select row!');
+                    return Notify('warning', `{{ 'error'|text|e }}`, 'Cannot select row!');
                 }
 
                 /* Мэдээний мэдээллийг авах */
@@ -316,7 +316,7 @@
                 const title = thisRow.children[3].textContent.replace(/<\/?[^>]+(>|$)/g, '');
 
                 /* Баталгаажуулах асуултын текстийг хэлнээс хамааруулан тохируулах */
-                let question = `<h5>${title}</h5><p class="text-danger mb-3">{{ 'confirm-deactivate'|text|e('js') }}?</p>`;
+                let question = `<h5>${title}</h5><p class="text-danger mb-3">{{ 'confirm-delete'|text|e('js') }}?</p>`;
 
                 /* Зургийг SweetAlert-д харуулах эсэхийг шалгах */
                 let src = '';
@@ -342,7 +342,7 @@
                     preConfirm: () => {
                         /* Сервер рүү устгах хүсэлт илгээх */
                         return csrfFetch(
-                            `{{ 'news-deactivate'|link }}`,
+                            `{{ 'news-delete'|link }}`,
                             {
                                 method: 'DELETE',
                                 headers: {
@@ -365,7 +365,7 @@
                             news.setReady();
 
                             /* Амжилттай мэдэгдэл харуулах */
-                            NotifyTop('success', `{{ 'success'|text|e }}`, response.message ?? `News:${id} deactivated`);
+                            Notify('success', `{{ 'success'|text|e }}`, response.message ?? `News:${id} deleted`);
                         }).catch(error => {
                             /* Алдааг SweetAlert-д харуулах */
                             Swal.showValidationMessage(error.message);

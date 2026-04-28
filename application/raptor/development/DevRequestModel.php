@@ -30,7 +30,6 @@ class DevRequestModel extends Model
             new Column('title', 'varchar', 255),
             new Column('content', 'text'),
            (new Column('status', 'varchar', 16))->default('pending'),
-           (new Column('is_active', 'tinyint'))->default(1),
             new Column('assigned_to', 'bigint'),
             new Column('created_at', 'datetime'),
             new Column('created_by', 'bigint'),
@@ -57,16 +56,16 @@ class DevRequestModel extends Model
         $this->setForeignKeyChecks(true);
 
         // Хүсэлтийн шүүлтийн гүйцэтгэлийг сайжруулах индекс
-        $this->exec("CREATE INDEX {$table}_idx_status_active ON $table (status, is_active)");
+        $this->exec("CREATE INDEX {$table}_idx_status ON $table (status)");
     }
 
     /**
      * Шинэ хөгжүүлэлтийн хүсэлт үүсгэх.
      *
      * @param array $record Бичлэгийн өгөгдөл
-     * @return array|false Амжилттай бол бичлэгийн массив, бусад тохиолдолд false
+     * @return array Амжилттай бол бичлэгийн массив
      */
-    public function insert(array $record): array|false
+    public function insert(array $record): array
     {
         if (!isset($record['created_at'])) {
             $record['created_at'] = \date('Y-m-d H:i:s');
@@ -79,9 +78,9 @@ class DevRequestModel extends Model
      *
      * @param int   $id     Бичлэгийн ID
      * @param array $record Шинэчлэх өгөгдөл
-     * @return array|false Амжилттай бол шинэчилсэн бичлэг, бусад тохиолдолд false
+     * @return array Амжилттай бол шинэчилсэн бичлэг
      */
-    public function updateById(int $id, array $record): array|false
+    public function updateById(int $id, array $record): array
     {
         if (!isset($record['updated_at'])) {
             $record['updated_at'] = \date('Y-m-d H:i:s');

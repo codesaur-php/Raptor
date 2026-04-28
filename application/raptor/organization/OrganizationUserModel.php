@@ -59,9 +59,9 @@ class OrganizationUserModel extends Model
      * @param int $organization_id Байгууллагын ID
      * @param int $user_id Хэрэглэгчийн ID
      *
-     * @return array|false Тухайн мөр олдвол массив, олдохгүй бол false
+     * @return array Тухайн мөр олдвол массив
      */
-    public function retrieve(int $organization_id, int $user_id): array|false
+    public function retrieve(int $organization_id, int $user_id): array
     {
         $org_model = new OrganizationModel($this->pdo);
 
@@ -159,9 +159,9 @@ class OrganizationUserModel extends Model
      * created_at дамжаагүй бол автоматаар системийн огноогоор бүртгэнэ.
      *
      * @param array $record Нэмэх гэж буй өгөгдлийн мөр
-     * @return array|false Амжилттай бол шинэ мөр, алдаатай бол false
+     * @return array Амжилттай бол шинэ мөр
      */
-    public function insert(array $record): array|false
+    public function insert(array $record): array
     {
         $record['created_at'] ??= \date('Y-m-d H:i:s');
         return parent::insert($record);

@@ -14,7 +14,7 @@ class JWTAuthTest extends IntegrationTestCase
     {
         parent::setUp();
 
-        $this->secret    = $_ENV['RAPTOR_JWT_SECRET'] ?? 'test-secret';
+        $this->secret    = $_ENV['RAPTOR_JWT_SECRET'] ?? 'test-secret-key-minimum-32-bytes';
         $this->algorithm = $_ENV['RAPTOR_JWT_ALGORITHM'] ?? 'HS256';
     }
 
@@ -88,7 +88,7 @@ class JWTAuthTest extends IntegrationTestCase
 
         \Firebase\JWT\JWT::decode(
             $jwt,
-            new \Firebase\JWT\Key('wrong-secret', $this->algorithm)
+            new \Firebase\JWT\Key('wrong-secret-key-minimum-32-byte', $this->algorithm)
         );
     }
 }

@@ -47,7 +47,6 @@ class ReferenceModel extends LocalizedModel
            (new Column('id', 'bigint'))->primary(),
            (new Column('keyword', 'varchar', 128))->unique(),
             new Column('category', 'varchar', 32),
-           (new Column('is_active', 'tinyint'))->default(1),
             new Column('created_at', 'datetime'),
             new Column('created_by', 'bigint'),
             new Column('updated_at', 'datetime'),
@@ -129,11 +128,11 @@ class ReferenceModel extends LocalizedModel
      *
      * @param array $record   - үндсэн хүснэгтийн өгөгдөл
      * @param array $content  - олон хэлний контент
-     * @return array|false
+     * @return array
      * 
      * created_at талбарыг ирүүлээгүй бол автомат онооно.
      */
-    public function insert(array $record, array $content): array|false
+    public function insert(array $record, array $content): array
     {
         $record['created_at'] ??= \date('Y-m-d H:i:s');
         return parent::insert($record, $content);
@@ -145,11 +144,11 @@ class ReferenceModel extends LocalizedModel
      * @param int $id
      * @param array $record
      * @param array $content
-     * @return array|false
+     * @return array
      * 
      * updated_at талбарыг ирүүлээгүй бол автомат онооно.
      */
-    public function updateById(int $id, array $record, array $content): array|false
+    public function updateById(int $id, array $record, array $content): array
     {
         $record['updated_at'] ??= \date('Y-m-d H:i:s');
         return parent::updateById($id, $record, $content);

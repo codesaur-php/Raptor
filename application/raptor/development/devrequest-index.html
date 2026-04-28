@@ -92,13 +92,13 @@
 
         if (!hasFilter && urlParams.size === 0) {
             filterAction.classList.add('btn-secondary');
-            filterAction.innerHTML = '<i class="bi bi-funnel"></i> {{ "filter"|text }}';
+            filterAction.innerHTML = '<i class="bi bi-funnel"></i> {{ 'filter'|text }}';
         } else if (hasFilter && matchesUrl) {
             filterAction.classList.add('btn-dark');
-            filterAction.innerHTML = '<i class="bi bi-funnel-fill"></i> {{ "filter"|text }} <i class="bi bi-x-circle ms-1" data-reset></i>';
+            filterAction.innerHTML = '<i class="bi bi-funnel-fill"></i> {{ 'filter'|text }} <i class="bi bi-x-circle ms-1" data-reset></i>';
         } else {
             filterAction.classList.add('btn-danger');
-            filterAction.innerHTML = '<i class="bi bi-funnel-fill"></i> {{ "filter"|text }} <i class="bi bi-x-circle ms-1" data-reset></i>';
+            filterAction.innerHTML = '<i class="bi bi-funnel-fill"></i> {{ 'filter'|text }} <i class="bi bi-x-circle ms-1" data-reset></i>';
         }
 
         const resetIcon = filterAction.querySelector('[data-reset]');
@@ -124,7 +124,7 @@
     filterAction.addEventListener('click', function (e) {
         e.preventDefault();
         if (filterAction.classList.contains('btn-secondary')) {
-            return NotifyTop('warning', `{{ 'warning'|text|e }}`, `{{ 'select-at-least-one-filter'|text|e('js') }}`);
+            return Notify('warning', `{{ 'warning'|text|e }}`, `{{ 'select-at-least-one-filter'|text|e('js') }}`);
         }
         if (filterAction.classList.contains('btn-dark')) return;
         const params = [];
@@ -185,7 +185,7 @@
 
                 const buttons = [
                     `<a class="btn btn-sm btn-info mt-1 shadow-sm" href="${indexLink}/view/${id}"><i class="bi bi-eye"></i></a>`,
-                    `<button class="deactivate-request btn btn-sm btn-danger mt-1 shadow-sm" type="button" value="${id}"><i class="bi bi-trash"></i></button>`
+                    `<button class="delete-request btn btn-sm btn-danger mt-1 shadow-sm" type="button" value="${id}"><i class="bi bi-trash"></i></button>`
                 ];
                 const actions = `<div class="mb-1">${buttons.join(' ')}</div>`;
 
@@ -206,12 +206,12 @@
         }).catch(err => {
             devRequests.error(err);
         }).finally(() => {
-            const deactivates = devRequests.table.querySelectorAll('.deactivate-request');
-            deactivates.forEach(btn => btn.addEventListener('click', function (e) {
+            const deletes = devRequests.table.querySelectorAll('.delete-request');
+            deletes.forEach(btn => btn.addEventListener('click', function (e) {
                 e.preventDefault();
                 const thisRow = btn.closest('tr');
                 if (!thisRow) {
-                    return NotifyTop('warning', `{{ 'error'|text|e }}`, 'Cannot select row!');
+                    return Notify('warning', `{{ 'error'|text|e }}`, 'Cannot select row!');
                 }
 
                 const id = btn.value;
@@ -228,7 +228,7 @@
                     backdrop: true,
                     preConfirm: () => {
                         return csrfFetch(
-                            `{{ 'dev-requests-deactivate'|link }}`,
+                            `{{ 'dev-requests-delete'|link }}`,
                             {
                                 method: 'DELETE',
                                 headers: { 'Content-Type': 'application/json' },
@@ -243,7 +243,7 @@
                             Swal.close();
                             thisRow.remove();
                             devRequests.setReady();
-                            NotifyTop('success', `{{ 'success'|text|e }}`, response.message ?? `Request:${id} deactivated`);
+                            Notify('success', `{{ 'success'|text|e }}`, response.message ?? `Request:${id} deleted`);
                         }).catch(error => {
                             Swal.showValidationMessage(error.message);
                         });

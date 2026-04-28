@@ -110,9 +110,9 @@
                         <i class="bi bi-pencil-square"></i>
                     </button>
 
-                    <!-- Жагсаалтын мөрийг идэвхгүй болгох / устгах товч -->
+                    <!-- Жагсаалтын мөрийг устгах товч -->
                     <button
-                        class="deactivate-item btn btn-sm btn-danger mt-1 shadow-sm"
+                        class="delete-item btn btn-sm btn-danger mt-1 shadow-sm"
                         value="{{ item['id'] }}"
                         type="button"
                     >
@@ -659,29 +659,29 @@
         const menu = new motable('table#raptor_menu');
         menu.setReady();
 
-        /* Цэс идэвхгүй болгох товч (trash icon) дээрх click event */
-        const deactivates = menu.table.querySelectorAll('.deactivate-item');
-        deactivates.forEach(btn => btn.addEventListener('click', function (e) {
+        /* Цэс устгах товч (trash icon) дээрх click event */
+        const deletes = menu.table.querySelectorAll('.delete-item');
+        deletes.forEach(btn => btn.addEventListener('click', function (e) {
             e.preventDefault();
 
             const thisRow = btn.closest('tr');
             if (!thisRow) {
-                return NotifyTop('warning', `{{ 'error'|text|e }}`, 'Cannot select row!');
+                return Notify('warning', `{{ 'error'|text|e }}`, 'Cannot select row!');
             }
 
             const caption = thisRow.children[1].innerHTML;
             const cleanCaption = caption.replace(/<\/?[^>]+(>|$)/g, '');
             let ask =
                 document.documentElement.lang === 'mn'
-                    ? `<p class="text-danger mb-3">Та (${cleanCaption}) цэсийг идэвхгүй болгоход итгэлтэй байна уу?</p><p>Хэрвээ тийм бол шалтгаан тайлбар бичнэ үү</p>`
-                    : `<p class="text-danger mb-3">Are you sure to deactivate the menu (${cleanCaption})?</p><p>If so, please provide a reason</p>`;
+                    ? `<p class="text-danger mb-3">Та (${cleanCaption}) цэсийг устгахдаа итгэлтэй байна уу?</p><p>Хэрвээ тийм бол шалтгаан тайлбар бичнэ үү</p>`
+                    : `<p class="text-danger mb-3">Are you sure to delete the menu (${cleanCaption})?</p><p>If so, please provide a reason</p>`;
 
             const icon = thisRow.children[0].querySelector('i');
             if (icon) {
                 ask = `<p>${icon.parentElement.innerHTML}</p>${ask}`;
             }
 
-            /* SweetAlert2 - Идэвхгүй болгохыг баталгаажуулах dialog */
+            /* SweetAlert2 - Устгахыг баталгаажуулах dialog */
             Swal.fire({
                 html: ask,
                 input: 'text',
@@ -694,7 +694,7 @@
                 backdrop: true,
                 preConfirm: (reason) => {
                     return csrfFetch(
-                        `{{ 'manage-menu-deactivate'|link }}`,
+                        `{{ 'manage-menu-delete'|link }}`,
                         {
                             method: 'DELETE',
                             headers: {
@@ -722,10 +722,10 @@
                         /* UI-г шинэчлэх (refresh) */
                         window.location.reload();
 
-                        NotifyTop(
+                        Notify(
                             'success',
                             `{{ 'success'|text|e }}`,
-                            response.message ?? `Menu (${caption}) deactivated`
+                            response.message ?? `Menu (${caption}) deleted`
                         );
                     }).catch(error => {
                         Swal.showValidationMessage(error.message);
@@ -797,7 +797,7 @@
         /* MENU INSERT FORM - Шинэ цэс нэмэх submit логик */
         const formInsert = document.querySelector('form#menu_insert');
         if (!formInsert) {
-            NotifyTop('danger', `{{ 'error'|text|e }}`, 'Form not found!');
+            Notify('danger', `{{ 'error'|text|e }}`, 'Form not found!');
         } else {
             const submitter = document.querySelector('button.insert-menu');
             submitter.addEventListener('click', function (e) {
@@ -812,7 +812,7 @@
                 this.classList.add('was-validated');
                 if (!_valid) {
                     event.stopPropagation();
-                    return NotifyTop(
+                    return Notify(
                         'danger',
                         `{{ 'error'|text|e }}`,
                         `{{ 'u-have-some-form-errors'|text|e }}`
@@ -844,13 +844,13 @@
                     /* Шинээр нэмэгдсэн цэсийг UI дээр харахын тулд refresh */
                     window.location.reload();
 
-                    NotifyTop(
+                    Notify(
                         response.type ?? 'success',
                         response.title ?? `{{ 'success'|text|e }}`,
                         response.message ?? 'Menu created'
                     );
                 }).catch(error => {
-                    NotifyTop('danger', `{{ 'error'|text|e }}`, error.message);
+                    Notify('danger', `{{ 'error'|text|e }}`, error.message);
                     submitter.growNstop();
                 });
             });
@@ -859,7 +859,7 @@
         /* MENU UPDATE FORM - Цэс засварлах submit логик */
         const formUpdate = document.querySelector('form#menu_update');
         if (!formUpdate) {
-            NotifyTop('danger', `{{ 'error'|text|e }}`, 'Form not found!');
+            Notify('danger', `{{ 'error'|text|e }}`, 'Form not found!');
         } else {
             const submitter = document.querySelector('button.update-menu');
             submitter.addEventListener('click', function (e) {
@@ -874,7 +874,7 @@
                 this.classList.add('was-validated');
                 if (!_valid) {
                     event.stopPropagation();
-                    return NotifyTop(
+                    return Notify(
                         'danger',
                         `{{ 'error'|text|e }}`,
                         `{{ 'u-have-some-form-errors'|text|e }}`
@@ -908,13 +908,13 @@
                     /* Засварын дараа UI-г шинэчлэх */
                     window.location.reload();
 
-                    NotifyTop(
+                    Notify(
                         response.type ?? 'success',
                         response.title ?? `{{ 'success'|text|e }}`,
                         response.message ?? 'Menu updated'
                     );
                 }).catch(error => {
-                    NotifyTop('danger', `{{ 'error'|text|e }}`, error.message);
+                    Notify('danger', `{{ 'error'|text|e }}`, error.message);
                     submitter.growNstop();
                 });
             });

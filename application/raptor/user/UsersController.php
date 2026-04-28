@@ -2,10 +2,10 @@
 
 namespace Raptor\User;
 
-use Twig\TwigFunction;
 
 use Psr\Log\LogLevel;
 
+use codesaur\DataObject\Constants;
 use codesaur\Template\MemoryTemplate;
 
 use Raptor\Authentication\ForgotModel;
@@ -62,7 +62,7 @@ use Raptor\Log\Logger;
  *  * SignupModel / ForgotModel - бүртгүүлэх болон нууц үг сэргээх хүсэлт
  *  * FileController - зураг upload удирдлага (profile photo)
  *  * Logger - үйлдлийн протокол
- *  * DashboardTrait - Twig Dashboard integration
+ *  * DashboardTrait - Dashboard template integration
  *
  * --------------------------------------------------------------
  * Аюулгүй байдал ба Permission
@@ -75,7 +75,7 @@ use Raptor\Log\Logger;
  * --------------------------------------------------------------
  * Response төрөл
  * --------------------------------------------------------------
- *  * Dashboard UI (twig template)
+ *  * Dashboard UI (template)
  *  * JSON (AJAX хүсэлтүүдэд)
  *  * Modal templates
  *
@@ -128,7 +128,7 @@ class UsersController extends FileController
      * Үндсэн үүрэг
      * --------------------------------------------------------------
      *  - system_user_index эрхтэй эсэхийг шалгана
-     *  - Twig dashboard layout ашиглан user-index.html темплейтийг
+     *  - Dashboard layout ашиглан user-index.html темплейтийг
      *    render хийнэ
      *  - Хэрэв алдаа гарвал dashboardProhibited() ашиглан
      *    хэрэглэгчдэд ойлгомжтой error UI үзүүлнэ
@@ -158,7 +158,7 @@ class UsersController extends FileController
      * --------------------------------------------------------------
      * Response
      * --------------------------------------------------------------
-     *  - UI response (Twig Dashboard)
+     *  - UI response (Dashboard)
      *
      * --------------------------------------------------------------
      * Ашиглагдах template:
@@ -175,8 +175,8 @@ class UsersController extends FileController
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
             
-            // Dashboard зориулалтын Twig wrapper дотор template-ээ ачаална
-            $dashboard = $this->twigDashboard(__DIR__ . '/user-index.html');            
+            // Dashboard зориулалтын template-ээ ачаална
+            $dashboard = $this->dashboardTemplate(__DIR__ . '/user-index.html');            
              // Гарчгийг локальчилж, template-руу дамжуулна
             $dashboard->set('title', $this->text('users'));
             $dashboard->render();
@@ -403,7 +403,7 @@ class UsersController extends FileController
                 // -----------------------------
                 // GET - хэрэглэгч үүсгэх form-тай Dashboard хуудсыг харуулах
                 // -----------------------------
-                $dashboard = $this->twigDashboard(
+                $dashboard = $this->dashboardTemplate(
                     __DIR__ . '/user-insert.html',
                     [
                         // Зөвхөн идэвхтэй байгууллагуудыг сонгож form-д өгнө
@@ -435,7 +435,7 @@ class UsersController extends FileController
                 $level = LogLevel::INFO;
                 $message = 'Хэрэглэгч [{record.username}] {record.id} дугаартай амжилттай үүслээ';
                 // POST амжилттай тул $record-г лог дээр нь хадгална
-                $context += ['id' => $record['id'], 'record' => $record];
+                $context += ['record_id' => $record['id'], 'record' => $record];
             } else {
                 // Зөвхөн create form-ийг нээсэн үед NOTICE level
                 $level = LogLevel::NOTICE;
@@ -616,11 +616,12 @@ class UsersController extends FileController
                     "FROM {$orgUserModel->getName()} as ou INNER JOIN {$orgModel->getName()} as o ON ou.organization_id=o.id " .
                     "WHERE ou.user_id=$id AND o.is_active=1";
                 $org_ids = $this->query($select_org_ids)->fetchAll();
+                // [id => true] бүтэцтэй - template-д O(1) шалгалт хийхэд зориулсан
                 $current_organizations = [];
                 foreach ($org_ids as $org) {
-                    $current_organizations[] = $org['id'];
+                    $current_organizations[$org['id']] = true;
                 }
-                
+
                 // RBAC бүтэц бэлдэх
                 $rbacs = ['common' => 'Common'];
                 $alias_names = $this->query(
@@ -657,13 +658,14 @@ class UsersController extends FileController
                     "SELECT rur.role_id FROM {$userRoleModel->getName()} as rur INNER JOIN {$rolesModel->getName()} as rr ON rur.role_id=rr.id " .
                     "WHERE rur.user_id=$id";
                 $current_roles_rows = $this->query($select_user_roles)->fetchAll();
+                // [role_id => true] бүтэцтэй - template-д O(1) шалгалт хийхэд зориулсан
                 $current_role = [];
                 foreach ($current_roles_rows as $row) {
-                    $current_role[] = $row['role_id'];
+                    $current_role[$row['role_id']] = true;
                 }
                 
                 // Dashboard template рендерлэх
-                $dashboard = $this->twigDashboard(
+                $dashboard = $this->dashboardTemplate(
                     __DIR__ . '/user-update.html',
                     [
                         'record'                => $record,
@@ -687,11 +689,11 @@ class UsersController extends FileController
             }
         } finally {
             // ЛОГ ПРОТОКОЛ - бүх үйлдлийг бүртгэнэ
-            $context = ['action' => 'update', 'id' => $id];
+            $context = ['action' => 'update', 'record_id' => $id];
             if (isset($err) && $err instanceof \Throwable) {
                 // Алдаатай бол
                 $level = LogLevel::ERROR;
-                $message = '{id} дугаартай хэрэглэгчийн мэдээллийг шинэчлэх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
+                $message = '{record_id} дугаартай хэрэглэгчийн мэдээллийг шинэчлэх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } elseif ($this->getRequest()->getMethod() == 'PUT') {
                 // Амжилттай update хийсэн үед
@@ -723,7 +725,7 @@ class UsersController extends FileController
      *      retrieveUsersDetail() ашиглан дэлгэрэнгүй болгох
      *   4) Байгууллага (Organizations) холбоотой мэдээллийг цуглуулах
      *   5) RBAC roles жагсаалтыг авах
-     *   6) Twig dashboard template-д дамжуулж үзүүлэх
+     *   6) Dashboard template-д дамжуулж үзүүлэх
      *
      * @param int $id - Дэлгэрэнгүй харах хэрэглэгчийн дугаар
      * @throws Exception Хэрэв:
@@ -779,7 +781,7 @@ class UsersController extends FileController
             // Ирээдүйд хүснэгтийн нэр өөрчлөгдвөл Model класс дахь setTable() засах хангалттай.
             $roles_table = (new Roles($this->pdo))->getName();
             $user_role_table = (new UserRole($this->pdo))->getName();
-            $concat = $this->getDriverName() == 'pgsql'
+            $concat = $this->getDriverName() == Constants::DRIVER_PGSQL
                 ? "t2.alias || '_' || t2.name"
                 : "CONCAT(t2.alias, '_', t2.name)";
             $select_user_roles =
@@ -790,7 +792,7 @@ class UsersController extends FileController
             $roles = $this->query($select_user_roles)->fetchAll();
             
             // Dashboard-ийн template рүү дамжуулж render хийх
-            $dashboard = $this->twigDashboard(
+            $dashboard = $this->dashboardTemplate(
                 __DIR__ . '/user-view.html',
                 [
                     'record' => $record,
@@ -805,10 +807,10 @@ class UsersController extends FileController
             $this->dashboardProhibited($err->getMessage(), $err->getCode())->render();
         } finally {
             // Үйлдлийн протокол
-            $context = ['action' => 'view', 'id' => $id];
+            $context = ['action' => 'view', 'record_id' => $id];
             if (isset($err) && $err instanceof \Throwable) {
                 $level = LogLevel::ERROR;
-                $message = '{id} дугаартай хэрэглэгчийн мэдээллийг нээх үед алдаа гарч зогслоо';
+                $message = '{record_id} дугаартай хэрэглэгчийн мэдээллийг нээх үед алдаа гарч зогслоо';
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } else {
                 $level = LogLevel::NOTICE;
@@ -875,16 +877,13 @@ class UsersController extends FileController
             //   * Хэрэв бүрэн устгах (hard delete) үйлдэл бол photo файлыг бас устгах хэрэгтэй.
             //
             $model = new UsersModel($this->pdo);
-            $deactivated = $model->deactivateById(
+            $model->deactivateById(
                 $id,
                 [
                     'updated_by' => $this->getUserId(),
                     'updated_at' => \date('Y-m-d H:i:s')
                 ]
             );
-            if (!$deactivated) {
-                throw new \Exception($this->text('no-record-selected'));
-            }
             
             // Амжилттай хариу -> JSON рендерлэнэ
             $this->respondJSON([
@@ -911,6 +910,86 @@ class UsersController extends FileController
                 $message = 
                     '[{server_request.body.id}] дугаартай [{server_request.body.name}] хэрэглэгчийг '
                     . '[{server_request.body.reason}] шалтгаанаар идэвхгүй болголоо';
+            }
+            $this->log('users', $level, $message, $context);
+        }
+    }
+
+    /**
+     * Идэвхгүй болсон хэрэглэгчийг бүрэн устгах (HARD DELETE).
+     *
+     * Зөвхөн is_active=0 болсон хэрэглэгчийг устгана.
+     * FK constraint-уудыг түр унтрааж устгана.
+     *
+     * Permission: system_user_delete
+     *
+     * @return void JSON response
+     */
+    public function delete()
+    {
+        try {
+            if (!$this->isUserCan('system_user_delete')) {
+                throw new \Exception('No permission for an action [delete]!', 401);
+            }
+
+            $payload = $this->getParsedBody();
+            if (!isset($payload['id'])
+                || !\filter_var($payload['id'], \FILTER_VALIDATE_INT)
+            ) {
+                throw new \InvalidArgumentException($this->text('invalid-request'), 400);
+            }
+            $id = \filter_var($payload['id'], \FILTER_VALIDATE_INT);
+
+            if ($this->getUserId() == $id) {
+                throw new \Exception('Cannot delete myself!', 403);
+            } elseif ($id == 1) {
+                throw new \Exception('Cannot remove first account!', 403);
+            }
+
+            $model = new UsersModel($this->pdo);
+            $user = $model->getById($id);
+            if (empty($user)) {
+                throw new \Exception($this->text('no-record-selected'), 404);
+            }
+            if ((int)($user['is_active'] ?? 1) !== 0) {
+                throw new \Exception('Only deactivated users can be permanently deleted!', 403);
+            }
+
+            // Profile photo файлыг устгах
+            if (!empty($user['photo'])) {
+                $photoPath = $this->getPublicPath() . $user['photo'];
+                if (\file_exists($photoPath)) {
+                    \unlink($photoPath);
+                }
+            }
+
+            // FK constraint түр унтрааж устгана
+            $model->setForeignKeyChecks(false);
+            $model->deleteById($id);
+            $model->setForeignKeyChecks(true);
+
+            $this->respondJSON([
+                'status'  => 'success',
+                'title'   => $this->text('success'),
+                'message' => $this->text('record-successfully-deleted')
+            ]);
+        } catch (\Throwable $err) {
+            $this->respondJSON([
+                'status'  => 'error',
+                'title'   => $this->text('error'),
+                'message' => $err->getMessage()
+            ], $err->getCode());
+        } finally {
+            $context = ['action' => 'delete'];
+            if (isset($err) && $err instanceof \Throwable) {
+                $level = LogLevel::ERROR;
+                $message = 'Хэрэглэгчийг бүрэн устгах явцад алдаа гарлаа';
+                $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
+            } else {
+                $level = LogLevel::CRITICAL;
+                $message =
+                    '[{server_request.body.id}] дугаартай [{server_request.body.name}] хэрэглэгчийг '
+                    . '[{server_request.body.reason}] шалтгаанаар бүрэн устгалаа';
             }
             $this->log('users', $level, $message, $context);
         }
@@ -948,31 +1027,29 @@ class UsersController extends FileController
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
 
-            // Twig modal template дуудах
-            $template = $this->twigTemplate(__DIR__ . "/$table-index-modal.html");
+            // Modal template дуудах
+            $template = $this->template(__DIR__ . "/$table-index-modal.html");
             
            // table параметрийн зөв эсэхийг шалгах
             switch ($table) {
                 case 'forgot':
                     {
                         $model = new ForgotModel($this->pdo);
-                        // isExpired() туслах Twig функц нэмэх
+                        // isExpired() туслах функцийг темплейтэд нэмэх
                         // Хүсэлт амьд байх хугацаандаа байгаа эсэх шалгалтад хэрэглэнэ
                         $template->addFunction(
-                            new TwigFunction(
-                                'isExpired',
-                                function (string $created_at): bool {
-                                    $now = new \DateTime();
-                                    $then = new \DateTime($created_at);
-                                    $diff = $then->diff($now);
-                                    return
-                                        $diff->y > 0 ||
-                                        $diff->m > 0 ||
-                                        $diff->d > 0 ||
-                                        $diff->h > 0 ||
-                                        $diff->i > RAPTOR_PASSWORD_RESET_MINUTES;
-                                }
-                            )
+                            'isExpired',
+                            function (string $created_at): bool {
+                                $now = new \DateTime();
+                                $then = new \DateTime($created_at);
+                                $diff = $then->diff($now);
+                                return
+                                    $diff->y > 0 ||
+                                    $diff->m > 0 ||
+                                    $diff->d > 0 ||
+                                    $diff->h > 0 ||
+                                    $diff->i > RAPTOR_PASSWORD_RESET_MINUTES;
+                            }
                         );
                     }
                     break;
@@ -1130,11 +1207,9 @@ class UsersController extends FileController
                 'record' => $record
             ]);
 
-            $adminName = \trim(($this->getUser()->profile['first_name'] ?? '') . ' ' . ($this->getUser()->profile['last_name'] ?? ''));
-            $appUrl = \rtrim((string)$this->getRequest()->getUri()->withPath($this->getScriptPath()), '/') . '/dashboard';
-            $this->getService('discord')?->userApproved(
-                $signup['username'], $signup['email'], $adminName, $appUrl
-            );
+            $this->dispatch(new \Raptor\Notification\UserEvent(
+                'approve', $signup['username'], $signup['email']
+            ));
 
             // Баталгаажуулалтын и-мэйл загвар авах (templates хүснэгтээс)
             $templateService = $this->getService('template_service');
@@ -1218,17 +1293,13 @@ class UsersController extends FileController
             $id = (int) $payload['id'];
             
             // SignupModel -> тухайн бичлэгийг deactivateById() ашиглан идэвхгүй болгох
-            $deactivated = (new SignupModel($this->pdo))->deactivateById(
+            (new SignupModel($this->pdo))->deactivateById(
                 $id,
                 [
                     'updated_by' => $this->getUserId(),
                     'updated_at' => \date('Y-m-d H:i:s')
                 ]
             );
-            // Хэрэв нэг ч мөр шинэчлэгдээгүй бол "хоосон сонголт" гэж үзнэ
-            if (!$deactivated) {
-                throw new \Exception($this->text('no-record-selected'));
-            }
             
             // Амжилттай JSON success хариу рендерлэнэ
             $this->respondJSON([
@@ -1255,6 +1326,64 @@ class UsersController extends FileController
                 // Амжилттай идэвхгүй болгосон
                 $level = LogLevel::ALERT;
                 $message = '[{server_request.body.name}] хэрэглэгчээр бүртгүүлэх хүсэлтийг идэвхгүй болгов';
+            }
+            $this->log('users', $level, $message, $context);
+        }
+    }
+
+    /**
+     * Идэвхгүй болсон signup хүсэлтийг бүрэн устгах (HARD DELETE).
+     *
+     * Permission: system_user_delete
+     *
+     * @return void JSON response
+     */
+    public function signupDelete()
+    {
+        try {
+            if (!$this->isUserCan('system_user_delete')) {
+                throw new \Exception('No permission for an action [delete]!', 401);
+            }
+
+            $payload = $this->getParsedBody();
+            if (!isset($payload['id'])
+                || !\filter_var($payload['id'], \FILTER_VALIDATE_INT)
+            ) {
+                throw new \InvalidArgumentException($this->text('invalid-request'), 400);
+            }
+            $id = (int) $payload['id'];
+
+            $model = new SignupModel($this->pdo);
+            $record = $model->getById($id);
+            if (empty($record)) {
+                throw new \Exception($this->text('no-record-selected'), 404);
+            }
+            if ((int)($record['is_active'] ?? 1) !== 0) {
+                throw new \Exception('Only deactivated signup requests can be permanently deleted!', 403);
+            }
+
+            $model->deleteById($id);
+
+            $this->respondJSON([
+                'status'  => 'success',
+                'title'   => $this->text('success'),
+                'message' => $this->text('record-successfully-deleted')
+            ]);
+        } catch (\Throwable $err) {
+            $this->respondJSON([
+                'status'  => 'error',
+                'title'   => $this->text('error'),
+                'message' => $err->getMessage()
+            ], $err->getCode());
+        } finally {
+            $context = ['action' => 'signup-delete'];
+            if (isset($err) && $err instanceof \Throwable) {
+                $level = LogLevel::ERROR;
+                $message = 'Signup хүсэлтийг бүрэн устгах явцад алдаа гарлаа';
+                $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
+            } else {
+                $level = LogLevel::CRITICAL;
+                $message = '[{server_request.body.name}] signup хүсэлтийг бүрэн устгалаа';
             }
             $this->log('users', $level, $message, $context);
         }
@@ -1346,7 +1475,7 @@ class UsersController extends FileController
                 // ---------------------------------------------------------
                 // GET -> modal form рендерлэнэ
                 // ---------------------------------------------------------
-                $this->twigTemplate(
+                $this->template(
                     __DIR__ . '/user-set-password-modal.html',
                     ['profile' => $record]
                 )->render();
@@ -1366,14 +1495,14 @@ class UsersController extends FileController
             }
         } finally {
             // Лог бичих (success болон error аль алинд)
-            $context = ['action' => 'set-password', 'id' => $id];
+            $context = ['action' => 'set-password', 'record_id' => $id];
             if (isset($err) && $err instanceof \Throwable) {
                 $level = LogLevel::ERROR;
-                $message = '{id} дугаартай хэрэглэгчийн нууц үг өөрчлөх үйлдлийг гүйцэтгэх үед алдаа гарлаа';
+                $message = '{record_id} дугаартай хэрэглэгчийн нууц үг өөрчлөх үйлдлийг гүйцэтгэх үед алдаа гарлаа';
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } else {
                 $context += ['record' => $record];
-                $message = '{id} дугаартай [{record.username}] хэрэглэгчийн нууц ';
+                $message = '{record_id} дугаартай [{record.username}] хэрэглэгчийн нууц ';
                 if ($this->getRequest()->getMethod() == 'POST') {
                     $level = LogLevel::INFO;
                     $message .= 'үгийг амжилттай шинэчлэв';
@@ -1455,13 +1584,14 @@ class UsersController extends FileController
                     "FROM {$orgUserModel->getName()} as ou INNER JOIN {$orgModel->getName()} as o ON ou.organization_id=o.id " .
                     "WHERE ou.user_id=$id AND o.is_active=1"
                 );
+                // [id => true] бүтэцтэй - template-д O(1) шалгалт хийхэд зориулсан
                 $current_organizations = [];
                 foreach ($response as $org) {
-                    $current_organizations[] = $org['id'];
+                    $current_organizations[$org['id']] = true;
                 }
-                
+
                 // GET хүсэлт -> popup modal HTML-ийг render хийе
-                $this->twigTemplate(
+                $this->template(
                     __DIR__ . '/user-set-organization-modal.html',
                     [
                         'profile' => $record,
@@ -1483,14 +1613,14 @@ class UsersController extends FileController
             }
         } finally {
             // Лог бүртгэх
-            $context = ['action' => 'set-organization', 'id' => $id];
+            $context = ['action' => 'set-organization', 'record_id' => $id];
             if (isset($err) && $err instanceof \Throwable) {
                 $level = LogLevel::ERROR;
-                $message = '{id} дугаартай хэрэглэгчийн байгууллага тохируулах үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
+                $message = '{record_id} дугаартай хэрэглэгчийн байгууллага тохируулах үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } else {
                 $context += ['record' => $record];
-                $message = '{id} дугаартай [{record.username}] хэрэглэгчийн байгууллага ';
+                $message = '{record_id} дугаартай [{record.username}] хэрэглэгчийн байгууллага ';
                 if ($this->getRequest()->getMethod() == 'POST') {
                     $level = LogLevel::INFO;
                     $message .= 'амжилттай тохируулав';
@@ -1712,18 +1842,19 @@ class UsersController extends FileController
 
                 // Хэрэглэгчийн эзэмшиж буй дүрүүдийг татах
                 $userRoleModel = new UserRole($this->pdo);
+                // [role_id => true] бүтэцтэй - template-д O(1) шалгалт хийхэд зориулсан
                 $current_role = [];
                 $select_current_roles =
                     "SELECT rur.role_id FROM {$userRoleModel->getName()} as rur INNER JOIN $roles_table as rr ON rur.role_id=rr.id " .
                     "WHERE rur.user_id=$id";
                 $current_roles = $this->query($select_current_roles)->fetchAll();
                 foreach ($current_roles as $row) {
-                    $current_role[] = $row['role_id'];
+                    $current_role[$row['role_id']] = true;
                 }
                 $vars['current_role'] = $current_role;
                 
                 // Modal форм рүү дамжуулж render хийе
-                $this->twigTemplate(__DIR__ . '/user-set-role-modal.html', $vars)->render();
+                $this->template(__DIR__ . '/user-set-role-modal.html', $vars)->render();
             }
         } catch (\Throwable $err) {
             // Error handling - GET/POST ялгаж JSON эсвэл modal error руу шилжүүлнэ
@@ -1738,14 +1869,14 @@ class UsersController extends FileController
             }
         } finally {
             // LOGGING - Rollback/Success бүх тохиолдолд RBAC log үлдээдэг
-            $context = ['action' => 'set-role', 'id' => $id];
+            $context = ['action' => 'set-role', 'record_id' => $id];
             if (isset($err) && $err instanceof \Throwable) {
                 $level = LogLevel::ERROR;
-                $message = '{id} дугаартай хэрэглэгчийн дүрийг тохируулах үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
+                $message = '{record_id} дугаартай хэрэглэгчийн дүрийг тохируулах үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } else {
                 $context += ['record' => $record];
-                $message = '{id} дугаартай [{record.username}] хэрэглэгчийн дүрийг ';
+                $message = '{record_id} дугаартай [{record.username}] хэрэглэгчийн дүрийг ';
                 if ($this->getRequest()->getMethod() == 'POST') {
                     $level = LogLevel::INFO;
                     $message .= 'амжилттай тохируулав';

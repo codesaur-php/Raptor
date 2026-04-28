@@ -15,14 +15,14 @@ use codesaur\Template\MemoryTemplate;
  *   - Захиалгын жагсаалт харуулах (index, list)
  *   - Захиалгын дэлгэрэнгүй мэдээлэл харуулах (view)
  *   - Захиалгын статус шинэчлэх (updateStatus)
- *   - Захиалгыг идэвхгүй болгох (deactivate)
+ *   - Захиалгыг устгах (delete)
  *   - Статус өөрчлөгдсөн тухай имэйл илгээх
  *   - Discord мэдэгдэл илгээх
  *   зэрэг үйлдлүүдийг гүйцэтгэнэ.
  *
  * Боломжит статусууд:
  *   new -> processing -> confirmed -> shipped -> completed
- *                                            -> cancelled
+ *                                             -> cancelled
  *
  * @package Dashboard\Shop
  */
@@ -47,21 +47,27 @@ class OrdersController extends \Raptor\Controller
         $filters = [];
         $table = (new ProductOrdersModel($this->pdo))->getName();
         $status_result = $this->query(
-            "SELECT DISTINCT status FROM $table WHERE is_active=1"
+            "SELECT DISTINCT status FROM $table"
         )->fetchAll();
         $filters['status']['title'] = $this->text('status');
         foreach ($status_result as $row) {
             $filters['status']['values'][$row['status']] = $row['status'];
         }
         $codes_result = $this->query(
-            "SELECT DISTINCT code FROM $table WHERE is_active=1"
+            "SELECT DISTINCT code FROM $table"
         )->fetchAll();
         $languages = $this->getLanguages();
         $filters['code']['title'] = $this->text('language');
         foreach ($codes_result as $row) {
             $filters['code']['values'][$row['code']] = "{$languages[$row['code']]['title']} [{$row['code']}]";
         }
-        $dashboard = $this->twigDashboard(__DIR__ . '/orders-index.html', ['filters' => $filters]);
+        $settings = $this->getAttribute('settings', []);
+        $dashboard = $this->dashboardTemplate(__DIR__ . '/orders-index.html', [
+            'filters' => $filters,
+            'order_email_notify' => !empty($_ENV['RAPTOR_ORDER_EMAIL_TO'] ?? ''),
+            'notify_email' => $_ENV['RAPTOR_ORDER_EMAIL_TO'] ?? '',
+            'settings_email' => $settings['email'] ?? ''
+        ]);
         $dashboard->set('title', $this->text('orders'));
         $dashboard->render();
 
@@ -83,11 +89,8 @@ class OrdersController extends \Raptor\Controller
             }
 
             $params = $this->getQueryParams();
-            if (!isset($params['is_active'])) {
-                $params['is_active'] = 1;
-            }
             $conditions = [];
-            $allowed = ['status', 'code', 'is_active'];
+            $allowed = ['status', 'code'];
             foreach (\array_keys($params) as $name) {
                 if (\in_array($name, $allowed)) {
                     $conditions[] = "$name=:$name";
@@ -95,12 +98,12 @@ class OrdersController extends \Raptor\Controller
                     unset($params[$name]);
                 }
             }
-            $where = \implode(' AND ', $conditions);
+            $where = !empty($conditions) ? 'WHERE ' . \implode(' AND ', $conditions) : '';
             $table = (new ProductOrdersModel($this->pdo))->getName();
             $select_orders =
                 'SELECT id, product_id, product_title, customer_name, customer_email, customer_phone, ' .
                 'quantity, status, code, date(created_at) as created_date ' .
-                "FROM $table WHERE $where ORDER BY created_at desc";
+                "FROM $table $where ORDER BY created_at desc";
             $orders_stmt = $this->prepare($select_orders);
             foreach ($params as $name => $value) {
                 $orders_stmt->bindValue(":$name", $value);
@@ -132,14 +135,11 @@ class OrdersController extends \Raptor\Controller
             if (!$this->isUserCan('system_product_index')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
-            $record = $model->getRowWhere([
-                'id' => $id,
-                'is_active' => 1
-            ]);
+            $record = $model->getById($id);
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));
             }
-            $dashboard = $this->twigDashboard(
+            $dashboard = $this->dashboardTemplate(
                 __DIR__ . '/orders-view.html',
                 ['table' => $table, 'record' => $record]
             );
@@ -155,7 +155,7 @@ class OrdersController extends \Raptor\Controller
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } else {
                 $level = LogLevel::NOTICE;
-                $message = '{record.id} дугаартай захиалгыг үзэж байна';
+                $message = '{record.id} ({record.customer_name}) дугаартай захиалгыг үзэж байна';
                 $context += ['record' => $record];
             }
             $this->log('products_orders', $level, $message, $context);
@@ -163,7 +163,10 @@ class OrdersController extends \Raptor\Controller
     }
 
     /**
-     * Захиалгын статусыг шинэчлэх.
+     * Захиалгын статусыг хэсэгчлэн шинэчлэх.
+     *
+     * PATCH /dashboard/orders/{id}/status
+     * Body: { "status": "processing" }
      *
      * Боломжит статусууд: new, processing, confirmed, shipped, completed, cancelled.
      * Статус өөрчлөгдсөн тухай захиалагчид имэйл, Discord мэдэгдэл илгээнэ.
@@ -182,8 +185,7 @@ class OrdersController extends \Raptor\Controller
 
             $model = new ProductOrdersModel($this->pdo);
             $record = $model->getRowWhere([
-                'id' => $id,
-                'is_active' => 1
+                'id' => $id
             ]);
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));
@@ -214,11 +216,10 @@ class OrdersController extends \Raptor\Controller
 
             $this->sendStatusNotification($record, $payload['status']);
 
-            $adminName = \trim(($this->getUser()->profile['first_name'] ?? '') . ' ' . ($this->getUser()->profile['last_name'] ?? ''));
-            $appUrl = \rtrim((string)$this->getRequest()->getUri()->withPath($this->getScriptPath()), '/') . '/dashboard';
-            $this->getService('discord')?->orderStatusChanged(
-                $id, $record['customer_name'], $record['status'], $payload['status'], $adminName, $appUrl
-            );
+            $this->dispatch(new \Raptor\Notification\OrderEvent(
+                'status_changed', $id, $record['customer_name'] ?? '', '', '', '', 0,
+                $record['status'] ?? '', $payload['status']
+            ));
 
             $this->respondJSON([
                 'status' => 'success',
@@ -235,21 +236,21 @@ class OrdersController extends \Raptor\Controller
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } else {
                 $level = LogLevel::INFO;
-                $message = '{record_id} дугаартай захиалгын статусыг амжилттай шинэчлэлээ';
-                $context += ['old_status' => $record['status'], 'new_status' => $payload['status'], 'record' => $updated];
+                $message = '{record_id} ({name}) дугаартай захиалгын статусыг амжилттай шинэчлэлээ';
+                $context += ['old_status' => $record['status'], 'new_status' => $payload['status'], 'name' => $record['customer_name'], 'record' => $updated];
             }
             $this->log('products_orders', $level, $message, $context);
         }
     }
 
     /**
-     * Захиалгыг идэвхгүй болгох (soft delete).
+     * Захиалгыг устгах.
      *
      * Permission: system_product_delete
      *
      * @return void JSON response буцаана
      */
-    public function deactivate()
+    public function delete()
     {
         try {
             if (!$this->isUserCan('system_product_delete')) {
@@ -264,16 +265,14 @@ class OrdersController extends \Raptor\Controller
                 throw new \InvalidArgumentException($this->text('invalid-request'), 400);
             }
             $id = \filter_var($payload['id'], \FILTER_VALIDATE_INT);
-            $deactivated = $model->deactivateById(
-                $id,
-                [
-                    'updated_by' => $this->getUserId(),
-                    'updated_at' => \date('Y-m-d H:i:s')
-                ]
-            );
-            if (!$deactivated) {
-                throw new \Exception($this->text('no-record-selected'));
+            $record = $model->getById($id);
+            if (empty($record)) {
+                throw new \Exception($this->text('no-record-selected'), 404);
             }
+            $model->deleteById($id);
+            (new \Raptor\Trash\TrashModel($this->pdo))->store(
+                'products_orders', $model->getName(), $id, $record, $this->getUserId()
+            );
             $this->respondJSON([
                 'status'  => 'success',
                 'title'   => $this->text('success'),
@@ -286,15 +285,15 @@ class OrdersController extends \Raptor\Controller
                 'message' => $err->getMessage()
             ], $err->getCode());
         } finally {
-            $context = ['action' => 'deactivate'];
+            $context = ['action' => 'delete'];
             if (isset($err) && $err instanceof \Throwable) {
                 $level = LogLevel::ERROR;
-                $message = 'Захиалгыг идэвхгүй болгох үйлдлийг гүйцэтгэх явцад алдаа гарч зогслоо';
+                $message = 'Захиалгыг устгах үйлдлийг гүйцэтгэх явцад алдаа гарч зогслоо';
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } else {
                 $level = LogLevel::ALERT;
-                $message = '{record_id} дугаартай захиалгыг идэвхгүй болголоо';
-                $context += ['record_id' => $id];
+                $message = '{record_id} ({name}) дугаартай захиалгыг устгалаа';
+                $context += ['record_id' => $id, 'name' => $record['customer_name'] ?? ''];
             }
             $this->log('products_orders', $level, $message, $context);
         }

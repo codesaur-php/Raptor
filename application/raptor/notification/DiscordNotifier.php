@@ -31,26 +31,36 @@ class DiscordNotifier
     /** @var string Discord Webhook URL */
     private string $webhookUrl;
 
+    /** @var string Одоогийн нэвтэрсэн хэрэглэгчийн бүтэн нэр */
+    public readonly string $user;
+
+    /** @var string Аппликейшний host (жнь: example.com) */
+    public readonly string $host;
+
     /**
      * DiscordNotifier constructor.
      *
      * .env файлаас RAPTOR_DISCORD_WEBHOOK_URL утгыг авч тохируулна.
+     *
+     * @param string $user Одоогийн админы нэр
+     * @param string $host  Аппликейшний host
      */
-    public function __construct()
+    public function __construct(string $user = '', string $host = '')
     {
+        $this->user = $user;
+        $this->host = $host;
         $this->webhookUrl = $_ENV['RAPTOR_DISCORD_WEBHOOK_URL'] ?? '';
     }
 
     /**
      * Discord руу embed мэдэгдэл илгээх.
      *
-     * @param string $title   Мэдэгдлийн гарчиг
+     * @param string $title       Мэдэгдлийн гарчиг
      * @param string $description Дэлгэрэнгүй текст
-     * @param int    $color   Embed-ийн зүүн ирмэгийн өнгө (decimal)
-     * @param array  $fields  Нэмэлт талбарууд [['name'=>..,'value'=>..,'inline'=>bool], ...]
-     * @param string $appUrl  Аппликейшний URL (footer-д харуулах)
+     * @param int    $color       Embed-ийн зүүн ирмэгийн өнгө (decimal)
+     * @param array  $fields      Нэмэлт талбарууд [['name'=>..,'value'=>..,'inline'=>bool], ...]
      */
-    public function send(string $title, string $description = '', int $color = 0x3498db, array $fields = [], string $appUrl = ''): void
+    public function send(string $title, string $description = '', int $color = 0x3498db, array $fields = []): void
     {
         if (empty($this->webhookUrl)) {
             return;
@@ -71,17 +81,20 @@ class DiscordNotifier
                 $embed['fields'] = \array_slice($fields, 0, 25);
             }
 
-            if ($appUrl !== '') {
-                $embed['footer'] = ['text' => $appUrl];
+            if ($this->host !== '') {
+                $embed['footer'] = ['text' => $this->host];
             }
 
-            $client = new CurlClient();
-            $client->request(
+            $response = (new CurlClient())->sendWithRetry(
                 $this->webhookUrl,
                 'POST',
                 \json_encode(['embeds' => [$embed]]),
-                [\CURLOPT_HTTPHEADER => ['Content-Type: application/json']]
+                [\CURLOPT_HTTPHEADER => ['Content-Type: application/json']],
+                2
             );
+            if ($response->isError() && CODESAUR_DEVELOPMENT) {
+                \error_log("DiscordNotifier: HTTP {$response->statusCode}");
+            }
         } catch (\Throwable $e) {
             if (CODESAUR_DEVELOPMENT) {
                 \error_log("DiscordNotifier: {$e->getMessage()}");
@@ -105,10 +118,10 @@ class DiscordNotifier
      *
      * @param string $username Хэрэглэгчийн нэр
      * @param string $email    Хэрэглэгчийн имэйл
-     * @param string $appUrl   Аппликейшний URL
+
      * @return void
      */
-    public function userSignupRequest(string $username, string $email, string $appUrl = ''): void
+    public function userSignupRequest(string $username, string $email): void
     {
         $this->send(
             '📋 New User Signup Request',
@@ -118,7 +131,6 @@ class DiscordNotifier
                 ['name' => 'Username', 'value' => $username, 'inline' => true],
                 ['name' => 'Email', 'value' => $email, 'inline' => true]
             ],
-            $appUrl
         );
     }
 
@@ -128,10 +140,10 @@ class DiscordNotifier
      * @param string $username Хэрэглэгчийн нэр
      * @param string $email    Хэрэглэгчийн имэйл
      * @param string $admin    Баталгаажуулсан админы нэр
-     * @param string $appUrl   Аппликейшний URL
+
      * @return void
      */
-    public function userApproved(string $username, string $email, string $admin = '', string $appUrl = ''): void
+    public function userApproved(string $username, string $email, string $admin = ''): void
     {
         $fields = [
             ['name' => 'Username', 'value' => $username, 'inline' => true],
@@ -146,7 +158,6 @@ class DiscordNotifier
             "**$username** has been approved and can now log in.",
             self::COLOR_SUCCESS,
             $fields,
-            $appUrl
         );
     }
 
@@ -159,10 +170,10 @@ class DiscordNotifier
      * @param string $product  Бүтээгдэхүүний нэр
      * @param int    $quantity Тоо ширхэг
      * @param string $phone    Захиалагчийн утасны дугаар
-     * @param string $appUrl   Аппликейшний URL
+
      * @return void
      */
-    public function newOrder(int $orderId, string $customer, string $email, string $product, int $quantity, string $phone = '', string $appUrl = ''): void
+    public function newOrder(int $orderId, string $customer, string $email, string $product, int $quantity, string $phone = ''): void
     {
         $fields = [
             ['name' => 'Customer', 'value' => $customer, 'inline' => true],
@@ -177,7 +188,6 @@ class DiscordNotifier
             "**$customer** placed a new order.",
             self::COLOR_SUCCESS,
             $fields,
-            $appUrl
         );
     }
 
@@ -189,10 +199,10 @@ class DiscordNotifier
      * @param string $oldStatus Хуучин статус
      * @param string $newStatus Шинэ статус
      * @param string $admin     Өөрчилсөн админы нэр
-     * @param string $appUrl    Аппликейшний URL
+
      * @return void
      */
-    public function orderStatusChanged(int $orderId, string $customer, string $oldStatus, string $newStatus, string $admin = '', string $appUrl = ''): void
+    public function orderStatusChanged(int $orderId, string $customer, string $oldStatus, string $newStatus, string $admin = ''): void
     {
         $fields = [
             ['name' => 'From', 'value' => $oldStatus, 'inline' => true],
@@ -207,7 +217,6 @@ class DiscordNotifier
             "Status updated for **$customer**'s order.",
             self::COLOR_WARNING,
             $fields,
-            $appUrl
         );
     }
 
@@ -218,10 +227,10 @@ class DiscordNotifier
      * @param string $title      Хүсэлтийн гарчиг
      * @param string $author     Үүсгэсэн хэрэглэгчийн нэр
      * @param string $assignedTo Хариуцагчийн нэр
-     * @param string $appUrl     Аппликейшний URL
+
      * @return void
      */
-    public function newDevRequest(int $requestId, string $title, string $author, string $assignedTo = '', string $appUrl = ''): void
+    public function newDevRequest(int $requestId, string $title, string $author, string $assignedTo = ''): void
     {
         $fields = [
             ['name' => 'Author', 'value' => $author, 'inline' => true]
@@ -235,7 +244,6 @@ class DiscordNotifier
             "**$title**",
             self::COLOR_INFO,
             $fields,
-            $appUrl
         );
     }
 
@@ -246,10 +254,10 @@ class DiscordNotifier
      * @param string $title     Хүсэлтийн гарчиг
      * @param string $author    Хариулт бичсэн хэрэглэгчийн нэр
      * @param string $status    Шинэ статус (хоосон бол өөрчлөгдөөгүй)
-     * @param string $appUrl    Аппликейшний URL
+
      * @return void
      */
-    public function devRequestUpdated(int $requestId, string $title, string $author, string $status = '', string $appUrl = ''): void
+    public function devRequestUpdated(int $requestId, string $title, string $author, string $status = ''): void
     {
         $fields = [
             ['name' => 'By', 'value' => $author, 'inline' => true]
@@ -263,7 +271,6 @@ class DiscordNotifier
             "**$title**",
             self::COLOR_WARNING,
             $fields,
-            $appUrl
         );
     }
 
@@ -274,10 +281,10 @@ class DiscordNotifier
      * @param string $phone   Утасны дугаар
      * @param string $email   И-мэйл (хоосон байж болно)
      * @param string $message Мессежийн агуулга
-     * @param string $appUrl  Аппликейшний URL
+
      * @return void
      */
-    public function newContactMessage(string $name, string $phone, string $email, string $message, string $appUrl = ''): void
+    public function newContactMessage(string $name, string $phone, string $email, string $message): void
     {
         $fields = [
             ['name' => 'Name', 'value' => $name, 'inline' => true],
@@ -290,10 +297,62 @@ class DiscordNotifier
 
         $this->send(
             '📩 New Contact Message',
-            "**$name** sent a message via the contact form.",
+            '',
             self::COLOR_INFO,
             $fields,
-            $appUrl
+        );
+    }
+
+    /**
+     * Мэдээнд шинэ сэтгэгдэл бичигдсэн тухай мэдэгдэл.
+     *
+     * @param string $author    Сэтгэгдэл бичсэн хэрэглэгчийн нэр
+     * @param string $comment   Сэтгэгдлийн агуулга
+     * @param int    $newsId    Мэдээний ID
+     * @param string $newsTitle Мэдээний гарчиг
+     */
+    public function newComment(string $author, string $comment, int $newsId, string $newsTitle = ''): void
+    {
+        $title = $newsTitle !== ''
+            ? "💬 $newsTitle"
+            : "💬 News #$newsId";
+
+        $this->send(
+            $title,
+            "**$author**: " . \mb_substr($comment, 0, 1024),
+            self::COLOR_INFO,
+        );
+    }
+
+    /**
+     * Шинэ бүтээгдэхүүний үнэлгээ ирсэн тухай мэдэгдэл.
+     *
+     * Одны үнэлгээ ⭐/☆ тэмдэгтээр болон сэтгэгдлийн текстийг
+     * Discord embed дээр тод харуулна.
+     *
+     * @param string $author       Үнэлгээ бичсэн хэрэглэгчийн нэр
+     * @param int    $rating       Одны тоо (1-5)
+     * @param string $comment      Сэтгэгдлийн агуулга
+     * @param string $productTitle Бүтээгдэхүүний нэр
+     * @param int    $productId    Бүтээгдэхүүний ID
+     */
+    public function newReview(string $author, int $rating, string $comment, string $productTitle, int $productId): void
+    {
+        $rating = \max(0, \min(5, $rating));
+        $stars = \str_repeat('⭐', $rating) . \str_repeat('☆', 5 - $rating);
+
+        $fields = [
+            ['name' => 'Rating', 'value' => "$stars ($rating/5)", 'inline' => false],
+        ];
+        if ($comment !== '') {
+            $fields[] = ['name' => 'Review', 'value' => \mb_substr($comment, 0, 1024), 'inline' => false];
+        }
+
+        $this->send(
+            "⭐ New Review: $productTitle",
+            "**$author** left a review on product #$productId",
+            self::COLOR_SUCCESS,
+            $fields,
         );
     }
 
@@ -308,11 +367,11 @@ class DiscordNotifier
      * @param string   $title  Контентын гарчиг
      * @param int|null $id     Контентын ID (байхгүй байж болно)
      * @param string   $admin   Үйлдэл хийсэн админы нэр
-     * @param string   $appUrl  Аппликейшний URL
+
      * @param array    $updates Өөрчлөгдсөн талбаруудын жагсаалт
      * @return void
      */
-    public function contentAction(string $type, string $action, string $title, ?int $id = null, string $admin = '', string $appUrl = '', array $updates = []): void
+    public function contentAction(string $type, string $action, string $title, ?int $id = null, string $admin = '', array $updates = []): void
     {
         $icons = [
             'insert' => '🆕', 'update' => '✏️',
@@ -346,7 +405,6 @@ class DiscordNotifier
             $desc,
             $color,
             $fields,
-            $appUrl
         );
     }
 
@@ -356,10 +414,10 @@ class DiscordNotifier
      * @param string $section Тохиргооны хэсэг (texts, files, options)
      * @param array  $updates Өөрчлөгдсөн талбаруудын жагсаалт
      * @param string $admin   Үйлдэл хийсэн админы нэр
-     * @param string $appUrl  Аппликейшний URL
+
      * @return void
      */
-    public function settingsUpdated(string $section, array $updates, string $admin = '', string $appUrl = ''): void
+    public function settingsUpdated(string $section, array $updates, string $admin = ''): void
     {
         $icons = ['texts' => '📝', 'files' => '🖼️', 'options' => '⚙️'];
         $icon = $icons[$section] ?? '🔧';
@@ -378,7 +436,6 @@ class DiscordNotifier
             $desc,
             self::COLOR_WARNING,
             $fields,
-            $appUrl
         );
     }
 }

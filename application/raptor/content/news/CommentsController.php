@@ -27,7 +27,12 @@ class CommentsController extends \Raptor\Controller
             return;
         }
 
-        $dashboard = $this->twigDashboard(__DIR__ . '/comments-index.html');
+        $settings = $this->getAttribute('settings', []);
+        $dashboard = $this->dashboardTemplate(__DIR__ . '/comments-index.html', [
+            'comment_email_notify' => !empty($_ENV['RAPTOR_COMMENT_EMAIL_TO'] ?? ''),
+            'notify_email' => $_ENV['RAPTOR_COMMENT_EMAIL_TO'] ?? '',
+            'settings_email' => $settings['email'] ?? ''
+        ]);
         $dashboard->set('title', $this->text('comments'));
         $dashboard->render();
 
@@ -48,19 +53,16 @@ class CommentsController extends \Raptor\Controller
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
 
-            $commentsTable = (new CommentsModel($this->pdo))->getName();
             $newsTable = (new NewsModel($this->pdo))->getName();
-
+            $commentsTable = (new CommentsModel($this->pdo))->getName();
             $stmt = $this->query(
                 "SELECT c.id, c.news_id, c.parent_id, c.created_by, c.name, c.comment, c.created_at,
                         n.title as news_title
                  FROM $commentsTable c
                  LEFT JOIN $newsTable n ON n.id=c.news_id
-                 WHERE c.is_active=1
                  ORDER BY c.created_at DESC"
             );
             $rows = $stmt ? $stmt->fetchAll() : [];
-
             $this->respondJSON(['status' => 'success', 'list' => $rows]);
         } catch (\Throwable $e) {
             $this->respondJSON(['message' => $e->getMessage()], $e->getCode());
@@ -94,7 +96,7 @@ class CommentsController extends \Raptor\Controller
             }
 
             $newsModel = new NewsModel($this->pdo);
-            $news = $newsModel->getRowWhere(['id' => $id, 'is_active' => 1]);
+            $news = $newsModel->getById($id);
             if (empty($news) || empty($news['comment'])) {
                 throw new \Exception($this->text('no-record-selected'), 404);
             }
@@ -106,16 +108,17 @@ class CommentsController extends \Raptor\Controller
             }
 
             $user = $this->getUser();
-            $adminName = \trim(($user->profile['first_name'] ?? '') . ' ' . ($user->profile['last_name'] ?? ''));
+            $adminName = \trim(
+                ($user?->profile['first_name'] ?? '') . ' '
+                . ($user?->profile['last_name'] ?? '')
+            );
 
             $commentsModel = new CommentsModel($this->pdo);
             $commentsModel->insert([
                 'news_id' => $id,
-                'parent_id' => null,
                 'created_by' => $this->getUserId(),
                 'name' => $adminName ?: $user->profile['username'] ?? 'Admin',
-                'comment' => $comment,
-                'created_at' => \date('Y-m-d H:i:s')
+                'comment' => $comment
             ]);
 
             $this->respondJSON([
@@ -124,10 +127,12 @@ class CommentsController extends \Raptor\Controller
                 'message' => $this->text('record-insert-success')
             ]);
 
-            $appUrl = \rtrim((string)$this->getRequest()->getUri()->withPath($this->getScriptPath()), '/') . '/dashboard';
-            $this->getService('discord')?->contentAction('comment', 'insert', $comment, $id, $adminName, $appUrl);
+            $this->dispatch(new \Raptor\Notification\ContentEvent(
+                'insert', 'comment', $comment, $id,
+                $adminName, ['news_title' => $news['title'] ?? '']
+            ));
 
-            $this->log('news', LogLevel::INFO, '{record_id} мэдээнд сэтгэгдэл бичлээ', ['action' => 'comment-insert', 'record_id' => $id]);
+            $this->log('news', LogLevel::INFO, '{record_id} мэдээнд сэтгэгдэл бичлээ ({name})', ['action' => 'comment-insert', 'record_id' => $id, 'name' => $adminName]);
         } catch (\Throwable $err) {
             $this->respondJSON([
                 'status' => 'error',
@@ -151,7 +156,7 @@ class CommentsController extends \Raptor\Controller
             }
 
             $commentsModel = new CommentsModel($this->pdo);
-            $parent = $commentsModel->getRowWhere(['id' => $id, 'is_active' => 1]);
+            $parent = $commentsModel->getById($id);
             if (empty($parent)) {
                 throw new \Exception($this->text('no-record-selected'), 404);
             }
@@ -168,15 +173,17 @@ class CommentsController extends \Raptor\Controller
             }
 
             $user = $this->getUser();
-            $adminName = \trim(($user->profile['first_name'] ?? '') . ' ' . ($user->profile['last_name'] ?? ''));
+            $adminName = \trim(
+                ($user?->profile['first_name'] ?? '') . ' '
+                . ($user?->profile['last_name'] ?? '')
+            );
 
             $commentsModel->insert([
                 'news_id' => $parent['news_id'],
                 'parent_id' => $id,
                 'created_by' => $this->getUserId(),
                 'name' => $adminName ?: $user->profile['username'] ?? 'Admin',
-                'comment' => $comment,
-                'created_at' => \date('Y-m-d H:i:s')
+                'comment' => $comment
             ]);
 
             $this->respondJSON([
@@ -185,11 +192,12 @@ class CommentsController extends \Raptor\Controller
                 'message' => $this->text('record-insert-success')
             ]);
 
-            // Discord мэдэгдэл
-            $appUrl = \rtrim((string)$this->getRequest()->getUri()->withPath($this->getScriptPath()), '/') . '/dashboard';
-            $this->getService('discord')?->contentAction('comment', 'insert', "@{$parent['name']}: $comment", (int)$parent['news_id'], $adminName, $appUrl);
+            $this->dispatch(new \Raptor\Notification\ContentEvent(
+                'insert', 'comment', "@{$parent['name']}: $comment", (int)$parent['news_id'],
+                $adminName
+            ));
 
-            $this->log('news', LogLevel::INFO, '{record_id} мэдээний #{parent_id} сэтгэгдэлд хариулт бичлээ', ['action' => 'comment-reply', 'record_id' => $parent['news_id'], 'parent_id' => $id]);
+            $this->log('news', LogLevel::INFO, '{record_id} мэдээний #{parent_id} ({name}) сэтгэгдэлд хариулт бичлээ', ['action' => 'comment-reply', 'record_id' => $parent['news_id'], 'parent_id' => $id, 'name' => $parent['name']]);
         } catch (\Throwable $err) {
             $this->respondJSON([
                 'status' => 'error',
@@ -200,11 +208,13 @@ class CommentsController extends \Raptor\Controller
     }
 
     /**
-     * Сэтгэгдлийг идэвхгүй болгох (soft delete).
+     * Сэтгэгдлийг устгах.
+     *
+     * Reply-уудыг мөн устгана.
      *
      * @return void
      */
-    public function deactivate()
+    public function delete()
     {
         try {
             if (!$this->isUserCan('system_content_delete')) {
@@ -218,15 +228,19 @@ class CommentsController extends \Raptor\Controller
             }
 
             $model = new CommentsModel($this->pdo);
-            $table = $model->getName();
-            $record = $model->getRowWhere(['id' => $id]);
+            $record = $model->getById($id);
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'), 404);
             }
 
-            $this->exec("UPDATE $table SET is_active=0 WHERE id=$id");
-            // Reply-уудыг мөн идэвхгүй болгох
-            $this->exec("UPDATE $table SET is_active=0 WHERE parent_id=$id");
+            // Reply-уудыг мөн устгах
+            $table = $model->getName();
+            $this->exec("DELETE FROM $table WHERE parent_id=$id");
+
+            $model->deleteById($id);
+            (new \Raptor\Trash\TrashModel($this->pdo))->store(
+                'news', $model->getName(), $id, $record, $this->getUserId()
+            );
 
             $this->respondJSON([
                 'status' => 'success',
@@ -234,11 +248,11 @@ class CommentsController extends \Raptor\Controller
                 'message' => $this->text('record-successfully-deleted')
             ]);
 
-            $this->log('news', LogLevel::WARNING, '{record_id} мэдээний #{id} сэтгэгдлийг устгалаа', ['action' => 'comment-deactivate', 'record_id' => $record['news_id'], 'id' => $id]);
+            $this->log('news', LogLevel::WARNING, '{record_id} мэдээний #{id} ({name}) сэтгэгдлийг устгалаа', ['action' => 'comment-delete', 'record_id' => $record['news_id'], 'id' => $id, 'name' => $record['name']]);
 
-            $adminName = \trim(($this->getUser()->profile['first_name'] ?? '') . ' ' . ($this->getUser()->profile['last_name'] ?? ''));
-            $appUrl = \rtrim((string)$this->getRequest()->getUri()->withPath($this->getScriptPath()), '/') . '/dashboard';
-            $this->getService('discord')?->contentAction('comment', 'delete', "#{$id} by {$record['name']}", (int)($record['news_id'] ?? 0), $adminName, $appUrl);
+            $this->dispatch(new \Raptor\Notification\ContentEvent(
+                'delete', 'comment', "#{$id} by {$record['name']}", (int)($record['news_id'] ?? 0)
+            ));
         } catch (\Throwable $err) {
             $this->respondJSON([
                 'status' => 'error',

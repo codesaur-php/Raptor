@@ -2,7 +2,7 @@
 
 namespace Raptor\Template;
 
-use codesaur\Template\TwigTemplate;
+use codesaur\Template\FileTemplate;
 
 use Raptor\User\UsersModel;
 
@@ -14,7 +14,7 @@ use Raptor\User\UsersModel;
  *
  * Үндсэн үүрэг:
  * ---------------------------------------------------------------
- *  - twigDashboard()  
+ *  - dashboardTemplate()  
  *      -> Dashboard layout (dashboard.html) дотор контент оруулах
  *
  *  - dashboardProhibited()  
@@ -28,7 +28,7 @@ use Raptor\User\UsersModel;
  *         товч мэдээллийн жагсаалтыг авах
  *
  *  - getUserMenu()  
- *      -> Permission, is_active, is_visible, organization alias
+ *      -> Permission, is_visible, organization alias
  *         зэрэг нөхцөлүүдээр хэрэглэгчийн sidemenu-г бүрдүүлэх
  *
  * Энэ trait нь Raptor\Controller-тэй цуг ажиллаж,
@@ -45,13 +45,13 @@ trait DashboardTrait
      *
      * Процесс:
      * ---------------------------------------------------------------
-     * 1) `dashboard.html` мастер layout-ийг twigTemplate() ашиглан ачаална.
+     * 1) `dashboard.html` мастер layout-ийг template() ашиглан ачаална.
      *
      * 2) Хэрэглэгчийн зөвшөөрөлд (RBAC) тулгуурлан харагдах ёстой
      *    sidemenu-г getUserMenu() функцээр тооцож -> `sidemenu` хувьсагчид онооно.
      *
      * 3) Контент хэсэгт харуулах тухайн хуудасны template-г
-     *    twigTemplate($template, $vars) дуудаж -> `content` болгон оруулна.
+     *    template($template, $vars) дуудаж -> `content` болгон оруулна.
      *    (Жич: Контент template нь зөвхөн `<main>` хэсэг дотор байрлана.)
      *
      * 4) Системийн тохируулгууд (`settings` аттрибут) - тухайлбал:
@@ -61,18 +61,18 @@ trait DashboardTrait
      * Товчхондоо:
      * ---------------------------------------------------------------
      *  > Dashboard layout + Dynamic sidebar + Dynamic content + System settings
-     *  -> нэг TwigTemplate объект болж буцна.
+     *  -> нэг FileTemplate объект болж буцна.
      *
      * @param string $template  Контент template-ийн файл зам
      * @param array  $vars      Контент template-д дамжуулах хувьсагчид
      *
-     * @return TwigTemplate     Бүрэн бэлтгэгдсэн Dashboard-ийн view объект
+     * @return FileTemplate     Бүрэн бэлтгэгдсэн Dashboard-ийн view объект
      */
-    public function twigDashboard(string $template, array $vars = []): TwigTemplate
+    public function dashboardTemplate(string $template, array $vars = []): FileTemplate
     {
-        $dashboard = $this->twigTemplate(__DIR__ . '/dashboard.html');
+        $dashboard = $this->template(__DIR__ . '/dashboard.html');
         $dashboard->set('sidemenu', $this->getUserMenu());
-        $dashboard->set('content', $this->twigTemplate($template, $vars));
+        $dashboard->set('content', $this->template($template, $vars));
         foreach ($this->getAttribute('settings', []) as $key => $value) {
             $dashboard->set($key, $value);
         }
@@ -88,13 +88,13 @@ trait DashboardTrait
      * @param string|null    $alert Alert текст
      * @param int|string     $code  HTTP статус код
      *
-     * @return TwigTemplate
+     * @return FileTemplate
      */
-    public function dashboardProhibited(?string $alert = null, int|string $code = 0): TwigTemplate
+    public function dashboardProhibited(?string $alert = null, int|string $code = 0): FileTemplate
     {
         $this->headerResponseCode($code);
 
-        return $this->twigDashboard(
+        return $this->dashboardTemplate(
             __DIR__ . '/alert-no-permission.html',
             ['alert' => $alert ?? $this->text('system-no-permission')]
         );
@@ -109,13 +109,13 @@ trait DashboardTrait
      * @param string|null $alert
      * @param int|string  $code
      *
-     * @return TwigTemplate
+     * @return FileTemplate
      */
-    public function modalProhibited(?string $alert = null, int|string $code = 0): TwigTemplate
+    public function modalProhibited(?string $alert = null, int|string $code = 0): FileTemplate
     {
         $this->headerResponseCode($code);
 
-        return new TwigTemplate(
+        return new FileTemplate(
             __DIR__ . '/modal-no-permission.html',
             [
                 'alert' => $alert ?? $this->text('system-no-permission'),
@@ -134,8 +134,8 @@ trait DashboardTrait
      *
      * Гаралт:
      *   [
-     *      4 => "batka » Бат Эрдэнэ (bat@example.com)",
-     *      9 => "saraa » Сараа Мөнх (saraa@example.com)",
+     *      4 => "batka - Бат Эрдэнэ (bat@example.com)",
+     *      9 => "saraa - Сараа Мөнх (saraa@example.com)",
      *   ]
      *
      * Алдаа гарвал хоосон массив буцаана.
@@ -166,7 +166,7 @@ trait DashboardTrait
             if ($pdo_stmt->execute()) {
                 while ($row = $pdo_stmt->fetch()) {
                     $users[$row['id']] =
-                        "{$row['username']} » {$row['first_name']} {$row['last_name']} ({$row['email']})";
+                        "{$row['username']} - {$row['first_name']} {$row['last_name']} ({$row['email']})";
                 }
             }
         } catch (\Throwable) {
@@ -181,7 +181,6 @@ trait DashboardTrait
      *
      * Filter-лэгдэх нөхцөлүүд:
      * ---------------------------------------------------------------
-     *  - p.is_active = 1  -> идэвхтэй меню
      *  - p.is_visible = 1 -> харагдах боломжтой
      *  - Organization alias тохирох эсэх:
      *        menu.alias != current_user.organization.alias -> skip
@@ -213,14 +212,20 @@ trait DashboardTrait
         try {
             $alias = $this->getUser()->organization['alias'];
             
-            $model = new MenuModel($this->pdo);
-            $rows = $model->getRowsByCode(
-                $this->getLanguageCode(),
-                [
-                    'ORDER BY' => 'p.position',
-                    'WHERE'    => 'p.is_active=1 AND p.is_visible=1'
-                ]
-            );
+            $cache = $this->hasService('cache') ? $this->getService('cache') : null;
+            $menuKey = "menu.{$this->getLanguageCode()}";
+            $rows = $cache?->get($menuKey);
+            if ($rows === null) {
+                $model = new MenuModel($this->pdo);
+                $rows = $model->getRowsByCode(
+                    $this->getLanguageCode(),
+                    [
+                        'ORDER BY' => 'p.position',
+                        'WHERE'    => 'p.is_visible=1'
+                    ]
+                );
+                $cache?->set($menuKey, $rows);
+            }
             foreach ($rows as $row) {
                 // Localization title авах
                 $title = $row['localized']['title'] ?? null;

@@ -42,7 +42,7 @@
                             
                             {% for organization in organizations %}
                             <option value="{{ organization['id'] }}"
-                                    {% if organization['id'] in current_organizations %}
+                                    {% if current_organizations[organization['id']] %}
                                     selected
                                     {% endif %}>
                                 {{ organization['name'] }}
@@ -84,7 +84,7 @@ const userOrgsForm = document.querySelector('form#set_user_organization');
 
 if (!userOrgsForm) {
     /* Хэрэв form олдохгүй бол алдаа харуулах */
-    NotifyTop('danger', `{{ 'error'|text|e }}`, 'Form not found!');
+    Notify('danger', `{{ 'error'|text|e }}`, 'Form not found!');
 } else {
     /* Хадгалах товч */
     const submitter = document.querySelector('button.submit-set-organization');
@@ -105,7 +105,7 @@ if (!userOrgsForm) {
 
         if (!isValid) {
             event.stopPropagation();
-            return NotifyTop(
+            return Notify(
                 'danger',
                 `{{ 'error'|text|e }}`,
                 `{{ 'u-have-some-form-errors'|text|e }}`
@@ -139,7 +139,7 @@ if (!userOrgsForm) {
             /* Амжилттай -> Page refresh */
             window.location.reload();
 
-            NotifyTop(
+            Notify(
                 response.type ?? 'success',
                 response.title ?? `{{ 'success'|text|e }}`,
                 response.message ?? 'User organization set'
@@ -147,7 +147,7 @@ if (!userOrgsForm) {
         })
         .catch(error => {
             /* Алдаа гарвал */
-            NotifyTop('danger', `{{ 'error'|text|e }}`, error.message);
+            Notify('danger', `{{ 'error'|text|e }}`, error.message);
 
             /* Анимэйшн зогсоох */
             submitter.growNstop();

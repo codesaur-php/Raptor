@@ -25,6 +25,6 @@ class DevelopmentRouter extends Router
         $this->POST('/dashboard/dev-requests/store', [DevRequestController::class, 'store'])->name('dev-requests-store');
         $this->GET('/dashboard/dev-requests/view/{uint:id}', [DevRequestController::class, 'view'])->name('dev-requests-view');
         $this->POST('/dashboard/dev-requests/respond', [DevRequestController::class, 'respond'])->name('dev-requests-respond');
-        $this->DELETE('/dashboard/dev-requests/deactivate', [DevRequestController::class, 'deactivate'])->name('dev-requests-deactivate');
+        $this->DELETE('/dashboard/dev-requests/delete', [DevRequestController::class, 'delete'])->name('dev-requests-delete');
     }
 }

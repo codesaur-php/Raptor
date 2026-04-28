@@ -2,8 +2,8 @@
     <h3 class="px-2 my-auto fs-6 text-white">
         <i class="bi bi-book"></i> Users - Manual
     </h3>
-    <a href="{{ 'manual' | link }}" class="btn btn-sm btn-light m-1">
-        <i class="bi bi-arrow-left"></i> {{ 'manual' | text }}
+    <a href="{{ 'manual'|link }}" class="btn btn-sm btn-light m-1">
+        <i class="bi bi-arrow-left"></i> {{ 'manual'|text }}
     </a>
 </div>
 
@@ -250,7 +250,8 @@
         <ul>
             <li>A SweetAlert confirmation dialog will appear</li>
             <li>A text input field for providing a reason</li>
-            <li>Soft delete - data is preserved, only deactivated</li>
+            <li>Soft delete (deactivate) - data is preserved, the user is marked inactive</li>
+            <li>Deactivated users can be permanently deleted using the fire (<i class="bi bi-fire"></i>) button; permanently deleted data is stored in the Trash table for recovery</li>
         </ul>
     </div>
 </div>

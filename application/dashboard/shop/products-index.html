@@ -7,7 +7,7 @@
         <i class="bi bi-box-seam"></i> {{ 'products'|text }}
     </h3>
     <div class="ms-auto">
-        <a class="btn btn-outline-info shadow-sm me-1" href="{{ 'reviews'|link }}">
+        <a class="btn btn-outline-info shadow-sm me-1" href="{{ 'products-reviews'|link }}">
             <i class="bi bi-star-half"></i> {{ 'reviews'|text }}
         </a>
         <a class="btn btn-outline-secondary shadow-sm" href="{{ 'manual-view'|link({'file': 'products-manual-' ~ localization.code ~ '.html'}) }}" title="{{ 'manual'|text }}" target="_blank">
@@ -103,15 +103,15 @@
         if (!hasFilter && urlParams.size === 0) {
             /* Горим 1: Фильтргүй */
             filterAction.classList.add('btn-secondary');
-            filterAction.innerHTML = '<i class="bi bi-funnel"></i> {{ "filter"|text }}';
+            filterAction.innerHTML = '<i class="bi bi-funnel"></i> {{ 'filter'|text }}';
         } else if (hasFilter && matchesUrl) {
             /* Горим 3: Set хийгдсэн фильтертэй */
             filterAction.classList.add('btn-dark');
-            filterAction.innerHTML = '<i class="bi bi-funnel-fill"></i> {{ "filter"|text }} <i class="bi bi-x-circle ms-1" data-reset></i>';
+            filterAction.innerHTML = '<i class="bi bi-funnel-fill"></i> {{ 'filter'|text }} <i class="bi bi-x-circle ms-1" data-reset></i>';
         } else {
             /* Горим 2: Өөрчлөгдсөн, set хийхэд бэлэн */
             filterAction.classList.add('btn-danger');
-            filterAction.innerHTML = '<i class="bi bi-funnel-fill"></i> {{ "filter"|text }} <i class="bi bi-x-circle ms-1" data-reset></i>';
+            filterAction.innerHTML = '<i class="bi bi-funnel-fill"></i> {{ 'filter'|text }} <i class="bi bi-x-circle ms-1" data-reset></i>';
         }
 
         const resetIcon = filterAction.querySelector('[data-reset]');
@@ -140,7 +140,7 @@
         e.preventDefault();
         /* Фильтргүй үед анхааруулга */
         if (filterAction.classList.contains('btn-secondary')) {
-            return NotifyTop('warning', `{{ 'warning'|text|e }}`, '{{ localization.code == "mn" ? "Шүүлтүүрээс ядаж нэгийг сонгоорой" : "Select at least one filter" }}');
+            return Notify('warning', `{{ 'warning'|text|e }}`, '{{ localization.code == "mn" ? "Шүүлтүүрээс ядаж нэгийг сонгоорой" : "Select at least one filter" }}');
         }
         /* Set хийгдсэн горимд дахин ачаалахгүй */
         if (filterAction.classList.contains('btn-dark')) return;
@@ -239,7 +239,7 @@
                 }
                 /* Устгах эрхтэй бол устгах товч нэмэх */
                 if (canDelete) {
-                    buttons.push(`<button class="deactivate-product btn btn-sm btn-danger mt-1 shadow-sm" type="button" value="${record.id}"><i class="bi bi-trash"></i></button>`);
+                    buttons.push(`<button class="delete-product btn btn-sm btn-danger mt-1 shadow-sm" type="button" value="${record.id}"><i class="bi bi-trash"></i></button>`);
                 }
                 const actions = `<div class="mb-1">${buttons.join(' ')}</div>`;
 
@@ -288,7 +288,7 @@
                         }
                     }).then(result => {
                         if (result.isConfirmed) {
-                            NotifyTop('success', `{{ 'success'|text|e }}`, result.value.message);
+                            Notify('success', `{{ 'success'|text|e }}`, result.value.message);
                             setTimeout(() => window.location.reload(), 1000);
                         }
                     });
@@ -308,15 +308,15 @@
                 ajaxModal(a);
             }));
 
-            /* ========== БҮТЭЭГДЭХҮҮН ИДЭВХГҮЙ БОЛГОХ (УСТГАХ) ТОВЧНУУДАД EVENT НЭМЭХ ========== */
-            const deactivates = products.table.querySelectorAll('.deactivate-product');
-            deactivates.forEach(btn => btn.addEventListener('click', function (e) {
+            /* ========== БҮТЭЭГДЭХҮҮН УСТГАХ ТОВЧНУУДЫН EVENT ========== */
+            const deletes = products.table.querySelectorAll('.delete-product');
+            deletes.forEach(btn => btn.addEventListener('click', function (e) {
                 e.preventDefault();
 
                 /* Хүснэгтийн мөрийг олох */
                 const thisRow = btn.closest('tr');
                 if (!thisRow) {
-                    return NotifyTop('warning', `{{ 'error'|text|e }}`, 'Cannot select row!');
+                    return Notify('warning', `{{ 'error'|text|e }}`, 'Cannot select row!');
                 }
 
                 /* Бүтээгдэхүүний мэдээллийг авах */
@@ -325,8 +325,8 @@
 
                 /* Баталгаажуулах асуултын текстийг хэлнээс хамааруулан тохируулах */
                 let question = document.documentElement.lang === 'mn'
-                    ? `<p class="text-danger mb-3">Та (${title}) бүтээгдэхүүнийг идэвхгүй болгохдоо итгэлтэй байна уу?</p>`
-                    : `<p class="text-danger mb-3">Are you sure to deactivate the product (${title})?</p>`;
+                    ? `<p class="text-danger mb-3">Та (${title}) бүтээгдэхүүнийг устгахдаа итгэлтэй байна уу?</p>`
+                    : `<p class="text-danger mb-3">Are you sure to delete the product (${title})?</p>`;
 
                 /* Зургийг SweetAlert-д харуулах эсэхийг шалгах */
                 let src = '';
@@ -352,7 +352,7 @@
                     preConfirm: () => {
                         /* Сервер рүү устгах хүсэлт илгээх */
                         return csrfFetch(
-                            `{{ 'product-deactivate'|link }}`,
+                            `{{ 'product-delete'|link }}`,
                             {
                                 method: 'DELETE',
                                 headers: {
@@ -375,7 +375,7 @@
                             products.setReady();
 
                             /* Амжилттай мэдэгдэл харуулах */
-                            NotifyTop('success', `{{ 'success'|text|e }}`, response.message ?? `Product:${id} deactivated`);
+                            Notify('success', `{{ 'success'|text|e }}`, response.message ?? `Product:${id} deleted`);
                         }).catch(error => {
                             /* Алдааг SweetAlert-д харуулах */
                             Swal.showValidationMessage(error.message);

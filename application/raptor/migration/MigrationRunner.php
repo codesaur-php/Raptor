@@ -2,6 +2,8 @@
 
 namespace Raptor\Migration;
 
+use codesaur\DataObject\Constants;
+
 /**
  * Class MigrationRunner
  *
@@ -326,7 +328,7 @@ class MigrationRunner
     private function acquireLock(): bool
     {
         $driver = $this->pdo->getAttribute(\PDO::ATTR_DRIVER_NAME);
-        if ($driver === 'pgsql') {
+        if ($driver === Constants::DRIVER_PGSQL) {
             $stmt = $this->pdo->query("SELECT pg_try_advisory_lock(hashtext('raptor_migration'))");
         } else {
             $stmt = $this->pdo->query("SELECT GET_LOCK('raptor_migration', 0)");
@@ -347,7 +349,7 @@ class MigrationRunner
     private function releaseLock(): void
     {
         $driver = $this->pdo->getAttribute(\PDO::ATTR_DRIVER_NAME);
-        if ($driver === 'pgsql') {
+        if ($driver === Constants::DRIVER_PGSQL) {
             $stmt = $this->pdo->query("SELECT pg_advisory_unlock(hashtext('raptor_migration'))");
         } else {
             $stmt = $this->pdo->query("SELECT RELEASE_LOCK('raptor_migration')");

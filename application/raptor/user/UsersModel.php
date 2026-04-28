@@ -4,6 +4,7 @@ namespace Raptor\User;
 
 use codesaur\DataObject\Model;
 use codesaur\DataObject\Column;
+use codesaur\DataObject\Constants;
 
 /**
  * Class UsersModel
@@ -56,20 +57,20 @@ class UsersModel extends Model
         $this->setColumns([
            (new Column('id', 'bigint'))->primary(),
 
-           (new Column('username', 'varchar', 143))->unique(),
+           (new Column('username', 'varchar', 128))->unique(),
            (new Column('password', 'varchar', 255))->default(''),
 
             new Column('first_name', 'varchar', 128),
             new Column('last_name', 'varchar', 128),
             new Column('phone', 'varchar', 128),
 
-           (new Column('email', 'varchar', 143))->unique(),
+           (new Column('email', 'varchar', 128))->unique(),
 
             new Column('photo', 'varchar', 255),      // public img uri
             new Column('photo_file', 'varchar', 255), // physical img file location
             new Column('photo_size', 'int'),          // img size by bytes
 
-            new Column('code', 'varchar', 2),         // хэлний код, locale гэх мэт
+            new Column('code', 'varchar', Constants::DEFAULT_CODE_LENGTH),         // хэлний код, locale гэх мэт
            (new Column('is_active', 'tinyint'))->default(1),
 
             new Column('created_at', 'datetime'),
@@ -123,9 +124,9 @@ class UsersModel extends Model
      *  хийдэг override функц (хэрвээ шинэ утгууд дотор агуулагдаагүй бол).
      *
      * @param array $record
-     * @return array|false
+     * @return array
      */
-    public function insert(array $record): array|false
+    public function insert(array $record): array
     {
         $record['created_at'] ??= \date('Y-m-d H:i:s');
         return parent::insert($record);

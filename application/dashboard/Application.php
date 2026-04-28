@@ -26,16 +26,16 @@ class Application extends \Raptor\Application
      * Dashboard модуль ажиллаж эхлэхэд хамгийн түрүүнд ачаалагдана.
      *
      * Процесс:
-     *  1) parent::__construct() -> Raptor Framework-ийн үндсэн engine асаана
+     *  1) parent::__construct() -> Raptor\Application үндсэн middleware (DB, Session,
+     *     JWT, CSRF, Localization, Settings) болон core router-уудыг (Login, Users,
+     *     RBAC, Content, Logs, Template, Badge гэх мэт) бүгдийг ачаална
      *  2) Home\HomeRouter -> Dashboard-ийн үндсэн router-ийг бүртгэнэ
-     *  3) Shop\ProductsRouter, Shop\OrdersRouter, Shop\ReviewsRouter -> Дэлгүүрийн router-уудыг бүртгэнэ
+     *  3) Shop\ShopRouter -> Дэлгүүрийн (products, orders, reviews) router-ийг бүртгэнэ
      *  4) Manual\ManualRouter -> Гарын авлагын router-ийг бүртгэнэ
-     *  5) BadgeRouter -> Badge системийн router-ийг бүртгэнэ
-     *
      * Нэмэх боломж:
-     *  - Хэрэв дараа нь SettingsRouter, UserRouter гэх мэт нэмэх бол
-     *    $this->use(new Settings\SettingsRouter());
-     *    $this->use(new User\UserRouter());
+     *  - Хэрэв дараа нь KPIRouter, MemberRouter гэх мэт нэмэх бол
+     *    $this->use(new HR\KPIRouter());
+     *    $this->use(new Membership\MemberRouter());
      *    гэх мэтээр өргөтгөнө.
      */
     public function __construct()
@@ -43,17 +43,12 @@ class Application extends \Raptor\Application
         parent::__construct();
 
         // Home модулийн Router-г бүртгэж байна
-        $this->use(new Home\HomeRouter());        
-        
-        // Shop модулийн Router-г бүртгэж байна
-        $this->use(new Shop\ProductsRouter());
-        $this->use(new Shop\OrdersRouter());
-        $this->use(new Shop\ReviewsRouter());
+        $this->use(new Home\HomeRouter());
+
+        // Shop модулийн Router (products, orders, reviews нэгтгэсэн)
+        $this->use(new Shop\ShopRouter());
 
         // Гарын авлага
         $this->use(new Manual\ManualRouter());
-
-        // Badge систем
-        $this->use(new \Raptor\Template\BadgeRouter());
     }
 }

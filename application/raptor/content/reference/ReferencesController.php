@@ -4,11 +4,13 @@ namespace Raptor\Content;
 
 use Psr\Log\LogLevel;
 
+use codesaur\DataObject\Constants;
+
 /**
  * Class ReferencesController
  *
  * Лавлах төрлийн контентуудыг (reference tables) харах, үүсгэх,
- * засварлах, идэвхгүй болгох зэрэг CRUD үйлдлүүдийг
+ * засварлах, устгах зэрэг CRUD үйлдлүүдийг
  * хариуцдаг Raptor Dashboard Controller.
  *
  * ReferenceModel нь олон хэлний (localized) контент удирдах чадвартай
@@ -20,7 +22,7 @@ use Psr\Log\LogLevel;
  * 1) reference_* болон reference_*_content хүснэгтүүдийг илрүүлж, жагсаана
  * 2) ReferenceInitial дахь seed функцуудыг ашиглан хүснэгт байхгүй бол
  *      ReferenceModel::__initial() -> хүснэгт үүсгэнэ -> seed өгөгдөл оруулна
- * 3) Лавлах контентуудыг жагсаах, харах, үүсгэх, шинэчлэх, идэвхгүй болгох
+ * 3) Лавлах контентуудыг жагсаах, харах, үүсгэх, шинэчлэх, устгах
  * 4) Бүх үйлдлийг log() ашиглан системийн лог-д тэмдэглэнэ
  *
  * Permission:
@@ -49,7 +51,7 @@ class ReferencesController extends \Raptor\Controller
             return;
         }
         
-        if ($this->getDriverName() == 'pgsql') {
+        if ($this->getDriverName() == Constants::DRIVER_PGSQL) {
             $query =
                 'SELECT tablename FROM pg_catalog.pg_tables ' .
                 "WHERE schemaname != 'pg_catalog' AND schemaname != 'information_schema' AND tablename like 'reference_%'";
@@ -83,9 +85,9 @@ class ReferencesController extends \Raptor\Controller
         foreach (\array_keys($tables) as $table) {
             $reference = new ReferenceModel($this->pdo);
             $reference->setTable($table);
-            $tables[$table] = $reference->getRows(['WHERE' => 'p.is_active=1']);
+            $tables[$table] = $reference->getRows();
         }
-        $dashboard = $this->twigDashboard(__DIR__ . '/references-index.html', ['tables' => $tables]);
+        $dashboard = $this->dashboardTemplate(__DIR__ . '/references-index.html', ['tables' => $tables]);
         $dashboard->set('title', $this->text('reference-tables'));
         $dashboard->render();
         
@@ -153,16 +155,17 @@ class ReferencesController extends \Raptor\Controller
                 if (!isset($record['id'])) {
                     throw new \Exception($this->text('record-insert-error'));
                 }                
+                $this->invalidateCache("reference.$table.{code}");
                 $this->respondJSON([
                     'status' => 'success',
                     'message' => $this->text('record-insert-success')
                 ]);
 
-                $adminName = \trim(($this->getUser()->profile['first_name'] ?? '') . ' ' . ($this->getUser()->profile['last_name'] ?? ''));
-                $appUrl = \rtrim((string)$this->getRequest()->getUri()->withPath($this->getScriptPath()), '/') . '/dashboard';
-                $this->getService('discord')?->contentAction('reference', 'insert', $payload['keyword'] ?? '', $record['id'] ?? null, $adminName, $appUrl);
+                $this->dispatch(new \Raptor\Notification\ContentEvent(
+                    'insert', 'reference', $payload['keyword'] ?? '', $record['id'] ?? null
+                ));
             } else {
-                $dashboard = $this->twigDashboard(
+                $dashboard = $this->dashboardTemplate(
                     __DIR__ . '/reference-insert.html',
                     ['table' => $table]
                 );
@@ -187,7 +190,7 @@ class ReferencesController extends \Raptor\Controller
             } elseif ($this->getRequest()->getMethod() == 'POST') {
                 $level = LogLevel::INFO;
                 $message = '[{record.keyword}] түлхүүртэй лавлах мэдээллийг [{table}] хүснэгт дээр амжилттай үүсгэлээ';
-                $context += ['id' => $record['id'], 'record' => $record];
+                $context += ['record_id' => $record['id'], 'record' => $record];
             } else {
                 $level = LogLevel::NOTICE;
                 $message = 'Лавлах мэдээллийг {table} хүснэгт дээр үүсгэх үйлдлийг эхлүүллээ';
@@ -202,7 +205,7 @@ class ReferencesController extends \Raptor\Controller
      * Процесс:
      * --------
      * 1) Хүснэгт байгаа эсэхийг шалгана
-     * 2) p.id = $id ба p.is_active = 1 нөхцөлөөр бичлэгийг уншина
+     * 2) p.id = $id нөхцөлөөр бичлэгийг уншина
      * 3) Dashboard-ийг render хийнэ
      *
      * Хэрэглээ:
@@ -224,14 +227,11 @@ class ReferencesController extends \Raptor\Controller
 
             $reference = new ReferenceModel($this->pdo);
             $reference->setTable($table);
-            $record = $reference->getRowWhere([
-                'p.id' => $id,
-                'p.is_active' => 1
-            ]);
+            $record = $reference->getById($id);
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));
             }
-            $dashboard = $this->twigDashboard(
+            $dashboard = $this->dashboardTemplate(
                 __DIR__ . '/reference-view.html',
                 ['table' => $table, 'record' => $record]
             );
@@ -243,11 +243,11 @@ class ReferencesController extends \Raptor\Controller
             $context = [
                 'action' => 'reference-view',
                 'table' => $table,
-                'id' => $id
+                'record_id' => $id
             ];
             if (isset($err) && $err instanceof \Throwable) {
                 $level = LogLevel::ERROR;
-                $message = '{table} хүснэгтээс {id} дугаартай лавлах мэдээллийг нээх үед алдаа гарч зогслоо';
+                $message = '{table} хүснэгтээс {record_id} дугаартай лавлах мэдээллийг нээх үед алдаа гарч зогслоо';
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } else {
                 $level = LogLevel::NOTICE;
@@ -292,10 +292,7 @@ class ReferencesController extends \Raptor\Controller
             
             $reference = new ReferenceModel($this->pdo);
             $reference->setTable($table);
-            $record = $reference->getRowWhere([
-                'p.id' => $id,
-                'p.is_active' => 1
-            ]);
+            $record = $reference->getById($id);
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'), 400);
             }
@@ -332,17 +329,19 @@ class ReferencesController extends \Raptor\Controller
                     throw new \Exception($this->text('no-record-selected'));
                 }
                 
+                $this->invalidateCache("reference.$table.{code}");
                 $this->respondJSON([
                     'status' => 'success',
                     'type' => 'primary',
                     'message' => $this->text('record-update-success')
                 ]);
 
-                $adminName = \trim(($this->getUser()->profile['first_name'] ?? '') . ' ' . ($this->getUser()->profile['last_name'] ?? ''));
-                $appUrl = \rtrim((string)$this->getRequest()->getUri()->withPath($this->getScriptPath()), '/') . '/dashboard';
-                $this->getService('discord')?->contentAction('reference', 'update', $record['keyword'] ?? '', $id, $adminName, $appUrl, $updates ?? []);
+                $this->dispatch(new \Raptor\Notification\ContentEvent(
+                    'update', 'reference', $record['keyword'] ?? '', $id,
+                    updates: $updates ?? []
+                ));
             } else {
-                $dashboard = $this->twigDashboard(
+                $dashboard = $this->dashboardTemplate(
                     __DIR__ . '/reference-update.html',
                     ['table' => $table, 'record' => $record]
                 );
@@ -359,11 +358,11 @@ class ReferencesController extends \Raptor\Controller
             $context = [
                 'action' => 'reference-update',
                 'table' => $table,
-                'id' => $id
+                'record_id' => $id
             ];
             if (isset($err) && $err instanceof \Throwable) {
                 $level = LogLevel::ERROR;
-                $message = '{table} хүснэгтийн {id} дугаартай лавлах мэдээллийг өөрчлөх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
+                $message = '{table} хүснэгтийн {record_id} дугаартай лавлах мэдээллийг өөрчлөх үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } elseif ($this->getRequest()->getMethod() == 'PUT') {
                 $level = LogLevel::INFO;
@@ -379,12 +378,7 @@ class ReferencesController extends \Raptor\Controller
     }
 
     /**
-     * Лавлах мэдээллийг идэвхгүй болгох (SOFT DELETE).
-     *
-     * ReferenceModel::deactivateById() функц ашиглан:
-     *  - is_active = 0
-     *  - updated_by = current user $id
-     *  - updated_at = now()
+     * Лавлах мэдээллийг устгах.
      *
      * Үр дүн:
      * -------
@@ -398,7 +392,7 @@ class ReferencesController extends \Raptor\Controller
      *
      * @return void
      */
-    public function deactivate()
+    public function delete()
     {
         try {
             if (!$this->isUserCan('system_content_delete')) {
@@ -419,25 +413,23 @@ class ReferencesController extends \Raptor\Controller
             $id = \filter_var($payload['id'], \FILTER_VALIDATE_INT);
             $reference = new ReferenceModel($this->pdo);
             $reference->setTable($table);
-            $deactivated = $reference->deactivateById(
-                $id,
-                [
-                    'updated_by' => $this->getUserId(),
-                    'updated_at' => \date('Y-m-d H:i:s')
-                ]
-            );
-            if (!$deactivated) {
-                throw new \Exception($this->text('no-record-selected'));
+            $record = $reference->getById($id);
+            $reference->deleteById($id);
+            if (!empty($record)) {
+                (new \Raptor\Trash\TrashModel($this->pdo))->store(
+                    'content', $reference->getName(), $id, $record, $this->getUserId()
+                );
             }            
+            $this->invalidateCache("reference.$table.{code}");
             $this->respondJSON([
                 'status'  => 'success',
                 'title'   => $this->text('success'),
                 'message' => $this->text('record-successfully-deleted')
             ]);
 
-            $adminName = \trim(($this->getUser()->profile['first_name'] ?? '') . ' ' . ($this->getUser()->profile['last_name'] ?? ''));
-            $appUrl = \rtrim((string)$this->getRequest()->getUri()->withPath($this->getScriptPath()), '/') . '/dashboard';
-            $this->getService('discord')?->contentAction('reference', 'delete', $record['keyword'] ?? "#{$id}", $id, $adminName, $appUrl);
+            $this->dispatch(new \Raptor\Notification\ContentEvent(
+                'delete', 'reference', $record['keyword'] ?? "#{$id}", $id
+            ));
         } catch (\Throwable $err) {
             $this->respondJSON([
                 'status'  => 'error',
@@ -445,15 +437,15 @@ class ReferencesController extends \Raptor\Controller
                 'message' => $err->getMessage()
             ], $err->getCode());
         } finally {
-            $context = ['action' => 'reference-deactivate'];
+            $context = ['action' => 'reference-delete'];
             if (isset($err) && $err instanceof \Throwable) {
                 $level = LogLevel::ERROR;
-                $message = 'Лавлах мэдээлэл идэвхгүй болгох үйлдлийг гүйцэтгэх явцад алдаа гарч зогслоо';
+                $message = 'Лавлах мэдээлэл устгах үйлдлийг гүйцэтгэх явцад алдаа гарч зогслоо';
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } else {
                 $level = LogLevel::ALERT;
-                $message = '{table} хүснэгтээс {id} дугаартай [{server_request.body.keyword}] түлхүүртэй лавлах мэдээллийг идэвхгүй болголоо';
-                $context += ['table' => $table, 'id' => $id];
+                $message = '{table} хүснэгтээс {record_id} дугаартай [{server_request.body.keyword}] түлхүүртэй лавлах мэдээллийг устгалаа';
+                $context += ['table' => $table, 'record_id' => $id];
             }
             $this->log('content', $level, $message, $context);
         }

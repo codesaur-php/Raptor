@@ -16,7 +16,7 @@ use Psr\Log\LogLevel;
  * 2) TextModel ашиглан localization_text хүснэгтээс бүх идэвхтэй
  *    текстүүдийг уншиж дамжуулна.
  * 3) LanguageModel ашиглан идэвхтэй хэлний жагсаалтыг авч ирнэ.
- * 4) localization-index.html Twig dashboard руу өгөгдөл дамжуулж render хийнэ.
+ * 4) localization-index.html Dashboard руу өгөгдөл дамжуулж render хийнэ.
  *
  * Бүх орчуулгын текстүүд нэг хүснэгтэд (localization_text + localization_text_content)
  * хадгалагддаг бөгөөд LocalizedModel-ийн 2 хүснэгтийн архитектурыг ашигладаг.
@@ -33,7 +33,7 @@ class LocalizationController extends \Raptor\Controller
      * 1) Хэрэглэгчийн эрхийг шалгана (system_localization_index).
      * 2) TextModel ашиглан localization_text хүснэгтээс идэвхтэй текстүүдийг уншина.
      * 3) LanguageModel ашиглан идэвхтэй хэлний жагсаалтыг уншина.
-     * 4) Twig dashboard руу өгөгдлийг дамжуулж UI-г render хийнэ.
+     * 4) Dashboard руу өгөгдлийг дамжуулж UI-г render хийнэ.
      *
      * Алдаа гарвал dashboardProhibited() ашиглан алдааны dashboard үзүүлнэ.
      *
@@ -50,15 +50,14 @@ class LocalizationController extends \Raptor\Controller
             // Орчуулгын текстүүдийг унших
             $model = new TextModel($this->pdo);
             $texts = $model->getRows([
-                'WHERE'    => 'p.is_active=1',
                 'ORDER BY' => 'p.keyword'
             ]);
 
             // Идэвхтэй хэлнүүдийг унших
-            $languages = (new LanguageModel($this->pdo))->getRows(['WHERE' => 'is_active=1']);
+            $languages = (new LanguageModel($this->pdo))->getRows();
 
             // Localization dashboard render хийх
-            $dashboard = $this->twigDashboard(
+            $dashboard = $this->dashboardTemplate(
                 __DIR__ . '/localization-index.html',
                 [
                     'languages' => $languages,

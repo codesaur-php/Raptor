@@ -2,8 +2,8 @@
     <h3 class="px-2 my-auto fs-6 text-white">
         <i class="bi bi-book"></i> moedit - User Manual
     </h3>
-    <a href="{{ 'manual' | link }}" class="btn btn-sm btn-light m-1">
-        <i class="bi bi-arrow-left"></i> {{ 'manual' | text }}
+    <a href="{{ 'manual'|link }}" class="btn btn-sm btn-light m-1">
+        <i class="bi bi-arrow-left"></i> {{ 'manual'|text }}
     </a>
 </div>
 
@@ -436,6 +436,37 @@
                 <tr><td><kbd>Backspace</kbd></td><td>Delete the current row if the first cell is empty (requires 2+ rows)</td></tr>
             </tbody>
         </table>
+    </div>
+</div>
+
+<!-- ==================== HTML VALIDATION ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-shield-check text-success"></i> HTML Validation</h4>
+        <p>
+            moedit validates HTML structure at two levels to protect content from broken HTML:
+        </p>
+        <h5 class="mt-3">1. Editor-side validation (Source -> Visual)</h5>
+        <p>When switching from Source mode to Visual mode, HTML structure is automatically validated:</p>
+        <ul>
+            <li>Detects unclosed HTML comments (<code>&lt;!-- ... </code>)</li>
+            <li>Warns if broken tags cause more than 20% of content to be lost</li>
+            <li>If issues are found, the editor stays in Source mode so you can fix them</li>
+            <li>Warnings are shown via built-in popup notification</li>
+        </ul>
+        <h5 class="mt-3">2. Server-side validation (On save)</h5>
+        <p>When saving pages, news, or products, the server validates HTML content again:</p>
+        <ul>
+            <li>Detects unclosed HTML comments</li>
+            <li>Parses HTML via DOMDocument to check for content loss</li>
+            <li>If broken HTML is detected, saving is rejected with an error message</li>
+        </ul>
+        <div class="alert alert-warning mb-0">
+            <i class="bi bi-exclamation-triangle"></i>
+            <strong>Warning:</strong> When editing HTML in Source mode, make sure all tags are properly closed
+            and comments (<code>&lt;!-- ... --&gt;</code>) are complete.
+            Broken HTML can "swallow" content, which is why validation is essential.
+        </div>
     </div>
 </div>
 

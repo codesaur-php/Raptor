@@ -23,14 +23,12 @@ class ProductsSamples
         if ($path == '\\' || $path == '/' || $path == '.') {
             $path = '';
         }
-        $now = \date('Y-m-d H:i:s');
+        
         $seed = [
+            'category' => '_raptor_sample_',
             'review' => 1,
-            'is_active' => 1,
             'published' => 1,
-            'created_at' => $now,
-            'published_at' => $now,
-            'category' => '_raptor_sample_'
+            'published_at' => \date('Y-m-d H:i:s')
         ];
 
         $model->insert($seed + [

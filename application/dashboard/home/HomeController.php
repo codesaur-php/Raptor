@@ -20,9 +20,9 @@ class HomeController extends \Raptor\Controller
      */
     public function index()
     {
-        $this->twigDashboard(
+        $this->dashboardTemplate(
             __DIR__ . '/home.html',
-            ['web_log_stats' => $this->twigTemplate(__DIR__ . '/web-log-stats.html')]
+            ['web_log_stats' => $this->template(__DIR__ . '/web-log-stats.html')]
         )->render();
 
         $this->log('dashboard', LogLevel::NOTICE, 'Нүүр хуудсыг уншиж байна');

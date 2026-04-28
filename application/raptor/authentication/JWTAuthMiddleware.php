@@ -253,9 +253,15 @@ class JWTAuthMiddleware implements MiddlewareInterface
             $organization = $stmt->fetch();
 
             // -------------------------------------------------------------
-            // 5. RBAC эрхүүдийг ачаалан User объект үүсгэх
+            // 5. RBAC эрхүүдийг ачаалан User объект үүсгэх (cache-тэй)
             // -------------------------------------------------------------
-            $permissions = (new RBAC($pdo, $profile['id']))->jsonSerialize();
+            $cache = $request->getAttribute('container')?->get('cache');
+            $rbacKey = "rbac.{$profile['id']}";
+            $permissions = $cache?->get($rbacKey);
+            if ($permissions === null) {
+                $permissions = (new RBAC($pdo, $profile['id']))->jsonSerialize();
+                $cache?->set($rbacKey, $permissions);
+            }
             $userObject = new User($profile, $organization, $permissions);
 
             // -------------------------------------------------------------

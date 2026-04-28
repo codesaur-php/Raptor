@@ -88,7 +88,7 @@
             const content = form.querySelector('#content').value.trim();
             const assignedTo = form.querySelector('#assigned_to').value;
             if (!title || !content || !assignedTo) {
-                return NotifyTop('warning', `{{ 'warning'|text|e }}`, `{{ 'fill-required-fields'|text|e('js') }}`);
+                return Notify('warning', `{{ 'warning'|text|e }}`, `{{ 'fill-required-fields'|text|e('js') }}`);
             }
 
             submitBtn.disabled = true;
@@ -116,7 +116,7 @@
                     throw new Error(data.message || `{{ 'error-occurred'|text|e('js') }}`);
                 }
             }).catch(err => {
-                NotifyTop('error', `{{ 'error'|text|e }}`, err.message);
+                Notify('error', `{{ 'error'|text|e }}`, err.message);
             }).finally(() => {
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = `<i class="bi bi-send"></i> {{ 'send'|text|e('js') }}`;

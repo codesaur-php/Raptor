@@ -4,6 +4,8 @@ namespace Raptor\RBAC;
 
 use Psr\Log\LogLevel;
 
+use codesaur\DataObject\Constants;
+
 /**
  * RBACController - RBAC (Role-Based Access Control) модулийн
  * UI болон API-д зориулсан үндсэн контроллер.
@@ -24,8 +26,8 @@ use Psr\Log\LogLevel;
  *
  * UI Rendering Pipeline:
  * ---------------------------------------------------------------
- *  - DashboardTrait::twigDashboard() ашиглан sidebar + content бүхий layout
- *  - twigTemplate() ашиглан modal/forms рендерлэх
+ *  - DashboardTrait::dashboardTemplate() ашиглан sidebar + content бүхий layout
+ *  - template() ашиглан modal/forms рендерлэх
  *
  * Logging (audit trail):
  * ---------------------------------------------------------------
@@ -110,7 +112,7 @@ class RBACController extends \Raptor\Controller
             }
 
             // Dashboard руу рендерлэх
-            $dashboard = $this->twigDashboard(
+            $dashboard = $this->dashboardTemplate(
                 __DIR__ . '/rbac-alias.html',
                 [
                     'alias'           => $alias,
@@ -178,13 +180,16 @@ class RBACController extends \Raptor\Controller
                 if (empty($record)) {
                     throw new \Exception($this->text('record-insert-error'));
                 }
+                if ($this->hasService('cache')) {
+                    $this->getService('cache')->clear();
+                }
                 $this->respondJSON([
                     'status'  => 'success',
                     'message' => $this->text('record-insert-success')
                 ]);
             } else {
                 // Modal form render
-                $this->twigTemplate(
+                $this->template(
                     __DIR__ . '/rbac-insert-role-modal.html',
                     ['alias' => $alias, 'title' => $title]
                 )->render();
@@ -209,7 +214,7 @@ class RBACController extends \Raptor\Controller
             } elseif ($this->getRequest()->getMethod() == 'POST') {
                 $level = LogLevel::INFO;
                 $message = 'RBAC дүр [{record.name}] амжилттай үүсгэлээ';
-                $context += ['id' => $record['id'], 'record' => $record];
+                $context += ['record_id' => $record['id'], 'record' => $record];
             } else {
                 $level = LogLevel::NOTICE;
                 $message = 'RBAC дүр үүсгэх үйлдлийг эхлүүллээ';
@@ -239,7 +244,7 @@ class RBACController extends \Raptor\Controller
             // Role-г alias_name байдлаар lookup хийх
             // roles хүснэгтийн нэрийг Roles::getName() ашиглан динамикаар авна. Ирээдүйд refactor хийхэд бэлэн байна.
             $roles_table = (new Roles($this->pdo))->getName();
-            $concat_expr = ($this->getDriverName() == 'pgsql')
+            $concat_expr = ($this->getDriverName() == Constants::DRIVER_PGSQL)
                 ? "alias || '_' || name"
                 : "CONCAT_WS('_',alias,name)";
             $select_role = $this->prepare(
@@ -270,7 +275,7 @@ class RBACController extends \Raptor\Controller
             $stmt->execute();
             $values['permissions'] = $stmt->fetchAll();
 
-            $this->twigTemplate(
+            $this->template(
                 __DIR__ . '/rbac-view-role-modal.html',
                 $values
             )->render();
@@ -287,9 +292,9 @@ class RBACController extends \Raptor\Controller
                 $level = LogLevel::NOTICE;
                 $message = 'RBAC дүр [{record.name}] дэлгэрэнгүйг үзэж байна';
                 $context += [
-                    'alias'  => $record['alias'],
-                    'id'     => $record['id'],
-                    'record' => $record
+                    'alias'     => $record['alias'],
+                    'record_id' => $record['id'],
+                    'record'    => $record
                 ];
             }
             $this->log('dashboard', $level, $message, $context);
@@ -327,6 +332,9 @@ class RBACController extends \Raptor\Controller
                 if (empty($record)) {
                     throw new \Exception($this->text('record-insert-error'));
                 }
+                if ($this->hasService('cache')) {
+                    $this->getService('cache')->clear();
+                }
                 $this->respondJSON([
                     'status'  => 'success',
                     'message' => $this->text('record-insert-success')
@@ -343,7 +351,7 @@ class RBACController extends \Raptor\Controller
                 $select_modules->execute();
                 $modules = $select_modules->fetchAll() ?: [];
 
-                $this->twigTemplate(
+                $this->template(
                     __DIR__ . '/rbac-insert-permission-modal.html',
                     ['alias' => $alias, 'title' => $title, 'modules' => $modules]
                 )->render();
@@ -368,7 +376,7 @@ class RBACController extends \Raptor\Controller
             } elseif ($this->getRequest()->getMethod() == 'POST') {
                 $level = LogLevel::INFO;
                 $message = 'RBAC зөвшөөрөл [{record.name}] амжилттай үүсгэлээ';
-                $context += ['id'=>$record['id'], 'record'=>$record];
+                $context += ['record_id'=>$record['id'], 'record'=>$record];
             } else {
                 $level = LogLevel::NOTICE;
                 $message = 'RBAC зөвшөөрөл үүсгэх үйлдлийг эхлүүллээ';
@@ -417,6 +425,9 @@ class RBACController extends \Raptor\Controller
             if ($method === 'POST') {
                 // Assign
                 if (empty($row) && $model->insert($payload)) {
+                    if ($this->hasService('cache')) {
+                        $this->getService('cache')->clear();
+                    }
                     return $this->respondJSON([
                         'type'    => 'success',
                         'message' => $this->text('record-insert-success')
@@ -425,13 +436,16 @@ class RBACController extends \Raptor\Controller
             } elseif ($method === 'DELETE') {
                 // Revoke
                 if (isset($row['id']) && $model->deleteById($row['id'])) {
+                    if ($this->hasService('cache')) {
+                        $this->getService('cache')->clear();
+                    }
                     return $this->respondJSON([
                         'type'    => 'primary',
                         'message' => $this->text('record-successfully-deleted')
                     ]);
                 }
             }
-            
+
             throw new \Exception($this->text('invalid-values'), 400);
         } catch (\Throwable $err) {
             $this->respondJSON([

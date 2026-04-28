@@ -2,7 +2,7 @@
 
 ## Architecture
 
-Raptor is a PHP MVC framework with Twig templating and multi-tenant RBAC. Frontend is not locked to any specific library - the current codebase uses Bootstrap 5 but developers can use any CSS/JS framework.
+Raptor is a PHP MVC framework with multi-tenant RBAC, built on PSR-7/PSR-15 middleware. Templates are rendered by `codesaur/template` (see "Create Templates" below for syntax notes). Frontend is not locked to any specific library - the current codebase uses Bootstrap 5 but developers can use any CSS/JS framework.
 
 ### Directory Structure
 
@@ -50,38 +50,49 @@ $this->isUserCan('system_rbac')     // Check permission
 $this->getUserId()                  // User ID (do NOT use for auth checks)
 $this->text('keyword')              // Get localized text
 $this->respondJSON($data, $code)    // JSON response
-$this->twigTemplate('file.html')    // Render a standalone template (no layout)
+$this->template('file.html')        // Render a standalone template (no layout)
 $this->generateRouteLink('route')   // Generate URL
 $this->log('table', $level, $msg)   // PSR-3 logging
 $this->prepare($sql)                // PDO prepare
+$this->invalidateCache('key')       // Clear cached data after CRUD
+$this->getService('cache')          // CacheService instance (or null)
+$this->dispatch($event)             // Dispatch PSR-14 event (notifications, etc.)
+```
+
+**Notification dispatch** - use PSR-14 events instead of calling services directly. Admin name and dashboard URL are auto-injected by `DiscordNotifier` (set in `ContainerMiddleware`), so controllers only pass content-specific data:
+
+```php
+$this->dispatch(new \Raptor\Notification\ContentEvent(
+    'delete', 'my-module', $title, $id
+));
 ```
 
 **Template rendering** has three levels:
 
-1. `twigTemplate('file.html', $vars)` - Renders a single standalone template without any layout wrapper. The template itself becomes the full output. Use for any response that does not need the standard layout: AJAX modal forms, error pages (e.g., page-404.html), custom standalone pages, partial HTML fragments, etc.
+1. `template('file.html', $vars)` - Renders a single standalone template without any layout wrapper. The template itself becomes the full output. Use for any response that does not need the standard layout: AJAX modal forms, error pages (e.g., page-404.html), custom standalone pages, partial HTML fragments, etc.
 
-2. `twigDashboard('module.html', $vars)` - Dashboard full-page render: wraps content inside `dashboard.html` layout with sidebar, settings. From DashboardTrait.
+2. `dashboardTemplate('module.html', $vars)` - Dashboard full-page render: wraps content inside `dashboard.html` layout with sidebar, settings. From DashboardTrait.
 
-3. `twigWebLayout('page.html', $vars)` - Web full-page render: wraps content inside `index.html` layout with navbar, footer, SEO meta. From TemplateController.
+3. `webTemplate('page.html', $vars)` - Web full-page render: wraps content inside `index.html` layout with navbar, footer, SEO meta. From TemplateController.
 
-**Rule:** When you need the standard layout (navbar/sidebar, footer, settings), use `twigDashboard()` or `twigWebLayout()`. These call `twigTemplate()` internally to build layout + content. When you need full control over the output without any layout, use `twigTemplate()` directly.
+**Rule:** When you need the standard layout (navbar/sidebar, footer, settings), use `dashboardTemplate()` or `webTemplate()`. These call `template()` internally to build layout + content. When you need full control over the output without any layout, use `template()` directly.
 
 ```php
 // AJAX modal - standalone, no layout
-$this->twigTemplate(__DIR__ . '/role-insert-modal.html', $vars)->render();
+$this->template(__DIR__ . '/role-insert-modal.html', $vars)->render();
 
 // Error page - standalone, own HTML structure
-$this->twigTemplate(__DIR__ . '/page-404.html')->render();
+$this->template(__DIR__ . '/page-404.html')->render();
 ```
 
-`twigWebLayout()` auto-maps SEO meta from `$vars` to the index layout: `title` -> `record_title`, `code` -> `record_code`, `description` -> `record_description`, `photo` -> `record_photo`. For content records (news, page, product) that already have these keys, no extra work is needed:
+`webTemplate()` auto-maps SEO meta from `$vars` to the index layout: `title` -> `record_title`, `code` -> `record_code`, `description` -> `record_description`, `photo` -> `record_photo`. For content records (news, page, product) that already have these keys, no extra work is needed:
 
 ```php
 // Record with title/code/description/photo - meta is auto-mapped
-$this->twigWebLayout(__DIR__ . '/page.html', $record)->render();
+$this->webTemplate(__DIR__ . '/page.html', $record)->render();
 
 // List page - pass title explicitly in $vars
-$this->twigWebLayout(__DIR__ . '/products.html', [
+$this->webTemplate(__DIR__ . '/products.html', [
     'products' => $products,
     'title' => $this->text('products')
 ])->render();
@@ -107,14 +118,24 @@ Register routes in a Router class extending `codesaur\Router\Router`.
 ### 5. Create Templates
 
 - Use vanilla HTML comments (`<!-- -->`), not template engine comments (`{# #}`)
-- Never use `{{ }}` or `{% %}` inside comments - template may evaluate them. Document variables by name only
+- Never use `{{ }}` or `{% %}` inside comments - template may evaluate them. Document variables by name only, e.g. `<!-- Variables: max_file_size, record, files -->`
 - `|text` filter returns the keyword itself when not found, so do NOT add `|default` after it - `{{ 'keyword'|text }}` is always safe
 
-All steps (6-10) below must be completed for a module to be fully integrated. Do not skip any step.
+**Template engine = `codesaur/template` (NOT Twig).** The syntax mimics Twig but is a custom parser. Twig features that are NOT supported (use the listed alternative):
+- `..` range operator -> `range(a, b)` function. e.g. `{% for i in 1..5 %}` -> `{% for i in range(1, 5) %}`
+- `in` membership -> explicit `==`/`or` chain or `[key] is defined` lookup map
+- `ends with`, `matches` operators (only `starts with` works)
+- `**` power, `//` integer division
+- `is odd`, `is even`, `is divisible by`, `is same as` tests
+- `loop.revindex`, `loop.revindex0`, `loop.parent`
+- `{% verbatim %}`, `{% spaceless %}`, `{% apply %}`, `{% extends %}`, `{% block %}`, `{% include %}`
+- Named filter arguments (`|date(format='Y-m-d')`) - only positional
 
-```html
-<!-- Variables: max_file_size, record, files -->
-```
+Supported and works as in Twig: `if/elseif/else/endif`, `for/else/endfor`, `set`, `macro/endmacro`, `is defined`, `is empty`, `is null`, `is iterable`, `loop.{first,last,index,index0,length}`, `?:`, `??`, `~` concat, `starts with`, ternary, hash/array literals, dot/bracket access, filter chains, `range()`, `max()`, `min()`, `attribute()` functions, plus 30+ built-in filters (`e`, `date`, `length`, `keys`, `slice`, `json_encode`, `merge`, `trim`, `nl2br`, `number_format`, `format`, `replace`, `column`, `batch`, `wordwrap`, etc.).
+
+Object method calls work: `{{ user.can('perm') }}`, `{% if auth.is('role') %}` - the engine dispatches to public PHP methods on `is_object($val)`.
+
+Steps 6-11 below must all be completed for a dashboard module to be fully integrated.
 
 ### 6. Add Translations
 
@@ -129,7 +150,7 @@ $model->insert(
 
 Prefer combining existing keywords in templates over creating new ones:
 
-```twig
+```html
 {{ 'username'|text }} / {{ 'email'|text }}
 ```
 
@@ -145,7 +166,7 @@ Seed files only run on fresh installs. If the system is already deployed, also w
 
 ### 8. Add Menu Entry (dashboard modules)
 
-Add the module's index link to `DashboardMenus.php` so it appears in the dashboard sidebar. Set `permission` to control visibility by role. Place under an existing section (Contents, Shop, System) if it fits, or create a new section if the module is a separate concern.
+Add the module's index link to `MenuSeed.php` so it appears in the dashboard sidebar. Set `permission` to control visibility by role. Place under an existing section (Contents, Shop, System) if it fits, or create a new section if the module is a separate concern.
 
 Seed files only run on fresh installs. If the system is already deployed, also write a migration SQL to insert the new menu entry into the live database. The migration must insert into the correct parent menu (use SELECT to find parent_id by title).
 
@@ -158,7 +179,7 @@ If the module has a sidebar menu entry and uses `$this->log()` with an `action` 
 'my_table' => [
     'create'     => ['/dashboard/my-module', 'green'],
     'update'     => ['/dashboard/my-module', 'blue'],
-    'deactivate' => ['/dashboard/my-module', 'red'],
+    'delete'     => ['/dashboard/my-module', 'red'],
 ],
 ```
 
@@ -168,6 +189,19 @@ If the module has a sidebar menu entry and uses `$this->log()` with an `action` 
 ```
 
 No controller changes needed - the badge system reads from the existing `*_log` tables that `$this->log()` already writes to. Just ensure log calls include `'action' => 'action-name'` in the context array.
+
+### 9a. Implement Delete with Trash
+
+Delete methods must call `deleteById()` first, then store the record to trash. This ensures trash only contains actually deleted records - if `deleteById()` fails (throws exception), the record is not stored in trash:
+
+```php
+$model->deleteById($id);
+(new TrashModel($this->pdo))->store('my_log_channel', $tableName, $id, $record, $userId);
+```
+
+**First arg = log channel name.** Pass the same string you would pass to `$this->log()` as the table prefix. `restore()` writes the "restored" audit row directly to that channel, so the entry shows up in Logger Protocol on the recovered record's view/update page. Examples: ReviewsController passes `'products'` (because reviews log to `products_log`); ReferencesController passes `'content'`; TemplateController menu delete passes `'dashboard'`.
+
+The Trash system already provides a `restore()` flow (UNIQUE pre-flight, original-ID-first / auto-increment fallback, LocalizedModel `_content` row recreation). For your new module to restore correctly, the `record_data` you pass to `store()` must be the full record snapshot - including `localized` for LocalizedModel entries.
 
 ### 10. Write Manual (dashboard modules)
 
@@ -183,10 +217,6 @@ Create `application/dashboard/manual/{module}-manual-{lang}.html` for both MN an
 ### 11. Write Tests (if needed)
 
 Place tests in `tests/Unit/` or `tests/Integration/`. Extend `Tests\Support\RaptorTestCase` (unit) or `Tests\Support\IntegrationTestCase` (DB required). Test security rules, business logic, and code quality - not trivial getters/setters.
-
-### 12. Run Composer Dump
-
-After adding new files/namespaces, run `composer dump-autoload` to regenerate the autoloader.
 
 ## RBAC and Authentication
 
@@ -205,6 +235,49 @@ After adding new files/namespaces, run `composer dump-autoload` to regenerate th
 - `viewer` - Read only
 
 ## Shared Middleware
+
+### Writing Middleware - Critical Rule
+
+**NEVER call `$handler->handle()` inside a `try` block.** The middleware runner uses a shared internal pointer (via `current()`/`next()`) to iterate the middleware queue. Each `handle()` call advances this pointer. If `handle()` is called inside `try` and an exception propagates back from deeper in the chain, the `catch` block catches it, and execution continues to a SECOND `handle()` call - causing the pointer to advance past the end of the queue (`current()` returns `false`, crashing the application).
+
+```php
+// WRONG - causes double handle() call when exception occurs
+public function process($request, $handler): ResponseInterface
+{
+    try {
+        $data = $this->loadData($request);
+        if ($data) {
+            return $handler->handle($request->withAttribute('data', $data));
+        }
+        // ... fallback loading ...
+    } catch (\Throwable $err) {
+        // Exception from deep in the chain is caught here,
+        // but handle() already advanced the pointer
+    }
+    return $handler->handle($request);  // SECOND call - pointer is stale!
+}
+```
+
+```php
+// CORRECT - prepare data in try, call handle() once outside
+public function process($request, $handler): ResponseInterface
+{
+    $data = [];
+    try {
+        $data = $this->loadData($request);
+        // No handle() call here - only data preparation
+    } catch (\Throwable $err) {
+        // Safe - no pointer was advanced
+    }
+    return $handler->handle($request->withAttribute('data', $data));
+}
+```
+
+**Rule summary for middleware:**
+- `$handler->handle()` must be called exactly ONCE per middleware
+- That single call must be OUTSIDE any `try/catch` block
+- `try/catch` should only wrap data preparation logic (DB queries, cache reads, etc.)
+- The `catch` block should handle the error (log, set defaults), then let execution flow to the single `handle()` call
 
 ### SessionMiddleware
 
@@ -225,7 +298,7 @@ new SessionMiddleware(fn($path, $method) =>
 
 ### CsrfMiddleware
 
-`Raptor\CsrfMiddleware` protects dashboard POST/PUT/DELETE requests against CSRF attacks.
+`Raptor\CsrfMiddleware` protects dashboard POST/PUT/PATCH/DELETE requests against CSRF attacks.
 
 - Token is generated per-session at login and stored in `$_SESSION['CSRF_TOKEN']`
 - If no token exists (e.g. old session), the middleware auto-generates one (requires session write access from SessionMiddleware)
@@ -234,7 +307,7 @@ new SessionMiddleware(fn($path, $method) =>
 - Client JS sends the token via `X-CSRF-TOKEN` header using `csrfFetch()` wrapper
 - Token is delivered to the frontend via `<meta name="csrf-token">` in `dashboard.html`
 
-**For new dashboard modules**: use `csrfFetch()` instead of `fetch()` for all POST/PUT/DELETE requests. GET requests can use either. `csrfFetch()` is defined in `dashboard.js` and auto-adds the CSRF header.
+**For new dashboard modules**: use `csrfFetch()` instead of `fetch()` for all POST/PUT/PATCH/DELETE requests. GET requests can use either. `csrfFetch()` is defined in `dashboard.js` and auto-adds the CSRF header.
 
 **For standalone pages** (not using `dashboard.html` layout, e.g. login): use plain `fetch()` since `dashboard.js` is not loaded and login is CSRF-exempt anyway.
 
@@ -247,6 +320,43 @@ new SessionMiddleware(fn($path, $method) =>
 ### Parameterized Queries
 
 Use `prepare()` + `bindValue()` for user input. Router-validated values (e.g. `{uint:id}`) are safe to use directly in SQL since the router rejects non-matching requests with 404.
+
+### MySQL / PostgreSQL Compatibility
+
+The framework supports both MySQL and PostgreSQL. Raw SQL queries MUST work on both drivers. Use `$this->getDriverName()` together with `codesaur\DataObject\Constants::DRIVER_*` to branch when syntax differs:
+
+```php
+use codesaur\DataObject\Constants;
+
+// JSON extraction
+if ($this->getDriverName() === Constants::DRIVER_PGSQL) {
+    $expr = "(context::jsonb)->>'action'";
+} else {
+    $expr = "JSON_UNQUOTE(JSON_EXTRACT(context, '$.action'))";
+}
+
+// String concatenation - CONCAT() works on both, but || is PostgreSQL-only.
+// Use CONCAT() for cross-database compatibility.
+$sql = "CONCAT(first_name, ' ', last_name)";
+
+// Table/column discovery
+if ($this->getDriverName() === Constants::DRIVER_PGSQL) {
+    $sql = "SELECT tablename FROM pg_catalog.pg_tables WHERE schemaname = 'public' AND tablename LIKE '%_log'";
+} else {
+    $sql = "SHOW TABLES LIKE '%_log'";
+}
+
+// Auto-increment reset
+if ($this->getDriverName() === Constants::DRIVER_PGSQL) {
+    $this->exec("SELECT setval(pg_get_serial_sequence('$table', 'id'), $nextId, false)");
+} else {
+    $this->exec("ALTER TABLE $table AUTO_INCREMENT = $nextId");
+}
+```
+
+Always use `Constants::DRIVER_PGSQL` / `DRIVER_MYSQL` / `DRIVER_SQLITE` rather than the raw `'pgsql'` / `'mysql'` strings - the literals were replaced framework-wide when `codesaur/dataobject` v9.1.0 introduced the Constants class.
+
+Common differences to watch: `JSON_EXTRACT` vs `::jsonb`, `SHOW TABLES/COLUMNS` vs `pg_catalog`/`information_schema`, `AUTO_INCREMENT` vs `setval()`, `ON DUPLICATE KEY UPDATE` vs `ON CONFLICT DO UPDATE`, `DATE_SUB(NOW(), INTERVAL 15 MINUTE)` vs `NOW() - INTERVAL '15 minutes'`, identifier quoting (backticks vs double quotes).
 
 ### Migration System
 
@@ -279,9 +389,57 @@ Rules:
 6. Use `IF NOT EXISTS` / `IF EXISTS` where possible
 7. Never edit a file in `ran/`
 
-### Soft Delete
+### Delete Strategy
 
-Records are deactivated (`is_active=0`), never physically deleted. Exception: `LanguageModel` uses hard delete because `code`, `locale`, `title` columns have unique constraints that cannot accommodate deactivated rows.
+- **Users, Organizations, Signup** use soft delete (`deactivateById`, `is_active=0`) with optional hard delete for deactivated records
+- **All other models** use hard delete (`deleteById`) directly. Deleted data is preserved in the `trash` table via `TrashModel::store()` before deletion
+- Hard delete for Users/Organizations uses `setForeignKeyChecks(false)` before `deleteById()`
+
+## Cache
+
+Custom file-based cache (PSR-16 SimpleCache). Гадаад dependency-гүй, зөвхөн `psr/simple-cache` interface ашиглана. Stored in `private/cache/`. Registered as `cache` container service. TTL: 12 hours (safety net - primary invalidation is explicit).
+
+### Cached Data
+
+| Cache key | Loaded by | Invalidated by |
+|-----------|-----------|---------------|
+| `languages` | LocalizationMiddleware | LanguageController |
+| `texts.{code}` | LocalizationMiddleware | TextController, LanguageController |
+| `settings.{code}` | SettingsMiddleware | SettingsController |
+| `menu.{code}` | DashboardTrait | TemplateController (menu CRUD) |
+| `rbac.{userId}` | JWTAuthMiddleware | RBACController (`clear()`) |
+| `pages_nav.{code}` | Web TemplateController | PagesController |
+| `featured_pages.{code}` | Web TemplateController | PagesController |
+| `recent_news.{code}` | HomeController | NewsController |
+| `reference.{table}.{code}` | TemplateService | ReferencesController |
+
+### Cache Invalidation Rules
+
+- Call `$this->invalidateCache('key')` in the `try` block, right after successful DB write and before `respondJSON()`
+- Use `{code}` placeholder for language-specific keys - automatically iterates all languages
+- RBAC changes use `$this->getService('cache')->clear()` since they affect all users
+- Never place `invalidateCache` in `finally` blocks (runs on errors too)
+- Cache is fail-safe: if unavailable, system works without it (direct DB queries)
+
+### Adding Cache to New Modules
+
+When a new module has data that is loaded on every request and only changes via admin CRUD:
+
+1. Add cache read in the middleware/controller that loads the data:
+```php
+$cache = $this->hasService('cache') ? $this->getService('cache') : null;
+$data = $cache?->get('my_key');
+if ($data === null) {
+    $data = $model->retrieve();
+    $cache?->set('my_key', $data);
+}
+```
+
+2. Add `$this->invalidateCache('my_key')` after successful CRUD operations in the controller
+
+### PrivateFilesController
+
+`private/cache/` is protected from `PrivateFilesController` - both `read()` and `setFolder()` block access to the cache directory.
 
 ## Frontend
 
@@ -291,12 +449,12 @@ The current codebase uses these libraries, but none are required by the framewor
 
 - Bootstrap 5.3.6 (CDN), Bootstrap Icons 1.13.1
 - `motable.js` - Data table, `moedit.js` - Rich text editor
-- `dashboard.js` - AJAX modals, notifications, search, sidebar badges, CSRF fetch wrapper, log protocol loader
+- `dashboard.js` - AJAX modals, notifications, search, sidebar badges, CSRF fetch wrapper, log protocol loader, dark mode
 - SweetAlert2 - Confirmation dialogs
 
 ### Asset Versioning
 
-When making significant changes to JS or CSS files, bump `?v=` in Twig templates (e.g. `dashboard.css?v=1` -> `dashboard.css?v=2`). Only local assets, not CDN.
+When making significant changes to JS or CSS files, bump `?v=` in Templates (e.g. `dashboard.css?v=1` -> `dashboard.css?v=2`). Only local assets, not CDN.
 
 ### UI Conventions
 
@@ -314,7 +472,7 @@ Colored badge pills on sidebar menu items showing unseen activity counts per adm
 
 - `BadgeController` (`raptor/template/`) - BADGE_MAP, PERMISSION_MAP, badge counting + seen API
 - `AdminBadgeSeenModel` (`raptor/template/`) - stores `checked_at` per admin per module
-- `BadgeRouter` (`raptor/template/`) - GET `/dashboard/badges`, POST `/dashboard/badges/seen`
+- `BadgeRouter` (`raptor/template/`) - GET `/dashboard/badges`, POST `/dashboard/badges/seen`. Registered in `Raptor\Application`
 - `dashboard.js` - `initSidebarBadges()` AJAX fetch + DOM render
 - `dashboard.css` - sidebar badge flex layout + pill styles
 
@@ -322,7 +480,7 @@ Colored badge pills on sidebar menu items showing unseen activity counts per adm
 
 - Green (`bg-success`) - create, insert
 - Blue (`bg-primary`) - update
-- Red (`bg-danger`) - delete, deactivate
+- Red (`bg-danger`) - delete
 
 Up to 3 badges per module, shown left to right in green-blue-red order.
 
@@ -393,8 +551,10 @@ For modules not tracked in logs (manual, migrations), badges are based on file c
 
 Common context patterns:
 - Record-specific: `{"record_id":"{{ record['id'] }}"}`
-- Action-specific: `{"action":"reference-*","id":"{{ record['id'] }}"}`
+- Action-specific: `{"action":"reference-*","record_id":"{{ record['id'] }}"}`
 - No filter: omit `data-context` entirely
+
+**Convention:** any log entry tied to a record must use `'record_id' => $id` in the context array - never `'id' => $id`. This single convention keeps Logger Protocol filters consistent across modules. The separate `auth_user.id` field has its own semantic (used by the Badge system to filter out the actor's own actions) and is unrelated.
 
 ## Code Style
 
@@ -406,8 +566,15 @@ Group by namespace, separated by blank lines: external packages -> codesaur -> R
 
 Write in Mongolian Cyrillic or English. Applies to `*.md`, PHPDoc, HTMLDoc, JSDoc, comments.
 
-- No Unicode special characters - ASCII only (`->` not arrow, `-` not bullet, `--` not em-dash, `"` `'` not curly quotes)
+- No Unicode special characters - ASCII only (`->` not arrow, `-` not bullet, `--` not em-dash, `"` `'` not curly quotes, `>=` not `≥`, `>` not `»`, `(c)` or `&copy;` not `©`)
 - When changing code, update related docs in the same commit
+
+**Allowed Unicode exceptions** (do not "fix" these):
+- `🦖` dinosaur emoji - Raptor brand identity. Allowed in `README.md` (title) and `application/raptor/migration/migration-index.html` (header).
+- Emoji in `application/dashboard/manual/*-manual-*.html` - allowed for admin clarity in user-facing manual pages.
+- Emoji in `application/raptor/notification/DiscordNotifier.php` - allowed because Discord notifications use emoji as their primary visual language for admin clarity.
+- IPA pronunciation characters (e.g. `/vɪˈlɒsɪræptər/`) in `application/raptor/content/page/PagesSamples.php` and `README.md` "Did You Know?" trivia - educational content, not docs/comments.
+- Superscript/subscript characters (`²`, `₂` etc.) in `application/dashboard/manual/moedit-manual-*.html` - chemistry/math notation examples in moedit manual.
 
 ### error_log Usage
 

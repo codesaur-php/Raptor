@@ -6,13 +6,154 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 
 ---
 
+## [3.0.0] - 2026-04-28
+[3.0.0]: https://github.com/codesaur-php/Raptor/compare/v2.2.0...v3.0.0
+
+Trash system, PSR-14 event dispatcher, soft-delete removal across 15 models, hard-delete for users/organizations, file-based DB cache, admin notification emails, HTML validation, HTTP PATCH for partial updates, query optimizations, Mailer rewrite (PHPMailer/Brevo SDK/Guzzle removed), codesaur dependency upgrades (template v4.0.1, dataobject v9.1.0, http-client v2.1.0), SSH deploy, comprehensive documentation expansion.
+
+### Breaking Changes
+
+- **Soft delete (deactivateById) removed** from most models - only UsersModel, OrganizationModel, SignupModel retain `is_active` column
+- **`is_active` column removed** from 15 models: NewsModel, PagesModel, ProductsModel, ProductOrdersModel, ReviewsModel, CommentsModel, FilesModel, MenuModel, TextModel, ReferenceModel, SettingsModel, LanguageModel, ForgotModel, DevRequestModel, MessagesModel
+- All content controllers `deactivate()` method renamed to `delete()` with hard `deleteById()`
+- Route paths changed from `/deactivate` to `/delete` across all content routers
+- `getRowWhere(['id' => $id, 'is_active' => 1])` patterns replaced with `getById($id)`
+
+### Added
+
+- **Trash system** (`Raptor\Trash`) - Deleted records are stored in `trash` table before deletion
+  - `TrashModel` columns: `id`, `table_name`, `log_table`, `original_id`, `record_data` (JSON mediumtext), `deleted_by`, `deleted_at`. The `log_table` column holds the **log channel name** that `restore()` writes the "restored" row to (e.g. `'products'`, `'news'`, `'content'`); controllers pass it directly to `TrashModel::store()`
+  - `TrashController` - index, list (filter by `table_name`), view (JSON detail), restore (recover record), delete (permanent), empty (clear all)
+  - `TrashRouter` - 6 routes under `/dashboard/trash/` (`trash`, `trash-list`, `trash-view`, `trash-restore`, `trash-delete`, `trash-empty`)
+  - Dashboard UI with table-name filter, detail modal, restore button, SweetAlert confirmations
+  - system_coder only access
+  - Menu entry added to MenuSeed (position 365, before Manage Menu)
+  - **Restore feature** - schema-aware UNIQUE pre-flight check (information_schema for MySQL, pg_index for PostgreSQL); attempts original ID first to preserve FK references, falls back to auto-increment on PRIMARY KEY conflict (SQLSTATE 23000); restores LocalizedModel `_content` rows with new parent_id; aborts with admin-friendly message on UNIQUE collision (slug, keyword, code, sku, etc.)
+  - **Dual restore audit logging** - every restore writes to `trash_log` (full audit) AND the restored record's `log_table` channel (so the entry appears in Logger Protocol on the record's view/update page). The `log_table` value is set at delete time by the controller calling `TrashModel::store()` with its log channel name (e.g. ReviewsController passes `'products'`, ReferencesController passes `'content'`, TemplateController menu delete passes `'dashboard'`)
+- **`record_id` log context convention** - Standardized record-identifier key across all CRUD log calls. Previously some modules used `'id' => $id`, others `'record_id' => $id`, breaking Logger Protocol filters. Refactored 10 controllers (Messages, Language, Text, Organization, RBAC, Users, References, web News/Page/Shop) and updated `WebLogStats` JSON_EXTRACT path from `$.id` to `$.record_id`. Reference view/update templates updated to filter by `record_id`. New rule: any log entry tied to a record must use `'record_id' => $id` in context (`auth_user.id` retains its own semantic for Badge system)
+- **PSR-14 Event Dispatcher** (`Raptor\Notification`) - Decoupled notification system
+  - `EventDispatcher` implementing `Psr\EventDispatcher\EventDispatcherInterface`
+  - `ListenerProvider` implementing `Psr\EventDispatcher\ListenerProviderInterface`
+  - `Event` base class implementing `StoppableEventInterface`
+  - `ContentEvent` - content CRUD events (news, pages, text, references, files, etc.)
+  - `UserEvent` - user signup/approve events
+  - `OrderEvent` - order new/status_changed events
+  - `DevRequestEvent` - dev request new/updated events
+  - `DiscordListener` - subscribes to all events, delegates to `DiscordNotifier`
+  - Registered as `events` service in Container
+- **Hard delete for Users/Organizations** - `delete()` method with `setForeignKeyChecks(false)` for permanently deleting deactivated records
+  - Fire icon button in UI for is_active=0 records
+  - Trash icon button retained for is_active=1 records (deactivate)
+  - Routes: `user-delete`, `user-signup-delete`, `organization-delete`
+- **Controller helpers** added to base `Raptor\Controller`:
+  - `dispatch(object $event)` - PSR-14 event dispatch
+  - `getAdminName()` - current admin full name
+  - `getDashboardUrl()` - dashboard base URL
+- **CacheService** - Custom file-based DB cache (PSR-16 SimpleCache). Гадаад dependency-гүй. Stored in `private/cache/`. Registered as container service. Caches: languages, translations, settings, dashboard menu, RBAC permissions, pages navigation, featured pages, recent news, reference data. Auto-invalidated on CRUD operations via `Controller::invalidateCache()` helper. 12-hour TTL safety net. Fail-safe: system works without cache if unavailable
+- **TemplateService caching** - Email/notification templates now load through 2-mode strategy: cache enabled = full table cached as `reference.templates.{code}` map; cache disabled = per-keyword DB query (single keyword) or batch IN(...) query (multiple keywords)
+- **Admin email notifications** - Configurable email notifications for 4 channels: contact messages (`RAPTOR_CONTACT_EMAIL_NOTIFY`), orders (`RAPTOR_ORDER_EMAIL_NOTIFY`), comments (`RAPTOR_COMMENT_EMAIL_NOTIFY`), product reviews (`RAPTOR_REVIEW_EMAIL_NOTIFY`). Each channel has independent toggle and recipient email in `.env`. Contact and order enabled by default, comment and review disabled by default
+- **Email notification UI** - Toggle switch and recipient email settings at top of messages, orders, comments, reviews index pages. Visible to `system_coder` role only. Directly modifies `.env` file via `MessagesController` toggle/update methods
+- **Email templates** - `contact-message-notify`, `order-status-update`, `comment-notify`, `review-notify` templates in `reference_templates` for admin notification emails
+- **HtmlValidationTrait** - Server-side HTML content validation for Pages, News, Products. Detects unclosed HTML comments and broken tags causing >20% content loss. Rejects save with error message
+- **NewsModel::getRecentPublished()** - Reusable method for recent published news with cache-friendly field selection (excludes dynamic `read_count`)
+- **moedit built-in notify** - `_notify(type, msg)` method with built-in popup notification (no external dependency). Displays centered toast with icon, colored background, auto-dismiss after 2.5s. Supports `success`, `warning`, `danger`, `info` types
+- **moedit HTML validation** - Client-side validation when switching Source to Visual mode. Detects unclosed comments and broken tags. Stays in Source mode on failure with warning notification
+- **SSH Deploy** - New deploy job using `rsync` + `ssh-action` for Linux servers with SSH access (VPS, cloud VM, dedicated). Post-deploy `composer dump-autoload` via SSH
+
+### Changed
+
+- All direct `$this->getService('discord')?->` calls (35 occurrences across 16 controllers) replaced with `$this->dispatch(new Event(...))` pattern
+- Removed duplicated `$adminName`/`$appUrl` variable assignments from controllers (now helper methods)
+- **`codesaur/dataobject` upgraded to v9.1.0** - significant ORM upgrade with breaking error-handling changes and new helper methods that Raptor adopts framework-wide:
+  - **New `Constants` class** centralizes all magic values previously scattered through the ORM. Raptor now imports it everywhere a literal would have been used:
+    - `Constants::DRIVER_PGSQL` / `DRIVER_MYSQL` / `DRIVER_SQLITE` replaces hardcoded `'pgsql'` string comparisons in `getDriverName()` checks (25 occurrences across 14 files: WebLogStats, TrashController, Application init, multiple migration helpers, etc.)
+    - `Constants::DEFAULT_CODE_LENGTH` replaces hardcoded `2` in `new Column('code', 'varchar', 2)` (9 models with localization code columns)
+    - `Constants::CONTENT_TABLE_SUFFIX` (`'_content'`) used by `TrashController::insertLocalizedContent()` to derive the LocalizedModel content-table name without hardcoding the suffix
+    - Other constants available for future use: `COL_ID`, `COL_IS_ACTIVE`, `COL_PARENT_ID`, `COL_CODE`, `LOCALIZED_KEY`, `CONTENT_KEY_COLUMNS`, `PRIMARY_ALIAS_PREFIX`, `CONTENT_ALIAS_PREFIX`, `TABLE_NAME_PATTERN`, error codes
+  - **Breaking: `insert()` and `updateById()` now throw on failure** instead of returning `false`. Return type narrowed from `array|false` to `array`. All Raptor callers updated; pattern `=== false` checks removed in favour of try/catch around the ORM call
+  - **Breaking: `deactivateById()` throws when row is already inactive** (previously returned `false`). Also no longer mutates UNIQUE column values on deactivation (Raptor's `UsersModel`/`SignupModel`/`OrganizationModel` no longer rely on the old "negate numeric / prefix `[uniqid]`" hack - the username/email column lengths could be reduced from 143 to 128 chars accordingly)
+  - **New shortcut methods leveraged across Raptor**: `getById(int $id)` adopted across 18 controllers (replacing the older `getRowWhere(['id' => $id])` pattern); `countRows(array $condition)` used by `TrashController::empty()` for the pre-clear summary count; `existsById(int $id)` available for lightweight presence checks (`SELECT 1 ... LIMIT 1`)
+  - PDO error extraction centralized via `throwPdoError()` helper inside the package (no Raptor change needed - exceptions now carry richer context automatically)
+- `codesaur/template` updated to v4.0.1 - adds `{% for %}{% else %}{% endfor %}` empty-iterable branch and object method calls in expressions (`{{ user.can('edit') }}`, `{% if auth.is('admin') %}`). Both were silently failing before; permission-gated UI is now visible to authorized users, and templates with `{% else %}` no longer truncate everything after `{% endfor %}`.
+- `composer.json`: `psr/simple-cache` moved from dev to stable version, `minimum-stability: dev` removed, `psr/event-dispatcher` added
+- Example `deactivateById()` calls wrapped in try/catch (adapts to v9.1.0's throw-on-already-inactive behaviour)
+- **Shop module router merge** - `OrdersRouter`, `ProductsRouter`, `ReviewsRouter` consolidated into single `ShopRouter`. Reviews routes renamed: `reviews` -> `products-reviews` (GET=HTML, POST=JSON), `reviews-delete` -> `products-reviews-delete`; `reviews-list` and `reviews-view` removed (handler logic merged into index/products view)
+- **`twigDashboard()` renamed to `dashboardTemplate()`** - Method in `DashboardTrait` renamed across 23 controllers and 4 docs/CLAUDE files. Old name was a leftover from when codesaur/template embedded Twig
+- **CacheService cross-platform robustness** - All filesystem ops (`unlink`, `file_put_contents`, `file_get_contents`, `mkdir`, `rmdir`) wrapped with `@` to suppress warnings on Windows file locks/race conditions. `clear()` now returns `false` on partial failure (PSR-16 compliance). `set()` now properly handles `\DateInterval` TTL. `has()` correctly returns true for explicitly-stored null values
+- **Mailer rewritten with native PHP / codesaur primitives** - All third-party email dependencies (PHPMailer, Brevo SDK, Guzzle) removed:
+  - **Brevo transport** (`sendBrevoTransactional`) - rewritten using `codesaur/http-client`'s `JSONClient` (no more Brevo SDK + Guzzle dependency tree)
+  - **SMTP transport** (`sendSMTP`) - rewritten using native `stream_socket_client` (no more PHPMailer). Visibility changed from `public` to `protected`. New helpers: `smtpRead`, `smtpCommand`, `smtpExpect`, `buildMimeMessage`, `formatAddress`
+  - **Mail transport** (`sendMail`) - new method using PHP `mail()` for cPanel/VPS sendmail/postfix
+  - **Transport selection** via new `RAPTOR_MAIL_TRANSPORT` env var: `brevo` (default), `smtp`, `mail`. `send()` dispatches to the appropriate handler based on this setting
+  - **`.env` keys added**: `RAPTOR_MAIL_TRANSPORT`, `RAPTOR_SMTP_HOST`, `RAPTOR_SMTP_PORT`, `RAPTOR_SMTP_USERNAME`, `RAPTOR_SMTP_PASSWORD`, `RAPTOR_SMTP_SECURE`
+  - **Attachments** - URL/base64 (Brevo), local file/base64 (SMTP), all types via parent class (Mail)
+- **WebLogStats query optimization** - Consolidated 14 separate `GROUP BY` + `JSON_EXTRACT` queries into 2 single-scan queries (1 for today's live data, 1 per cached date). Eliminates MySQL temporary table creation that caused "Disk full" errors on shared hosting. `refreshCache()` batch limited to 5 dates per request to prevent overloading `/tmp` partition
+- **moedit.js** - Removed `opts.notify` option. `_notify` definition moved entirely to `moedit.ui.js` as built-in. Version bumped to v3
+- **moedit.ui.js** - `_notify` rewritten as built-in 2-parameter method `(type, msg)`. All 3-parameter calls consolidated to 2 parameters. Removed `Notify` global fallback and `alert()` fallback. Version bumped to v3
+- **dashboard.js** - `copyContent()` moved to Files module `index.html` (only used by file tag/location modals). `initLoggerProtocol()` LIMIT capped at 100 entries with idempotent guard against duplicate fetches. `initInvalidTabFocus()` MutationObserver auto-switches Bootstrap tab when invalid input detected on hidden tab. Version bumped to v4
+- **News list query** - Correlated subquery for comments count replaced with single LEFT JOIN. 4000 news = 4000 subqueries reduced to 1 grouped JOIN
+- **Database indexes** - Added `idx_news_content_active_created`, `idx_news_content_code`, `idx_news_comments_newsid_active` for news list performance
+- **DashboardMenus renamed to MenuSeed** - Class and file renamed for consistency with other seed classes (PermissionsSeed, RolePermissionSeed). CLAUDE.md and CHANGELOG.md updated
+- **PagesModel::getFeaturedLeafPages()** - SELECT fields expanded for developer flexibility (added description, photo, code, type, category, position, published_at, created_at)
+- **PrivateFilesController** - `read()` and `setFolder()` now block access to `private/cache/` directory
+- **Cache invalidation** - Moved from `finally` blocks to `try` blocks (after successful DB write only). Exception-safe with error logging in development mode
+- **Partial update routes: PUT -> PATCH** - 4 routes that perform partial resource updates now use HTTP PATCH instead of PUT, following RESTful conventions:
+  - `PATCH /dashboard/orders/{id}/status` - Order status update (single field)
+  - `PATCH /dashboard/files/{table}/{id}` - File metadata update (changed fields only)
+  - `PATCH /dashboard/settings/env` - Single .env key-value toggle/update
+  - `PATCH /dashboard/messages/replied/{id}` - Mark message as replied (is_read + replied_note)
+- **Frontend templates updated** - All `csrfFetch()` calls for the 4 PATCH routes changed from `method: 'PUT'` to `method: 'PATCH'` across 6 HTML files (orders-view, orders-index, reviews-index, messages-index, comments-index, files-update-modal)
+- **CsrfMiddleware** - PHPDoc updated to document PATCH as a protected method (POST/PUT/PATCH/DELETE). No code change needed - middleware already validates all non-safe methods
+- **LogsController::retrieve()** - Now sanitizes and applies `OFFSET` parameter (was silently ignored, causing infinite-scroll endless loop on `index-list-logs.html`). `LIMIT` capped at 200 max with default 100
+- **Empty `WHERE` SQL guard** - 3 list controllers (NewsController, PagesController, DevRequestController) now build optional `WHERE` clause to avoid `WHERE  ORDER BY` syntax error when no filter params are provided
+- **codesaur/http-client upgraded to v2.1.0** - New features: `Response` object (`statusCode`, `headers`, `body`, `isOk()`, `isError()`, `json()`), `CurlClient::send()` returning Response, `CurlClient::sendWithRetry()` with exponential backoff, `CurlClient::upload()`, `JSONClient` base URL support, auto SSL verify based on `CODESAUR_APP_ENV`
+- **DiscordNotifier** - `CurlClient::request()` replaced with `sendWithRetry()` for automatic retry on transient failures (2 retries with exponential backoff). Response status logged in development mode. Added `newReview()` method for product reviews showing star rating + comment
+- **BadgeController** - `trash` log table now bypasses `auth_user.id != adminId` self-filter (admin's own trash entries should appear in their own badge). `store` action color changed from green to red (semantically a destructive operation)
+- **deploy.yml** - Renamed from cPanel-specific to generic naming: "cPanel FTP Deploy" -> "FTP Deploy", job `cpanel` -> `ftp`. Pre-check job `check-ftp` -> `check-targets` detects both FTP and SSH. "XAMPP htdocs" -> "Server project directory". All 3 jobs (FTP, SSH, Windows) run in parallel when configured
+- **SpamProtectionTrait** - Turnstile verification uses `CurlClient::send()` with `Response` object. HTTP status check (`isError()`) added before JSON parsing. `json_decode()` replaced with `$response->json()`
+
+### Removed
+
+- `is_active` column and all related SQL queries, indexes, filter logic from 15+ models and their controllers
+- Direct Discord notification calls from all controllers (replaced by PSR-14 events)
+- Codecov integration from CI workflow (coverage reports remain local)
+- `OrdersRouter`, `ProductsRouter`, `ReviewsRouter` files (merged into `ShopRouter`)
+- `ReviewsController::list()` and `ReviewsController::view()` methods (functionality merged into `index()` with method-aware response)
+- `is_active` orphan check in `references-index.html` (Reference module never had `is_active` column)
+- **`phpmailer/phpmailer ^7.0.1`** dependency (replaced by native `stream_socket_client` SMTP)
+- **`getbrevo/brevo-php ^2.0.14`** dependency (replaced by `codesaur/http-client`'s `JSONClient`)
+- **`guzzlehttp/guzzle`** transitive dependency (was pulled in by Brevo SDK; no longer needed)
+
+### Tests
+
+- **PatchRoutesTest** - 28 tests (40 assertions) covering PATCH route matching, PUT rejection, parameter extraction, URL generation, CsrfMiddleware PATCH validation, source code verification
+- **CacheTest** expanded - 46 tests covering PSR-16 compliance: TTL expiry, `\DateInterval` TTL, `has()` semantics for null/false/zero, `getMultiple/setMultiple/deleteMultiple`, edge cases (long keys, unicode, special chars, corrupted files, nonexistent dir, invalid path)
+
+### Documentation
+
+- **moedit manual** (MN/EN) - Added HTML validation section covering editor-side and server-side validation
+- **messages manual** (MN/EN) - Added admin email notification settings section
+- **comments manual** (MN/EN) - Added admin email notification settings section
+- **orders manual** (MN/EN) - Added admin email notification section, separated customer and admin email sections
+- **reviews manual** (MN/EN) - Added admin email notification settings section
+- **pages manual** (MN/EN) - Added HTML content validation warning in create/edit sections
+- **news manual** (MN/EN) - Added HTML content validation warning in create/edit sections
+- **products manual** (MN/EN) - Added HTML content validation warning in create/edit sections
+- **docs/en/api.md, docs/mn/api.md** - Added 10 new sections: HtmlValidationTrait, DashboardTrait, FileController, AIHelper, Badge System, MenuModel, Dashboard Home, Dashboard Manual, ExceptionHandler, Seed/Initial Data. Route tables updated for PATCH. ShopRouter unified route table added (replaces ProductsRouter/OrdersRouter/ReviewsRouter). CsrfMiddleware added to pipeline. Web controller methods expanded (favicon, commentSubmit, reviewSubmit). Return types updated from `TwigTemplate` (removed) to `FileTemplate`
+- **docs/en/README.md, docs/mn/README.md** - Added 5 new module sections (6.24-6.28): Badge System, Dashboard Home, Dashboard Manual, AI Helper, Seed/Initial Data. Template module expanded with DashboardTrait, MenuModel, FileController. CSRF section added (6.20). Middleware pipeline table updated. Architecture flow updated. Features list expanded. Router example code expanded with PATCH. Template engine section rewritten - codesaur/template (NOT Twig) limitations table added (range operator, `in` membership, `ends with`, etc.)
+- **CLAUDE.md** - Template engine clarification (codesaur/template, not Twig). Twig features NOT supported listed with replacements. `dashboardTemplate()` method (renamed from `twigDashboard()`). CsrfMiddleware updated to PATCH-aware
+- **README.md** - Added CSRF protection and sidebar badge system to features list (MN/EN). Architecture diagram updated with CSRF middleware
+- **PHPDoc** - Updated in OrdersController, ContentsRouter, MessagesController, SettingsController, FilesController, CsrfMiddleware, ShopRouter, Application.php (web), CacheService
+
+---
+
 ## [2.2.0] - 2026-03-19
 [2.2.0]: https://github.com/codesaur-php/Raptor/compare/v2.1.0...v2.2.0
 
 Security hardening (CSRF, login rate limiting, SQL injection protection), Discord notifications expansion, test coverage 3x increase, web content metadata and social sharing, news category listing, page sidebar, files module consolidation, and database compatibility improvements.
 
 ### Added
-- **CsrfMiddleware** - Per-session CSRF token validation for all dashboard POST/PUT/DELETE requests. Token generated at login and auto-generated for existing sessions. Delivered to frontend via `<meta name="csrf-token">` tag
+- **CsrfMiddleware** - Per-session CSRF token validation for all dashboard POST/PUT/PATCH/DELETE requests. Token generated at login and auto-generated for existing sessions. Delivered to frontend via `<meta name="csrf-token">` tag
 - **csrfFetch() / getCsrfToken()** - JS wrapper in `dashboard.js` that auto-attaches `X-CSRF-TOKEN` header to fetch requests
 - **Login rate limiting** - `checkLoginAttempts()` queries `dashboard_log` for failed attempts by IP or username. 10+ failures within 15 minutes triggers 429 lockout
 - **Forgot password cooldown** - `checkForgotCooldown()` queries `forgot` table to prevent repeat requests within `RAPTOR_PASSWORD_RESET_MINUTES`

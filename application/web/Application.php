@@ -23,7 +23,7 @@ namespace Web;
  * ---------------------------------------------------------
  * 1) **Template\ExceptionHandler**  
  *    - Template ашиглан error page рендерлэх  
- *    - Хэрвээ Template алга бол кодын default ExceptionHandler ажиллана  
+ *    - Хэрвээ template файл байхгүй бол кодын default ExceptionHandler ажиллана  
  *
  * 2) **MySQLConnectMiddleware / PostgresConnectMiddleware**
  *    - PDO instance үүсгэж, хожим нь Controller-т дамжуулна
@@ -40,7 +40,7 @@ namespace Web;
  *
  * 5) **LocalizationMiddleware**  
  *    - Системийн хэл (mn/en/...) тодорхойлох  
- *    - Twig template-д localization объект дамжуулах  
+ *    - Template-д localization объект дамжуулах  
  *
  * 6) **SettingsMiddleware**  
  *    - System settings (branding, favicon, footer, title, зэрэг)  
@@ -54,7 +54,7 @@ namespace Web;
  *
  * Хэрвээ та өөр Router нэмэх бол:
  *
- *      $this->use(new Products\ProductsRouter());
+ *      $this->use(new Shop\ShopRouter());
  *      $this->use(new News\NewsRouter());
  *      $this->use(new Auth\AuthRouter());
  *
@@ -90,7 +90,7 @@ class Application extends \codesaur\Http\Application\Application
         // Migration middleware (auto-migrate pending SQL files)
         $this->use(new \Raptor\Migration\MigrationMiddleware());
 
-        // Container middleware (PDO шаардлагатай тул Database-ийн дараа)
+        // Container middleware
         $this->use(new \Raptor\ContainerMiddleware());
 
         // Session middleware

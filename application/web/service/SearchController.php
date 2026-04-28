@@ -48,7 +48,7 @@ class SearchController extends TemplateController
             $stmt = $this->prepare(
                 "SELECT id, title, slug, description, content, source, link, 'page' AS type
                  FROM $pages_table
-                 WHERE is_active=1 AND published=1 AND code=:code
+                 WHERE published=1 AND code=:code
                    AND (title LIKE :q1 OR slug LIKE :q2 OR description LIKE :q3
                         OR content LIKE :q4 OR source LIKE :q5 OR link LIKE :q6)
                  ORDER BY published_at DESC
@@ -70,7 +70,7 @@ class SearchController extends TemplateController
             $stmt = $this->prepare(
                 "SELECT id, title, slug, description, content, source, 'news' AS type
                  FROM $news_table
-                 WHERE is_active=1 AND published=1 AND code=:code
+                 WHERE published=1 AND code=:code
                    AND (title LIKE :q1 OR slug LIKE :q2 OR description LIKE :q3
                         OR content LIKE :q4 OR source LIKE :q5)
                  ORDER BY published_at DESC
@@ -92,7 +92,7 @@ class SearchController extends TemplateController
             $stmt = $this->prepare(
                 "SELECT id, title, slug, description, content, link, 'product' AS type
                  FROM $products_table
-                 WHERE is_active=1 AND published=1 AND code=:code
+                 WHERE published=1 AND code=:code
                    AND (title LIKE :q1 OR slug LIKE :q2 OR description LIKE :q3
                         OR content LIKE :q4 OR link LIKE :q5)
                  ORDER BY published_at DESC
@@ -113,7 +113,7 @@ class SearchController extends TemplateController
         // HTML tag attribute дотроос олдсон буруу match-уудыг шүүх
         $results = $this->filterResults($results, $q);
 
-        $this->twigWebLayout(__DIR__ . '/search.html', [
+        $this->webTemplate(__DIR__ . '/search.html', [
             'q' => $q,
             'results' => $results,
             'title' => $this->text('search')

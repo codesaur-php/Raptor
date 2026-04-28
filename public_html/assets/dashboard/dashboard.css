@@ -200,7 +200,7 @@ body {
 }
 
 /* ---------------------------------------------------------------
-   3) SIDEBAR LAYOUT (Desktop ≥768px үед fixed болгоно)
+   3) SIDEBAR LAYOUT (Desktop >=768px үед fixed болгоно)
    --------------------------------------------------------------- */
 @media only screen and (min-width: 768px) {
     .sidebar {

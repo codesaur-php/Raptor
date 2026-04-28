@@ -1,6 +1,21 @@
+<script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h5 class="text-info text-uppercase"><i class="bi bi-chat-left-text"></i> {{ 'comments'|text }}</h5>
-    <div class="ms-auto">
+    <div class="ms-auto d-flex align-items-center gap-2">
+        {% if user.is('system_coder') %}
+        <div class="form-check form-switch" title="Email {{ 'notify'|text }}">
+            <input class="form-check-input" type="checkbox" role="switch" id="commentEmailToggle"
+                   {{ comment_email_notify ? 'checked' : '' }}>
+            <label class="form-check-label small" for="commentEmailToggle">
+                <i class="bi bi-envelope"></i> Email {{ 'notify'|text }}
+            </label>
+        </div>
+        <button class="btn btn-sm btn-outline-secondary py-0 px-1" type="button" id="commentEmailEdit" title="Email">
+            <small id="commentEmailDisplay">{{ notify_email ?: '-' }}</small>
+            <i class="bi bi-pencil-square"></i>
+        </button>
+        {% endif %}
         <a class="btn btn-sm btn-info shadow-sm" href="{{ 'news'|link }}">
             <i class="bi bi-arrow-left"></i> {{ 'news'|text }}
         </a>
@@ -61,5 +76,92 @@
         }).catch(err => {
             table.setBody(`<tr><td colspan="5" class="text-center text-danger">${err.message}</td></tr>`);
         });
+        // Comment email мэдэгдэл toggle (ON = email тохируулах, OFF = email хоослох)
+        const commentEmailToggle = document.getElementById('commentEmailToggle');
+        if (commentEmailToggle) {
+            commentEmailToggle.addEventListener('change', function () {
+                if (commentEmailToggle.checked) {
+                    // ON -> email оруулах
+                    commentEmailToggle.checked = false;
+                    Swal.fire({
+                        title: 'Email',
+                        text: `{{ 'email'|text|e('js') }}`,
+                        input: 'email',
+                        inputValue: `{{ settings_email|e('js') }}`,
+                        inputPlaceholder: 'email@example.com',
+                        showCancelButton: true,
+                        confirmButtonText: `{{ 'save'|text|e('js') }}`,
+                        cancelButtonText: `{{ 'cancel'|text|e('js') }}`,
+                        inputValidator: v => !v ? `{{ 'email'|text|e('js') }}` : null
+                    }).then(result => {
+                        if (!result.isConfirmed) return;
+                        csrfFetch(`{{ 'settings-env'|link }}`, {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ name: 'RAPTOR_COMMENT_EMAIL_TO', value: result.value, type: 'email' })
+                        }).then(r => r.json()).then(res => {
+                            if (res.status !== 'success') return Notify('danger', res.title, res.message);
+                            document.getElementById('commentEmailDisplay').textContent = res.value;
+                            commentEmailToggle.checked = true;
+                            Notify('success', res.title, res.message);
+                        }).catch(err => Notify('danger', `{{ 'error'|text|e('js') }}`, err.message));
+                    });
+                } else {
+                    // OFF -> email хоослох
+                    csrfFetch(`{{ 'settings-env'|link }}`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name: 'RAPTOR_COMMENT_EMAIL_TO', value: '', type: 'email' })
+                    }).then(r => r.json()).then(res => {
+                        if (res.status === 'success') {
+                            document.getElementById('commentEmailDisplay').textContent = '-';
+                            commentEmailToggle.checked = false;
+                            Notify('success', res.title, res.message);
+                        } else {
+                            commentEmailToggle.checked = true;
+                            Notify('danger', res.title ?? `{{ 'error'|text|e('js') }}`, res.message);
+                        }
+                    }).catch(err => {
+                        commentEmailToggle.checked = true;
+                        Notify('danger', `{{ 'error'|text|e('js') }}`, err.message);
+                    });
+                }
+            });
+        }
+
+        const commentEmailEdit = document.getElementById('commentEmailEdit');
+        if (commentEmailEdit) {
+            commentEmailEdit.addEventListener('click', function () {
+                const current = document.getElementById('commentEmailDisplay').textContent.trim();
+                Swal.fire({
+                    title: 'Email',
+                    input: 'email',
+                    inputValue: current === '-' ? '' : current,
+                    inputPlaceholder: 'email@example.com',
+                    showCancelButton: true,
+                    confirmButtonText: `{{ 'save'|text|e('js') }}`,
+                    cancelButtonText: `{{ 'cancel'|text|e('js') }}`
+                }).then(result => {
+                    if (!result.isConfirmed) return;
+                    csrfFetch(`{{ 'settings-env'|link }}`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name: 'RAPTOR_COMMENT_EMAIL_TO', value: result.value, type: 'email' })
+                    }).then(r => r.json()).then(res => {
+                        if (res.status === 'success') {
+                            document.getElementById('commentEmailDisplay').textContent = res.value || '-';
+                            if (commentEmailToggle) {
+                                commentEmailToggle.checked = !!res.value;
+                            }
+                            Notify('success', res.title, res.message);
+                        } else {
+                            Notify('danger', res.title ?? `{{ 'error'|text|e('js') }}`, res.message);
+                        }
+                    }).catch(err => {
+                        Notify('danger', `{{ 'error'|text|e('js') }}`, err.message);
+                    });
+                });
+            });
+        }
     });
 </script>

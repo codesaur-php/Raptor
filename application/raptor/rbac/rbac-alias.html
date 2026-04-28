@@ -187,14 +187,14 @@
                 }
                 return res.json();
             }).then(response => {
-                NotifyTop(
+                Notify(
                     response.type ?? 'warning',
                     response.title ?? `{{ 'notice'|text|e('js') }}`,
                     response.message ?? 'Role permission set'
                 );
             }).catch(error => {
                 checkbox.checked = !checkbox.checked;
-                NotifyTop('danger', `{{ 'error'|text|e('js') }}`, error.message);
+                Notify('danger', `{{ 'error'|text|e('js') }}`, error.message);
             }).finally(() => {
                 updateCounts();
                 if (requesting) requesting.style.display = 'none';

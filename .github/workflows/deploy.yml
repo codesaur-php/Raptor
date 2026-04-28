@@ -8,19 +8,33 @@
 # Шаардлага:
 #   - .github/workflows/ci.yml байх ёстой (код чанарын шалгалт тэнд хийгдэнэ)
 #   - CI амжилтгүй бол deploy хийгдэхгүй
-#   - Аль ч deploy тохируулаагүй бол хоёулаа алгасагдана (developer clone)
+#   - Аль ч deploy тохируулаагүй бол бүгд алгасна (developer clone)
 #
 # ----------------------------------------------------------------------
-# A) cPanel FTP Deploy
+# A) FTP Deploy
 # ----------------------------------------------------------------------
+#   FTP хандалттай дурын серверт (shared hosting, VPS, dedicated) ажиллана.
+#
 #   GitHub repo -> Settings -> Secrets and variables -> Actions -> Secrets:
-#     FTP_HOST       - cPanel серверийн FTP хаяг (жишээ: ftp.example.com)
-#     FTP_USERNAME   - cPanel FTP хэрэглэгчийн нэр
-#     FTP_PASSWORD   - cPanel FTP нууц үг
+#     FTP_HOST       - Серверийн FTP хаяг (жишээ: ftp.example.com)
+#     FTP_USERNAME   - FTP хэрэглэгчийн нэр
+#     FTP_PASSWORD   - FTP нууц үг
 #     FTP_SERVER_DIR - Серверийн зорьсон хавтас (жишээ: /)
 #
 # ----------------------------------------------------------------------
-# B) Windows Server Self-hosted Runner Deploy
+# B) SSH Deploy
+# ----------------------------------------------------------------------
+#   SSH хандалттай Linux серверт (VPS, cloud VM, dedicated) ажиллана.
+#
+#   GitHub repo -> Settings -> Secrets and variables -> Actions -> Secrets:
+#     SSH_HOST       - Серверийн хаяг (жишээ: example.com эсвэл 1.2.3.4)
+#     SSH_USERNAME   - SSH хэрэглэгчийн нэр
+#     SSH_KEY        - SSH private key (id_rsa агуулга бүтнээр)
+#     SSH_DEPLOY_DIR - Серверийн зорьсон хавтас (жишээ: /var/www/myproject)
+#     SSH_PORT       - (заавал биш) SSH порт, анхдагч: 22
+#
+# ----------------------------------------------------------------------
+# C) Windows Self-hosted Runner Deploy
 # ----------------------------------------------------------------------
 #   Windows Server дээр GitHub Actions self-hosted runner суулгах:
 #     GitHub repo -> Settings -> Actions -> Runners -> New self-hosted runner
@@ -32,14 +46,14 @@
 #     4. Runner дээр PHP, Composer PATH-д байх ёстой
 #
 #   GitHub repo -> Settings -> Secrets and variables -> Actions -> Variables:
-#     DEPLOY_PATH - XAMPP htdocs доторх project хавтас
+#     DEPLOY_PATH - Серверийн project хавтас
 #                   (жишээ: C:\xampp\htdocs\myproject)
 #
 # Тэмдэглэл:
 #   - .env файл серверт гараар үүсгэж тохируулна (deploy хийгдэхгүй)
 #   - logs/ хавтас серверт автомат үүсдэг, deploy хийх шаардлагагүй
-#   - Хоёр deploy зэрэг тохируулж болно (жишээ: staging = Windows,
-#     production = cPanel) - тус тусдаа ажиллана
+#   - Олон deploy зэрэг тохируулж болно (жишээ: staging = Windows,
+#     production = SSH) - тус тусдаа ажиллана
 # ======================================================================
 
 name: Deploy
@@ -52,32 +66,38 @@ on:
 
 jobs:
   # ====================================================================
-  # Pre-check: FTP secrets тохируулсан эсэхийг шалгах
+  # Pre-check: Deploy target-ууд тохируулсан эсэхийг шалгах
   # ====================================================================
-  check-ftp:
+  check-targets:
     name: Detect deploy targets
     runs-on: ubuntu-latest
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     outputs:
-      configured: ${{ steps.check.outputs.configured }}
+      ftp: ${{ steps.check.outputs.ftp }}
+      ssh: ${{ steps.check.outputs.ssh }}
     steps:
-      - name: Check FTP secrets
+      - name: Check deploy secrets
         id: check
         run: |
-          if [ -z "${{ secrets.FTP_HOST }}" ]; then
-            echo "configured=false" >> "$GITHUB_OUTPUT"
+          if [ -n "${{ secrets.FTP_HOST }}" ]; then
+            echo "ftp=true" >> "$GITHUB_OUTPUT"
           else
-            echo "configured=true" >> "$GITHUB_OUTPUT"
+            echo "ftp=false" >> "$GITHUB_OUTPUT"
+          fi
+          if [ -n "${{ secrets.SSH_HOST }}" ]; then
+            echo "ssh=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ssh=false" >> "$GITHUB_OUTPUT"
           fi
 
   # ====================================================================
-  # A) cPanel FTP Deploy
+  # A) FTP Deploy
   # ====================================================================
-  cpanel:
-    name: Deploy to cPanel
-    needs: check-ftp
+  ftp:
+    name: Deploy via FTP
+    needs: check-targets
     runs-on: ubuntu-latest
-    if: ${{ needs.check-ftp.outputs.configured == 'true' }}
+    if: ${{ needs.check-targets.outputs.ftp == 'true' }}
 
     steps:
       - name: Checkout repository
@@ -92,7 +112,7 @@ jobs:
       - name: Install production dependencies
         run: composer install --no-dev --optimize-autoloader --no-interaction
 
-      - name: Deploy to cPanel via FTP
+      - name: Deploy via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.6
         with:
           server: ${{ secrets.FTP_HOST }}
@@ -112,7 +132,61 @@ jobs:
             **/phpunit.xml
 
   # ====================================================================
-  # B) Windows Server Self-hosted Runner Deploy
+  # B) SSH Deploy
+  # ====================================================================
+  ssh:
+    name: Deploy via SSH
+    needs: check-targets
+    runs-on: ubuntu-latest
+    if: ${{ needs.check-targets.outputs.ssh == 'true' }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup PHP 8.2
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: gd, intl, pdo_mysql
+
+      - name: Install production dependencies
+        run: composer install --no-dev --optimize-autoloader --no-interaction
+
+      - name: Deploy via rsync
+        uses: burnett01/rsync-deployments@7.0.2
+        with:
+          switches: -avz --delete
+          path: ./
+          remote_path: ${{ secrets.SSH_DEPLOY_DIR }}/
+          remote_host: ${{ secrets.SSH_HOST }}
+          remote_port: ${{ secrets.SSH_PORT || 22 }}
+          remote_user: ${{ secrets.SSH_USERNAME }}
+          remote_key: ${{ secrets.SSH_KEY }}
+          exclude: |
+            .git*
+            .github/
+            docs/
+            tests/
+            .env*
+            logs/
+            nbproject/
+            private/
+            phpunit.xml
+
+      - name: Post-deploy commands
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            cd ${{ secrets.SSH_DEPLOY_DIR }}
+            composer dump-autoload --optimize --no-interaction
+
+  # ====================================================================
+  # C) Windows Self-hosted Runner Deploy
   # ====================================================================
   windows-server:
     name: Deploy to Windows Server
@@ -123,7 +197,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
 
-      - name: Sync files to XAMPP
+      - name: Sync files to deploy path
         shell: cmd
         run: |
           robocopy "%GITHUB_WORKSPACE%" "${{ vars.DEPLOY_PATH }}" /MIR /XD .git .github docs tests logs nbproject private /XF .env .env.* phpunit.xml /NFL /NDL /NJH /NJS /R:3 /W:5

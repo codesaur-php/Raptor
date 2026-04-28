@@ -4,9 +4,7 @@ namespace Raptor;
 
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Container\ContainerInterface;
-use Twig\TwigFilter;
-
-use codesaur\Template\TwigTemplate;
+use codesaur\Template\FileTemplate;
 use codesaur\Http\Message\ReasonPrhase;
 
 use Raptor\Authentication\User;
@@ -25,7 +23,7 @@ use Raptor\Log\Logger;
  *  RBAC эрх шалгах (isUser / isUserCan гэх мэт)
  *  Route линк үүсгэх (generateRouteLink)
  *  Localization (text(), getLanguageCode())
- *  Twig template рендерлэх тусгай wrapper (twigTemplate)
+ *  Template рендерлэх тусгай wrapper (template)
  *  JSON response (respondJSON)
  *  Redirect хийх (redirectTo)
  *  Рапторлог (raptorlog) - системийн протокол хөтлөх
@@ -251,6 +249,21 @@ abstract class Controller extends \codesaur\Http\Application\Controller
     }
 
     /**
+     * Session дахь хэлний кодыг солих.
+     *
+     * LocalizationMiddleware дараагийн request дээр энэ утгыг уншина.
+     *
+     * @param string $code Хэлний код (mn, en, ...)
+     */
+    protected final function setLanguageCode(string $code): void
+    {
+        $key = $this->getAttribute('localization')['session_key'] ?? null;
+        if ($key !== null) {
+            $_SESSION[$key] = $code;
+        }
+    }
+
+    /**
      * Localization key-г орчуулаад буцаах.
      *
      * Анхаар: LocalizationMiddleware нь орчуулгын текстүүдийг
@@ -279,9 +292,9 @@ abstract class Controller extends \codesaur\Http\Application\Controller
     }
 
     /**
-     * Twig темплейт рендерлэх тусгай wrapper.
+     * Template рендерлэх тусгай wrapper.
      *
-     * Энэ функц нь TwigTemplate объектыг үүсгээд түүнд нийтлэг хувьсагчдыг
+     * Энэ функц нь FileTemplate объектыг үүсгээд түүнд нийтлэг хувьсагчдыг
      * автоматаар дамжуулна. Үүнд:
      *
      *   - user             -> Нэвтэрсэн хэрэглэгчийн объект (User)
@@ -294,36 +307,36 @@ abstract class Controller extends \codesaur\Http\Application\Controller
      * middleware нь (LocalizationMiddleware, JWTAuthMiddleware гэх мэт)
      * request attributes дээр inject хийгдсэн байдаг.
      *
-     * Мөн дараах Twig filter-үүдийг бүртгэж өгнө:
-     *   - {{ 'key'|text }}     -> Localization орчуулга
-     *   - {{ 'route'|link() }} -> Route name ашиглан URL үүсгэх
+     * Мөн дараах function-үүдийг бүртгэж өгнө:
+     *   - {{ text('key') }}          -> Localization орчуулга
+     *   - {{ link('route', params) }} -> Route name ашиглан URL үүсгэх
      *
      * @param string $template  Рендерлэх template файл
      * @param array  $vars      Template-д дамжуулах нэмэлт хувьсагчид
      *
-     * @return TwigTemplate
+     * @return FileTemplate
      */
-    public function twigTemplate(string $template, array $vars = []): TwigTemplate
+    public function template(string $template, array $vars = []): FileTemplate
     {
-        $twig = new TwigTemplate($template, $vars);
+        $tmplte = new FileTemplate($template, $vars);
 
         // PSR-7 request attributes-ээс дамжиж ирсэн өгөгдлүүд
-        $twig->set('user', $this->getUser());
-        $twig->set('index', $this->getScriptPath());
-        $twig->set('localization', $this->getAttribute('localization'));
-        $twig->set('csrf_token', $this->getAttribute('csrf_token') ?? '');
+        $tmplte->set('user', $this->getUser());
+        $tmplte->set('index', $this->getScriptPath());
+        $tmplte->set('localization', $this->getAttribute('localization'));
+        $tmplte->set('csrf_token', $this->getAttribute('csrf_token') ?? '');
 
-        // Localization filter
-        $twig->addFilter(new TwigFilter('text', function (string $key, $default = null): string {
+        // Localization filter: {{ 'keyword'|text }}
+        $tmplte->addFilter('text', function (string $key, $default = null): string {
             return $this->text($key, $default);
-        }));
+        });
 
-        // Route generator filter
-        $twig->addFilter(new TwigFilter('link', function (string $routeName, array $params = [], bool $is_absolute = false): string {
+        // Route generator filter: {{ 'route'|link }}, {{ 'route'|link({'key': value}) }}
+        $tmplte->addFilter('link', function (string $routeName, array $params = [], bool $is_absolute = false): string {
             return $this->generateRouteLink($routeName, $params, $is_absolute);
-        }));
+        });
 
-        return $twig;
+        return $tmplte;
     }
 
     /**
@@ -536,5 +549,58 @@ abstract class Controller extends \codesaur\Http\Application\Controller
             return false;
         }
         return $container->has($id);
+    }
+
+    /**
+     * PSR-14 Event dispatch helper.
+     *
+     * Container-д бүртгэгдсэн EventDispatcher ашиглан event илгээнэ.
+     * EventDispatcher байхгүй бол чимээгүй алгасна.
+     *
+     * @param object $event Event объект
+     */
+    protected function dispatch(object $event): void
+    {
+        try {
+            $this->getService('events')?->dispatch($event);
+        } catch (\Throwable $e) {
+            if (CODESAUR_DEVELOPMENT) {
+                \error_log('EventDispatcher: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
+            }
+        }
+    }
+
+    /**
+     * Cache invalidation helper.
+     * Заасан key-үүдийг cache-ээс устгана. Хэл бүрд давтагддаг key-д
+     * {code} placeholder ашиглавал бүх хэлний cache-г устгана.
+     *
+     * @param string ...$keys Cache key-үүд (жишээ: 'languages', 'texts.{code}', 'settings.{code}')
+     */
+    protected function invalidateCache(string ...$keys): void
+    {
+        try {
+            if (!$this->hasService('cache')) {
+                return;
+            }
+            $cache = $this->getService('cache');
+            if ($cache === null) {
+                return;
+            }
+            $languages = $this->getAttribute('localization')['language'] ?? [];
+            foreach ($keys as $key) {
+                if (\str_contains($key, '{code}')) {
+                    foreach (\array_keys($languages) as $code) {
+                        $cache->delete(\str_replace('{code}', $code, $key));
+                    }
+                } else {
+                    $cache->delete($key);
+                }
+            }
+        } catch (\Throwable $e) {
+            if (CODESAUR_DEVELOPMENT) {
+                \error_log('Cache invalidation failed: ' . $e->getMessage());
+            }
+        }
     }
 }

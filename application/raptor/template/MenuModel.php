@@ -43,7 +43,6 @@ class MenuModel extends LocalizedModel
             new Column('permission', 'varchar', 128),                   // RBAC permission код
            (new Column('position', 'smallint'))->default(100),          // Дараалал
            (new Column('is_visible', 'tinyint'))->default(1),           // UI дээр харагдах эсэх
-           (new Column('is_active', 'tinyint'))->default(1),            // Идэвхтэй эсэх
             new Column('created_at', 'datetime'),
             new Column('created_by', 'bigint'),
             new Column('updated_at', 'datetime'),
@@ -89,7 +88,7 @@ class MenuModel extends LocalizedModel
         // Цэсний мод бүтэц, эрэмбэлэлтийн гүйцэтгэлийг сайжруулах индекс
         $this->exec("CREATE INDEX {$table}_idx_parent_id ON $table (parent_id)");
 
-        DashboardMenus::seed($this);
+        MenuSeed::seed($this);
     }
 
     /**
@@ -97,9 +96,9 @@ class MenuModel extends LocalizedModel
      *
      * @param array $record  Үндсэн хүснэгтийн өгөгдөл
      * @param array $content Олон хэлний контент
-     * @return array|false Амжилттай бол бичлэгийн массив, бусад тохиолдолд false
+     * @return array Амжилттай бол бичлэгийн массив
      */
-    public function insert(array $record, array $content): array|false
+    public function insert(array $record, array $content): array
     {
         $record['created_at'] ??= \date('Y-m-d H:i:s');
         return parent::insert($record, $content);
@@ -111,9 +110,9 @@ class MenuModel extends LocalizedModel
      * @param int   $id      Бичлэгийн ID
      * @param array $record  Үндсэн хүснэгтийн өгөгдөл
      * @param array $content Олон хэлний контент
-     * @return array|false Амжилттай бол шинэчилсэн бичлэг, бусад тохиолдолд false
+     * @return array Амжилттай бол шинэчилсэн бичлэг
      */
-    public function updateById(int $id, array $record, array $content): array|false
+    public function updateById(int $id, array $record, array $content): array
     {
         $record['updated_at'] ??= \date('Y-m-d H:i:s');
         return parent::updateById($id, $record, $content);

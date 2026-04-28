@@ -4,6 +4,7 @@ namespace Raptor\Authentication;
 
 use codesaur\DataObject\Model;
 use codesaur\DataObject\Column;
+use codesaur\DataObject\Constants;
 
 \define('RAPTOR_PASSWORD_RESET_MINUTES', (int) ($_ENV['RAPTOR_PASSWORD_RESET_MINUTES'] ?? 10));
 
@@ -49,8 +50,7 @@ class ForgotModel extends Model
             new Column('last_name', 'varchar', 255),
             new Column('email', 'varchar', 128),
             new Column('remote_addr', 'varchar', 46),  // IPv4/IPv6
-            new Column('code', 'varchar', 2),
-           (new Column('is_active', 'tinyint'))->default(1),
+            new Column('code', 'varchar', Constants::DEFAULT_CODE_LENGTH),
             new Column('created_at', 'datetime'),
             new Column('updated_at', 'datetime')
         ]);
@@ -68,10 +68,9 @@ class ForgotModel extends Model
      */
     protected function __initial()
     {
-        $table = $this->getName();
-
         $this->setForeignKeyChecks(false);
 
+        $table = $this->getName();
         $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
         $this->exec("
             ALTER TABLE $table
@@ -96,10 +95,10 @@ class ForgotModel extends Model
      * @param array $record
      *      Мэдээллийн массив (username, email, code, remote_addr, ...)
      *
-     * @return array|false
-     *      Амжилттай бол оруулсан бичлэг, алдаа гарвал false
+     * @return array
+     *      Амжилттай бол оруулсан бичлэг
      */
-    public function insert(array $record): array|false
+    public function insert(array $record): array
     {
         $record['created_at'] ??= \date('Y-m-d H:i:s');
         return parent::insert($record);
@@ -116,10 +115,10 @@ class ForgotModel extends Model
      * @param array $record
      *      Засварын мэдээлэл
      *
-     * @return array|false
-     *      Амжилттай бол шинэчлэгдсэн бичлэг, алдаа гарвал false
+     * @return array
+     *      Амжилттай бол шинэчлэгдсэн бичлэг
      */
-    public function updateById(int $id, array $record): array|false
+    public function updateById(int $id, array $record): array
     {
         $record['updated_at'] ??= \date('Y-m-d H:i:s');
         return parent::updateById($id, $record);

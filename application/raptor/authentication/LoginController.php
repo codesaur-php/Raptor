@@ -4,6 +4,7 @@ namespace Raptor\Authentication;
 
 use Psr\Log\LogLevel;
 
+use codesaur\DataObject\Constants;
 use codesaur\Template\MemoryTemplate;
 
 use Raptor\User\UsersModel;
@@ -31,7 +32,7 @@ use Raptor\Organization\OrganizationUserModel;
  *   UsersModel, OrganizationModel, ForgotModel гэх мэт мэдээллийн сангийн
  *     загваруудыг ашиглана
  *   JWTAuthMiddleware-ийг ашиглан нэвтрэх токен үүсгэнэ
- *   MemoryTemplate / TwigTemplate ашиглан template рендерлэнэ
+ *   MemoryTemplate / FileTemplate ашиглан template рендерлэнэ
  *   PSR-3 стандартын LogLevel ашиглан бүх үйлдлийг системийн лог руу бичнэ
  *   LocalizationMiddleware-аар дамжсан хэл, орчуулгын мэдээллийг
  *     автоматаар хэрэглэнэ
@@ -86,7 +87,7 @@ class LoginController extends \Raptor\Controller
         }
 
         // 3) Login template-г ачаалах
-        $login = $this->twigTemplate(__DIR__ . '/login.html');
+        $login = $this->template(__DIR__ . '/login.html');
 
         // Spam хамгаалалтын timestamp + token
         $ts = \time();
@@ -242,7 +243,7 @@ class LoginController extends \Raptor\Controller
             } elseif ($user['code'] != $this->getLanguageCode()
                 && isset($this->getLanguages()[$user['code']])
             ) {
-                $_SESSION[$this->getAttribute('localization')['session_key']] = $user['code'];
+                $this->setLanguageCode($user['code']);
             }
 
         } catch (\Throwable $err) {
@@ -631,10 +632,9 @@ class LoginController extends \Raptor\Controller
                 ]);
             }
 
-            $appUrl = \rtrim((string)$this->getRequest()->getUri()->withPath($this->getScriptPath()), '/');
-            $this->getService('discord')?->userSignupRequest(
-                $profile['username'], $profile['email'], $appUrl
-            );
+            $this->dispatch(new \Raptor\Notification\UserEvent(
+                'signup', $profile['username'], $profile['email']
+            ));
         } catch (\Throwable $e) {
             // Error хэвлэнэ
             $this->respondJSON(
@@ -865,13 +865,12 @@ class LoginController extends \Raptor\Controller
      * ---------------------------------------------------------------
      *
      * 1) ForgotModel -> "forgot_password" токен шалгах
-     *    - is_active=1 байх ёстой
      *    - user_id, username, email зэрэг мэдээлэл олдоно
      *    - Олдохгүй бол -> алдаа (403)
      *
      * 2) Token-д тохирох хэл (code) шалгах
      *    - Хэрэв токенийх код != одоогийн localization code бол:
-     *        -> $_SESSION[$this->getAttribute('localization')['session_key']] = token.code
+     *        -> $this->setLanguageCode(token.code)
      *        -> login form руу redirect хийх (token-г хадгалсаар)
      *
      * 3) Token хугацаа дууссан эсэхийг шалгах
@@ -892,7 +891,7 @@ class LoginController extends \Raptor\Controller
      *         -> error.message логжино
      *
      * Аюулгүй байдлын онцлог:
-     *   - Token-ийг ашигласан эсэхийг ForgotModel дээр is_active талбараар хянадаг
+     *   - Token ашигласны дараа deleteById() ашиглан устгадаг
      *   - Token зөв IP-ээр ирсэн эсэхийг check хийх боломжтой (remote_addr)
      *   - Token хугацаагаар хамгаалагдсан
      *   - Token хэл (locale) таарахгүй бол UI-г автоматаар зөв хэл рүү шилжүүлдэг
@@ -906,8 +905,7 @@ class LoginController extends \Raptor\Controller
             // 1) Forgot token шалгах
             $model = new ForgotModel($this->pdo);
             $forgot = $model->getRowWhere([
-                'forgot_password' => $forgot_password,
-                'is_active'       => 1
+                'forgot_password' => $forgot_password
             ]);
             if (empty($forgot)) {
                 throw new \Exception(
@@ -923,7 +921,7 @@ class LoginController extends \Raptor\Controller
                 isset($this->getLanguages()[$code])
             ) {
                 // Localization middleware-д дамжуулах шинэ код
-                $_SESSION[$this->getAttribute('localization')['session_key']] = $code;
+                $this->setLanguageCode($code);
 
                 // Token-г хадгалсан чигээрээ login руу redirect
                 $link = $this->generateRouteLink('login') . '?forgot=' . \urlencode($forgot_password);
@@ -954,7 +952,7 @@ class LoginController extends \Raptor\Controller
             ];
         } finally {
             // 4) Template рэндерлэх
-            $login_reset = $this->twigTemplate(
+            $login_reset = $this->template(
                 __DIR__ . '/login-reset-password.html',
                 $error ?? $forgot
             );
@@ -999,7 +997,6 @@ class LoginController extends \Raptor\Controller
      *    - Хүчингүй бол -> Exception (400 эсвэл 403)
      *
      * 2) ForgotModel -> токеныг шалгах
-     *    - is_active=1 байх ёстой
      *    - user_id таарч байх ёстой
      *    - remote_addr таарч байх ёстой (security measure)
      *    - Олдохгүй бол -> 403
@@ -1075,7 +1072,6 @@ class LoginController extends \Raptor\Controller
             // 2) ForgotModel -> токеныг шалгах
             $model = new ForgotModel($this->pdo);
             $forgot = $model->getRowWhere([
-                'is_active'       => 1,
                 'user_id'         => $user_id,
                 'forgot_password' => $forgot_password,
                 'remote_addr'     => $this->getRequest()->getServerParams()['REMOTE_ADDR'] ?? ''
@@ -1130,10 +1126,7 @@ class LoginController extends \Raptor\Controller
             }
 
             // Token-г устгах
-            $model->deactivateById(
-                $forgot['id'],
-                ['updated_at' => \date('Y-m-d H:i:s')]
-            );
+            $model->deleteById($forgot['id']);
 
             // UI-д харуулах success хувьсагч
             $vars = [
@@ -1145,7 +1138,7 @@ class LoginController extends \Raptor\Controller
             $vars = ['error' => $e->getMessage()] + ($forgot ?? []);
         } finally {
             // 7) UI render
-            $login_reset = $this->twigTemplate(
+            $login_reset = $this->template(
                 __DIR__ . '/login-reset-password.html',
                 $vars
             );
@@ -1181,7 +1174,7 @@ class LoginController extends \Raptor\Controller
      *
      * Энэ action нь хэрэглэгч footer/header дээрээс хэл сонгох үед ажиллана.
      * LocalizationMiddleware дараагийн хүсэлт дээр гарч ирэх хэлийг
-     * $_SESSION[$this->getAttribute('localization')['session_key']] утгаар тодорхойлдог.
+     * $this->setLanguageCode утгаар тодорхойлдог.
      *
      * Workflow (алхам алхмаар):
      * ---------------------------------------------------------------
@@ -1194,7 +1187,7 @@ class LoginController extends \Raptor\Controller
      *      -> Хэрэв байхгүй бол юу ч хийхгүй, шууд redirect
      *
      * 3) code өөр байвал хэлний сонголтыг session-д хадгална:
-     *       $_SESSION[$this->getAttribute('localization')['session_key']] = $code
+     *       $this->setLanguageCode($code)
      *
      * 4) Хэрвээ хэрэглэгч нэвтэрсэн бол:
      *       - UsersModel -> хэрэглэгчийн profile дахь 'code' талбарыг update хийнэ
@@ -1223,7 +1216,7 @@ class LoginController extends \Raptor\Controller
         // 2) Хэл бүртгэлтэй эсэх, мөн өөр хэл байгаа эсэхийг шалгах
         if (isset($language[$code]) && $code != $from) {
             // 3) Session-д хадгалах -> LocalizationMiddleware уншиж хэрэглэнэ
-            $_SESSION[$this->getAttribute('localization')['session_key']] = $code;
+            $this->setLanguageCode($code);
 
             // 4) Хэрэглэгч нэвтэрсэн бол -> profile update + log
             if ($this->isUserAuthorized()) {
@@ -1275,8 +1268,8 @@ class LoginController extends \Raptor\Controller
             return;
         }
 
-        $driver = $this->pdo->getAttribute(\PDO::ATTR_DRIVER_NAME);
-        if ($driver === 'pgsql') {
+        $driver = $this->getDriverName();
+        if ($driver === Constants::DRIVER_PGSQL) {
             $sql = "SELECT COUNT(*) as cnt FROM dashboard_log " .
                    "WHERE (context::jsonb)->>'action' = 'login' " .
                    "AND level = 'error' " .
@@ -1296,11 +1289,16 @@ class LoginController extends \Raptor\Controller
                    ")";
         }
 
-        $stmt = $this->prepare($sql);
-        $stmt->bindValue(':ip', $ip);
-        $stmt->bindValue(':username', $username);
-        $stmt->execute();
-        $count = (int) ($stmt->fetch()['cnt'] ?? 0);
+        try {
+            $stmt = $this->prepare($sql);
+            $stmt->bindValue(':ip', $ip);
+            $stmt->bindValue(':username', $username);
+            $stmt->execute();
+            $count = (int) ($stmt->fetch()['cnt'] ?? 0);
+        } catch (\PDOException) {
+            // dashboard_log хараахан үүсээгүй (fresh DB) - rate limit шалгах боломжгүй
+            return;
+        }
 
         if ($count >= 10) {
             throw new \Exception($this->text('too-many-login-attempts'), 429);
@@ -1320,7 +1318,7 @@ class LoginController extends \Raptor\Controller
     {
         $stmt = $forgot->prepare(
             "SELECT created_at FROM {$forgot->getName()} " .
-            'WHERE email=:email AND is_active=1 ORDER BY id DESC LIMIT 1'
+            'WHERE email=:email ORDER BY id DESC LIMIT 1'
         );
         $stmt->bindValue(':email', $email);
         $stmt->execute();
@@ -1551,7 +1549,7 @@ class LoginController extends \Raptor\Controller
             $orgTable     = (new OrganizationModel($this->pdo))->getName();
             $orgUserTable = (new OrganizationUserModel($this->pdo))->getName();
 
-            if ($this->getDriverName() == 'pgsql') {
+            if ($this->getDriverName() == Constants::DRIVER_PGSQL) {
                 // PostgreSQL JSONB query
                 $sql =
                     "SELECT context

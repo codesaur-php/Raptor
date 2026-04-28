@@ -4,6 +4,7 @@ namespace Raptor\Content;
 
 use codesaur\DataObject\Model;
 use codesaur\DataObject\Column;
+use codesaur\DataObject\Constants;
 
 /**
  * Class NewsModel
@@ -32,7 +33,6 @@ use codesaur\DataObject\Column;
  *  - is_featured (tinyint, default: 0) - Онцлох мэдээ эсэх
  *  - comment (tinyint, default: 1) - Сэтгэгдэл идэвхтэй эсэх
  *  - read_count (bigint, default: 0) - Уншсан тоо
- *  - is_active (tinyint, default: 1) - Идэвхтэй эсэх
  *  - published (tinyint, default: 0) - Нийтлэгдсэн эсэх
  *  - published_at (datetime) - Нийтлэгдсэн огноо
  *  - published_by (bigint) - Нийтлэсэн хэрэглэгчийн ID
@@ -94,13 +94,12 @@ class NewsModel extends Model
             new Column('content', 'mediumtext'),
             new Column('source', 'varchar', 255),
             new Column('photo', 'varchar', 255),
-            new Column('code', 'varchar', 2),
+            new Column('code', 'varchar', Constants::DEFAULT_CODE_LENGTH),
            (new Column('type', 'varchar', 32))->default('article'),
            (new Column('category', 'varchar', 32))->default('general'),
            (new Column('is_featured', 'tinyint'))->default(0),
            (new Column('comment', 'tinyint'))->default(1),
            (new Column('read_count', 'bigint'))->default(0),
-           (new Column('is_active', 'tinyint'))->default(1),
            (new Column('published', 'tinyint'))->default(0),
             new Column('published_at', 'datetime'),
             new Column('published_by', 'bigint'),
@@ -128,19 +127,16 @@ class NewsModel extends Model
      */
     protected function __initial()
     {
-        $table = $this->getName();
-
         $this->setForeignKeyChecks(false);
 
+        $table = $this->getName();
         $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
-
         // Foreign key constraint-ууд үүсгэх
         $constraints = [
             'published_by' => "{$table}_fk_published_by",
             'created_by'   => "{$table}_fk_created_by",
             'updated_by'   => "{$table}_fk_updated_by"
         ];
-
         foreach ($constraints as $column => $constraint) {
             $this->exec(
                 "ALTER TABLE $table " .
@@ -155,8 +151,9 @@ class NewsModel extends Model
         $this->setForeignKeyChecks(true);
 
         // Хайлт, шүүлтийн гүйцэтгэлийг сайжруулах индексүүд
-        $this->exec("CREATE INDEX {$table}_idx_active_published ON $table (is_active, published)");
-        $this->exec("CREATE INDEX {$table}_idx_code_active_published ON $table (code, is_active, published, published_at)");
+        $this->exec("CREATE INDEX {$table}_idx_published ON $table (published)");
+        $this->exec("CREATE INDEX {$table}_idx_code_published ON $table (code, published, published_at)");
+        $this->exec("CREATE INDEX {$table}_idx_created ON $table (created_at DESC)");
 
         NewsSamples::seed($this);
     }
@@ -168,12 +165,10 @@ class NewsModel extends Model
      * автоматаар бөглөнө (хэрэв өгөгдөөгүй бол).
      *
      * @param array $record Мэдээний мэдээлэл (title, content, гэх мэт)
-     * @return array|false Амжилттай бол үүссэн бичлэгийн массив, бусад тохиолдолд false
+     * @return array Амжилттай бол үүссэн бичлэгийн массив
      */
-    public function insert(array $record): array|false
+    public function insert(array $record): array
     {
-        $record['created_at'] ??= \date('Y-m-d H:i:s');
-
         // Slug автоматаар үүсгэх (title-аас)
         if (empty($record['slug']) && !empty($record['title'])) {
             $record['slug'] = $this->generateSlug($record['title']);
@@ -187,7 +182,36 @@ class NewsModel extends Model
             $record['description'] = $desc;
         }
 
+        $record['created_at'] ??= \date('Y-m-d H:i:s');
         return parent::insert($record);
+    }
+
+    /**
+     * Сүүлийн нийтлэгдсэн мэдээнүүдийг авах.
+     *
+     * Нүүр хуудас болон бусад web хэсгүүдэд ашиглагдана.
+     * read_count зэрэг dynamic өгөгдөл оруулаагүй тул cache хийхэд тохиромжтой.
+     *
+     * @param string $code Хэлний код (mn, en...)
+     * @param int $limit Хамгийн ихдээ авах тоо (анхдагч: 20)
+     * @return array Мэдээнүүдийн жагсаалт
+     */
+    public function getRecentPublished(string $code, int $limit = 20): array
+    {
+        $table = $this->getName();
+        $stmt = $this->pdo->prepare(
+            'SELECT id, slug, title, description, photo, code, type, category, ' .
+            'is_featured, comment, published_at, created_at, source ' .
+            "FROM $table " .
+            'WHERE published=1 AND code=:code ' .
+            'ORDER BY published_at DESC ' .
+            "LIMIT $limit"
+        );
+        $stmt->bindParam(':code', $code, \PDO::PARAM_STR);
+        if (!$stmt->execute()) {
+            throw new \RuntimeException('Failed to fetch recent published news');
+        }
+        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     }
 
     /**

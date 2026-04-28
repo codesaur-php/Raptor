@@ -42,14 +42,14 @@ class SearchController extends \Raptor\Controller
 
             $like = '%' . $q . '%';
             $results = [];
-
+            
             // NEWS
             if ($this->isUserCan('system_content_index')) {
                 $table = (new NewsModel($this->pdo))->getName();
                 $stmt = $this->prepare(
                     "SELECT id, title, description, code, type, published, 'news' AS source
                      FROM $table
-                     WHERE is_active=1 AND (title LIKE :q OR description LIKE :q2 OR content LIKE :q3 OR source LIKE :q4)
+                     WHERE title LIKE :q OR description LIKE :q2 OR content LIKE :q3 OR source LIKE :q4
                      ORDER BY created_at DESC LIMIT 10"
                 );
                 $stmt->bindValue(':q', $like);
@@ -69,7 +69,7 @@ class SearchController extends \Raptor\Controller
                 $stmt = $this->prepare(
                     "SELECT id, title, description, code, type, published, link, 'pages' AS source
                      FROM $table
-                     WHERE is_active=1 AND (title LIKE :q OR description LIKE :q2 OR content LIKE :q3 OR link LIKE :q4 OR source LIKE :q5)
+                     WHERE title LIKE :q OR description LIKE :q2 OR content LIKE :q3 OR link LIKE :q4 OR source LIKE :q5
                      ORDER BY created_at DESC LIMIT 10"
                 );
                 $stmt->bindValue(':q', $like);
@@ -91,7 +91,7 @@ class SearchController extends \Raptor\Controller
                     $stmt = $this->prepare(
                         "SELECT id, title, description, code, type, published, sku, 'products' AS source
                          FROM $table
-                         WHERE is_active=1 AND (title LIKE :q OR description LIKE :q2 OR sku LIKE :q3 OR content LIKE :q4)
+                         WHERE title LIKE :q OR description LIKE :q2 OR sku LIKE :q3 OR content LIKE :q4
                          ORDER BY created_at DESC LIMIT 10"
                     );
                     $stmt->bindValue(':q', $like);
@@ -114,8 +114,7 @@ class SearchController extends \Raptor\Controller
                     $stmt = $this->prepare(
                         "SELECT id, product_title AS title, customer_name, customer_email, customer_phone, message, status, 'orders' AS source
                          FROM $table
-                         WHERE is_active=1
-                           AND (product_title LIKE :q OR customer_name LIKE :q2 OR customer_email LIKE :q3 OR customer_phone LIKE :q4 OR message LIKE :q5)
+                         WHERE product_title LIKE :q OR customer_name LIKE :q2 OR customer_email LIKE :q3 OR customer_phone LIKE :q4 OR message LIKE :q5
                          ORDER BY created_at DESC LIMIT 10"
                     );
                     $stmt->bindValue(':q', $like);

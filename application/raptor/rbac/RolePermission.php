@@ -143,9 +143,9 @@ class RolePermission extends Model
      * insert() - Permission-г Role-д холбох үед created_at автоматаар тохируулах.
      *
      * @param array $record
-     * @return array|false
+     * @return array
      */
-    public function insert(array $record): array|false
+    public function insert(array $record): array
     {
         $record['created_at'] ??= \date('Y-m-d H:i:s');
         return parent::insert($record);

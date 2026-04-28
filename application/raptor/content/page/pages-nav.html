@@ -97,7 +97,7 @@ document.addEventListener('DOMContentLoaded', function () {
                          srcset="https://flagcdn.com/48x36/${flagCode}.png 2x"
                          width="24" height="18" alt="${code}" class="me-2">
                     <h5 class="mb-0 fw-bold">${langTitle}</h5>
-                    <span class="badge bg-primary ms-2">${roots.length} root · ${langPages.length} total</span>
+                    <span class="badge bg-primary ms-2">${roots.length} root / ${langPages.length} total</span>
                     <div class="ms-auto d-flex gap-1">
                         <button class="btn btn-sm btn-outline-secondary py-0 expand-all-btn" type="button" title="${lang === 'mn' ? 'Бүгдийг нээх' : 'Expand All'}">
                             <i class="bi bi-arrows-expand"></i>
@@ -147,10 +147,10 @@ document.addEventListener('DOMContentLoaded', function () {
                     if (response.status !== 'success') {
                         throw new Error(response.message ?? 'Error!');
                     }
-                    NotifyTop('success', lang === 'mn' ? 'Амжилттай' : 'Success', response.message);
+                    Notify('success', lang === 'mn' ? 'Амжилттай' : 'Success', response.message);
                     setTimeout(() => window.location.reload(), 1000);
                 }).catch(error => {
-                    NotifyTop('danger', lang === 'mn' ? 'Алдаа' : 'Error', error.message);
+                    Notify('danger', lang === 'mn' ? 'Алдаа' : 'Error', error.message);
                     this.disabled = false;
                 });
             });
@@ -195,14 +195,14 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
         // Delete buttons
-        treeContainer.querySelectorAll('.deactivate-page').forEach(btn => {
+        treeContainer.querySelectorAll('.delete-page').forEach(btn => {
             btn.addEventListener('click', function (e) {
                 e.preventDefault();
                 const id = btn.value;
                 const title = btn.getAttribute('data-title');
                 const photo = btn.getAttribute('data-photo');
 
-                let question = `<h5>${title}</h5><p class="text-danger mb-3">{{ 'confirm-deactivate'|text|e('js') }}?</p>`;
+                let question = `<h5>${title}</h5><p class="text-danger mb-3">{{ 'confirm-delete'|text|e('js') }}?</p>`;
                 let src = '';
                 if (photo) {
                     src = photo;
@@ -223,7 +223,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     backdrop: true,
                     preConfirm: () => {
                         return csrfFetch(
-                            `{{ 'page-deactivate'|link }}`,
+                            `{{ 'page-delete'|link }}`,
                             {
                                 method: 'DELETE',
                                 headers: { 'Content-Type': 'application/json' },
@@ -235,7 +235,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             }
                             Swal.close();
                             btn.closest('.list-group-item').remove();
-                            NotifyTop('success', `{{ 'success'|text|e }}`, response.message ?? `Page:${id} deactivated`);
+                            Notify('success', `{{ 'success'|text|e }}`, response.message ?? `Page:${id} deleted`);
                         }).catch(error => {
                             Swal.showValidationMessage(error.message);
                         });
@@ -292,7 +292,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 actions += ` <a class="btn btn-sm btn-primary py-0 px-1" href="${indexLink}/${id}?from=nav" title="Edit"><i class="bi bi-pencil-square"></i></a>`;
             }
             if (canDelete) {
-                actions += ` <button class="deactivate-page btn btn-sm btn-danger py-0 px-1" type="button" value="${id}" data-title="${escAttr(stripTags(page.title))}"${page.photo ? ` data-photo="${page.photo}"` : ''} title="Delete"><i class="bi bi-trash"></i></button>`;
+                actions += ` <button class="delete-page btn btn-sm btn-danger py-0 px-1" type="button" value="${id}" data-title="${escAttr(stripTags(page.title))}"${page.photo ? ` data-photo="${page.photo}"` : ''} title="Delete"><i class="bi bi-trash"></i></button>`;
             }
 
             // Toggle / leaf icon

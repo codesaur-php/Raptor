@@ -48,11 +48,19 @@ class LocalizationMiddleware implements MiddlewareInterface
     private function retrieveLanguage(ServerRequestInterface $request): array
     {
         try {
+            $cache = $request->getAttribute('container')?->get('cache');
+            $cached = $cache?->get('languages');
+            if ($cached !== null) {
+                return $cached;
+            }
+
             $model = new LanguageModel($request->getAttribute('pdo'));
             $rows = $model->retrieve();
             if (empty($rows)) {
                 throw new \Exception('Languages not found!');
             }
+
+            $cache?->set('languages', $rows);
             return $rows;
         } catch (\Throwable $err) {
             if (CODESAUR_DEVELOPMENT) {
@@ -68,8 +76,17 @@ class LocalizationMiddleware implements MiddlewareInterface
     private function retrieveTexts(ServerRequestInterface $request, string $langCode): array
     {
         try {
+            $cache = $request->getAttribute('container')?->get('cache');
+            $cached = $cache?->get("texts.$langCode");
+            if ($cached !== null) {
+                return $cached;
+            }
+
             $model = new TextModel($request->getAttribute('pdo'));
-            return $model->retrieve($langCode);
+            $texts = $model->retrieve($langCode);
+
+            $cache?->set("texts.$langCode", $texts);
+            return $texts;
         } catch (\Throwable $err) {
             if (CODESAUR_DEVELOPMENT) {
                 \error_log($err->getMessage());

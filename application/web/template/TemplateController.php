@@ -2,9 +2,7 @@
 
 namespace Web\Template;
 
-use Twig\TwigFilter;
-
-use codesaur\Template\TwigTemplate;
+use codesaur\Template\FileTemplate;
 
 use Raptor\Content\PagesModel;
 
@@ -14,7 +12,7 @@ use Raptor\Content\PagesModel;
  * Raptor Framework - Web UI Template Controller
  *
  * Энэ контроллер нь вэб сайтын бүх үндсэн layout (index.html) болон
- * динамик контентуудыг TwigTemplate ашиглан нэгтгэж рендерлэх үүрэгтэй.
+ * динамик контентуудыг FileTemplate ашиглан нэгтгэж рендерлэх үүрэгтэй.
  *
  * Үндсэн боломжууд:
  * ---------------------------------------------------------------
@@ -32,11 +30,11 @@ use Raptor\Content\PagesModel;
 class TemplateController extends \Raptor\Controller
 {
     /**
-     * Web layout (index.html) + контент template нэгтгэж бэлэн TwigTemplate буцаана.
+     * Web layout (index.html) + контент template нэгтгэж бэлэн FileTemplate буцаана.
      *
-     * Энэ method нь Dashboard-ийн `twigDashboard()`-тай адил үүрэгтэй:
-     * layout + content template-ийг нэгтгэнэ. Дотроо `twigTemplate()`-г
-     * дуудаж бүх зүйлийг бэлддэг тул caller дахин `twigTemplate()` дуудах
+     * Энэ method нь Dashboard-ийн `dashboardTemplate()`-тай адил үүрэгтэй:
+     * layout + content template-ийг нэгтгэнэ. Дотроо `template()`-г
+     * дуудаж бүх зүйлийг бэлддэг тул caller дахин `template()` дуудах
      * шаардлагагүй - зөвхөн энэ method-г дуудахад хангалттай.
      *
      * Ажиллах дараалал:
@@ -54,20 +52,20 @@ class TemplateController extends \Raptor\Controller
      *   $vars['photo']       -> index-д `record_photo` болно
      *
      * Жишээ:
-     *   $this->twigWebLayout(__DIR__ . '/page.html', $record)->render();
+     *   $this->webTemplate(__DIR__ . '/page.html', $record)->render();
      *
-     * @param string $template Контентын Twig template файл (жишээ: page.html)
+     * @param string $template Контентын Template файл (жишээ: page.html)
      * @param array  $vars     Контент template-д дамжуулах хувьсагчид.
      *                         title, code, description, photo key байвал
      *                         index layout-ийн SEO meta-д автоматаар map хийгдэнэ.
      *
-     * @return TwigTemplate Web-ийн бүрэн layout-тэй рендерлэхэд бэлэн объект
+     * @return FileTemplate Web-ийн бүрэн layout-тэй рендерлэхэд бэлэн объект
      */
-    public function twigWebLayout(string $template, array $vars = []): TwigTemplate
+    public function webTemplate(string $template, array $vars = []): FileTemplate
     {
-        $index = $this->twigTemplate(__DIR__ . '/index.html');
-        $content = $this->twigTemplate($template, $vars);
-        $content->addFilter(new TwigFilter('basename', fn(string $path): string => \rawurldecode(\basename($path))));
+        $index = $this->template(__DIR__ . '/index.html');
+        $content = $this->template($template, $vars);
+        $content->addFilter('basename', fn(string $path): string => \rawurldecode(\basename($path)));
         $index->set('content', $content);
 
         // SEO meta: $vars дотроос index layout руу автоматаар map хийх
@@ -90,13 +88,25 @@ class TemplateController extends \Raptor\Controller
             $index->set($key, $value);
         }
 
-        // Navigation menu (сонгосон хэлээр)
+        // Navigation menu (сонгосон хэлээр, cache-тэй)
         $code = $this->getLanguageCode();
-        $pagesModel = new PagesModel($this->pdo);
-        $index->set('main_menu', $pagesModel->getNavigation($code));
-        $index->set('featured_pages', $pagesModel->getFeaturedLeafPages($code));
+        $cache = $this->hasService('cache') ? $this->getService('cache') : null;
+        $mainMenu = $cache?->get("pages_nav.$code");
+        $featuredPages = $cache?->get("featured_pages.$code");
+        if ($mainMenu === null || $featuredPages === null) {
+            $pagesModel = new PagesModel($this->pdo);
+            if ($mainMenu === null) {
+                $mainMenu = $pagesModel->getNavigation($code);
+                $cache?->set("pages_nav.$code", $mainMenu);
+            }
+            if ($featuredPages === null) {
+                $featuredPages = $pagesModel->getFeaturedLeafPages($code);
+                $cache?->set("featured_pages.$code", $featuredPages);
+            }
+        }
+        $index->set('main_menu', $mainMenu);
+        $index->set('featured_pages', $featuredPages);
 
         return $index;
     }
-
 }

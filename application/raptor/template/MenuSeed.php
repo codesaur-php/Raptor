@@ -3,14 +3,14 @@
 namespace Raptor\Template;
 
 /**
- * Class DashboardMenus
+ * Class MenuSeed
  *
  * Dashboard sidebar-ийн анхдагч цэсний бүтэц.
  * MenuModel::__initial() дотроос дуудагдана.
  *
  * @package Raptor\Template
  */
-class DashboardMenus
+class MenuSeed
 {
     /**
      * Dashboard-ийн үндсэн цэсний бүтцийг үүсгэх.
@@ -175,7 +175,7 @@ class DashboardMenus
          * ----------------------------------------
          */
         $system = $model->insert(
-            ['position' => '300'],
+            ['position' => '900'],
             ['mn' => ['title' => 'Систем'], 'en' => ['title' => 'System']]
         );
         if (isset($system['id'])) {
@@ -183,7 +183,7 @@ class DashboardMenus
             $model->insert(
                 [
                     'parent_id' => $system['id'],
-                    'position' => '310',
+                    'position' => '910',
                     'permission' => 'system_user_index',
                     'icon' => 'bi bi-people-fill',
                     'href' => "$path/dashboard/users"
@@ -194,7 +194,7 @@ class DashboardMenus
             $model->insert(
                 [
                     'parent_id' => $system['id'],
-                    'position' => '320',
+                    'position' => '920',
                     'permission' => 'system_organization_index',
                     'icon' => 'bi bi-building',
                     'href' => "$path/dashboard/organizations"
@@ -205,7 +205,7 @@ class DashboardMenus
             $model->insert(
                 [
                     'parent_id' => $system['id'],
-                    'position' => '330',
+                    'position' => '930',
                     'permission' => 'system_logger',
                     'icon' => 'bi bi-list-stars',
                     'href' => "$path/dashboard/logs"
@@ -216,7 +216,7 @@ class DashboardMenus
             $model->insert(
                 [
                     'parent_id' => $system['id'],
-                    'position' => '340',
+                    'position' => '940',
                     'alias' => 'system',
                     'icon' => 'bi bi-code-slash',
                     'href' => "$path/dashboard/dev-requests"
@@ -227,21 +227,21 @@ class DashboardMenus
             $model->insert(
                 [
                     'parent_id' => $system['id'],
-                    'position' => '350',
+                    'position' => '950',
                     'icon' => 'bi bi-book',
                     'href' => "$path/dashboard/manual"
                 ],
                 ['mn' => ['title' => 'Гарын авлага'], 'en' => ['title' => 'Manual']]
             );
 
-            // Raptor Migrations & Цэс удирдах
+            // Raptor Migrations & Хогийн сав & Цэс удирдах
             // permission => 'system_coder': system_coder нь role, permission биш.
             // Coder role-тэй хэрэглэгчид isUserCan() бүх утганд true буцаадаг
             // тул зөвхөн coder-д харагдана.
             $model->insert(
                 [
                     'parent_id' => $system['id'],
-                    'position' => '360',
+                    'position' => '960',
                     'alias' => 'system',
                     'permission' => 'system_coder',
                     'icon' => 'bi bi-database-gear',
@@ -252,7 +252,18 @@ class DashboardMenus
             $model->insert(
                 [
                     'parent_id' => $system['id'],
-                    'position' => '370',
+                    'position' => '970',
+                    'alias' => 'system',
+                    'permission' => 'system_coder',
+                    'icon' => 'bi bi-trash3',
+                    'href' => "$path/dashboard/trash"
+                ],
+                ['mn' => ['title' => 'Хогийн сав'], 'en' => ['title' => 'Trash']]
+            );
+            $model->insert(
+                [
+                    'parent_id' => $system['id'],
+                    'position' => '980',
                     'alias' => 'system',
                     'permission' => 'system_coder',
                     'icon' => 'bi bi-menu-button-wide-fill',

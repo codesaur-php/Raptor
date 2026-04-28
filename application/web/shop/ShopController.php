@@ -60,14 +60,14 @@ class ShopController extends TemplateController
              FROM $table p
              LEFT JOIN (
                  SELECT product_id, AVG(rating) as avg_rating, COUNT(*) as review_count
-                 FROM $reviewsTable WHERE is_active=1 GROUP BY product_id
+                 FROM $reviewsTable GROUP BY product_id
              ) rv ON rv.product_id=p.id
-             WHERE p.is_active=1 AND p.published=1 AND p.code=:code
+             WHERE p.published=1 AND p.code=:code
              ORDER BY p.published_at DESC"
         );
         $products = $stmt->execute([':code' => $code]) ? $stmt->fetchAll() : [];
 
-        $this->twigWebLayout(__DIR__ . '/products.html', [
+        $this->webTemplate(__DIR__ . '/products.html', [
             'products' => $products,
             'title' => $this->text('products')
         ])->render();
@@ -86,7 +86,7 @@ class ShopController extends TemplateController
     {
         $model = new ProductsModel($this->pdo);
         $table = $model->getName();
-        $stmt = $this->prepare("SELECT slug FROM $table WHERE id=:id AND is_active=1");
+        $stmt = $this->prepare("SELECT slug FROM $table WHERE id=:id");
         $stmt->bindValue(':id', $id, \PDO::PARAM_INT);
         $stmt->execute();
         $row = $stmt->fetch();
@@ -118,7 +118,7 @@ class ShopController extends TemplateController
             "FROM $table p " .
             "LEFT JOIN $users c ON p.created_by = c.id " .
             "LEFT JOIN $users pb ON p.published_by = pb.id " .
-            "WHERE p.slug = :slug AND p.is_active = 1 LIMIT 1"
+            "WHERE p.slug = :slug LIMIT 1"
         );
         $stmt->bindValue(':slug', $slug);
         $stmt->execute();
@@ -131,14 +131,14 @@ class ShopController extends TemplateController
 
         // Үг тоолох ба уншихад шаардлагатай хугацаа
         $plainText = \strip_tags($record['content'] ?? '');
-        $record['word_count'] = \str_word_count($plainText);
+        $record['word_count'] = \preg_match_all('/[\p{L}\p{N}]+/u', $plainText);
         $record['read_time'] = \max(1, (int) \ceil($record['word_count'] / 200));
 
         // Файлуудыг татах
         $files = new FilesModel($this->pdo);
         $files->setTable($table);
         $record['files'] = $files->getRows([
-            'WHERE' => "record_id=$id AND is_active=1"
+            'WHERE' => "record_id=$id"
         ]);
 
         // Үнэлгээнүүдийг татах (review=1 үед)
@@ -147,13 +147,13 @@ class ShopController extends TemplateController
             $reviewsTable = $reviewsModel->getName();
             $rstmt = $this->prepare(
                 "SELECT id, name, rating, comment, created_at FROM $reviewsTable
-                 WHERE product_id=:pid AND is_active=1 ORDER BY created_at DESC"
+                 WHERE product_id=:pid ORDER BY created_at DESC"
             );
             $record['reviews'] = $rstmt->execute([':pid' => $id]) ? $rstmt->fetchAll() : [];
 
             $avgStmt = $this->prepare(
                 "SELECT AVG(rating) as avg_rating, COUNT(*) as review_count FROM $reviewsTable
-                 WHERE product_id=:pid AND is_active=1"
+                 WHERE product_id=:pid"
             );
             $avgStmt->execute([':pid' => $id]);
             $stats = $avgStmt->fetch();
@@ -167,7 +167,7 @@ class ShopController extends TemplateController
             $record['turnstile_site_key'] = $this->getTurnstileSiteKey();
         }
 
-        $this->twigWebLayout(__DIR__ . '/product.html', $record)->render();
+        $this->webTemplate(__DIR__ . '/product.html', $record)->render();
 
         // Read count
         $this->exec("UPDATE $table SET read_count=read_count+1 WHERE id=$id");
@@ -176,7 +176,7 @@ class ShopController extends TemplateController
             'web',
             LogLevel::NOTICE,
             '[{server_request.code} : /product/{slug}] {title} - бүтээгдэхүүнийг уншиж байна',
-            ['action' => 'product', 'id' => $id, 'slug' => $slug, 'title' => $record['title']]
+            ['action' => 'product', 'record_id' => $id, 'slug' => $slug, 'title' => $record['title']]
         );
     }
 
@@ -197,7 +197,7 @@ class ShopController extends TemplateController
             $model = new ProductsModel($this->pdo);
             $table = $model->getName();
             $stmt = $this->prepare(
-                "SELECT id, title, photo, price FROM $table WHERE id=:id AND is_active=1 AND published=1"
+                "SELECT id, title, photo, price FROM $table WHERE id=:id AND published=1"
             );
             $stmt->bindValue(':id', (int)$productId, \PDO::PARAM_INT);
             $stmt->execute();
@@ -214,7 +214,7 @@ class ShopController extends TemplateController
         $vars['turnstile_site_key'] = $this->getTurnstileSiteKey();
 
         $vars['title'] = $this->text('order');
-        $this->twigWebLayout(__DIR__ . '/order.html', $vars)->render();
+        $this->webTemplate(__DIR__ . '/order.html', $vars)->render();
 
         $context = ['action' => 'order'];
         if (isset($product)) {
@@ -235,84 +235,99 @@ class ShopController extends TemplateController
      */
     public function orderSubmit()
     {
-        $payload = $this->getParsedBody();
-        $code = $this->getLanguageCode();
+        try {
+            $payload = $this->getParsedBody();
+            $code = $this->getLanguageCode();
 
-        $this->validateSpamProtection($payload, 'order-form', '_last_order_at', 10, 3);
+            $this->validateSpamProtection($payload, 'order-form', '_last_order_at', 10, 3);
 
-        if (empty($payload['customer_name']) || empty($payload['customer_email'])) {
-            throw new \Exception(
-                $code === 'mn' ? 'Нэр болон имэйл хаяг шаардлагатай' : 'Name and email are required',
-                400
-            );
-        }
+            if (empty($payload['customer_name']) || empty($payload['customer_email'])) {
+                throw new \Exception(
+                    $code === 'mn' ? 'Нэр болон имэйл хаяг шаардлагатай' : 'Name and email are required',
+                    400
+                );
+            }
 
-        $model = new ProductOrdersModel($this->pdo);
-        $record = $model->insert([
-            'product_id' => !empty($payload['product_id']) ? (int)$payload['product_id'] : null,
-            'product_title' => $payload['product_title'] ?? '',
-            'customer_name' => $payload['customer_name'],
-            'customer_email' => $payload['customer_email'],
-            'customer_phone' => $payload['customer_phone'] ?? '',
-            'message' => $payload['message'] ?? '',
-            'quantity' => \max(1, (int)($payload['quantity'] ?? 1)),
-            'code' => $code,
-            'status' => 'new'
-        ]);
-
-        if (!isset($record['id'])) {
-            throw new \Exception(
-                $code === 'mn' ? 'Захиалга үүсгэхэд алдаа гарлаа' : 'Failed to create order',
-                500
-            );
-        }
-
-        $_SESSION['_last_order_at'] = \time();
-
-        $this->sendOrderConfirmation(
-            (int)$record['id'],
-            $payload['customer_name'],
-            $payload['customer_email'],
-            $payload['product_title'] ?? '',
-            \max(1, (int)($payload['quantity'] ?? 1)),
-            $code
-        );
-
-        $appUrl = \rtrim((string)$this->getRequest()->getUri()->withPath($this->getScriptPath()), '/');
-        $this->getService('discord')?->newOrder(
-            (int)$record['id'],
-            $payload['customer_name'],
-            $payload['customer_email'],
-            $payload['product_title'] ?? '',
-            \max(1, (int)($payload['quantity'] ?? 1)),
-            $payload['customer_phone'] ?? '',
-            $appUrl
-        );
-
-        $this->twigWebLayout(__DIR__ . '/order-success.html', [
-            'order_id' => $record['id'],
-            'customer_name' => $payload['customer_name'],
-            'product_title' => $payload['product_title'] ?? '',
-            'title' => $code === 'mn' ? 'Захиалга амжилттай' : 'Order Success'
-        ])->render();
-
-        $this->log(
-            'products_orders',
-            LogLevel::INFO,
-            '{auth_user.username} шинэ захиалга илгээлээ',
-            [
-                'action' => 'order',
-                'record_id' => $record['id'],
+            $model = new ProductOrdersModel($this->pdo);
+            $orderData = [
                 'product_title' => $payload['product_title'] ?? '',
-                'auth_user' => [
-                    'username'   => $payload['customer_name'],
-                    'email'      => $payload['customer_email'],
-                    'phone'      => $payload['customer_phone'] ?? '',
-                    'first_name' => $payload['customer_name'],
-                    'last_name'  => ''
+                'customer_name' => $payload['customer_name'],
+                'customer_email' => $payload['customer_email'],
+                'customer_phone' => $payload['customer_phone'] ?? '',
+                'message' => $payload['message'] ?? '',
+                'quantity' => \max(1, (int)($payload['quantity'] ?? 1)),
+                'code' => $code,
+                'status' => 'new'
+            ];
+            if (!empty($payload['product_id'])) {
+                $orderData['product_id'] = (int)$payload['product_id'];
+            }
+            $record = $model->insert($orderData);
+
+            if (!isset($record['id'])) {
+                throw new \Exception(
+                    $code === 'mn' ? 'Захиалга үүсгэхэд алдаа гарлаа' : 'Failed to create order',
+                    500
+                );
+            }
+
+            $_SESSION['_last_order_at'] = \time();
+
+            $this->sendOrderConfirmation(
+                (int)$record['id'],
+                $payload['customer_name'],
+                $payload['customer_email'],
+                $payload['product_title'] ?? '',
+                \max(1, (int)($payload['quantity'] ?? 1)),
+                $code
+            );
+
+            $this->dispatch(new \Raptor\Notification\OrderEvent(
+                'insert', (int)$record['id'],
+                $payload['customer_name'],
+                $payload['customer_email'],
+                $payload['customer_phone'] ?? '',
+                $payload['product_title'] ?? '',
+                \max(1, (int)($payload['quantity'] ?? 1)),
+                '', ''
+            ));
+
+            $this->sendOrderNotifyEmail(
+                (int)$record['id'],
+                $payload['customer_name'],
+                $payload['customer_email'],
+                $payload['product_title'] ?? '',
+                \max(1, (int)($payload['quantity'] ?? 1)),
+                $payload['customer_phone'] ?? ''
+            );
+
+            $this->webTemplate(__DIR__ . '/order-success.html', [
+                'order_id' => $record['id'],
+                'customer_name' => $payload['customer_name'],
+                'product_title' => $payload['product_title'] ?? '',
+                'title' => $code === 'mn' ? 'Захиалга амжилттай' : 'Order Success'
+            ])->render();
+
+            $this->log(
+                'products_orders',
+                LogLevel::INFO,
+                '{auth_user.username} шинэ захиалга илгээлээ',
+                [
+                    'action' => 'order',
+                    'record_id' => $record['id'],
+                    'product_title' => $payload['product_title'] ?? '',
+                    'auth_user' => [
+                        'username'   => $payload['customer_name'],
+                        'email'      => $payload['customer_email'],
+                        'phone'      => $payload['customer_phone'] ?? '',
+                        'first_name' => $payload['customer_name'],
+                        'last_name'  => ''
+                    ]
                 ]
-            ]
-        );
+            );
+        } catch (\Throwable $err) {
+            $this->respondJSON(['message' => $err->getMessage()], $err->getCode() ?: 500);
+        }
     }
 
     /**
@@ -332,7 +347,7 @@ class ShopController extends TemplateController
 
             // Бүтээгдэхүүн байгаа эсэх, comment идэвхтэй эсэх шалгах
             $productsModel = new ProductsModel($this->pdo);
-            $product = $productsModel->getRowWhere(['id' => $id, 'is_active' => 1]);
+            $product = $productsModel->getById($id);
             if (empty($product) || empty($product['review'])) {
                 throw new \Exception('Invalid request', 400);
             }
@@ -366,13 +381,17 @@ class ShopController extends TemplateController
                 'name' => $name,
                 'email' => $email,
                 'rating' => $rating,
-                'comment' => $comment,
-                'created_at' => \date('Y-m-d H:i:s')
+                'comment' => $comment
             ]);
 
-            // Discord мэдэгдэл
-            $appUrl = \rtrim((string)$this->getRequest()->getUri()->withPath($this->getScriptPath()), '/');
-            $this->getService('discord')?->contentAction('review', 'insert', $product['title'], $id, $name, $appUrl);
+            $this->dispatch(new \Raptor\Notification\ContentEvent(
+                'insert', 'review', $product['title'], $id,
+                $name,
+                ['rating' => $rating, 'comment' => $comment]
+            ));
+
+            // Админд email мэдэгдэл
+            $this->sendReviewNotifyEmail($name, $email, $rating, $comment, $product['title']);
 
             $this->respondJSON([
                 'status' => 'success',
@@ -442,7 +461,7 @@ class ShopController extends TemplateController
             }
 
             $templateService = $this->getService('template_service');
-            $template = $templateService->getByKeyword('order-confirmation', $code);
+            $template = $templateService?->getByKeyword('order-confirmation', $code);
             if (empty($template)) {
                 return;
             }
@@ -459,11 +478,130 @@ class ShopController extends TemplateController
             $bodyTemplate->set('product_title', $productTitle);
             $bodyTemplate->set('quantity', $quantity);
             $body = $bodyTemplate->output();
-
+            
             $mailer->mail($customerEmail, $customerName, $subject, $body)->send();
         } catch (\Throwable $e) {
             if (CODESAUR_DEVELOPMENT) {
                 \error_log("OrderConfirmationEmail: {$e->getMessage()}");
+            }
+        }
+    }
+
+    /**
+     * Шинэ захиалга ирсэн тухай админд email мэдэгдэл.
+     */
+    private function sendOrderNotifyEmail(
+        int $orderId,
+        string $customerName,
+        string $customerEmail,
+        string $productTitle,
+        int $quantity,
+        string $phone
+    ) {
+        try {
+            $notifyEmail = $_ENV['RAPTOR_ORDER_EMAIL_TO'] ?? '';
+            if (empty($notifyEmail)) {
+                return;
+            }
+
+            $mailer = $this->getService('mailer');
+            if (empty($mailer)) {
+                return;
+            }
+
+            $code = $this->getLanguageCode() ?: 'en';
+            $templateService = $this->getService('template_service');
+            $template = $templateService?->getByKeyword('order-notify', $code);
+            if (empty($template)) {
+                return;
+            }
+
+            $appUrl = \rtrim((string)$this->getRequest()->getUri()->withPath($this->getScriptPath()), '/');
+            $ordersLink = $appUrl . '/dashboard/orders';
+
+            $subjectTemplate = new MemoryTemplate();
+            $subjectTemplate->source($template['title']);
+            $subjectTemplate->set('order_id', $orderId);
+            $subjectTemplate->set('customer_name', $customerName);
+            $subject = $subjectTemplate->output();
+
+            $bodyTemplate = new MemoryTemplate();
+            $bodyTemplate->source($template['content']);
+            $bodyTemplate->set('order_id', $orderId);
+            $bodyTemplate->set('customer_name', \htmlspecialchars($customerName));
+            $bodyTemplate->set('customer_email', \htmlspecialchars($customerEmail));
+            $bodyTemplate->set('customer_phone', \htmlspecialchars($phone));
+            $bodyTemplate->set('product_title', \htmlspecialchars($productTitle));
+            $bodyTemplate->set('quantity', $quantity);
+            $bodyTemplate->set('orders_link', $ordersLink);
+            $body = $bodyTemplate->output();
+
+            $mailer->mail($notifyEmail, null, $subject, $body);
+            if (!empty($customerEmail)) {
+                $mailer->setReplyTo($customerEmail, $customerName);
+            }
+            $mailer->send();
+        } catch (\Throwable $e) {
+            if (CODESAUR_DEVELOPMENT) {
+                \error_log("OrderNotifyEmail: {$e->getMessage()}");
+            }
+        }
+    }
+
+    /**
+     * Шинэ үнэлгээ ирсэн тухай админд email мэдэгдэл.
+     */
+    private function sendReviewNotifyEmail(
+        string $name,
+        string $email,
+        int $rating,
+        string $comment,
+        string $productTitle
+    ) {
+        try {
+            $notifyEmail = $_ENV['RAPTOR_REVIEW_EMAIL_TO'] ?? '';
+            if (empty($notifyEmail)) {
+                return;
+            }
+
+            $mailer = $this->getService('mailer');
+            if (empty($mailer)) {
+                return;
+            }
+
+            $code = $this->getLanguageCode() ?: 'en';
+            $templateService = $this->getService('template_service');
+            $template = $templateService?->getByKeyword('review-notify', $code);
+            if (empty($template)) {
+                return;
+            }
+
+            $appUrl = \rtrim((string)$this->getRequest()->getUri()->withPath($this->getScriptPath()), '/');
+            $reviewsLink = $appUrl . '/dashboard/products/reviews';
+
+            $subjectTemplate = new MemoryTemplate();
+            $subjectTemplate->source($template['title']);
+            $subjectTemplate->set('product_title', $productTitle);
+            $subject = $subjectTemplate->output();
+
+            $bodyTemplate = new MemoryTemplate();
+            $bodyTemplate->source($template['content']);
+            $bodyTemplate->set('name', \htmlspecialchars($name));
+            $bodyTemplate->set('email', \htmlspecialchars($email));
+            $bodyTemplate->set('rating', $rating);
+            $bodyTemplate->set('comment', \nl2br(\htmlspecialchars($comment)));
+            $bodyTemplate->set('product_title', \htmlspecialchars($productTitle));
+            $bodyTemplate->set('reviews_link', $reviewsLink);
+            $body = $bodyTemplate->output();
+
+            $mailer->mail($notifyEmail, null, $subject, $body);
+            if (!empty($email)) {
+                $mailer->setReplyTo($email, $name);
+            }
+            $mailer->send();
+        } catch (\Throwable $e) {
+            if (CODESAUR_DEVELOPMENT) {
+                \error_log("ReviewNotifyEmail: {$e->getMessage()}");
             }
         }
     }

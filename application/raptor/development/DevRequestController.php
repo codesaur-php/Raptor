@@ -19,7 +19,7 @@ use Raptor\Content\FilesModel;
  *  - Шинэ хүсэлт үүсгэх (create, store)
  *  - Хүсэлтийн дэлгэрэнгүй харах (view)
  *  - Хүсэлтэд хариулт бичих (respond)
- *  - Хүсэлтийг идэвхгүй болгох (deactivate)
+ *  - Хүсэлтийг устгах (delete)
  *
  * Нэвтэрсэн бүх хэрэглэгч хүсэлт үүсгэж, өөрийнхөө хүсэлтийг харах боломжтой.
  * `system_development` эрхтэй хэрэглэгч бүх хүсэлтийг харах, хариулах, устгах эрхтэй.
@@ -45,7 +45,7 @@ class DevRequestController extends FileController
             return;
         }
 
-        $dashboard = $this->twigDashboard(
+        $dashboard = $this->dashboardTemplate(
             __DIR__ . '/devrequest-index.html',
             ['can_manage' => $this->isUserCan('system_development')]
         );
@@ -72,11 +72,8 @@ class DevRequestController extends FileController
             $userId = $this->getUserId();
 
             $params = $this->getQueryParams();
-            if (!isset($params['is_active'])) {
-                $params['is_active'] = 1;
-            }
             $conditions = [];
-            $allowed = ['status', 'is_active'];
+            $allowed = ['status'];
             foreach (\array_keys($params) as $name) {
                 if (\in_array($name, $allowed)) {
                     $conditions[] = "t.$name=:$name";
@@ -92,7 +89,7 @@ class DevRequestController extends FileController
                 $params['assigned_to'] = $userId;
             }
 
-            $where = \implode(' AND ', $conditions);
+            $whereClause = empty($conditions) ? '' : ' WHERE ' . \implode(' AND ', $conditions);
 
             $model = new DevRequestModel($this->pdo);
             $table = $model->getName();
@@ -110,14 +107,14 @@ class DevRequestController extends FileController
                 "CONCAT(u.first_name, ' ', u.last_name) as created_user, " .
                 "CONCAT(a.first_name, ' ', a.last_name) as assigned_user, " .
                 "(" .
-                    "(SELECT COUNT(*) FROM $reqFilesTable f WHERE f.record_id = t.id AND f.is_active = 1) + " .
+                    "(SELECT COUNT(*) FROM $reqFilesTable f WHERE f.record_id = t.id) + " .
                     "(SELECT COUNT(*) FROM $respFilesTable rf " .
                         "INNER JOIN $respTable r ON rf.record_id = r.id " .
-                        "WHERE r.request_id = t.id AND rf.is_active = 1)" .
+                        "WHERE r.request_id = t.id)" .
                 ") as attachment_count " .
                 "FROM $table t LEFT JOIN $users u ON t.created_by = u.id " .
-                "LEFT JOIN $users a ON t.assigned_to = a.id " .
-                "WHERE $where ORDER BY t.created_at DESC";
+                "LEFT JOIN $users a ON t.assigned_to = a.id" .
+                "$whereClause ORDER BY t.created_at DESC";
             $stmt = $this->prepare($sql);
             foreach ($params as $name => $value) {
                 $stmt->bindValue(":$name", $value);
@@ -166,7 +163,7 @@ class DevRequestController extends FileController
                 }
             }
 
-            $dashboard = $this->twigDashboard(
+            $dashboard = $this->dashboardTemplate(
                 __DIR__ . '/devrequest-create.html',
                 [
                     'max_file_size' => $this->getMaximumFileUploadSize(),
@@ -239,15 +236,14 @@ class DevRequestController extends FileController
             // Email мэдэгдэл: зөвхөн сонгогдсон хэрэглэгчид
             $this->notifyNewRequest($id, $payload['title'], $assignedTo ?: null);
 
-            // Discord мэдэгдэл
-            $authorName = \trim(($this->getUser()->profile['first_name'] ?? '') . ' ' . ($this->getUser()->profile['last_name'] ?? ''));
             $assignedName = '';
             if ($assignedTo) {
-                $assignedUser = (new \Raptor\User\UsersModel($this->pdo))->getRowWhere(['id' => $assignedTo]);
+                $assignedUser = (new \Raptor\User\UsersModel($this->pdo))->getById($assignedTo);
                 $assignedName = $assignedUser ? \trim(($assignedUser['first_name'] ?? '') . ' ' . ($assignedUser['last_name'] ?? '')) : '';
             }
-            $appUrl = \rtrim((string)$this->getRequest()->getUri()->withPath($this->getScriptPath()), '/') . '/dashboard';
-            $this->getService('discord')?->newDevRequest($id, $payload['title'], $authorName, $assignedName, $appUrl);
+            $this->dispatch(new \Raptor\Notification\DevRequestEvent(
+                'new', $id, $payload['title'], $assignedName
+            ));
 
             $this->respondJSON([
                 'status' => 'success',
@@ -263,8 +259,8 @@ class DevRequestController extends FileController
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } else {
                 $level = LogLevel::INFO;
-                $message = '{record_id} дугаартай хөгжүүлэлтийн хүсэлт амжилттай бүртгэгдлээ';
-                $context += ['record_id' => $id ?? null];
+                $message = '{record_id} ({title}) дугаартай хөгжүүлэлтийн хүсэлт амжилттай бүртгэгдлээ';
+                $context += ['record_id' => $id ?? null, 'title' => $payload['title'] ?? ''];
             }
             $this->log('dev_requests', $level, $message, $context);
         }
@@ -298,7 +294,7 @@ class DevRequestController extends FileController
                 "CONCAT(a.first_name, ' ', a.last_name) as assigned_user " .
                 "FROM $table t LEFT JOIN $users u ON t.created_by = u.id " .
                 "LEFT JOIN $users a ON t.assigned_to = a.id " .
-                "WHERE t.id = :id AND t.is_active = 1";
+                "WHERE t.id = :id";
             $stmt = $this->prepare($sql);
             $stmt->bindValue(':id', $id, \PDO::PARAM_INT);
             $stmt->execute();
@@ -319,7 +315,7 @@ class DevRequestController extends FileController
             $filesTable = $filesModel->getName();
             $attachStmt = $this->prepare(
                 "SELECT id, path, size, type, mime_content_type FROM $filesTable " .
-                "WHERE record_id = :rid AND is_active = 1"
+                "WHERE record_id = :rid"
             );
             $attachStmt->bindValue(':rid', $id, \PDO::PARAM_INT);
             $attachStmt->execute();
@@ -344,7 +340,7 @@ class DevRequestController extends FileController
             foreach ($responses as &$resp) {
                 $rfStmt = $this->prepare(
                     "SELECT id, path, size, type, mime_content_type FROM $respFilesTable " .
-                    "WHERE record_id = :rid AND is_active = 1"
+                    "WHERE record_id = :rid"
                 );
                 $rfStmt->bindValue(':rid', (int)$resp['id'], \PDO::PARAM_INT);
                 $rfStmt->execute();
@@ -352,7 +348,7 @@ class DevRequestController extends FileController
             }
             unset($resp);
 
-            $dashboard = $this->twigDashboard(
+            $dashboard = $this->dashboardTemplate(
                 __DIR__ . '/devrequest-view.html',
                 [
                     'record' => $record,
@@ -373,8 +369,8 @@ class DevRequestController extends FileController
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } else {
                 $level = LogLevel::NOTICE;
-                $message = '{record_id} дугаартай хөгжүүлэлтийн хүсэлтийг үзэж байна';
-                $context += ['record' => $record];
+                $message = '{record_id} ({title}) дугаартай хөгжүүлэлтийн хүсэлтийг үзэж байна';
+                $context += ['title' => $record['title'], 'record' => $record];
             }
             $this->log('dev_requests', $level, $message, $context);
         }
@@ -405,7 +401,7 @@ class DevRequestController extends FileController
             $id = \filter_var($payload['id'], \FILTER_VALIDATE_INT);
 
             $model = new DevRequestModel($this->pdo);
-            $record = $model->getRowWhere(['id' => $id, 'is_active' => 1]);
+            $record = $model->getById($id);
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));
             }
@@ -465,10 +461,9 @@ class DevRequestController extends FileController
             // Email мэдэгдэл илгээх
             $this->notifyResponse($record, $userId, $payload['response']);
 
-            // Discord мэдэгдэл
-            $authorName = \trim(($this->getUser()->profile['first_name'] ?? '') . ' ' . ($this->getUser()->profile['last_name'] ?? ''));
-            $appUrl = \rtrim((string)$this->getRequest()->getUri()->withPath($this->getScriptPath()), '/') . '/dashboard';
-            $this->getService('discord')?->devRequestUpdated($id, $record['title'], $authorName, $newStatus, $appUrl);
+            $this->dispatch(new \Raptor\Notification\DevRequestEvent(
+                'updated', $id, $record['title'], '', $newStatus
+            ));
 
             $this->respondJSON([
                 'status' => 'success',
@@ -489,22 +484,22 @@ class DevRequestController extends FileController
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } else {
                 $level = LogLevel::INFO;
-                $message = '{record_id} дугаартай хүсэлтэд хариулт бичлээ';
-                $context += ['record_id' => $id];
+                $message = '{record_id} ({title}) дугаартай хүсэлтэд хариулт бичлээ';
+                $context += ['record_id' => $id, 'title' => $record['title'] ?? ''];
             }
             $this->log('dev_requests', $level, $message, $context);
         }
     }
 
     /**
-     * Хөгжүүлэлтийн хүсэлтийг идэвхгүй болгох (soft delete).
+     * Хөгжүүлэлтийн хүсэлтийг устгах.
      *
      * system_development эрхтэй бол дурын хүсэлтийг,
      * бусад тохиолдолд зөвхөн өөрийн хүсэлтийг устгана.
      *
      * @return void JSON хариулт: { status, title, message }
      */
-    public function deactivate()
+    public function delete()
     {
         try {
             if (!$this->isUserAuthorized()) {
@@ -521,7 +516,7 @@ class DevRequestController extends FileController
             $id = \filter_var($payload['id'], \FILTER_VALIDATE_INT);
 
             $model = new DevRequestModel($this->pdo);
-            $record = $model->getRowWhere(['id' => $id, 'is_active' => 1]);
+            $record = $model->getById($id);
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));
             }
@@ -531,14 +526,11 @@ class DevRequestController extends FileController
                 throw new \Exception($this->text('system-no-permission'), 403);
             }
 
-            $deactivated = $model->updateById($id, [
-                'is_active' => 0,
-                'updated_by' => $userId,
-                'updated_at' => \date('Y-m-d H:i:s')
-            ]);
-            if (!$deactivated) {
-                throw new \Exception($this->text('no-record-selected'));
-            }
+            $model->deleteById($id);
+            (new \Raptor\Trash\TrashModel($this->pdo))->store(
+                'dev_requests', $model->getName(), $id, $record, $this->getUserId()
+            );
+
             $this->respondJSON([
                 'status'  => 'success',
                 'title'   => $this->text('success'),
@@ -551,15 +543,15 @@ class DevRequestController extends FileController
                 'message' => $err->getMessage()
             ], $err->getCode());
         } finally {
-            $context = ['action' => 'deactivate'];
+            $context = ['action' => 'delete'];
             if (isset($err) && $err instanceof \Throwable) {
                 $level = LogLevel::ERROR;
-                $message = 'Хөгжүүлэлтийн хүсэлтийг идэвхгүй болгох үед алдаа гарлаа';
+                $message = 'Хөгжүүлэлтийн хүсэлтийг устгах үед алдаа гарлаа';
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } else {
                 $level = LogLevel::ALERT;
-                $message = '{record_id} дугаартай хөгжүүлэлтийн хүсэлтийг идэвхгүй болголоо';
-                $context += ['record_id' => $id];
+                $message = '{record_id} ({title}) дугаартай хөгжүүлэлтийн хүсэлтийг устгалаа';
+                $context += ['record_id' => $id, 'title' => $record['title'] ?? ''];
             }
             $this->log('dev_requests', $level, $message, $context);
         }
@@ -600,7 +592,7 @@ class DevRequestController extends FileController
             }
 
             $usersModel = new \Raptor\User\UsersModel($this->pdo);
-            $recipient = $usersModel->getRowWhere(['id' => $assignedTo]);
+            $recipient = $usersModel->getById($assignedTo);
             if (empty($recipient) || empty($recipient['email'])) {
                 return;
             }
@@ -687,7 +679,7 @@ class DevRequestController extends FileController
             }
 
             $usersModel = new \Raptor\User\UsersModel($this->pdo);
-            $recipient = $usersModel->getRowWhere(['id' => $notifyUserId]);
+            $recipient = $usersModel->getById($notifyUserId);
             if (empty($recipient) || empty($recipient['email'])) {
                 return;
             }

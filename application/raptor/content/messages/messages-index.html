@@ -1,9 +1,24 @@
 <!-- SweetAlert2 -->
 <script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-<!-- Variables: filters -->
+<!-- Variables: filters, contact_email_notify -->
 <div class="d-flex justify-content-between align-items-center">
     <h5 class="text-uppercase"><i class="bi bi-chat-dots"></i> {{ 'messages'|text }}</h5>
+    {% if user.is('system_coder') %}
+    <div class="d-flex align-items-center ms-auto me-3 gap-2">
+        <div class="form-check form-switch" title="{{ 'contact-email-notify'|text }}">
+            <input class="form-check-input" type="checkbox" role="switch" id="contactEmailToggle"
+                   {{ contact_email_notify ? 'checked' : '' }}>
+            <label class="form-check-label small" for="contactEmailToggle">
+                <i class="bi bi-envelope"></i> Email {{ 'notify'|text }}
+            </label>
+        </div>
+        <button class="btn btn-sm btn-outline-secondary py-0 px-1" type="button" id="contactEmailEdit" title="Email">
+            <small id="contactEmailDisplay">{{ notify_email ?: '-' }}</small>
+            <i class="bi bi-pencil-square"></i>
+        </button>
+    </div>
+    {% endif %}
 </div>
 
 <style>
@@ -78,13 +93,13 @@
         filterAction.classList.remove('btn-secondary', 'btn-danger', 'btn-dark');
         if (!hasFilter && urlParams.size === 0) {
             filterAction.classList.add('btn-secondary');
-            filterAction.innerHTML = '<i class="bi bi-funnel"></i> {{ "filter"|text }}';
+            filterAction.innerHTML = '<i class="bi bi-funnel"></i> {{ 'filter'|text }}';
         } else if (hasFilter && matchesUrl) {
             filterAction.classList.add('btn-dark');
-            filterAction.innerHTML = '<i class="bi bi-funnel-fill"></i> {{ "filter"|text }} <i class="bi bi-x-circle ms-1" data-reset></i>';
+            filterAction.innerHTML = '<i class="bi bi-funnel-fill"></i> {{ 'filter'|text }} <i class="bi bi-x-circle ms-1" data-reset></i>';
         } else {
             filterAction.classList.add('btn-danger');
-            filterAction.innerHTML = '<i class="bi bi-funnel-fill"></i> {{ "filter"|text }} <i class="bi bi-x-circle ms-1" data-reset></i>';
+            filterAction.innerHTML = '<i class="bi bi-funnel-fill"></i> {{ 'filter'|text }} <i class="bi bi-x-circle ms-1" data-reset></i>';
         }
         const resetIcon = filterAction.querySelector('[data-reset]');
         if (resetIcon) {
@@ -109,7 +124,7 @@
     filterAction.addEventListener('click', function (e) {
         e.preventDefault();
         if (filterAction.classList.contains('btn-secondary')) {
-            return NotifyTop('warning', `{{ 'warning'|text|e }}`, `{{ 'select-at-least-one-filter'|text|e('js') }}`);
+            return Notify('warning', `{{ 'warning'|text|e }}`, `{{ 'select-at-least-one-filter'|text|e('js') }}`);
         }
         if (filterAction.classList.contains('btn-dark')) return;
         const params = [];
@@ -208,7 +223,7 @@
                         cancelButtonText: `{{ 'cancel'|text|e('js') }}`
                     }).then(result => {
                         if (!result.isConfirmed) return;
-                        csrfFetch(`{{ 'messages-deactivate'|link }}`, {
+                        csrfFetch(`{{ 'messages-delete'|link }}`, {
                             method: 'DELETE',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ id })
@@ -235,7 +250,7 @@
                             </div>
                             <div class="form-check mb-3">
                                 <input class="form-check-input" type="checkbox" id="swal-email" ${hasEmail ? '' : 'disabled'}>
-                                <label class="form-check-label ${hasEmail ? '' : 'text-muted'}" for="swal-email">{{ 'contacted-by-email'|text|e('js') }}${hasEmail ? '' : ' ({{ "no-email"|text|e("js") }})'}</label>
+                                <label class="form-check-label ${hasEmail ? '' : 'text-muted'}" for="swal-email">{{ 'contacted-by-email'|text|e('js') }}${hasEmail ? '' : ' ({{ 'no-email'|text|e("js") }})'}</label>
                             </div>
                             <textarea class="form-control" id="swal-note" rows="3" placeholder="{{ 'additional-info'|text|e('js') }}"></textarea>
                         </div>`,
@@ -259,7 +274,7 @@
                     }).then(result => {
                         if (!result.isConfirmed) return;
                         csrfFetch(`{{ 'messages'|link }}/replied/${id}`, {
-                            method: 'PUT',
+                            method: 'PATCH',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ note: result.value })
                         }).then(r => r.json()).then(res => {
@@ -275,5 +290,94 @@
         }).catch(err => {
             table.setBody(`<tr><td colspan="6" class="text-center text-danger">${err.message}</td></tr>`);
         });
+
+        // Contact email мэдэгдэл toggle (ON = email тохируулах, OFF = email хоослох)
+        const emailToggle = document.getElementById('contactEmailToggle');
+        if (emailToggle) {
+            emailToggle.addEventListener('change', function () {
+                if (emailToggle.checked) {
+                    // ON -> email оруулах
+                    emailToggle.checked = false;
+                    Swal.fire({
+                        title: 'Email',
+                        text: `{{ 'email'|text|e('js') }}`,
+                        input: 'email',
+                        inputValue: `{{ settings_email|e('js') }}`,
+                        inputPlaceholder: 'email@example.com',
+                        showCancelButton: true,
+                        confirmButtonText: `{{ 'save'|text|e('js') }}`,
+                        cancelButtonText: `{{ 'cancel'|text|e('js') }}`,
+                        inputValidator: v => !v ? `{{ 'email'|text|e('js') }}` : null
+                    }).then(result => {
+                        if (!result.isConfirmed) return;
+                        csrfFetch(`{{ 'settings-env'|link }}`, {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ name: 'RAPTOR_CONTACT_EMAIL_TO', value: result.value, type: 'email' })
+                        }).then(r => r.json()).then(res => {
+                            if (res.status !== 'success') return Notify('danger', res.title, res.message);
+                            document.getElementById('contactEmailDisplay').textContent = res.value;
+                            emailToggle.checked = true;
+                            Notify('success', res.title, res.message);
+                        }).catch(err => Notify('danger', `{{ 'error'|text|e('js') }}`, err.message));
+                    });
+                } else {
+                    // OFF -> email хоослох
+                    csrfFetch(`{{ 'settings-env'|link }}`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name: 'RAPTOR_CONTACT_EMAIL_TO', value: '', type: 'email' })
+                    }).then(r => r.json()).then(res => {
+                        if (res.status === 'success') {
+                            document.getElementById('contactEmailDisplay').textContent = '-';
+                            emailToggle.checked = false;
+                            Notify('success', res.title, res.message);
+                        } else {
+                            emailToggle.checked = true;
+                            Notify('danger', res.title ?? `{{ 'error'|text|e('js') }}`, res.message);
+                        }
+                    }).catch(err => {
+                        emailToggle.checked = true;
+                        Notify('danger', `{{ 'error'|text|e('js') }}`, err.message);
+                    });
+                }
+            });
+        }
+
+        // Contact notify email засварлах
+        const contactEmailEdit = document.getElementById('contactEmailEdit');
+        if (contactEmailEdit) {
+            contactEmailEdit.addEventListener('click', function () {
+                const current = document.getElementById('contactEmailDisplay').textContent.trim();
+                Swal.fire({
+                    title: 'Email',
+                    input: 'email',
+                    inputValue: current === '-' ? '' : current,
+                    inputPlaceholder: 'email@example.com',
+                    showCancelButton: true,
+                    confirmButtonText: `{{ 'save'|text|e('js') }}`,
+                    cancelButtonText: `{{ 'cancel'|text|e('js') }}`
+                }).then(result => {
+                    if (!result.isConfirmed) return;
+                    csrfFetch(`{{ 'settings-env'|link }}`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name: 'RAPTOR_CONTACT_EMAIL_TO', value: result.value, type: 'email' })
+                    }).then(r => r.json()).then(res => {
+                        if (res.status === 'success') {
+                            document.getElementById('contactEmailDisplay').textContent = res.value || '-';
+                            if (emailToggle) {
+                                emailToggle.checked = !!res.value;
+                            }
+                            Notify('success', res.title, res.message);
+                        } else {
+                            Notify('danger', res.title ?? `{{ 'error'|text|e('js') }}`, res.message);
+                        }
+                    }).catch(err => {
+                        Notify('danger', `{{ 'error'|text|e('js') }}`, err.message);
+                    });
+                });
+            });
+        }
     });
 </script>

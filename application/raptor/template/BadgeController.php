@@ -2,6 +2,8 @@
 
 namespace Raptor\Template;
 
+use codesaur\DataObject\Constants;
+
 /**
  * Class BadgeController
  * ---------------------------------------------------------------
@@ -57,6 +59,7 @@ class BadgeController extends \Raptor\Controller
         '/dashboard/dev-requests'  => 'system_development',
         '/dashboard/manual'        => null,
         '/dashboard/migrations'    => 'role:system_coder',
+        '/dashboard/trash'         => 'role:system_coder',
     ];
 
     /**
@@ -66,7 +69,7 @@ class BadgeController extends \Raptor\Controller
      *   log_table_prefix - log хүснэгтийн нэр (_log suffix-гүй), жишээ: 'news' -> news_log
      *   action_name - log context доторх 'action' талбарын утга
      *   module_path - dashboard sidebar-ийн module замнал
-     *   color - badge-ийн өнгө: green (create/insert), blue (update), red (delete/deactivate)
+     *   color - badge-ийн өнгө: green (create/insert), blue (update), red (delete)
      *
      * Нэг log хүснэгтээс олон module-руу badge үүсэх боломжтой.
      * Жишээ: news_log доторх 'create' action нь /dashboard/news-руу green badge,
@@ -79,50 +82,50 @@ class BadgeController extends \Raptor\Controller
         'messages' => [
             'contact-send'   => ['/dashboard/messages', 'green'],
             'mark-replied'   => ['/dashboard/messages', 'blue'],
-            'deactivate'     => ['/dashboard/messages', 'red'],
+            'delete'         => ['/dashboard/messages', 'red'],
         ],
         'pages' => [
             'create'         => ['/dashboard/pages', 'green'],
             'update'         => ['/dashboard/pages', 'blue'],
-            'deactivate'     => ['/dashboard/pages', 'red'],
+            'delete'         => ['/dashboard/pages', 'red'],
         ],
         'news' => [
-            'create'             => ['/dashboard/news', 'green'],
-            'update'             => ['/dashboard/news', 'blue'],
-            'deactivate'         => ['/dashboard/news', 'red'],
-            'comment-insert'     => ['/dashboard/news', 'info'],
-            'comment-reply'      => ['/dashboard/news', 'info'],
-            'comment-deactivate' => ['/dashboard/news', 'red'],
+            'create'         => ['/dashboard/news', 'green'],
+            'update'         => ['/dashboard/news', 'blue'],
+            'delete'         => ['/dashboard/news', 'red'],
+            'comment-insert' => ['/dashboard/news', 'info'],
+            'comment-reply'  => ['/dashboard/news', 'info'],
+            'comment-delete' => ['/dashboard/news', 'red'],
         ],
         'files' => [
-            'files-upload'     => ['/dashboard/files', 'green'],
-            'files-update'     => ['/dashboard/files', 'blue'],
-            'files-deactivate' => ['/dashboard/files', 'red'],
+            'files-upload'   => ['/dashboard/files', 'green'],
+            'files-update'   => ['/dashboard/files', 'blue'],
+            'files-delete'   => ['/dashboard/files', 'red'],
         ],
         'content' => [
-            'localization-language-create'     => ['/dashboard/localization', 'green'],
-            'localization-language-update'     => ['/dashboard/localization', 'blue'],
-            'localization-language-delete'     => ['/dashboard/localization', 'red'],
-            'localization-text-create'         => ['/dashboard/localization', 'green'],
-            'localization-text-update'         => ['/dashboard/localization', 'blue'],
-            'localization-text-deactivate'     => ['/dashboard/localization', 'red'],
-            'settings-post'        => ['/dashboard/settings', 'blue'],
-            'settings-files'       => ['/dashboard/settings', 'blue'],
-            'reference-create'     => ['/dashboard/references', 'green'],
-            'reference-update'     => ['/dashboard/references', 'blue'],
-            'reference-deactivate' => ['/dashboard/references', 'red'],
+            'localization-language-create' => ['/dashboard/localization', 'green'],
+            'localization-language-update' => ['/dashboard/localization', 'blue'],
+            'localization-language-delete' => ['/dashboard/localization', 'red'],
+            'localization-text-create'     => ['/dashboard/localization', 'green'],
+            'localization-text-update'     => ['/dashboard/localization', 'blue'],
+            'localization-text-delete'     => ['/dashboard/localization', 'red'],
+            'settings-post'                => ['/dashboard/settings', 'blue'],
+            'settings-files'               => ['/dashboard/settings', 'blue'],
+            'reference-create'             => ['/dashboard/references', 'green'],
+            'reference-update'             => ['/dashboard/references', 'blue'],
+            'reference-delete'             => ['/dashboard/references', 'red'],
         ],
         'products' => [
-            'create'            => ['/dashboard/products', 'green'],
-            'update'            => ['/dashboard/products', 'blue'],
-            'deactivate'        => ['/dashboard/products', 'red'],
-            'review-insert'     => ['/dashboard/products', 'info'],
-            'review-deactivate' => ['/dashboard/products', 'red'],
+            'create'         => ['/dashboard/products', 'green'],
+            'update'         => ['/dashboard/products', 'blue'],
+            'delete'         => ['/dashboard/products', 'red'],
+            'review-insert'  => ['/dashboard/products', 'info'],
+            'review-delete'  => ['/dashboard/products', 'red'],
         ],
         'products_orders' => [
-            'order'         => ['/dashboard/orders', 'green'],
-            'update-status' => ['/dashboard/orders', 'blue'],
-            'deactivate'    => ['/dashboard/orders', 'red'],
+            'order'          => ['/dashboard/orders', 'green'],
+            'update-status'  => ['/dashboard/orders', 'blue'],
+            'delete'         => ['/dashboard/orders', 'red'],
         ],
         'users' => [
             'create'             => ['/dashboard/users', 'green'],
@@ -132,7 +135,9 @@ class BadgeController extends \Raptor\Controller
             'set-organization'   => ['/dashboard/users', 'blue'],
             'set-role'           => ['/dashboard/users', 'blue'],
             'deactivate'         => ['/dashboard/users', 'red'],
+            'delete'             => ['/dashboard/users', 'red'],
             'signup-deactivate'  => ['/dashboard/users', 'red'],
+            'signup-delete'      => ['/dashboard/users', 'red'],
             'strip-organization' => ['/dashboard/users', 'red'],
             'strip-role'         => ['/dashboard/users', 'red'],
         ],
@@ -140,6 +145,7 @@ class BadgeController extends \Raptor\Controller
             'create'     => ['/dashboard/organizations', 'green'],
             'update'     => ['/dashboard/organizations', 'blue'],
             'deactivate' => ['/dashboard/organizations', 'red'],
+            'delete'     => ['/dashboard/organizations', 'red'],
         ],
         'dashboard' => [
             'rbac-create-role'         => ['/dashboard/organizations', 'green'],
@@ -147,12 +153,15 @@ class BadgeController extends \Raptor\Controller
             'rbac-set-role-permission' => ['/dashboard/organizations', 'blue'],
             'template-menu-create'     => ['/dashboard/manage/menu', 'green'],
             'template-menu-update'     => ['/dashboard/manage/menu', 'blue'],
-            'template-menu-deactivate' => ['/dashboard/manage/menu', 'red'],
+            'template-menu-delete'     => ['/dashboard/manage/menu', 'red'],
         ],
         'dev_requests' => [
             'store'      => ['/dashboard/dev-requests', 'green'],
             'respond'    => ['/dashboard/dev-requests', 'blue'],
-            'deactivate' => ['/dashboard/dev-requests', 'red'],
+            'delete'     => ['/dashboard/dev-requests', 'red'],
+        ],
+        'trash' => [
+            'store' => ['/dashboard/trash', 'red'],
         ],
     ];
 
@@ -244,26 +253,37 @@ class BadgeController extends \Raptor\Controller
                     $colorByAction = \array_column($actionList, 'color', 'action');
                     $placeholders = \implode(',', \array_fill(0, \count($actionNames), '?'));
 
-                    if ($this->getDriverName() === 'pgsql') {
+                    // Trash бол admin-ийн ӨӨРИЙНХ нь хогийн сав учраас өөрийн үйлдлийг
+                    // ч тоолно. Бусад module-уудад өөрийн үйлдлийг хасдаг (бусад
+                    // admin-ий үйл ажиллагаа харуулах үүднээс).
+                    $excludeSelf = $logTable !== 'trash';
+
+                    if ($this->getDriverName() === Constants::DRIVER_PGSQL) {
                         $sql =
                             "SELECT (context::jsonb)->>'action' as act, COUNT(*) as cnt " .
                             "FROM $tableName " .
                             "WHERE created_at > ? " .
                             "AND level IN ('info', 'alert', 'warning') " .
-                            "AND (context::jsonb)->>'action' IN ($placeholders) " .
-                            "AND ((context::jsonb)->'auth_user'->>'id' IS NULL " .
-                            "     OR ((context::jsonb)->'auth_user'->>'id')::int != ?) " .
-                            "GROUP BY act";
+                            "AND (context::jsonb)->>'action' IN ($placeholders) ";
+                        if ($excludeSelf) {
+                            $sql .=
+                                "AND ((context::jsonb)->'auth_user'->>'id' IS NULL " .
+                                "     OR ((context::jsonb)->'auth_user'->>'id')::int != ?) ";
+                        }
+                        $sql .= "GROUP BY act";
                     } else {
                         $sql =
                             "SELECT JSON_UNQUOTE(JSON_EXTRACT(context, '$.action')) as act, COUNT(*) as cnt " .
                             "FROM $tableName " .
                             "WHERE created_at > ? " .
                             "AND level IN ('info', 'alert', 'warning') " .
-                            "AND JSON_UNQUOTE(JSON_EXTRACT(context, '$.action')) IN ($placeholders) " .
-                            "AND (JSON_EXTRACT(context, '$.auth_user.id') IS NULL " .
-                            "     OR JSON_EXTRACT(context, '$.auth_user.id') != ?) " .
-                            "GROUP BY act";
+                            "AND JSON_UNQUOTE(JSON_EXTRACT(context, '$.action')) IN ($placeholders) ";
+                        if ($excludeSelf) {
+                            $sql .=
+                                "AND (JSON_EXTRACT(context, '$.auth_user.id') IS NULL " .
+                                "     OR JSON_EXTRACT(context, '$.auth_user.id') != ?) ";
+                        }
+                        $sql .= "GROUP BY act";
                     }
 
                     $stmt = $this->prepare($sql);
@@ -272,7 +292,9 @@ class BadgeController extends \Raptor\Controller
                     foreach ($actionNames as $act) {
                         $stmt->bindValue($i++, $act);
                     }
-                    $stmt->bindValue($i, $adminId, \PDO::PARAM_INT);
+                    if ($excludeSelf) {
+                        $stmt->bindValue($i, $adminId, \PDO::PARAM_INT);
+                    }
 
                     if ($stmt->execute()) {
                         while ($row = $stmt->fetch()) {

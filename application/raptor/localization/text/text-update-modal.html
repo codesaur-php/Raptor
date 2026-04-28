@@ -84,7 +84,7 @@
     const formUpdate = document.querySelector('form#text_update');
     if (!formUpdate) {
         /* Форм олдоогүй бол алдаа харуулна */
-        NotifyTop('danger', `{{ 'error'|text|e }}`, 'Form not found!');
+        Notify('danger', `{{ 'error'|text|e }}`, 'Form not found!');
     } else {
         /* Submit товч дарсан үед form.requestSubmit() дуудагдана.
          * Энэ нь submit event -> validation-г ажиллуулдаг. */
@@ -104,7 +104,7 @@
 
             if (!_valid) {
                 event.stopPropagation();
-                return NotifyTop(
+                return Notify(
                     'danger',
                     `{{ 'error'|text|e }}`,
                     `{{ 'u-have-some-form-errors'|text|e }}`
@@ -136,17 +136,20 @@
                     throw new Error(response.message ? response.message : 'Invalid response!');
                 }
 
-                /* Амжилттай -> localization dashboard хуудсыг дахин ачаална */
+                /* Амжилттай -> localization dashboard хуудсыг дахин ачаална.
+                 * Reload хийхээс өмнө hash-г #tab-text болгож, page reload-ийн дараа
+                 * текстийн таб дээр буцаж очих байдлаар тохируулна. */
+                window.location.hash = '#tab-text';
                 window.location.reload();
 
-                NotifyTop(
+                Notify(
                     response.type ?? 'success',
                     response.title ?? `{{ 'success'|text|e }}`,
                     response.message ?? 'Text updated'
                 );
             })
             .catch(error => {
-                NotifyTop('danger', `{{ 'error'|text|e }}`, error.message);
+                Notify('danger', `{{ 'error'|text|e }}`, error.message);
                 submitter.growNstop();
             });
         });

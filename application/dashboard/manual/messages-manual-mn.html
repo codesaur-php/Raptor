@@ -2,8 +2,8 @@
     <h3 class="px-2 my-auto fs-6 text-white">
         <i class="bi bi-book"></i> Messages - Гарын авлага
     </h3>
-    <a href="{{ 'manual' | link }}" class="btn btn-sm btn-light m-1">
-        <i class="bi bi-arrow-left"></i> {{ 'manual' | text }}
+    <a href="{{ 'manual'|link }}" class="btn btn-sm btn-light m-1">
+        <i class="bi bi-arrow-left"></i> {{ 'manual'|text }}
     </a>
 </div>
 
@@ -94,9 +94,38 @@
         <h4 class="text-primary mb-3"><i class="bi bi-trash"></i> Мессеж устгах</h4>
         <p><strong>Устгах</strong> (хогийн сав) товчийг дарахад баталгаажуулах цонх гарна.</p>
         <ul>
-            <li>Зөөлөн устгалт (soft delete) - өгөгдөл хадгалагдана</li>
+            <li>Мэдээллийн сангаас бүрмөсөн устгагдана; нөөц хуулбар нь Trash хүснэгтэд хадгалагдана</li>
             <li><code>system_content_delete</code> эрх шаардлагатай</li>
         </ul>
+    </div>
+</div>
+
+<!-- ==================== ИМЭЙЛ МЭДЭГДЭЛ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-envelope-at"></i> Админ имэйл мэдэгдэл</h4>
+        <p>
+            Вэбсайтын холбоо барих формоор мессеж ирэх бүрд админд автомат имэйл мэдэгдэл илгээх боломжтой.
+            Энэ тохиргоо нь жагсаалтын хуудасны дээд хэсэгт байрлана (<code>system_coder</code> эрхтэй хэрэглэгчдэд харагдана).
+        </p>
+        <h5 class="mt-3">Тохиргоо</h5>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Тохиргоо</th><th>Тайлбар</th></tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Идэвхжүүлэх / Идэвхгүй болгох</strong></td>
+                    <td>Toggle switch ON = имэйл хаяг тохируулна, OFF = имэйл хаягийг хоослоно</td>
+                </tr>
+            </tbody>
+        </table>
+        <p>Имэйл мэдэгдэл нь <code>contact-message-notify</code> загвар ашиглан илгээгдэнэ.</p>
+        <div class="alert alert-info mb-0">
+            <i class="bi bi-info-circle"></i>
+            Энэ тохиргоо нь <code>.env</code> файлын <code>RAPTOR_CONTACT_EMAIL_TO</code> утгыг шууд өөрчилнө.
+            Имэйл хаяг тохируулсан = идэвхтэй, хоосон = идэвхгүй.
+        </div>
     </div>
 </div>
 

@@ -20,8 +20,6 @@ class PermissionsSeed
      */
     public static function seed(string $table, \PDO $pdo): void
     {
-        $now = \date('Y-m-d H:i:s');
-
         $permissions = [
             // Log
             ['module' => 'log',          'name' => 'logger',                'description' => 'View system access logs and activity history'],
@@ -74,6 +72,7 @@ class PermissionsSeed
             "INSERT INTO $table (created_at, alias, module, name, description) VALUES (:created_at, 'system', :module, :name, :description)"
         );
 
+        $now = \date('Y-m-d H:i:s');
         foreach ($permissions as $perm) {
             $stmt->execute([
                 ':created_at'  => $now,

@@ -4,13 +4,6 @@ namespace Web;
 
 use codesaur\Router\Router;
 
-use Web\Content\PageController;
-use Web\Content\NewsController;
-use Web\Service\ContactController;
-use Web\Service\SearchController;
-use Web\Service\SeoController;
-use Web\Shop\ShopController;
-
 /**
  * Class WebRouter
  * ---------------------------------------------------------------
@@ -37,43 +30,43 @@ class WebRouter extends Router
         $this->GET('/home', [HomeController::class, 'index']);
 
         // Динамик Page (ID-аар болон slug-аар)
-        $this->GET('/page/{uint:id}', [PageController::class, 'pageById']);
-        $this->GET('/page/{slug}', [PageController::class, 'page'])->name('page');
+        $this->GET('/page/{uint:id}', [Content\PageController::class, 'pageById']);
+        $this->GET('/page/{slug}', [Content\PageController::class, 'page'])->name('page');
 
         // Контакт пэйж
-        $this->GET('/contact', [ContactController::class, 'contact'])->name('contact');
+        $this->GET('/contact', [Service\ContactController::class, 'contact'])->name('contact');
 
         // Динамик News (ID-аар болон slug-аар)
-        $this->GET('/news/{uint:id}', [NewsController::class, 'newsById']);
-        $this->GET('/news/{slug}', [NewsController::class, 'news'])->name('news');
+        $this->GET('/news/{uint:id}', [Content\NewsController::class, 'newsById']);
+        $this->GET('/news/{slug}', [Content\NewsController::class, 'news'])->name('news');
 
         // Мэдээний төрлөөр жагсаалт
-        $this->GET('/news/type/{type}', [NewsController::class, 'newsType'])->name('news-type');
+        $this->GET('/news/type/{type}', [Content\NewsController::class, 'newsType'])->name('news-type');
 
         // Архив
-        $this->GET('/archive', [NewsController::class, 'archive'])->name('archive');
+        $this->GET('/archive', [Content\NewsController::class, 'archive'])->name('archive');
 
         // Бүтээгдэхүүнүүд (жагсаалт)
-        $this->GET('/products', [ShopController::class, 'products']);
+        $this->GET('/products', [Shop\ShopController::class, 'products']);
 
         // Динамик Product (ID-аар болон slug-аар)
-        $this->GET('/product/{uint:id}', [ShopController::class, 'productById']);
-        $this->GET('/product/{slug}', [ShopController::class, 'product'])->name('product');
+        $this->GET('/product/{uint:id}', [Shop\ShopController::class, 'productById']);
+        $this->GET('/product/{slug}', [Shop\ShopController::class, 'product'])->name('product');
 
         // Захиалгын форм (GET нь session write шаардахгүй)
-        $this->GET('/order', [ShopController::class, 'order'])->name('order');
+        $this->GET('/order', [Shop\ShopController::class, 'order'])->name('order');
 
         // Хайлт
-        $this->GET('/search', [SearchController::class, 'search'])->name('search');
+        $this->GET('/search', [Service\SearchController::class, 'search'])->name('search');
 
         // Сайтын бүтэц (хэрэглэгчдэд)
-        $this->GET('/sitemap', [SeoController::class, 'sitemap'])->name('sitemap');
+        $this->GET('/sitemap', [Service\SeoController::class, 'sitemap'])->name('sitemap');
 
         // XML Sitemap (SEO)
-        $this->GET('/sitemap.xml', [SeoController::class, 'sitemapXml']);
+        $this->GET('/sitemap.xml', [Service\SeoController::class, 'sitemapXml']);
 
         // RSS Feed
-        $this->GET('/rss', [SeoController::class, 'rss'])->name('rss');
+        $this->GET('/rss', [Service\SeoController::class, 'rss'])->name('rss');
 
         // Favicon
         $this->GET('/favicon.ico', [HomeController::class, 'favicon']);
@@ -90,15 +83,15 @@ class WebRouter extends Router
         $this->GET('/session/language/{code}', [HomeController::class, 'language'])->name('language');
 
         // Холбоо барих мессеж илгээх
-        $this->POST('/session/contact-send', [ContactController::class, 'contactSend'])->name('contact-send');
+        $this->POST('/session/contact-send', [Service\ContactController::class, 'contactSend'])->name('contact-send');
 
         // Захиалга илгээх
-        $this->POST('/session/order', [ShopController::class, 'orderSubmit'])->name('order-submit');
+        $this->POST('/session/order', [Shop\ShopController::class, 'orderSubmit'])->name('order-submit');
 
         // Мэдээний сэтгэгдэл
-        $this->POST('/session/news/{uint:id}/comment', [NewsController::class, 'commentSubmit'])->name('news-comment');
+        $this->POST('/session/news/{uint:id}/comment', [Content\NewsController::class, 'commentSubmit'])->name('news-comment');
 
         // Бүтээгдэхүүний үнэлгээ
-        $this->POST('/session/product/{uint:id}/review', [ShopController::class, 'reviewSubmit'])->name('product-review');
+        $this->POST('/session/product/{uint:id}/review', [Shop\ShopController::class, 'reviewSubmit'])->name('product-review');
     }
 }

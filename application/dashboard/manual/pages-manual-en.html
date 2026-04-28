@@ -2,8 +2,8 @@
     <h3 class="px-2 my-auto fs-6 text-white">
         <i class="bi bi-book"></i> Pages - User Manual
     </h3>
-    <a href="{{ 'manual' | link }}" class="btn btn-sm btn-light m-1">
-        <i class="bi bi-arrow-left"></i> {{ 'manual' | text }}
+    <a href="{{ 'manual'|link }}" class="btn btn-sm btn-light m-1">
+        <i class="bi bi-arrow-left"></i> {{ 'manual'|text }}
     </a>
 </div>
 
@@ -95,12 +95,20 @@
                 <tr><td><strong>Parent page</strong></td><td>Place under which page (must share same language)</td><td>No</td></tr>
                 <tr><td><strong>Title</strong></td><td>Page name (up to 255 characters)</td><td>Yes</td></tr>
                 <tr><td><strong>Description</strong></td><td>Short description (auto-generated from content if empty)</td><td>No</td></tr>
-                <tr><td><strong>Content</strong></td><td>Full content - written with <a href="{{ 'manual-view' | link({'file': 'moedit-manual-en.html'}) }}" title="View moedit manual">moedit</a> editor</td><td>No</td></tr>
+                <tr><td><strong>Content</strong></td><td>Full content - written with <a href="{{ 'manual-view'|link({'file': 'moedit-manual-en.html'}) }}" title="View moedit manual">moedit</a> editor</td><td>No</td></tr>
                 <tr><td><strong>Source</strong></td><td>Source/attribution information</td><td>No</td></tr>
                 <tr><td><strong>Link</strong></td><td>External/internal URL (replaces content display)</td><td>No</td></tr>
                 <tr><td><strong>Header image</strong></td><td>Page header image (1 only)</td><td>No</td></tr>
             </tbody>
         </table>
+
+        <h5 class="mt-3">HTML Content Validation</h5>
+        <div class="alert alert-warning">
+            <i class="bi bi-shield-check"></i>
+            Content with broken HTML structure will not be saved. If unclosed HTML comments (<code>&lt;!-- ... </code>)
+            or broken tags cause significant content loss, an error message is displayed.
+            Fix the HTML in Source mode and try again.
+        </div>
 
         <h5 class="mt-3">Publishing Options</h5>
         <p>Users with <code>system_content_publish</code> permission see these options:</p>
@@ -128,6 +136,7 @@
             <li>Header image can be replaced or removed</li>
             <li>Attachment descriptions can be edited, new files added, or existing files deleted</li>
             <li>Editing a published page requires <code>system_content_publish</code> permission</li>
+            <li>Content with broken HTML structure will not be saved (error message is displayed)</li>
         </ul>
 
         <h5 class="mt-3">Parent Page Selection</h5>
@@ -161,7 +170,7 @@
         <p>Click the <strong>delete</strong> (trash) button from the list.</p>
         <ul>
             <li>A confirmation dialog appears (SweetAlert2)</li>
-            <li>Soft delete - data is preserved, only deactivated</li>
+            <li>Permanently deleted from the database; a backup copy is stored in the Trash table for recovery</li>
             <li>Attachments and child pages remain intact</li>
             <li>Requires <code>system_content_delete</code> permission</li>
         </ul>

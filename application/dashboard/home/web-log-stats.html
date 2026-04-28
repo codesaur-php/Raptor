@@ -6,7 +6,7 @@
 
     Controller: Dashboard\Home\HomeController
     Routes:
-      GET /dashboard/stats    -> stats()       (web_log)
+      GET /dashboard/stats     -> stats()      (web_log)
       GET /dashboard/log-stats -> logStats()   (system *_log)
 -->
 <div id="statsLoading" class="text-center py-4">
@@ -25,11 +25,11 @@
         var loading = document.getElementById('statsLoading');
 
         Promise.all([
-            fetch('{{ "dashboard-stats"|link }}').then(function(r) {
+            fetch('{{ 'dashboard-stats'|link }}').then(function(r) {
                 if (!r.ok) throw new Error('Stats: HTTP ' + r.status);
                 return r.json();
             }),
-            fetch('{{ "dashboard-log-stats"|link }}').then(function(r) {
+            fetch('{{ 'dashboard-log-stats'|link }}').then(function(r) {
                 if (!r.ok) throw new Error('Log stats: HTTP ' + r.status);
                 return r.json();
             })

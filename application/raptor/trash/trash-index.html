@@ -1,0 +1,237 @@
+<script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0"><i class="bi bi-trash3"></i> Trash</h4>
+    <div>
+        <button class="btn btn-sm btn-outline-secondary" id="trash-refresh" type="button">
+            <i class="bi bi-arrow-clockwise"></i>
+        </button>
+        <button class="btn btn-sm btn-danger ms-2" id="trash-empty" type="button">
+            <i class="bi bi-trash3"></i> Empty Trash
+        </button>
+    </div>
+</div>
+
+<!-- Table filter -->
+<div class="mb-3">
+    <select class="form-select form-select-sm w-auto d-inline-block" id="trash-table-filter">
+        <option value="">All tables</option>
+    </select>
+    <span class="ms-2 text-muted" id="trash-count"></span>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-sm table-hover" id="trash-table">
+        <thead class="table-dark">
+            <tr>
+                <th>#</th>
+                <th>Table</th>
+                <th>Original ID</th>
+                <th>Deleted by</th>
+                <th>Deleted at</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+</div>
+
+<!-- View detail modal -->
+<div class="modal fade" id="trash-detail-modal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Trash Detail</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <pre id="trash-detail-json" class="bg-light p-3 rounded"
+                     style="max-height:500px;overflow:auto;font-size:.8rem"></pre>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+document.addEventListener('DOMContentLoaded', function () {
+    const tbody = document.querySelector('#trash-table tbody');
+    const tableFilter = document.getElementById('trash-table-filter');
+    const countEl = document.getElementById('trash-count');
+
+    function loadTrash(tableName) {
+        const qs = tableName ? `?table_name=${encodeURIComponent(tableName)}` : '';
+        fetch(`{{ 'trash-list'|link }}${qs}`)
+            .then(r => r.json())
+            .then(data => {
+                if (data.status !== 'success') throw new Error(data.message);
+
+                const list = data.list || [];
+                countEl.textContent = `${list.length} items`;
+
+                // Collect tables for filter
+                const tables = [...new Set(list.map(r => r.table_name))].sort();
+                const current = tableFilter.value;
+                tableFilter.innerHTML = '<option value="">All tables</option>';
+                tables.forEach(t => {
+                    const opt = document.createElement('option');
+                    opt.value = t;
+                    opt.textContent = t;
+                    if (t === current) opt.selected = true;
+                    tableFilter.appendChild(opt);
+                });
+
+                tbody.innerHTML = '';
+                if (list.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">Trash is empty</td></tr>';
+                    return;
+                }
+
+                list.forEach(row => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${row.id}</td>
+                        <td><code>${row.table_name}</code></td>
+                        <td>${row.original_id}</td>
+                        <td>${row.deleted_by_name}</td>
+                        <td>${row.deleted_at}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-info view-trash" data-id="${row.id}" type="button" title="View">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-success restore-trash" data-id="${row.id}" type="button" title="Restore">
+                                <i class="bi bi-arrow-counterclockwise"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger delete-trash" data-id="${row.id}" type="button" title="Permanently delete">
+                                <i class="bi bi-fire"></i>
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+
+                // View buttons
+                document.querySelectorAll('.view-trash').forEach(btn => {
+                    btn.addEventListener('click', function () {
+                        fetch(`{{ 'trash'|link }}/view/${this.dataset.id}`)
+                            .then(r => r.json())
+                            .then(res => {
+                                if (res.status !== 'success') throw new Error(res.message);
+                                document.getElementById('trash-detail-json').textContent =
+                                    JSON.stringify(res.record, null, 2);
+                                new bootstrap.Modal(document.getElementById('trash-detail-modal')).show();
+                            })
+                            .catch(err => Notify('error', 'Error', err.message));
+                    });
+                });
+
+                // Restore buttons
+                document.querySelectorAll('.restore-trash').forEach(btn => {
+                    btn.addEventListener('click', function () {
+                        const id = this.dataset.id;
+                        const tr = btn.closest('tr');
+                        const tableName = tr.querySelector('td:nth-child(2) code').textContent;
+                        const originalId = tr.querySelector('td:nth-child(3)').textContent;
+
+                        Swal.fire({
+                            title: 'Restore record?',
+                            html:
+                                `<p>Restore record <strong>#${originalId}</strong> back into <code>${tableName}</code>?</p>` +
+                                '<p class="text-muted small">Will try with the original ID first; ' +
+                                'if that ID is already taken, a new auto-increment ID will be used.</p>',
+                            icon: 'question',
+                            showCancelButton: true,
+                            confirmButtonText: '<i class="bi bi-arrow-counterclockwise"></i> Restore',
+                            confirmButtonColor: '#198754',
+                            preConfirm: () => {
+                                return csrfFetch(`{{ 'trash-restore'|link({'id': 0}) }}`.replace(/\/0$/, '/' + id), {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' }
+                                })
+                                .then(r => r.json())
+                                .then(res => {
+                                    if (res.status !== 'success') throw new Error(res.message);
+                                    Swal.close();
+                                    btn.closest('tr').remove();
+
+                                    // Хэрэв original ID ашиглагдаагүй бол warning тэмдэглэгээтэй харуулна
+                                    const type = res.used_original_id ? 'success' : 'warning';
+                                    const title = res.used_original_id ? 'Restored' : 'Restored with new ID';
+
+                                    Swal.fire({
+                                        icon: type,
+                                        title: title,
+                                        html: `<p>${res.message}</p>`,
+                                        confirmButtonText: 'OK'
+                                    });
+                                })
+                                .catch(err => Swal.showValidationMessage(err.message));
+                            }
+                        });
+                    });
+                });
+
+                // Delete buttons
+                document.querySelectorAll('.delete-trash').forEach(btn => {
+                    btn.addEventListener('click', function () {
+                        const id = this.dataset.id;
+                        Swal.fire({
+                            html: '<p class="text-danger">Энэ бичлэгийг бүрэн устгах уу?</p><p class="text-muted">Буцаах боломжгүй</p>',
+                            showCancelButton: true,
+                            confirmButtonText: '<i class="bi bi-fire"></i> Delete',
+                            confirmButtonColor: '#dc3545',
+                            preConfirm: () => {
+                                return csrfFetch(`{{ 'trash-delete'|link }}`, {
+                                    method: 'DELETE',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ id })
+                                })
+                                .then(r => r.json())
+                                .then(res => {
+                                    if (res.status !== 'success') throw new Error(res.message);
+                                    Swal.close();
+                                    btn.closest('tr').remove();
+                                    Notify('success', res.title, res.message);
+                                })
+                                .catch(err => Swal.showValidationMessage(err.message));
+                            }
+                        });
+                    });
+                });
+            })
+            .catch(err => {
+                tbody.innerHTML = `<tr><td colspan="6" class="text-danger">${err.message}</td></tr>`;
+            });
+    }
+
+    loadTrash('');
+    tableFilter.addEventListener('change', () => loadTrash(tableFilter.value));
+    document.getElementById('trash-refresh').addEventListener('click', () => loadTrash(tableFilter.value));
+
+    // Empty trash
+    document.getElementById('trash-empty').addEventListener('click', function () {
+        Swal.fire({
+            html: '<p class="text-danger"><strong>АНХААРУУЛГА!</strong> Trash дахь бүх бичлэгийг бүрэн устгах уу?</p>',
+            showCancelButton: true,
+            confirmButtonText: '<i class="bi bi-trash3"></i> Empty Trash',
+            confirmButtonColor: '#dc3545',
+            preConfirm: () => {
+                return csrfFetch(`{{ 'trash-empty'|link }}`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' }
+                })
+                .then(r => r.json())
+                .then(res => {
+                    if (res.status !== 'success') throw new Error(res.message);
+                    Swal.close();
+                    Notify('success', res.title, res.message);
+                    loadTrash('');
+                })
+                .catch(err => Swal.showValidationMessage(err.message));
+            }
+        });
+    });
+});
+</script>

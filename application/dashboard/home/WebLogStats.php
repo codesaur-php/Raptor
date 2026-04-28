@@ -2,6 +2,8 @@
 
 namespace Dashboard\Home;
 
+use codesaur\DataObject\Constants;
+
 /**
  * Class WebLogStats
  * ------------------------------------------------------------------
@@ -142,120 +144,52 @@ class WebLogStats
             }
         }
 
-        // Өнөөдрийн live actions нэмэх
-        $stmt = $this->prepare(
-            "SELECT {$this->jsonVal('context', '$.action')} AS k, COUNT(*) AS v
-             FROM web_log
-             WHERE created_at >= :today AND created_at < :tomorrow
-               AND {$this->jsonVal('context', '$.action')} IS NOT NULL
-             GROUP BY k"
-        );
-        $stmt->bindValue(':today', $today);
-        $stmt->bindValue(':tomorrow', $tomorrow);
-        if ($stmt->execute()) {
-            while ($row = $stmt->fetch()) {
-                $actionsMerge[$row['k']] = ($actionsMerge[$row['k']] ?? 0) + (int)$row['v'];
-            }
-        }
-
-        // Өнөөдрийн live pages (code|id|title)
+        // Өнөөдрийн live мэдээллийг нэг query-гээр авч PHP дээр ангилна.
+        // 6 тусдаа GROUP BY query-г нэгтгэснээр MySQL-ийн түр хүснэгт (tmp table) үүсгэхгүй.
         $pagesToday = [];
-        $stmt = $this->prepare(
-            "SELECT COALESCE({$this->jsonVal('context', '$.server_request.code')}, '?') AS c,
-                    COALESCE({$this->jsonVal('context', '$.id')}, '0') AS rid,
-                    {$this->jsonVal('context', '$.title')} AS k, COUNT(*) AS v
-             FROM web_log
-             WHERE created_at >= :today AND created_at < :tomorrow
-               AND {$this->jsonVal('context', '$.action')} = 'page'
-               AND {$this->jsonVal('context', '$.title')} IS NOT NULL
-             GROUP BY c, rid, k"
-        );
-        $stmt->bindValue(':today', $today);
-        $stmt->bindValue(':tomorrow', $tomorrow);
-        if ($stmt->execute()) {
-            while ($row = $stmt->fetch()) {
-                $key = $row['c'] . '|' . $row['rid'] . '|' . $row['k'];
-                $pagesToday[$key] = (int)$row['v'];
-                $pagesMerge[$key] = ($pagesMerge[$key] ?? 0) + (int)$row['v'];
-                $pagesWeek[$key] = ($pagesWeek[$key] ?? 0) + (int)$row['v'];
-            }
-        }
-
-        // Өнөөдрийн live news (code|id|title)
         $newsToday = [];
-        $stmt = $this->prepare(
-            "SELECT COALESCE({$this->jsonVal('context', '$.server_request.code')}, '?') AS c,
-                    COALESCE({$this->jsonVal('context', '$.id')}, '0') AS rid,
-                    {$this->jsonVal('context', '$.title')} AS k, COUNT(*) AS v
-             FROM web_log
-             WHERE created_at >= :today AND created_at < :tomorrow
-               AND {$this->jsonVal('context', '$.action')} = 'news'
-               AND {$this->jsonVal('context', '$.title')} IS NOT NULL
-             GROUP BY c, rid, k"
-        );
-        $stmt->bindValue(':today', $today);
-        $stmt->bindValue(':tomorrow', $tomorrow);
-        if ($stmt->execute()) {
-            while ($row = $stmt->fetch()) {
-                $key = $row['c'] . '|' . $row['rid'] . '|' . $row['k'];
-                $newsToday[$key] = (int)$row['v'];
-                $newsMerge[$key] = ($newsMerge[$key] ?? 0) + (int)$row['v'];
-                $newsWeek[$key] = ($newsWeek[$key] ?? 0) + (int)$row['v'];
-            }
-        }
-
-        // Өнөөдрийн live products (code|id|title)
         $productsToday = [];
         $stmt = $this->prepare(
-            "SELECT COALESCE({$this->jsonVal('context', '$.server_request.code')}, '?') AS c,
-                    COALESCE({$this->jsonVal('context', '$.id')}, '0') AS rid,
-                    {$this->jsonVal('context', '$.title')} AS k, COUNT(*) AS v
+            "SELECT {$this->jsonVal('context', '$.action')} AS action,
+                    COALESCE({$this->jsonVal('context', '$.server_request.code')}, '?') AS code,
+                    COALESCE({$this->jsonVal('context', '$.record_id')}, '0') AS rid,
+                    {$this->jsonVal('context', '$.title')} AS title,
+                    {$this->jsonVal('context', '$.customer_name')} AS customer_name,
+                    {$this->jsonVal('context', '$.server_request.remote_addr')} AS ip,
+                    {$this->jsonVal('context', '$.server_request.user_agent')} AS ua
              FROM web_log
-             WHERE created_at >= :today AND created_at < :tomorrow
-               AND {$this->jsonVal('context', '$.action')} = 'product'
-               AND {$this->jsonVal('context', '$.title')} IS NOT NULL
-             GROUP BY c, rid, k"
+             WHERE created_at >= :today AND created_at < :tomorrow"
         );
         $stmt->bindValue(':today', $today);
         $stmt->bindValue(':tomorrow', $tomorrow);
         if ($stmt->execute()) {
             while ($row = $stmt->fetch()) {
-                $key = $row['c'] . '|' . $row['rid'] . '|' . $row['k'];
-                $productsToday[$key] = (int)$row['v'];
-                $productsMerge[$key] = ($productsMerge[$key] ?? 0) + (int)$row['v'];
-                $productsWeek[$key] = ($productsWeek[$key] ?? 0) + (int)$row['v'];
-            }
-        }
-
-        // Өнөөдрийн live IPs нэмэх
-        $stmt = $this->prepare(
-            "SELECT {$this->jsonVal('context', '$.server_request.remote_addr')} AS k, COUNT(*) AS v
-             FROM web_log
-             WHERE created_at >= :today AND created_at < :tomorrow
-               AND {$this->jsonVal('context', '$.server_request.remote_addr')} IS NOT NULL
-             GROUP BY k"
-        );
-        $stmt->bindValue(':today', $today);
-        $stmt->bindValue(':tomorrow', $tomorrow);
-        if ($stmt->execute()) {
-            while ($row = $stmt->fetch()) {
-                $ipsMerge[$row['k']] = ($ipsMerge[$row['k']] ?? 0) + (int)$row['v'];
-            }
-        }
-
-        // Өнөөдрийн live User Agents нэмэх
-        $stmt = $this->prepare(
-            "SELECT {$this->jsonVal('context', '$.server_request.user_agent')} AS k, COUNT(*) AS v
-             FROM web_log
-             WHERE created_at >= :today AND created_at < :tomorrow
-               AND {$this->jsonVal('context', '$.server_request.user_agent')} IS NOT NULL
-             GROUP BY k"
-        );
-        $stmt->bindValue(':today', $today);
-        $stmt->bindValue(':tomorrow', $tomorrow);
-        if ($stmt->execute()) {
-            while ($row = $stmt->fetch()) {
-                $uaMerge[$row['k']] = ($uaMerge[$row['k']] ?? 0) + (int)$row['v'];
+                $action = $row['action'] ?? null;
+                if ($action !== null) {
+                    $actionsMerge[$action] = ($actionsMerge[$action] ?? 0) + 1;
+                }
+                if ($action === 'page' && $row['title'] !== null) {
+                    $key = $row['code'] . '|' . $row['rid'] . '|' . $row['title'];
+                    $pagesToday[$key] = ($pagesToday[$key] ?? 0) + 1;
+                    $pagesMerge[$key] = ($pagesMerge[$key] ?? 0) + 1;
+                    $pagesWeek[$key] = ($pagesWeek[$key] ?? 0) + 1;
+                } elseif ($action === 'news' && $row['title'] !== null) {
+                    $key = $row['code'] . '|' . $row['rid'] . '|' . $row['title'];
+                    $newsToday[$key] = ($newsToday[$key] ?? 0) + 1;
+                    $newsMerge[$key] = ($newsMerge[$key] ?? 0) + 1;
+                    $newsWeek[$key] = ($newsWeek[$key] ?? 0) + 1;
+                } elseif ($action === 'product' && $row['title'] !== null) {
+                    $key = $row['code'] . '|' . $row['rid'] . '|' . $row['title'];
+                    $productsToday[$key] = ($productsToday[$key] ?? 0) + 1;
+                    $productsMerge[$key] = ($productsMerge[$key] ?? 0) + 1;
+                    $productsWeek[$key] = ($productsWeek[$key] ?? 0) + 1;
+                }
+                if ($row['ip'] !== null) {
+                    $ipsMerge[$row['ip']] = ($ipsMerge[$row['ip']] ?? 0) + 1;
+                }
+                if ($row['ua'] !== null) {
+                    $uaMerge[$row['ua']] = ($uaMerge[$row['ua']] ?? 0) + 1;
+                }
             }
         }
 
@@ -302,7 +236,7 @@ class WebLogStats
                 "SELECT
                     COUNT(*) AS total,
                     SUM(CASE WHEN status = 'new' THEN 1 ELSE 0 END) AS new_count
-                 FROM orders WHERE is_active = 1"
+                 FROM orders"
             );
             $stmt->execute();
             $r = $stmt->fetch();
@@ -325,7 +259,7 @@ class WebLogStats
         $tomorrow = \date('Y-m-d', \strtotime('+1 day'));
         $weekAgo = \date('Y-m-d', \strtotime('-7 days'));
 
-        if ($driver === 'pgsql') {
+        if ($driver === Constants::DRIVER_PGSQL) {
             $stmt = $this->prepare(
                 "SELECT tablename AS table_name FROM pg_tables
                  WHERE schemaname = 'public'
@@ -352,7 +286,7 @@ class WebLogStats
             $label = \str_replace('_log', '', $tableName);
 
             try {
-                $q = $driver === 'pgsql'
+                $q = $driver === Constants::DRIVER_PGSQL
                     ? "SELECT
                         COUNT(*) AS total,
                         SUM(CASE WHEN created_at >= :today AND created_at < :tomorrow THEN 1 ELSE 0 END) AS today,
@@ -394,18 +328,8 @@ class WebLogStats
      */
     private function ensureCacheTable(): void
     {
-        if ($this->hasTable('web_log_cache')) {
-            try {
-                $this->exec("ALTER TABLE web_log_cache ADD COLUMN products_data TEXT DEFAULT NULL");
-            } catch (\Throwable) {}
-            try {
-                $this->exec("ALTER TABLE web_log_cache ADD COLUMN orders_data TEXT DEFAULT NULL");
-            } catch (\Throwable) {}
-            return;
-        }
-
         $driver = $this->getDriverName();
-        if ($driver === 'pgsql') {
+        if ($driver === Constants::DRIVER_PGSQL) {
             $this->prepare(
                 "CREATE TABLE IF NOT EXISTS web_log_cache (
                     cache_date DATE PRIMARY KEY,
@@ -467,145 +391,63 @@ class WebLogStats
             $dates[] = $row['log_date'];
         }
 
+        // Shared hosting дээр disk дүүрэхээс сэргийлж нэг удаад хамгийн ихдээ 5 өдрийг боловсруулна.
+        // Дараагийн хүсэлтээр үлдсэн өдрүүдийг үргэлжлүүлнэ.
+        $dates = \array_slice($dates, 0, 5);
+
         foreach ($dates as $date) {
             $nextDate = \date('Y-m-d', \strtotime($date . ' +1 day'));
 
-            // Visit count
+            // Нэг өдрийн бүх мэдээллийг нэг query-гээр авч PHP дээр ангилна.
+            // 8 тусдаа GROUP BY query-г нэгтгэснээр MySQL tmp table үүсгэхгүй.
             $s = $this->prepare(
-                "SELECT COUNT(*) AS cnt FROM web_log
+                "SELECT {$this->jsonVal('context', '$.action')} AS action,
+                        COALESCE({$this->jsonVal('context', '$.server_request.code')}, '?') AS code,
+                        COALESCE({$this->jsonVal('context', '$.record_id')}, '0') AS rid,
+                        {$this->jsonVal('context', '$.title')} AS title,
+                        {$this->jsonVal('context', '$.customer_name')} AS customer_name,
+                        {$this->jsonVal('context', '$.server_request.remote_addr')} AS ip,
+                        {$this->jsonVal('context', '$.server_request.user_agent')} AS ua
+                 FROM web_log
                  WHERE created_at >= :d AND created_at < :nd"
             );
             $s->bindValue(':d', $date);
             $s->bindValue(':nd', $nextDate);
             $s->execute();
-            $visitCount = (int)$s->fetch()['cnt'];
 
-            // Actions
-            $s = $this->prepare(
-                "SELECT {$this->jsonVal('context', '$.action')} AS k, COUNT(*) AS v
-                 FROM web_log
-                 WHERE created_at >= :d AND created_at < :nd
-                   AND {$this->jsonVal('context', '$.action')} IS NOT NULL
-                 GROUP BY k"
-            );
-            $s->bindValue(':d', $date);
-            $s->bindValue(':nd', $nextDate);
-            $s->execute();
+            $visitCount = 0;
             $actions = [];
-            while ($r = $s->fetch()) {
-                $actions[$r['k']] = (int)$r['v'];
-            }
-
-            // Pages
-            $s = $this->prepare(
-                "SELECT COALESCE({$this->jsonVal('context', '$.server_request.code')}, '?') AS c,
-                        COALESCE({$this->jsonVal('context', '$.id')}, '0') AS rid,
-                        {$this->jsonVal('context', '$.title')} AS k, COUNT(*) AS v
-                 FROM web_log
-                 WHERE created_at >= :d AND created_at < :nd
-                   AND {$this->jsonVal('context', '$.action')} = 'page'
-                   AND {$this->jsonVal('context', '$.title')} IS NOT NULL
-                 GROUP BY c, rid, k"
-            );
-            $s->bindValue(':d', $date);
-            $s->bindValue(':nd', $nextDate);
-            $s->execute();
             $pages = [];
-            while ($r = $s->fetch()) {
-                $key = $r['c'] . '|' . $r['rid'] . '|' . $r['k'];
-                $pages[$key] = (int)$r['v'];
-            }
-
-            // News
-            $s = $this->prepare(
-                "SELECT COALESCE({$this->jsonVal('context', '$.server_request.code')}, '?') AS c,
-                        COALESCE({$this->jsonVal('context', '$.id')}, '0') AS rid,
-                        {$this->jsonVal('context', '$.title')} AS k, COUNT(*) AS v
-                 FROM web_log
-                 WHERE created_at >= :d AND created_at < :nd
-                   AND {$this->jsonVal('context', '$.action')} = 'news'
-                   AND {$this->jsonVal('context', '$.title')} IS NOT NULL
-                 GROUP BY c, rid, k"
-            );
-            $s->bindValue(':d', $date);
-            $s->bindValue(':nd', $nextDate);
-            $s->execute();
             $news = [];
-            while ($r = $s->fetch()) {
-                $key = $r['c'] . '|' . $r['rid'] . '|' . $r['k'];
-                $news[$key] = (int)$r['v'];
-            }
-
-            // Products
-            $s = $this->prepare(
-                "SELECT COALESCE({$this->jsonVal('context', '$.server_request.code')}, '?') AS c,
-                        COALESCE({$this->jsonVal('context', '$.id')}, '0') AS rid,
-                        {$this->jsonVal('context', '$.title')} AS k, COUNT(*) AS v
-                 FROM web_log
-                 WHERE created_at >= :d AND created_at < :nd
-                   AND {$this->jsonVal('context', '$.action')} = 'product'
-                   AND {$this->jsonVal('context', '$.title')} IS NOT NULL
-                 GROUP BY c, rid, k"
-            );
-            $s->bindValue(':d', $date);
-            $s->bindValue(':nd', $nextDate);
-            $s->execute();
             $products = [];
-            while ($r = $s->fetch()) {
-                $key = $r['c'] . '|' . $r['rid'] . '|' . $r['k'];
-                $products[$key] = (int)$r['v'];
-            }
-
-            // Orders
-            $s = $this->prepare(
-                "SELECT COALESCE({$this->jsonVal('context', '$.server_request.code')}, '?') AS c,
-                        COALESCE({$this->jsonVal('context', '$.id')}, '0') AS rid,
-                        {$this->jsonVal('context', '$.customer_name')} AS k, COUNT(*) AS v
-                 FROM web_log
-                 WHERE created_at >= :d AND created_at < :nd
-                   AND {$this->jsonVal('context', '$.action')} = 'order'
-                   AND {$this->jsonVal('context', '$.customer_name')} IS NOT NULL
-                 GROUP BY c, rid, k"
-            );
-            $s->bindValue(':d', $date);
-            $s->bindValue(':nd', $nextDate);
-            $s->execute();
             $orders = [];
-            while ($r = $s->fetch()) {
-                $key = $r['c'] . '|' . $r['rid'] . '|' . $r['k'];
-                $orders[$key] = (int)$r['v'];
-            }
-
-            // IPs
-            $s = $this->prepare(
-                "SELECT {$this->jsonVal('context', '$.server_request.remote_addr')} AS k, COUNT(*) AS v
-                 FROM web_log
-                 WHERE created_at >= :d AND created_at < :nd
-                   AND {$this->jsonVal('context', '$.server_request.remote_addr')} IS NOT NULL
-                 GROUP BY k"
-            );
-            $s->bindValue(':d', $date);
-            $s->bindValue(':nd', $nextDate);
-            $s->execute();
             $ips = [];
-            while ($r = $s->fetch()) {
-                $ips[$r['k']] = (int)$r['v'];
-            }
-
-            // User Agents
-            $s = $this->prepare(
-                "SELECT {$this->jsonVal('context', '$.server_request.user_agent')} AS k, COUNT(*) AS v
-                 FROM web_log
-                 WHERE created_at >= :d AND created_at < :nd
-                   AND {$this->jsonVal('context', '$.server_request.user_agent')} IS NOT NULL
-                 GROUP BY k"
-            );
-            $s->bindValue(':d', $date);
-            $s->bindValue(':nd', $nextDate);
-            $s->execute();
             $uas = [];
             while ($r = $s->fetch()) {
-                $uas[$r['k']] = (int)$r['v'];
+                $visitCount++;
+                $act = $r['action'] ?? null;
+                if ($act !== null) {
+                    $actions[$act] = ($actions[$act] ?? 0) + 1;
+                }
+                if ($act === 'page' && $r['title'] !== null) {
+                    $key = $r['code'] . '|' . $r['rid'] . '|' . $r['title'];
+                    $pages[$key] = ($pages[$key] ?? 0) + 1;
+                } elseif ($act === 'news' && $r['title'] !== null) {
+                    $key = $r['code'] . '|' . $r['rid'] . '|' . $r['title'];
+                    $news[$key] = ($news[$key] ?? 0) + 1;
+                } elseif ($act === 'product' && $r['title'] !== null) {
+                    $key = $r['code'] . '|' . $r['rid'] . '|' . $r['title'];
+                    $products[$key] = ($products[$key] ?? 0) + 1;
+                } elseif ($act === 'order' && $r['customer_name'] !== null) {
+                    $key = $r['code'] . '|' . $r['rid'] . '|' . $r['customer_name'];
+                    $orders[$key] = ($orders[$key] ?? 0) + 1;
+                }
+                if ($r['ip'] !== null) {
+                    $ips[$r['ip']] = ($ips[$r['ip']] ?? 0) + 1;
+                }
+                if ($r['ua'] !== null) {
+                    $uas[$r['ua']] = ($uas[$r['ua']] ?? 0) + 1;
+                }
             }
 
             $this->upsertCache($date, $visitCount, $actions, $pages, $news, $products, $orders, $ips, $uas);
@@ -619,7 +461,7 @@ class WebLogStats
     {
         $driver = $this->getDriverName();
 
-        if ($driver === 'pgsql') {
+        if ($driver === Constants::DRIVER_PGSQL) {
             $parts = \explode('.', \ltrim($path, '$.'));
             if (\count($parts) === 1) {
                 return "{$column}::jsonb->>'{$parts[0]}'";
@@ -652,7 +494,7 @@ class WebLogStats
         $ipsJson = \json_encode($ips, JSON_UNESCAPED_UNICODE);
         $uasJson = \json_encode($uas, JSON_UNESCAPED_UNICODE);
 
-        if ($driver === 'pgsql') {
+        if ($driver === Constants::DRIVER_PGSQL) {
             $sql = "INSERT INTO web_log_cache (cache_date, visit_count, actions_data, pages_data, news_data, products_data, orders_data, ips_data, ua_data)
                     VALUES (:d, :vc, :ad, :pd, :nd2, :prd, :ord, :id, :ud)
                     ON CONFLICT (cache_date) DO UPDATE SET

@@ -134,9 +134,9 @@ class OrganizationModel extends Model
      * created_at утга дамжаагүй бол автоматаар системийн огноо нэмнэ.
      *
      * @param array $record Нэмэх гэж буй мөрийн өгөгдөл
-     * @return array|false Амжилттай бол үүссэн мөрийн өгөгдөл, алдаатай бол false
+     * @return array Амжилттай бол үүссэн мөрийн өгөгдөл
      */
-    public function insert(array $record): array|false
+    public function insert(array $record): array
     {
         $record['created_at'] ??= \date('Y-m-d H:i:s');
         return parent::insert($record);

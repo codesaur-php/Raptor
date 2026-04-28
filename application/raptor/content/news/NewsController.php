@@ -4,6 +4,8 @@ namespace Raptor\Content;
 
 use Psr\Log\LogLevel;
 
+use codesaur\DataObject\Constants;
+
 /**
  * Class NewsController
  *
@@ -14,7 +16,7 @@ use Psr\Log\LogLevel;
  * - Шинэ мэдээ үүсгэх (insert)
  * - Мэдээ шинэчлэх (update)
  * - Мэдээний дэлгэрэнгүй мэдээлэл харуулах (view)
- * - Мэдээг идэвхгүй болгох (deactivate)
+ * - Мэдээг устгах (delete)
  * зэрэг үйлдлүүдийг гүйцэтгэнэ.
  *
  * @package Raptor\Content
@@ -22,6 +24,7 @@ use Psr\Log\LogLevel;
 class NewsController extends FileController
 {
     use \Raptor\Template\DashboardTrait;
+    use HtmlValidationTrait;
     
     /**
      * Мэдээний жагсаалтын dashboard хуудсыг харуулах.
@@ -46,7 +49,7 @@ class NewsController extends FileController
         // news хүснэгтийн нэрийг NewsModel::getName() ашиглан динамикаар авна. Ирээдүйд refactor хийхэд бэлэн байна.
         $table = (new NewsModel($this->pdo))->getName();
         $codes_result = $this->query(
-            "SELECT DISTINCT code FROM $table WHERE is_active=1"
+            "SELECT DISTINCT code FROM $table"
         )->fetchAll();
         $languages = $this->getLanguages();
         $filters['code']['title'] = $this->text('language');
@@ -54,14 +57,14 @@ class NewsController extends FileController
             $filters['code']['values'][$row['code']] = "{$languages[$row['code']]['title']} [{$row['code']}]";
         }
         $types_result = $this->query(
-            "SELECT DISTINCT type FROM $table WHERE is_active=1"
+            "SELECT DISTINCT type FROM $table"
          )->fetchAll();
         $filters['type']['title'] = $this->text('type');
         foreach ($types_result as $row) {
             $filters['type']['values'][$row['type']] = $row['type'];
         }
         $categories_result = $this->query(
-            "SELECT DISTINCT category FROM $table WHERE is_active=1"
+            "SELECT DISTINCT category FROM $table"
         )->fetchAll();
         $filters['category']['title'] = $this->text('category');
         foreach ($categories_result as $row) {
@@ -76,7 +79,7 @@ class NewsController extends FileController
                 ]
             ]
         ];        
-        $dashboard = $this->twigDashboard(__DIR__ . '/news-index.html', ['filters' => $filters]);
+        $dashboard = $this->dashboardTemplate(__DIR__ . '/news-index.html', ['filters' => $filters]);
         $dashboard->set('title', $this->text('news'));
         $dashboard->render();
         
@@ -88,7 +91,7 @@ class NewsController extends FileController
      *
      * Энэ method нь:
      * - Query parameter-уудаас шүүлтийн нөхцөлүүдийг авна
-     *   (code, type, category, published, is_active)
+     *   (code, type, category, published)
      * - Мэдээний жагсаалтыг бүртгэлийн огноогоор буурахаар эрэмбэлэнэ
      * - Мэдээ бүрийн хавсаргасан файлын тоог тоолж буцаана
      *
@@ -105,26 +108,24 @@ class NewsController extends FileController
             }
             
             $params = $this->getQueryParams();
-            if (!isset($params['is_active'])) {
-                $params['is_active'] = 1;
-            }
             $conditions = [];
-            $allowed = ['code', 'type', 'category', 'published', 'is_active'];
+            $allowed = ['code', 'type', 'category', 'published'];
             foreach (\array_keys($params) as $name) {
                 if (\in_array($name, $allowed)) {
-                    $conditions[] = "$name=:$name";
+                    $conditions[] = "n.$name=:$name";
                 } else {
                     unset($params[$name]);
                 }
             }
-            $where = \implode(' AND ', $conditions);
-            // news хүснэгтийн нэрийг NewsModel::getName() ашиглан динамикаар авна. Ирээдүйд refactor хийхэд бэлэн байна.
+            $whereClause = empty($conditions) ? '' : ' WHERE ' . \implode(' AND ', $conditions);
             $table = (new NewsModel($this->pdo))->getName();
             $commentsTable = (new CommentsModel($this->pdo))->getName();
             $select_pages =
-                'SELECT id, photo, title, slug, code, type, category, comment, published, published_at, date(created_at) as created_date, ' .
-                "(SELECT COUNT(*) FROM $commentsTable c WHERE c.news_id=$table.id AND c.is_active=1) as comments_count " .
-                "FROM $table WHERE $where ORDER BY created_at desc";
+                'SELECT n.id, n.photo, n.title, n.slug, n.code, n.type, n.category, n.comment, n.published, n.published_at, date(n.created_at) as created_date, ' .
+                "COALESCE(cc.cnt, 0) as comments_count " .
+                "FROM $table n " .
+                "LEFT JOIN (SELECT news_id, COUNT(*) as cnt FROM $commentsTable GROUP BY news_id) cc ON cc.news_id=n.id " .
+                "$whereClause ORDER BY n.created_at desc";
             $news_stmt = $this->prepare($select_pages);
             foreach ($params as $name => $value) {
                 $news_stmt->bindValue(":$name", $value);
@@ -135,7 +136,7 @@ class NewsController extends FileController
             $sampleCheck = $this->query(
                 "SELECT COUNT(*) as total, " .
                 "SUM(CASE WHEN created_by IS NULL AND created_at = published_at AND category='_raptor_sample_' THEN 1 ELSE 0 END) as sample " .
-                "FROM $table WHERE is_active=1"
+                "FROM $table"
             )->fetch();
             $isSample = (int)$sampleCheck['sample'] > 0;
 
@@ -182,7 +183,12 @@ class NewsController extends FileController
                 if (empty($payload['title'])) {
                     throw new \InvalidArgumentException($this->text('invalid-request'), 400);
                 }
-                
+
+                // HTML контент tag бүтэц шалгах
+                if (!empty($payload['content'])) {
+                    $this->validateHtmlContent($payload['content']);
+                }
+
                 // Нийтлэх эрх шаардлагатай талбарууд
                 $isPublished = ($payload['published'] ?? 0) == 1;
                 $needsPublishPermission =
@@ -215,17 +221,18 @@ class NewsController extends FileController
                 // Файлуудыг нэгдсэн аргаар боловсруулах
                 $fileChanges = $this->processFiles($record, $files, true);
 
+                $this->invalidateCache('recent_news.{code}');
                 $this->respondJSON([
                     'status' => 'success',
                     'message' => $this->text('record-insert-success')
                 ]);
 
                 $action = !empty($payload['published']) ? 'publish' : 'insert';
-                $adminName = \trim(($this->getUser()->profile['first_name'] ?? '') . ' ' . ($this->getUser()->profile['last_name'] ?? ''));
-                $appUrl = \rtrim((string)$this->getRequest()->getUri()->withPath($this->getScriptPath()), '/') . '/dashboard';
-                $this->getService('discord')?->contentAction('news', $action, $payload['title'] ?? '', $id, $adminName, $appUrl);
+                $this->dispatch(new \Raptor\Notification\ContentEvent(
+                    $action, 'news', $payload['title'] ?? '', $id
+                ));
             } else {
-                $dashboard = $this->twigDashboard(
+                $dashboard = $this->dashboardTemplate(
                     __DIR__ . '/news-insert.html',
                     [
                         'table' => $table,
@@ -287,10 +294,7 @@ class NewsController extends FileController
             $table = $model->getName();
             $filesModel = new FilesModel($this->pdo);
             $filesModel->setTable($table);
-            $record = $model->getRowWhere([
-                'id' => $id,
-                'is_active' => 1
-            ]);
+            $record = $model->getById($id);
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));
             }
@@ -311,6 +315,11 @@ class NewsController extends FileController
                 $payload = $this->getParsedBody();
                 if (empty($payload['title'])) {
                     throw new \InvalidArgumentException($this->text('invalid-request'), 400);
+                }
+
+                // HTML контент tag бүтэц шалгах
+                if (!empty($payload['content'])) {
+                    $this->validateHtmlContent($payload['content']);
                 }
 
                 // Нийтлэх эрх шаардлагатай талбарууд
@@ -365,11 +374,9 @@ class NewsController extends FileController
 
                 $payload['updated_at'] = \date('Y-m-d H:i:s');
                 $payload['updated_by'] = $this->getUserId();
-                $updated = $model->updateById($id, $payload);
-                if (empty($updated)) {
-                    throw new \Exception($this->text('no-record-selected'));
-                }
+                $model->updateById($id, $payload);
 
+                $this->invalidateCache('recent_news.{code}');
                 $this->respondJSON([
                     'status' => 'success',
                     'type' => 'primary',
@@ -379,12 +386,13 @@ class NewsController extends FileController
                 $wasPublished = !empty($record['published']);
                 $nowPublished = !empty($payload['published']);
                 $action = (!$wasPublished && $nowPublished) ? 'publish' : 'update';
-                $adminName = \trim(($this->getUser()->profile['first_name'] ?? '') . ' ' . ($this->getUser()->profile['last_name'] ?? ''));
-                $appUrl = \rtrim((string)$this->getRequest()->getUri()->withPath($this->getScriptPath()), '/') . '/dashboard';
-                $this->getService('discord')?->contentAction('news', $action, $payload['title'] ?? $record['title'] ?? '', $id, $adminName, $appUrl, $updates);
+                $this->dispatch(new \Raptor\Notification\ContentEvent(
+                    $action, 'news', $payload['title'] ?? $record['title'] ?? '', $id,
+                    updates: $updates
+                ));
             } else {
-                $files = $filesModel->getRows(['WHERE' => "record_id=$id AND is_active=1"]);
-                $dashboard = $this->twigDashboard(
+                $files = $filesModel->getRows(['WHERE' => "record_id=$id"]);
+                $dashboard = $this->dashboardTemplate(
                     __DIR__ . '/news-update.html',
                     [
                         'table' => $table,
@@ -442,10 +450,7 @@ class NewsController extends FileController
         try {
             $model = new NewsModel($this->pdo);
             $table = $model->getName();
-            $record = $model->getRowWhere([
-                'id' => $id,
-                'is_active' => 1
-            ]);
+            $record = $model->getById($id);
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));
             }
@@ -456,17 +461,17 @@ class NewsController extends FileController
             }
             $filesModel = new FilesModel($this->pdo);
             $filesModel->setTable($table);
-            $files = $filesModel->getRows(['WHERE' => "record_id=$id AND is_active=1"]);
+            $files = $filesModel->getRows(['WHERE' => "record_id=$id"]);
             $comments = [];
             if (!empty($record['comment'])) {
                 $commentsTable = (new CommentsModel($this->pdo))->getName();
                 $cstmt = $this->prepare(
                     "SELECT id, parent_id, created_by, name, email, comment, created_at FROM $commentsTable
-                     WHERE news_id=:nid AND is_active=1 ORDER BY created_at ASC"
+                     WHERE news_id=:nid ORDER BY created_at ASC"
                 );
                 $comments = $cstmt->execute([':nid' => $id]) ? $cstmt->fetchAll() : [];
             }
-            $dashboard = $this->twigDashboard(
+            $dashboard = $this->dashboardTemplate(
                 __DIR__ . '/news-view.html',
                 ['table' => $table, 'record' => $record, 'files' => $files, 'comments' => $comments]
             );
@@ -612,7 +617,7 @@ class NewsController extends FileController
         // 4. Attachments - Update existing (description only)
         $currentDescriptions = [];
         if (!empty($files['attachments']['existing'])) {
-            $currentFiles = $filesModel->getRows(['WHERE' => "record_id={$record['id']} AND is_active=1"]);
+            $currentFiles = $filesModel->getRows(['WHERE' => "record_id={$record['id']}"]);
             $currentDescriptions = \array_column($currentFiles, 'description', 'id');
         }
         foreach ($files['attachments']['existing'] ?? [] as $att) {
@@ -628,12 +633,15 @@ class NewsController extends FileController
             }
         }
 
-        // 5. Attachments - Delete (soft delete)
+        // 5. Attachments - Delete
         foreach ($files['attachments']['deleted'] ?? [] as $fileId) {
-            $filesModel->deactivateById((int)$fileId, [
-                'updated_at' => \date('Y-m-d H:i:s'),
-                'updated_by' => $userId
-            ]);
+            $fileRecord = $filesModel->getById((int)$fileId);
+            $filesModel->deleteById((int)$fileId);
+            if ($fileRecord) {
+                (new \Raptor\Trash\TrashModel($this->pdo))->store(
+                    'news', $filesModel->getName(), (int)$fileId, $fileRecord, $userId
+                );
+            }
             $changes[] = "attachment deleted: #$fileId";
         }
 
@@ -641,12 +649,11 @@ class NewsController extends FileController
     }
 
     /**
-     * Мэдээний бичлэгийг идэвхгүй болгох.
+     * Мэдээний бичлэгийг устгах.
      *
      * Энэ method нь:
      * - Request body-оос id дугаарыг авна
-     * - Мэдээний бичлэгийг is_active=0 болгон шинэчлэнэ
-     * - updated_by, updated_at талбаруудыг автоматаар шинэчлэнэ
+     * - Мэдээний бичлэгийг deleteById() ашиглан устгана
      *
      * Permission: system_content_delete
      * Эсвэл: өөрийн үүсгэсэн, нийтлэгдээгүй бичлэгийг устгах боломжтой
@@ -654,7 +661,7 @@ class NewsController extends FileController
      * @return void JSON response буцаана
      * @throws \Exception Эрхгүй, буруу хүсэлт эсвэл бичлэг олдохгүй бол exception шидэнэ
      */
-    public function deactivate()
+    public function delete()
     {
         try {
             $payload = $this->getParsedBody();
@@ -667,7 +674,7 @@ class NewsController extends FileController
 
             $model = new NewsModel($this->pdo);
             if (!$this->isUserCan('system_content_delete')) {
-                $record = $model->getRowWhere(['id' => $id, 'is_active' => 1]);
+                $record = $model->getById($id);
                 if (empty($record)
                     || (int)$record['created_by'] !== $this->getUserId()
                     || (int)$record['published'] !== 0
@@ -676,25 +683,25 @@ class NewsController extends FileController
                 }
             }
 
-            $deactivated = $model->deactivateById(
-                $id,
-                [
-                    'updated_by' => $this->getUserId(),
-                    'updated_at' => \date('Y-m-d H:i:s')
-                ]
-            );
-            if (!$deactivated) {
-                throw new \Exception($this->text('no-record-selected'));
+            if (!isset($record)) {
+                $record = $model->getById($id);
             }
+            $model->deleteById($id);
+            if (!empty($record)) {
+                (new \Raptor\Trash\TrashModel($this->pdo))->store(
+                    'news', $model->getName(), $id, $record, $this->getUserId()
+                );
+            }
+            $this->invalidateCache('recent_news.{code}');
             $this->respondJSON([
                 'status'  => 'success',
                 'title'   => $this->text('success'),
                 'message' => $this->text('record-successfully-deleted')
             ]);
 
-            $adminName = \trim(($this->getUser()->profile['first_name'] ?? '') . ' ' . ($this->getUser()->profile['last_name'] ?? ''));
-            $appUrl = \rtrim((string)$this->getRequest()->getUri()->withPath($this->getScriptPath()), '/') . '/dashboard';
-            $this->getService('discord')?->contentAction('news', 'delete', $payload['title'] ?? "#{$id}", $id, $adminName, $appUrl);
+            $this->dispatch(new \Raptor\Notification\ContentEvent(
+                'delete', 'news', $payload['title'] ?? "#{$id}", $id
+            ));
         } catch (\Throwable $err) {
             $this->respondJSON([
                 'status'  => 'error',
@@ -702,14 +709,14 @@ class NewsController extends FileController
                 'message' => $err->getMessage()
             ], $err->getCode());
         } finally {
-            $context = ['action' => 'deactivate'];
+            $context = ['action' => 'delete'];
             if (isset($err) && $err instanceof \Throwable) {
                 $level = LogLevel::ERROR;
-                $message = 'Мэдээг идэвхгүй болгох үйлдлийг гүйцэтгэх явцад алдаа гарч зогслоо';
+                $message = 'Мэдээг устгах үйлдлийг гүйцэтгэх явцад алдаа гарч зогслоо';
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } else {
                 $level = LogLevel::ALERT;
-                $message = '{record_id} дугаартай [{server_request.body.title}] мэдээг идэвхгүй болголоо';
+                $message = '{record_id} дугаартай [{server_request.body.title}] мэдээг устгалаа';
                 $context += ['record_id' => $id];
             }
             $this->log('news', $level, $message, $context);
@@ -737,7 +744,7 @@ class NewsController extends FileController
             // Жишиг дата байгаа эсэхийг давхар шалгах
             $check = $this->query(
                 "SELECT COUNT(*) as sample FROM $table " .
-                "WHERE is_active=1 AND created_by IS NULL AND created_at = published_at AND category='_raptor_sample_'"
+                "WHERE created_by IS NULL AND created_at = published_at AND category='_raptor_sample_'"
             )->fetch();
             if ((int)$check['sample'] === 0) {
                 throw new \Exception(
@@ -759,25 +766,16 @@ class NewsController extends FileController
                 $this->exec("DELETE FROM $table WHERE id IN ($idList)");
             }
 
-            // Идэвхгүй (is_active=0) бичлэгүүдийг устгах
-            $inactiveIds = $this->query(
-                "SELECT id FROM $table WHERE is_active=0"
-            )->fetchAll(\PDO::FETCH_COLUMN);
-            if (!empty($inactiveIds)) {
-                $idList = \implode(',', \array_map('intval', $inactiveIds));
-                try { $this->exec("DELETE FROM {$table}_files WHERE record_id IN ($idList)"); } catch (\Throwable) {}
-                $this->exec("DELETE FROM $table WHERE id IN ($idList)");
-            }
-
             // Auto increment тохируулах
             $maxId = $this->query("SELECT MAX(id) as max_id FROM $table")->fetch();
             $nextId = ((int)($maxId['max_id'] ?? 0)) + 1;
-            if ($this->getDriverName() === 'pgsql') {
+            if ($this->getDriverName() === Constants::DRIVER_PGSQL) {
                 $this->exec("SELECT setval(pg_get_serial_sequence('$table', 'id'), $nextId, false)");
             } else {
                 $this->exec("ALTER TABLE $table AUTO_INCREMENT = $nextId");
             }
 
+            $this->invalidateCache('recent_news.{code}');
             $this->respondJSON([
                 'status' => 'success',
                 'message' => $this->text('sample-data-cleared')
@@ -810,7 +808,6 @@ class NewsController extends FileController
             $sql =
                 'SELECT record_id, COUNT(*) as cnt ' .
                 "FROM {$table}_files " .
-                'WHERE is_active=1 ' .
                 'GROUP BY record_id';
             $result = $this->query($sql)->fetchAll();
             $counts = [];

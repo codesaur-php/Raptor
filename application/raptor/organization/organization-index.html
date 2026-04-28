@@ -107,14 +107,23 @@ document.addEventListener('DOMContentLoaded', function () {
                         </a>`);
                 }
 
-                /* Устгах болгох эрхтэй бол */
+                /* Устгах эрхтэй бол */
                 if (canDelete) {
-                    buttons.push(`
-                        <button class="deactivate-organization btn btn-sm btn-danger mt-1 shadow-sm"
-                                type="button"
-                                value="${org.id}">
-                            <i class="bi bi-trash"></i>
-                        </button>`);
+                    if (org.is_active == 0) {
+                        buttons.push(`
+                            <button class="delete-organization btn btn-sm btn-danger mt-1 shadow-sm"
+                                    type="button"
+                                    value="${org.id}">
+                                <i class="bi bi-fire"></i>
+                            </button>`);
+                    } else {
+                        buttons.push(`
+                            <button class="deactivate-organization btn btn-sm btn-danger mt-1 shadow-sm"
+                                    type="button"
+                                    value="${org.id}">
+                                <i class="bi bi-trash"></i>
+                            </button>`);
+                    }
                 }
 
                 const actions = `<div class="mb-1">${buttons.join(' ')}</div>`;
@@ -173,7 +182,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     /* Мөр сонгох */
                     let thisRow = btn.closest('tr');
                     if (!thisRow) {
-                        return NotifyTop('warning', `{{ 'error'|text|e }}`, 'Cannot select row!');
+                        return Notify('warning', `{{ 'error'|text|e }}`, 'Cannot select row!');
                     }
 
                     /* Байгууллагын нэр */
@@ -235,11 +244,86 @@ document.addEventListener('DOMContentLoaded', function () {
                                 thisRow.remove();
                                 organizations.setReady();
 
-                                NotifyTop(
+                                Notify(
                                     'success',
                                     `{{ 'success'|text|e }}`,
                                     response.message ?? `Organization (${name}) deactivated`
                                 );
+                            })
+                            .catch(error => {
+                                Swal.showValidationMessage(error.message);
+                            });
+                        }
+                    });
+                })
+            );
+
+            /* Идэвхгүй байгууллагыг бүрэн устгах (hard delete) товч */
+            let questionHardDelete;
+            if (document.documentElement.lang === 'mn') {
+                questionHardDelete = name => `
+                    <p class="text-danger mb-3">
+                        <strong>АНХААРУУЛГА!</strong> Та (${name}) байгууллагыг бүрэн устгахдаа итгэлтэй байна уу?
+                    </p>
+                    <p class="text-muted">Энэ үйлдлийг буцаах боломжгүй. Шалтгаан бичнэ үү</p>`;
+            } else {
+                questionHardDelete = name => `
+                    <p class="text-danger mb-3">
+                        <strong>WARNING!</strong> Are you sure to permanently delete this organization (${name})?
+                    </p>
+                    <p class="text-muted">This action cannot be undone. Please provide a reason</p>`;
+            }
+
+            const hardDeletes = organizations.table.querySelectorAll('.delete-organization');
+            hardDeletes.forEach(btn =>
+                btn.addEventListener('click', function (e) {
+                    e.preventDefault();
+
+                    let thisRow = btn.closest('tr');
+                    if (!thisRow) {
+                        return Notify('warning', `{{ 'error'|text|e }}`, 'Cannot select row!');
+                    }
+
+                    const name = thisRow.children[2]?.innerHTML;
+                    const cleanName = name.replace(/<\/?[^>]+(>|$)/g, '');
+                    const askHtml = questionHardDelete(cleanName);
+
+                    const photo = thisRow.children[1]?.querySelector('img');
+                    const src = photo ? photo.src : '';
+                    const finalHtml = src
+                        ? askHtml
+                        : `<p><i class="bi bi-building text-danger mb-4" style="font-size:3rem"></i></p>${askHtml}`;
+
+                    Swal.fire({
+                        imageUrl: src || undefined,
+                        imageHeight: src ? 64 : undefined,
+                        html: finalHtml,
+                        input: 'text',
+                        showCancelButton: true,
+                        cancelButtonText: `{{ 'cancel'|text|e }}`,
+                        confirmButtonText: `<i class="bi bi-fire"></i> {{ 'delete'|text|e }}`,
+                        confirmButtonColor: '#dc3545',
+                        showLoaderOnConfirm: true,
+                        allowOutsideClick: () => !Swal.isLoading(),
+                        backdrop: true,
+                        preConfirm: (reason) => {
+                            return csrfFetch(
+                                `{{ 'organization-delete'|link }}`,
+                                {
+                                    method: 'DELETE',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ name, reason, id: btn.value })
+                                }
+                            )
+                            .then(res => res.json())
+                            .then(response => {
+                                if (response.status !== 'success') {
+                                    throw new Error(response.message ?? 'Invalid response!');
+                                }
+                                Swal.close();
+                                thisRow.remove();
+                                organizations.setReady();
+                                Notify('success', `{{ 'success'|text|e }}`, response.message ?? `Organization permanently deleted`);
                             })
                             .catch(error => {
                                 Swal.showValidationMessage(error.message);

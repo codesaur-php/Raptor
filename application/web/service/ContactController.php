@@ -4,6 +4,8 @@ namespace Web\Service;
 
 use Psr\Log\LogLevel;
 
+use codesaur\Template\MemoryTemplate;
+
 use Raptor\Content\PagesModel;
 use Raptor\Content\MessagesModel;
 
@@ -39,7 +41,7 @@ class ContactController extends TemplateController
         $stmt = $this->prepare(
             "SELECT id, title, content, photo, code
              FROM $pages_table
-             WHERE is_active=1 AND published=1
+             WHERE published=1
                AND code=:code
                AND link LIKE '%/contact'
              ORDER BY published_at DESC
@@ -51,7 +53,7 @@ class ContactController extends TemplateController
         $ts = \time();
         $secret = $this->getJwtSecret();
 
-        $this->twigWebLayout(__DIR__ . '/contact.html', [
+        $this->webTemplate(__DIR__ . '/contact.html', [
             'record' => $record ?: [],
             'title' => $record['title'] ?? $this->text('contact'),
             'code' => $record['code'] ?? '',
@@ -120,13 +122,15 @@ class ContactController extends TemplateController
                 'phone' => $phone,
                 'email' => $email,
                 'message' => $message,
-                'code' => $code,
-                'created_at' => \date('Y-m-d H:i:s')
+                'code' => $code
             ]);
 
-            // Discord мэдэгдэл
-            $appUrl = \rtrim((string)$this->getRequest()->getUri()->withPath($this->getScriptPath()), '/');
-            $this->getService('discord')?->newContactMessage($name, $phone, $email, $message, $appUrl);
+            $this->respondJSON([
+                'status' => 'success',
+                'message' => $code === 'mn'
+                    ? 'Таны мессеж амжилттай илгээгдлээ! Бид тантай удахгүй холбогдох болно.'
+                    : 'Your message has been sent successfully! We will contact you soon.'
+            ]);
 
             $this->log(
                 'messages',
@@ -147,15 +151,78 @@ class ContactController extends TemplateController
                     ]
                 ]
             );
+            
+            $this->dispatch(new \Raptor\Notification\ContentEvent(
+                'new', 'message', $name, null, $name,
+                ['phone' => $phone, 'email' => $email, 'message' => $message]
+            ));
 
-            $this->respondJSON([
-                'status' => 'success',
-                'message' => $code === 'mn'
-                    ? 'Таны мессеж амжилттай илгээгдлээ! Бид тантай удахгүй холбогдох болно.'
-                    : 'Your message has been sent successfully! We will contact you soon.'
-            ]);
+            // И-мэйл мэдэгдэл (settings-д email тохируулсан бол)
+            $this->sendContactEmail($name, $phone, $email, $message);
         } catch (\Throwable $err) {
             $this->respondJSON(['message' => $err->getMessage()], $err->getCode() ?: 500);
+        }
+    }
+
+    /**
+     * Settings-д тохируулсан email хаяг руу холбоо барих мессежийг илгээх.
+     *
+     * reference_templates хүснэгтэд 'contact-message-notify' keyword-тэй
+     * загварыг ашиглана. Системийн анхдагч хэлээр илгээнэ.
+     *
+     * @param string $name    Зочны нэр
+     * @param string $phone   Зочны утас
+     * @param string $email   Зочны и-мэйл
+     * @param string $message Зочны мессеж
+     */
+    private function sendContactEmail(string $name, string $phone, string $email, string $message): void
+    {
+        try {
+            $notifyEmail = $_ENV['RAPTOR_CONTACT_EMAIL_TO'] ?? '';
+            if (empty($notifyEmail)) {
+                return;
+            }
+
+            $mailer = $this->getService('mailer');
+            if (empty($mailer)) {
+                return;
+            }
+
+            $defaultCode = $this->getLanguageCode() ?: 'en';
+
+            $templateService = $this->getService('template_service');
+            $template = $templateService?->getByKeyword('contact-message-notify', $defaultCode);
+            if (empty($template)) {
+                return;
+            }
+
+            // Dashboard messages link
+            $appUrl = \rtrim((string)$this->getRequest()->getUri()->withPath($this->getScriptPath()), '/');
+            $messagesLink = $appUrl . '/dashboard/messages';
+
+            $subjectTemplate = new MemoryTemplate();
+            $subjectTemplate->source($template['title']);
+            $subjectTemplate->set('name', $name);
+            $subject = $subjectTemplate->output();
+
+            $bodyTemplate = new MemoryTemplate();
+            $bodyTemplate->source($template['content']);
+            $bodyTemplate->set('name', \htmlspecialchars($name));
+            $bodyTemplate->set('phone', \htmlspecialchars($phone));
+            $bodyTemplate->set('email', \htmlspecialchars($email));
+            $bodyTemplate->set('message', \nl2br(\htmlspecialchars($message)));
+            $bodyTemplate->set('messages_link', $messagesLink);
+            $body = $bodyTemplate->output();
+
+            $mailer->mail($notifyEmail, null, $subject, $body);
+            if (!empty($email)) {
+                $mailer->setReplyTo($email, $name);
+            }
+            $mailer->send();
+        } catch (\Throwable $err) {
+            if (CODESAUR_DEVELOPMENT) {
+                \error_log('Contact email send failed: ' . $err->getMessage());
+            }
         }
     }
 

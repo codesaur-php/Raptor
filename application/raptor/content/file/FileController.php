@@ -196,7 +196,7 @@ class FileController extends \Raptor\Controller
      * @param bool $optimize  Зураг optimize хийх эсэх         
      * @param int $mode  mkdir() permission
      *
-     * @return array|false  Амжилттай бол:
+     * @return array  Амжилттай бол:
      *      [
      *        'path' => public URL,
      *        'file' => absolute local file path,
@@ -596,4 +596,5 @@ class FileController extends \Raptor\Controller
             return false;
         }
     }
+
 }

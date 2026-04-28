@@ -68,6 +68,9 @@ class UsersRouter extends Router
         // Хэрэглэгчийг идэвхгүй болгох
         $this->DELETE('/dashboard/users/deactivate', [UsersController::class, 'deactivate'])->name('user-deactivate');
 
+        // Идэвхгүй хэрэглэгчийг бүрэн устгах
+        $this->DELETE('/dashboard/users/delete', [UsersController::class, 'delete'])->name('user-delete');
+
         /**
          * ----------------------------------------------------------
          * ORGANIZATION SET
@@ -111,5 +114,8 @@ class UsersRouter extends Router
 
         // Signup хүсэлтийг идэвхгүй болгох
         $this->DELETE('/dashboard/users/signup/deactivate', [UsersController::class, 'signupDeactivate'])->name('user-signup-deactivate');
+
+        // Идэвхгүй signup хүсэлтийг бүрэн устгах
+        $this->DELETE('/dashboard/users/signup/delete', [UsersController::class, 'signupDelete'])->name('user-signup-delete');
     }
 }

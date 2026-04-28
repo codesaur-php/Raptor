@@ -20,7 +20,7 @@
                                 {% endif %}
                                 <div class="card-body">
                                     <h6 class="card-title">
-                                        <a href="{{ 'news'|link({ slug: item.slug }) }}" class="text-decoration-none text-dark">
+                                        <a href="{{ 'news'|link({ slug: item.slug }) }}" class="text-decoration-none {% if item.is_read %}text-muted fw-normal{% else %}text-dark fw-bold{% endif %}">
                                             {{ item.title }}
                                         </a>
                                     </h6>

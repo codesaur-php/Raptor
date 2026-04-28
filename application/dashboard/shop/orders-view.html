@@ -153,7 +153,7 @@ document.addEventListener('DOMContentLoaded', function () {
             csrfFetch(
                 `{{ 'order-status'|link({id: record['id']}) }}`,
                 {
-                    method: 'PUT',
+                    method: 'PATCH',
                     headers: {
                         'Content-Type': 'application/json'
                     },
@@ -174,12 +174,12 @@ document.addEventListener('DOMContentLoaded', function () {
                     badge.textContent = newStatus;
                 }
 
-                NotifyTop('success', `{{ 'success'|text|e }}`, response.message ?? 'Status updated');
+                Notify('success', `{{ 'success'|text|e }}`, response.message ?? 'Status updated');
             }).catch(error => {
-                NotifyTop('danger', `{{ 'error'|text|e }}`, error.message);
+                Notify('danger', `{{ 'error'|text|e }}`, error.message);
             }).finally(() => {
                 statusBtn.disabled = false;
-                statusBtn.innerHTML = '<i class="bi bi-check-circle"></i> {{ "update"|text }}';
+                statusBtn.innerHTML = '<i class="bi bi-check-circle"></i> {{ 'update'|text }}';
             });
         });
     }

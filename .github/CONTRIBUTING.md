@@ -132,7 +132,7 @@ Then create a pull request on GitHub.
 - **Models** - `PascalCase` with `Model` suffix (e.g., `PagesModel`)
 - **Routers** - `PascalCase` with `Router` suffix (e.g., `ContentsRouter`)
 - **Middleware** - `PascalCase` with `Middleware` suffix (e.g., `JWTAuthMiddleware`)
-- **Templates** - `kebab-case` Twig files (e.g., `index-files.html`)
+- **Templates** - `kebab-case` Template files (e.g., `index-files.html`)
 
 ---
 
@@ -246,7 +246,7 @@ If your change affects usage or public API:
 For security-related issues, please follow the instructions in [SECURITY.md](SECURITY.md) or contact the maintainer directly:
 
 - **Email:** codesaur@gmail.com
-- **Phone:** [+976 99000287](https://wa.me/97699000287)
+- **Phone:** +976 99000287
 
 ---
 

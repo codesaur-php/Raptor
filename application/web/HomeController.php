@@ -5,9 +5,7 @@ namespace Web;
 use Psr\Log\LogLevel;
 
 use Raptor\Content\NewsModel;
-
-use Web\Template\TemplateController;
-
+use Raptor\Content\ReadNewsTrait;
 
 /**
  * Class HomeController
@@ -20,8 +18,10 @@ use Web\Template\TemplateController;
  *
  * @package Web
  */
-class HomeController extends TemplateController
+class HomeController extends Template\TemplateController
 {
+    use ReadNewsTrait;
+
     /**
      * Нүүр хуудсыг харуулах.
      *
@@ -33,20 +33,23 @@ class HomeController extends TemplateController
     public function index()
     {
         $code = $this->getLanguageCode();
-        $news_table = (new NewsModel($this->pdo))->getName();
-        $stmt_recent = $this->prepare(
-            "SELECT id, title, description, slug, photo, published_at
-             FROM $news_table
-             WHERE is_active=1 AND published=1 AND code=:code
-             ORDER BY published_at DESC
-             LIMIT 20"
-        );
-        $recent = $stmt_recent->execute([':code' => $code])
-            ? $stmt_recent->fetchAll()
-            : [];
+        $cache = $this->hasService('cache') ? $this->getService('cache') : null;
+        $recent = $cache?->get("recent_news.$code");
+        if ($recent === null) {
+            try {
+                $recent = (new NewsModel($this->pdo))->getRecentPublished($code);
+                $cache?->set("recent_news.$code", $recent);
+            } catch (\Throwable $e) {
+                if (CODESAUR_DEVELOPMENT) {
+                    \error_log($e->getMessage());
+                }
+                $recent = [];
+            }
+        }
+        $this->decorateReadNews($recent);
         $vars = ['recent' => $recent];
 
-        $this->twigWebLayout(__DIR__ . '/home.html', $vars)->render();
+        $this->webTemplate(__DIR__ . '/home.html', $vars)->render();
 
         $this->log(
             'web',
@@ -98,7 +101,7 @@ class HomeController extends TemplateController
         $from = $this->getLanguageCode();
         $language = $this->getLanguages();
         if (isset($language[$code]) && $code !== $from) {
-            $_SESSION[$this->getAttribute('localization')['session_key']] = $code;
+            $this->setLanguageCode($code);
         }
 
         $script_path = $this->getScriptPath();

@@ -108,15 +108,15 @@
         {% endif %}
         <div class="d-flex flex-wrap gap-2 mt-3">
             {% if record['published'] == 1 %}
-                <span class="badge bg-success"><i class="bi bi-globe me-1"></i>{{ 'publish'|text }}</span>
+                <span class="badge bg-success" title="{{ 'publish'|text }}"><i class="bi bi-globe"></i></span>
             {% else %}
-                <span class="badge bg-secondary"><i class="bi bi-eye-slash me-1"></i>{{ 'draft'|text }}</span>
+                <span class="badge bg-secondary" title="{{ 'draft'|text }}"><i class="bi bi-eye-slash"></i></span>
             {% endif %}
             {% if record['is_featured'] == 1 %}
-                <span class="badge bg-warning text-dark"><i class="bi bi-star-fill me-1"></i>{{ 'featured'|text }}</span>
+                <span class="badge bg-danger text-white" title="{{ 'featured'|text }}"><i class="bi bi-star-fill"></i></span>
             {% endif %}
             {% if record['comment'] == 1 %}
-                <span class="badge bg-info"><i class="bi bi-chat-dots me-1"></i>{{ 'comment'|text }}</span>
+                <span class="badge bg-info" title="{{ 'comment'|text }}"><i class="bi bi-chat-dots"></i></span>
             {% endif %}
         </div>
     </div>
@@ -210,7 +210,7 @@
                     if (res.status === 'success') {
                         location.reload();
                     } else {
-                        NotifyTop('error', res.title, res.message);
+                        Notify('error', res.title, res.message);
                     }
                 }).finally(() => {
                     commentBtn.disabled = false;
@@ -255,11 +255,11 @@
                     if (res.status === 'success') {
                         location.reload();
                     } else {
-                        NotifyTop('error', res.title, res.message);
+                        Notify('error', res.title, res.message);
                     }
                 }).finally(() => {
                     btn.disabled = false;
-                    btn.innerHTML = '<i class="bi bi-send me-1"></i>{{ "send"|text }}';
+                    btn.innerHTML = '<i class="bi bi-send me-1"></i>{{ 'send'|text }}';
                 });
             });
 
@@ -277,7 +277,7 @@
                         cancelButtonText: `{{ 'cancel'|text|e('js') }}`
                     }).then(result => {
                         if (!result.isConfirmed) return;
-                        csrfFetch(`{{ 'comments-deactivate'|link }}`, {
+                        csrfFetch(`{{ 'comments-delete'|link }}`, {
                             method: 'DELETE',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ id })

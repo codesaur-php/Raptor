@@ -142,15 +142,15 @@
         {% endif %}
         <div class="d-flex flex-wrap gap-2 mt-3">
             {% if record['published'] == 1 %}
-                <span class="badge bg-success"><i class="bi bi-globe me-1"></i>{{ 'publish'|text }}</span>
+                <span class="badge bg-success" title="{{ 'publish'|text }}"><i class="bi bi-globe"></i></span>
             {% else %}
-                <span class="badge bg-secondary"><i class="bi bi-eye-slash me-1"></i>{{ 'draft'|text }}</span>
+                <span class="badge bg-secondary" title="{{ 'draft'|text }}"><i class="bi bi-eye-slash"></i></span>
             {% endif %}
             {% if record['is_featured'] == 1 %}
-                <span class="badge bg-warning text-dark"><i class="bi bi-star-fill me-1"></i>{{ 'featured'|text }}</span>
+                <span class="badge bg-danger text-white" title="{{ 'featured'|text }}"><i class="bi bi-star-fill"></i></span>
             {% endif %}
             {% if record['review'] == 1 %}
-                <span class="badge bg-info"><i class="bi bi-star-half me-1"></i>{{ 'reviews'|text }}</span>
+                <span class="badge bg-info" title="{{ 'reviews'|text }}"><i class="bi bi-star-half"></i></span>
             {% endif %}
         </div>
     </div>
@@ -167,7 +167,7 @@
         {% if review_count > 0 %}
         <div class="d-flex align-items-center gap-2">
             <span class="fw-bold text-warning">{{ avg_rating }}</span>
-            {% for i in 1..5 %}
+            {% for i in range(1, 5) %}
                 {% if i <= avg_rating|round(0, 'floor') %}
                     <i class="bi bi-star-fill text-warning small"></i>
                 {% elseif i - avg_rating < 1 and i - avg_rating > 0 %}
@@ -198,7 +198,7 @@
                 </div>
             </div>
             <div class="mt-1 mb-1">
-                {% for i in 1..5 %}
+                {% for i in range(1, 5) %}
                     {% if i <= r.rating %}
                         <i class="bi bi-star-fill text-warning small"></i>
                     {% else %}
@@ -226,7 +226,7 @@
                     cancelButtonText: `{{ 'cancel'|text|e('js') }}`
                 }).then(result => {
                     if (!result.isConfirmed) return;
-                    csrfFetch(`{{ 'reviews-deactivate'|link }}`, {
+                    csrfFetch(`{{ 'products-reviews-delete'|link }}`, {
                         method: 'DELETE',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ id })

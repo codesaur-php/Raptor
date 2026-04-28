@@ -40,7 +40,7 @@ use codesaur\DataObject\Column;
  *
  *      Энэ нь тухайн page-ийн бүх хавсаргагдсан файлуудыг дараах SQL-аар авах боломжтой:
  *
- *          SELECT * FROM pages_files WHERE record_id = 10 AND is_active=1;
+ *          SELECT * FROM pages_files WHERE record_id = 10;
  *
  *  > Үүнийг Content module бүхэлдээ ашигладаг:
  *      - FilesController::post()
@@ -106,7 +106,6 @@ class FilesModel extends Model
      *  mime_content_type  - MIME type (image/png гэх мэт)
      *  keyword            - Түлхүүр үг (optional)
      *  description        - Тайлбар (optional)
-     *  is_active          - 1 -> идэвхтэй / 0 -> soft delete хийгдсэн
      *  created_at         - Үүссэн огноо
      *  created_by         - Үүсгэсэн хэрэглэгч (users.id)
      *  updated_at         - Зассан огноо
@@ -126,7 +125,6 @@ class FilesModel extends Model
             new Column('mime_content_type', 'varchar', 127),
             new Column('keyword', 'varchar', 32),
             new Column('description', 'varchar', 255),
-           (new Column('is_active', 'tinyint'))->default(1),
             new Column('created_at', 'datetime'),
             new Column('created_by', 'bigint'),
             new Column('updated_at', 'datetime'),
@@ -179,9 +177,9 @@ class FilesModel extends Model
      */
     protected function __initial()
     {
-        $my_name = $this->getName();
-
         $this->setForeignKeyChecks(false);
+     
+        $my_name = $this->getName();
         $record_name = $this->getRecordName();
         $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
         $this->exec("ALTER TABLE $my_name ADD CONSTRAINT {$my_name}_fk_created_by FOREIGN KEY (created_by) REFERENCES $users(id) ON DELETE SET NULL ON UPDATE CASCADE");
@@ -189,10 +187,11 @@ class FilesModel extends Model
         if ($this->hasTable($record_name)) {
             $this->exec("ALTER TABLE $my_name ADD CONSTRAINT {$my_name}_fk_record_id FOREIGN KEY (record_id) REFERENCES $record_name(id) ON DELETE SET NULL ON UPDATE CASCADE");
         }
+        
         $this->setForeignKeyChecks(true);
 
         // Файл хайлтын гүйцэтгэлийг сайжруулах индекс
-        $this->exec("CREATE INDEX {$my_name}_idx_record_id ON $my_name (record_id, is_active)");
+        $this->exec("CREATE INDEX {$my_name}_idx_record_id ON $my_name (record_id)");
     }
     
     /**
@@ -202,9 +201,9 @@ class FilesModel extends Model
      *  хийдэг override функц (хэрвээ шинэ утгууд дотор агуулагдаагүй бол).
      *
      * @param array $record
-     * @return array|false
+     * @return array
      */
-    public function insert(array $record): array|false
+    public function insert(array $record): array
     {
         $record['created_at'] ??= \date('Y-m-d H:i:s');
         return parent::insert($record);
@@ -216,12 +215,12 @@ class FilesModel extends Model
      * @param int $id         Засах бичлэгийн ID
      * @param array $record   Шинэ утгууд
      *
-     * @return array|false
+     * @return array
      *
      *  Бичлэг шинэчилж буй үед updated_at-г автоматаар онооно
      *  (хэрвээ шинэ утгууд дотор агуулагдаагүй бол).
      */
-    public function updateById(int $id, array $record): array|false
+    public function updateById(int $id, array $record): array
     {
         $record['updated_at'] ??= \date('Y-m-d H:i:s');
         return parent::updateById($id, $record);

@@ -17,9 +17,16 @@ use PHPUnit\Framework\TestCase;
 class SpamProtectionExtendedTest extends TestCase
 {
     private object $trait;
+    private array $originalEnv = [];
 
     protected function setUp(): void
     {
+        $this->originalEnv = [
+            'RAPTOR_JWT_SECRET'         => $_ENV['RAPTOR_JWT_SECRET'] ?? null,
+            'RAPTOR_TURNSTILE_SITE_KEY' => $_ENV['RAPTOR_TURNSTILE_SITE_KEY'] ?? null,
+            'RAPTOR_TURNSTILE_SECRET_KEY' => $_ENV['RAPTOR_TURNSTILE_SECRET_KEY'] ?? null,
+        ];
+
         $this->trait = new class {
             use \Raptor\SpamProtectionTrait {
                 getTurnstileSiteKey as public;
@@ -32,11 +39,13 @@ class SpamProtectionExtendedTest extends TestCase
 
     protected function tearDown(): void
     {
-        unset(
-            $_ENV['RAPTOR_JWT_SECRET'],
-            $_ENV['RAPTOR_TURNSTILE_SITE_KEY'],
-            $_ENV['RAPTOR_TURNSTILE_SECRET_KEY']
-        );
+        foreach ($this->originalEnv as $key => $value) {
+            if ($value === null) {
+                unset($_ENV[$key]);
+            } else {
+                $_ENV[$key] = $value;
+            }
+        }
     }
 
     // =============================================

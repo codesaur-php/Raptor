@@ -67,6 +67,22 @@
             .social-icon:hover {
                 color: #fff;
             }
+            @media print {
+                .navbar, footer .row, .no-print {
+                    display: none !important;
+                }
+                footer {
+                    background: none !important;
+                    color: #000 !important;
+                    padding-top: 0 !important;
+                }
+                footer .border-top {
+                    border-color: #000 !important;
+                }
+                footer .text-secondary {
+                    color: #000 !important;
+                }
+            }
         </style>
     </head>
     <body>

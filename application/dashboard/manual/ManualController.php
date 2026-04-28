@@ -28,7 +28,7 @@ class ManualController extends \Raptor\Controller
             return $this->dashboardProhibited(null, 401)->render();
         }
 
-        $this->twigDashboard(__DIR__ . '/manual-index.html', [
+        $this->dashboardTemplate(__DIR__ . '/manual-index.html', [
             'manuals' => $this->getManualList()
         ])->render();
     }
@@ -60,7 +60,7 @@ class ManualController extends \Raptor\Controller
                 }
             }
 
-            $this->twigDashboard($filePath)->render();
+            $this->dashboardTemplate($filePath)->render();
         } catch (\Throwable $e) {
             $this->dashboardProhibited($e->getMessage(), $e->getCode())->render();
         }

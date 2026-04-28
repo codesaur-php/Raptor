@@ -111,7 +111,7 @@
 
                             {% if can_delete %}
                                 <!-- Хэл устгах товч -->
-                                <button class="deactivate-language btn btn-sm btn-danger mt-1 shadow-sm"
+                                <button class="delete-language btn btn-sm btn-danger mt-1 shadow-sm"
                                         value="{{ language['id'] }}"
                                         type="button">
                                     <i class="bi bi-trash"></i>
@@ -188,8 +188,8 @@
                             {% endif %}
 
                             {% if can_delete %}
-                                <!-- Идэвхгүй болгох -->
-                                <button class="deactivate-text btn btn-sm btn-danger mt-1 shadow-sm"
+                                <!-- Устгах -->
+                                <button class="delete-text btn btn-sm btn-danger mt-1 shadow-sm"
                                         value="{{ row['id'] }}"
                                         type="button">
                                     <i class="bi bi-trash"></i>
@@ -229,42 +229,32 @@
 {% endif %}
 
 <script type="text/javascript">
-    /* URL дээр hash (жишээ: #tab-language) байвал тухайн табыг идэвхжүүлнэ */
-    const tabLink = window.location.hash;
-    if (tabLink) {
-        const activeTab = document.querySelector('ul.nav.nav-tabs > li.nav-item > a.active.show');
-
-        if (activeTab.getAttribute('href') !== tabLink) {
-            const linkTab = document.querySelector(`ul.nav.nav-tabs > li.nav-item > a[href="${tabLink}"]`);
-            if (linkTab) {
-                activeTab.classList.remove('active', 'show');
-
-                linkTab.classList.add('active', 'show');
-                document.querySelector(`div.tab-content > div.tab-pane.active.show`)
-                    .classList.remove('active', 'show');
-
-                const newTabPaneId = tabLink.substr(1);
-                document.querySelector(`div.tab-pane[id="${newTabPaneId}"]`)
-                    .classList.add('active', 'show');
-            }
-        }
-    }
-
     /* Document бүрэн уншигдсаны дараах бүх UI event binding ажиллана */
     document.addEventListener('DOMContentLoaded', function () {
+        /* URL дээр hash (жишээ: #tab-text) байвал тухайн табыг идэвхжүүлнэ.
+         * Tabs нь <button data-bs-target="#tab-..."> хэлбэртэй тул Bootstrap Tab API ашиглана.
+         * bootstrap нь defer-ээр ачаалагддаг тул заавал DOMContentLoaded дотор хийнэ. */
+        const tabLink = window.location.hash;
+        if (tabLink) {
+            const targetBtn = document.querySelector(`ul.nav.nav-tabs button[data-bs-target="${tabLink}"]`);
+            if (targetBtn) {
+                bootstrap.Tab.getOrCreateInstance(targetBtn).show();
+            }
+        }
+
         /* "languages" хүснэгтийг motable ашиглан амьлуулж, код баганыг наая */
         const languages = new motable('table#languages', { freezeColumns: [0] });
 
         /* Хэл устгах товчлууруудыг цуглуулна */
-        const deactivateLanguages = languages.table.querySelectorAll('.deactivate-language');
-        deactivateLanguages.forEach(btn =>
+        const deleteLanguages = languages.table.querySelectorAll('.delete-language');
+        deleteLanguages.forEach(btn =>
             btn.addEventListener('click', function (e) {
                 e.preventDefault();
 
                 /* Устгах гэж буй мөрийг олж авах */
                 const thisRow = btn.closest('tr');
                 if (!thisRow) {
-                    return NotifyTop('warning', `{{ 'error'|text|e }}`, 'Cannot select row!');
+                    return Notify('warning', `{{ 'error'|text|e }}`, 'Cannot select row!');
                 }
 
                 /* Хэл устгах баталгаажуулах асуултын текст бэлдэх */
@@ -332,10 +322,10 @@
                             /* Амжилттай тул хуудас шинэчилнэ */
                             window.location.reload();
 
-                            NotifyTop(
+                            Notify(
                                 'success',
                                 `{{ 'success'|text|e }}`,
-                                response.message ?? `Language (${title}) deactivated`
+                                response.message ?? `Language (${title}) deleted`
                             );
                         })
                         .catch(error => {
@@ -353,15 +343,15 @@
             text.setReady();
 
             /* Бүх "устгах" товчлууруудыг цуглуулах */
-            const deactivateText = text.table.querySelectorAll('.deactivate-text');
-            deactivateText.forEach(btn =>
+            const deleteText = text.table.querySelectorAll('.delete-text');
+            deleteText.forEach(btn =>
                 btn.addEventListener('click', function (e) {
                     e.preventDefault();
 
                     /* Устгах гэж буй мөрийг тодорхойлох */
                     const thisRow = btn.closest('tr');
                     if (!thisRow) {
-                        return NotifyTop('warning', `{{ 'error'|text|e }}`, 'Cannot select row!');
+                        return Notify('warning', `{{ 'error'|text|e }}`, 'Cannot select row!');
                     }
 
                     /* Баталгаажуулах асуултын үндсэн текст */
@@ -369,12 +359,12 @@
                     if (document.documentElement.lang === 'mn') {
                         questiondel =
                             `<p class="text-danger mb-3">
-                                Та [{0}] текст бичлэгийг идэвхгүй болгоход итгэлтэй байна уу?
+                                Та [{0}] текст бичлэгийг устгахдаа итгэлтэй байна уу?
                              </p>`;
                     } else {
                         questiondel =
                             `<p class="text-danger mb-3">
-                                Are you sure to deactivate the text with keyword [{0}]?
+                                Are you sure to delete the text with keyword [{0}]?
                              </p>`;
                     }
 
@@ -395,7 +385,7 @@
                         /* preConfirm -> сервер рүү DELETE хүсэлт илгээнэ */
                         preConfirm: () => {
                             return csrfFetch(
-                                `{{ 'text-deactivate'|link }}`,
+                                `{{ 'text-delete'|link }}`,
                                 {
                                     method: 'DELETE',
                                     headers: {
@@ -419,10 +409,10 @@
                                 thisRow.remove();
                                 text.setReady(); /* motable-ийг дахин бэлэн болгоно */
 
-                                NotifyTop(
+                                Notify(
                                     'success',
                                     `{{ 'success'|text|e }}`,
-                                    response.message ?? `Text ${keyword} deactivated`
+                                    response.message ?? `Text ${keyword} deleted`
                                 );
                             })
                             .catch(error => {

@@ -76,14 +76,14 @@ class CommentsTest extends RaptorTestCase
     }
 
     /**
-     * deactivate() нь system_content_delete эрх шалгадаг эсэх.
+     * delete() нь system_content_delete эрх шалгадаг эсэх.
      */
-    public function testDeactivateRequiresContentDeletePermission(): void
+    public function testDeleteRequiresContentDeletePermission(): void
     {
-        \preg_match('/function\s+deactivate\s*\(.*?\{(.+?)(?=\n    public\s|\n\})/s', self::$dashboardController, $m);
-        $this->assertNotEmpty($m, 'deactivate() method not found');
+        \preg_match('/function\s+delete\s*\(.*?\{(.+?)(?=\n    public\s|\n\})/s', self::$dashboardController, $m);
+        $this->assertNotEmpty($m, 'delete() method not found');
         $this->assertStringContainsString("isUserCan('system_content_delete')", $m[1],
-            'deactivate() must check system_content_delete permission');
+            'delete() must check system_content_delete permission');
     }
 
     // =============================================
@@ -115,28 +115,26 @@ class CommentsTest extends RaptorTestCase
     }
 
     /**
-     * deactivate() нь reply-уудыг мөн идэвхгүй болгодог эсэх (cascade soft delete).
+     * delete() нь reply-уудыг мөн устгадаг эсэх (cascade delete).
      */
-    public function testDeactivateCascadesToReplies(): void
+    public function testDeleteCascadesToReplies(): void
     {
-        \preg_match('/function\s+deactivate\s*\(.*?\{(.+?)(?=\n    public\s|\n\})/s', self::$dashboardController, $m);
+        \preg_match('/function\s+delete\s*\(.*?\{(.+?)(?=\n    public\s|\n\})/s', self::$dashboardController, $m);
         $this->assertMatchesRegularExpression(
-            '/is_active\s*=\s*0\s+WHERE\s+parent_id/',
+            '/DELETE\s+FROM\s+.*WHERE\s+parent_id/',
             $m[1],
-            'deactivate() must also deactivate child replies'
+            'delete() must also delete child replies'
         );
     }
 
     /**
-     * deactivate() нь soft delete хийдэг (is_active=0), бичлэг устгахгүй.
+     * delete() нь deleteById ашигладаг эсэх.
      */
-    public function testDeactivateUsesSoftDelete(): void
+    public function testDeleteUsesDeleteById(): void
     {
-        \preg_match('/function\s+deactivate\s*\(.*?\{(.+?)(?=\n    public\s|\n\})/s', self::$dashboardController, $m);
-        $this->assertStringContainsString('is_active=0', $m[1],
-            'deactivate() must use soft delete (is_active=0)');
-        $this->assertStringNotContainsString('DELETE FROM', $m[1],
-            'deactivate() must NOT physically delete records');
+        \preg_match('/function\s+delete\s*\(.*?\{(.+?)(?=\n    public\s|\n\})/s', self::$dashboardController, $m);
+        $this->assertStringContainsString('deleteById', $m[1],
+            'delete() must use deleteById');
     }
 
     /**
@@ -174,13 +172,13 @@ class CommentsTest extends RaptorTestCase
     }
 
     /**
-     * deactivate() лог бичдэг эсэх.
+     * delete() лог бичдэг эсэх.
      */
-    public function testDeactivateLogsAction(): void
+    public function testDeleteLogsAction(): void
     {
-        \preg_match('/function\s+deactivate\s*\(.*?\{(.+?)(?=\n    public\s|\n\})/s', self::$dashboardController, $m);
-        $this->assertStringContainsString("'action' => 'comment-deactivate'", $m[1],
-            'deactivate() must log with action context for badge system');
+        \preg_match('/function\s+delete\s*\(.*?\{(.+?)(?=\n    public\s|\n\})/s', self::$dashboardController, $m);
+        $this->assertStringContainsString("'action' => 'comment-delete'", $m[1],
+            'delete() must log with action context for badge system');
     }
 
     // =============================================
@@ -338,7 +336,7 @@ class CommentsTest extends RaptorTestCase
         $source = \file_get_contents(
             \dirname(__DIR__, 3) . '/application/raptor/content/news/CommentsModel.php'
         );
-        $required = ['id', 'news_id', 'parent_id', 'created_by', 'name', 'email', 'comment', 'is_active', 'created_at'];
+        $required = ['id', 'news_id', 'parent_id', 'created_by', 'name', 'email', 'comment', 'created_at'];
         foreach ($required as $col) {
             $this->assertStringContainsString("'$col'", $source,
                 "CommentsModel must have '$col' column");
@@ -366,8 +364,8 @@ class CommentsTest extends RaptorTestCase
         $source = \file_get_contents(
             \dirname(__DIR__, 3) . '/application/raptor/content/news/CommentsModel.php'
         );
-        $this->assertStringContainsString('idx_news_active', $source,
-            'Must have composite index on (news_id, is_active)');
+        $this->assertStringContainsString('idx_news_id', $source,
+            'Must have index on news_id');
         $this->assertStringContainsString('idx_created', $source,
             'Must have index on created_at');
     }
