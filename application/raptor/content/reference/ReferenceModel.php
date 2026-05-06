@@ -101,21 +101,14 @@ class ReferenceModel extends LocalizedModel
     protected function __initial()
     {
         $table = $this->getName();
-
-        $this->setForeignKeyChecks(false);
-
         $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
-
         /* FK - created_by / updated_by талбаруудыг хэрэглэгчийн хүснэгттэй холбох */
         $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_created_by
             FOREIGN KEY (created_by) REFERENCES $users(id)
             ON DELETE SET NULL ON UPDATE CASCADE");
-
         $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_updated_by
             FOREIGN KEY (updated_by) REFERENCES $users(id)
             ON DELETE SET NULL ON UPDATE CASCADE");
-
-        $this->setForeignKeyChecks(true);
 
         /* Seed function байвал түүнийг ажиллуулна */
         if (\method_exists(ReferenceInitial::class, $table)) {

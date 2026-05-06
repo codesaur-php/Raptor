@@ -38,9 +38,7 @@ class CommentsModel extends Model
      * @return void
      */
     protected function __initial()
-    {
-        $this->setForeignKeyChecks(false);
-        
+    {        
         $table = $this->getName();
         $news = (new NewsModel($this->pdo))->getName();
         $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
@@ -58,9 +56,7 @@ class CommentsModel extends Model
             "ALTER TABLE $table ADD CONSTRAINT {$table}_fk_created_by
              FOREIGN KEY (created_by) REFERENCES $users(id)
              ON DELETE SET NULL ON UPDATE CASCADE"
-        );
-        
-        $this->setForeignKeyChecks(true);
+        );        
 
         $this->exec("CREATE INDEX {$table}_idx_news_id ON $table (news_id)");
         $this->exec("CREATE INDEX {$table}_idx_created ON $table (created_at)");

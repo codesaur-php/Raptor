@@ -296,30 +296,22 @@ class OrganizationController extends FileController
                 // alias -> зөвшөөрөгдөх тэмдэгт үлдээх
                 $payload['alias'] = \preg_replace('/[^A-Za-z0-9_-]/', '', $payload['alias']);
 
-                // Лого устгах
-                if ($payload['logo_removed'] == 1) {
-                    // logo файл устгах
-                    if (\file_exists($record['logo_file'])) {
-                        \unlink($record['logo_file']);
-                        $record['logo_file'] = '';
-                    }
+                $oldLogoFile = $record['logo_file'] ?? '';
+                $logoRemovedRequested = (int)($payload['logo_removed'] ?? 0) === 1;
+                $newUploadedFile = null;
+
+                if ($logoRemovedRequested) {
                     $payload['logo']      = '';
                     $payload['logo_file'] = '';
                     $payload['logo_size'] = 0;
                 }
                 unset($payload['logo_removed']);
 
-                // Лого шинээр байрлуулах
                 $this->setFolder("/{$model->getName()}/$id");
                 $this->allowImageOnly();
                 $logo = $this->moveUploaded('logo');
                 if ($logo) {
-                    // Хуучин лого байвал устгана
-                    if (!empty($record['logo_file']) && \file_exists($record['logo_file'])) {
-                        \unlink($record['logo_file']);
-                    }
-                    
-                    // Шинэ лого мэдээлэл
+                    $newUploadedFile = $logo['file'];
                     $payload['logo']      = $logo['path'];
                     $payload['logo_file'] = $logo['file'];
                     $payload['logo_size'] = $logo['size'];
@@ -347,6 +339,14 @@ class OrganizationController extends FileController
                     throw new \Exception($this->text('no-record-selected'));
                 }
 
+                if (($logoRemovedRequested || $newUploadedFile !== null)
+                    && !empty($oldLogoFile)
+                    && $oldLogoFile !== ($payload['logo_file'] ?? '')
+                    && \file_exists($oldLogoFile)
+                ) {
+                    \unlink($oldLogoFile);
+                }
+
                 // Амжилттай JSON
                 $this->respondJSON([
                     'status'  => 'success',
@@ -364,6 +364,12 @@ class OrganizationController extends FileController
                 )->render();
             }
         } catch (\Throwable $err) {
+            if (isset($newUploadedFile)
+                && !empty($newUploadedFile)
+                && \file_exists($newUploadedFile)
+            ) {
+                \unlink($newUploadedFile);
+            }
             // Алдаа гарсан үед -> PUT=JSON / GET=Modal хэлбэрээр хариулна
             if ($this->getRequest()->getMethod() == 'PUT') {
                 $this->respondJSON(['message' => $err->getMessage()], $err->getCode());
@@ -512,18 +518,14 @@ class OrganizationController extends FileController
                 throw new \Exception('Only deactivated organizations can be permanently deleted!', 403);
             }
 
-            // Logo файлыг устгах
+            $model->deleteById($id);
+
             if (!empty($org['logo'])) {
                 $logoPath = $this->getPublicPath() . $org['logo'];
                 if (\file_exists($logoPath)) {
                     \unlink($logoPath);
                 }
             }
-
-            // FK constraint түр унтрааж устгана
-            $model->setForeignKeyChecks(false);
-            $model->deleteById($id);
-            $model->setForeignKeyChecks(true);
 
             $this->respondJSON([
                 'status'  => 'success',

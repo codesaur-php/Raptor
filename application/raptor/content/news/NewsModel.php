@@ -127,8 +127,6 @@ class NewsModel extends Model
      */
     protected function __initial()
     {
-        $this->setForeignKeyChecks(false);
-
         $table = $this->getName();
         $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
         // Foreign key constraint-ууд үүсгэх
@@ -147,8 +145,6 @@ class NewsModel extends Model
                 "ON UPDATE CASCADE"
             );
         }
-
-        $this->setForeignKeyChecks(true);
 
         // Хайлт, шүүлтийн гүйцэтгэлийг сайжруулах индексүүд
         $this->exec("CREATE INDEX {$table}_idx_published ON $table (published)");

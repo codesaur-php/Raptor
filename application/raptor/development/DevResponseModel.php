@@ -55,17 +55,10 @@ class DevResponseModel extends Model
     protected function __initial()
     {
         $table = $this->getName();
-
-        $this->setForeignKeyChecks(false);
-
         $requests = (new DevRequestModel($this->pdo))->getName();
         $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
-
         $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_request_id FOREIGN KEY (request_id) REFERENCES $requests(id) ON DELETE CASCADE ON UPDATE CASCADE");
         $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_created_by FOREIGN KEY (created_by) REFERENCES $users(id) ON DELETE SET NULL ON UPDATE CASCADE");
-
-        $this->setForeignKeyChecks(true);
-
         $this->exec("CREATE INDEX {$table}_idx_request_id ON $table (request_id)");
     }
 

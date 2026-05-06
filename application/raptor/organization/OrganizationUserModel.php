@@ -93,9 +93,6 @@ class OrganizationUserModel extends Model
      *      organization_id  -> organizations(id)
      *      created_by       -> users(id)
      *
-     * - FK шалгалтыг түр унтрааж (setForeignKeyChecks(false)),
-     *   тохиргоо хийсний дараа буцааж асаана
-     *
      * - Анхны өгөгдөл: хэрэглэгч 1 -> байгууллага 1 гэсэн харьяаллыг үүсгэнэ.
      *   Энэ нь системийн default холбоос бөгөөд супер админ байгууллагадаа багтах нөхцөл
      *
@@ -104,12 +101,8 @@ class OrganizationUserModel extends Model
     protected function __initial()
     {
         $table = $this->getName();
-
-        $this->setForeignKeyChecks(false);
-
         $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
         $organizations = (new OrganizationModel($this->pdo))->getName();
-
         // user_id -> FK
         $this->exec(
             "ALTER TABLE $table
@@ -119,7 +112,6 @@ class OrganizationUserModel extends Model
              ON DELETE CASCADE
              ON UPDATE CASCADE"
         );
-
         // organization_id -> FK
         $this->exec(
             "ALTER TABLE $table
@@ -129,7 +121,6 @@ class OrganizationUserModel extends Model
              ON DELETE CASCADE
              ON UPDATE CASCADE"
         );
-
         // created_by -> FK
         $this->exec(
             "ALTER TABLE $table
@@ -139,8 +130,6 @@ class OrganizationUserModel extends Model
              ON DELETE SET NULL
              ON UPDATE CASCADE"
         );
-
-        $this->setForeignKeyChecks(true);
 
         // JOIN хайлтын гүйцэтгэлийг сайжруулах индекс
         $this->exec("CREATE INDEX {$table}_idx_user_org ON $table (user_id, organization_id)");

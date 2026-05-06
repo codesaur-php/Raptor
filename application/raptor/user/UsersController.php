@@ -2,7 +2,6 @@
 
 namespace Raptor\User;
 
-
 use Psr\Log\LogLevel;
 
 use codesaur\DataObject\Constants;
@@ -542,29 +541,22 @@ class UsersController extends FileController
                     );
                 }
                 
-                // Хэрэв хэрэглэгч зураг устгахыг сонгосон бол
-                if ($payload['photo_removed'] == 1) {
-                    if (\file_exists($record['photo_file'])) {
-                        \unlink($record['photo_file']);
-                        $record['photo_file'] = '';
-                    }
+                $oldPhotoFile = $record['photo_file'] ?? '';
+                $photoRemovedRequested = (int)($payload['photo_removed'] ?? 0) === 1;
+                $newUploadedFile = null;
+
+                if ($photoRemovedRequested) {
                     $payload['photo'] = '';
                     $payload['photo_file'] = '';
                     $payload['photo_size'] = 0;
                 }
                 unset($payload['photo_removed']);
-                
-                // Зураг upload хийх
+
                 $this->setFolder("/{$model->getName()}/$id");
                 $this->allowImageOnly();
                 $photo = $this->moveUploaded('photo');
                 if ($photo) {
-                    if (!empty($record['photo_file'])
-                        && \file_exists($record['photo_file'])
-                    ) {
-                        // Хуучин зураг байвал устгана
-                        \unlink($record['photo_file']);
-                    }
+                    $newUploadedFile = $photo['file'];
                     $payload['photo'] = $photo['path'];
                     $payload['photo_file'] = $photo['file'];
                     $payload['photo_size'] = $photo['size'];
@@ -598,8 +590,16 @@ class UsersController extends FileController
                     throw new \Exception($this->text('no-record-selected'));
                 }
 
-                // Client-рүү амжилттай JSON хариу хэвлэх                
-                $this->respondJSON([ 
+                if (($photoRemovedRequested || $newUploadedFile !== null)
+                    && !empty($oldPhotoFile)
+                    && $oldPhotoFile !== ($payload['photo_file'] ?? '')
+                    && \file_exists($oldPhotoFile)
+                ) {
+                    \unlink($oldPhotoFile);
+                }
+
+                // Client-рүү амжилттай JSON хариу хэвлэх
+                $this->respondJSON([
                     'type' => 'primary',
                     'status' => 'success',
                     'message' => $this->text('record-update-success')
@@ -680,6 +680,11 @@ class UsersController extends FileController
                 $dashboard->render();
             }
         } catch (\Throwable $err) {
+            if (isset($newUploadedFile) && !empty($newUploadedFile)
+                && \file_exists($newUploadedFile)
+            ) {
+                \unlink($newUploadedFile);
+            }
             if ($this->getRequest()->getMethod() == 'PUT') {
                 // PUT үед JSON рендерлэнэ
                 $this->respondJSON(['message' => $err->getMessage()], $err->getCode());
@@ -955,18 +960,14 @@ class UsersController extends FileController
                 throw new \Exception('Only deactivated users can be permanently deleted!', 403);
             }
 
-            // Profile photo файлыг устгах
+            $model->deleteById($id);
+
             if (!empty($user['photo'])) {
                 $photoPath = $this->getPublicPath() . $user['photo'];
                 if (\file_exists($photoPath)) {
                     \unlink($photoPath);
                 }
             }
-
-            // FK constraint түр унтрааж устгана
-            $model->setForeignKeyChecks(false);
-            $model->deleteById($id);
-            $model->setForeignKeyChecks(true);
 
             $this->respondJSON([
                 'status'  => 'success',

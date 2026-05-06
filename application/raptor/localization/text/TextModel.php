@@ -129,11 +129,7 @@ class TextModel extends LocalizedModel
     protected function __initial()
     {
         $table = $this->getName();
-
-        $this->setForeignKeyChecks(false);
-
         $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
-
         // created_by FK
         $this->exec(
             "ALTER TABLE $table
@@ -141,7 +137,6 @@ class TextModel extends LocalizedModel
              FOREIGN KEY (created_by) REFERENCES $users(id)
              ON DELETE SET NULL ON UPDATE CASCADE"
         );
-
         // updated_by FK
         $this->exec(
             "ALTER TABLE $table
@@ -149,8 +144,6 @@ class TextModel extends LocalizedModel
              FOREIGN KEY (updated_by) REFERENCES $users(id)
              ON DELETE SET NULL ON UPDATE CASCADE"
         );
-
-        $this->setForeignKeyChecks(true);
 
         // TextInitial class дотор анхны өгөгдөл суулгах
         TextInitial::localization_text($this);

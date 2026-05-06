@@ -483,7 +483,15 @@ class LanguageController extends \Raptor\Controller
                 }
 
                 // parent table баганууд
-                $table_query = $this->query("SHOW COLUMNS FROM $table");
+                if ($this->getDriverName() == Constants::DRIVER_PGSQL) {
+                    $table_query = $this->query(
+                        "SELECT column_name FROM information_schema.columns " .
+                        "WHERE table_schema = 'public' AND table_name = " . $this->quote($table) .
+                        " ORDER BY ordinal_position"
+                    );
+                } else {
+                    $table_query = $this->query("SHOW COLUMNS FROM $table");
+                }
                 $table_columns = $table_query->fetchAll();
                 $update = false;
                 $primary = false;
@@ -491,7 +499,8 @@ class LanguageController extends \Raptor\Controller
                 $update_arguments = [];
                 $by_account = $this->getUserId();
                 foreach ($table_columns as $column) {
-                    $name = $column['Field'];
+                    $name = $this->getDriverName() == Constants::DRIVER_PGSQL
+                        ? $column['column_name'] : $column['Field'];
                     if ($name == 'id') {
                         $primary = true;
                     } elseif ($name == 'updated_at') {

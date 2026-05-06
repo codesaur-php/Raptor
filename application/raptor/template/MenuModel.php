@@ -71,9 +71,6 @@ class MenuModel extends LocalizedModel
     protected function __initial()
     {
         $table = $this->getName();
-
-        $this->setForeignKeyChecks(false);
-
         $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
         // created_by / updated_by -> Users FK
         $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_created_by
@@ -82,9 +79,7 @@ class MenuModel extends LocalizedModel
         $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_updated_by
                      FOREIGN KEY (updated_by) REFERENCES $users(id)
                      ON DELETE SET NULL ON UPDATE CASCADE");
-
-        $this->setForeignKeyChecks(true);
-
+        
         // Цэсний мод бүтэц, эрэмбэлэлтийн гүйцэтгэлийг сайжруулах индекс
         $this->exec("CREATE INDEX {$table}_idx_parent_id ON $table (parent_id)");
 

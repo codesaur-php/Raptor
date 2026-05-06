@@ -105,8 +105,6 @@ class Permissions extends Model
     protected function __initial()
     {
         $table = $this->getName();
-
-        $this->setForeignKeyChecks(false);
         $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
         $this->exec("
             ALTER TABLE $table
@@ -116,8 +114,7 @@ class Permissions extends Model
             ON DELETE SET NULL
             ON UPDATE CASCADE
         ");
-        $this->setForeignKeyChecks(true);
-
+        
         PermissionsSeed::seed($table, $this->pdo);
     }
 

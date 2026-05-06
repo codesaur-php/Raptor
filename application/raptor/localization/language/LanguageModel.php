@@ -110,11 +110,7 @@ class LanguageModel extends Model
     protected function __initial()
     {
         $table = $this->getName();
-
-        $this->setForeignKeyChecks(false);
-
         $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
-
         /* created_by -> users(id) холбоос */
         $this->exec(
             "ALTER TABLE $table
@@ -122,7 +118,6 @@ class LanguageModel extends Model
              FOREIGN KEY (created_by) REFERENCES $users(id)
              ON DELETE SET NULL ON UPDATE CASCADE"
         );
-
         /* updated_by -> users(id) холбоос */
         $this->exec(
             "ALTER TABLE $table
@@ -130,9 +125,6 @@ class LanguageModel extends Model
              FOREIGN KEY (updated_by) REFERENCES $users(id)
              ON DELETE SET NULL ON UPDATE CASCADE"
         );
-
-        $this->setForeignKeyChecks(true);
-
         /* Анхны 2 хэл бүртгэх */
         $nowdate = \date('Y-m-d H:i:s');
         $query =

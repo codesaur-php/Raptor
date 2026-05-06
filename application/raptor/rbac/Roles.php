@@ -111,8 +111,6 @@ class Roles extends Model
     protected function __initial()
     {
         $table = $this->getName();
-
-        $this->setForeignKeyChecks(false);
         $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
         // FK created_by -> users.id
         $this->exec("
@@ -123,8 +121,6 @@ class Roles extends Model
             ON DELETE SET NULL
             ON UPDATE CASCADE
         ");
-        $this->setForeignKeyChecks(true);
-
         // coder роль - системийн super-admin, бүх эрхтэй
         $stmt = $this->pdo->prepare(
             "INSERT INTO $table (created_at, name, description, alias) VALUES (:now, 'coder', 'Coder can do anything!', 'system')"

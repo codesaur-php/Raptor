@@ -32,7 +32,7 @@
         "firebase/php-jwt": "^7.0.2",
 
         "codesaur/http-application": "^6.0.2",
-        "codesaur/dataobject": "^9.1.0",
+        "codesaur/dataobject": "^10.0.0",
         "codesaur/http-client": "^2.1.0",
         "codesaur/template": "^4.0.1",
         "codesaur/container": "^3.1.3"

@@ -68,8 +68,6 @@ class ForgotModel extends Model
      */
     protected function __initial()
     {
-        $this->setForeignKeyChecks(false);
-
         $table = $this->getName();
         $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
         $this->exec("
@@ -80,8 +78,6 @@ class ForgotModel extends Model
             ON DELETE SET NULL
             ON UPDATE CASCADE
         ");
-
-        $this->setForeignKeyChecks(true);
 
         $this->exec("CREATE INDEX {$table}_idx_user_id ON $table (user_id)");
     }

@@ -87,18 +87,13 @@ class SettingsModel extends LocalizedModel
      * Энд:
      *  - `created_by` -> users.id рүү FK
      *  - `updated_by` -> users.id рүү FK
-     *  - FK fail болохоос сэргийлж түр хугацаанд foreign_key_checks-ийг унтраана.
      *
      * @return void
      */
     protected function __initial(): void
     {
         $table = $this->getName();
-
-        $this->setForeignKeyChecks(false);
-
         $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
-
         // created_by талбарын FK
         $this->exec(
             "ALTER TABLE $table
@@ -107,7 +102,6 @@ class SettingsModel extends LocalizedModel
              ON DELETE SET NULL
              ON UPDATE CASCADE"
         );
-
         // updated_by талбарын FK
         $this->exec(
             "ALTER TABLE $table
@@ -116,8 +110,6 @@ class SettingsModel extends LocalizedModel
              ON DELETE SET NULL
              ON UPDATE CASCADE"
         );
-
-        $this->setForeignKeyChecks(true);
 
         $path = \dirname($_SERVER['SCRIPT_NAME'] ?? '/');
         if ($path == '\\' || $path == '/' || $path == '.') {

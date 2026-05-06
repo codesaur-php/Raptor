@@ -6,6 +6,39 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 
 ---
 
+## [3.1.0] - 2026-05-06
+[3.1.0]: https://github.com/codesaur-php/Raptor/compare/v3.0.0...v3.1.0
+
+`codesaur/dataobject` upgraded to v10.0.0 (which dropped `setForeignKeyChecks()`); 24 redundant FK-toggle wrappers around `ALTER TABLE ADD CONSTRAINT FOREIGN KEY` removed framework-wide; PostgreSQL deployments no longer require the application DB user to hold `SUPERUSER` privilege. Plus PostgreSQL compatibility fixes in news archive and language copy-content flows, and safer file lifecycle around hard-delete and profile/logo update.
+
+### Breaking Changes
+
+- **`codesaur/dataobject` upgraded to v10.0.0** which drops `setForeignKeyChecks(bool $enable)` from `PDOTrait`. Anyone with custom Models under `application/` that wrapped `ALTER TABLE ADD CONSTRAINT FOREIGN KEY` in `$this->setForeignKeyChecks(false)` ... `(true)` brackets must remove those calls (they were redundant on freshly-created empty tables anyway). If real toggling is genuinely needed, write the raw SQL directly:
+  - MySQL: `$this->exec('SET foreign_key_checks=0')` / `=1`
+  - PostgreSQL: `$this->exec("SET session_replication_role='replica'")` / `'origin'` (still requires SUPERUSER)
+  - SQLite: `$this->exec('PRAGMA foreign_keys=OFF')` / `=ON`
+
+### Removed
+
+- **24 redundant `setForeignKeyChecks()` calls** stripped from framework Models and Controllers:
+  - 22 model `__initial()` hooks - ProductsModel, ReviewsModel, ProductOrdersModel, DevRequestModel, DevResponseModel, LanguageModel, TextModel, SignupModel, ForgotModel, SettingsModel, OrganizationModel, OrganizationUserModel, Roles, Permissions, RolePermission, UserRole, FilesModel, NewsModel, CommentsModel, PagesModel, ReferenceModel, MenuModel
+  - 2 controller hard-delete blocks - UsersController, OrganizationController
+  - All wrapped only `ALTER TABLE ADD CONSTRAINT FOREIGN KEY` on JUST-CREATED (empty) tables, where FK validation cannot fail. The toggling was over-defensive copy-paste from earlier MySQL-only days.
+  - **Side effect:** PostgreSQL deployments no longer need `SUPERUSER`. After upgrade run `ALTER USER <app_db_user> NOSUPERUSER;` to revoke the previously-required privilege.
+
+### Changed
+
+- **Hard-delete file cleanup ordering** - `UsersController::delete()` and `OrganizationController::delete()` now `unlink()` the profile photo / logo file **after** `$model->deleteById($id)` succeeds. Previously the file was deleted first; if the DB delete failed (e.g. FK violation, permission denied) the record stayed pointing to a missing file - "хагас орхигдсон линк".
+- **Profile/Org update file lifecycle** - `UsersController::update()` and `OrganizationController::update()` defer old-file `unlink()` until after `updateById()` returns successfully, and the `catch` block rolls back any newly uploaded file if the UPDATE failed. Previously the old file was unlinked before UPDATE, and a failed UPDATE left a freshly uploaded file orphaned on disk while the record still referenced the deleted old path.
+- Stale docblock fragments referencing the removed FK-toggle pattern cleaned up in SignupModel, OrganizationUserModel, OrganizationModel, SettingsModel. Stale "// FK constraint түр унтрааж устгана" inline comments removed from UsersController and OrganizationController delete blocks.
+
+### Fixed
+
+- **PostgreSQL: news archive crashed on first request** with `SQLSTATE[42883]: function year(timestamp without time zone) does not exist`. `Web\Content\NewsController::archive()` now branches on `getDriverName()`: `EXTRACT(YEAR FROM published_at)::int` / `EXTRACT(MONTH FROM published_at)::int` on PostgreSQL, `YEAR()` / `MONTH()` on MySQL.
+- **PostgreSQL: language copy-content broke on second metadata lookup** - the first column-metadata query in `Raptor\Localization\LanguageController` was already driver-aware (`information_schema.columns` vs `SHOW COLUMNS`) but a sibling lookup a few lines below ran an unconditional `SHOW COLUMNS FROM $table` and accessed `$column['Field']`. Both branches now match: `information_schema.columns` + `column_name` on PostgreSQL, `SHOW COLUMNS` + `Field` on MySQL.
+
+---
+
 ## [3.0.0] - 2026-04-28
 [3.0.0]: https://github.com/codesaur-php/Raptor/compare/v2.2.0...v3.0.0
 

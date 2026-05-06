@@ -134,9 +134,6 @@ class UserRole extends Model
     protected function __initial()
     {
         $table = $this->getName();
-
-        $this->setForeignKeyChecks(false);
-
         $roles = (new Roles($this->pdo))->getName();
         $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
         // FK: user_id -> users.id
@@ -165,10 +162,8 @@ class UserRole extends Model
                 REFERENCES $users(id)
                 ON DELETE SET NULL
                 ON UPDATE CASCADE
-            ");
-
-        $this->setForeignKeyChecks(true);
-
+        ");
+        
         // Анхны супер админ холболт
         $nowdate = \date('Y-m-d H:i:s');
         $query = "INSERT INTO $table(created_at, user_id, role_id)

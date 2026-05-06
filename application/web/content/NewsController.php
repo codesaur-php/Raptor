@@ -4,6 +4,7 @@ namespace Web\Content;
 
 use Psr\Log\LogLevel;
 
+use codesaur\DataObject\Constants;
 use codesaur\Template\MemoryTemplate;
 
 use Raptor\Content\NewsModel;
@@ -212,9 +213,13 @@ class NewsController extends TemplateController
         $news_table = (new NewsModel($this->pdo))->getName();
         $selectedYear = $this->getQueryParams()['year'] ?? null;
 
+        $isPg = $this->getDriverName() === Constants::DRIVER_PGSQL;
+        $yearExpr  = $isPg ? "EXTRACT(YEAR FROM published_at)::int"  : "YEAR(published_at)";
+        $monthExpr = $isPg ? "EXTRACT(MONTH FROM published_at)::int" : "MONTH(published_at)";
+
         // Жилүүдийн жагсаалт
         $stmt = $this->prepare(
-            "SELECT DISTINCT YEAR(published_at) AS y FROM $news_table
+            "SELECT DISTINCT $yearExpr AS y FROM $news_table
              WHERE published=1 AND code=:code
              ORDER BY y DESC"
         );
@@ -228,10 +233,10 @@ class NewsController extends TemplateController
         $months = [];
         if ($selectedYear) {
             $stmt = $this->prepare(
-                "SELECT id, title, slug, published_at, MONTH(published_at) AS m
+                "SELECT id, title, slug, published_at, $monthExpr AS m
                  FROM $news_table
                  WHERE published=1 AND code=:code
-                   AND YEAR(published_at) = :year
+                   AND $yearExpr = :year
                  ORDER BY published_at DESC"
             );
             $stmt->bindValue(':code', $code);

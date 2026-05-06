@@ -393,7 +393,6 @@ Rules:
 
 - **Users, Organizations, Signup** use soft delete (`deactivateById`, `is_active=0`) with optional hard delete for deactivated records
 - **All other models** use hard delete (`deleteById`) directly. Deleted data is preserved in the `trash` table via `TrashModel::store()` before deletion
-- Hard delete for Users/Organizations uses `setForeignKeyChecks(false)` before `deleteById()`
 
 ## Cache
 

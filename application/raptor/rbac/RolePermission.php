@@ -108,10 +108,7 @@ class RolePermission extends Model
      */
     protected function __initial()
     {
-        $table = $this->getName();
-
-        $this->setForeignKeyChecks(false);
-
+        $table       = $this->getName();
         $roles       = (new Roles($this->pdo))->getName();
         $permissions = (new Permissions($this->pdo))->getName();
         $users       = (new \Raptor\User\UsersModel($this->pdo))->getName();
@@ -133,8 +130,6 @@ class RolePermission extends Model
             FOREIGN KEY (created_by) REFERENCES $users(id)
             ON DELETE SET NULL ON UPDATE CASCADE
         ");
-
-        $this->setForeignKeyChecks(true);
 
         RolePermissionSeed::seed($table, $roles, $permissions, $this->pdo);
     }

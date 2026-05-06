@@ -70,8 +70,6 @@ class ProductsModel extends Model
      */
     protected function __initial()
     {
-        $this->setForeignKeyChecks(false);
-
         $table = $this->getName();
         $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
         $constraints = [
@@ -89,8 +87,6 @@ class ProductsModel extends Model
                 "ON UPDATE CASCADE"
             );
         }
-
-        $this->setForeignKeyChecks(true);
 
         // Хайлт, шүүлтийн гүйцэтгэлийг сайжруулах индексүүд
         $this->exec("CREATE INDEX {$table}_idx_published ON $table (published)");

@@ -75,8 +75,6 @@ class ProductOrdersModel extends Model
      */
     protected function __initial()
     {
-        $this->setForeignKeyChecks(false);
-
         $table = $this->getName();
         $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
         $products = (new ProductsModel($this->pdo))->getName();
@@ -102,8 +100,6 @@ class ProductOrdersModel extends Model
             "ON DELETE SET NULL " .
             "ON UPDATE CASCADE"
         );
-
-        $this->setForeignKeyChecks(true);
 
         $this->exec("CREATE INDEX {$table}_idx_status ON $table (status)");
         $this->exec("CREATE INDEX {$table}_idx_product_id ON $table (product_id)");

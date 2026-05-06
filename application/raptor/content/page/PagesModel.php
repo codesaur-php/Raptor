@@ -78,16 +78,12 @@ class PagesModel extends Model
     protected function __initial()
     {
         $table = $this->getName();
-
-        $this->setForeignKeyChecks(false);
         $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
-
         $constraints = [
             'published_by' => "{$table}_fk_published_by",
             'created_by'   => "{$table}_fk_created_by",
             'updated_by'   => "{$table}_fk_updated_by"
         ];
-
         foreach ($constraints as $column => $constraint) {
             $this->exec(
                 "ALTER TABLE $table " .
@@ -98,8 +94,6 @@ class PagesModel extends Model
                 "ON UPDATE CASCADE"
             );
         }
-
-        $this->setForeignKeyChecks(true);
 
         // Хайлт, шүүлтийн гүйцэтгэлийг сайжруулах индексүүд
         $this->exec("CREATE INDEX {$table}_idx_parent_id ON $table (parent_id)");

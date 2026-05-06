@@ -49,9 +49,7 @@ class ReviewsModel extends Model
      * @return void
      */
     protected function __initial()
-    {
-        $this->setForeignKeyChecks(false);
-        
+    {        
         $table = $this->getName();
         $products = (new ProductsModel($this->pdo))->getName();
         $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
@@ -64,9 +62,7 @@ class ReviewsModel extends Model
             "ALTER TABLE $table ADD CONSTRAINT {$table}_fk_created_by
              FOREIGN KEY (created_by) REFERENCES $users(id)
              ON DELETE SET NULL ON UPDATE CASCADE"
-        );
-        
-        $this->setForeignKeyChecks(true);
+        );        
 
         $this->exec("CREATE INDEX {$table}_idx_product ON $table (product_id)");
         $this->exec("CREATE INDEX {$table}_idx_product_rating ON $table (product_id, rating)");

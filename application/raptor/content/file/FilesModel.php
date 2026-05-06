@@ -176,9 +176,7 @@ class FilesModel extends Model
      * @return void
      */
     protected function __initial()
-    {
-        $this->setForeignKeyChecks(false);
-     
+    {     
         $my_name = $this->getName();
         $record_name = $this->getRecordName();
         $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
@@ -186,9 +184,7 @@ class FilesModel extends Model
         $this->exec("ALTER TABLE $my_name ADD CONSTRAINT {$my_name}_fk_updated_by FOREIGN KEY (updated_by) REFERENCES $users(id) ON DELETE SET NULL ON UPDATE CASCADE");
         if ($this->hasTable($record_name)) {
             $this->exec("ALTER TABLE $my_name ADD CONSTRAINT {$my_name}_fk_record_id FOREIGN KEY (record_id) REFERENCES $record_name(id) ON DELETE SET NULL ON UPDATE CASCADE");
-        }
-        
-        $this->setForeignKeyChecks(true);
+        }        
 
         // Файл хайлтын гүйцэтгэлийг сайжруулах индекс
         $this->exec("CREATE INDEX {$my_name}_idx_record_id ON $my_name (record_id)");
