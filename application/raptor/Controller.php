@@ -5,7 +5,7 @@ namespace Raptor;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Container\ContainerInterface;
 use codesaur\Template\FileTemplate;
-use codesaur\Http\Message\ReasonPrhase;
+use codesaur\Http\Message\ReasonPhrase;
 
 use Raptor\Authentication\User;
 use Raptor\Log\Logger;
@@ -249,7 +249,7 @@ abstract class Controller extends \codesaur\Http\Application\Controller
     protected function headerResponseCode(int|string $code)
     {
         if (\headers_sent() || empty($code) || $code == 200
-            || !\defined(ReasonPrhase::class . "::STATUS_$code")
+            || !\defined(ReasonPhrase::class . "::STATUS_$code")
         ) {
             return; // үйлдэл хийхгүй
         }
@@ -476,7 +476,7 @@ abstract class Controller extends \codesaur\Http\Application\Controller
             if (!empty($code)
                 && \is_int($code)
                 && $code != 200
-                && \defined(ReasonPrhase::class . "::STATUS_$code")
+                && \defined(ReasonPhrase::class . "::STATUS_$code")
             ) {
                 \http_response_code($code);
             }

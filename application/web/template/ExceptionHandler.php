@@ -3,7 +3,7 @@
 namespace Web\Template;
 
 use codesaur\Template\FileTemplate;
-use codesaur\Http\Message\ReasonPrhase;
+use codesaur\Http\Message\ReasonPhrase;
 use codesaur\Http\Application\ExceptionHandler as Base;
 use codesaur\Http\Application\ExceptionHandlerInterface;
 
@@ -31,9 +31,9 @@ class ExceptionHandler implements ExceptionHandlerInterface
         $title = $throwable instanceof \Exception ? 'Exception' : 'Error';
 
         if ($code != 0) {
-            if (\class_exists(ReasonPrhase::class)) {
+            if (\class_exists(ReasonPhrase::class)) {
                 $status = "STATUS_$code";
-                $reasonPhrase = ReasonPrhase::class;
+                $reasonPhrase = ReasonPhrase::class;
                 if (\defined("$reasonPhrase::$status") && !\headers_sent()) {
                     \http_response_code($code);
                 }

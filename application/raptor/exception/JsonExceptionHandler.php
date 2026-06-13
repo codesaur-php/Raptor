@@ -2,7 +2,7 @@
 
 namespace Raptor\Exception;
 
-use codesaur\Http\Message\ReasonPrhase;
+use codesaur\Http\Message\ReasonPhrase;
 use codesaur\Http\Application\ExceptionHandlerInterface;
 
 /**
@@ -46,7 +46,7 @@ use codesaur\Http\Application\ExceptionHandlerInterface;
  *
  * > HTTP статус кодын тохиргоо:
  * -----------------------------------------
- * Throwable код нь 0 биш бол ReasonPrhase классыг ашиглан
+ * Throwable код нь 0 биш бол ReasonPhrase классыг ашиглан
  * тохирох HTTP статус кодыг автоматаар тохируулна:
  *
  *   - 400 Bad Request
@@ -73,7 +73,7 @@ class JsonExceptionHandler implements ExceptionHandlerInterface
         
         if ($code != 0) {
             $status = "STATUS_$code";
-            $reasonPhrase = ReasonPrhase::class;
+            $reasonPhrase = ReasonPhrase::class;
             if (\defined("$reasonPhrase::$status") && !\headers_sent()) {
                 \http_response_code($code);
             }

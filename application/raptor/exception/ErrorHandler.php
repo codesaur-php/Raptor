@@ -3,7 +3,7 @@
 namespace Raptor\Exception;
 
 use codesaur\Template\FileTemplate;
-use codesaur\Http\Message\ReasonPrhase;
+use codesaur\Http\Message\ReasonPhrase;
 use codesaur\Http\Application\ExceptionHandler as Base;
 use codesaur\Http\Application\ExceptionHandlerInterface;
 
@@ -71,9 +71,9 @@ class ErrorHandler implements ExceptionHandlerInterface
             $title .= " $code";
 
             // HTTP статус код тохируулах боломжтой эсэхийг шалгах
-            if (\class_exists(ReasonPrhase::class)) {
+            if (\class_exists(ReasonPhrase::class)) {
                 $status = "STATUS_$code";
-                $reasonPhrase = ReasonPrhase::class;
+                $reasonPhrase = ReasonPhrase::class;
 
                 // Status constant байвал -> HTTP статус илгээх
                 if (\defined("$reasonPhrase::$status") && !\headers_sent()) {

@@ -38,6 +38,7 @@ This cycle consolidates database access behind a single `DatabaseConnection` fac
 
 ### Fixed
 
+- **`ReasonPhrase` class typo** - the class name was misspelled `ReasonPrhase` across `Controller`, `ErrorHandler`, `JsonExceptionHandler`, and web `ExceptionHandler`. Since `::class` resolves to a literal string without requiring the class to exist, `\defined(ReasonPrhase::class . "::STATUS_$code")` and `\class_exists(ReasonPrhase::class)` always returned false. As a result `Controller::headerResponseCode()` returned early for every code and never called `http_response_code()` - so all error responses (401/403/404/500, e.g. `ProtectedFilesController::read()` rejecting an unauthenticated request or a `protected/cache/` access) silently fell back to `200 OK` with an empty body. Corrected to `ReasonPhrase` everywhere; HTTP error codes are now emitted as intended.
 - **JWTAuthMiddleware** - `$handler->handle()` is now called exactly once outside try/catch. Previously it was called inside `try`, so a downstream controller exception was caught here and masked as a login redirect (or double-handled on login pages); exceptions now propagate to the ErrorHandler as intended.
 - **OrganizationUserModel::retrieve()** - return type `: array` -> `: array|false`. `return false` on a no-row result threw a TypeError, which broke the `system_coder` organization-switch flow.
 - **WebLogStats** - dashboard home order stats queried a non-existent `orders` table (always 0); now queries `products_orders`.
