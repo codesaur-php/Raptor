@@ -23,7 +23,7 @@ class NewsSamples
         if ($path == '\\' || $path == '/' || $path == '.') {
             $path = '';
         }
-        
+
         $seed = [
             'category' => '_raptor_sample_',
             'published' => 1,
@@ -38,7 +38,7 @@ class NewsSamples
             'source' => 'codesaur.net, packagist.org, github.com',
             'photo' => $path . '/assets/images/code.jpg',
             'content' => '<p><a href="https://github.com/codesaur-php/Raptor" target="_blank">Raptor Framework</a> амжилттай суулгагдлаа. '
-                . 'Та одоо <a href="' . $path . '/dashboard">хянах самбар</a>аас контент удирдах боломжтой.</p>'
+                . 'Та одоо хянах самбараас контент удирдах боломжтой.</p>'
                 . '<p>Ашиглагдаж буй codesaur package-ууд:</p>'
                 . '<ul>'
                 . '<li><a href="https://github.com/codesaur-php/http-application" target="_blank">codesaur/http-application</a> - PSR-7/15 HTTP Application, Middleware</li>'
@@ -64,7 +64,7 @@ class NewsSamples
             'code' => 'mn',
             'type' => 'guide',
             'title' => 'CMS систем ашиглах заавар',
-            'content' => '<p><a href="' . $path . '/dashboard">Хянах самбар</a>т нэвтэрч мэдээ болон хуудсуудыг удирдаарай. '
+            'content' => '<p>Хянах самбарт нэвтэрч мэдээ болон хуудсуудыг удирдаарай. '
                 . 'Анхдагч нэвтрэх: admin / password</p>'
         ]);
 
@@ -76,7 +76,7 @@ class NewsSamples
             'source' => 'codesaur.net, packagist.org, github.com',
             'photo' => $path . '/assets/images/code.jpg',
             'content' => '<p><a href="https://github.com/codesaur-php/Raptor" target="_blank">Raptor Framework</a> has been successfully installed. '
-                . 'You can now manage content from the <a href="' . $path . '/dashboard">admin dashboard</a>.</p>'
+                . 'You can now manage content from the admin dashboard.</p>'
                 . '<p>codesaur packages in use:</p>'
                 . '<ul>'
                 . '<li><a href="https://github.com/codesaur-php/http-application" target="_blank">codesaur/http-application</a> - PSR-7/15 HTTP Application, Middleware</li>'
@@ -102,7 +102,7 @@ class NewsSamples
             'code' => 'en',
             'type' => 'guide',
             'title' => 'Getting Started with CMS',
-            'content' => '<p>Log in to the <a href="' . $path . '/dashboard">admin dashboard</a> to manage news and pages. '
+            'content' => '<p>Log in to the admin dashboard to manage news and pages. '
                 . 'Default credentials: admin / password</p>'
         ]);
     }

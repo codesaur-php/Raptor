@@ -77,8 +77,9 @@ class CommentsController extends \Raptor\Controller
      */
     public function view(int $id)
     {
-        $path = $this->getScriptPath();
-        \header("Location: $path/dashboard/news/view/$id#comments");
+        // Named route ашиглан mount-aware URL үүсгэнэ (/dashboard prefix авто нэмэгдэнэ)
+        $url = $this->generateRouteLink('news-view', ['id' => $id]);
+        \header("Location: $url#comments");
         exit;
     }
 

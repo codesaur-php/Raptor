@@ -177,8 +177,8 @@ class Logger extends AbstractLogger
     {
         $flat = $this->flattenArray($context);
         $replace = [];
-        foreach ($flat as $key => $val) {
-            $replace['{' . $key . '}'] = (string)$val;
+        foreach ($flat as $key => $value) {
+            $replace['{' . $key . '}'] = (string)$value;
         }
         return \strtr($message, $replace);
     }

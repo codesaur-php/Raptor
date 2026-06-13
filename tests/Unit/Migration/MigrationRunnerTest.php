@@ -6,298 +6,181 @@ use Tests\Support\RaptorTestCase;
 use Raptor\Migration\MigrationRunner;
 
 /**
- * MigrationRunner-ийн цэвэр логикийн тестүүд.
- * DB шаардахгүй method-уудыг шалгана: parseFile(), splitStatements().
+ * Pure-logic unit tests for `MigrationRunner` methods that do not need a DB
+ * (`splitStatements`, `summarize`, `getUserFolderPath`).
+ *
+ * The runner constructor still asks for a PDO so we hand it a mock - none of
+ * these methods touch the DB.
  */
 class MigrationRunnerTest extends RaptorTestCase
 {
-    private string $tmpDir;
     private MigrationRunner $runner;
 
     protected function setUp(): void
     {
         parent::setUp();
-
-        $this->tmpDir = sys_get_temp_dir() . '/raptor_migration_test_' . uniqid();
-        mkdir($this->tmpDir, 0755, true);
-
-        // MigrationRunner-д mock PDO өгнө (parseFile, splitStatements-д хэрэггүй)
         $pdo = $this->createMock(\PDO::class);
-        $this->runner = new MigrationRunner($pdo, $this->tmpDir);
+        // Default runner нь MySQL - dollar-quoting идэвхгүй
+        $pdo->method('getAttribute')->willReturn('mysql');
+        $this->runner = new MigrationRunner($pdo, \sys_get_temp_dir());
     }
 
-    protected function tearDown(): void
+    // ====================== splitStatements() ======================
+
+    public function testSplitsSimpleStatements(): void
     {
-        // Temp файлуудыг цэвэрлэх
-        $this->removeDir($this->tmpDir);
-        parent::tearDown();
+        $sql = "CREATE INDEX i ON t (a); ALTER TABLE t ADD COLUMN b INT;";
+        $this->assertSame(
+            ['CREATE INDEX i ON t (a)', 'ALTER TABLE t ADD COLUMN b INT'],
+            $this->runner->splitStatements($sql)
+        );
     }
 
-    private function removeDir(string $dir): void
+    public function testIgnoresSemicolonInsideStringLiteral(): void
     {
-        if (!is_dir($dir)) {
-            return;
+        $sql = "INSERT INTO t VALUES ('a;b'); INSERT INTO t VALUES ('c');";
+        $this->assertSame(
+            ["INSERT INTO t VALUES ('a;b')", "INSERT INTO t VALUES ('c')"],
+            $this->runner->splitStatements($sql)
+        );
+    }
+
+    public function testIgnoresLineComments(): void
+    {
+        $sql = "-- comment with ; in it\nSELECT 1;";
+        $this->assertSame(['SELECT 1'], $this->runner->splitStatements($sql));
+    }
+
+    public function testHandlesTrailingStatementWithoutSemicolon(): void
+    {
+        $sql = "SELECT 1; SELECT 2";
+        $this->assertSame(['SELECT 1', 'SELECT 2'], $this->runner->splitStatements($sql));
+    }
+
+    public function testHandlesPostgresDollarQuoted(): void
+    {
+        // Dollar-quoting нь зөвхөн PostgreSQL дээр идэвхждэг тул pgsql runner ашиглана
+        $pgPdo = $this->createMock(\PDO::class);
+        $pgPdo->method('getAttribute')->willReturn('pgsql');
+        $runner = new MigrationRunner($pgPdo, \sys_get_temp_dir());
+
+        $sql = "DO \$\$BEGIN; PERFORM 1; END;\$\$ ; SELECT 2;";
+        $statements = $runner->splitStatements($sql);
+        $this->assertCount(2, $statements);
+        $this->assertStringContainsString('BEGIN; PERFORM 1; END;', $statements[0]);
+        $this->assertSame('SELECT 2', $statements[1]);
+    }
+
+    public function testDollarSignNotDollarQuotedOnMysql(): void
+    {
+        // MySQL дээр $$ нь dollar-quote БИШ - statement-ууд ; дээр зөв хуваагдана.
+        // (pgsql-д бол $$...$$ хооронд байх ; залгигдах байсан)
+        $sql = "SELECT a\$\$b; SELECT 2;";
+        $this->assertSame(['SELECT a$$b', 'SELECT 2'], $this->runner->splitStatements($sql));
+    }
+
+    public function testBackslashEscapesQuoteOnMysql(): void
+    {
+        // MySQL: \' нь escaped quote тул string хаагдахгүй -> бүх юм нэг statement
+        $sql = "SELECT 'x\\' AS c; SELECT 2;";
+        $this->assertCount(1, $this->runner->splitStatements($sql));
+    }
+
+    public function testBackslashBeforeQuoteIsLiteralOnPostgres(): void
+    {
+        // PostgreSQL (standard_conforming_strings): backslash literal тул \' нь
+        // quote-г хааж, statement-ууд зөв хуваагдана
+        $pgPdo = $this->createMock(\PDO::class);
+        $pgPdo->method('getAttribute')->willReturn('pgsql');
+        $runner = new MigrationRunner($pgPdo, \sys_get_temp_dir());
+
+        $sql = "SELECT 'x\\' AS c; SELECT 2;";
+        $this->assertCount(2, $runner->splitStatements($sql));
+    }
+
+    public function testSkipsEmptyStatements(): void
+    {
+        $sql = ";;; SELECT 1; ;;";
+        $this->assertSame(['SELECT 1'], $this->runner->splitStatements($sql));
+    }
+
+    // ====================== summarize() ======================
+
+    public function testSummaryUsesFirstLineComment(): void
+    {
+        $sql = "-- Adds product category column\nALTER TABLE products ADD COLUMN category VARCHAR(100);";
+        $this->assertSame('Adds product category column', $this->runner->summarize($sql));
+    }
+
+    public function testSummaryFallsBackToStatementsWhenNoComment(): void
+    {
+        $sql = "ALTER TABLE products ADD COLUMN active TINYINT;\nCREATE INDEX idx_active ON products (active);";
+        $summary = $this->runner->summarize($sql);
+        $this->assertStringContainsString('ALTER TABLE products', $summary);
+        $this->assertStringContainsString('CREATE INDEX', $summary);
+    }
+
+    public function testSummaryTruncatesAt500Chars(): void
+    {
+        $longComment = '-- ' . \str_repeat('x', 700);
+        $summary = $this->runner->summarize($longComment);
+        $this->assertLessThanOrEqual(500, \strlen($summary));
+        $this->assertStringEndsWith('...', $summary);
+    }
+
+    public function testSummaryCapsListAtFiveStatements(): void
+    {
+        $sql = '';
+        for ($i = 1; $i <= 8; $i++) {
+            $sql .= "SELECT $i;\n";
         }
-        foreach (scandir($dir) as $item) {
-            if ($item === '.' || $item === '..') {
-                continue;
-            }
-            $path = $dir . '/' . $item;
-            is_dir($path) ? $this->removeDir($path) : unlink($path);
-        }
-        rmdir($dir);
+        $summary = $this->runner->summarize($sql);
+        $this->assertStringContainsString('SELECT 1', $summary);
+        $this->assertStringContainsString('SELECT 5', $summary);
+        $this->assertStringContainsString('...', $summary);
+        $this->assertStringNotContainsString('SELECT 6', $summary);
     }
 
-    // ===== parseFile() tests =====
+    // ====================== getUserFolderPath() ======================
 
-    public function testParseFileWithUpAndDown(): void
+    public function testFolderPathUsesIdAndUsername(): void
     {
-        $file = $this->tmpDir . '/test.sql';
-        file_put_contents($file, <<<'SQL'
--- [UP]
-ALTER TABLE news ADD COLUMN source VARCHAR(255);
-CREATE INDEX idx_source ON news (source);
-
--- [DOWN]
-ALTER TABLE news DROP COLUMN source;
-SQL);
-
-        $result = $this->runner->parseFile($file);
-
-        $this->assertArrayHasKey('up', $result);
-        $this->assertArrayHasKey('down', $result);
-        $this->assertStringContainsString('ALTER TABLE news ADD COLUMN source', $result['up']);
-        $this->assertStringContainsString('CREATE INDEX idx_source', $result['up']);
-        $this->assertStringContainsString('ALTER TABLE news DROP COLUMN source', $result['down']);
+        $path = $this->runner->getUserFolderPath(12, 'john');
+        $this->assertSame('12-john', \basename($path));
     }
 
-    public function testParseFileUpOnly(): void
+    public function testFolderPathSanitizesInvalidChars(): void
     {
-        $file = $this->tmpDir . '/test.sql';
-        file_put_contents($file, <<<'SQL'
--- [UP]
-ALTER TABLE users ADD COLUMN phone VARCHAR(20);
-SQL);
-
-        $result = $this->runner->parseFile($file);
-
-        $this->assertStringContainsString('ALTER TABLE users ADD COLUMN phone', $result['up']);
-        $this->assertEmpty($result['down']);
+        $path = $this->runner->getUserFolderPath(42, 'john/../etc');
+        // Slashes become _, dots survive (allowed in whitelist), no traversal possible
+        $this->assertSame('42-john_.._etc', \basename($path));
     }
 
-    public function testParseFileNoMarkers(): void
+    public function testFolderPathStripsTrailingDot(): void
     {
-        $file = $this->tmpDir . '/test.sql';
-        file_put_contents($file, 'ALTER TABLE users ADD COLUMN age INT;');
-
-        $result = $this->runner->parseFile($file);
-
-        $this->assertStringContainsString('ALTER TABLE users ADD COLUMN age', $result['up']);
-        $this->assertEmpty($result['down']);
+        $path = $this->runner->getUserFolderPath(7, 'john.');
+        $this->assertSame('7-john', \basename($path));
     }
 
-    public function testParseFileDownOnly(): void
+    public function testFolderPathStripsLeadingDot(): void
     {
-        $file = $this->tmpDir . '/test.sql';
-        file_put_contents($file, <<<'SQL'
--- [DOWN]
-DROP INDEX idx_source ON news;
-SQL);
-
-        $result = $this->runner->parseFile($file);
-
-        $this->assertEmpty($result['up']);
-        $this->assertStringContainsString('DROP INDEX idx_source', $result['down']);
+        $path = $this->runner->getUserFolderPath(7, '.john');
+        $this->assertSame('7-john', \basename($path));
     }
 
-    public function testParseFileCaseInsensitiveMarkers(): void
+    public function testFolderPathFallsBackToUserOnEdgeCases(): void
     {
-        $file = $this->tmpDir . '/test.sql';
-        file_put_contents($file, <<<'SQL'
--- [up]
-ALTER TABLE news ADD COLUMN slug VARCHAR(255);
-
--- [down]
-ALTER TABLE news DROP COLUMN slug;
-SQL);
-
-        $result = $this->runner->parseFile($file);
-
-        $this->assertStringContainsString('slug', $result['up']);
-        $this->assertStringContainsString('DROP COLUMN slug', $result['down']);
+        $this->assertSame('5-user', \basename($this->runner->getUserFolderPath(5, '')));
+        $this->assertSame('5-user', \basename($this->runner->getUserFolderPath(5, '.')));
+        $this->assertSame('5-user', \basename($this->runner->getUserFolderPath(5, '..')));
+        $this->assertSame('5-user', \basename($this->runner->getUserFolderPath(5, 'Наранхүү')));
     }
 
-    // ===== splitStatements() tests =====
-
-    public function testSplitSimpleStatements(): void
+    public function testFolderPathTruncatesLongUsername(): void
     {
-        $sql = "ALTER TABLE news ADD COLUMN source VARCHAR(255);\nCREATE INDEX idx ON news (source);";
-
-        $result = $this->runner->splitStatements($sql);
-
-        $this->assertCount(2, $result);
-        $this->assertStringContainsString('ALTER TABLE', $result[0]);
-        $this->assertStringContainsString('CREATE INDEX', $result[1]);
-    }
-
-    public function testSplitIgnoresEmptyStatements(): void
-    {
-        $sql = "ALTER TABLE news ADD COLUMN x INT;\n;\n;";
-
-        $result = $this->runner->splitStatements($sql);
-
-        $this->assertCount(1, $result);
-    }
-
-    public function testSplitRespectsStringLiterals(): void
-    {
-        $sql = "UPDATE news SET title = 'hello; world' WHERE id = 1;";
-
-        $result = $this->runner->splitStatements($sql);
-
-        $this->assertCount(1, $result);
-        $this->assertStringContainsString("'hello; world'", $result[0]);
-    }
-
-    public function testSplitRespectsDoubleQuotedStrings(): void
-    {
-        $sql = 'UPDATE news SET title = "semi;colon" WHERE id = 1;';
-
-        $result = $this->runner->splitStatements($sql);
-
-        $this->assertCount(1, $result);
-        $this->assertStringContainsString('"semi;colon"', $result[0]);
-    }
-
-    public function testSplitSkipsSQLComments(): void
-    {
-        $sql = "-- This is a comment\nALTER TABLE news ADD COLUMN x INT;";
-
-        $result = $this->runner->splitStatements($sql);
-
-        $this->assertCount(1, $result);
-        $this->assertStringContainsString('ALTER TABLE', $result[0]);
-    }
-
-    public function testSplitNoTrailingSemicolon(): void
-    {
-        $sql = "ALTER TABLE news ADD COLUMN x INT";
-
-        $result = $this->runner->splitStatements($sql);
-
-        $this->assertCount(1, $result);
-    }
-
-    public function testSplitEmptyInput(): void
-    {
-        $result = $this->runner->splitStatements('');
-
-        $this->assertCount(0, $result);
-    }
-
-    public function testSplitMultipleStatementsWithComments(): void
-    {
-        $sql = <<<'SQL'
--- Add source column
-ALTER TABLE news ADD COLUMN source VARCHAR(255);
--- Add index
-CREATE INDEX idx_source ON news (source);
--- Update default
-UPDATE news SET source = 'unknown' WHERE source IS NULL;
-SQL;
-
-        $result = $this->runner->splitStatements($sql);
-
-        $this->assertCount(3, $result);
-    }
-
-    public function testSplitEscapedQuoteInString(): void
-    {
-        $sql = "UPDATE news SET title = 'it\\'s a test' WHERE id = 1;";
-
-        $result = $this->runner->splitStatements($sql);
-
-        $this->assertCount(1, $result);
-        $this->assertStringContainsString("it\\'s a test", $result[0]);
-    }
-
-    // ===== hasPending() tests =====
-
-    public function testHasPendingWithNoFiles(): void
-    {
-        $this->assertFalse($this->runner->hasPending());
-    }
-
-    public function testHasPendingWithSqlFiles(): void
-    {
-        file_put_contents($this->tmpDir . '/add_column.sql', '-- [UP]' . "\n" . 'SELECT 1;');
-
-        $this->assertTrue($this->runner->hasPending());
-    }
-
-    public function testHasPendingIgnoresNonSqlFiles(): void
-    {
-        file_put_contents($this->tmpDir . '/readme.txt', 'not a migration');
-
-        $this->assertFalse($this->runner->hasPending());
-    }
-
-    public function testHasPendingIgnoresRanDirectory(): void
-    {
-        // ran/ дотор SQL файл байгаа ч pending гэж тооцохгүй
-        mkdir($this->tmpDir . '/ran', 0755, true);
-        file_put_contents($this->tmpDir . '/ran/old.sql', 'SELECT 1;');
-
-        $this->assertFalse($this->runner->hasPending());
-    }
-
-    // ===== status() tests =====
-
-    public function testStatusEmptyDirectory(): void
-    {
-        $status = $this->runner->status();
-
-        $this->assertArrayHasKey('ran', $status);
-        $this->assertArrayHasKey('pending', $status);
-        $this->assertEmpty($status['ran']);
-        $this->assertEmpty($status['pending']);
-    }
-
-    public function testStatusWithPendingFiles(): void
-    {
-        file_put_contents($this->tmpDir . '/add_slug.sql', 'SELECT 1;');
-        file_put_contents($this->tmpDir . '/add_source.sql', 'SELECT 1;');
-
-        $status = $this->runner->status();
-
-        $this->assertCount(2, $status['pending']);
-        $this->assertContains('add_slug.sql', $status['pending']);
-        $this->assertContains('add_source.sql', $status['pending']);
-        $this->assertEmpty($status['ran']);
-    }
-
-    public function testStatusWithRanFiles(): void
-    {
-        mkdir($this->tmpDir . '/ran', 0755, true);
-        file_put_contents($this->tmpDir . '/ran/old_migration.sql', 'SELECT 1;');
-
-        $status = $this->runner->status();
-
-        $this->assertCount(1, $status['ran']);
-        $this->assertEquals('old_migration.sql', $status['ran'][0]['file']);
-        $this->assertArrayHasKey('executed_at', $status['ran'][0]);
-        $this->assertEmpty($status['pending']);
-    }
-
-    public function testStatusMixedPendingAndRan(): void
-    {
-        file_put_contents($this->tmpDir . '/new_migration.sql', 'SELECT 1;');
-        mkdir($this->tmpDir . '/ran', 0755, true);
-        file_put_contents($this->tmpDir . '/ran/old_migration.sql', 'SELECT 1;');
-
-        $status = $this->runner->status();
-
-        $this->assertCount(1, $status['pending']);
-        $this->assertCount(1, $status['ran']);
+        $long = \str_repeat('a', 200);
+        $base = \basename($this->runner->getUserFolderPath(9, $long));
+        $this->assertSame(52, \strlen($base)); // "9-" + 50 chars
+        $this->assertStringStartsWith('9-', $base);
     }
 }

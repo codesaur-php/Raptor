@@ -33,16 +33,16 @@ class FileController extends \Raptor\Controller
     protected string $public_path;
 
     /** @var bool Файл давхцвал дарж бичих эсэх */
-    private bool $_overwrite = false;
+    private bool $overwrite = false;
 
     /** @var int|false Файлын хэмжээний хязгаар (байтаар), false бол хязгааргүй */
-    private int|false $_size_limit = false;
+    private int|false $size_limit = false;
 
     /** @var array|false Зөвшөөрөгдсөн файл өргөтгөлүүд, false бол бүгд */
-    private array|false $_allowed_exts = false;
+    private array|false $allowed_exts = false;
 
     /** @var int Upload алдааны код */
-    private int $_upload_error = \UPLOAD_ERR_OK;
+    private int $upload_error = \UPLOAD_ERR_OK;
     
     /**
      * Upload хийх фолдерийг тохируулна.
@@ -88,7 +88,7 @@ class FileController extends \Raptor\Controller
      */
     public function allowExtensions(array $exts)
     {
-        $this->_allowed_exts = $exts;
+        $this->allowed_exts = $exts;
     }
 
     /**
@@ -96,7 +96,7 @@ class FileController extends \Raptor\Controller
      */
     public function allowAnything()
     {
-        $this->_allowed_exts = false;
+        $this->allowed_exts = false;
     }
 
     /**
@@ -129,7 +129,7 @@ class FileController extends \Raptor\Controller
      */
     public function setSizeLimit(int $size)
     {
-        $this->_size_limit = $size;
+        $this->size_limit = $size;
     }
 
     /**
@@ -145,7 +145,7 @@ class FileController extends \Raptor\Controller
      */
     public function setOverwrite(bool $overwrite)
     {
-        $this->_overwrite = $overwrite;
+        $this->overwrite = $overwrite;
     }
     
     /**
@@ -221,8 +221,8 @@ class FileController extends \Raptor\Controller
             }
 
             $file_size = $uploadedFile->getSize();
-            if (!$optimize && $this->_size_limit
-                && $file_size > $this->_size_limit
+            if (!$optimize && $this->size_limit
+                && $file_size > $this->size_limit
             ) {
                 throw new \Exception('The uploaded file exceeds the MAX_FILE_SIZE directive that was specified in the HTML form', \UPLOAD_ERR_FORM_SIZE);
             }
@@ -232,8 +232,8 @@ class FileController extends \Raptor\Controller
             $name = \pathinfo($file_name, \PATHINFO_FILENAME);
             $ext = \strtolower(\pathinfo($file_name, \PATHINFO_EXTENSION));
 
-            if ($this->_allowed_exts
-                && !\in_array($ext, $this->_allowed_exts)
+            if ($this->allowed_exts
+                && !\in_array($ext, $this->allowed_exts)
             ) {
                 throw new \Exception('The uploaded file ext is not allowed', 9);
             }
@@ -241,13 +241,13 @@ class FileController extends \Raptor\Controller
             // Path урт шалгах (VARCHAR(255) - unique suffix _(XXX) = 10 = 245)
             // base = public_path + "/" + "." + ext
             $base_length = \strlen($this->public_path) + 2 + \strlen(\rawurlencode($ext));
-            $max_name_length = 255 - ($this->_overwrite ? 0 : 10) - $base_length;
+            $max_name_length = 255 - ($this->overwrite ? 0 : 10) - $base_length;
             if (\strlen(\rawurlencode($name)) > $max_name_length) {
                 // Нэр хэт урт - file-{uniqid} болгох
                 $name = 'file-' . \uniqid();
                 $file_name = "$name.$ext";
             }
-            if (!$this->_overwrite) {
+            if (!$this->overwrite) {
                 $file_name = $this->uniqueName($upload_path, $name, $ext);
             }
 
@@ -258,7 +258,7 @@ class FileController extends \Raptor\Controller
             }
             
             $uploadedFile->moveTo($upload_path . $file_name);
-            $this->_upload_error = \UPLOAD_ERR_OK;
+            $this->upload_error = \UPLOAD_ERR_OK;
             
             $file_path = $upload_path . $file_name;
             $mime_type = \mime_content_type($file_path) ?: 'application/octet-stream';
@@ -270,7 +270,7 @@ class FileController extends \Raptor\Controller
             }
 
             // Optimize хийсний дараа хэмжээг дахин шалгах
-            if ($optimize && $this->_size_limit && $file_size > $this->_size_limit) {
+            if ($optimize && $this->size_limit && $file_size > $this->size_limit) {
                 @\unlink($file_path);
                 throw new \Exception('The uploaded file exceeds the MAX_FILE_SIZE directive that was specified in the HTML form', \UPLOAD_ERR_FORM_SIZE);
             }
@@ -284,7 +284,7 @@ class FileController extends \Raptor\Controller
             ];
         } catch (\Throwable $err) {
             if (\is_numeric($err->getCode())) {
-                $this->_upload_error = (int) $err->getCode();
+                $this->upload_error = (int) $err->getCode();
             }
             
             // failed to move uploaded file!
@@ -496,7 +496,7 @@ class FileController extends \Raptor\Controller
      */
     protected function getLastUploadError(): int
     {
-        return $this->_upload_error;
+        return $this->upload_error;
     }
     
     /**

@@ -288,7 +288,7 @@ SSH хандалттай Linux серверт (VPS, cloud VM, dedicated). **Sett
 
 - **`.env`** - Серверт гараар үүсгэж тохируулна
 - **`logs/`** - Аппликейшн автоматаар үүсгэнэ
-- **`private/`** - Нууцлалтай файлууд (upload)
+- **`protected/`** - public web root-аас гадуурх файлууд ба cache; public request дээр шууд хандах боломжгүй, зөвхөн authenticated `/dashboard/protected/file` endpoint-аар үйлчилнэ
 - **`docs/`** - Зөвхөн баримтжуулалт
 - **`vendor/`** - Workflow дотор `composer install/update --no-dev` ажиллуулж build хийнэ
 
@@ -302,12 +302,12 @@ SSH хандалттай Linux серверт (VPS, cloud VM, dedicated). **Sett
 public_html/index.php (Entry point)
 |
 |-- /dashboard/* -> Dashboard\Application (Админ панель)
-|    |-- Middleware: ErrorHandler -> MySQL -> Session -> JWT -> CSRF -> Container -> Localization -> Settings
+|    |-- Middleware: ErrorHandler -> Session -> JWT -> Container -> Localization -> Settings (CSRF нь per-route)
 |    |-- Routers: Login, Users, Organization, RBAC, Localization, Contents, Messages, Comments, Logs, Template, Shop, Development, Migration
 |    \-- Controllers -> Templates -> HTML Response
 |
 \-- /* -> Web\Application (Нийтийн вэб сайт)
-     |-- Middleware: ExceptionHandler -> MySQL -> Container -> Session -> Localization -> Settings
+     |-- Middleware: ExceptionHandler -> Container -> Session -> Localization -> Settings
      |-- Router: WebRouter (/, /page, /news, /contact, /products, /order, /search, /sitemap, /rss, /session/language, /session/contact-send, /session/order, /session/news/{id}/comment, /session/product/{id}/review, ...)
      \-- Controllers -> Templates -> HTML Response
 ```
@@ -327,6 +327,12 @@ Browser -> index.php -> .env -> ServerRequest
 
 ### Директорийн бүтэц
 
+Raptor нь MVC pattern-г баримталдаг ч **модульчилсан (package-by-feature)**
+зохион байгуулалттай: модуль бүр өөрийн Controller, Model, темплейтүүдийг нэг хавтаст
+хамт агуулдаг бөгөөд тэдгээрийг тусдаа давхаргын директорт (top-level `Models/`,
+`Controllers/`, `Views/`) салгадаггүй. Модуль нэмэх, устгах нь нэг хавтсыг хуулах,
+устгахтай адил энгийн.
+
 ```
 raptor/
 |-- application/
@@ -336,8 +342,7 @@ raptor/
 |   |   |-- CacheService.php       # Файл суурьтай DB cache (PSR-16 SimpleCache)
 |   |   |-- CsrfMiddleware.php     # CSRF token шалгалт
 |   |   |-- SpamProtectionTrait.php # Honeypot, HMAC, rate limit, Turnstile
-|   |   |-- MySQLConnectMiddleware.php    # MySQL PDO холболт (localhost дээр DB-г автоматаар үүсгэнэ)
-|   |   |-- PostgresConnectMiddleware.php # PostgreSQL PDO холболт (UTF8 client encoding)
+|   |   |-- DatabaseConnection.php        # PDO factory (driver сонголт RAPTOR_DB_DRIVER-ээр: mysql | pgsql)
 |   |   |-- ContainerMiddleware.php       # PSR-11 DI container залгах (events, cache, mailer, Discord)
 |   |   |-- SessionMiddleware.php         # Session lifecycle (shared, write-close оптимизаци)
 |   |   |-- authentication/        # Login, JWT
@@ -358,8 +363,7 @@ raptor/
 |   |   |-- template/              # Dashboard UI, цэс, badge
 |   |   |-- log/                   # PSR-3 лог
 |   |   |-- mail/                  # И-мэйл (Brevo API, SMTP, PHP mail)
-|   |   |-- event/                 # PSR-14 Event Dispatcher систем
-|   |   |-- notification/          # Discord webhook listener
+|   |   |-- notification/          # PSR-14 Event Dispatcher + Discord webhook listener
 |   |   |-- trash/                 # Хогийн сав модуль (устгасан бичлэг сэргээх)
 |   |   |-- migration/             # Өгөгдлийн сангийн migration систем
 |   |   |-- development/           # Хөгжүүлэлтийн хүсэлт хянах
@@ -394,17 +398,26 @@ raptor/
 |   \-- mn/                        # Монгол баримтжуулалт
 |-- tests/                         # PHPUnit тестүүд (unit, integration)
 |-- database/
-|   \-- migrations/                # SQL migration файлууд
+|   \-- migrations/                # SQL migration файлууд (git-ignored, per-user folder)
 |-- .github/
 |   \-- workflows/
 |       |-- ci.yml                 # CI код чанарын шалгалт (push, PR)
 |       \-- deploy.yml             # Автомат deploy (FTP / SSH / Windows Server)
 |-- logs/                          # Алдааны лог файлууд
-|-- private/                       # Хамгаалагдсан файлууд (upload, cache)
+|-- protected/                     # Хамгаалагдсан файлууд (upload, cache)
 |-- composer.json
 |-- phpunit.xml                    # PHPUnit тохиргоо
 \-- LICENSE
 ```
+
+> **`vendor/`-оос бусад бүх директор хөгжүүлэгчийн мэдэлд.** `composer create-project`-оор
+> татсаны дараа `application/`, `public_html/`, `database/`, `tests/`, `docs/`,
+> тохиргооны файлууд бүгд таны төслийн хэсэг болж, хэрэгцээ шаардлагадаа тааруулан
+> бүрэн өөрчлөх, устгах, шинээр бичих боломжтой - `application/raptor/` core хүртэл
+> үүнд хамаарна. Үндсэн (default) codebase нь
+> хөгжүүлэгчийн нийтлэг хэрэгцээг хангасан суурь тул өөрийн нарийвчилсан хэрэгцээ
+> шаардлагаа кодод шууд шингээгээрэй. Зөвхөн `vendor/*` packages нь Composer-ээр удирдагдах
+> dependency тул гар хүрэхгүй (`composer update`-ээр шинэчилнэ).
 
 ---
 
@@ -412,41 +425,45 @@ raptor/
 
 Middleware бол PSR-15 стандартын дагуу request/response-г боловсруулах давхаргууд юм. Бүртгэгдсэн дараалал чухал!
 
+PDO холболт нь `public_html/index.php` entry point дотор
+`\Raptor\DatabaseConnection::connect()`-ээр нэг л удаа үүсэн request-ийн
+`pdo` attribute хэлбэрээр Application руу дамждаг.
+
 ### Dashboard Middleware
 
 | # | Middleware | Зориулалт |
 |---|-----------|-----------|
 | 1 | `ErrorHandler` | Алдааг JSON/HTML хэлбэрээр хариулна |
-| 2 | `MySQLConnectMiddleware` | PDO холболт үүсгэж request-д inject хийнэ |
-| 3 | `MigrationMiddleware` | Pending SQL migration-г автоматаар ажиллуулна |
-| 4 | `SessionMiddleware` | PHP session эхлүүлж удирдна |
-| 5 | `JWTAuthMiddleware` | JWT шалгаж `User` объект үүсгэнэ |
-| 6 | `CsrfMiddleware` | POST/PUT/PATCH/DELETE хүсэлтүүдэд CSRF token шалгана |
-| 7 | `ContainerMiddleware` | DI Container-г inject хийнэ |
-| 8 | `LocalizationMiddleware` | Хэл, орчуулгыг тодорхойлно |
-| 9 | `SettingsMiddleware` | Системийн тохиргоог inject хийнэ |
+| 2 | `SessionMiddleware` | PHP session эхлүүлж удирдна |
+| 3 | `JWTAuthMiddleware` | JWT шалгаж `User` объект үүсгэнэ |
+| 4 | `ContainerMiddleware` | DI Container-г inject хийнэ |
+| 5 | `LocalizationMiddleware` | Хэл, орчуулгыг тодорхойлно |
+| 6 | `SettingsMiddleware` | Системийн тохиргоог inject хийнэ |
+
+> `CsrfMiddleware` нь app-wide pipeline-д БИШ - router дээр mutating route бүрд per-route наагдана (6.20-г үз).
 
 ### Web Middleware
 
 | # | Middleware | Зориулалт |
 |---|-----------|-----------|
 | 1 | `ExceptionHandler` | Template ашиглан алдааны хуудас рендерлэнэ |
-| 2 | `MySQLConnectMiddleware` | PDO холболт |
-| 3 | `ContainerMiddleware` | DI Container |
-| 4 | `SessionMiddleware` | Session (хэл хадгалах) |
-| 5 | `LocalizationMiddleware` | Олон хэл |
-| 6 | `SettingsMiddleware` | Тохиргоо (logo, title, footer) |
+| 2 | `ContainerMiddleware` | DI Container |
+| 3 | `SessionMiddleware` | Session (хэл хадгалах) |
+| 4 | `LocalizationMiddleware` | Олон хэл |
+| 5 | `SettingsMiddleware` | Тохиргоо (logo, title, footer) |
 
-### Database Middleware сонголт
+### Database driver сонголт
 
-Зөвхөн **нэг** database middleware ашиглана:
+Driver сонголт `.env` доторх `RAPTOR_DB_DRIVER` хувьсагчаар хийгдэнэ
+(`mysql` эсвэл `pgsql`). `\Raptor\DatabaseConnection::connect()` түүнийг
+уншиж тохирох PDO instance үүсгэж буцаана:
 
-```php
-// MySQL (default)
-$this->use(new \Raptor\MySQLConnectMiddleware());
+```dotenv
+# MySQL (default)
+RAPTOR_DB_DRIVER=mysql
 
-// PostgreSQL
-$this->use(new \Raptor\PostgresConnectMiddleware());
+# PostgreSQL
+RAPTOR_DB_DRIVER=pgsql
 ```
 
 ---
@@ -500,7 +517,7 @@ $this->isUserCan('news_edit');
 
 ### 6.5 Content - Files (Файл)
 
-**Классууд:** `FilesController`, `FilesModel`, `PrivateFilesController`
+**Классууд:** `FilesController`, `FilesModel`, `ProtectedFilesController`
 
 - Файл upload (native JS, FormData)
 - Зураг optimize хийх (GD)
@@ -685,26 +702,27 @@ Sitemap: https://example.com/sitemap.xml
 
 **Классууд:** `CsrfMiddleware`
 
-- Dashboard-ийн бүх POST/PUT/PATCH/DELETE хүсэлтүүдэд session-тай холбоотой CSRF token шалгана
-- Token нь login үед үүсэж `$_SESSION['CSRF_TOKEN']` дотор хадгалагдана
-- Token байхгүй хуучин session-д автоматаар үүсгэнэ (session бичих эрхтэй байх шаардлагатай)
-- GET/HEAD/OPTIONS хүсэлтүүд шалгалтгүйгээр дамжина
-- `/login` замууд exempt (тэнд token үүсдэг)
+- **Per-route middleware** (app-wide биш). Router дээр mutating route бүрд `->middleware([CsrfMiddleware::class])`-аар наагдана (`use Raptor\CsrfMiddleware;`)
+- Middleware нь зөвхөн **шалгана**: `$_SESSION['CSRF_TOKEN']`-г `X-CSRF-TOKEN` header-тэй тулгаж, зөрвөл 403 буцаана
+- GET/HEAD/OPTIONS хүсэлтүүд шалгалтгүйгээр дамжина (`GET_POST`/`GET_PUT` compound route-ийн GET талыг хамгаална)
+- Token нь login үед үүсэж `$_SESSION['CSRF_TOKEN']` дотор хадгалагдана. Хуучин session-д fallback болгож `Controller::template()` (нэвтэрсэн хэрэглэгчид token байхгүй + session writable бол) үүсгэнэ
+- Token нь `dashboard.html` доторх `<meta name="csrf-token">` tag-аар frontend-д хүрнэ (`Controller::template()` session-аас уншина)
 - Клиент тал (JS) нь `csrfFetch()` wrapper ашиглан `X-CSRF-TOKEN` header-аар дамжуулна
-- Token нь `dashboard.html` доторх `<meta name="csrf-token">` tag-аар frontend-д хүрнэ
-- Шинэ модуль нэмэхэд: бүх state-changing хүсэлтэд `fetch()` биш `csrfFetch()` ашиглана
+- Шинэ модуль нэмэхэд: mutating route бүрд `->middleware([CsrfMiddleware::class])` нэмнэ (автомат БИШ); зөвхөн login routes exempt. Клиент талд бүх state-changing хүсэлтэд `fetch()` биш `csrfFetch()` ашиглана
 
 ### 6.21 Database Migration (Өгөгдлийн сангийн шилжүүлэг)
 
-**Классууд:** `MigrationRunner`, `MigrationMiddleware`, `MigrationController`, `MigrationRouter`
+**Классууд:** `MigrationRunner`, `MigrationController`, `MigrationRouter`, `MigrationSecurityScanner`
 
 - SQL файл дээр суурилсан, зөвхөн урагшлах (forward-only) migration систем
-- Migration файлууд `database/migrations/` хавтаст хадгалагдана
-- Хүлээгдэж буй = `migrations/` дотор, Ажилласан = `migrations/ran/` руу зөөгдсөн
-- `MigrationMiddleware` хүсэлт бүрт pending migration-г автоматаар ажиллуулна
-- Advisory lock (`GET_LOCK`) зэрэгцээ ажиллахаас хамгаална
-- Dashboard UI-аар migration төлөв, SQL файлын агуулга харах
-- Зөвхөн `system_coder` эрхтэй хэрэглэгчид dashboard руу хандах боломжтой
+- Файлын систем дээр state хадгалагдана (tracking хүснэгт байхгүй)
+- `database/migrations/` нь git-ignored - per-environment upload
+- Per-user folder: `{userId}-{username}/` дотор pending файл, `{userId}-{username}/ran/` дотор амжилттай ажилласан файл
+- Coder dashboard-аас `.sql` upload хийнэ (max = min(10 MB, php.ini post_max_size, upload_max_filesize)), apply дарвал ажиллаж дараагийн file-аа `ran/` руу зөөнө
+- Apply үед `MigrationSecurityScanner` нь sensitive хүснэгт (`users`, `rbac_*`, `organizations*`, `localization_language`, `raptor_menu`) болон DCL (`GRANT/REVOKE/CREATE-DROP-ALTER USER`)-д хандсан pattern илрүүлж soft warning гаргана - coder `CONFIRM` бичиж баталгаажуулна
+- Advisory lock (`GET_LOCK` / `pg_try_advisory_lock`) зэрэгцээ apply-аас хамгаална
+- `dashboard_log`-д бүх upload/apply/delete үйлдлийг SHA-256 hash, statement тоо, warning тоотойгоор бичнэ
+- Зөвхөн `system_coder` role-той хэрэглэгчид хандах боломжтой
 - `.htaccess` хамгаалалт SQL файлуудад шууд хандахыг хаана
 
 ### 6.22 Messages (Холбоо барих мессеж)
@@ -1132,7 +1150,7 @@ tests/
 |   |-- Controller/
 |   |   \-- ControllerTextTest.php  # Controller::text() тест
 |   \-- Migration/
-|       \-- MigrationRunnerTest.php  # Migration parser/status тест
+|       \-- MigrationSecurityScannerTest.php  # Sensitive SQL pattern шалгалт
 \-- Integration/
     |-- Model/
     |   |-- UsersModelTest.php          # Хэрэглэгчийн CRUD тест
@@ -1143,7 +1161,7 @@ tests/
     |-- Authentication/
     |   \-- JWTAuthTest.php             # JWT encode/decode тест
     \-- Migration/
-        \-- MigrationRunnerIntegrationTest.php  # Migration engine тест
+        \-- MigrationRunnerIntegrationTest.php  # File-based migration runner тест
 ```
 
 ### Тестийн онцлогууд
@@ -1243,15 +1261,17 @@ public function products()
 
 ### Database сонгох
 
-`Application.php` дотор database middleware-г солих:
+Driver-г `.env` доторх `RAPTOR_DB_DRIVER` хувьсагчаар солино:
 
-```php
-// MySQL (default)
-$this->use(new \Raptor\MySQLConnectMiddleware());
+```dotenv
+# MySQL (default)
+RAPTOR_DB_DRIVER=mysql
 
-// PostgreSQL руу шилжих
-$this->use(new \Raptor\PostgresConnectMiddleware());
+# PostgreSQL руу шилжих
+RAPTOR_DB_DRIVER=pgsql
 ```
+
+`\Raptor\DatabaseConnection::connect()` энэ утгыг уншиж тохирох PDO үүсгэнэ.
 
 ---
 

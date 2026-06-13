@@ -34,11 +34,13 @@ use Raptor\Log\Logger;
  *  гэдэг trait-ийг ашигладаг. PDOTrait нь `$pdo` шинж чанарыг
  *  controller-ийн объект дээр үүсгэж өгдөг.
  *
- *  Framework-ийн түвшинд DatabaseConnectMiddleware нь:
+ *  Entry point болох `public_html/index.php` нь хүсэлт бүрд:
  *
+ *      $pdo     = \Raptor\DatabaseConnection::connect();
  *      $request = $request->withAttribute('pdo', $pdo);
  *
- *  гэж PSR-7 ServerRequest дотор `pdo` attribute-ийг суулгадаг.
+ *  гэж нэг л удаа PDO үүсгэж, PSR-7 ServerRequest дотор `pdo`
+ *  attribute-ийг суулгаж Application руу дамжуулдаг.
  *
  *  Controller нь BaseController::__construct() дотор:
  *

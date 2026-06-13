@@ -51,7 +51,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 throw new Error(data.message ?? 'Invalid response!');
             }
 
-            const indexLink  = `{{ 'organizations'|link }}`;
+            const viewPattern   = `{{ 'organization-view'|pattern }}`;
+            const updatePattern = `{{ 'organization-update'|pattern }}`;
             const rbacLink   = `{{ user.can('system_rbac') ? 'rbac-alias'|link : '' }}`;
             const canUpdate  = `{{ user.can('system_organization_update') ? 'true' : '' }}`;
             const canDelete  = `{{ user.can('system_organization_delete') ? 'true' : '' }}`;
@@ -91,7 +92,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     `<a class="org-modal btn btn-sm btn-info mt-1 shadow-sm"
                         data-bs-target="#static-modal"
                         data-bs-toggle="modal"
-                        href="${indexLink}/view/${org.id}">
+                        href="${viewPattern.replace('{id}', org.id)}">
                         <i class="bi bi-eye"></i>
                     </a>`
                 ];
@@ -102,7 +103,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         <a class="org-modal btn btn-sm btn-primary mt-1 shadow-sm"
                            data-bs-target="#static-modal"
                            data-bs-toggle="modal"
-                           href="${indexLink}/update/${org.id}">
+                           href="${updatePattern.replace('{id}', org.id)}">
                             <i class="bi bi-pencil-square"></i>
                         </a>`);
                 }

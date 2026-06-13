@@ -59,9 +59,9 @@ class OrganizationUserModel extends Model
      * @param int $organization_id Байгууллагын ID
      * @param int $user_id Хэрэглэгчийн ID
      *
-     * @return array Тухайн мөр олдвол массив
+     * @return array|false Тухайн мөр олдвол массив, эс бөгөөс false
      */
-    public function retrieve(int $organization_id, int $user_id): array
+    public function retrieve(int $organization_id, int $user_id): array|false
     {
         $org_model = new OrganizationModel($this->pdo);
 

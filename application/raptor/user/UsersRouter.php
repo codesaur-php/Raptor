@@ -4,6 +4,8 @@ namespace Raptor\User;
 
 use codesaur\Router\Router;
 
+use Raptor\CsrfMiddleware;
+
 /**
  * Хэрэглэгчийн модулийн маршрут (route)-уудыг бүртгэгч router класс.
  *
@@ -41,10 +43,10 @@ class UsersRouter extends Router
          */
 
         // Хэрэглэгчийн dashboard жагсаалт харуулах
-        $this->GET('/dashboard/users', [UsersController::class, 'index'])->name('users');
+        $this->GET('/users', [UsersController::class, 'index'])->name('users');
 
         // Хэрэглэгчдийн жагсаалтыг AJAX-аар авах
-        $this->GET('/dashboard/users/list', [UsersController::class, 'list'])->name('users-list');
+        $this->GET('/users/list', [UsersController::class, 'list'])->name('users-list');
 
         /**
          * ----------------------------------------------------------
@@ -52,13 +54,13 @@ class UsersRouter extends Router
          * ----------------------------------------------------------
          */
         // Шинэ хэрэглэгч үүсгэх (form үзүүлэх + submit)
-        $this->GET_POST('/dashboard/users/insert', [UsersController::class, 'insert'])->name('user-insert');
+        $this->GET_POST('/users/insert', [UsersController::class, 'insert'])->name('user-insert')->middleware([CsrfMiddleware::class]);
         
         // Хэрэглэгчийн мэдээлэл засварлах (form үзүүлэх + update хийх PUT)
-        $this->GET_PUT('/dashboard/users/update/{uint:id}', [UsersController::class, 'update'])->name('user-update');
+        $this->GET_PUT('/users/update/{uint:id}', [UsersController::class, 'update'])->name('user-update')->middleware([CsrfMiddleware::class]);
         
         // Хэрэглэгчийн дэлгэрэнгүй мэдээлэл харах
-        $this->GET('/dashboard/users/view/{uint:id}', [UsersController::class, 'view']);
+        $this->GET('/users/view/{uint:id}', [UsersController::class, 'view'])->name('user-view');
 
         /**
          * ----------------------------------------------------------
@@ -66,10 +68,10 @@ class UsersRouter extends Router
          * ----------------------------------------------------------
          */
         // Хэрэглэгчийг идэвхгүй болгох
-        $this->DELETE('/dashboard/users/deactivate', [UsersController::class, 'deactivate'])->name('user-deactivate');
+        $this->DELETE('/users/deactivate', [UsersController::class, 'deactivate'])->name('user-deactivate')->middleware([CsrfMiddleware::class]);
 
         // Идэвхгүй хэрэглэгчийг бүрэн устгах
-        $this->DELETE('/dashboard/users/delete', [UsersController::class, 'delete'])->name('user-delete');
+        $this->DELETE('/users/delete', [UsersController::class, 'delete'])->name('user-delete')->middleware([CsrfMiddleware::class]);
 
         /**
          * ----------------------------------------------------------
@@ -78,7 +80,7 @@ class UsersRouter extends Router
          */
 
         // Хэрэглэгчийг байгууллага дээр холбох / устгах
-        $this->GET_POST('/dashboard/users/set/organization/{uint:id}', [UsersController::class, 'setOrganization'])->name('user-set-organization');
+        $this->GET_POST('/users/set/organization/{uint:id}', [UsersController::class, 'setOrganization'])->name('user-set-organization')->middleware([CsrfMiddleware::class]);
 
         /**
          * ----------------------------------------------------------
@@ -86,7 +88,7 @@ class UsersRouter extends Router
          * ----------------------------------------------------------
          */
         // Хэрэглэгчийн RBAC дүр тохируулах
-        $this->GET_POST('/dashboard/users/set/role/{uint:id}', [UsersController::class, 'setRole'])->name('user-set-role');
+        $this->GET_POST('/users/set/role/{uint:id}', [UsersController::class, 'setRole'])->name('user-set-role')->middleware([CsrfMiddleware::class]);
 
         /**
          * ----------------------------------------------------------
@@ -94,7 +96,7 @@ class UsersRouter extends Router
          * ----------------------------------------------------------
          */
         // Хэрэглэгчийн нууц үг солих (өөрийнхөө эсвэл system_coder -> бусдын)
-        $this->GET_POST('/dashboard/users/set/password/{uint:id}', [UsersController::class, 'setPassword'])->name('user-set-password');
+        $this->GET_POST('/users/set/password/{uint:id}', [UsersController::class, 'setPassword'])->name('user-set-password')->middleware([CsrfMiddleware::class]);
 
         /**
          * ----------------------------------------------------------
@@ -102,7 +104,7 @@ class UsersRouter extends Router
          * ----------------------------------------------------------
          */
         // Signup / Forgot хүсэлтийн modal жагсаалт (зөвхөн view)
-        $this->GET('/dashboard/users/requests/{table}/modal', [UsersController::class, 'requestsModal'])->name('user-requests-modal');
+        $this->GET('/users/requests/{table}/modal', [UsersController::class, 'requestsModal'])->name('user-requests-modal');
 
         /**
          * ----------------------------------------------------------
@@ -110,12 +112,12 @@ class UsersRouter extends Router
          * ----------------------------------------------------------
          */
         // Signup хүсэлтийг батлах -> хэрэглэгч болгож insert хийх
-        $this->POST('/dashboard/users/signup/approve', [UsersController::class, 'signupApprove'])->name('user-signup-approve');
+        $this->POST('/users/signup/approve', [UsersController::class, 'signupApprove'])->name('user-signup-approve')->middleware([CsrfMiddleware::class]);
 
         // Signup хүсэлтийг идэвхгүй болгох
-        $this->DELETE('/dashboard/users/signup/deactivate', [UsersController::class, 'signupDeactivate'])->name('user-signup-deactivate');
+        $this->DELETE('/users/signup/deactivate', [UsersController::class, 'signupDeactivate'])->name('user-signup-deactivate')->middleware([CsrfMiddleware::class]);
 
         // Идэвхгүй signup хүсэлтийг бүрэн устгах
-        $this->DELETE('/dashboard/users/signup/delete', [UsersController::class, 'signupDelete'])->name('user-signup-delete');
+        $this->DELETE('/users/signup/delete', [UsersController::class, 'signupDelete'])->name('user-signup-delete')->middleware([CsrfMiddleware::class]);
     }
 }

@@ -128,7 +128,7 @@ jobs:
             **/.env*
             **/logs/**
             **/nbproject/**
-            **/private/**
+            **/protected/**
             **/phpunit.xml
 
   # ====================================================================
@@ -171,7 +171,7 @@ jobs:
             .env*
             logs/
             nbproject/
-            private/
+            protected/
             phpunit.xml
 
       - name: Post-deploy commands
@@ -200,7 +200,7 @@ jobs:
       - name: Sync files to deploy path
         shell: cmd
         run: |
-          robocopy "%GITHUB_WORKSPACE%" "${{ vars.DEPLOY_PATH }}" /MIR /XD .git .github docs tests logs nbproject private /XF .env .env.* phpunit.xml /NFL /NDL /NJH /NJS /R:3 /W:5
+          robocopy "%GITHUB_WORKSPACE%" "${{ vars.DEPLOY_PATH }}" /MIR /XD .git .github docs tests logs nbproject protected /XF .env .env.* phpunit.xml /NFL /NDL /NJH /NJS /R:3 /W:5
           if %ERRORLEVEL% LEQ 7 (exit /b 0) else (exit /b 1)
 
       - name: Install/update production dependencies

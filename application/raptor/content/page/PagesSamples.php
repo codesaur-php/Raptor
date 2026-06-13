@@ -24,7 +24,7 @@ class PagesSamples
             $path = '';
         }
         $assets = $path . '/assets/images';
-        
+
         $seed = [
             'category' => '_raptor_sample_',
             'published' => 1,
@@ -39,7 +39,7 @@ class PagesSamples
             'title' => 'Танилцуулга',
             'position' => 10,
             'content' => '<p>Энэ бол <a href="https://github.com/codesaur-php/Raptor" target="_blank">Raptor Framework</a> дээр суурилсан демо вэб сайт юм.</p>'
-                . '<p>Та энэ хуудсыг <a href="' . $path . '/dashboard">хянах самбар</a>аас засварлах боломжтой.</p>'
+                . '<p>Та энэ хуудсыг хянах самбараас засварлах боломжтой.</p>'
                 . '<p>Холбоосууд:</p>'
                 . '<ul>'
                 . '<li><a href="https://codesaur.net" target="_blank">codesaur.net</a> - Албан ёсны вэб сайт</li>'
@@ -61,7 +61,7 @@ class PagesSamples
             'position' => 110,
             'photo' => $assets . '/organization.jpg',
             'content' => '<p>Байгууллагын танилцуулга энд байрлана.</p>'
-                . '<p>Энэ хуудсыг <a href="' . $path . '/dashboard">хянах самбар</a>аас засварлах боломжтой.</p>'
+                . '<p>Энэ хуудсыг хянах самбараас засварлах боломжтой.</p>'
         ]);
         $model->insert($seed + [
             'code' => 'mn',
@@ -139,7 +139,7 @@ class PagesSamples
             'title' => 'Introduction',
             'position' => 500,
             'content' => '<p>This is a demo website built on the <a href="https://github.com/codesaur-php/Raptor" target="_blank">Raptor Framework</a>.</p>'
-                . '<p>You can edit this page from the <a href="' . $path . '/dashboard">admin dashboard</a>.</p>'
+                . '<p>You can edit this page from the admin dashboard.</p>'
                 . '<p>Links:</p>'
                 . '<ul>'
                 . '<li><a href="https://codesaur.net" target="_blank">codesaur.net</a> - Official website</li>'
@@ -161,7 +161,7 @@ class PagesSamples
             'position' => 610,
             'photo' => $assets . '/organization.jpg',
             'content' => '<p>Organization introduction goes here.</p>'
-                . '<p>You can edit this page from the <a href="' . $path . '/dashboard">admin dashboard</a>.</p>'
+                . '<p>You can edit this page from the admin dashboard.</p>'
         ]);
         $model->insert($seed + [
             'code' => 'en',

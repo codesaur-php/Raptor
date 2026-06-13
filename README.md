@@ -16,7 +16,7 @@ Clean architecture object-oriented web development framework
 
 ## 1. Монгол тайлбар
 
-`codesaur/raptor` нь PSR стандартууд (PSR-3, PSR-7, PSR-15) дээр суурилсан, **олон давхаргат архитектуртай**, **бүрэн CMS боломжтой** PHP веб фреймворк юм.
+`codesaur/raptor` нь PSR стандартууд (PSR-3, PSR-4, PSR-7, PSR-11, PSR-12, PSR-14, PSR-15, PSR-16) дээр суурилсан, **олон давхаргат архитектуртай**, **бүрэн CMS боломжтой** PHP веб фреймворк юм.
 
 Фреймворк нь **Web** (нийтийн вебсайт) болон **Dashboard** (админ панель) гэсэн хоёр давхаргад хуваагдан ажилладаг бөгөөд codesaur экосистемийн бусад packages-тэй хамтран ажиллана.
 
@@ -53,7 +53,7 @@ Clean architecture object-oriented web development framework
 
 ## 2. English Description
 
-`codesaur/raptor` is a **multi-layered**, **full-featured CMS** PHP web framework built on PSR standards (PSR-3, PSR-7, PSR-15).
+`codesaur/raptor` is a **multi-layered**, **full-featured CMS** PHP web framework built on PSR standards (PSR-3, PSR-4, PSR-7, PSR-11, PSR-12, PSR-14, PSR-15, PSR-16).
 
 The framework operates in two layers - **Web** (public website) and **Dashboard** (admin panel) - and works together with other packages in the codesaur ecosystem.
 
@@ -137,7 +137,7 @@ RAPTOR_JWT_LIFETIME=2592000
 ```
 public_html/index.php
  |-- /dashboard/* -> Dashboard\Application (Admin Panel)
- |    |-- Middleware stack (Session, JWT, CSRF, RBAC, Localization, Settings)
+ |    |-- Middleware stack (Session, JWT, Container, Localization, Settings; CSRF per-route)
  |    |-- Routers (Login, Users, Organization, RBAC, Content, Logs, Shop, Development, Migration)
  |    \-- Controllers -> Templates
  |
@@ -156,7 +156,7 @@ raptor/
 |-- application/
 |   |-- raptor/              # Core framework (Controllers, Models, Middleware)
 |   |   |-- Application.php, Controller.php           # Dashboard app + base controller
-|   |   |-- *ConnectMiddleware.php (MySQL, Postgres)  # DB connection middleware
+|   |   |-- DatabaseConnection.php                    # Single PDO factory (driver from RAPTOR_DB_DRIVER)
 |   |   |-- SessionMiddleware.php, ContainerMiddleware.php, CsrfMiddleware.php  # PSR-15 middleware
 |   |   |-- CacheService.php, SpamProtectionTrait.php # Cache + spam helpers
 |   |   |-- authentication/  # Login, JWT, Session
@@ -200,12 +200,28 @@ raptor/
 |       |-- ci.yml           # CI code quality checks (push, PR)
 |       \-- deploy.yml       # Auto deploy (FTP / SSH / Windows Server)
 |-- logs/                    # Error logs
-|-- private/                 # Protected files (uploads, cache)
+|-- protected/               # Protected files (uploads, cache)
 |-- .env.testing             # Test environment variables
 |-- composer.json            # Dependencies
 |-- phpunit.xml              # PHPUnit configuration
 \-- LICENSE                  # MIT License
 ```
+
+> **`vendor/`-оос бусад бүх директор хөгжүүлэгчийн мэдэлд.** `composer create-project`-оор
+> татсаны дараа `application/`, `public_html/`, `database/`, `tests/`, `docs/`,
+> тохиргооны файлууд бүгд таны төслийн хэсэг болж, хэрэгцээ шаардлагадаа тааруулан
+> бүрэн өөрчлөх, устгах, шинээр бичих боломжтой - `application/raptor/` core хүртэл
+> үүнд хамаарна. Үндсэн (default) codebase нь
+> хөгжүүлэгчийн нийтлэг хэрэгцээг хангасан суурь тул өөрийн нарийвчилсан хэрэгцээ
+> шаардлагаа кодод шууд шингээгээрэй. Зөвхөн `vendor/*` packages нь Composer-ээр удирдагдах
+> dependency тул гар хүрэхгүй (`composer update`-ээр шинэчилнэ).
+>
+> **Everything outside `vendor/` is yours.** After `composer create-project`,
+> `application/`, `public_html/`, `database/`, `tests/`, `docs/` and the config
+> files all become part of your project - freely modify, delete, or rewrite them to
+> fit your needs, including the `raptor/` core itself. The default codebase is a baseline covering a developer's common needs,
+> so adapt the code directly to your own detailed requirements. Only the `vendor/*` packages
+> are Composer-managed dependencies (updated via `composer update`); leave those untouched.
 
 ### Testing / Тестчилгээ
 

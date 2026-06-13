@@ -14,20 +14,22 @@
  *  Үндсэн үүргүүд:
  *  ----------------
  *  1. Composer autoload-г ачаалах
- *  2. .env тохиргоог унших (Dotenv)
- *  3. Хөгжүүлэлтийн / Production горим тодорхойлох
- *  4. Алдааны лог тохируулах
- *  5. Цагийн бүс тохируулах (ENV дээр заасан бол)
- *  6. PSR-7 стандартын дагуу ServerRequest үүсгэх
- *  7. URL замаас хамааран Web эсвэл Dashboard Application-г ажиллуулах
- *  8. PSR-15 стандартын дагуу request-г handle хийх
+ *  2. Error log файлын байрлал тохируулах
+ *  3. .env тохиргоог унших (Dotenv)
+ *  4. Хөгжүүлэлтийн / Production горим тодорхойлох
+ *  5. Custom error handler бүртгэх
+ *  6. Цагийн бүс тохируулах (ENV дээр заасан бол)
+ *  7. PSR-7 стандартын дагуу ServerRequest үүсгэх
+ *  8. Өгөгдлийн сангийн PDO холболтыг үүсгэж request-д inject хийх
+ *  9. URL замаас хамааран Web эсвэл Dashboard Application-г сонгох
+ *  10. PSR-15 стандартын дагуу request-г handle хийх
  *
  *  @package    codesaur/raptor
  *  @author     Narankhuu <codesaur@gmail.com>
  *  @copyright  Copyright (c) 2012-present codesaur (Narankhuu)
  *  @license    MIT
  *
- *   СЕРВЕРИЙН ТОХИРГООНЫ ТАЙЛБАР:
+ *  СЕРВЕРИЙН ТОХИРГООНЫ ТАЙЛБАР:
  *  -----------------------------------
  *  Энэ index.php файл нь Apache серверийн .htaccess тохиргоотой
  *  зөв ажиллаж байна. Гэхдээ Apache сервер биш, nginx сервертэй 
@@ -39,6 +41,7 @@
  */
 
 use codesaur\Http\Message\ServerRequest;
+use codesaur\Http\Message\NonBodyResponse;
 
 /**
  * Бүх алдааны төрлийг идэвхтэй болгох
@@ -47,35 +50,33 @@ use codesaur\Http\Message\ServerRequest;
 \error_reporting(\E_ALL);
 
 // ---------------------------------------------------------------------------
-// 1. Root болон autoload файлуудыг шалгаж ачаалах
+// 1. Bootstrap-ийн суурь: autoload ачаалах, error log тохируулах, .env унших
 // ---------------------------------------------------------------------------
-/** @var string $root_dir Төслийн root директорийн зам */
-$root_dir = \dirname(__DIR__);
-
-/** @var string $autoload Composer autoload файлын бүтэн зам */
-$autoload = "$root_dir/vendor/autoload.php";
-
-if (!\file_exists($autoload)) {
-    die("codesaur exit: <strong>$autoload is missing!</strong>");
-}
-
-/** @var \Composer\Autoload\ClassLoader $composer Composer autoload instance */
-$composer = require($autoload);
-
-// ---------------------------------------------------------------------------
-// 2. Error log байрлал тохируулах
-// ---------------------------------------------------------------------------
-\ini_set('log_errors', 'On');
-\ini_set('error_log', "$root_dir/logs/code.log");
-
-// ---------------------------------------------------------------------------
-// 3. .env татаж орчны хувьсагчдыг ачаалах
-// ---------------------------------------------------------------------------
+/**
+ * Доорх алхмууд бүгд серверийн тохиргооноос хамаардаг тул аль нэг нь
+ * амжилтгүй болбол нэг л catch барьж, 500 статустайгаар зогсоно:
+ *   1. Composer autoload-г шалгаж ачаалах
+ *   2. Error log файлын байрлал тохируулах
+ *   3. .env тохиргоог унших (Dotenv)
+ */
 try {
-    /** @var \Dotenv\Dotenv $dotenv Dotenv instance для .env файл унших */
+    /** @var string $root_dir Төслийн root директорийн зам */
+    $root_dir = \dirname(__DIR__);
+    /** @var string $autoload Composer autoload файлын бүтэн зам */
+    $autoload = "$root_dir/vendor/autoload.php";
+    if (!\file_exists($autoload)) {
+        throw new \RuntimeException("$autoload is missing!");
+    }
+    /** @var \Composer\Autoload\ClassLoader $composer Composer autoload instance */
+    $composer = require($autoload);
+
+    // Error log байрлал тохируулах
+    \ini_set('log_errors', 'On');
+    \ini_set('error_log', "$root_dir/logs/code.log");
+
+    /** @var \Dotenv\Dotenv $dotenv .env файлыг унших Dotenv instance */
     $dotenv = \Dotenv\Dotenv::createImmutable($root_dir);
     $dotenv->load();
-
     /**
      * .env файлаас уншсан boolean утгыг string-ээс бодит boolean болгох
      * (Dotenv нь бүх утгыг string хэлбэрээр авдаг тул)
@@ -89,7 +90,8 @@ try {
     }
     unset($env); // Reference-г цэвэрлэх
 } catch (\Throwable $e) {
-    die("codesaur exit: <strong>{$e->getMessage()}</strong>");
+    \http_response_code(500);
+    die("codesaur exit: {$e->getMessage()}");
 }
 
 // ---------------------------------------------------------------------------
@@ -108,11 +110,7 @@ try {
         ? $_ENV['CODESAUR_APP_ENV'] != 'production'
         : false
 );
-
-/**
- * Development үед error-г дэлгэцэн дээр харуулах
- * Production үед зөвхөн лог файлд бичнэ
- */
+// Development үед алдааг дэлгэцэн дээр харуулна. Production үед бол зөвхөн лог файлд бичнэ
 \ini_set('display_errors', CODESAUR_DEVELOPMENT ? 'On' : 'Off');
 
 // ---------------------------------------------------------------------------
@@ -167,6 +165,35 @@ if (!empty($_ENV['CODESAUR_APP_TIME_ZONE'])) {
  */
 $request = (new ServerRequest())->initFromGlobal();
 
+// ---------------------------------------------------------------------------
+// 8. Өгөгдлийн сангийн PDO холболтыг үүсгэж request-д inject хийх
+// ---------------------------------------------------------------------------
+/**
+ * Web ба Dashboard аппликейшнүүд аль аль нь нэг бааз ашиглах ёстой тул
+ * entry point дээр нэг л удаа PDO нээж, request-д attribute болгон
+ * дамжуулна. Driver сонголт .env-ийн RAPTOR_DB_DRIVER хувьсагчаар
+ * удирдагдана.
+ *
+ * Database нь аль хэдийн үүссэн байх ёстой - шинэ системд developer
+ * CREATE DATABASE-ийг өөрөө ажиллуулна.
+ */
+try {
+    $pdo = \Raptor\DatabaseConnection::connect();
+    $request = $request->withAttribute('pdo', $pdo);
+} catch (\Throwable $e) {
+    \error_log("DB холболтын алдаа: {$e->getMessage()}");
+
+    \http_response_code(503);
+
+    // Production-д алдааны дэлгэрэнгүйг гаргахгүй (мэдээлэл алдагдахаас сэргийлнэ),
+    // зөвхөн development үед getMessage()-г харуулна.    
+    $message = 'Database connection failed';
+    if (CODESAUR_DEVELOPMENT) {
+        $message .= ' - ' . $e->getMessage();
+    }
+    die("codesaur exit: $message.");
+}
+
 /**
  * URL path-г цэвэрлэх (subdirectory дээр ажиллуулахад ашиглагдана)
  * 
@@ -176,32 +203,50 @@ $request = (new ServerRequest())->initFromGlobal();
  * @var string $path Цэвэрлэгдсэн URL path (leading slash-тай)
  */
 $path = \rawurldecode($request->getUri()->getPath());
-if (($lngth = \strlen(\dirname($request->getServerParams()['SCRIPT_NAME']))) > 1) {
-    $path = \substr($path, $lngth);
+if (($length = \strlen(\dirname($request->getServerParams()['SCRIPT_NAME']))) > 1) {
+    $path = \substr($path, $length);
     $path = '/' . \ltrim($path, '/');
 }
 
 // ---------------------------------------------------------------------------
-// 8. Өгөгдсөн path-аас хамааран Application сонгох
+// 9. Өгөгдсөн path-аас хамааран Application сонгох
 // ---------------------------------------------------------------------------
 /**
  * URL path-аас хамааран Application instance үүсгэх
- * 
+ *
  * Routing логик:
  *   - /dashboard/... -> Dashboard\Application (Admin panel)
  *   - Бусад бүх зам -> Web\Application (Public website)
- * 
- * @var \Dashboard\Application|\Web\Application $application 
+ *
+ * NonBodyResponse - Application-ийн constructor-д дамжуулж буй хариуны
+ * fallback prototype:
+ *   - Controller/action нь ResponseInterface БИШ төрөл буцаавал Application
+ *     дотор энэ prototype-оос clone хийж хүчинтэй PSR-7 хариу болгоно.
+ *   - Body stream огт агуулаагүй (getBody() дуудвал RuntimeException шиднэ),
+ *     учир нь Raptor-ийн controller-ууд контентоо output buffer-аар шууд
+ *     echo/print хийж browser руу хэвлэдэг - хариу нь зөвхөн HTTP status,
+ *     reason phrase, header-уудыг л зөөх carrier болж ажиллана.
+ *   - Body stream-тэй Response-ийн оронд үүнийг сонгосноор хэзээ ч
+ *     ашиглагдахгүй Output stream дэмий үүсгэхээс зайлсхийнэ (хөнгөн).
+ *
+ * @see \codesaur\Http\Message\NonBodyResponse Body-гүй минимал PSR-7 хариу
+ * @see \codesaur\Http\Application\Application::handle() prototype-оос clone хийх логик
+ *
+ * @var \Dashboard\Application|\Web\Application $application
  *      Path-аас хамааран сонгогдсон Application instance
  */
 if ((\explode('/', $path)[1] ?? '') == 'dashboard') {
-    $application = new \Dashboard\Application();
+    // Dashboard-ийн бүх router нь prefix-naive (route-ууд '/users', '/news'
+    // гэх мэт '/dashboard'-гүй бүртгэгдсэн). Application-ийг mount path-д
+    // mount хийснээр match() нь request path-аас prefix-ийг автоматаар зүсэж,
+    // generate()/link нь буцах URL-д prefix-ийг автоматаар нэмнэ.
+    $application = (new \Dashboard\Application(new NonBodyResponse()))->mount('/dashboard');
 } else {
-    $application = new \Web\Application();
+    $application = new \Web\Application(new NonBodyResponse());
 }
 
 // ---------------------------------------------------------------------------
-// 9. Сонгогдсон Application-д PSR-15 handler-ээр request-г дамжуулах
+// 10. Сонгогдсон Application-д PSR-15 handler-ээр request-г дамжуулах
 // ---------------------------------------------------------------------------
 /**
  * PSR-15 стандартын дагуу request-г handle хийх

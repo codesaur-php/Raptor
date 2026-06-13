@@ -259,7 +259,7 @@ class SettingsController extends FileController
             $this->allowExtensions(['ico']);
             $ico = $this->moveUploaded('favicon');
 
-            if (!empty($favicon_name) && $parsedBody['favicon_removed'] == 1) {
+            if (!empty($favicon_name) && ($parsedBody['favicon_removed'] ?? 0) == 1) {
                 $this->unlinkByName($favicon_name);
                 $payload['favicon'] = '';
                 $favicon_name = null;
@@ -282,7 +282,7 @@ class SettingsController extends FileController
             $apple_touch_icon = $this->moveUploaded('apple_touch_icon');
 
             if (!empty($apple_touch_icon_name)
-                && $parsedBody['apple_touch_icon_removed'] == 1
+                && ($parsedBody['apple_touch_icon_removed'] ?? 0) == 1
             ) {
                 $this->unlinkByName($apple_touch_icon_name);
                 $payload['apple_touch_icon'] = '';
@@ -308,7 +308,7 @@ class SettingsController extends FileController
                 $logo = $this->moveUploaded($uploadedLogos[$code]);
 
                 if (!empty($logo_name)
-                    && $parsedBody["logo_{$code}_removed"] == 1
+                    && ($parsedBody["logo_{$code}_removed"] ?? 0) == 1
                 ) {
                     $this->unlinkByName($logo_name);
                     $content[$code]['logo'] = '';
@@ -438,7 +438,7 @@ class SettingsController extends FileController
                 'value' => $type === 'bool' ? $value === 'true' : $value
             ]);
 
-            $this->log('content', LogLevel::INFO, "$name -> $value", [
+            $this->log('dashboard', LogLevel::INFO, "$name -> $value", [
                 'action' => 'update-env', $name => $value
             ]);
         } catch (\Throwable $err) {

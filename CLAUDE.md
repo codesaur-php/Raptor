@@ -2,7 +2,7 @@
 
 ## Architecture
 
-Raptor is a PHP MVC framework with multi-tenant RBAC, built on PSR-7/PSR-15 middleware. Templates are rendered by `codesaur/template` (see "Create Templates" below for syntax notes). Frontend is not locked to any specific library - the current codebase uses Bootstrap 5 but developers can use any CSS/JS framework.
+Raptor is a PHP framework following the MVC pattern with a modular (package-by-feature) structure - each module bundles its Controller, Model, and templates together in one folder rather than splitting them across separate layer directories (no top-level `Models/`, `Controllers/`, `Views/`). It has multi-tenant RBAC and is built on PSR-7/PSR-15 middleware. Templates are rendered by `codesaur/template` (see "Create Templates" below for syntax notes). Frontend is not locked to any specific library - the current codebase uses Bootstrap 5 but developers can use any CSS/JS framework.
 
 ### Directory Structure
 
@@ -24,7 +24,7 @@ tests/             # PHPUnit tests
 
 ### Entry Point
 
-`public_html/index.php` bootstraps the app, loads `.env`, routes to `Web\Application` or `Dashboard\Application` based on URL path.
+`public_html/index.php` bootstraps the app, loads `.env`, opens the PDO connection via `\Raptor\DatabaseConnection::connect()` (driver selected by `RAPTOR_DB_DRIVER`: `mysql` | `pgsql`), and passes it to the Application as the `pdo` request attribute. Web and Dashboard share the same connection. Then routes to `Web\Application` or `Dashboard\Application` based on URL path. Controllers pick up `$this->pdo` automatically inside `Raptor\Controller::__construct()`.
 
 ### Namespaces
 
@@ -36,6 +36,8 @@ tests/             # PHPUnit tests
 ## General Rule
 
 If something is not covered in this guide, read existing code in `application/` and follow the same patterns. Match the conventions of the nearest similar module.
+
+Everything outside `vendor/` is developer-owned project code, not a locked library. After `composer create-project`, the whole tree (`application/`, `public_html/`, `database/`, `tests/`, `docs/`, config files) can be freely modified, replaced, or removed - including the `raptor/` core itself. The default codebase is only a baseline covering a developer's common needs - adapt the code directly to project-specific requirements. Only the `vendor/*` packages are Composer-managed dependencies (updated via `composer update`); leave those untouched.
 
 ## Adding a New Module
 
@@ -114,6 +116,7 @@ Register routes in a Router class extending `codesaur\Router\Router`.
 
 - Give a route `->name()` only when referenced from templates (`{{ 'name'|link }}`) or PHP (`generateRouteLink()`). Routes called dynamically from JS do not need a name.
 - Register the router in the app's `Application.php`.
+- **CSRF**: every mutating dashboard route (POST/PUT/PATCH/DELETE and `GET_POST`/`GET_PUT` compounds) MUST chain `->middleware([CsrfMiddleware::class])` (with `use Raptor\CsrfMiddleware;`) - CSRF is per-route, not app-wide. Only login routes are exempt. See "CsrfMiddleware" below.
 
 ### 5. Create Templates
 
@@ -174,18 +177,20 @@ Seed files only run on fresh installs. If the system is already deployed, also w
 
 If the module has a sidebar menu entry and uses `$this->log()` with an `action` context key, register it for badge tracking in `BadgeController`:
 
+Module paths in both maps are **mount-naive** - use the bare route path (`/my-module`) WITHOUT the `/dashboard` prefix. The dashboard mount point is configured once via `->mount('/dashboard')` in `public_html/index.php`; `BadgeController` re-attaches it at runtime through `getMountPath()`. Never hardcode `/dashboard` in these maps - it would break if the mount path changes.
+
 1. Add entries to `BADGE_MAP` mapping log table + action to module path + color:
 ```php
 'my_table' => [
-    'create'     => ['/dashboard/my-module', 'green'],
-    'update'     => ['/dashboard/my-module', 'blue'],
-    'delete'     => ['/dashboard/my-module', 'red'],
+    'create'     => ['/my-module', 'green'],
+    'update'     => ['/my-module', 'blue'],
+    'delete'     => ['/my-module', 'red'],
 ],
 ```
 
 2. Add the module to `PERMISSION_MAP` with the permission required to view it:
 ```php
-'/dashboard/my-module' => 'system_my_permission',
+'/my-module' => 'system_my_permission',
 ```
 
 No controller changes needed - the badge system reads from the existing `*_log` tables that `$this->log()` already writes to. Just ensure log calls include `'action' => 'action-name'` in the context array.
@@ -298,18 +303,23 @@ new SessionMiddleware(fn($path, $method) =>
 
 ### CsrfMiddleware
 
-`Raptor\CsrfMiddleware` protects dashboard POST/PUT/PATCH/DELETE requests against CSRF attacks.
+`Raptor\CsrfMiddleware` protects dashboard mutating requests against CSRF attacks. It is a **per-route** middleware (NOT app-wide) - import it (`use Raptor\CsrfMiddleware;`) and attach it to each mutating route in the router:
 
-- Token is generated per-session at login and stored in `$_SESSION['CSRF_TOKEN']`
-- If no token exists (e.g. old session), the middleware auto-generates one (requires session write access from SessionMiddleware)
-- GET/HEAD/OPTIONS requests pass through without validation
-- `/login` routes are exempt (token is created there)
-- Client JS sends the token via `X-CSRF-TOKEN` header using `csrfFetch()` wrapper
-- Token is delivered to the frontend via `<meta name="csrf-token">` in `dashboard.html`
+```php
+$this->POST('/news/insert', [NewsController::class, 'insert'])
+    ->name('news-insert')
+    ->middleware([CsrfMiddleware::class]);
+```
 
-**For new dashboard modules**: use `csrfFetch()` instead of `fetch()` for all POST/PUT/PATCH/DELETE requests. GET requests can use either. `csrfFetch()` is defined in `dashboard.js` and auto-adds the CSRF header.
+- The middleware ONLY validates: it compares `$_SESSION['CSRF_TOKEN']` against the `X-CSRF-TOKEN` header and returns 403 on mismatch.
+- GET/HEAD/OPTIONS pass through without validation (so `GET_POST`/`GET_PUT` compound routes can still serve their GET side).
+- Token is generated per-session at login and stored in `$_SESSION['CSRF_TOKEN']`. As a fallback for old sessions, `Controller::template()` generates it when an authorized dashboard user has none and the session is writable.
+- Token is delivered to the frontend via `<meta name="csrf-token">` in `dashboard.html` (`Controller::template()` reads it from session).
+- Client JS sends the token via `X-CSRF-TOKEN` header using `csrfFetch()` wrapper.
 
-**For standalone pages** (not using `dashboard.html` layout, e.g. login): use plain `fetch()` since `dashboard.js` is not loaded and login is CSRF-exempt anyway.
+**For new dashboard modules**: every mutating route (POST/PUT/PATCH/DELETE and `GET_POST`/`GET_PUT` compounds) MUST add `->middleware([CsrfMiddleware::class])` (with `use Raptor\CsrfMiddleware;` in the router) - it is NOT automatic. Login routes are the only exempt mutating routes (do not attach it there; the token is created during login). On the client, use `csrfFetch()` instead of `fetch()` for all mutating requests; GET requests can use either. `csrfFetch()` is defined in `dashboard.js` and auto-adds the CSRF header.
+
+**For standalone pages** (not using `dashboard.html` layout, e.g. login): use plain `fetch()` since `dashboard.js` is not loaded and login routes carry no CsrfMiddleware anyway.
 
 ### LocalizationMiddleware
 
@@ -360,34 +370,48 @@ Common differences to watch: `JSON_EXTRACT` vs `::jsonb`, `SHOW TABLES/COLUMNS` 
 
 ### Migration System
 
-File-based, forward-only SQL migration engine. Runs automatically via `MigrationMiddleware`. Migrations are ONLY for modifying existing tables on deployed systems - NOT for creating new tables (Model handles that).
+Fully file-based, forward-only SQL migration engine. State is derived entirely from the directory layout. Migrations are ONLY for modifying existing tables on deployed systems - NOT for creating new tables (Model handles that).
 
-- **Pending**: `database/migrations/*.sql`
-- **Completed**: `database/migrations/ran/*.sql`
-- File naming: `YYYY-MM-DD_description.sql`
-- Use `-- [UP]` and `-- [DOWN]` markers. DOWN auto-runs if UP partially fails.
+The `database/migrations/` folder is **git-ignored**. Each environment uploads its own SQL files through `/dashboard/migrations` (requires `system_coder`).
 
-Typical use cases:
-- ALTER TABLE (add/modify/drop columns)
-- CREATE INDEX on existing tables
-- INSERT seed data (permissions, translations, menu entries) into live databases
+Directory layout:
+```
+database/migrations/
+├── .gitkeep
+├── README.md
+└── {userId}-{username}/         <- per-user folder, created on first upload
+    ├── pending_file.sql         <- pending
+    └── ran/
+        └── applied_file.sql     <- successfully applied
+```
 
+State derivation: file at `{folder}/*.sql` = **pending**; file at `{folder}/ran/*.sql` = **applied**.
+
+Lifecycle:
+1. `system_coder` uploads a `.sql` file via the dashboard
+2. File stored at `database/migrations/{userId}-{username}/{filename}.sql`
+3. Apply is requested -> `MigrationSecurityScanner` flags writes against sensitive tables (`users`, `rbac_*`, `organizations*`, `localization_language`, `raptor_menu`) and DCL (`GRANT/REVOKE`, `CREATE/DROP/ALTER USER`)
+4. If warnings present, the dashboard requires a typed `CONFIRM` to proceed (soft guard, not hard block)
+5. On success the file moves to `{folder}/ran/`; on failure it stays pending and the error is logged to `dashboard_log` (action: `migration-apply`)
+
+File format:
 ```sql
--- [UP]
+-- Optional first-line description (used as summary in UI)
 ALTER TABLE products ADD COLUMN category VARCHAR(100) DEFAULT NULL;
-
--- [DOWN]
-ALTER TABLE products DROP COLUMN category;
+CREATE INDEX idx_products_category ON products (category);
 ```
 
 Rules:
 1. Never use CREATE TABLE - Model classes handle table creation
-2. Always include both `-- [UP]` and `-- [DOWN]`
-3. DOWN must reverse UP exactly
-4. Each statement ends with `;`
-5. One concern per file
+2. Each statement ends with `;`
+3. Statements run in order; the first failure stops the rest and leaves the file pending
+4. To revert a bad apply, write a new migration (forward-only)
+5. Never edit a file in `ran/`
 6. Use `IF NOT EXISTS` / `IF EXISTS` where possible
-7. Never edit a file in `ran/`
+7. Audit trail is preserved on disk per-environment + in `dashboard_log` (`action: migration-upload` / `migration-apply` / `migration-delete`)
+8. Migration SQL MUST work on both MySQL and PostgreSQL (see "MySQL / PostgreSQL Compatibility" above). The statement splitter is driver-aware: PostgreSQL dollar-quoting (`$$...$$`) is parsed only on pgsql, and MySQL backslash escapes (`\'`) only on mysql - so a `;` inside a string/dollar-block is not mistaken for a statement separator on either driver.
+
+For touching the sensitive table list, see `MigrationSecurityScanner::SENSITIVE_TABLES` and the `PATTERNS` map in the same class.
 
 ### Delete Strategy
 
@@ -396,7 +420,7 @@ Rules:
 
 ## Cache
 
-Custom file-based cache (PSR-16 SimpleCache). Гадаад dependency-гүй, зөвхөн `psr/simple-cache` interface ашиглана. Stored in `private/cache/`. Registered as `cache` container service. TTL: 12 hours (safety net - primary invalidation is explicit).
+Custom file-based cache (PSR-16 SimpleCache). Гадаад dependency-гүй, зөвхөн `psr/simple-cache` interface ашиглана. Stored in `protected/cache/`. Registered as `cache` container service. TTL: 12 hours (safety net - primary invalidation is explicit).
 
 ### Cached Data
 
@@ -436,9 +460,9 @@ if ($data === null) {
 
 2. Add `$this->invalidateCache('my_key')` after successful CRUD operations in the controller
 
-### PrivateFilesController
+### ProtectedFilesController
 
-`private/cache/` is protected from `PrivateFilesController` - both `read()` and `setFolder()` block access to the cache directory.
+`protected/cache/` is protected from `ProtectedFilesController` - both `read()` and `setFolder()` block access to the cache directory.
 
 ## Frontend
 
@@ -495,15 +519,17 @@ Up to 3 badges per module, shown left to right in green-blue-red order.
 
 ### BADGE_MAP
 
-`BadgeController::BADGE_MAP` is structured as `[log_table][action] => [module_path, color]`. To add badges for a new module, add entries here.
+`BadgeController::BADGE_MAP` is structured as `[log_table][action] => [module_path, color]`. To add badges for a new module, add entries here. `module_path` is mount-naive (`/news`, not `/dashboard/news`).
 
 ### PERMISSION_MAP
 
-`BadgeController::PERMISSION_MAP` maps each module to its required permission:
+`BadgeController::PERMISSION_MAP` maps each module (mount-naive key) to its required permission:
 
-- `null` - any authenticated admin (e.g. `/dashboard/manual`)
+- `null` - any authenticated admin (e.g. `/manual`)
 - `'system_content_index'` - checked via `isUserCan()`
 - `'role:system_coder'` - checked via `isUser()`
+
+Both maps key on the bare route path; the `/dashboard` mount prefix is added at runtime via `getMountPath()`. The full key (`/dashboard/news`) appears only in the JSON the API returns and in the `seen` POST body (matched against sidebar menu hrefs).
 
 ### Web Frontend Log Context
 

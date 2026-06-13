@@ -400,7 +400,10 @@ class PagesController extends FileController
             $filesModel = new FilesModel($this->pdo);
             $filesModel->setTable($table);
             $files = $filesModel->getRows(['WHERE' => "record_id=$id"]);
-            $infos = $this->getInfos($table, "(id=$id OR id={$record['parent_id']})");
+            // parent_id NULL (top-level page) үед "id=" гэсэн буруу SQL үүсэхээс сэргийлнэ.
+            $parentId = (int)($record['parent_id'] ?? 0);
+            $condition = $parentId > 0 ? "(id=$id OR id=$parentId)" : "id=$id";
+            $infos = $this->getInfos($table, $condition);
             $childCount = $this->query(
                 "SELECT COUNT(*) as cnt FROM $table WHERE parent_id=$id"
             )->fetch();

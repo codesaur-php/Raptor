@@ -121,7 +121,7 @@ Then create a pull request on GitHub.
 
 ### Code Structure
 
-- **PSR-7 & PSR-15 compliance** - All code must adhere to PSR standards
+- **PSR compliance** - The codebase adheres to PSR-3 (Logger Interface), PSR-4 (Autoloading), PSR-7 (HTTP Message Interfaces), PSR-11 (Container Interface), PSR-12 (Extended Coding Style), PSR-14 (Event Dispatcher), PSR-15 (HTTP Server Request Handlers / middleware), and PSR-16 (Simple Cache)
 - **Middleware pattern** - Follow the middleware pipeline architecture
 - **Two-layer architecture** - Dashboard (admin) and Web (public) layers are separate
 - **Type hints** - Use strict type declarations where possible

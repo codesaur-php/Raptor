@@ -189,7 +189,8 @@
 
             /* ========== ХҮСНЭГТИЙН МӨРҮҮДИЙГ ҮҮСГЭХ ========== */
             let rowsHTML = '';
-            const indexLink = `{{ 'products'|link }}`;
+            const viewPattern = `{{ 'product-view'|pattern }}`;
+            const updatePattern = `{{ 'product-update'|pattern }}`;
 
             /* Хэрэглэгчийн эрхүүдийг шалгах */
             const canUpdate = {{ user.can('system_product_update') ? 'true' : 'false' }};  /* Засах эрх */
@@ -231,11 +232,11 @@
                 }
 
                 /* ========== ҮЙЛДЛИЙН ТОВЧНУУДЫГ ҮҮСГЭХ ========== */
-                const buttons = [`<a class="btn btn-sm btn-info mt-1 shadow-sm" href="${indexLink}/view/${record.id}"><i class="bi bi-eye"></i></a>`];  /* Харах товч */
+                const buttons = [`<a class="btn btn-sm btn-info mt-1 shadow-sm" href="${viewPattern.replace('{id}', record.id)}"><i class="bi bi-eye"></i></a>`];  /* Харах товч */
 
                 /* Засах эрхтэй бол засах товч нэмэх */
                 if (canUpdate) {
-                    buttons.push(`<a class="btn btn-sm btn-primary mt-1 shadow-sm" href="${indexLink}/${record.id}"><i class="bi bi-pencil-square"></i></a>`);
+                    buttons.push(`<a class="btn btn-sm btn-primary mt-1 shadow-sm" href="${updatePattern.replace('{id}', record.id)}"><i class="bi bi-pencil-square"></i></a>`);
                 }
                 /* Устгах эрхтэй бол устгах товч нэмэх */
                 if (canDelete) {

@@ -28,7 +28,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const treeContainer = document.getElementById('pages-tree');
     const loadingEl = document.getElementById('pages-tree-loading');
     const errorEl = document.getElementById('pages-tree-error');
-    const indexLink = `{{ 'pages'|link }}`;
+    const viewPattern = `{{ 'page-view'|pattern }}`;
+    const updatePattern = `{{ 'page-update'|pattern }}`;
     const canUpdate = {{ user.can('system_content_update') ? 'true' : 'false' }};
     const canDelete = {{ user.can('system_content_delete') ? 'true' : 'false' }};
     const canInsert = {{ user.can('system_content_insert') ? 'true' : 'false' }};
@@ -287,9 +288,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
             // Actions
             let actions = '';
-            actions += `<a class="btn btn-sm btn-info py-0 px-1" href="${indexLink}/view/${id}?from=nav" title="View"><i class="bi bi-eye"></i></a>`;
+            actions += `<a class="btn btn-sm btn-info py-0 px-1" href="${viewPattern.replace('{id}', id)}?from=nav" title="View"><i class="bi bi-eye"></i></a>`;
             if (canUpdate) {
-                actions += ` <a class="btn btn-sm btn-primary py-0 px-1" href="${indexLink}/${id}?from=nav" title="Edit"><i class="bi bi-pencil-square"></i></a>`;
+                actions += ` <a class="btn btn-sm btn-primary py-0 px-1" href="${updatePattern.replace('{id}', id)}?from=nav" title="Edit"><i class="bi bi-pencil-square"></i></a>`;
             }
             if (canDelete) {
                 actions += ` <button class="delete-page btn btn-sm btn-danger py-0 px-1" type="button" value="${id}" data-title="${escAttr(stripTags(page.title))}"${page.photo ? ` data-photo="${page.photo}"` : ''} title="Delete"><i class="bi bi-trash"></i></button>`;

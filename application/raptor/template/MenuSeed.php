@@ -25,6 +25,15 @@ class MenuSeed
         if ($path == '\\' || $path == '/' || $path == '.') {
             $path = '';
         }
+        // MenuModel нь зөвхөн dashboard request үед ашиглагддаг тул mount хэсгийг
+        // тухайн request-ийн URI-ийн эхний segment-ээс тодорхойлно. Base path ($path)
+        // байвал эхэлж зүснэ. REQUEST_URI байхгүй (CLI/тест) бол default нь '/dashboard'.
+        $uri = \parse_url($_SERVER['REQUEST_URI'] ?? '', \PHP_URL_PATH) ?: '';
+        if ($path !== '' && \str_starts_with($uri, $path)) {
+            $uri = \substr($uri, \strlen($path));
+        }
+        $segment = \explode('/', \trim($uri, '/'))[0] ?? '';
+        $mount = '/' . ($segment !== '' ? $segment : 'dashboard');
 
         /**
          * ----------------------------------------
@@ -55,7 +64,7 @@ class MenuSeed
                     'alias' => 'system',
                     'permission' => 'system_content_index',
                     'icon' => 'bi bi-chat-dots',
-                    'href' => "$path/dashboard/messages"
+                    'href' => "$path$mount/messages"
                 ],
                 ['mn' => ['title' => 'Мессежүүд'], 'en' => ['title' => 'Messages']]
             );
@@ -67,7 +76,7 @@ class MenuSeed
                     'alias' => 'system',
                     'permission' => 'system_content_index',
                     'icon' => 'bi bi-book-half',
-                    'href' => "$path/dashboard/pages"
+                    'href' => "$path$mount/pages"
                 ],
                 ['mn' => ['title' => 'Хуудсууд'], 'en' => ['title' => 'Pages']]
             );
@@ -79,7 +88,7 @@ class MenuSeed
                     'alias' => 'system',
                     'permission' => 'system_content_index',
                     'icon' => 'bi bi-newspaper',
-                    'href' => "$path/dashboard/news"
+                    'href' => "$path$mount/news"
                 ],
                 ['mn' => ['title' => 'Мэдээнүүд'], 'en' => ['title' => 'News']]
             );
@@ -91,7 +100,7 @@ class MenuSeed
                     'alias' => 'system',
                     'permission' => 'system_content_index',
                     'icon' => 'bi bi-folder',
-                    'href' => "$path/dashboard/files"
+                    'href' => "$path$mount/files"
                 ],
                 ['mn' => ['title' => 'Файлууд'], 'en' => ['title' => 'Files']]
             );
@@ -103,7 +112,7 @@ class MenuSeed
                     'alias' => 'system',
                     'permission' => 'system_localization_index',
                     'icon' => 'bi bi-translate',
-                    'href' => "$path/dashboard/localization"
+                    'href' => "$path$mount/localization"
                 ],
                 ['mn' => ['title' => 'Нутагшуулалт'], 'en' => ['title' => 'Localization']]
             );
@@ -115,7 +124,7 @@ class MenuSeed
                     'alias' => 'system',
                     'permission' => 'system_templates_index',
                     'icon' => 'bi bi-layout-wtf',
-                    'href' => "$path/dashboard/references"
+                    'href' => "$path$mount/references"
                 ],
                 ['mn' => ['title' => 'Лавлах хүснэгтүүд'], 'en' => ['title' => 'Reference Tables']]
             );
@@ -127,7 +136,7 @@ class MenuSeed
                     'alias' => 'system',
                     'permission' => 'system_content_settings',
                     'icon' => 'bi bi-gear-wide-connected',
-                    'href' => "$path/dashboard/settings"
+                    'href' => "$path$mount/settings"
                 ],
                 ['mn' => ['title' => 'Тохируулгууд'], 'en' => ['title' => 'Settings']]
             );
@@ -151,7 +160,7 @@ class MenuSeed
                     'alias' => 'system',
                     'permission' => 'system_content_index',
                     'icon' => 'bi bi-box2-heart',
-                    'href' => "$path/dashboard/products"
+                    'href' => "$path$mount/products"
                 ],
                 ['mn' => ['title' => 'Бүтээгдэхүүн'], 'en' => ['title' => 'Products']]
             );
@@ -163,7 +172,7 @@ class MenuSeed
                     'alias' => 'system',
                     'permission' => 'system_content_index',
                     'icon' => 'bi bi-cart3',
-                    'href' => "$path/dashboard/orders"
+                    'href' => "$path$mount/orders"
                 ],
                 ['mn' => ['title' => 'Захиалгууд'], 'en' => ['title' => 'Orders']]
             );
@@ -186,7 +195,7 @@ class MenuSeed
                     'position' => '910',
                     'permission' => 'system_user_index',
                     'icon' => 'bi bi-people-fill',
-                    'href' => "$path/dashboard/users"
+                    'href' => "$path$mount/users"
                 ],
                 ['mn' => ['title' => 'Хэрэглэгчид'], 'en' => ['title' => 'Users']]
             );
@@ -197,7 +206,7 @@ class MenuSeed
                     'position' => '920',
                     'permission' => 'system_organization_index',
                     'icon' => 'bi bi-building',
-                    'href' => "$path/dashboard/organizations"
+                    'href' => "$path$mount/organizations"
                 ],
                 ['mn' => ['title' => 'Байгууллагууд'], 'en' => ['title' => 'Organizations']]
             );
@@ -208,7 +217,7 @@ class MenuSeed
                     'position' => '930',
                     'permission' => 'system_logger',
                     'icon' => 'bi bi-list-stars',
-                    'href' => "$path/dashboard/logs"
+                    'href' => "$path$mount/logs"
                 ],
                 ['mn' => ['title' => 'Хандалтын протокол'], 'en' => ['title' => 'Access logs']]
             );
@@ -219,7 +228,7 @@ class MenuSeed
                     'position' => '940',
                     'alias' => 'system',
                     'icon' => 'bi bi-code-slash',
-                    'href' => "$path/dashboard/dev-requests"
+                    'href' => "$path$mount/dev-requests"
                 ],
                 ['mn' => ['title' => 'Хөгжүүлэлтийн хүсэлт'], 'en' => ['title' => 'Dev Requests']]
             );
@@ -229,7 +238,7 @@ class MenuSeed
                     'parent_id' => $system['id'],
                     'position' => '950',
                     'icon' => 'bi bi-book',
-                    'href' => "$path/dashboard/manual"
+                    'href' => "$path$mount/manual"
                 ],
                 ['mn' => ['title' => 'Гарын авлага'], 'en' => ['title' => 'Manual']]
             );
@@ -245,7 +254,7 @@ class MenuSeed
                     'alias' => 'system',
                     'permission' => 'system_coder',
                     'icon' => 'bi bi-database-gear',
-                    'href' => "$path/dashboard/migrations"
+                    'href' => "$path$mount/migrations"
                 ],
                 ['mn' => ['title' => 'Database Migrations'], 'en' => ['title' => 'Database Migrations']]
             );
@@ -256,7 +265,7 @@ class MenuSeed
                     'alias' => 'system',
                     'permission' => 'system_coder',
                     'icon' => 'bi bi-trash3',
-                    'href' => "$path/dashboard/trash"
+                    'href' => "$path$mount/trash"
                 ],
                 ['mn' => ['title' => 'Хогийн сав'], 'en' => ['title' => 'Trash']]
             );
@@ -267,7 +276,7 @@ class MenuSeed
                     'alias' => 'system',
                     'permission' => 'system_coder',
                     'icon' => 'bi bi-menu-button-wide-fill',
-                    'href' => "$path/dashboard/manage/menu"
+                    'href' => "$path$mount/manage/menu"
                 ],
                 ['mn' => ['title' => 'Цэс удирдах'], 'en' => ['title' => 'Manage Menu']]
             );

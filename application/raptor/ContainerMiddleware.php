@@ -189,7 +189,7 @@ class ContainerMiddleware implements MiddlewareInterface
         // систем cache-гүйгээр хэвийн ажиллана
         $container->set('cache', function(ContainerInterface $c) {
             try {
-                $cacheDir = \dirname($_SERVER['SCRIPT_FILENAME'], 2) . '/private/cache';
+                $cacheDir = \dirname($_SERVER['SCRIPT_FILENAME'], 2) . '/protected/cache';
                 return new CacheService($cacheDir, 43200);
             } catch (\Throwable $e) {
                 if (CODESAUR_DEVELOPMENT) {

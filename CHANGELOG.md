@@ -6,6 +6,62 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 
 ---
 
+## [4.0.0] - 2026-06-13
+[4.0.0]: https://github.com/codesaur-php/Raptor/compare/v3.1.0...v4.0.0
+
+This cycle consolidates database access behind a single `DatabaseConnection` factory, adds a fully file-based per-user SQL migration system, adopts the `codesaur/http-application` v7 application-wide mount feature (prefix-naive routers mounted at `/dashboard`), moves CSRF protection from an app-wide middleware to explicit per-route middleware, and renames the authenticated file-serving controller and its storage folder from `Private*`/`private/` to `Protected*`/`protected/`. A round of correctness fixes (middleware control flow, return types, cross-driver SQL handling, defensive I/O checks) is also included.
+
+### Added
+
+- `Raptor\DatabaseConnection` (`application/raptor/DatabaseConnection.php`) - single PDO factory used by `public_html/index.php` and tests. `connect()` reads `RAPTOR_DB_DRIVER` from `.env` (`mysql` | `pgsql`) and returns a ready PDO. Web and Dashboard share the same connection via `$request->withAttribute('pdo', $pdo)` set in the entry point.
+- Fully file-based, per-user migration system under `database/migrations/{userId}-{username}/[ran/]` - no tracking table; state is derived from file location (`*.sql` = pending, `ran/*.sql` = applied). The folder is git-ignored so each environment uploads its own SQL via `/dashboard/migrations` (requires `system_coder`). SQL files are plain statement lists; an optional first-line `--` comment becomes the UI summary.
+- `MigrationSecurityScanner` (`application/raptor/migration/MigrationSecurityScanner.php`) - static SQL scanner with case-insensitive, comment- and string-aware pattern matching against sensitive tables (`users`, `rbac_*`, `organizations*`, `localization_language`, `raptor_menu`) and DCL (`GRANT/REVOKE/CREATE-DROP-ALTER USER`); apply requires a typed `CONFIRM` when any pattern matches. Also flags `CREATE TABLE` to nudge coders toward defining a Model with `setTable()` (auto-creates the table on first use) instead of duplicating that in a migration.
+- Upload UI on `/dashboard/migrations` with per-folder grouping, per-row view/apply/delete actions, and a CONFIRM modal for sensitive applies.
+- SHA-256 hash + summary + statement count logged to `dashboard_log` for every upload, apply, and delete (`action: migration-upload | migration-apply | migration-delete`).
+- Manual pages: `application/dashboard/manual/migrations-manual-{mn,en}.html`.
+- Tests: `MigrationSecurityScannerTest` (pattern matches, case-insensitivity, comment/string false-positive avoidance) and `MigrationRunnerIntegrationTest` (apply/move-to-ran, failure-stays-pending, path-traversal rejection, cross-OS folder name sanitization).
+- Delete action on the reviews moderation list (`application/dashboard/shop/reviews-index.html`), gated by `system_product_delete` and reusing the existing `products-reviews-delete` route - previously reviews could only be deleted from the product view page.
+
+### Removed
+
+- `application/raptor/MySQLConnectMiddleware.php` and `application/raptor/PostgresConnectMiddleware.php` - replaced by the single `DatabaseConnection` factory wired in `index.php`.
+
+### Changed
+
+- `codesaur/http-application` upgraded to v7.0.0 (multi-router + application-wide mount feature). Dashboard routers are now prefix-naive and the Dashboard app is mounted at `/dashboard` via `->mount('/dashboard')` in `index.php`.
+- **CSRF protection moved from app-wide to per-route.** `Application` no longer registers `CsrfMiddleware` globally; instead every mutating route (POST/PUT/PATCH/DELETE and `GET_POST`/`GET_PUT` compounds) attaches `->middleware([CsrfMiddleware::class])` (69 routes across 12 routers; login routes are exempt). The middleware now only validates; token provisioning moved to login and `Controller::template()` (reads from session, regenerates as a fallback for old sessions). This makes each route's CSRF requirement explicit at the router.
+- `PrivateFilesController` renamed to **`ProtectedFilesController`**, and the storage folder `private/` to `protected/` (cache moved to `protected/cache/`). Access is gated on authentication only (not per-owner), so "protected" is more accurate than "private". Route is `/dashboard/protected/file` (name `protected-file-read`); `.gitignore` updated. **Deploy note:** the folder is git-ignored, so each environment must rename `private/` to `protected/` manually.
+- `database/migrations/*` is git-ignored (only `.gitkeep` and `README.md` tracked).
+- `BadgeController` file-count badge for `/dashboard/migrations` globs `*/*.sql` to count pending files across user folders (excluding `ran/`).
+- `getUserFolderPath()` sanitizes username for cross-OS safety: whitelist `[A-Za-z0-9._-]`, strip leading/trailing `. - _ ` (Windows NTFS trailing-dot stripping), fallback to `user` for empty / `.` / `..`, cap at 50 chars.
+- Private property names no longer use a leading underscore (PSR-12 compliance). `User`: `$_rbac` -> `$rbac`. `FileController`: `$_overwrite` -> `$overwrite`, `$_size_limit` -> `$size_limit`, `$_allowed_exts` -> `$allowed_exts`, `$_upload_error` -> `$upload_error`. Internal only - all properties are `private`, so the public API is unchanged.
+
+### Fixed
+
+- **JWTAuthMiddleware** - `$handler->handle()` is now called exactly once outside try/catch. Previously it was called inside `try`, so a downstream controller exception was caught here and masked as a login redirect (or double-handled on login pages); exceptions now propagate to the ErrorHandler as intended.
+- **OrganizationUserModel::retrieve()** - return type `: array` -> `: array|false`. `return false` on a no-row result threw a TypeError, which broke the `system_coder` organization-switch flow.
+- **WebLogStats** - dashboard home order stats queried a non-existent `orders` table (always 0); now queries `products_orders`.
+- **NewsController::update()** - now captures the `updateById()` result (`$updated`); the success log stores the actual record instead of `null`.
+- **PagesController::view()** - avoids a malformed `id=` SQL condition for a top-level page (NULL `parent_id`).
+- **SettingsController** - reads `*_removed` form fields with `?? 0` to avoid undefined-array-key warnings.
+- **SearchController** (dashboard) - NEWS/PAGES/USERS branches are wrapped in inner try/catch, matching PRODUCTS/ORDERS (degrades gracefully on partial installs).
+- **MigrationRunner::splitStatements()** - SQL splitting is now driver-aware: PostgreSQL dollar-quoting (`$$...$$`) is parsed only on pgsql, and MySQL `\'` backslash escapes only on mysql. Prevents stray `$...$` pairs (MySQL/SQLite) or a backslash-before-quote (PostgreSQL) from merging statements across `;`.
+- **MigrationSecurityScanner** - DML patterns use `[^;]*` (single-statement scope) instead of `.*` with `/s`, so a sensitive table name in a different statement no longer produces a false warning. `stripCommentsAndStrings()` also keeps `'-- UPDATE users'` string literals and `-- UPDATE users` comments from triggering false warnings.
+- **MigrationController** - rejects uploads when `getSize()` returns null (PSR-7) instead of silently bypassing the size check.
+- **MigrationRunner::apply()** - returns an error when `file_get_contents()` fails, instead of treating an unreadable file as an empty (successful) migration and moving it to `ran/`.
+- **MigrationController / MigrationRunner** - `mkdir()` failures are now checked (upload folder and `ran/` folder), surfacing a clear error instead of a confusing downstream failure.
+- **DiscordNotifier** - skips the POST when `json_encode()` returns false (e.g. invalid UTF-8) instead of sending an empty body.
+- **Deploy (Windows job)** - `deploy.yml` robocopy `/XD` excluded a nonexistent `private` directory and did not exclude `protected/`; the `/MIR` mirror would delete the server's live `protected/` (uploads + cache). Now excludes `protected/`, matching the FTP and SSH jobs.
+- **TrashController::restore()** - the primary insert, localized `_content` insert, and trash-row removal are now wrapped in a single transaction; a failure in any step rolls back, preventing an orphan primary row on partial restore. `insertPrimary()` now pre-checks whether the original ID is free instead of catch-and-retry on a failed INSERT (PostgreSQL aborts the whole transaction on a failed statement, which would have broken the auto-increment fallback inside the transaction).
+- **products-view.html** - replaced the unsupported `in` membership operator (`codesaur/template` has no `in`) with an explicit `==`/`or` chain, so the attachment preview-vs-download logic evaluates correctly.
+- **ProductsController::update()** - clears `published_at`/`published_by` when a product is unpublished (1 -> 0); previously stale publish metadata persisted after un-publishing.
+- **MigrationRunner::splitStatements()** - MySQL quote-escape detection now counts consecutive preceding backslashes (even count = literal `\\`, not an escape) instead of a single-character lookback, so a string literal ending in `\\` no longer swallows the following `;` and merges statements.
+- **contact.html** - the public contact page title (admin-entered content) is now HTML-escaped (`|e`).
+- **`Controller::respondJSON()` PHPdoc** clarified: a valid HTTP integer code is returned as the response code, while a string or unrecognized code is intentionally ignored (stays 200) with the error conveyed through the JSON `status: 'error'` envelope. Behavior unchanged - documentation only, for future maintainers and AI agents.
+- **Documentation accuracy** - corrected the web middleware pipeline diagram (removed the deleted `MySQL` connection middleware) in `README` and `api.md` (mn/en); event classes (`EventDispatcher`, `ListenerProvider`, `ContentEvent`, `UserEvent`, `OrderEvent`, `DevRequestEvent`) now documented under `application/raptor/notification/` (not a nonexistent `event/`); `ContentEvent`/`OrderEvent`/`DevRequestEvent` property tables matched to their actual constructors; `ReviewsController` delete route corrected to `/dashboard/products/reviews/delete`; `FTP_SERVER_DIR` example aligned across docs; migration README example uses `IF NOT EXISTS`.
+
+---
+
 ## [3.1.0] - 2026-05-06
 [3.1.0]: https://github.com/codesaur-php/Raptor/compare/v3.0.0...v3.1.0
 

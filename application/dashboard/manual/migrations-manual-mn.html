@@ -1,0 +1,96 @@
+<div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-3 shadow bg-secondary">
+    <h3 class="px-2 my-auto fs-6 text-white">
+        <i class="bi bi-database-fill-gear"></i> Migrations - Хэрэглэгчийн гарын авлага
+    </h3>
+    <a href="{{ 'manual'|link }}" class="btn btn-sm btn-light m-1">
+        <i class="bi bi-arrow-left"></i> {{ 'manual'|text }}
+    </a>
+</div>
+
+<!-- ==================== ОНОВЧТОЙ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3">Migration гэж юу вэ?</h4>
+        <p>
+            <strong>Migration</strong> бол анхны setup-аас хойш өгөгдлийн санг өөрчлөх SQL скрипт юм:
+            ихэвчлэн schema өөрчлөлт (ALTER TABLE, CREATE INDEX) эсвэл seed data (translations,
+            menu гэх мэт). Шинэ хүснэгт migration-аар үүсгэхгүй - Model class бүр өөрийн
+            хүснэгтийг анхны хэрэглээ дээр автоматаар үүсгэдэг.
+        </p>
+        <p class="mb-0">
+            <span class="badge bg-warning text-dark"><i class="bi bi-shield-exclamation"></i> Эрх</span>
+            Migration-д зөвхөн <code>system_coder</code> role-той хэрэглэгч хандах боломжтой.
+        </p>
+    </div>
+</div>
+
+<!-- ==================== ХЭРХЭН АЖИЛЛАДАГ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-folder-symlink"></i> Хэрхэн ажилладаг</h4>
+        <p>Raptor нь <strong>file-based</strong> migration систем ашигладаг - state нь файлын disk дээрх байршлаас тогтоогдоно.</p>
+        <pre class="bg-body-tertiary p-2 rounded mb-3"><code>database/migrations/
+  {userId}-{username}/
+    pending_file.sql     <- pending
+    ran/
+      applied_file.sql   <- амжилттай ажилласан</code></pre>
+        <p><code>database/migrations/</code> хавтас нь git-ээр ignore хийгдсэн. Орчин бүр өөрийн SQL файлуудаа энэ хуудаснаас upload хийнэ. Анх удаа upload хийхэд per-user folder автоматаар үүсэх ба сервер дээр хэн ямар файл upload хийсэн, аль нь амжилттай ажилласан гэх мэт түүх хадгалагдана.</p>
+    </div>
+</div>
+
+<!-- ==================== SQL ФОРМАТ ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-file-earmark-code"></i> SQL файлын формат</h4>
+        <pre class="bg-body-tertiary p-2 rounded mb-3"><code>-- Эхний мөрийн тайлбар (summary болж UI-д харагдана)
+ALTER TABLE products ADD COLUMN category VARCHAR(100);
+CREATE INDEX idx_products_category ON products (category);</code></pre>
+        <ul>
+            <li>Statement-ууд дараалан ажиллана. Нэг нь алдаа гаргавал бусад нь ажиллахгүй, файл pending хэвээр үлдэнэ.</li>
+            <li>Файлын нэрлэх зөвлөмж: <code>YYYY-MM-DD_short-description.sql</code> (хугацаагаар sort хийгдэхүйц).</li>
+            <li>Хэмжээний хязгаар: <code>min(10 MB, php.ini post_max_size, upload_max_filesize)</code> - upload товчны tooltip-д тухайн серверийн бодит max харагдана. Зөвхөн <code>.sql</code> extension зөвшөөрнө.</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== LIFECYCLE ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-arrow-repeat"></i> Ажлын урсгал</h4>
+        <ol>
+            <li>Дээд талын <strong>Upload SQL</strong> товчийг даран <code>.sql</code> файл сонгоно.</li>
+            <li>Файл таны folder-д pending файл болж буудаг.</li>
+            <li><i class="bi bi-eye"></i> View товчийг даран SQL, summary, SHA-256 hash, security warning-уудыг үзнэ.</li>
+            <li><i class="bi bi-play-fill"></i> Apply товчийг дарвал warning байвал <code>CONFIRM</code> гэж (томоор) бичиж баталгаажуулна.</li>
+            <li>Амжилттай бол файл <code>ran/</code> руу шилжинэ. Амжилтгүй бол файл pending хэвээр, алдааг <strong>Logs</strong> модулиар харна.</li>
+            <li>Apply хийхээсээ өмнө буруу файлыг устгахыг хүсвэл pending row дээрх <i class="bi bi-trash"></i> Delete товчийг ашиглана.</li>
+        </ol>
+    </div>
+</div>
+
+<!-- ==================== SECURITY ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-danger mb-3"><i class="bi bi-shield-lock"></i> Аюулгүй байдлын хамгаалалт</h4>
+        <p>Apply хийхээсээ өмнө SQL нь дараах sensitive хүснэгт болон pattern-уудтай таарч байгаа эсэхийг шалгагдана. Таарсан тохиолдолд soft warning гарч, Apply товч <code>CONFIRM</code> бичүүлж шаардана:</p>
+        <ul>
+            <li><code>users</code> - нууц үг / identity</li>
+            <li><code>rbac_roles</code>, <code>rbac_permissions</code>, <code>rbac_user_role</code>, <code>rbac_role_permission</code> - privilege escalation эрсдэл</li>
+            <li><code>organizations</code>, <code>organizations_users</code> - multi-tenant хязгаар</li>
+            <li><code>localization_language</code> - сайт даяар хэлний нөлөөлөл</li>
+            <li><code>raptor_menu</code> - dashboard навигаци</li>
+            <li><code>GRANT</code> / <code>REVOKE</code></li>
+            <li><code>CREATE USER</code> / <code>DROP USER</code> / <code>ALTER USER</code></li>
+            <li><code>CREATE TABLE</code> - Model class дээр <code>setTable()</code>-ээр тодорхойлох нь зөв. Raptor нь Model-ийг анх ашиглахад хүснэгтийг автоматаар үүсгэдэг.</li>
+        </ul>
+        <p class="mb-0">Хамгаалалт зөөлөн (hard block биш). Зорилго нь зориудаас гадуурх privilege change-ээс сэргийлэх. Энгийн password reset эсвэл role grant хийхдээ SQL migration-аас илүү dashboard UI-г ашиглах нь зөв. Шинэ хүснэгтийн хувьд migration биш, Model-ийг сонгох ёстой.</p>
+    </div>
+</div>
+
+<!-- ==================== AUDIT ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-clipboard-data"></i> Audit мөрдөлгөө</h4>
+        <p>Upload, apply, delete бүр <code>dashboard_log</code>-д тэмдэглэгдэнэ: SQL-ийн SHA-256 hash, statement тоо, warning тоо, очих folder. Disk дээрх file бүтэц өөрөө audit trail юм - pending файл user folder-т, амжилттай ажилласан файл <code>ran/</code>-д.</p>
+    </div>
+</div>

@@ -56,31 +56,31 @@ class TrashControllerTest extends TestCase
 
     public function testRouterHasIndexRoute(): void
     {
-        $this->assertStringContainsString("'/dashboard/trash'", self::$routerSource);
+        $this->assertStringContainsString("'/trash'", self::$routerSource);
         $this->assertStringContainsString("name('trash')", self::$routerSource);
     }
 
     public function testRouterHasListRoute(): void
     {
-        $this->assertStringContainsString("'/dashboard/trash/list'", self::$routerSource);
+        $this->assertStringContainsString("'/trash/list'", self::$routerSource);
         $this->assertStringContainsString("name('trash-list')", self::$routerSource);
     }
 
     public function testRouterHasViewRoute(): void
     {
-        $this->assertStringContainsString("'/dashboard/trash/view/{uint:id}'", self::$routerSource);
+        $this->assertStringContainsString("'/trash/view/{uint:id}'", self::$routerSource);
         $this->assertStringContainsString("name('trash-view')", self::$routerSource);
     }
 
     public function testRouterHasDeleteRoute(): void
     {
-        $this->assertStringContainsString("'/dashboard/trash/delete'", self::$routerSource);
+        $this->assertStringContainsString("'/trash/delete'", self::$routerSource);
         $this->assertStringContainsString("name('trash-delete')", self::$routerSource);
     }
 
     public function testRouterHasEmptyRoute(): void
     {
-        $this->assertStringContainsString("'/dashboard/trash/empty'", self::$routerSource);
+        $this->assertStringContainsString("'/trash/empty'", self::$routerSource);
         $this->assertStringContainsString("name('trash-empty')", self::$routerSource);
     }
 

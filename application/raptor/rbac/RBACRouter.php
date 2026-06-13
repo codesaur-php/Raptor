@@ -4,6 +4,8 @@ namespace Raptor\RBAC;
 
 use codesaur\Router\Router;
 
+use Raptor\CsrfMiddleware;
+
 /**
  * RBACRouter - RBAC (Role-Based Access Control) модулийн бүх маршрут
  * болон HTTP endpoint-уудыг бүртгэх зориулалттай Router класс.
@@ -40,13 +42,14 @@ use codesaur\Router\Router;
  *      -> Permission шинээр нэмэх (GET: form / POST: insert)
  *
  * 5) /dashboard/organizations/rbac/{alias}/role/permission
- *      -> Role <-> Permission холболт (mapping) hiikh
+ *      -> Role <-> Permission холболт (mapping) хийх
  *      -> POST: assign / DELETE: revoke
  *
  * Security:
  * ---------------------------------------------------------------
  *  - RBACController дотор RBAC эрх шалгалт хийгдэнэ.
- *  - Энэ Router зөвхөн маршрут map хийх бөгөөд security-ийн шат middleware-д байна.
+ *  - Mutating route-ууд (role/permission insert, role-permission холболт) нь
+ *    router дээр ->middleware([CsrfMiddleware::class])-аар CSRF хамгаалалттай.
  *
  * @package Raptor RBAC
  */
@@ -59,32 +62,32 @@ class RBACRouter extends Router
     {
         // RBAC alias list
         $this->GET(
-            '/dashboard/organizations/rbac/alias',
+            '/organizations/rbac/alias',
             [RBACController::class, 'alias']
         )->name('rbac-alias');
 
         // Role viewer
         $this->GET(
-            '/dashboard/organizations/rbac/role/view',
+            '/organizations/rbac/role/view',
             [RBACController::class, 'viewRole']
         )->name('rbac-role-view');
 
         // Insert role
         $this->GET_POST(
-            '/dashboard/organizations/rbac/{alias}/insert/role',
+            '/organizations/rbac/{alias}/insert/role',
             [RBACController::class, 'insertRole']
-        )->name('rbac-insert-role');
+        )->name('rbac-insert-role')->middleware([CsrfMiddleware::class]);
 
         // Insert permission
         $this->GET_POST(
-            '/dashboard/organizations/rbac/{alias}/insert/permission',
+            '/organizations/rbac/{alias}/insert/permission',
             [RBACController::class, 'insertPermission']
-        )->name('rbac-insert-permission');
+        )->name('rbac-insert-permission')->middleware([CsrfMiddleware::class]);
 
         // Role <-> Permission modifier
         $this->POST_DELETE(
-            '/dashboard/organizations/rbac/{alias}/role/permission',
+            '/organizations/rbac/{alias}/role/permission',
             [RBACController::class, 'setRolePermission']
-        )->name('rbac-set-role-permission');
+        )->name('rbac-set-role-permission')->middleware([CsrfMiddleware::class]);
     }
 }

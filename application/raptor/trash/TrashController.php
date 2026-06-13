@@ -237,17 +237,30 @@ class TrashController extends \Raptor\Controller
                 );
             }
 
-            // 2-3. Original ID-аар оролдох -> амжилтгүй бол auto-increment
-            $newId = $this->insertPrimary($tableName, $primary, $originalId);
-            $usedOriginalId = ($newId === $originalId);
+            // 2-5. Primary insert, localized content, trash-аас хасах - бүгдийг нэг
+            // транзакцид багтаана. Аль нэг алхам унавал бүхэлд нь rollback хийж,
+            // хагас сэргээлт (orphan primary мөр) үүсэхээс сэргийлнэ.
+            $this->pdo->beginTransaction();
+            try {
+                // 2-3. Original ID-аар оролдох -> ашиглагдсан бол auto-increment
+                $newId = $this->insertPrimary($tableName, $primary, $originalId);
+                $usedOriginalId = ($newId === $originalId);
 
-            // 4. Localized content
-            if ($localized !== null) {
-                $this->insertLocalizedContent($tableName, $localized, $newId);
+                // 4. Localized content
+                if ($localized !== null) {
+                    $this->insertLocalizedContent($tableName, $localized, $newId);
+                }
+
+                // 5. Trash-аас хасах
+                $trashModel->deleteById($id);
+
+                $this->pdo->commit();
+            } catch (\Throwable $txErr) {
+                if ($this->pdo->inTransaction()) {
+                    $this->pdo->rollBack();
+                }
+                throw $txErr;
             }
-
-            // 5. Trash-аас хасах
-            $trashModel->deleteById($id);
 
             // 6. Сэргээгдсэн record-н log table-д "restored" мөр бичих - Logger Protocol-д
             // тухайн record-н үзэх/засах хуудас дээр харагдахын тулд. `$logTable` нь
@@ -327,15 +340,15 @@ class TrashController extends \Raptor\Controller
             if ($col === 'id' || !\array_key_exists($col, $data)) {
                 continue;
             }
-            $val = $data[$col];
-            if ($val === null || $val === '') {
+            $value = $data[$col];
+            if ($value === null || $value === '') {
                 continue;
             }
             $stmt = $this->prepare("SELECT id FROM $tableName WHERE $col=:v LIMIT 1");
-            $stmt->bindValue(':v', $val);
+            $stmt->bindValue(':v', $value);
             $stmt->execute();
             if ($stmt->fetch()) {
-                $conflicts[] = "$col='$val'";
+                $conflicts[] = "$col='$value'";
             }
         }
         return $conflicts;
@@ -384,20 +397,22 @@ class TrashController extends \Raptor\Controller
      */
     private function insertPrimary(string $tableName, array $row, int $originalId): int
     {
-        // 1. Анхны ID-аар оролдох
-        try {
+        // Анхны ID сул байгаа эсэхийг урьдчилан шалгана. Амжилтгүй INSERT-г барьж
+        // дахин оролдох (catch-retry) аргыг ашиглахгүй: PostgreSQL дээр транзакц
+        // дотор statement унавал бүх транзакц abort болдог тул дараагийн INSERT ч
+        // бүтэлгүйтэнэ. Урьдчилан шалгах нь MySQL/PostgreSQL хоёуланд аюулгүй.
+        $check = $this->prepare("SELECT id FROM $tableName WHERE id=:id LIMIT 1");
+        $check->bindValue(':id', $originalId, \PDO::PARAM_INT);
+        $check->execute();
+
+        // 1. Анхны ID сул бол түүгээр оролдох
+        if ($check->fetch() === false) {
             $row['id'] = $originalId;
             $this->execInsert($tableName, $row);
             return $originalId;
-        } catch (\PDOException $e) {
-            // 23000 = integrity constraint violation (PRIMARY KEY эсвэл UNIQUE)
-            // UNIQUE-ийг pre-flight-аар үнэлсэн тул энд зөвхөн ID conflict тохиолдоно
-            if ($e->getCode() !== '23000') {
-                throw $e;
-            }
         }
 
-        // 2. ID-г хасч auto-increment-аар оролдох
+        // 2. Анхны ID ашиглагдсан бол ID-г хасч auto-increment-аар оруулах
         unset($row['id']);
         $this->execInsert($tableName, $row);
         return (int) $this->pdo->lastInsertId();
@@ -438,8 +453,8 @@ class TrashController extends \Raptor\Controller
         $columns = \implode(', ', \array_keys($row));
         $placeholders = \implode(', ', \array_map(fn($k) => ":$k", \array_keys($row)));
         $stmt = $this->prepare("INSERT INTO $tableName ($columns) VALUES ($placeholders)");
-        foreach ($row as $col => $val) {
-            $stmt->bindValue(":$col", $val);
+        foreach ($row as $col => $value) {
+            $stmt->bindValue(":$col", $value);
         }
         $stmt->execute();
     }

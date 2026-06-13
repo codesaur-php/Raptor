@@ -4,6 +4,8 @@ namespace Raptor\Template;
 
 use codesaur\Router\Router;
 
+use Raptor\CsrfMiddleware;
+
 /**
  * Class BadgeRouter
  * ---------------------------------------------------------------
@@ -24,7 +26,7 @@ class BadgeRouter extends Router
         // Dashboard sidebar ачаалагдах бүрт JS-ээс дуудагдана.
         // Named route: template дотор {{ 'dashboard-badges'|link }} ашиглана.
         $this->GET(
-            '/dashboard/badges',
+            '/badges',
             [BadgeController::class, 'list']
         )->name('dashboard-badges');
 
@@ -32,8 +34,8 @@ class BadgeRouter extends Router
         // Admin sidebar дээр module линк дарахад JS-ээс дуудагдана.
         // Body: { module: "/dashboard/news" }
         $this->POST(
-            '/dashboard/badges/seen',
+            '/badges/seen',
             [BadgeController::class, 'seen']
-        );
+        )->middleware([CsrfMiddleware::class]);
     }
 }

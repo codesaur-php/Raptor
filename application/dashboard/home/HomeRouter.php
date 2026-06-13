@@ -18,11 +18,11 @@ class HomeRouter extends Router
      */
     public function __construct()
     {
-        $this->GET('/dashboard', [HomeController::class, 'index'])->name('home');
+        $this->GET('/', [HomeController::class, 'index'])->name('home');
         
-        $this->GET('/dashboard/search', [SearchController::class, 'search'])->name('dashboard-search');
+        $this->GET('/search', [SearchController::class, 'search'])->name('dashboard-search');
 
-        $this->GET('/dashboard/stats', [WebLogStatsController::class, 'stats'])->name('dashboard-stats');
-        $this->GET('/dashboard/log-stats', [WebLogStatsController::class, 'logStats'])->name('dashboard-log-stats');
+        $this->GET('/stats', [WebLogStatsController::class, 'stats'])->name('dashboard-stats');
+        $this->GET('/log-stats', [WebLogStatsController::class, 'logStats'])->name('dashboard-log-stats');
     }
 }

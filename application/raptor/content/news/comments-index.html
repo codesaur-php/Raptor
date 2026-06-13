@@ -37,7 +37,7 @@
 <script type="text/javascript">
     document.addEventListener('DOMContentLoaded', function () {
         const table = new motable('table#comments', { freezeColumns: [1] });
-        const commentsLink = `{{ 'comments'|link }}`;
+        const commentViewPattern = `{{ 'comments-view'|pattern }}`;
 
         csrfFetch(
             `{{ 'comments-list'|link }}`
@@ -61,7 +61,7 @@
                     ? `<small>${record.news_title}</small>`
                     : `<small class="text-muted">#${record.news_id}</small>`;
 
-                const actions = `<a class="btn btn-sm btn-outline-info" href="${commentsLink}/news/${record.news_id}?comment_id=${id}" title="View Comment"><i class="bi bi-eye"></i></a>`;
+                const actions = `<a class="btn btn-sm btn-outline-info" href="${commentViewPattern.replace('{id}', id)}" title="View Comment"><i class="bi bi-eye"></i></a>`;
 
                 rowsHTML += `<tr>
                     <td>${id}<br><small class="text-muted">${record.created_at}</small></td>

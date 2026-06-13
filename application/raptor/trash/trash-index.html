@@ -115,7 +115,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 // View buttons
                 document.querySelectorAll('.view-trash').forEach(btn => {
                     btn.addEventListener('click', function () {
-                        fetch(`{{ 'trash'|link }}/view/${this.dataset.id}`)
+                        fetch(`{{ 'trash-view'|pattern }}`.replace('{id}', this.dataset.id))
                             .then(r => r.json())
                             .then(res => {
                                 if (res.status !== 'success') throw new Error(res.message);

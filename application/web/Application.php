@@ -2,6 +2,8 @@
 
 namespace Web;
 
+use Psr\Http\Message\ResponseInterface;
+
 /**
  * Class Application
  * ---------------------------------------------------------
@@ -21,30 +23,29 @@ namespace Web;
  * ---------------------------------------------------------
  * Middleware-ийн дарааллын тайлбар
  * ---------------------------------------------------------
- * 1) **Template\ExceptionHandler**  
- *    - Template ашиглан error page рендерлэх  
- *    - Хэрвээ template файл байхгүй бол кодын default ExceptionHandler ажиллана  
+ * 1) **Template\ExceptionHandler**
+ *    - Template ашиглан error page рендерлэх
+ *    - Хэрвээ template файл байхгүй бол кодын default ExceptionHandler ажиллана
  *
- * 2) **MySQLConnectMiddleware / PostgresConnectMiddleware**
- *    - PDO instance үүсгэж, хожим нь Controller-т дамжуулна
- *    - DB connection автоматаар нээгдэж хаагдана
- *    - Зөвхөн НЭГ database middleware ашиглах ёстой
+ *    PDO холболт нь public_html/index.php дотор үүсгэгдэж request-д
+ *    attribute болгон inject хийгдсэн байна. Web ба Dashboard аль аль
+ *    нь нэг л холболтыг (`\Raptor\DatabaseConnection`) ашиглана.
  *
- * 3) **ContainerMiddleware**  
- *    - Dependency Injection Container-г request attributes-д inject хийнэ  
- *    - PDO-г container-д бүртгэнэ  
+ * 2) **ContainerMiddleware**
+ *    - Dependency Injection Container-г request attributes-д inject хийнэ
+ *    - Service factory-ууд PDO-г request attribute-аас (`pdo`) шууд уншина
  *
- * 4) **SessionMiddleware**  
- *    - PHP session удирдах  
- *    - Хэрэглэгчийн authentication / session-based data хадгалах  
+ * 3) **SessionMiddleware**
+ *    - PHP session удирдах
+ *    - Хэрэглэгчийн authentication / session-based data хадгалах
  *
- * 5) **LocalizationMiddleware**  
- *    - Системийн хэл (mn/en/...) тодорхойлох  
- *    - Template-д localization объект дамжуулах  
+ * 4) **LocalizationMiddleware**
+ *    - Системийн хэл (mn/en/...) тодорхойлох
+ *    - Template-д localization объект дамжуулах
  *
- * 6) **SettingsMiddleware**  
- *    - System settings (branding, favicon, footer, title, зэрэг)  
- *    - Хуудсуудад дамжуулах болно  
+ * 5) **SettingsMiddleware**
+ *    - System settings (branding, favicon, footer, title, зэрэг)
+ *    - Хуудсуудад дамжуулах болно
  *
  * ---------------------------------------------------------
  * Router бүртгэх
@@ -74,21 +75,16 @@ class Application extends \codesaur\Http\Application\Application
 {
     /**
      * Web Application-г эхлүүлж middleware, router-уудыг бүртгэх.
+     *
+     * @param ResponseInterface $response Handler ResponseInterface биш төрөл
+     *        буцаасан үед fallback болгон ашиглах хариуны prototype (base руу дамжина)
      */
-    public function __construct()
+    public function __construct(ResponseInterface $response)
     {
-        parent::__construct();
+        parent::__construct($response);
 
         // Template тулгуурласан Error Handler
         $this->use(new Template\ExceptionHandler());
-        
-        // Database connection (MySQL эсвэл PostgreSQL)
-        $this->use(new \Raptor\MySQLConnectMiddleware());
-        // -> Хэрэв PostgreSQL ашиглавал:
-        // $this->use(new \Raptor\PostgresConnectMiddleware());
-
-        // Migration middleware (auto-migrate pending SQL files)
-        $this->use(new \Raptor\Migration\MigrationMiddleware());
 
         // Container middleware
         $this->use(new \Raptor\ContainerMiddleware());

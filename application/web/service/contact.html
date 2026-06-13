@@ -9,7 +9,7 @@
     <div class="container">
         <div class="text-center">
             <h3 class="fw-bold text-white m-0">
-                {{ record['title'] is defined and record['title'] is not empty ? record['title'] : 'contact'|text }}
+                {{ record['title'] is defined and record['title'] is not empty ? record['title']|e : 'contact'|text }}
             </h3>
         </div>
     </div>

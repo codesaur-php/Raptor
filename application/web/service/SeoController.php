@@ -75,14 +75,14 @@ class SeoController extends TemplateController
         $news_by_type = [];
         foreach ($news_types as $type) {
             // Нийт тоог авах
-            $cnt = $this->prepare(
+            $countStmt = $this->prepare(
                 "SELECT COUNT(*) FROM $news_table
                  WHERE published=1 AND code=:code AND type=:type"
             );
-            $cnt->bindValue(':code', $code);
-            $cnt->bindValue(':type', $type);
-            $cnt->execute();
-            $total = (int)$cnt->fetchColumn();
+            $countStmt->bindValue(':code', $code);
+            $countStmt->bindValue(':type', $type);
+            $countStmt->execute();
+            $total = (int)$countStmt->fetchColumn();
 
             $stmt = $this->prepare(
                 "SELECT title, slug, published_at FROM $news_table

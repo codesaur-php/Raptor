@@ -2,6 +2,8 @@
 
 namespace Dashboard;
 
+use Psr\Http\Message\ResponseInterface;
+
 /**
  * Class Application
  * --------------------------------------------------------------------
@@ -26,21 +28,24 @@ class Application extends \Raptor\Application
      * Dashboard модуль ажиллаж эхлэхэд хамгийн түрүүнд ачаалагдана.
      *
      * Процесс:
-     *  1) parent::__construct() -> Raptor\Application үндсэн middleware (DB, Session,
-     *     JWT, CSRF, Localization, Settings) болон core router-уудыг (Login, Users,
-     *     RBAC, Content, Logs, Template, Badge гэх мэт) бүгдийг ачаална
+     *  1) parent::__construct() -> Raptor\Application үндсэн middleware (Session,
+     *     JWT, CSRF, Container, Localization, Settings) болон core router-уудыг
+     *     (Login, Users, RBAC, Content, Logs, Template, Badge гэх мэт) бүгдийг
+     *     ачаална.
      *  2) Home\HomeRouter -> Dashboard-ийн үндсэн router-ийг бүртгэнэ
      *  3) Shop\ShopRouter -> Дэлгүүрийн (products, orders, reviews) router-ийг бүртгэнэ
      *  4) Manual\ManualRouter -> Гарын авлагын router-ийг бүртгэнэ
      * Нэмэх боломж:
-     *  - Хэрэв дараа нь KPIRouter, MemberRouter гэх мэт нэмэх бол
-     *    $this->use(new HR\KPIRouter());
-     *    $this->use(new Membership\MemberRouter());
+     *  - Хэрэв дараа нь шинэ модуль нэмэх бол түүний Router-г
+     *    $this->use(new {Module}\{Module}Router());
      *    гэх мэтээр өргөтгөнө.
+     *
+     * @param ResponseInterface $response Handler ResponseInterface биш төрөл
+     *        буцаасан үед fallback болгон ашиглах хариуны prototype (parent руу дамжина)
      */
-    public function __construct()
+    public function __construct(ResponseInterface $response)
     {
-        parent::__construct();
+        parent::__construct($response);
 
         // Home модулийн Router-г бүртгэж байна
         $this->use(new Home\HomeRouter());

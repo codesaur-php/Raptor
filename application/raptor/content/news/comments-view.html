@@ -20,7 +20,7 @@
             <strong>{{ record['title']|e }}</strong>
         </div>
         <div>
-            <a class="btn btn-sm btn-outline-info" href="{{ 'news'|link }}/view/{{ record['id'] }}">
+            <a class="btn btn-sm btn-outline-info" href="{{ 'news-view'|link({id: record['id']}) }}">
                 <i class="bi bi-eye me-1"></i>{{ 'view'|text }}
             </a>
         </div>
@@ -156,7 +156,7 @@
             btn.disabled = true;
             btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
 
-            csrfFetch(`{{ 'news'|link }}/comment/${parentInput.value}/reply`, {
+            csrfFetch(`{{ 'news-comment-reply'|pattern }}`.replace('{id}', parentInput.value), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ comment })

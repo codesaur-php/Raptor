@@ -73,11 +73,13 @@ use codesaur\DataObject\Column;
  *        - formatSizeUnits()
  *
  * --------------------------------------------------------------
- * Middleware ба PDO injection
+ * PDO injection
  * --------------------------------------------------------------
- *  Raptor\Controller нь PDOTrait ашигладаг тул PDO instance нь:
- *      $request->getAttribute('pdo')
- *  хэлбэрээр ирдэг.
+ *  PDO нь `public_html/index.php` entry point дээр нэг л удаа
+ *  үүсэгдэж ServerRequest-ийн attribute хэлбэрээр Application
+ *  руу дамждаг. Raptor\Controller нь PDOTrait ашигладаг тул:
+ *      $this->pdo = $request->getAttribute('pdo')
+ *  гэж controller дотор шууд гарч ирнэ.
  *
  *  FilesModel constructor нь энэ PDO-г:
  *      $this->setInstance($pdo)
@@ -91,8 +93,8 @@ class FilesModel extends Model
      * FilesModel constructor.
      *
      * @param \PDO $pdo
-     *      Middleware -> ServerRequest -> attribute('pdo') хэлбэрээр
-     *      автоматаар ирдэг PDO instance.
+     *      `public_html/index.php` -> ServerRequest -> attribute('pdo')
+     *      хэлбэрээр Controller хүртэл дамжиж ирсэн PDO instance.
      *
      * ----------------------------------------------------------
      * Багануудын бүтэц

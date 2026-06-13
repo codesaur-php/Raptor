@@ -85,7 +85,7 @@ class PatchRoutesTest extends TestCase
         $callback = $router->match('/dashboard/orders/42/status', 'PATCH');
 
         $this->assertNotNull($callback);
-        $params = $callback->getParameters();
+        $params = $callback[1];
         $this->assertSame(42, $params['id']);
     }
 
@@ -97,7 +97,7 @@ class PatchRoutesTest extends TestCase
         $callback = $router->match('/dashboard/files/content_files/7', 'PATCH');
 
         $this->assertNotNull($callback);
-        $params = $callback->getParameters();
+        $params = $callback[1];
         $this->assertSame('content_files', $params['table']);
         $this->assertSame(7, $params['id']);
     }
@@ -110,7 +110,7 @@ class PatchRoutesTest extends TestCase
         $callback = $router->match('/dashboard/messages/replied/99', 'PATCH');
 
         $this->assertNotNull($callback);
-        $params = $callback->getParameters();
+        $params = $callback[1];
         $this->assertSame(99, $params['id']);
     }
 
@@ -252,12 +252,12 @@ class PatchRoutesTest extends TestCase
         );
 
         $this->assertStringContainsString(
-            "->PATCH('/dashboard/orders/{uint:id}/status'",
+            "->PATCH('/orders/{uint:id}/status'",
             $source,
             'ShopRouter should use PATCH for order status update'
         );
         $this->assertStringNotContainsString(
-            "->PUT('/dashboard/orders/{uint:id}/status'",
+            "->PUT('/orders/{uint:id}/status'",
             $source,
             'ShopRouter should NOT use PUT for order status update'
         );
@@ -270,17 +270,17 @@ class PatchRoutesTest extends TestCase
         );
 
         $this->assertStringContainsString(
-            "->PATCH('/dashboard/files/{table}/{uint:id}'",
+            "->PATCH('/files/{table}/{uint:id}'",
             $source,
             'ContentsRouter should use PATCH for files update'
         );
         $this->assertStringContainsString(
-            "->PATCH('/dashboard/settings/env'",
+            "->PATCH('/settings/env'",
             $source,
             'ContentsRouter should use PATCH for settings env'
         );
         $this->assertStringContainsString(
-            "->PATCH('/dashboard/messages/replied/{uint:id}'",
+            "->PATCH('/messages/replied/{uint:id}'",
             $source,
             'ContentsRouter should use PATCH for messages replied'
         );
@@ -293,9 +293,9 @@ class PatchRoutesTest extends TestCase
         );
 
         // GET_PUT route-ууд PUT хэвээр байх ёстой
-        $this->assertStringContainsString("GET_PUT('/dashboard/news/{uint:id}'", $source);
-        $this->assertStringContainsString("GET_PUT('/dashboard/pages/{uint:id}'", $source);
-        $this->assertStringContainsString("GET_PUT('/dashboard/references/{table}/{uint:id}'", $source);
+        $this->assertStringContainsString("GET_PUT('/news/{uint:id}'", $source);
+        $this->assertStringContainsString("GET_PUT('/pages/{uint:id}'", $source);
+        $this->assertStringContainsString("GET_PUT('/references/{table}/{uint:id}'", $source);
     }
 
     // =========================================================

@@ -228,15 +228,15 @@ class WebLogStats
             if (++$i >= 10) break;
         }
 
-        // Захиалгын статистик (orders хүснэгт)
+        // Захиалгын статистик (products_orders хүснэгт)
         $data['orders_total'] = 0;
         $data['orders_new'] = 0;
-        if ($this->hasTable('orders')) {
+        if ($this->hasTable('products_orders')) {
             $stmt = $this->prepare(
                 "SELECT
                     COUNT(*) AS total,
                     SUM(CASE WHEN status = 'new' THEN 1 ELSE 0 END) AS new_count
-                 FROM orders"
+                 FROM products_orders"
             );
             $stmt->execute();
             $r = $stmt->fetch();

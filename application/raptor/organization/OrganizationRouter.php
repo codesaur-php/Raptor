@@ -4,6 +4,8 @@ namespace Raptor\Organization;
 
 use codesaur\Router\Router;
 
+use Raptor\CsrfMiddleware;
+
 /**
  * Class OrganizationRouter
  *
@@ -42,7 +44,7 @@ class OrganizationRouter extends Router
          * Action:   OrganizationController::index()
          * Name:     organizations
          */
-        $this->GET('/dashboard/organizations', [OrganizationController::class, 'index'])->name('organizations');
+        $this->GET('/organizations', [OrganizationController::class, 'index'])->name('organizations');
 
         /**
          * --------------------------------------------------------------
@@ -53,7 +55,7 @@ class OrganizationRouter extends Router
          * Action:   OrganizationController::list()
          * Name:     organizations-list
          */
-        $this->GET('/dashboard/organizations/list', [OrganizationController::class, 'list'])->name('organizations-list');
+        $this->GET('/organizations/list', [OrganizationController::class, 'list'])->name('organizations-list');
 
         /**
          * --------------------------------------------------------------
@@ -64,7 +66,7 @@ class OrganizationRouter extends Router
          * Action:   OrganizationController::insert()
          * Name:     organization-insert
          */
-        $this->GET_POST('/dashboard/organizations/insert', [OrganizationController::class, 'insert'])->name('organization-insert');
+        $this->GET_POST('/organizations/insert', [OrganizationController::class, 'insert'])->name('organization-insert')->middleware([CsrfMiddleware::class]);
 
         /**
          * --------------------------------------------------------------
@@ -76,7 +78,7 @@ class OrganizationRouter extends Router
          * Param:    id - uint төрөлтэй
          * Name:     organization-update
          */
-        $this->GET_PUT('/dashboard/organizations/update/{uint:id}', [OrganizationController::class, 'update'])->name('organization-update');
+        $this->GET_PUT('/organizations/update/{uint:id}', [OrganizationController::class, 'update'])->name('organization-update')->middleware([CsrfMiddleware::class]);
 
         /**
          * --------------------------------------------------------------
@@ -87,7 +89,7 @@ class OrganizationRouter extends Router
          * Action:   OrganizationController::view()
          * Name:     organization-view
          */
-        $this->GET('/dashboard/organizations/view/{uint:id}', [OrganizationController::class, 'view']);
+        $this->GET('/organizations/view/{uint:id}', [OrganizationController::class, 'view'])->name('organization-view');
 
         /**
          * --------------------------------------------------------------
@@ -98,14 +100,14 @@ class OrganizationRouter extends Router
          * Action:   OrganizationController::deactivate()
          * Name:     organization-deactivate
          */
-        $this->DELETE('/dashboard/organizations/deactivate', [OrganizationController::class, 'deactivate'])->name('organization-deactivate');
+        $this->DELETE('/organizations/deactivate', [OrganizationController::class, 'deactivate'])->name('organization-deactivate')->middleware([CsrfMiddleware::class]);
 
         /**
          * --------------------------------------------------------------
          * Идэвхгүй байгууллагыг бүрэн устгах (HARD DELETE)
          * --------------------------------------------------------------
          */
-        $this->DELETE('/dashboard/organizations/delete', [OrganizationController::class, 'delete'])->name('organization-delete');
+        $this->DELETE('/organizations/delete', [OrganizationController::class, 'delete'])->name('organization-delete')->middleware([CsrfMiddleware::class]);
 
         /**
          * --------------------------------------------------------------
@@ -116,6 +118,6 @@ class OrganizationRouter extends Router
          * Action:   OrganizationUserController::index()
          * Name:     organization-user
          */
-        $this->GET('/dashboard/organization/user/list', [OrganizationUserController::class, 'index'])->name('organization-user');
+        $this->GET('/organization/user/list', [OrganizationUserController::class, 'index'])->name('organization-user');
     }
 }

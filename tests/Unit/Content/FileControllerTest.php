@@ -245,18 +245,18 @@ class FileControllerTest extends TestCase
     public function testMoveUploadedChecksSizeLimit(): void
     {
         $this->assertStringContainsString(
-            '_size_limit',
+            'size_limit',
             self::$source,
-            'moveUploaded() must check file size against _size_limit'
+            'moveUploaded() must check file size against size_limit'
         );
     }
 
     public function testMoveUploadedChecksAllowedExtensions(): void
     {
         $this->assertStringContainsString(
-            '_allowed_exts',
+            'allowed_exts',
             self::$source,
-            'moveUploaded() must validate against _allowed_exts'
+            'moveUploaded() must validate against allowed_exts'
         );
     }
 

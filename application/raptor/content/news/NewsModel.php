@@ -58,9 +58,9 @@ class NewsModel extends Model
      * --------------------------------------------------------------
      * Raptor Framework нь PDO instance-ийг дараах дарааллаар inject хийдэг:
      *
-     *   1) MySQLConnectMiddleware / PostgresConnectMiddleware
-     *      -> Application-ийн ServerRequestInterface дотор PDO instance үүсгэнэ
-     *      -> $request->withAttribute('pdo', $pdo) хэлбэрээр хадгална
+     *   1) public_html/index.php (entry point)
+     *      -> \Raptor\DatabaseConnection::connect() дуудаж PDO үүсгэнэ
+     *      -> $request = $request->withAttribute('pdo', $pdo) хэлбэрээр хадгална
      *
      *   2) Controller constructor
      *      -> ServerRequest-аас PDO-г авч $this->pdo хувьсагчид онооно
@@ -70,17 +70,17 @@ class NewsModel extends Model
      *      -> Controller-ийн байгуулагчаар дамжуулан PDO instance ирнэ
      *      -> new NewsModel($this->pdo) хэлбэрээр дуудагдана
      *
-     * Иймээс энэхүү `$pdo` нь *middleware injection-ээр дамжсан баталгаатай
+     * Иймээс энэхүү `$pdo` нь *entry point дээр үүсгэгдсэн баталгаатай
      * холболт* бөгөөд Model анги зөвхөн өгөгдөлтэй ажиллахад анхаарна.
      *
-     * Framework-ийн request-scope injection механизм ашигладаг
+     * Web ба Dashboard аппликейшнүүд нэг л PDO instance ашиглана
      * Нэг request дотор нэг л PDO instance ажиллана
-     * DatabaseMiddleware нь PDO-г автоматаар үүсгэж inject хийнэ
+     * Driver сонголт .env-ийн RAPTOR_DB_DRIVER хувьсагчаар удирдагдана
      *
      * @param \PDO $pdo Database connection instance.
-     *                  Application-ийн ServerRequestInterface дотор inject хийгдсэн
-     *                  PDO object (DatabaseMiddleware inject хийсэн) байгаа нь
-     *                  Controller-ийн байгуулагчаар дамжуулан ирдэг.
+     *                  `public_html/index.php` entry point дээр үүсэгдэж
+     *                  ServerRequestInterface-ийн `pdo` attribute-аар Application
+     *                  руу дамждаг бөгөөд Controller-ийн байгуулагчаар цааш ирнэ.
      */
     public function __construct(\PDO $pdo)
     {

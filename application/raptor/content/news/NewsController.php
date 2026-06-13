@@ -374,7 +374,7 @@ class NewsController extends FileController
 
                 $payload['updated_at'] = \date('Y-m-d H:i:s');
                 $payload['updated_by'] = $this->getUserId();
-                $model->updateById($id, $payload);
+                $updated = $model->updateById($id, $payload);
 
                 $this->invalidateCache('recent_news.{code}');
                 $this->respondJSON([

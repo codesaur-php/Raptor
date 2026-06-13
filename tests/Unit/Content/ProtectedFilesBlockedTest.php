@@ -5,19 +5,19 @@ namespace Tests\Unit\Content;
 use PHPUnit\Framework\TestCase;
 
 /**
- * PrivateFilesController::read() - blocked file extension/name test.
+ * ProtectedFilesController::read() - blocked file extension/name test.
  *
  * Source code-d blockedExtensions, blockedFiles, .env* shalgalt
  * zuw bichigdsen esehiig batalgaajuulna.
  */
-class PrivateFilesBlockedTest extends TestCase
+class ProtectedFilesBlockedTest extends TestCase
 {
     private static string $source;
 
     public static function setUpBeforeClass(): void
     {
         self::$source = file_get_contents(
-            dirname(__DIR__, 3) . '/application/raptor/content/file/PrivateFilesController.php'
+            dirname(__DIR__, 3) . '/application/raptor/content/file/ProtectedFilesController.php'
         );
     }
 
@@ -103,7 +103,7 @@ class PrivateFilesBlockedTest extends TestCase
         $this->assertMatchesRegularExpression(
             '/\$blockedExtensions\s*=\s*\[/',
             self::$source,
-            'PrivateFilesController should have $blockedExtensions array'
+            'ProtectedFilesController should have $blockedExtensions array'
         );
     }
 
@@ -116,7 +116,7 @@ class PrivateFilesBlockedTest extends TestCase
         $this->assertMatchesRegularExpression(
             '/\$blockedFiles\s*=\s*\[/',
             self::$source,
-            'PrivateFilesController should have $blockedFiles array'
+            'ProtectedFilesController should have $blockedFiles array'
         );
     }
 

@@ -10,7 +10,7 @@
  * @example
  * // Тохиргоотой
  * const editor = new moedit(document.querySelector('.moedit'), {
- *   upload: '/dashboard/files/moedit/upload',
+ *   upload: { url: '/dashboard/files/upload', folder: 'news', maxFileSize: 2097152 },
  *   onChange: (html) => console.log('Changed:', html),
  *   notify: (type, msg) => showToast(type, msg)
  * });

@@ -43,7 +43,7 @@ class TextModel extends LocalizedModel
      */
     public function __construct(\PDO $pdo)
     {
-        // Middleware-ээс ирсэн PDO instance авах
+        // public_html/index.php-ээс request attribute-ээр ирсэн PDO instance
         $this->setInstance($pdo);
 
         // Parent table columns

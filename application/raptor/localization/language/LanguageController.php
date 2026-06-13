@@ -173,6 +173,9 @@ class LanguageController extends \Raptor\Controller
 
             $model = new LanguageModel($this->pdo);
             $record = $model->getById($id);
+            if (empty($record)) {
+                throw new \Exception($this->text('no-record-selected'), 404);
+            }
             $this->template(
                 __DIR__ . '/language-retrieve-modal.html',
                 ['record' => $record]

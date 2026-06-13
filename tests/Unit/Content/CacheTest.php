@@ -325,46 +325,46 @@ class CacheTest extends TestCase
     }
 
     // =============================================
-    // PrivateFilesController cache хамгаалалт
+    // ProtectedFilesController cache хамгаалалт
     // =============================================
 
-    public function testPrivateFilesReadBlocksCache(): void
+    public function testProtectedFilesReadBlocksCache(): void
     {
         $source = file_get_contents(
-            dirname(__DIR__, 3) . '/application/raptor/content/file/PrivateFilesController.php'
+            dirname(__DIR__, 3) . '/application/raptor/content/file/ProtectedFilesController.php'
         );
 
         $this->assertStringContainsString(
             'cache',
             $source,
-            'PrivateFilesController::read() should check for cache directory'
+            'ProtectedFilesController::read() should check for cache directory'
         );
 
         $this->assertStringContainsString(
             'cacheDir',
             $source,
-            'PrivateFilesController should define cacheDir path for blocking'
+            'ProtectedFilesController should define cacheDir path for blocking'
         );
     }
 
-    public function testPrivateFilesSetFolderBlocksCache(): void
+    public function testProtectedFilesSetFolderBlocksCache(): void
     {
         $source = file_get_contents(
-            dirname(__DIR__, 3) . '/application/raptor/content/file/PrivateFilesController.php'
+            dirname(__DIR__, 3) . '/application/raptor/content/file/ProtectedFilesController.php'
         );
 
         // setFolder method deer cache shalgalt baidag eseh
         $this->assertMatchesRegularExpression(
             '/function setFolder.*?cache/s',
             $source,
-            'PrivateFilesController::setFolder() should block cache folder'
+            'ProtectedFilesController::setFolder() should block cache folder'
         );
     }
 
     public function testReadMethodBlocksCacheWithForbidden(): void
     {
         $source = file_get_contents(
-            dirname(__DIR__, 3) . '/application/raptor/content/file/PrivateFilesController.php'
+            dirname(__DIR__, 3) . '/application/raptor/content/file/ProtectedFilesController.php'
         );
 
         // read() deer cache folder -> Forbidden shiddeg eseh
@@ -378,7 +378,7 @@ class CacheTest extends TestCase
     public function testSetFolderBlocksCacheWithException(): void
     {
         $source = file_get_contents(
-            dirname(__DIR__, 3) . '/application/raptor/content/file/PrivateFilesController.php'
+            dirname(__DIR__, 3) . '/application/raptor/content/file/ProtectedFilesController.php'
         );
 
         // setFolder() deer cache -> RuntimeException shiddeg eseh

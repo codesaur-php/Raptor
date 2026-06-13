@@ -37,7 +37,8 @@ class BadgeControllerTest extends RaptorTestCase
                 $this->assertCount(2, $config, "Config for '$logTable.$action' must have exactly 2 elements [path, color]");
                 $this->assertIsString($config[0], "Module path for '$logTable.$action' must be a string");
                 $this->assertIsString($config[1], "Color for '$logTable.$action' must be a string");
-                $this->assertStringStartsWith('/dashboard/', $config[0], "Module path for '$logTable.$action' must start with /dashboard/");
+                $this->assertStringStartsWith('/', $config[0], "Module path for '$logTable.$action' must start with /");
+                $this->assertFalse(\str_starts_with($config[0], '/dashboard'), "Module path for '$logTable.$action' must be mount-naive (no /dashboard prefix; getMountPath() prepends it at runtime)");
             }
         }
     }
@@ -133,7 +134,8 @@ class BadgeControllerTest extends RaptorTestCase
     {
         foreach (BadgeController::PERMISSION_MAP as $module => $permission) {
             $this->assertIsString($module, "PERMISSION_MAP key must be a string");
-            $this->assertStringStartsWith('/dashboard/', $module, "Module '$module' must start with /dashboard/");
+            $this->assertStringStartsWith('/', $module, "Module '$module' must start with /");
+            $this->assertFalse(\str_starts_with($module, '/dashboard'), "Module '$module' must be mount-naive (no /dashboard prefix)");
 
             // Permission is null, 'role:xxx', or a permission string
             if ($permission !== null) {
@@ -168,15 +170,15 @@ class BadgeControllerTest extends RaptorTestCase
      */
     public function testNullPermissionMeansAnyAuthenticated(): void
     {
-        // /dashboard/manual has null permission
-        $permission = BadgeController::PERMISSION_MAP['/dashboard/manual'];
+        // /manual has null permission
+        $permission = BadgeController::PERMISSION_MAP['/manual'];
         $this->assertNull($permission, 'Manual module should have null permission (any authenticated admin)');
     }
 
     public function testRolePermissionFormat(): void
     {
-        // /dashboard/manage/menu requires 'role:system_coder'
-        $permission = BadgeController::PERMISSION_MAP['/dashboard/manage/menu'];
+        // /manage/menu requires 'role:system_coder'
+        $permission = BadgeController::PERMISSION_MAP['/manage/menu'];
         $this->assertNotNull($permission);
         $this->assertTrue(str_starts_with($permission, 'role:'));
         $this->assertEquals('system_coder', substr($permission, 5));
@@ -184,8 +186,8 @@ class BadgeControllerTest extends RaptorTestCase
 
     public function testStandardPermissionFormat(): void
     {
-        // /dashboard/news requires 'system_content_index'
-        $permission = BadgeController::PERMISSION_MAP['/dashboard/news'];
+        // /news requires 'system_content_index'
+        $permission = BadgeController::PERMISSION_MAP['/news'];
         $this->assertNotNull($permission);
         $this->assertFalse(str_starts_with($permission, 'role:'));
         $this->assertEquals('system_content_index', $permission);
@@ -227,19 +229,19 @@ class BadgeControllerTest extends RaptorTestCase
 
     public function testManualModuleInPermissionMap(): void
     {
-        $this->assertArrayHasKey('/dashboard/manual', BadgeController::PERMISSION_MAP);
+        $this->assertArrayHasKey('/manual', BadgeController::PERMISSION_MAP);
     }
 
     public function testMigrationsModuleInPermissionMap(): void
     {
-        $this->assertArrayHasKey('/dashboard/migrations', BadgeController::PERMISSION_MAP);
+        $this->assertArrayHasKey('/migrations', BadgeController::PERMISSION_MAP);
     }
 
     public function testMigrationsRequiresCoderRole(): void
     {
         $this->assertEquals(
             'role:system_coder',
-            BadgeController::PERMISSION_MAP['/dashboard/migrations']
+            BadgeController::PERMISSION_MAP['/migrations']
         );
     }
 }

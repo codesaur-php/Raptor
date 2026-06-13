@@ -154,31 +154,6 @@ class LogsController extends \Raptor\Controller
     }
 
     /**
-     * Логийн ашиглалтын өгөгдлийг AJAX-р авах API.
-     *
-     * Энэ API нь UI дээрх:
-     *   - хайлт
-     *   - шүүлтүүр (context.action, context.alias ...)
-     *   - ORDER BY
-     *   - LIMIT
-     * бүгдийг хариуцдаг.
-     *
-     * Request format:
-     * ---------------------------------------------
-     * POST /dashboard/logs/retrieve?table=dashboard
-     * Body (JSON):
-     * {
-     *      "ORDER BY": "id DESC",
-     *      "LIMIT": 100,
-     *      "CONTEXT": {
-     *          "action": "rbac-*",
-     *          "alias": "system"
-     *      }
-     * }
-     *
-     * @return void
-     */
-    /**
      * Error log файлыг сүүлээс нь 100 мөрөөр уншиж JSON буцаах.
      *
      * Зөвхөн system_coder эрхтэй хэрэглэгчид хандах боломжтой.

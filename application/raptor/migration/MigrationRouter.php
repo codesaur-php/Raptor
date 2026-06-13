@@ -4,32 +4,42 @@ namespace Raptor\Migration;
 
 use codesaur\Router\Router;
 
+use Raptor\CsrfMiddleware;
+
 /**
  * Class MigrationRouter
  *
- * Migration dashboard-ийн чиглүүлэгч (Router).
+ * File-based migration UI-ийн route-ууд.
  *
- * Маршрутууд:
- *  - GET  /dashboard/migrations         -> Migrations хуудас (index)
- *  - GET  /dashboard/migrations/status  -> Төлөв байдал JSON (AJAX)
- *  - GET  /dashboard/migrations/view    -> SQL файлын агуулга JSON (AJAX)
+ *   GET  /dashboard/migrations         -> Migration index page
+ *   GET  /dashboard/migrations/status  -> JSON: folder бүрийн pending/ran жагсаалт
+ *   GET  /dashboard/migrations/view    -> SQL контент modal
+ *   POST /dashboard/migrations/upload  -> .sql файл хүлээж авах
+ *   POST /dashboard/migrations/apply   -> pending файлыг ажиллуулах
+ *   POST /dashboard/migrations/delete  -> pending файлыг устгах
  *
  * @package Raptor\Migration
  */
 class MigrationRouter extends Router
 {
-    /**
-     * Migration модулийн маршрутуудыг бүртгэх.
-     */
     public function __construct()
     {
-        $this->GET('/dashboard/migrations', [MigrationController::class, 'index'])
+        $this->GET('/migrations', [MigrationController::class, 'index'])
             ->name('migrations');
 
-        $this->GET('/dashboard/migrations/status', [MigrationController::class, 'status'])
+        $this->GET('/migrations/status', [MigrationController::class, 'status'])
             ->name('migrations-status');
 
-        $this->GET('/dashboard/migrations/view', [MigrationController::class, 'view'])
+        $this->GET('/migrations/view', [MigrationController::class, 'view'])
             ->name('migrations-view');
+
+        $this->POST('/migrations/upload', [MigrationController::class, 'upload'])
+            ->name('migrations-upload')->middleware([CsrfMiddleware::class]);
+
+        $this->POST('/migrations/apply', [MigrationController::class, 'apply'])
+            ->name('migrations-apply')->middleware([CsrfMiddleware::class]);
+
+        $this->POST('/migrations/delete', [MigrationController::class, 'delete'])
+            ->name('migrations-delete')->middleware([CsrfMiddleware::class]);
     }
 }

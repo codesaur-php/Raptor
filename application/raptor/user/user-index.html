@@ -72,8 +72,12 @@
             }
             
             /* Амжилттай JSON ирсэн тул UI-д буулгая */
-            const indexLink = `{{ 'users'|link }}`;
-            const orgIndexLink = `{{ 'organizations'|link }}`;
+            const viewPattern        = `{{ 'user-view'|pattern }}`;
+            const updatePattern      = `{{ 'user-update'|pattern }}`;
+            const setOrgPattern      = `{{ 'user-set-organization'|pattern }}`;
+            const setRolePattern     = `{{ 'user-set-role'|pattern }}`;
+            const setPasswordPattern = `{{ 'user-set-password'|pattern }}`;
+            const orgViewPattern     = `{{ 'organization-view'|pattern }}`;
             const canUpdate = `{{ user.can('system_user_update') ? 'true' : '' }}`;
             const canDelete = `{{ user.can('system_user_delete') ? 'true' : '' }}`;
             const canSetOrg = `{{ user.can('system_user_organization_set') ? 'true' : '' }}`;
@@ -147,7 +151,7 @@
                     orgUserHtml += `
                         <a class="ajax-modal btn btn-dark btn-sm shadow-sm mb-1"
                            style="--bs-btn-font-size:.7rem;"
-                           href="${indexLink}/set/organization/${profile.id}"
+                           href="${setOrgPattern.replace('{id}', profile.id)}"
                            data-bs-target="#static-modal" data-bs-toggle="modal">
                            <i class="bi bi-bank"></i>
                         </a>`;
@@ -166,7 +170,7 @@
                     orgUserHtml += `
                         <a class="ajax-modal badge text-bg-light text-decoration-none
                                    ${org.alias === 'system' ? '' : 'fw-normal '} shadow-sm"
-                           href="${orgIndexLink}/view/${org.id}"
+                           href="${orgViewPattern.replace('{id}', org.id)}"
                            data-bs-target="#static-modal" data-bs-toggle="modal">
                            ${org.name}
                         </a>`;
@@ -178,7 +182,7 @@
                     rolesHtml += `
                         <a class="ajax-modal btn btn-sm btn-dark shadow-sm mb-1"
                            style="--bs-btn-font-size:.7rem;"
-                           href="${indexLink}/set/role/${profile.id}"
+                           href="${setRolePattern.replace('{id}', profile.id)}"
                            data-bs-target="#static-modal" data-bs-toggle="modal">
                            <i class="bi bi-shield-fill-check"></i>
                         </a>`;
@@ -201,7 +205,7 @@
                 
                 /* -------- Үйлдлийн товчнууд -------- */
                 let buttons = [
-                    `<a class="btn btn-sm btn-info mt-1 shadow-sm" href="${indexLink}/view/${profile.id}">
+                    `<a class="btn btn-sm btn-info mt-1 shadow-sm" href="${viewPattern.replace('{id}', profile.id)}">
                         <i class="bi bi-eye"></i>
                      </a>`
                 ];
@@ -210,7 +214,7 @@
                     if (canUpdate) {
                         buttons.push(`
                             <a class="btn btn-sm btn-primary mt-1 shadow-sm"
-                               href="${indexLink}/update/${profile.id}">
+                               href="${updatePattern.replace('{id}', profile.id)}">
                                <i class="bi bi-pencil-square"></i>
                             </a>`);
                     }
@@ -219,7 +223,7 @@
                     if (profile.id === authUserId || authSystemCoder) {
                         buttons.push(`
                             <a class="ajax-modal btn btn-sm btn-dark mt-1 shadow-sm"
-                               href="${indexLink}/set/password/${profile.id}"
+                               href="${setPasswordPattern.replace('{id}', profile.id)}"
                                data-bs-target="#static-modal" data-bs-toggle="modal">
                                <i class="bi bi-key-fill"></i>
                             </a>`);

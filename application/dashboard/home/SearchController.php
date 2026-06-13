@@ -45,42 +45,48 @@ class SearchController extends \Raptor\Controller
             
             // NEWS
             if ($this->isUserCan('system_content_index')) {
-                $table = (new NewsModel($this->pdo))->getName();
-                $stmt = $this->prepare(
-                    "SELECT id, title, description, code, type, published, 'news' AS source
-                     FROM $table
-                     WHERE title LIKE :q OR description LIKE :q2 OR content LIKE :q3 OR source LIKE :q4
-                     ORDER BY created_at DESC LIMIT 10"
-                );
-                $stmt->bindValue(':q', $like);
-                $stmt->bindValue(':q2', $like);
-                $stmt->bindValue(':q3', $like);
-                $stmt->bindValue(':q4', $like);
-                if ($stmt->execute()) {
-                    while ($row = $stmt->fetch()) {
-                        $results[] = $row;
+                try {
+                    $table = (new NewsModel($this->pdo))->getName();
+                    $stmt = $this->prepare(
+                        "SELECT id, title, description, code, type, published, 'news' AS source
+                         FROM $table
+                         WHERE title LIKE :q OR description LIKE :q2 OR content LIKE :q3 OR source LIKE :q4
+                         ORDER BY created_at DESC LIMIT 10"
+                    );
+                    $stmt->bindValue(':q', $like);
+                    $stmt->bindValue(':q2', $like);
+                    $stmt->bindValue(':q3', $like);
+                    $stmt->bindValue(':q4', $like);
+                    if ($stmt->execute()) {
+                        while ($row = $stmt->fetch()) {
+                            $results[] = $row;
+                        }
                     }
+                } catch (\Throwable) {
                 }
             }
 
             // PAGES
             if ($this->isUserCan('system_content_index')) {
-                $table = (new PagesModel($this->pdo))->getName();
-                $stmt = $this->prepare(
-                    "SELECT id, title, description, code, type, published, link, 'pages' AS source
-                     FROM $table
-                     WHERE title LIKE :q OR description LIKE :q2 OR content LIKE :q3 OR link LIKE :q4 OR source LIKE :q5
-                     ORDER BY created_at DESC LIMIT 10"
-                );
-                $stmt->bindValue(':q', $like);
-                $stmt->bindValue(':q2', $like);
-                $stmt->bindValue(':q3', $like);
-                $stmt->bindValue(':q4', $like);
-                $stmt->bindValue(':q5', $like);
-                if ($stmt->execute()) {
-                    while ($row = $stmt->fetch()) {
-                        $results[] = $row;
+                try {
+                    $table = (new PagesModel($this->pdo))->getName();
+                    $stmt = $this->prepare(
+                        "SELECT id, title, description, code, type, published, link, 'pages' AS source
+                         FROM $table
+                         WHERE title LIKE :q OR description LIKE :q2 OR content LIKE :q3 OR link LIKE :q4 OR source LIKE :q5
+                         ORDER BY created_at DESC LIMIT 10"
+                    );
+                    $stmt->bindValue(':q', $like);
+                    $stmt->bindValue(':q2', $like);
+                    $stmt->bindValue(':q3', $like);
+                    $stmt->bindValue(':q4', $like);
+                    $stmt->bindValue(':q5', $like);
+                    if ($stmt->execute()) {
+                        while ($row = $stmt->fetch()) {
+                            $results[] = $row;
+                        }
                     }
+                } catch (\Throwable) {
                 }
             }
 
@@ -133,25 +139,28 @@ class SearchController extends \Raptor\Controller
 
             // USERS
             if ($this->isUserCan('system_user_index')) {
-                $table = (new UsersModel($this->pdo))->getName();
-                $stmt = $this->prepare(
-                    "SELECT id, username, first_name, last_name, email, phone, 'users' AS source
-                     FROM $table
-                     WHERE is_active=1
-                       AND (username LIKE :q OR first_name LIKE :q2 OR last_name LIKE :q3 OR email LIKE :q4 OR phone LIKE :q5)
-                     ORDER BY id DESC LIMIT 10"
-                );
-                $stmt->bindValue(':q', $like);
-                $stmt->bindValue(':q2', $like);
-                $stmt->bindValue(':q3', $like);
-                $stmt->bindValue(':q4', $like);
-                $stmt->bindValue(':q5', $like);
-                if ($stmt->execute()) {
-                    while ($row = $stmt->fetch()) {
-                        $row['title'] = \trim($row['first_name'] . ' ' . $row['last_name']);
-                        unset($row['first_name'], $row['last_name']);
-                        $results[] = $row;
+                try {
+                    $table = (new UsersModel($this->pdo))->getName();
+                    $stmt = $this->prepare(
+                        "SELECT id, username, first_name, last_name, email, phone, 'users' AS source
+                         FROM $table
+                         WHERE is_active=1
+                           AND (username LIKE :q OR first_name LIKE :q2 OR last_name LIKE :q3 OR email LIKE :q4 OR phone LIKE :q5)
+                         ORDER BY id DESC LIMIT 10"
+                    );
+                    $stmt->bindValue(':q', $like);
+                    $stmt->bindValue(':q2', $like);
+                    $stmt->bindValue(':q3', $like);
+                    $stmt->bindValue(':q4', $like);
+                    $stmt->bindValue(':q5', $like);
+                    if ($stmt->execute()) {
+                        while ($row = $stmt->fetch()) {
+                            $row['title'] = \trim($row['first_name'] . ' ' . $row['last_name']);
+                            unset($row['first_name'], $row['last_name']);
+                            $results[] = $row;
+                        }
                     }
+                } catch (\Throwable) {
                 }
             }
 

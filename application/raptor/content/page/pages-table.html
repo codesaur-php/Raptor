@@ -166,7 +166,8 @@
             }
 
             let rowsHTML = '';
-            const indexLink = `{{ 'pages'|link }}`;
+            const viewPattern = `{{ 'page-view'|pattern }}`;
+            const updatePattern = `{{ 'page-update'|pattern }}`;
             const canUpdate = {{ user.can('system_content_update') ? 'true' : 'false' }};
             const canDelete = {{ user.can('system_content_delete') ? 'true' : 'false' }};
             const published_text = `{{ 'published'|text|e('js') }}`;
@@ -200,9 +201,9 @@
                 const published = page.published == 1 ? `<i class="bi bi-emoji-heart-eyes-fill text-success"></i> ${published_text}<br/><small>${page['published_at']}</small>` : '<i class="bi bi-eye-slash"></i>';
 
                 const buttons = [];
-                buttons.push(`<a class="btn btn-sm btn-info mt-1 shadow-sm" href="${indexLink}/view/${page.id}?from=index"><i class="bi bi-eye"></i></a>`);
+                buttons.push(`<a class="btn btn-sm btn-info mt-1 shadow-sm" href="${viewPattern.replace('{id}', page.id)}?from=index"><i class="bi bi-eye"></i></a>`);
                 if (canUpdate) {
-                    buttons.push(`<a class="btn btn-sm btn-primary mt-1 shadow-sm" href="${indexLink}/${page.id}?from=index"><i class="bi bi-pencil-square"></i></a>`);
+                    buttons.push(`<a class="btn btn-sm btn-primary mt-1 shadow-sm" href="${updatePattern.replace('{id}', page.id)}?from=index"><i class="bi bi-pencil-square"></i></a>`);
                 }
                 if (canDelete) {
                     buttons.push(`<button class="delete-page btn btn-sm btn-danger mt-1 shadow-sm" type="button" value="${page.id}"><i class="bi bi-trash"></i></button>`);

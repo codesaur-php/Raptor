@@ -38,3 +38,28 @@ if (!empty($_ENV['CODESAUR_APP_TIME_ZONE'])) {
 // Server params (Controller-д хэрэгтэй)
 $_SERVER['SCRIPT_NAME']     = $_SERVER['SCRIPT_NAME'] ?? '/index.php';
 $_SERVER['SCRIPT_FILENAME'] = $_SERVER['SCRIPT_FILENAME'] ?? "$root/public_html/index.php";
+
+// Test database-г байхгүй бол үүсгэх (зөвхөн MySQL driver-т, developer-д амар).
+// Production бол `\Raptor\DatabaseConnection::connect()` шууд connect хийдэг -
+// энд тест орчинд CREATE DATABASE-ийг тусад нь ажиллуулна.
+if ((($_ENV['RAPTOR_DB_DRIVER'] ?? 'mysql') === 'mysql')) {
+    $host      = $_ENV['RAPTOR_DB_HOST']      ?? 'localhost';
+    $username  = $_ENV['RAPTOR_DB_USERNAME']  ?? 'root';
+    $password  = $_ENV['RAPTOR_DB_PASSWORD']  ?? '';
+    $charset   = $_ENV['RAPTOR_DB_CHARSET']   ?? 'utf8mb4';
+    $collation = $_ENV['RAPTOR_DB_COLLATION'] ?? 'utf8mb4_unicode_ci';
+    $database  = $_ENV['RAPTOR_DB_NAME']      ?? 'raptor_test';
+
+    try {
+        $server = new \PDO(
+            "mysql:host=$host;charset=$charset",
+            $username,
+            $password,
+            [\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION]
+        );
+        $server->exec("CREATE DATABASE IF NOT EXISTS `$database` COLLATE $collation");
+    } catch (\Throwable $e) {
+        fwrite(STDERR, "Test DB бэлдэх алдаа: {$e->getMessage()}\n");
+        exit(1);
+    }
+}

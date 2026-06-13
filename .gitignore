@@ -2,9 +2,9 @@
 /public_html/public/*
 !/public_html/public/.htaccess
 
-# Private хавтас - серверийн дотоод өгөгдөл, зөвхөн .htaccess үлдэнэ
-/private/*
-!/private/.htaccess
+# Protected хавтас (cache + protected files), зөвхөн .htaccess үлдэнэ
+/protected/*
+!/protected/.htaccess
 
 # Composer vendor - автоматаар татагддаг тул оруулахгүй
 /vendor/
@@ -19,3 +19,10 @@ composer.lock
 
 # NetBeans private тохиргоо
 /nbproject/private/
+
+# Migration SQL файлууд - per-environment upload (file-based system).
+# Зөвхөн .gitkeep ба README.md git-д үлдэнэ; бусад файлууд server-ээс
+# upload хийгдэнэ.
+/database/migrations/*
+!/database/migrations/.gitkeep
+!/database/migrations/README.md

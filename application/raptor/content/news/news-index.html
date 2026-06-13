@@ -186,8 +186,8 @@
 
             /* ========== ХҮСНЭГТИЙН МӨРҮҮДИЙГ ҮҮСГЭХ ========== */
             let rowsHTML = '';
-            const indexLink = `{{ 'news'|link }}`;
-            const commentsLink = `{{ 'comments'|link }}`;
+            const viewPattern = `{{ 'news-view'|pattern }}`;
+            const updatePattern = `{{ 'news-update'|pattern }}`;
 
             /* Хэрэглэгчийн эрхүүдийг шалгах */
             const canUpdate = {{ user.can('system_content_update') ? 'true' : 'false' }};  /* Засах эрх */
@@ -222,16 +222,16 @@
                 if (record.comment == 1) {
                     const cnt = record.comments_count || 0;
                     const badge = cnt > 0 ? `<span class="badge bg-info">${cnt}</span>` : '';
-                    published += `<br/><a class="text-decoration-none" href="${commentsLink}/news/${record.id}" title="Comments"><i class="bi bi-chat-dots"></i> ${badge}</a>`;
+                    published += `<br/><a class="text-decoration-none" href="${viewPattern.replace('{id}', record.id)}#comments" title="Comments"><i class="bi bi-chat-dots"></i> ${badge}</a>`;
                 }
 
                 /* ========== ҮЙЛДЛИЙН ТОВЧНУУДЫГ ҮҮСГЭХ ========== */
                 const buttons = [];
-                buttons.push(`<a class="btn btn-sm btn-info mt-1 shadow-sm" href="${indexLink}/view/${record.id}"><i class="bi bi-eye"></i></a>`);          /* Харах товч */
+                buttons.push(`<a class="btn btn-sm btn-info mt-1 shadow-sm" href="${viewPattern.replace('{id}', record.id)}"><i class="bi bi-eye"></i></a>`);          /* Харах товч */
 
                 /* Засах эрхтэй бол засах товч нэмэх */
                 if (canUpdate) {
-                    buttons.push(`<a class="btn btn-sm btn-primary mt-1 shadow-sm" href="${indexLink}/${record.id}"><i class="bi bi-pencil-square"></i></a>`);
+                    buttons.push(`<a class="btn btn-sm btn-primary mt-1 shadow-sm" href="${updatePattern.replace('{id}', record.id)}"><i class="bi bi-pencil-square"></i></a>`);
                 }
                 /* Устгах эрхтэй бол устгах товч нэмэх */
                 if (canDelete) {

@@ -19,7 +19,7 @@
                 <label class="form-label fw-bolder">{{ 'product'|text }} <i class="bi bi-box-seam"></i></label>
                 {% if record['product_id'] %}
                 <div class="form-control bg-light">
-                    <a href="{{ 'products'|link }}/view/{{ record['product_id'] }}" class="text-decoration-none">
+                    <a href="{{ 'product-view'|link({id: record['product_id']}) }}" class="text-decoration-none">
                         <i class="bi bi-link-45deg"></i> {{ record['product_title']|e }}
                     </a>
                 </div>

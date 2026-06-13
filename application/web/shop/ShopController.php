@@ -516,6 +516,9 @@ class ShopController extends TemplateController
                 return;
             }
 
+            // Web app нь /dashboard-д mount хийгдээгүй тул generateRouteLink() энд
+            // ажиллахгүй - email-д cross-app absolute URL hardcode хийнэ. '/dashboard'-г
+            // index.php дахь Dashboard app-ийн mount path-тай тааруулж байх ёстой.
             $appUrl = \rtrim((string)$this->getRequest()->getUri()->withPath($this->getScriptPath()), '/');
             $ordersLink = $appUrl . '/dashboard/orders';
 
@@ -576,6 +579,9 @@ class ShopController extends TemplateController
                 return;
             }
 
+            // Web app нь /dashboard-д mount хийгдээгүй тул generateRouteLink() энд
+            // ажиллахгүй - email-д cross-app absolute URL hardcode хийнэ. '/dashboard'-г
+            // index.php дахь Dashboard app-ийн mount path-тай тааруулж байх ёстой.
             $appUrl = \rtrim((string)$this->getRequest()->getUri()->withPath($this->getScriptPath()), '/');
             $reviewsLink = $appUrl . '/dashboard/products/reviews';
 

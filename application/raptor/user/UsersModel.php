@@ -24,15 +24,18 @@ use codesaur\DataObject\Constants;
  * --------------------------------------------------------------
  * Raptor Framework нь PDO instance-ийг дараах дарааллаар inject хийдэг:
  *
- *   Middleware  ->  ServerRequest::withAttribute('pdo')  
- *                 -> Controller::$pdo  
- *                 -> Model::__construct(\PDO $pdo)
+ *   public_html/index.php
+ *     -> \Raptor\DatabaseConnection::connect()
+ *     -> ServerRequest::withAttribute('pdo')
+ *     -> Controller::$pdo
+ *     -> Model::__construct(\PDO $pdo)
  *
- * Иймээс энэхүү `$pdo` нь *middleware injection-ээр дамжсан баталгаатай
- * холболт* бөгөөд Model анги зөвхөн өгөгдөлтэй ажиллахад анхаарна.
+ * Иймээс энэхүү `$pdo` нь *entry point дээр нэг л удаа үүсгэгдсэн
+ * баталгаатай холболт* бөгөөд Model анги зөвхөн өгөгдөлтэй ажиллахад
+ * анхаарна.
  *
- * Framework-ийн DI container ашигладаггүй, request-scope injection юм  
- * Нэг request дотор нэг л PDO instance ажиллана  
+ * Web ба Dashboard аппликейшнүүд нэг л PDO instance ашиглана
+ * Нэг request дотор нэг л PDO instance ажиллана
  *
  * @package Raptor\User
  */
@@ -42,8 +45,8 @@ class UsersModel extends Model
      * UsersModel constructor.
      *
      * @param \PDO $pdo
-     *      Middleware -> ServerRequest -> Controller-аас дамжиж ирсэн
-     *      **баталгаатай PDO instance**.
+     *      public_html/index.php -> ServerRequest -> Controller-аас
+     *      дамжиж ирсэн **баталгаатай PDO instance**.
      *
      *      Энэхүү constructor нь:
      *        * хүснэгтийн бүх багануудыг тодорхойлно  

@@ -4,6 +4,8 @@ namespace Raptor\Log;
 
 use codesaur\Router\Router;
 
+use Raptor\CsrfMiddleware;
+
 /**
  * Class LogsRouter
  * 
@@ -41,7 +43,7 @@ class LogsRouter extends Router
          * -----------------------------------------
          * Логийн үндсэн dashboard хуудсыг харуулна.
          */
-        $this->GET('/dashboard/logs', [LogsController::class, 'index'])->name('logs');
+        $this->GET('/logs', [LogsController::class, 'index'])->name('logs');
 
         /**
          * GET /dashboard/logs/view
@@ -49,7 +51,7 @@ class LogsRouter extends Router
          * Нэг бүртгэлийг modal-аар харах.
          * AJAX modal loader-аар дуудагддаг -> logs-view
          */
-        $this->GET('/dashboard/logs/view', [LogsController::class, 'view'])->name('logs-view');
+        $this->GET('/logs/view', [LogsController::class, 'view'])->name('logs-view');
 
         /**
          * POST /dashboard/logs/retrieve
@@ -64,8 +66,8 @@ class LogsRouter extends Router
          * UI талын JS:
          * fetch('logs-retrieve', { method:'POST', body:{ ... } })
          */
-        $this->POST('/dashboard/logs/retrieve', [LogsController::class, 'retrieve'])->name('logs-retrieve');
+        $this->POST('/logs/retrieve', [LogsController::class, 'retrieve'])->name('logs-retrieve')->middleware([CsrfMiddleware::class]);
 
-        $this->GET('/dashboard/logs/error-log-read', [LogsController::class, 'errorLogRead'])->name('error-log-read');
+        $this->GET('/logs/error-log-read', [LogsController::class, 'errorLogRead'])->name('error-log-read');
     }
 }

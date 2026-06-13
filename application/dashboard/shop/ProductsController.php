@@ -313,8 +313,13 @@ class ProductsController extends FileController
                 }
 
                 if ($isPublished && $record['published'] != 1) {
+                    // Шинээр нийтлэх (0 -> 1) үед нийтэлсэн огноо/хэрэглэгчийг тэмдэглэнэ
                     $parsedBody['published_at'] = \date('Y-m-d H:i:s');
                     $parsedBody['published_by'] = $this->getUserId();
+                } elseif (!$isPublished && $record['published'] == 1) {
+                    // Нийтлэлээс хасах (1 -> 0) үед хуучин нийтлэлийн метаг цэвэрлэнэ
+                    $parsedBody['published_at'] = null;
+                    $parsedBody['published_by'] = null;
                 }
 
                 $files = \json_decode($parsedBody['files'] ?? '{}', true) ?: [];

@@ -10,47 +10,26 @@ use Psr\Http\Server\RequestHandlerInterface;
 /**
  * Class CsrfMiddleware
  *
- * Dashboard-ийн POST/PUT/PATCH/DELETE хүсэлтүүдэд CSRF token шалгах middleware.
+ * Dashboard-ийн mutating (POST/PUT/PATCH/DELETE) хүсэлтүүдэд CSRF token шалгах
+ * per-route middleware.
  *
- * Token нь login үед $_SESSION['CSRF_TOKEN'] дотор үүсэж хадгалагдана.
- * Клиент тал (JS) нь X-CSRF-TOKEN header-аар дамжуулна.
+ * Router дээр mutating route бүрд `->middleware([CsrfMiddleware::class])`
+ * хэлбэрээр наагдана. Token нь login үед $_SESSION['CSRF_TOKEN'] дотор үүсэж,
+ * dashboard layout-ийн <meta name="csrf-token">-аар клиентэд хүрнэ. Клиент тал
+ * (JS) X-CSRF-TOKEN header-аар буцааж дамжуулна.
  *
- * GET/HEAD/OPTIONS хүсэлтүүд шалгахгүй дамжина.
- * /login замууд мөн exempt (тэнд token үүсдэг).
+ * GET/HEAD/OPTIONS (safe method) хүсэлт шалгахгүй дамжина - GET_POST зэрэг
+ * compound route-ийн GET талыг блоклохгүйн тулд.
  */
 class CsrfMiddleware implements MiddlewareInterface
 {
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
-        // Token байхгүй бол үүсгэх (session writable байх ёстой)
-        if (empty($_SESSION['CSRF_TOKEN']) && \session_status() === \PHP_SESSION_ACTIVE) {
-            $_SESSION['CSRF_TOKEN'] = \bin2hex(\random_bytes(32));
-        }
-
-        // Token-г request attribute-аар дамжуулна (Controller-д ашиглахад)
-        $request = $request->withAttribute('csrf_token', $_SESSION['CSRF_TOKEN'] ?? '');
-
-        $method = $request->getMethod();
-
-        // Safe method -> дамжуулна
-        if (\in_array($method, ['GET', 'HEAD', 'OPTIONS'], true)) {
+        // Safe method -> шалгахгүй дамжина (compound route-ийн GET талыг хамгаална)
+        if (\in_array($request->getMethod(), ['GET', 'HEAD', 'OPTIONS'], true)) {
             return $handler->handle($request);
         }
 
-        // Path олох (SessionMiddleware-тай ижил логик)
-        $path = \rawurldecode($request->getUri()->getPath());
-        $scriptRoot = \dirname($request->getServerParams()['SCRIPT_NAME']);
-        if (($len = \strlen($scriptRoot)) > 1) {
-            $path = \substr($path, $len);
-            $path = '/' . \ltrim($path, '/');
-        }
-
-        // Login exempt
-        if (\str_contains($path, '/login')) {
-            return $handler->handle($request);
-        }
-
-        // Token шалгах
         $sessionToken = $_SESSION['CSRF_TOKEN'] ?? '';
         $headerToken  = $request->getHeaderLine('X-CSRF-TOKEN');
 

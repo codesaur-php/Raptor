@@ -18,7 +18,7 @@ class ManualRouter extends Router
      */
     public function __construct()
     {
-        $this->GET('/dashboard/manual', [ManualController::class, 'index'])->name('manual');
-        $this->GET('/dashboard/manual/{file}', [ManualController::class, 'view'])->name('manual-view');
+        $this->GET('/manual', [ManualController::class, 'index'])->name('manual');
+        $this->GET('/manual/{file}', [ManualController::class, 'view'])->name('manual-view');
     }
 }

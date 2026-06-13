@@ -38,7 +38,37 @@
 <script type="text/javascript">
     document.addEventListener('DOMContentLoaded', function () {
         const table = new motable('table#reviews', { freezeColumns: [1] });
-        const productsLink = `{{ 'products'|link }}`;
+        const productViewPattern = `{{ 'product-view'|pattern }}`;
+
+        {% if user.can('system_product_delete') %}
+        // Үнэлгээ устгах - мөрүүд динамикаар үүсдэг тул document дээр delegation ашиглана
+        document.addEventListener('click', function (e) {
+            const btn = e.target.closest('.delete-review');
+            if (!btn) return;
+            const id = btn.dataset.id;
+            Swal.fire({
+                title: `{{ 'confirm-delete'|text|e('js') }}`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                confirmButtonText: `{{ 'delete'|text|e('js') }}`,
+                cancelButtonText: `{{ 'cancel'|text|e('js') }}`
+            }).then(result => {
+                if (!result.isConfirmed) return;
+                csrfFetch(`{{ 'products-reviews-delete'|link }}`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id })
+                }).then(r => r.json()).then(res => {
+                    if (res.status === 'success') {
+                        location.reload();
+                    } else {
+                        Swal.fire(`{{ 'error'|text|e('js') }}`, res.message, 'error');
+                    }
+                });
+            });
+        });
+        {% endif %}
 
         csrfFetch(
             `{{ 'products-reviews'|link }}`,
@@ -66,7 +96,10 @@
                         : '<i class="bi bi-star text-muted"></i>';
                 }
 
-                const actions = `<a class="btn btn-sm btn-outline-info" href="${productsLink}/view/${record.product_id}#reviews-section" title="View"><i class="bi bi-eye"></i></a>`;
+                let actions = `<a class="btn btn-sm btn-outline-info" href="${productViewPattern.replace('{id}', record.product_id)}#reviews-section" title="View"><i class="bi bi-eye"></i></a>`;
+                {% if user.can('system_product_delete') %}
+                actions += ` <button type="button" class="btn btn-sm btn-outline-danger delete-review" data-id="${id}" title="{{ 'delete'|text|e('js') }}"><i class="bi bi-trash"></i></button>`;
+                {% endif %}
 
                 rowsHTML += `<tr>
                     <td>${id}<br><small class="text-muted">${record.created_at}</small></td>

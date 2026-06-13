@@ -36,6 +36,9 @@ class BadgeController extends \Raptor\Controller
     /**
      * Module бүрт хандахад шаардлагатай эрхийн зураглал.
      *
+     * Түлхүүр нь mount-naive ('/news', '/manage/menu') - mount prefix
+     * ('/dashboard') БАЙХГҮЙ. Runtime-д getMountPath()-аар угсарна.
+     *
      * Гурван төрлийн утга авна:
      *   null               - аливаа нэвтэрсэн admin хандах боломжтой (isUserAuthorized)
      *   'role:system_coder' - тухайн role-той эсэхийг isUser() ашиглан шалгана
@@ -44,22 +47,22 @@ class BadgeController extends \Raptor\Controller
      * @var array<string, string|null>
      */
     public const PERMISSION_MAP = [
-        '/dashboard/messages'      => 'system_content_index',
-        '/dashboard/pages'         => 'system_content_index',
-        '/dashboard/news'          => 'system_content_index',
-        '/dashboard/files'         => 'system_content_index',
-        '/dashboard/localization'  => 'system_localization_index',
-        '/dashboard/settings'      => 'system_content_settings',
-        '/dashboard/references'    => 'system_content_index',
-        '/dashboard/products'      => 'system_product_index',
-        '/dashboard/orders'        => 'system_product_index',
-        '/dashboard/users'         => 'system_user_index',
-        '/dashboard/organizations' => 'system_organization_index',
-        '/dashboard/manage/menu'   => 'role:system_coder',
-        '/dashboard/dev-requests'  => 'system_development',
-        '/dashboard/manual'        => null,
-        '/dashboard/migrations'    => 'role:system_coder',
-        '/dashboard/trash'         => 'role:system_coder',
+        '/messages'      => 'system_content_index',
+        '/pages'         => 'system_content_index',
+        '/news'          => 'system_content_index',
+        '/files'         => 'system_content_index',
+        '/localization'  => 'system_localization_index',
+        '/settings'      => 'system_content_settings',
+        '/references'    => 'system_content_index',
+        '/products'      => 'system_product_index',
+        '/orders'        => 'system_product_index',
+        '/users'         => 'system_user_index',
+        '/organizations' => 'system_organization_index',
+        '/manage/menu'   => 'role:system_coder',
+        '/dev-requests'  => 'system_development',
+        '/manual'        => null,
+        '/migrations'    => 'role:system_coder',
+        '/trash'         => 'role:system_coder',
     ];
 
     /**
@@ -68,100 +71,101 @@ class BadgeController extends \Raptor\Controller
      * Бүтэц: [log_table_prefix][action_name] => [module_path, color]
      *   log_table_prefix - log хүснэгтийн нэр (_log suffix-гүй), жишээ: 'news' -> news_log
      *   action_name - log context доторх 'action' талбарын утга
-     *   module_path - dashboard sidebar-ийн module замнал
+     *   module_path - mount-naive module зам ('/news') - mount prefix БАЙХГҮЙ,
+     *                 runtime-д getMountPath()-аар бүтэн '/dashboard/news' болно
      *   color - badge-ийн өнгө: green (create/insert), blue (update), red (delete)
      *
      * Нэг log хүснэгтээс олон module-руу badge үүсэх боломжтой.
-     * Жишээ: news_log доторх 'create' action нь /dashboard/news-руу green badge,
-     * 'comment-insert' action нь /dashboard/news-руу info badge үүсгэнэ.
-     * products_orders_log доторх 'order' action нь /dashboard/orders-руу badge үүсгэнэ.
+     * Жишээ: news_log доторх 'create' action нь /news-руу green badge,
+     * 'comment-insert' action нь /news-руу info badge үүсгэнэ.
+     * products_orders_log доторх 'order' action нь /orders-руу badge үүсгэнэ.
      *
      * @var array<string, array<string, array{0: string, 1: string}>>
      */
     public const BADGE_MAP = [
         'messages' => [
-            'contact-send'   => ['/dashboard/messages', 'green'],
-            'mark-replied'   => ['/dashboard/messages', 'blue'],
-            'delete'         => ['/dashboard/messages', 'red'],
+            'contact-send'   => ['/messages', 'green'],
+            'mark-replied'   => ['/messages', 'blue'],
+            'delete'         => ['/messages', 'red'],
         ],
         'pages' => [
-            'create'         => ['/dashboard/pages', 'green'],
-            'update'         => ['/dashboard/pages', 'blue'],
-            'delete'         => ['/dashboard/pages', 'red'],
+            'create'         => ['/pages', 'green'],
+            'update'         => ['/pages', 'blue'],
+            'delete'         => ['/pages', 'red'],
         ],
         'news' => [
-            'create'         => ['/dashboard/news', 'green'],
-            'update'         => ['/dashboard/news', 'blue'],
-            'delete'         => ['/dashboard/news', 'red'],
-            'comment-insert' => ['/dashboard/news', 'info'],
-            'comment-reply'  => ['/dashboard/news', 'info'],
-            'comment-delete' => ['/dashboard/news', 'red'],
+            'create'         => ['/news', 'green'],
+            'update'         => ['/news', 'blue'],
+            'delete'         => ['/news', 'red'],
+            'comment-insert' => ['/news', 'info'],
+            'comment-reply'  => ['/news', 'info'],
+            'comment-delete' => ['/news', 'red'],
         ],
         'files' => [
-            'files-upload'   => ['/dashboard/files', 'green'],
-            'files-update'   => ['/dashboard/files', 'blue'],
-            'files-delete'   => ['/dashboard/files', 'red'],
+            'files-upload'   => ['/files', 'green'],
+            'files-update'   => ['/files', 'blue'],
+            'files-delete'   => ['/files', 'red'],
         ],
         'content' => [
-            'localization-language-create' => ['/dashboard/localization', 'green'],
-            'localization-language-update' => ['/dashboard/localization', 'blue'],
-            'localization-language-delete' => ['/dashboard/localization', 'red'],
-            'localization-text-create'     => ['/dashboard/localization', 'green'],
-            'localization-text-update'     => ['/dashboard/localization', 'blue'],
-            'localization-text-delete'     => ['/dashboard/localization', 'red'],
-            'settings-post'                => ['/dashboard/settings', 'blue'],
-            'settings-files'               => ['/dashboard/settings', 'blue'],
-            'reference-create'             => ['/dashboard/references', 'green'],
-            'reference-update'             => ['/dashboard/references', 'blue'],
-            'reference-delete'             => ['/dashboard/references', 'red'],
+            'localization-language-create' => ['/localization', 'green'],
+            'localization-language-update' => ['/localization', 'blue'],
+            'localization-language-delete' => ['/localization', 'red'],
+            'localization-text-create'     => ['/localization', 'green'],
+            'localization-text-update'     => ['/localization', 'blue'],
+            'localization-text-delete'     => ['/localization', 'red'],
+            'settings-post'                => ['/settings', 'blue'],
+            'settings-files'               => ['/settings', 'blue'],
+            'reference-create'             => ['/references', 'green'],
+            'reference-update'             => ['/references', 'blue'],
+            'reference-delete'             => ['/references', 'red'],
         ],
         'products' => [
-            'create'         => ['/dashboard/products', 'green'],
-            'update'         => ['/dashboard/products', 'blue'],
-            'delete'         => ['/dashboard/products', 'red'],
-            'review-insert'  => ['/dashboard/products', 'info'],
-            'review-delete'  => ['/dashboard/products', 'red'],
+            'create'         => ['/products', 'green'],
+            'update'         => ['/products', 'blue'],
+            'delete'         => ['/products', 'red'],
+            'review-insert'  => ['/products', 'info'],
+            'review-delete'  => ['/products', 'red'],
         ],
         'products_orders' => [
-            'order'          => ['/dashboard/orders', 'green'],
-            'update-status'  => ['/dashboard/orders', 'blue'],
-            'delete'         => ['/dashboard/orders', 'red'],
+            'order'          => ['/orders', 'green'],
+            'update-status'  => ['/orders', 'blue'],
+            'delete'         => ['/orders', 'red'],
         ],
         'users' => [
-            'create'             => ['/dashboard/users', 'green'],
-            'signup-approve'     => ['/dashboard/users', 'green'],
-            'update'             => ['/dashboard/users', 'blue'],
-            'set-password'       => ['/dashboard/users', 'blue'],
-            'set-organization'   => ['/dashboard/users', 'blue'],
-            'set-role'           => ['/dashboard/users', 'blue'],
-            'deactivate'         => ['/dashboard/users', 'red'],
-            'delete'             => ['/dashboard/users', 'red'],
-            'signup-deactivate'  => ['/dashboard/users', 'red'],
-            'signup-delete'      => ['/dashboard/users', 'red'],
-            'strip-organization' => ['/dashboard/users', 'red'],
-            'strip-role'         => ['/dashboard/users', 'red'],
+            'create'             => ['/users', 'green'],
+            'signup-approve'     => ['/users', 'green'],
+            'update'             => ['/users', 'blue'],
+            'set-password'       => ['/users', 'blue'],
+            'set-organization'   => ['/users', 'blue'],
+            'set-role'           => ['/users', 'blue'],
+            'deactivate'         => ['/users', 'red'],
+            'delete'             => ['/users', 'red'],
+            'signup-deactivate'  => ['/users', 'red'],
+            'signup-delete'      => ['/users', 'red'],
+            'strip-organization' => ['/users', 'red'],
+            'strip-role'         => ['/users', 'red'],
         ],
         'organizations' => [
-            'create'     => ['/dashboard/organizations', 'green'],
-            'update'     => ['/dashboard/organizations', 'blue'],
-            'deactivate' => ['/dashboard/organizations', 'red'],
-            'delete'     => ['/dashboard/organizations', 'red'],
+            'create'     => ['/organizations', 'green'],
+            'update'     => ['/organizations', 'blue'],
+            'deactivate' => ['/organizations', 'red'],
+            'delete'     => ['/organizations', 'red'],
         ],
         'dashboard' => [
-            'rbac-create-role'         => ['/dashboard/organizations', 'green'],
-            'rbac-create-permission'   => ['/dashboard/organizations', 'green'],
-            'rbac-set-role-permission' => ['/dashboard/organizations', 'blue'],
-            'template-menu-create'     => ['/dashboard/manage/menu', 'green'],
-            'template-menu-update'     => ['/dashboard/manage/menu', 'blue'],
-            'template-menu-delete'     => ['/dashboard/manage/menu', 'red'],
+            'rbac-create-role'         => ['/organizations', 'green'],
+            'rbac-create-permission'   => ['/organizations', 'green'],
+            'rbac-set-role-permission' => ['/organizations', 'blue'],
+            'template-menu-create'     => ['/manage/menu', 'green'],
+            'template-menu-update'     => ['/manage/menu', 'blue'],
+            'template-menu-delete'     => ['/manage/menu', 'red'],
         ],
         'dev_requests' => [
-            'store'      => ['/dashboard/dev-requests', 'green'],
-            'respond'    => ['/dashboard/dev-requests', 'blue'],
-            'delete'     => ['/dashboard/dev-requests', 'red'],
+            'store'      => ['/dev-requests', 'green'],
+            'respond'    => ['/dev-requests', 'blue'],
+            'delete'     => ['/dev-requests', 'red'],
         ],
         'trash' => [
-            'store' => ['/dashboard/trash', 'red'],
+            'store' => ['/trash', 'red'],
         ],
     ];
 
@@ -213,7 +217,12 @@ class BadgeController extends \Raptor\Controller
 
             $badges = [];
 
-            // Module -> [(log_table, action, color)] reverse map
+            // Mount path ('/dashboard'). BADGE_MAP/PERMISSION_MAP-ийн түлхүүр
+            // нь mount-naive ('/news') тул JSON-д буцаах болон menu href-тэй
+            // тулгах бүтэн key ('/dashboard/news')-г энэ prefix-ээр угсарна.
+            $mount = $this->getMountPath();
+
+            // Module -> [(log_table, action, color)] reverse map (naive key-ээр)
             $moduleMap = [];
             foreach (self::BADGE_MAP as $logTable => $actions) {
                 foreach ($actions as $action => [$module, $color]) {
@@ -222,11 +231,14 @@ class BadgeController extends \Raptor\Controller
             }
 
             // Module бүрт log хүснэгтүүдээс тоолох
-            foreach ($moduleMap as $module => $entries) {
-                // Permission шалгах
-                if (!$this->hasModuleAccess($module)) {
+            foreach ($moduleMap as $naiveModule => $entries) {
+                // Permission шалгах (naive key-ээр PERMISSION_MAP-аас)
+                if (!$this->hasModuleAccess($naiveModule)) {
                     continue;
                 }
+
+                // Бүтэн module key - checkedMap, JSON badge, menu href тулгалтад
+                $module = $mount . $naiveModule;
 
                 // Бичлэг байхгүй бол сүүлийн 30 хоногоос тоолно
                 $checkedAt = $checkedMap[$module]['checked_at']
@@ -314,19 +326,20 @@ class BadgeController extends \Raptor\Controller
             // File-count badge: manual (бүх нэвтэрсэн admin)
             $this->addFileCountBadge(
                 $badges, $checkedMap,
-                '/dashboard/manual',
+                $mount . '/manual',
                 \dirname(__DIR__, 2) . '/dashboard/manual/',
                 '*-*.html',
                 ['manual-index.html']
             );
 
             // File-count badge: migrations (coder only)
-            if ($this->hasModuleAccess('/dashboard/migrations')) {
+            // Pending = .sql in user folders (one level deep), excluding ran/ subfolders.
+            if ($this->hasModuleAccess('/migrations')) {
                 $this->addFileCountBadge(
                     $badges, $checkedMap,
-                    '/dashboard/migrations',
+                    $mount . '/migrations',
                     \dirname(__DIR__, 3) . '/database/migrations/',
-                    '*.sql'
+                    '*/*.sql'
                 );
             }
 
@@ -346,7 +359,8 @@ class BadgeController extends \Raptor\Controller
      *
      * PERMISSION_MAP-д бүртгэгдээгүй module нь null-тэй адил ажиллана.
      *
-     * @param string $module Module-ийн path (жишээ: '/dashboard/news')
+     * @param string $module Mount-naive module key (жишээ: '/news') -
+     *        PERMISSION_MAP-ийн түлхүүртэй ижил, mount prefix БАЙХГҮЙ
      * @return bool Admin энэ module-ийн badge-г харах эрхтэй эсэх
      */
     private function hasModuleAccess(string $module): bool
@@ -440,16 +454,19 @@ class BadgeController extends \Raptor\Controller
             $seenTable = $seenModel->getName();
             $now = \date('Y-m-d H:i:s');
 
-            // File-count: manual, migrations
+            // File-count: manual, migrations. Client бүтэн key ('/dashboard/manual')
+            // илгээдэг тул mount prefix-тэй угсарч тулгана.
+            $mount = $this->getMountPath();
             $fileCount = 0;
-            if ($module === '/dashboard/manual') {
+            if ($module === $mount . '/manual') {
                 $manualDir = \dirname(__DIR__, 2) . '/dashboard/manual/';
                 $manualFiles = \glob($manualDir . '*-*.html') ?: [];
                 $manualFiles = \array_filter($manualFiles, fn($f) => \basename($f) !== 'manual-index.html');
                 $fileCount = \count($manualFiles);
-            } elseif ($module === '/dashboard/migrations') {
+            } elseif ($module === $mount . '/migrations') {
                 $migrationsDir = \dirname(__DIR__, 3) . '/database/migrations/';
-                $migrationFiles = \glob($migrationsDir . '*.sql') ?: [];
+                // Pending = .sql in user folders (one level deep), excluding ran/
+                $migrationFiles = \glob($migrationsDir . '*/*.sql') ?: [];
                 $fileCount = \count($migrationFiles);
             }
 

@@ -37,7 +37,7 @@ class LoginRouter extends Router
          * ---------------------------------------------------------------
          * Хэрэглэгч нэвтрэх нүүр хуудас руу орно.
          */
-        $this->GET('/dashboard/login', [LoginController::class, 'index'])->name('login');
+        $this->GET('/login', [LoginController::class, 'index'])->name('login');
 
         /**
          * ---------------------------------------------------------------
@@ -45,7 +45,7 @@ class LoginRouter extends Router
          * ---------------------------------------------------------------
          * Хэрэглэгч username/password илгээж нэвтрэхийг оролдоно.
          */
-        $this->POST('/dashboard/login/try', [LoginController::class, 'entry'])->name('entry');
+        $this->POST('/login/try', [LoginController::class, 'entry'])->name('entry');
 
         /**
          * ---------------------------------------------------------------
@@ -53,7 +53,7 @@ class LoginRouter extends Router
          * ---------------------------------------------------------------
          * Session болон JWT-г цэвэрлээд хэрэглэгчийг гарах.
          */
-        $this->GET('/dashboard/login/logout', [LoginController::class, 'logout'])->name('logout');
+        $this->GET('/login/logout', [LoginController::class, 'logout'])->name('logout');
 
         /**
          * ---------------------------------------------------------------
@@ -61,7 +61,7 @@ class LoginRouter extends Router
          * ---------------------------------------------------------------
          * Хэрэглэгч email/username оруулж "Forgot password" хүсэлт үүсгэнэ.
          */
-        $this->POST('/dashboard/login/forgot', [LoginController::class, 'forgot'])->name('login-forgot');
+        $this->POST('/login/forgot', [LoginController::class, 'forgot'])->name('login-forgot');
 
         /**
          * ---------------------------------------------------------------
@@ -69,7 +69,7 @@ class LoginRouter extends Router
          * ---------------------------------------------------------------
          * Шинэ хэрэглэгч нэр, имэйл, нууц үгийн мэдээлэл өгч signup хийх.
          */
-        $this->POST('/dashboard/login/signup', [LoginController::class, 'signup'])->name('signup');
+        $this->POST('/login/signup', [LoginController::class, 'signup'])->name('signup');
 
         /**
          * ---------------------------------------------------------------
@@ -79,14 +79,14 @@ class LoginRouter extends Router
          * Dynamic parameter: {code}
          * Жишээ: GET /dashboard/login/language/mn
          */
-        $this->GET('/dashboard/login/language/{code}', [LoginController::class, 'language'])->name('language');
+        $this->GET('/login/language/{code}', [LoginController::class, 'language'])->name('language');
 
         /**
          * ---------------------------------------------------------------
          * 7. Сэргээх линк дээр дараад шинэ нууц үг тохируулах (POST)
          * ---------------------------------------------------------------
          */
-        $this->POST('/dashboard/login/set/password', [LoginController::class, 'setPassword'])->name('login-set-password');
+        $this->POST('/login/set/password', [LoginController::class, 'setPassword'])->name('login-set-password');
 
         /**
          * ---------------------------------------------------------------
@@ -100,6 +100,6 @@ class LoginRouter extends Router
          *
          * Жишээ: GET /dashboard/login/organization/12
          */
-        $this->GET('/dashboard/login/organization/{uint:id}', [LoginController::class, 'selectOrganization'])->name('login-select-organization');
+        $this->GET('/login/organization/{uint:id}', [LoginController::class, 'selectOrganization'])->name('login-select-organization');
     }
 }

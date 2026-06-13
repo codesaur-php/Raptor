@@ -99,7 +99,7 @@
             {% for org in organizations %}
                 <a class="badge bg-{{ org['alias'] == 'system' ? 'primary' : 'info' }}
                            text-decoration-none fw-normal shadow-sm"
-                   href="{{ 'organizations'|link }}/view/{{ org['id'] }}"
+                   href="{{ 'organization-view'|link({id: org['id']}) }}"
                    data-bs-target="#static-modal"
                    data-bs-toggle="modal">
                     {{ org['name'] }}

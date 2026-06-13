@@ -160,7 +160,7 @@
         }
 
         const devRequests = new motable('table#dev-requests', { freezeColumns: [1] });
-        const indexLink = `{{ 'dev-requests'|link }}`;
+        const viewPattern = `{{ 'dev-requests-view'|pattern }}`;
 
         csrfFetch(
             `{{ 'dev-requests-list'|link }}` + window.location.search
@@ -184,7 +184,7 @@
                     : '';
 
                 const buttons = [
-                    `<a class="btn btn-sm btn-info mt-1 shadow-sm" href="${indexLink}/view/${id}"><i class="bi bi-eye"></i></a>`,
+                    `<a class="btn btn-sm btn-info mt-1 shadow-sm" href="${viewPattern.replace('{id}', id)}"><i class="bi bi-eye"></i></a>`,
                     `<button class="delete-request btn btn-sm btn-danger mt-1 shadow-sm" type="button" value="${id}"><i class="bi bi-trash"></i></button>`
                 ];
                 const actions = `<div class="mb-1">${buttons.join(' ')}</div>`;

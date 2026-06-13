@@ -188,7 +188,7 @@
 
             /* ========== ХҮСНЭГТИЙН МӨРҮҮДИЙГ ҮҮСГЭХ ========== */
             let rowsHTML = '';
-            const indexLink = `{{ 'orders'|link }}`;
+            const viewPattern = `{{ 'order-view'|pattern }}`;
 
             const canDelete = {{ user.can('system_product_delete') ? 'true' : 'false' }};
 
@@ -210,7 +210,7 @@
 
                 /* ========== ҮЙЛДЛИЙН ТОВЧНУУДЫГ ҮҮСГЭХ ========== */
                 const buttons = [];
-                buttons.push(`<a class="btn btn-sm btn-info mt-1 shadow-sm" href="${indexLink}/view/${id}"><i class="bi bi-eye"></i></a>`);
+                buttons.push(`<a class="btn btn-sm btn-info mt-1 shadow-sm" href="${viewPattern.replace('{id}', id)}"><i class="bi bi-eye"></i></a>`);
 
                 if (canDelete) {
                     buttons.push(`<button class="delete-order btn btn-sm btn-danger mt-1 shadow-sm" type="button" value="${id}"><i class="bi bi-trash"></i></button>`);

@@ -85,10 +85,19 @@ class DiscordNotifier
                 $embed['footer'] = ['text' => $this->host];
             }
 
+            $body = \json_encode(['embeds' => [$embed]]);
+            if ($body === false) {
+                // Invalid UTF-8 гэх мэт шалтгаанаар encode амжилтгүй бол хоосон body
+                // POST хийхгүйгээр шууд гарна.
+                if (CODESAUR_DEVELOPMENT) {
+                    \error_log('DiscordNotifier: json_encode failed - ' . \json_last_error_msg());
+                }
+                return;
+            }
             $response = (new CurlClient())->sendWithRetry(
                 $this->webhookUrl,
                 'POST',
-                \json_encode(['embeds' => [$embed]]),
+                $body,
                 [\CURLOPT_HTTPHEADER => ['Content-Type: application/json']],
                 2
             );

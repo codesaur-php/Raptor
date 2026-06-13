@@ -397,6 +397,9 @@ class NewsController extends TemplateController
                 return;
             }
 
+            // Web app нь /dashboard-д mount хийгдээгүй тул generateRouteLink() энд
+            // ажиллахгүй - email-д cross-app absolute URL hardcode хийнэ. '/dashboard'-г
+            // index.php дахь Dashboard app-ийн mount path-тай тааруулж байх ёстой.
             $appUrl = \rtrim((string)$this->getRequest()->getUri()->withPath($this->getScriptPath()), '/');
             $commentsLink = $appUrl . '/dashboard/news/comments';
 

@@ -196,7 +196,9 @@ class ContactController extends TemplateController
                 return;
             }
 
-            // Dashboard messages link
+            // Web app нь /dashboard-д mount хийгдээгүй тул generateRouteLink() энд
+            // ажиллахгүй - email-д cross-app absolute URL hardcode хийнэ. '/dashboard'-г
+            // index.php дахь Dashboard app-ийн mount path-тай тааруулж байх ёстой.
             $appUrl = \rtrim((string)$this->getRequest()->getUri()->withPath($this->getScriptPath()), '/');
             $messagesLink = $appUrl . '/dashboard/messages';
 

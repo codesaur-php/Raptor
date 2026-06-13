@@ -310,7 +310,7 @@ function initScrollToTop(options = {}) {
 /**
  * Topbar Search - Live хайлт
  */
-function initTopbarSearch(searchUrl, basePath) {
+function initTopbarSearch(searchUrl, viewPatterns) {
     const input = document.getElementById('topbar-search-q');
     const resultsDiv = document.getElementById('topbar-search-results');
     if (!input || !resultsDiv || !searchUrl) return;
@@ -318,12 +318,15 @@ function initTopbarSearch(searchUrl, basePath) {
     let timer = null;
     let xhr = null;
 
+    /* URL-ийг hardcode хийхгүй - viewPatterns map нь dashboard.html-ээс
+       route pattern filter-ээр дамжина (жишээ news: '/dashboard/news/view/{id}').
+       Энд зөвхөн icon/badge/label-ийг тодорхойлно. */
     const SOURCE_META = {
-        news:     { icon: 'bi-newspaper',      badge: 'bg-info',      label: 'News',     url: '/dashboard/news/view/' },
-        pages:    { icon: 'bi-file-earmark',    badge: 'bg-success',   label: 'Pages',    url: '/dashboard/pages/view/' },
-        products: { icon: 'bi-box-seam',        badge: 'bg-warning',   label: 'Products', url: '/dashboard/products/view/' },
-        orders:   { icon: 'bi-cart-check',      badge: 'bg-secondary', label: 'Orders',   url: '/dashboard/orders/view/' },
-        users:    { icon: 'bi-person',          badge: 'bg-primary',   label: 'Users',    url: '/dashboard/users/view/' }
+        news:     { icon: 'bi-newspaper',      badge: 'bg-info',      label: 'News' },
+        pages:    { icon: 'bi-file-earmark',    badge: 'bg-success',   label: 'Pages' },
+        products: { icon: 'bi-box-seam',        badge: 'bg-warning',   label: 'Products' },
+        orders:   { icon: 'bi-cart-check',      badge: 'bg-secondary', label: 'Orders' },
+        users:    { icon: 'bi-person',          badge: 'bg-primary',   label: 'Users' }
     };
 
     function doSearch(q) {
@@ -350,8 +353,9 @@ function initTopbarSearch(searchUrl, basePath) {
 
                 let html = '';
                 data.results.forEach(function (item) {
-                    const meta = SOURCE_META[item.source] || { icon: 'bi-file', badge: 'bg-dark', label: item.source, url: '#' };
-                    let href = basePath + meta.url + item.id;
+                    const meta = SOURCE_META[item.source] || { icon: 'bi-file', badge: 'bg-dark', label: item.source };
+                    const pattern = (viewPatterns && viewPatterns[item.source]) || '';
+                    let href = pattern ? pattern.replace('{id}', item.id) : '#';
 
                     let subtitle = '';
                     if (item.source === 'users' && item.email) subtitle = item.email;

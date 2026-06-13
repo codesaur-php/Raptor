@@ -52,9 +52,9 @@ class FilesController extends FileController
         if ($this->getDriverName() == Constants::DRIVER_PGSQL) {
             $query =
                 'SELECT tablename FROM pg_catalog.pg_tables ' .
-                "WHERE schemaname != 'pg_catalog' AND schemaname != 'information_schema' AND tablename like '%_files'";
+                "WHERE schemaname != 'pg_catalog' AND schemaname != 'information_schema' AND tablename LIKE '%\\_files' ESCAPE '\\'";
         } else {
-            $query = 'SHOW TABLES LIKE ' . $this->quote('%_files');
+            $query = 'SHOW TABLES LIKE ' . $this->quote('%\_files');
         }
         $tblNames = $this->query($query)->fetchAll();
         $tables = [];
@@ -143,11 +143,11 @@ class FilesController extends FileController
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
 
-            // Хүснэгт байгаа эсэх баталгаажуулалт
+            // Хүснэгт байгаа эсэх баталгаажуулалт (нэрийг яг таруулна, LIKE wildcard-аас зайлсхийнэ)
             if ($this->getDriverName() == Constants::DRIVER_PGSQL) {
                 $query =
                     'SELECT tablename FROM pg_catalog.pg_tables ' .
-                    "WHERE schemaname != 'pg_catalog' AND schemaname != 'information_schema' AND tablename like '{$table}_files'";
+                    "WHERE schemaname != 'pg_catalog' AND schemaname != 'information_schema' AND tablename = '{$table}_files'";
             } else {
                 $query = 'SHOW TABLES LIKE ' . $this->quote("{$table}_files");
             }

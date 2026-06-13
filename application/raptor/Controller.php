@@ -42,11 +42,13 @@ use Raptor\Log\Logger;
  *  гэдэг trait-ийг ашигладаг. PDOTrait нь `$pdo` шинж чанарыг
  *  controller-ийн объект дээр үүсгэж өгдөг.
  *
- *  Framework-ийн түвшинд DatabaseConnectMiddleware нь:
+ *  Entry point болох `public_html/index.php` нь хүсэлт бүрд:
  *
+ *      $pdo     = \Raptor\DatabaseConnection::connect();
  *      $request = $request->withAttribute('pdo', $pdo);
  *
- *  гэж PSR-7 ServerRequest дотор `pdo` attribute-ийг суулгадаг.
+ *  гэж нэг л удаа PDO үүсгэж, PSR-7 ServerRequest дотор `pdo`
+ *  attribute-ийг суулгаж Application руу дамжуулдаг.
  *
  *  Controller нь __construct() нь:
  *
@@ -54,12 +56,36 @@ use Raptor\Log\Logger;
  *
  *  хэлбэрээр автоматаар авч `$this->pdo` болгон тохируулдаг.
  *
- * Үүний ачаар энэ Controller-оос удамшсан бүх контроллер дотор Model-классуудыг:
- *      new UsersModel($this->pdo)
- *      new Roles($this->pdo)
- *      new OrganizationModel($this->pdo)
- *  гэх мэтээр шууд найдвартай холбогдсон баазын холболттойгоор хэрэглэж чадна.
- * 
+ * --------------------------------------------------------------
+ * Баазтай ажиллах хоёр адил хүчинтэй арга
+ * --------------------------------------------------------------
+ *  $this->pdo автоматаар бэлэн болсон тул энэ Controller-оос удамшсан
+ *  бүх контроллер баазтай дараах хоёр аргын алинаар нь ч ажиллаж болно.
+ *  Хоёул жигд хүчинтэй - нэг нь нөгөөгөө орлох гэсэн зүйл биш, тухайн
+ *  ажилдаа тохирхыг нь сонгоно:
+ *
+ *   1) new Model(...) - бүтэцлэгдсэн CRUD, column schema, localization
+ *      шаардлагатай үед тохиромжтой. Model бүр $this->pdo-гоор шууд
+ *      найдвартай холбогдоно:
+ *          new UsersModel($this->pdo)
+ *          new Roles($this->pdo)
+ *          (new OrganizationModel($this->pdo))->getRows()
+ *
+ *   2) PDOTrait шууд - Controller нь PDOTrait-ийг өөрөө use хийдэг тул
+ *      яг Model шиг доорх method-ууд controller дээр бэлэн байна:
+ *
+ *          $this->prepare($sql)     - SQL statement бэлтгэх (PDOStatement буцаана)
+ *          $this->query($sql)       - бэлтгэлгүй SELECT-г шууд гүйцэтгэх
+ *          $this->exec($sql)        - DDL/DML (CREATE, UPDATE ...)-г шууд гүйцэтгэх
+ *          $this->quote($string)    - драйверт тохирсон escape
+ *          $this->hasTable($table)  - хүснэгт байгаа эсэхийг шалгах
+ *          $this->getDriverName()   - идэвхтэй драйвер (mysql | pgsql | sqlite)
+ *
+ *      Жишээ:
+ *          $stmt = $this->prepare('SELECT id FROM users WHERE email=:email');
+ *          $stmt->bindValue(':email', $email);
+ *          $stmt->execute();
+ *
  * @package Raptor
  */
 abstract class Controller extends \codesaur\Http\Application\Controller
@@ -162,6 +188,16 @@ abstract class Controller extends \codesaur\Http\Application\Controller
     }
 
     /**
+     * Амьд Application-ийн mount path-ийг буцаана (жишээ: '/dashboard' эсвэл '').
+     *
+     * @return string
+     */
+    protected function getMountPath(): string
+    {
+        return $this->getAttribute('application')?->getMountPath() ?? '';
+    }
+
+    /**
      * Route нэр болон параметр ашиглан URL үүсгэх.
      *
      * @param string $routeName   Route name
@@ -178,7 +214,7 @@ abstract class Controller extends \codesaur\Http\Application\Controller
         string $default = '#'
     ): string {
         try {
-            $route_path = $this->getAttribute('router')->generate($routeName, $params);
+            $route_path = $this->getAttribute('application')->generate($routeName, $params);
             $pattern = $this->getScriptPath() . $route_path;
 
             if (!$is_absolute) {
@@ -324,7 +360,18 @@ abstract class Controller extends \codesaur\Http\Application\Controller
         $tmplte->set('user', $this->getUser());
         $tmplte->set('index', $this->getScriptPath());
         $tmplte->set('localization', $this->getAttribute('localization'));
-        $tmplte->set('csrf_token', $this->getAttribute('csrf_token') ?? '');
+
+        // CSRF token-г session-аас уншиж <meta>-д өгнө (login дээр үүсдэг).
+        // Нэвтэрсэн dashboard хэрэглэгчид token байхгүй бол (хуучин session) энд
+        // үүсгэнэ - SessionMiddleware-ийн needsWrite нь яг тэр үед session-г
+        // writable байлгадаг тул эрт-хаах оновчлолд нөлөөлөхгүй.
+        if ($this->isUserAuthorized()
+            && empty($_SESSION['CSRF_TOKEN'])
+            && \session_status() === \PHP_SESSION_ACTIVE
+        ) {
+            $_SESSION['CSRF_TOKEN'] = \bin2hex(\random_bytes(32));
+        }
+        $tmplte->set('csrf_token', $_SESSION['CSRF_TOKEN'] ?? '');
 
         // Localization filter: {{ 'keyword'|text }}
         $tmplte->addFilter('text', function (string $key, $default = null): string {
@@ -334,6 +381,29 @@ abstract class Controller extends \codesaur\Http\Application\Controller
         // Route generator filter: {{ 'route'|link }}, {{ 'route'|link({'key': value}) }}
         $tmplte->addFilter('link', function (string $routeName, array $params = [], bool $is_absolute = false): string {
             return $this->generateRouteLink($routeName, $params, $is_absolute);
+        });
+
+        // Route pattern filter: {{ 'route'|pattern }} -> /dashboard/pages/view/{id}
+        //
+        // link()-ээс ялгаатай нь param-уудыг орлуулахгүй, route-ийн placeholder
+        // (жишээ {id})-ийг хэвээр буцаана. Client талд JS-ээр мөр render хийхэд
+        // тохиромжтой - param утга (record.id) нь JS runtime дээр л мэдэгддэг
+        // тул template дотор урьдчилан орлуулах боломжгүй:
+        //   const view = `{{ 'page-view'|pattern }}`;       // /dashboard/pages/view/{id}
+        //   a.href = view.replace('{id}', record.id);
+        //
+        // Application::pattern() нь mount prefix-ийг авто нэмнэ, getScriptPath()
+        // нь subdirectory deploy-д зориулсан script prefix - link()-тэй ижил эрэмбэ.
+        $tmplte->addFilter('pattern', function (string $routeName): string {
+            try {
+                return $this->getScriptPath()
+                    . $this->getAttribute('application')->pattern($routeName);
+            } catch (\Throwable $e) {
+                if (CODESAUR_DEVELOPMENT) {
+                    \error_log($e->getMessage());
+                }
+                return '#';
+            }
         });
 
         return $tmplte;
@@ -365,14 +435,28 @@ abstract class Controller extends \codesaur\Http\Application\Controller
      *   -> `int|string $code`
      * гэж тодорхойлох нь зөв.
      *
-     * Гэхдээ:
-     *   HTTP статус код зөвхөн integer байх ёстой
-     *   string кодыг HTTP code болгон ашиглах боломжгүй
-     *   Тиймээс string байвал status code-д ямар ч нөлөө үзүүлэхгүй (IGNORE)
+     * Status code оноох дүрэм:
+     * ----------------------------------------------------
+     *   * $code нь зөв HTTP integer (ReasonPhrase::STATUS_* доторх тогтмол,
+     *     жишээ 400/401/403/404/500) бол -> тэрхүү HTTP response code-ыг
+     *     бодитоор буцаана (http_response_code).
+     *   * $code = 0 (default) бол -> 200 OK (амжилттай хариу).
+     *   * $code нь string (жишээ 'invalid-email') ЭСВЭЛ танигдахгүй
+     *     integer бол -> HTTP status code-д ямар ч нөлөө үзүүлэхгүй (IGNORE),
+     *     200 хэвээр үлдэнэ. Энэ тохиолдолд алдааг JSON body доторх
+     *     `status: 'error'` envelope-оор клиентэд дамжуулна (frontend нь
+     *     HTTP кодыг биш, тэрхүү envelope-ийг уншдаг).
+     *
+     * Тиймээс PDOException-ийн SQLSTATE string код (жишээ '23000') шиг
+     * HTTP бус кодыг шууд дамжуулсан ч аюулгүй - method өөрөө түүнийг үл
+     * тооцож, JSON envelope-оор алдааг мэдэгдэнэ. Хэрэв тодорхой HTTP
+     * статус код заавал хэрэгтэй бол caller талдаа зөв int болгож хувиргана
+     * (жишээ нь WebLogStatsController дахь `($code >= 400 && $code < 600) ? $code : 500`).
      *
      * @param array      $response  Клиентэд буцаагдах JSON structure
-     * @param int|string $code      HTTP status code. 
-     *                              string байвал автоматаар үл тооцно (ignored).
+     * @param int|string $code      HTTP status code. Зөв HTTP integer бол
+     *                              response code болж буцна; string эсвэл
+     *                              танигдахгүй код бол үл тооцно (200 хэвээр).
      * @return void
      */
     public function respondJSON(array $response, int|string $code = 0): void

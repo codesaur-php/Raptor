@@ -49,7 +49,7 @@ class User
      *   - Key: role_name (жишээ: system_admin)
      *   - Value: [permission => true]
      */
-    private readonly array $_rbac;
+    private readonly array $rbac;
 
     /**
      * User constructor.
@@ -62,7 +62,7 @@ class User
     {
         $this->profile = $user;
         $this->organization = $organization;
-        $this->_rbac = $rbac;
+        $this->rbac = $rbac;
     }
 
     /**
@@ -79,11 +79,11 @@ class User
      */
     public function is(string $role): bool
     {
-        if (isset($this->_rbac['system_coder'])) {
+        if (isset($this->rbac['system_coder'])) {
             return true;
         }
 
-        return isset($this->_rbac[$role]);
+        return isset($this->rbac[$role]);
     }
 
     /**
@@ -104,17 +104,17 @@ class User
     public function can(string $permission, ?string $role = null): bool
     {
         // Super admin: бүх эрхийг зөвшөөрнө
-        if (isset($this->_rbac['system_coder'])) {
+        if (isset($this->rbac['system_coder'])) {
             return true;
         }
 
         // Заасан роль дотор permission шалгах
         if (!empty($role)) {
-            return $this->_rbac[$role][$permission] ?? false;
+            return $this->rbac[$role][$permission] ?? false;
         }
 
         // Бүх ролиос privilege хайх
-        foreach ($this->_rbac as $role) {
+        foreach ($this->rbac as $role) {
             if (isset($role[$permission]) && $role[$permission] === true) {
                 return true;
             }

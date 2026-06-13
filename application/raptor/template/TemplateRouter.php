@@ -4,6 +4,8 @@ namespace Raptor\Template;
 
 use codesaur\Router\Router;
 
+use Raptor\CsrfMiddleware;
+
 /**
  * Class TemplateRouter
  *
@@ -38,7 +40,7 @@ class TemplateRouter extends Router
          * ХЭРЭГЛЭГЧИЙН DASHBOARD UI ТОХИРГОО
          */
         $this->GET(
-            '/dashboard/user/option',
+            '/user/option',
             [TemplateController::class, 'userOption']
         )->name('user-option');
 
@@ -48,26 +50,26 @@ class TemplateRouter extends Router
 
         // Меню жагсаалт, удирдлагын хуудас
         $this->GET(
-            '/dashboard/manage/menu',
+            '/manage/menu',
             [TemplateController::class, 'manageMenu']
         );
 
         // Шинэ меню үүсгэх
         $this->POST(
-            '/dashboard/manage/menu/insert',
+            '/manage/menu/insert',
             [TemplateController::class, 'manageMenuInsert']
-        )->name('manage-menu-insert');
+        )->name('manage-menu-insert')->middleware([CsrfMiddleware::class]);
 
         // Меню шинэчлэх
         $this->PUT(
-            '/dashboard/manage/menu/update',
+            '/manage/menu/update',
             [TemplateController::class, 'manageMenuUpdate']
-        )->name('manage-menu-update');
+        )->name('manage-menu-update')->middleware([CsrfMiddleware::class]);
 
         // Меню устгах
         $this->DELETE(
-            '/dashboard/manage/menu/delete',
+            '/manage/menu/delete',
             [TemplateController::class, 'manageMenuDelete']
-        )->name('manage-menu-delete');
+        )->name('manage-menu-delete')->middleware([CsrfMiddleware::class]);
     }
 }

@@ -254,7 +254,7 @@ For any server with FTP access (shared hosting, VPS, dedicated). Add the followi
 | `FTP_HOST` | FTP server address | `ftp.example.com` |
 | `FTP_USERNAME` | FTP username | `user@example.com` |
 | `FTP_PASSWORD` | FTP password | |
-| `FTP_SERVER_DIR` | Target directory on server | `/public_html/` |
+| `FTP_SERVER_DIR` | Target directory on server | `/` |
 
 **B) SSH Deploy**
 
@@ -288,7 +288,7 @@ For Linux servers with SSH access (VPS, cloud VM, dedicated). Add the following 
 
 - **`.env`** - Create and configure manually on the server
 - **`logs/`** - Created automatically by the application
-- **`private/`** - Sensitive files (uploads)
+- **`protected/`** - Files and cache outside the web root; not reachable by a direct public request, served only via the authenticated `/dashboard/protected/file` endpoint
 - **`docs/`** - Documentation only
 - **`vendor/`** - Built during the workflow with `composer install/update --no-dev`
 
@@ -302,12 +302,12 @@ For Linux servers with SSH access (VPS, cloud VM, dedicated). Add the following 
 public_html/index.php (Entry point)
 |
 |-- /dashboard/* -> Dashboard\Application (Admin Panel)
-|    |-- Middleware: ErrorHandler -> MySQL -> Session -> JWT -> CSRF -> Container -> Localization -> Settings
+|    |-- Middleware: ErrorHandler -> Session -> JWT -> Container -> Localization -> Settings (CSRF is per-route)
 |    |-- Routers: Login, Users, Organization, RBAC, Localization, Contents, Messages, Comments, Logs, Template, Shop, Development, Migration
 |    \-- Controllers -> Templates -> HTML Response
 |
 \-- /* -> Web\Application (Public Website)
-     |-- Middleware: ExceptionHandler -> MySQL -> Container -> Session -> Localization -> Settings
+     |-- Middleware: ExceptionHandler -> Container -> Session -> Localization -> Settings
      |-- Router: WebRouter (/, /page, /news, /contact, /products, /order, /search, /sitemap, /rss, /session/language, /session/contact-send, /session/order, /session/news/{id}/comment, /session/product/{id}/review, ...)
      \-- Controllers -> Templates -> HTML Response
 ```
@@ -327,6 +327,12 @@ Browser -> index.php -> .env -> ServerRequest
 
 ### Directory Structure
 
+Raptor follows the MVC pattern but uses a **modular (package-by-feature)**
+organization: each module bundles its Controller, Model, and templates together in
+one folder, rather than splitting them across separate layer directories (there is
+no top-level `Models/`, `Controllers/`, or `Views/`). Adding or removing a feature
+is as simple as copying or deleting one folder.
+
 ```
 raptor/
 |-- application/
@@ -336,8 +342,7 @@ raptor/
 |   |   |-- CacheService.php       # File-based DB cache (PSR-16 SimpleCache)
 |   |   |-- CsrfMiddleware.php     # CSRF token validation
 |   |   |-- SpamProtectionTrait.php # Honeypot, HMAC, rate limit, Turnstile
-|   |   |-- MySQLConnectMiddleware.php    # MySQL PDO connection (auto-creates DB on localhost)
-|   |   |-- PostgresConnectMiddleware.php # PostgreSQL PDO connection (UTF8 client encoding)
+|   |   |-- DatabaseConnection.php        # PDO factory (driver selected via RAPTOR_DB_DRIVER: mysql | pgsql)
 |   |   |-- ContainerMiddleware.php       # PSR-11 DI container wiring (events, cache, mailer, Discord)
 |   |   |-- SessionMiddleware.php         # Shared session lifecycle (write-close optimization)
 |   |   |-- authentication/        # Login, JWT
@@ -358,8 +363,7 @@ raptor/
 |   |   |-- template/              # Dashboard UI, menu, badges
 |   |   |-- log/                   # PSR-3 logging
 |   |   |-- mail/                  # Email (Brevo API, SMTP, PHP mail)
-|   |   |-- event/                 # PSR-14 Event Dispatcher system
-|   |   |-- notification/          # Discord webhook listener
+|   |   |-- notification/          # PSR-14 Event Dispatcher + Discord webhook listener
 |   |   |-- trash/                 # Trash module (deleted record recovery)
 |   |   |-- migration/             # Database migration system
 |   |   |-- development/           # Dev request tracking
@@ -394,17 +398,25 @@ raptor/
 |   \-- mn/                        # Mongolian documentation
 |-- tests/                         # PHPUnit tests (unit, integration)
 |-- database/
-|   \-- migrations/                # SQL migration files
+|   \-- migrations/                # SQL migration files (git-ignored, per-user folder)
 |-- .github/
 |   \-- workflows/
 |       |-- ci.yml                 # CI code quality checks (push, PR)
 |       \-- deploy.yml             # Auto deploy (FTP / SSH / Windows Server)
 |-- logs/                          # Error log files
-|-- private/                       # Protected files (uploads, cache)
+|-- protected/                     # Protected files (uploads, cache)
 |-- composer.json
 |-- phpunit.xml                    # PHPUnit configuration
 \-- LICENSE
 ```
+
+> **Everything outside `vendor/` is yours.** After `composer create-project`,
+> `application/`, `public_html/`, `database/`, `tests/`, `docs/` and the config
+> files all become part of your project - freely modify, delete, or rewrite them to
+> fit your needs, including the `raptor/` core itself. The default codebase is a baseline covering a developer's common
+> needs, so adapt the code directly to your own detailed requirements. Only the
+> `vendor/*` packages are Composer-managed dependencies (updated via
+> `composer update`); leave those untouched.
 
 ---
 
@@ -412,41 +424,45 @@ raptor/
 
 Middleware are PSR-15 standard layers that process request/response. Registration order matters!
 
+The PDO connection is opened once in `public_html/index.php` via
+`\Raptor\DatabaseConnection::connect()` and reaches the Application as the
+request's `pdo` attribute.
+
 ### Dashboard Middleware
 
 | # | Middleware | Purpose |
 |---|-----------|---------|
 | 1 | `ErrorHandler` | Returns errors as JSON/HTML |
-| 2 | `MySQLConnectMiddleware` | Creates PDO and injects into request |
-| 3 | `MigrationMiddleware` | Auto-runs pending SQL migrations |
-| 4 | `SessionMiddleware` | Starts and manages PHP session |
-| 5 | `JWTAuthMiddleware` | Validates JWT and creates `User` object |
-| 6 | `CsrfMiddleware` | CSRF token validation for POST/PUT/PATCH/DELETE |
-| 7 | `ContainerMiddleware` | Injects DI Container |
-| 8 | `LocalizationMiddleware` | Determines language and translations |
-| 9 | `SettingsMiddleware` | Injects system settings |
+| 2 | `SessionMiddleware` | Starts and manages PHP session |
+| 3 | `JWTAuthMiddleware` | Validates JWT and creates `User` object |
+| 4 | `ContainerMiddleware` | Injects DI Container |
+| 5 | `LocalizationMiddleware` | Determines language and translations |
+| 6 | `SettingsMiddleware` | Injects system settings |
+
+> `CsrfMiddleware` is NOT in the app-wide pipeline - it is attached per-route to each mutating route in the router (see 6.20).
 
 ### Web Middleware
 
 | # | Middleware | Purpose |
 |---|-----------|---------|
 | 1 | `ExceptionHandler` | Renders error pages using templates |
-| 2 | `MySQLConnectMiddleware` | PDO connection |
-| 3 | `ContainerMiddleware` | DI Container |
-| 4 | `SessionMiddleware` | Session (stores language preference) |
-| 5 | `LocalizationMiddleware` | Multi-language |
-| 6 | `SettingsMiddleware` | Settings (logo, title, footer) |
+| 2 | `ContainerMiddleware` | DI Container |
+| 3 | `SessionMiddleware` | Session (stores language preference) |
+| 4 | `LocalizationMiddleware` | Multi-language |
+| 5 | `SettingsMiddleware` | Settings (logo, title, footer) |
 
-### Database Middleware Options
+### Database Driver Selection
 
-Use only **one** database middleware:
+The driver is chosen via the `RAPTOR_DB_DRIVER` variable in `.env`
+(`mysql` or `pgsql`). `\Raptor\DatabaseConnection::connect()` reads it
+and returns the corresponding PDO instance:
 
-```php
-// MySQL (default)
-$this->use(new \Raptor\MySQLConnectMiddleware());
+```dotenv
+# MySQL (default)
+RAPTOR_DB_DRIVER=mysql
 
-// PostgreSQL
-$this->use(new \Raptor\PostgresConnectMiddleware());
+# PostgreSQL
+RAPTOR_DB_DRIVER=pgsql
 ```
 
 ---
@@ -500,7 +516,7 @@ $this->isUserCan('news_edit');
 
 ### 6.5 Content - Files
 
-**Classes:** `FilesController`, `FilesModel`, `PrivateFilesController`
+**Classes:** `FilesController`, `FilesModel`, `ProtectedFilesController`
 
 - File upload (native JS, FormData)
 - Image optimization (GD)
@@ -685,25 +701,25 @@ Sitemap: https://example.com/sitemap.xml
 
 **Classes:** `CsrfMiddleware`
 
-- Per-session CSRF token validation for all dashboard POST/PUT/PATCH/DELETE requests
-- Token generated at login, stored in `$_SESSION['CSRF_TOKEN']`
-- Auto-generated for existing sessions missing a token (requires writable session)
-- GET/HEAD/OPTIONS requests pass through without validation
-- `/login` routes are exempt (token is created there)
+- **Per-route middleware** (NOT app-wide). Attached to each mutating route in the router via `->middleware([CsrfMiddleware::class])` (with `use Raptor\CsrfMiddleware;`)
+- The middleware ONLY validates: it compares `$_SESSION['CSRF_TOKEN']` against the `X-CSRF-TOKEN` header and returns 403 on mismatch
+- GET/HEAD/OPTIONS requests pass through without validation (protects the GET side of `GET_POST`/`GET_PUT` compound routes)
+- Token is generated at login and stored in `$_SESSION['CSRF_TOKEN']`. As a fallback for old sessions, `Controller::template()` generates it when an authorized user has none and the session is writable
+- Token delivered to frontend via `<meta name="csrf-token">` in `dashboard.html` (`Controller::template()` reads it from session)
 - Client JS sends token via `X-CSRF-TOKEN` header using `csrfFetch()` wrapper
-- Token delivered to frontend via `<meta name="csrf-token">` in `dashboard.html`
-- For new modules: use `csrfFetch()` instead of `fetch()` for all state-changing requests
+- For new modules: every mutating route MUST add `->middleware([CsrfMiddleware::class])` (NOT automatic); only login routes are exempt. On the client, use `csrfFetch()` instead of `fetch()` for all state-changing requests
 
 ### 6.21 Database Migration
 
-**Classes:** `MigrationRunner`, `MigrationMiddleware`, `MigrationController`, `MigrationRouter`
+**Classes:** `MigrationRunner`, `MigrationController`, `MigrationRouter`, `MigrationSecurityScanner`
 
-- SQL file-based forward-only migration system
-- Migrations stored in `database/migrations/` directory
-- Pending = files in `migrations/`, Ran = moved to `migrations/ran/`
-- `MigrationMiddleware` auto-runs pending migrations on each request
-- Advisory lock (`GET_LOCK`) prevents concurrent migration execution
-- Dashboard UI for viewing migration status and SQL file contents
+- File-based forward-only SQL migration system; state lives on disk (no tracking table)
+- `database/migrations/` is git-ignored - per-environment upload
+- Per-user folder: `{userId}-{username}/` holds pending files, `{userId}-{username}/ran/` holds applied files
+- Coders upload `.sql` via the dashboard (max = min(10 MB, php.ini post_max_size, upload_max_filesize)); Apply runs the file and moves it to `ran/` on success
+- `MigrationSecurityScanner` flags writes against sensitive tables (`users`, `rbac_*`, `organizations*`, `localization_language`, `raptor_menu`) and DCL (`GRANT/REVOKE/CREATE-DROP-ALTER USER`); a soft warning requires the coder to type `CONFIRM` before apply proceeds
+- Advisory lock (`GET_LOCK` / `pg_try_advisory_lock`) prevents concurrent apply
+- Every upload/apply/delete is logged to `dashboard_log` with SHA-256, statement count, and warning count
 - Protected: only `system_coder` users can access the dashboard
 - `.htaccess` protection blocks direct browser access to SQL files
 
@@ -1132,7 +1148,7 @@ tests/
 |   |-- Controller/
 |   |   \-- ControllerTextTest.php  # Controller::text() tests
 |   \-- Migration/
-|       \-- MigrationRunnerTest.php  # Migration parser/status tests
+|       \-- MigrationSecurityScannerTest.php  # Sensitive SQL pattern checks
 \-- Integration/
     |-- Model/
     |   |-- UsersModelTest.php          # User CRUD tests
@@ -1143,7 +1159,7 @@ tests/
     |-- Authentication/
     |   \-- JWTAuthTest.php             # JWT encode/decode tests
     \-- Migration/
-        \-- MigrationRunnerIntegrationTest.php  # Migration engine tests
+        \-- MigrationRunnerIntegrationTest.php  # File-based migration runner tests
 ```
 
 ### Key Features
@@ -1243,15 +1259,17 @@ public function products()
 
 ### Switching Database
 
-Change the database middleware in `Application.php`:
+Change the driver via `RAPTOR_DB_DRIVER` in `.env`:
 
-```php
-// MySQL (default)
-$this->use(new \Raptor\MySQLConnectMiddleware());
+```dotenv
+# MySQL (default)
+RAPTOR_DB_DRIVER=mysql
 
-// Switch to PostgreSQL
-$this->use(new \Raptor\PostgresConnectMiddleware());
+# Switch to PostgreSQL
+RAPTOR_DB_DRIVER=pgsql
 ```
+
+`\Raptor\DatabaseConnection::connect()` reads this value and returns the matching PDO.
 
 ---
 

@@ -1,0 +1,96 @@
+<div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-3 shadow bg-secondary">
+    <h3 class="px-2 my-auto fs-6 text-white">
+        <i class="bi bi-database-fill-gear"></i> Migrations - User Manual
+    </h3>
+    <a href="{{ 'manual'|link }}" class="btn btn-sm btn-light m-1">
+        <i class="bi bi-arrow-left"></i> {{ 'manual'|text }}
+    </a>
+</div>
+
+<!-- ==================== OVERVIEW ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3">What are Migrations?</h4>
+        <p>
+            <strong>Migrations</strong> are SQL scripts that modify the existing database after
+            initial setup - typically schema changes (ALTER TABLE, CREATE INDEX) or seed data
+            (INSERT into translations, menus, etc.). New tables are NOT created via migrations;
+            Model classes auto-create their tables on first use.
+        </p>
+        <p class="mb-0">
+            <span class="badge bg-warning text-dark"><i class="bi bi-shield-exclamation"></i> Permission</span>
+            Migrations are accessible only to users with the <code>system_coder</code> role.
+        </p>
+    </div>
+</div>
+
+<!-- ==================== HOW IT WORKS ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-folder-symlink"></i> How it works</h4>
+        <p>Raptor uses a <strong>file-based</strong> migration system - state is derived from where the file lives on disk.</p>
+        <pre class="bg-body-tertiary p-2 rounded mb-3"><code>database/migrations/
+  {userId}-{username}/
+    pending_file.sql     <- pending
+    ran/
+      applied_file.sql   <- successfully applied</code></pre>
+        <p>The <code>database/migrations/</code> directory is git-ignored. Each environment uploads its own SQL files through this page, and the per-user folder is created automatically on first upload. This gives you a per-server audit trail of who uploaded what and which files ran successfully.</p>
+    </div>
+</div>
+
+<!-- ==================== SQL FORMAT ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-file-earmark-code"></i> SQL file format</h4>
+        <pre class="bg-body-tertiary p-2 rounded mb-3"><code>-- Optional first-line description (used as the summary)
+ALTER TABLE products ADD COLUMN category VARCHAR(100);
+CREATE INDEX idx_products_category ON products (category);</code></pre>
+        <ul>
+            <li>Statements run in order; if one fails, the rest are skipped and the file stays pending.</li>
+            <li>Filename convention: <code>YYYY-MM-DD_short-description.sql</code> for natural sorting.</li>
+            <li>Max file size: <code>min(10 MB, php.ini post_max_size, php.ini upload_max_filesize)</code> - shown in the upload button tooltip. Only <code>.sql</code> extension is accepted.</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ==================== LIFECYCLE ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-arrow-repeat"></i> Lifecycle</h4>
+        <ol>
+            <li>Click <strong>Upload SQL</strong> at the top of the page and pick a <code>.sql</code> file.</li>
+            <li>The file lands in your folder as a pending migration.</li>
+            <li>Click the <i class="bi bi-eye"></i> View button to inspect the SQL, summary, SHA-256, and any security warnings.</li>
+            <li>Click the <i class="bi bi-play-fill"></i> Apply button. If warnings are present, the dashboard requires you to type <code>CONFIRM</code> (uppercase) to proceed.</li>
+            <li>On success, the file moves to <code>ran/</code>. On failure the file stays pending; check the <strong>Logs</strong> module for the error.</li>
+            <li>To discard a typo before applying, use the <i class="bi bi-trash"></i> Delete button on the pending row.</li>
+        </ol>
+    </div>
+</div>
+
+<!-- ==================== SECURITY ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-danger mb-3"><i class="bi bi-shield-lock"></i> Security guardrails</h4>
+        <p>Before apply, the SQL is scanned for writes against the following sensitive tables and patterns. Any match raises a soft warning; the Apply button then requires a typed <code>CONFIRM</code>.</p>
+        <ul>
+            <li><code>users</code> - password / identity</li>
+            <li><code>rbac_roles</code>, <code>rbac_permissions</code>, <code>rbac_user_role</code>, <code>rbac_role_permission</code> - privilege escalation</li>
+            <li><code>organizations</code>, <code>organizations_users</code> - multi-tenant boundary</li>
+            <li><code>localization_language</code> - site-wide locale impact</li>
+            <li><code>raptor_menu</code> - dashboard navigation</li>
+            <li><code>GRANT</code> / <code>REVOKE</code></li>
+            <li><code>CREATE USER</code> / <code>DROP USER</code> / <code>ALTER USER</code></li>
+            <li><code>CREATE TABLE</code> - prefer defining a Model with <code>setTable()</code>; Raptor auto-creates the table on first use</li>
+        </ul>
+        <p class="mb-0">The guard is intentionally soft - a careful coder can still proceed if the migration is intentional. For routine password resets or role grants, prefer the dedicated dashboard UI over SQL migrations. For new tables, prefer Models over migrations.</p>
+    </div>
+</div>
+
+<!-- ==================== AUDIT ==================== -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-clipboard-data"></i> Audit trail</h4>
+        <p>Every upload, apply, and delete is logged to <code>dashboard_log</code> with full context: SHA-256 hash of the SQL, statement count, security warning count, and the destination folder. The on-disk layout itself is also an audit trail - pending files in user folders, successfully applied files in <code>ran/</code>.</p>
+    </div>
+</div>

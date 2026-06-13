@@ -197,18 +197,21 @@ public function process($request, $handler): ResponseInterface
 
 Base for the Dashboard Application. Registers the middleware pipeline and routers.
 
+The PDO connection is opened once in `public_html/index.php` via
+`\Raptor\DatabaseConnection::connect()` and reaches the Application as the
+request's `pdo` attribute.
+
 ### Constructor Pipeline
 
 1. `ErrorHandler` - Error handling
-2. `MySQLConnectMiddleware` - DB connection
-3. `MigrationMiddleware` - Auto-run pending migrations
-4. `SessionMiddleware` - Session management
-5. `JWTAuthMiddleware` - JWT authentication
-6. `CsrfMiddleware` - CSRF token validation for POST/PUT/PATCH/DELETE
-7. `ContainerMiddleware` - DI Container
-8. `LocalizationMiddleware` - Multi-language
-9. `SettingsMiddleware` - System settings
-10. `LoginRouter`, `UsersRouter`, `OrganizationRouter`, `RBACRouter`, `LocalizationRouter`, `ContentsRouter`, `LogsRouter`, `DevelopmentRouter`, `MigrationRouter`, `TemplateRouter`, `BadgeRouter`
+2. `SessionMiddleware` - Session management
+3. `JWTAuthMiddleware` - JWT authentication
+4. `ContainerMiddleware` - DI Container
+5. `LocalizationMiddleware` - Multi-language
+6. `SettingsMiddleware` - System settings
+7. `LoginRouter`, `UsersRouter`, `OrganizationRouter`, `RBACRouter`, `LocalizationRouter`, `ContentsRouter`, `LogsRouter`, `DevelopmentRouter`, `MigrationRouter`, `TemplateRouter`, `BadgeRouter`
+
+`CsrfMiddleware` is NOT in the app-wide pipeline - it is attached per-route to each mutating route in the router.
 
 `Dashboard\Application` adds: `HomeRouter`, `ShopRouter` (products + orders + reviews), `ManualRouter`
 
@@ -413,7 +416,7 @@ Stores file metadata. Table name is dynamic (`setTable()`).
 | `/dashboard/files/modal/{table}` | GET | `files-modal` |
 | `/dashboard/files/{table}/{uint:id}` | PATCH | `files-update` |
 | `/dashboard/files/{table}/delete` | DELETE | `files-delete` |
-| `/dashboard/private/file` | GET | - |
+| `/dashboard/protected/file` | GET | - |
 
 ---
 
@@ -818,29 +821,34 @@ Sends email. `send()` selects transport via `RAPTOR_MAIL_TRANSPORT` env var: `br
 
 ---
 
-## Database Middleware
+## Database
 
-### MySQLConnectMiddleware
+### DatabaseConnection
 
-**File:** `application/raptor/MySQLConnectMiddleware.php`
+**File:** `application/raptor/DatabaseConnection.php`
 
-1. Reads DB config from ENV
-2. Creates PDO connection to MySQL
-3. Auto-creates database on localhost
-4. Sets charset/collation
-5. Injects `pdo` into request attributes
+Single helper that owns every PDO handshake. The HTTP entry point
+(`public_html/index.php`) and tests all call
+`\Raptor\DatabaseConnection::connect()` and receive an identical PDO.
 
-### PostgresConnectMiddleware
+- `driver(): string` - reads `RAPTOR_DB_DRIVER` from `.env` (`mysql` |
+  `pgsql`). Throws an `Exception` for any other value.
+- `connect(): \PDO` - connects to MySQL or PostgreSQL based on the driver
+  and returns the PDO instance. The database must already exist - there is
+  no implicit auto-create.
 
-**File:** `application/raptor/PostgresConnectMiddleware.php`
-
-PostgreSQL variant. DSN: `pgsql:host=...;dbname=...`
+The PDO instance created in `public_html/index.php` is passed to the
+Application as `$request->withAttribute('pdo', $pdo)`. Controllers pick it
+up automatically inside `Raptor\Controller::__construct()` as `$this->pdo`.
 
 ### ContainerMiddleware
 
 **File:** `application/raptor/ContainerMiddleware.php`
 
-Injects PSR-11 DI Container into request. Registers PDO, User ID, `EventDispatcher` (with `DiscordListener`), and `DiscordNotifier` (legacy) in the container.
+Injects a PSR-11 DI Container into the request. It registers the `cache`,
+`mailer`, `template_service`, `discord`, and `events` service factories.
+Factories that need PDO read it from the request's `pdo` attribute (set
+by the entry point).
 
 ---
 
@@ -875,17 +883,20 @@ Checks if text contains suspicious link patterns. Returns `true` if spam is dete
 **File:** `application/raptor/CsrfMiddleware.php`
 **Implements:** `Psr\Http\Server\MiddlewareInterface`
 
-Per-session CSRF token validation for dashboard state-changing requests.
+CSRF token validation for dashboard mutating requests. **Per-route** middleware - attached to each mutating route in the router via `->middleware([CsrfMiddleware::class])` (with `use Raptor\CsrfMiddleware;`).
 
 ### How It Works
 
-1. Token is generated at login and stored in `$_SESSION['CSRF_TOKEN']`
-2. If no token exists (e.g. old session), auto-generates one when session is writable
-3. Token is set as `csrf_token` request attribute for controllers
-4. GET/HEAD/OPTIONS requests pass through without validation
-5. `/login` routes are exempt (token is created there)
-6. All other methods (POST, PUT, PATCH, DELETE) require valid `X-CSRF-TOKEN` header
-7. Mismatched or missing token returns 403 JSON response
+1. The middleware ONLY validates (it does not generate tokens or set request attributes)
+2. GET/HEAD/OPTIONS requests pass through without validation (protects the GET side of `GET_POST`/`GET_PUT` compound routes)
+3. Other methods (POST, PUT, PATCH, DELETE) compare `$_SESSION['CSRF_TOKEN']` against the `X-CSRF-TOKEN` header
+4. Mismatched or missing token returns a 403 JSON response
+5. Login routes are exempt - the middleware is simply not attached there (token is created during login)
+
+### Token Provisioning
+
+- Token is generated at login and stored in `$_SESSION['CSRF_TOKEN']`
+- As a fallback for old sessions, `Controller::template()` generates it when an authorized user has none and the session is writable
 
 ### Frontend Integration
 
@@ -1001,6 +1012,8 @@ POST `/dashboard/badges/seen` - Marks a module as seen. Updates `checked_at` tim
 
 - `BADGE_MAP` - Maps `[log_table][action]` to `[module_path, color]`
 - `PERMISSION_MAP` - Maps module path to required permission (`null` = any admin, `'system_x'` = permission check, `'role:system_coder'` = role check)
+
+Both maps key on the **mount-naive** path (`/news`, not `/dashboard/news`). The `/dashboard` mount prefix is added at runtime via `getMountPath()`, so changing the mount point in `index.php` does not require touching these maps.
 
 ### BadgeRouter
 
@@ -1121,7 +1134,7 @@ Displays a specific manual file. Falls back to English (`-en.html`) if the reque
 **Extends:** `codesaur\Http\Application\Application`
 
 Public website Application. Middleware pipeline:
-ExceptionHandler -> MySQL -> Container -> Session -> Localization -> Settings -> WebRouter
+ExceptionHandler -> Container -> Session -> Localization -> Settings -> WebRouter
 
 ### WebRouter
 
@@ -1419,37 +1432,37 @@ Protected by `development:development` RBAC permission.
 
 ## Migration
 
+File-based, forward-only SQL migration system. State is derived entirely from the directory layout (no tracking table). Per-user folder: `database/migrations/{userId}-{username}/` holds pending files, `{userId}-{username}/ran/` holds applied files. `database/migrations/` is git-ignored.
+
 ### MigrationRunner
 
 **File:** `application/raptor/migration/MigrationRunner.php`
 
-SQL file-based forward-only migration engine.
-
 | Method | Description |
 |--------|-------------|
 | `__construct(\PDO $pdo, string $migrationsPath)` | PDO + path to migrations directory |
-| `hasPending(): bool` | Check if any pending migrations exist |
-| `migrate(): array` | Run all pending SQL files, return list of migrated filenames |
-| `status(): array` | Return `['ran' => [...], 'pending' => [...]]` |
-| `parseFile(string $path): array` | Parse SQL file returning `['up' => string, 'down' => string]` |
-
-### MigrationMiddleware
-
-**File:** `application/raptor/migration/MigrationMiddleware.php`
-**Implements:** `MiddlewareInterface`
-
-Auto-runs pending migrations on each request. Uses advisory lock (`GET_LOCK`) to prevent concurrent execution. Silent failure: logs errors but does not block the request.
+| `status(): array` | Returns `['folders' => [...]]` - pending/ran lists per user folder |
+| `apply(string $folder, string $filename): array` | Run a pending file and move it to `ran/` on success. Returns `ok`, `sha256`, `statements`, `error?`, `moved_to?` |
+| `scan(string $sql): array` | Forwards to `MigrationSecurityScanner::scan()` |
+| `summarize(string $sql): string` | Short summary (first `--` line or first statements) |
+| `splitStatements(string $sql): array` | Split SQL into individual statements (string/comment aware; dollar-quoting on pgsql only, `\'` backslash-escape on mysql only) |
+| `getUserFolderPath(int $userId, string $username): string` | Cross-OS safe folder path |
 
 ### MigrationController
 
 **File:** `application/raptor/migration/MigrationController.php`
 **Extends:** `Raptor\Controller`
 
+Restricted to users with the `system_coder` role. All POST routes are protected by the CSRF middleware.
+
 | Method | Description |
 |--------|-------------|
-| `index()` | Dashboard page showing migration status (system_coder only) |
-| `status()` | JSON: return ran + pending migration lists |
-| `view()` | AJAX modal: display SQL file contents |
+| `index()` | Migration dashboard page |
+| `status()` | JSON: pending/ran lists per user folder |
+| `view()` | AJAX modal: SQL contents + summary + SHA-256 + security warnings |
+| `upload()` | POST: accept a `.sql` file and store it under `{userId}-{username}/`. Max = `min(10 MB, php.ini post_max_size, upload_max_filesize)` |
+| `apply()` | POST: run a pending file. Sensitive-table writes require `confirm: 'CONFIRM'` |
+| `delete()` | POST: remove a pending file |
 
 ### MigrationRouter
 
@@ -1460,6 +1473,21 @@ Auto-runs pending migrations on each request. Uses advisory lock (`GET_LOCK`) to
 | `/dashboard/migrations` | GET | `migrations` |
 | `/dashboard/migrations/status` | GET | `migrations-status` |
 | `/dashboard/migrations/view` | GET | `migrations-view` |
+| `/dashboard/migrations/upload` | POST | `migrations-upload` |
+| `/dashboard/migrations/apply` | POST | `migrations-apply` |
+| `/dashboard/migrations/delete` | POST | `migrations-delete` |
+
+### MigrationSecurityScanner
+
+**File:** `application/raptor/migration/MigrationSecurityScanner.php`
+
+Static SQL scanner - checks uploaded SQL for writes against sensitive tables before apply.
+
+| Method | Description |
+|--------|-------------|
+| `scan(string $sql): array` | Returns a list of warnings; empty array means safe |
+
+Sensitive tables (`SENSITIVE_TABLES` const): `users`, `rbac_roles`, `rbac_permissions`, `rbac_user_role`, `rbac_role_permission`, `organizations`, `organizations_users`, `localization_language`, `raptor_menu`. Also flags `GRANT/REVOKE` and `CREATE/DROP/ALTER USER` patterns. Comments and string literals are stripped before matching to avoid false positives.
 
 ---
 
@@ -1470,7 +1498,7 @@ Auto-runs pending migrations on each request. Uses advisory lock (`GET_LOCK`) to
 **File:** `application/raptor/CacheService.php`
 **Namespace:** `Raptor`
 
-Custom file-based DB cache (PSR-16 SimpleCache). No external dependency beyond `psr/simple-cache`. Stored in `private/cache/`. Registered as `cache` container service via `ContainerMiddleware`. TTL: 12 hours (safety net). Fail-safe: returns `null` if unavailable.
+Custom file-based DB cache (PSR-16 SimpleCache). No external dependency beyond `psr/simple-cache`. Stored in `protected/cache/`. Registered as `cache` container service via `ContainerMiddleware`. TTL: 12 hours (safety net). Fail-safe: returns `null` if unavailable.
 
 | Method | Description |
 |--------|-------------|
@@ -1688,7 +1716,7 @@ Controllers that changed from `deactivate()` to `delete()`:
 - `PagesController` (route: `/dashboard/pages/delete`)
 - `ProductsController` (route: `/dashboard/products/delete`)
 - `OrdersController` (route: `/dashboard/orders/delete`)
-- `ReviewsController` (route: `/dashboard/reviews/delete`)
+- `ReviewsController` (route: `/dashboard/products/reviews/delete`)
 - `CommentsController` (route: `/dashboard/news/comments/delete`)
 - `MessagesController` (route: `/dashboard/messages/delete`)
 - `FilesController` (route: `/dashboard/files/{table}/delete`)
@@ -1701,7 +1729,7 @@ Controllers that changed from `deactivate()` to `delete()`:
 
 ### EventDispatcher
 
-**File:** `application/raptor/event/EventDispatcher.php`
+**File:** `application/raptor/notification/EventDispatcher.php`
 **Implements:** `Psr\EventDispatcher\EventDispatcherInterface`
 
 PSR-14 compliant event dispatcher. Iterates through listeners from `ListenerProvider` and calls each one with the event object.
@@ -1714,7 +1742,7 @@ Dispatches an event to all registered listeners.
 
 ### ListenerProvider
 
-**File:** `application/raptor/event/ListenerProvider.php`
+**File:** `application/raptor/notification/ListenerProvider.php`
 **Implements:** `Psr\EventDispatcher\ListenerProviderInterface`
 
 Registers and provides listeners for event types.
@@ -1727,21 +1755,22 @@ Returns all listeners registered for the given event's class.
 
 ### ContentEvent
 
-**File:** `application/raptor/event/ContentEvent.php`
+**File:** `application/raptor/notification/ContentEvent.php`
 
 Event dispatched for content management actions.
 
 | Property | Type | Description |
 |----------|------|-------------|
-| `$type` | string | Content type (`'news'`, `'page'`, `'product'`, etc.) |
 | `$action` | string | Action performed (`'insert'`, `'update'`, `'delete'`, `'publish'`) |
+| `$module` | string | Module / content type (`'news'`, `'page'`, `'product'`, etc.) |
 | `$title` | string | Content title |
-| `$id` | int | Content record ID |
+| `$id` | ?int | Content record ID |
 | `$user` | string | User who performed the action |
+| `$updates` | array | Changed fields (for update actions) |
 
 ### UserEvent
 
-**File:** `application/raptor/event/UserEvent.php`
+**File:** `application/raptor/notification/UserEvent.php`
 
 Event dispatched for user-related actions.
 
@@ -1753,32 +1782,35 @@ Event dispatched for user-related actions.
 
 ### OrderEvent
 
-**File:** `application/raptor/event/OrderEvent.php`
+**File:** `application/raptor/notification/OrderEvent.php`
 
 Event dispatched for order-related actions.
 
 | Property | Type | Description |
 |----------|------|-------------|
 | `$action` | string | Action (`'new'`, `'status_changed'`, `'review'`) |
-| `$orderId` | ?int | Order ID |
+| `$orderId` | int | Order ID |
 | `$customer` | string | Customer name |
-| `$email` | ?string | Customer email |
-| `$product` | ?string | Product title |
-| `$quantity` | ?int | Order quantity |
-| `$oldStatus` | ?string | Previous status (for status change) |
-| `$newStatus` | ?string | New status (for status change) |
+| `$email` | string | Customer email |
+| `$phone` | string | Customer phone |
+| `$product` | string | Product title |
+| `$quantity` | int | Order quantity |
+| `$oldStatus` | string | Previous status (for status change) |
+| `$newStatus` | string | New status (for status change) |
 
 ### DevRequestEvent
 
-**File:** `application/raptor/event/DevRequestEvent.php`
+**File:** `application/raptor/notification/DevRequestEvent.php`
 
 Event dispatched for development request actions.
 
 | Property | Type | Description |
 |----------|------|-------------|
 | `$action` | string | Action (`'new_request'`, `'new_response'`) |
+| `$requestId` | int | Request ID |
 | `$title` | string | Request title |
-| `$id` | int | Request ID |
+| `$assignedTo` | string | Assigned developer |
+| `$status` | string | Request status |
 
 ### Usage in Controllers
 

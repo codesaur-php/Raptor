@@ -247,7 +247,7 @@
                 btn.disabled = true;
                 btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
 
-                csrfFetch(`{{ 'news'|link }}/comment/${parentInput.value}/reply`, {
+                csrfFetch(`{{ 'news-comment-reply'|pattern }}`.replace('{id}', parentInput.value), {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ comment })

@@ -265,11 +265,9 @@ class JWTAuthMiddleware implements MiddlewareInterface
             $userObject = new User($profile, $organization, $permissions);
 
             // -------------------------------------------------------------
-            // 6. Request-д user attribute нэмээд үргэлжлүүлэх
+            // 6. Request-д user attribute нэмнэ (handle()-г try-ийн ГАДНА нэг л удаа дуудна)
             // -------------------------------------------------------------
-            return $handler->handle(
-                $request->withAttribute('user', $userObject)
-            );
+            $request = $request->withAttribute('user', $userObject);
         }
 
         // ==============================================================
@@ -301,14 +299,19 @@ class JWTAuthMiddleware implements MiddlewareInterface
                 $scriptPath = '';
             }
 
-            // Login хуудас дээр биш бол redirect хийнэ
+            // Login хуудас дээр биш бол redirect хийнэ (handle() дуудахгүй, early return)
             if ((\explode('/', $path)[2] ?? '') !== 'login') {
                 $loginUri = (string) $request->getUri()->withPath("$scriptPath/dashboard/login");
                 return $this->redirectResponse($request, $loginUri, 302);
             }
 
-            // Login дээр байвал процессийг үргэлжлүүлнэ
-            return $handler->handle($request);
+            // Login хуудас дээр байвал доорх ганц handle() рүү anonymous request-ээр fall-through
         }
+
+        // Ганц handle() - try/catch-ийн ГАДНА (CLAUDE.md-ийн middleware дүрэм):
+        //   - auth амжилттай бол $request нь 'user' attribute-тай
+        //   - login дээр auth алдсан бол original (anonymous) request
+        // Downstream controller-ийн exception энд баригдахгүй, гадна талын ErrorHandler руу дамжина.
+        return $handler->handle($request);
     }
 }

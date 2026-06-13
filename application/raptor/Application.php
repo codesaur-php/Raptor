@@ -2,6 +2,8 @@
 
 namespace Raptor;
 
+use Psr\Http\Message\ResponseInterface;
+
 /**
  * Class Application
  *
@@ -14,14 +16,22 @@ namespace Raptor;
  * Middleware pipeline нь дараах дарааллаар ажиллана:
  *
  *   1) ErrorHandler           - Алдаа барих, JSON/HTML error
- *   2) MySQLConnectMiddleware - PDO холболт inject
- *   3) MigrationMiddleware    - Pending SQL migration автомат ажиллуулах
- *   4) SessionMiddleware      - PHP session удирдлага
- *   5) JWTAuthMiddleware      - JWT шалгаж User объект үүсгэх
- *   6) CsrfMiddleware         - CSRF token шалгах (POST/PUT/PATCH/DELETE)
- *   7) ContainerMiddleware    - DI Container inject
- *   8) LocalizationMiddleware - Хэл, орчуулга inject
- *   9) SettingsMiddleware     - Системийн тохиргоо inject
+ *   2) SessionMiddleware      - PHP session удирдлага
+ *   3) JWTAuthMiddleware      - JWT шалгаж User объект үүсгэх
+ *   4) ContainerMiddleware    - DI Container inject
+ *   5) LocalizationMiddleware - Хэл, орчуулга inject
+ *   6) SettingsMiddleware     - Системийн тохиргоо inject
+ *
+ * CSRF хамгаалалт нь app-wide биш - CsrfMiddleware нь mutating route бүрд
+ * router дээр `->middleware([CsrfMiddleware::class])`-аар per-route наагдана.
+ *
+ * PDO холболт нь public_html/index.php дээр нэг л удаа үүсгэгдэж
+ * request->getAttribute('pdo')-р дамжина (Web ба Dashboard ижил DB ашиглах).
+ * Driver сонголт .env-ийн RAPTOR_DB_DRIVER хувьсагчаар хийгдэнэ.
+ *
+ * Migration-уудыг /dashboard/migrations хуудаснаас (per-user folder upload
+ * + apply) ажиллуулна. State нь
+ * `database/migrations/{userId}-{username}/[ran/]` бүтцээр тогтоогдоно.
  *
  * Мөн дараах router-үүдийг бүртгэж өгнө:
  *
@@ -32,6 +42,9 @@ namespace Raptor;
  *   - LocalizationRouter   -> Хэл болон орчуулга
  *   - ContentsRouter       -> File, News, Page, Reference, Settings модулиуд
  *   - LogsRouter           -> Системийн логийн индекс, харах
+ *   - DevelopmentRouter    -> Хөгжүүлэлтийн хүсэлт (dev-requests)
+ *   - MigrationRouter      -> Database migration upload / apply
+ *   - TrashRouter          -> Хогийн сав (сэргээх / бүрэн устгах)
  *   - TemplateRouter       -> Dashboard UI-ийн template харгалзах маршрут
  *   - BadgeRouter          -> Sidebar badge систем (unseen activity counts)
  *
@@ -48,40 +61,33 @@ abstract class Application extends \codesaur\Http\Application\Application
      * Dashboard-ын middleware болон router-үүдийг бүртгэнэ.
      * Регистрлэгдсэн дараалал нь маш чухал -> authentication, localization,
      * settings, routing гэх мэт бүх давхаргууд pipeline бүтээнэ.
+     *
+     * @param ResponseInterface $response Handler ResponseInterface биш төрөл
+     *        буцаасан үед fallback болгон ашиглах хариуны prototype (base руу дамжина)
      */
-    public function __construct()
+    public function __construct(ResponseInterface $response)
     {
-        parent::__construct();
+        parent::__construct($response);
 
         // 1. Error handler
         $this->use(new Exception\ErrorHandler());
 
-        // 2. Database (MySQL эсвэл PostgreSQL)
-        $this->use(new MySQLConnectMiddleware());
-        // $this->use(new PostgresConnectMiddleware());
-
-        // 3. Migration (auto-run pending SQL files)
-        $this->use(new Migration\MigrationMiddleware());
-
-        // 4. Session
+        // 2. Session
         $this->use(new SessionMiddleware(
             fn(string $path, string $method): bool =>
                 \str_contains($path, '/login') || empty($_SESSION['CSRF_TOKEN'])
         ));
 
-        // 5. JWT Authentication
+        // 3. JWT Authentication
         $this->use(new Authentication\JWTAuthMiddleware());
 
-        // 6. CSRF Protection
-        $this->use(new CsrfMiddleware());
-
-        // 7. DI Container
+        // 4. DI Container
         $this->use(new ContainerMiddleware());
 
-        // 8. Localization
+        // 5. Localization
         $this->use(new Localization\LocalizationMiddleware());
 
-        // 9. Settings
+        // 6. Settings
         $this->use(new Content\SettingsMiddleware());
 
         // Route mapping
