@@ -235,22 +235,23 @@ class Logger extends AbstractLogger
      *     * backup-оор дамжин гуравдагч этгээдэд очих
      *  зэрэг эрсдэлтэй байдаг.
      *
-     *  Тиймээс PASSWORD, TOKEN, JWT зэрэг эмзэг түлхүүрүүдийг лог дээр 
+     *  Тиймээс PASSWORD, TOKEN, JWT, PIN зэрэг эмзэг түлхүүрүүдийг лог дээр 
      *  цэвэр текстээр хадгалбал маш ноцтой аюулгүй байдлын зөрчил болно.
      *  -> Ийм төрлийн түлхүүр илэрвэл "*** hidden ***" гэж автоматаар маскална.
      */
     private function encodeContext(array $context): string
     {
-        static $logSecretExact   = ['PIN', 'JWT'];
-        static $logSecretPattern = '~PASSWORD|TOKEN~';
-        \array_walk_recursive($context, function (&$value, $k) use ($logSecretExact, $logSecretPattern) {
+        // PIN/JWT - яг тэнцүү (богино тул эдгээрийг агуулсан байдлаар шалгавал
+        // mapping, opinion зэрэг хууль ёсны түлхүүрийг буруугаар далдалж болзошгүй)
+        $secretExact = ['PIN', 'JWT'];
+        
+        // PASSWORD/TOKEN - эдгээр үгийг яг тэнцүү эсвэл агуулсан түлхүүрийг далдална
+        // (password_retype, csrf_token, _token г.м.)
+        $secretPattern = '~PASSWORD|TOKEN~';
+        
+        \array_walk_recursive($context, function (&$value, $k) use ($secretExact, $secretPattern) {
             $key = \strtoupper((string) $k);
-
-            // PIN/JWT - яг тэнцүү (богино тул эдгээрийг агуулсан байдлаар шалгавал
-            // mapping, opinion зэрэг хууль ёсны түлхүүрийг буруугаар далдалж болзошгүй).
-            // PASSWORD/TOKEN - эдгээр үгийг яг тэнцүү эсвэл агуулсан түлхүүрийг далдална
-            // (password_retype, csrf_token, _token г.м.).
-            if (\in_array($key, $logSecretExact) || \preg_match($logSecretPattern, $key)) {
+            if (\in_array($key, $secretExact) || \preg_match($secretPattern, $key)) {
                 $value = '*** hidden ***';
             }
         });

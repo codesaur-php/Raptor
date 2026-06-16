@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 
 ---
 
+## [4.2.0] - 2026-06-16
+[4.2.0]: https://github.com/codesaur-php/Raptor/compare/v4.0.0...v4.2.0
+
+### Removed
+
+- **PHPStan static analysis removed entirely.** The `phpstan/phpstan` dev dependency (added in 4.1.1) was dropped from `require-dev`, the `phpstan` and `phpstan:baseline` Composer scripts were removed, and the three config files (`phpstan.neon.dist`, `phpstan-bootstrap.php`, `phpstan-baseline.neon`) were deleted. `composer.lock` and `vendor/` were synced (`composer update phpstan/phpstan`), so the package is gone from the dependency tree. No runtime/request-path impact - PHPStan was dev-only and already excluded from production via `composer install --no-dev`.
+
+---
+
 ## [4.1.1] - 2026-06-16
 [4.1.1]: https://github.com/codesaur-php/Raptor/compare/v4.0.0...v4.1.1
 
