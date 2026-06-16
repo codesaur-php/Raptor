@@ -345,7 +345,7 @@ class BadgeController extends \Raptor\Controller
 
             $this->respondJSON(['status' => 'success', 'badges' => $badges]);
         } catch (\Throwable $err) {
-            $this->respondJSON(['message' => $err->getMessage()], $err->getCode());
+            $this->respondJSON(['message' => $err->getMessage()], $err->getCode() ?: 500);
         }
     }
 
@@ -499,7 +499,7 @@ class BadgeController extends \Raptor\Controller
 
             $this->respondJSON(['status' => 'success']);
         } catch (\Throwable $err) {
-            $this->respondJSON(['message' => $err->getMessage()], $err->getCode());
+            $this->respondJSON(['message' => $err->getMessage()], $err->getCode() ?: 500);
         }
     }
 }

@@ -323,7 +323,7 @@ class LogsController extends \Raptor\Controller
             $logger->setTable($table);
             $this->respondJSON($logger->getLogs($condition));
         } catch (\Throwable $err) {
-            $this->respondJSON(['error' => $err->getMessage()], $err->getCode());
+            $this->respondJSON(['error' => $err->getMessage()], $err->getCode() ?: 500);
         }
     }
 }

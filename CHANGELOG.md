@@ -6,8 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 
 ---
 
-## [4.1.0] - 2026-06-16
-[4.1.0]: https://github.com/codesaur-php/Raptor/compare/v4.0.0...v4.1.0
+## [4.1.1] - 2026-06-16
+[4.1.1]: https://github.com/codesaur-php/Raptor/compare/v4.1.0...v4.1.1
+
+### Security
+
+- **Log secret masking no longer silently misses `*_token` keys.** `Logger::encodeContext()` masked `PASSWORD` via substring match but checked `PIN`, `JWT`, `TOKEN` with an exact `in_array()`, so realistic keys like `_token`, `csrf_token`, `access_token` were written to `*_log.context` in plaintext - even though `Controller::log()` auto-injects the full parsed request body into `server_request.body`. The login form's spam `_token` field was leaking this way today. `TOKEN` is now matched as a substring (alongside `PASSWORD`) via a single precompiled regex, while `PIN` and `JWT` stay on exact `in_array()` matching on purpose: as short substrings they would over-mask legitimate keys (`PIN` is a substring of `mapping`, `opinion`, `shipping`; masking the wrong data is the same class of silent failure in reverse).
+
+### Fixed
+
+- **JSON error endpoints no longer return HTTP 200 on an exception with code 0.** `BadgeController::badges()`/`seen()` and `LogsController::retrieve()` passed `$err->getCode()` straight to `respondJSON()`; a plain exception thrown without an explicit HTTP code carries `0`, which falls outside the 100-599 range check and leaves the status at the default `200` - so a real server-side failure reached the client as `200 OK` and the `fetch().ok` check passed, swallowing the error. These now use `$err->getCode() ?: 500`, matching the fallback already used by `LogsController::errorLogRead()`.
 
 ### Added
 

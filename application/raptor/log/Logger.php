@@ -241,12 +241,16 @@ class Logger extends AbstractLogger
      */
     private function encodeContext(array $context): string
     {
-        \array_walk_recursive($context, function (&$value, $k) {
-            $key     = \strtoupper($k);
-            $secrets = ['PIN', 'JWT', 'TOKEN'];
+        static $logSecretExact   = ['PIN', 'JWT'];
+        static $logSecretPattern = '~PASSWORD|TOKEN~';
+        \array_walk_recursive($context, function (&$value, $k) use ($logSecretExact, $logSecretPattern) {
+            $key = \strtoupper((string) $k);
 
-            // Эмзэг түлхүүр таарвал лог дээр plaintext хадгалахыг хориглоно
-            if (\str_contains($key, 'PASSWORD') || \in_array($key, $secrets)) {
+            // PIN/JWT - яг тэнцүү (богино тул эдгээрийг агуулсан байдлаар шалгавал
+            // mapping, opinion зэрэг хууль ёсны түлхүүрийг буруугаар далдалж болзошгүй).
+            // PASSWORD/TOKEN - эдгээр үгийг яг тэнцүү эсвэл агуулсан түлхүүрийг далдална
+            // (password_retype, csrf_token, _token г.м.).
+            if (\in_array($key, $logSecretExact) || \preg_match($logSecretPattern, $key)) {
                 $value = '*** hidden ***';
             }
         });
