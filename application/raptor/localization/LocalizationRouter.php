@@ -62,7 +62,7 @@ class LocalizationRouter extends Router
          * Хэл устгах (hard delete).
          * Example: DELETE /dashboard/language/delete
          */
-        $this->DELETE('/language/delete', [LanguageController::class, 'delete'])->name('delete-language')->middleware([CsrfMiddleware::class]);
+        $this->DELETE('/language/delete', [LanguageController::class, 'delete'])->name('language-delete')->middleware([CsrfMiddleware::class]);
         
         /**
          * Орчуулгын текст шинээр нэмэх.

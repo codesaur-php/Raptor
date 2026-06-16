@@ -122,7 +122,7 @@ class MenuSeed
                     'parent_id' => $contents['id'],
                     'position' => '160',
                     'alias' => 'system',
-                    'permission' => 'system_templates_index',
+                    'permission' => 'system_content_index',
                     'icon' => 'bi bi-layout-wtf',
                     'href' => "$path$mount/references"
                 ],

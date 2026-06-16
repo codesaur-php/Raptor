@@ -137,6 +137,11 @@ class TemplateService
      */
     private function loadAllForCode(string $code): array
     {
+        // Coupling: Зөвхөн 'templates' reference хүснэгтийг кэшилдэг тул key-д
+        // 'templates' literal-аар бичигдсэн. ReferencesController нь динамик
+        // "reference.$table.{code}"-ээр invalidate хийдэг - $table='templates'
+        // үед яг энэ key-тэй таарна. Хэрэв ирээдүйд өөр reference хүснэгтийг
+        // кэшлэх бол invalidate талыг үүнтэй тааруулахаа бүү мартагтун.
         $cacheKey = "reference.templates.$code";
 
         try {

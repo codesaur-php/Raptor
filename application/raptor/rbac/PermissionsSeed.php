@@ -61,9 +61,6 @@ class PermissionsSeed
             ['module' => 'localization', 'name' => 'localization_update',   'description' => 'Edit existing translation entries'],
             ['module' => 'localization', 'name' => 'localization_delete',   'description' => 'Delete translation entries'],
 
-            // Template / Reference
-            ['module' => 'template',     'name' => 'templates_index',       'description' => 'View and manage reference tables'],
-
             // Development
             ['module' => 'development',  'name' => 'development',           'description' => 'Manage all development requests and respond to others'],
         ];

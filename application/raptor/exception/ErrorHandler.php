@@ -3,7 +3,6 @@
 namespace Raptor\Exception;
 
 use codesaur\Template\FileTemplate;
-use codesaur\Http\Message\ReasonPhrase;
 use codesaur\Http\Application\ExceptionHandler as Base;
 use codesaur\Http\Application\ExceptionHandlerInterface;
 
@@ -26,7 +25,7 @@ use codesaur\Http\Application\ExceptionHandlerInterface;
  *
  * Алдаа барих үндсэн логик:
  *   1) Throwable объектын код, мессежийг унших
- *   2) HTTP статус код тохируулах (ReasonPhrase ашиглан)
+ *   2) HTTP статус код тохируулах (100-599 мужийн стандарт код)
  *   3) error.log руу бичих (`error_log`)
  *   4) error.html template рендерлэх
  *
@@ -70,15 +69,10 @@ class ErrorHandler implements ExceptionHandlerInterface
         if ($code != 0) {
             $title .= " $code";
 
-            // HTTP статус код тохируулах боломжтой эсэхийг шалгах
-            if (\class_exists(ReasonPhrase::class)) {
-                $status = "STATUS_$code";
-                $reasonPhrase = ReasonPhrase::class;
-
-                // Status constant байвал -> HTTP статус илгээх
-                if (\defined("$reasonPhrase::$status") && !\headers_sent()) {
-                    \http_response_code($code);
-                }
+            // Стандарт HTTP статус кодын мужид (RFC 9110: 100-599) багтаж
+            // байвал -> HTTP статус илгээх
+            if (\is_numeric($code) && $code >= 100 && $code <= 599 && !\headers_sent()) {
+                \http_response_code((int) $code);
             }
         }
 

@@ -29,6 +29,38 @@ trait SpamProtectionTrait
     }
 
     /**
+     * Spam HMAC token-д ашиглах нууц түлхүүрийг авах.
+     *
+     * .env-д RAPTOR_JWT_SECRET заавал тохируулсан байх ёстой - hardcoded default
+     * БАЙХГҮЙ. Default тавьбал public source-д ил нууц болж, token-ийг хэн ч
+     * хуурамчаар үүсгэж чадна (spam хамгаалалт чимээгүй идэвхгүй болно).
+     *
+     * @throws \RuntimeException secret тохируулаагүй бол (fail-loud)
+     */
+    protected function getSpamSecret(): string
+    {
+        $secret = $_ENV['RAPTOR_JWT_SECRET'] ?? '';
+        if (empty($secret)) {
+            throw new \RuntimeException('RAPTOR_JWT_SECRET environment variable is not set');
+        }
+        return $secret;
+    }
+
+    /**
+     * Form-д суулгах spam HMAC token үүсгэх.
+     *
+     * Generation болон validation (validateSpamProtection) ижил томьёо ашиглахын
+     * тулд хоёр тал энэ нэг методыг дуудна.
+     *
+     * @param string $formName HMAC-д ашиглах form нэр (шалгахдаа ижил нэр дамжуулна)
+     * @param int    $ts       Timestamp (form render хийсэн агшин)
+     */
+    protected function generateSpamToken(string $formName, int $ts): string
+    {
+        return \hash_hmac('sha256', "$formName-$ts", $this->getSpamSecret());
+    }
+
+    /**
      * Spam хамгаалалтын бүрэн шалгалт хийх.
      *
      * @param array  $parsed     POST body
@@ -45,15 +77,10 @@ trait SpamProtectionTrait
             throw new \Exception('Invalid request', 400);
         }
 
-        // 2) HMAC token + timestamp
+        // 2) HMAC token + timestamp - generateSpamToken-той ижил томьёогоор шалгана
         $ts = (int)($parsed['_ts'] ?? 0);
         $token = $parsed['_token'] ?? '';
-        $secret = $_ENV['RAPTOR_JWT_SECRET'] ?? '';
-        if (empty($secret)) {
-            throw new \RuntimeException('RAPTOR_JWT_SECRET environment variable is not set');
-        }
-        $expected = \hash_hmac('sha256', "$formName-$ts", $secret);
-        if (!\hash_equals($expected, $token)) {
+        if (!\hash_equals($this->generateSpamToken($formName, $ts), $token)) {
             throw new \Exception('Invalid request', 403);
         }
 

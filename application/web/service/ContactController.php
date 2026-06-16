@@ -51,7 +51,6 @@ class ContactController extends TemplateController
 
         // Spam хамгаалалтын бүрдэл: timestamp + HMAC token
         $ts = \time();
-        $secret = $this->getJwtSecret();
 
         $this->webTemplate(__DIR__ . '/contact.html', [
             'record' => $record ?: [],
@@ -60,7 +59,7 @@ class ContactController extends TemplateController
             'description' => $record['description'] ?? '',
             'photo' => $record['photo'] ?? '',
             'spam_ts' => $ts,
-            'spam_token' => \hash_hmac('sha256', "contact-form-$ts", $secret),
+            'spam_token' => $this->generateSpamToken('contact-form', $ts),
             'turnstile_site_key' => $this->getTurnstileSiteKey()
         ] + $this->getAttribute('settings', []))->render();
 
@@ -228,18 +227,4 @@ class ContactController extends TemplateController
         }
     }
 
-    /**
-     * JWT secret авах.
-     *
-     * @return string JWT secret
-     * @throws \RuntimeException Environment variable тохируулаагүй бол
-     */
-    private function getJwtSecret(): string
-    {
-        $secret = $_ENV['RAPTOR_JWT_SECRET'] ?? '';
-        if (empty($secret)) {
-            throw new \RuntimeException('RAPTOR_JWT_SECRET environment variable is not set');
-        }
-        return $secret;
-    }
 }

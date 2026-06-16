@@ -92,7 +92,7 @@ Returns translation text. Returns `$default` or `{key}` if not found.
 Creates a Template with auto-injected variables: `user`, `index`, `localization`, `request`. Registers `text` and `link` filters.
 
 #### `respondJSON(array $response, int|string $code = 0): void`
-Outputs a JSON response with `Content-Type: application/json` header.
+Outputs a JSON response with `Content-Type: application/json` header. When `$code` is a valid HTTP status (100-599) it is applied via `headerResponseCode()`; otherwise the response stays `200`.
 
 #### `redirectTo(string $routeName, array $params = []): void`
 Redirects to a named route (302). Calls `exit`.
@@ -122,7 +122,7 @@ $this->invalidateCache('languages');
 ```
 
 #### `headerResponseCode(int|string $code): void`
-Sets HTTP response code. Ignores non-standard codes.
+Sets the HTTP response code only when `$code` is numeric and within the standard HTTP range 100-599 (RFC 9110). Non-numeric, out-of-range, or `200` (default) values are ignored, so non-standard codes are never emitted.
 
 #### `getScriptPath(): string`
 Returns the script path (subdirectory support).

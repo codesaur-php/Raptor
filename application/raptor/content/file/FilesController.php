@@ -84,16 +84,13 @@ class FilesController extends FileController
             $tables = ['files' => ['count' => 0, 'size' => 0]] + $tables;
         }
 
-        // Query параметрт table өгсөн эсэх, default = 'files'
+        // Query параметрт table өгсөн эсэх, default = 'files'.
+        // Дээрх мөр 82-85 нь $tables-д 'files' түлхүүрийг (байрлалаас үл хамааран)
+        // үргэлж нэмдэг тул default 'files' хэзээ ч хоосон гарахгүй.
         if (isset($this->getQueryParams()['table'])) {
             $table = \preg_replace('/[^A-Za-z0-9_-]/', '', $this->getQueryParams()['table']);
-        } elseif (isset($tables['files'])) {
-            $table = 'files';
-        } elseif (!empty($tables)) {
-            $table = \array_key_first($tables);
         } else {
-            $this->dashboardProhibited('No file tables found!', 404)->render();
-            return;
+            $table = 'files';
         }
         
         $total['total_bytes'] = (int) $total['sizes'];

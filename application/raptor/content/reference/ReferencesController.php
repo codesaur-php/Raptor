@@ -154,7 +154,8 @@ class ReferencesController extends \Raptor\Controller
                 );
                 if (!isset($record['id'])) {
                     throw new \Exception($this->text('record-insert-error'));
-                }                
+                }
+                // Зөвхөн 'templates' хүснэгт кэшлэгддэг (TemplateService); бусад нь no-op.
                 $this->invalidateCache("reference.$table.{code}");
                 $this->respondJSON([
                     'status' => 'success',
@@ -328,7 +329,8 @@ class ReferencesController extends \Raptor\Controller
                 if (empty($updated)) {
                     throw new \Exception($this->text('no-record-selected'));
                 }
-                
+
+                // Зөвхөн 'templates' хүснэгт кэшлэгддэг (TemplateService); бусад нь no-op.
                 $this->invalidateCache("reference.$table.{code}");
                 $this->respondJSON([
                     'status' => 'success',
@@ -419,7 +421,8 @@ class ReferencesController extends \Raptor\Controller
                 (new \Raptor\Trash\TrashModel($this->pdo))->store(
                     'content', $reference->getName(), $id, $record, $this->getUserId()
                 );
-            }            
+            }
+            // Зөвхөн 'templates' хүснэгт кэшлэгддэг (TemplateService); бусад нь no-op.
             $this->invalidateCache("reference.$table.{code}");
             $this->respondJSON([
                 'status'  => 'success',

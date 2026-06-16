@@ -89,11 +89,10 @@ class LoginController extends \Raptor\Controller
         // 3) Login template-г ачаалах
         $login = $this->template(__DIR__ . '/login.html');
 
-        // Spam хамгаалалтын timestamp + token
+        // Spam хамгаалалтын timestamp + token (SpamProtectionTrait-ийн нэгдсэн логик)
         $ts = \time();
-        $secret = $_ENV['RAPTOR_JWT_SECRET'] ?? 'raptor-form-secret';
         $login->set('spam_ts', $ts);
-        $login->set('spam_token', \hash_hmac('sha256', "login-form-$ts", $secret));
+        $login->set('spam_token', $this->generateSpamToken('login-form', $ts));
         $login->set('turnstile_site_key', $this->getTurnstileSiteKey());
 
         // SettingsMiddleware -> request attributes -> 'settings'
@@ -1351,12 +1350,10 @@ class LoginController extends \Raptor\Controller
             throw new \Exception('Invalid request', 400);
         }
 
-        // 2) HMAC token шалгалт
+        // 2) HMAC token шалгалт (SpamProtectionTrait-ийн нэгдсэн логик)
         $ts = (int)($payload['_ts'] ?? 0);
         $token = $payload['_token'] ?? '';
-        $secret = $_ENV['RAPTOR_JWT_SECRET'] ?? 'raptor-form-secret';
-        $expected = \hash_hmac('sha256', "login-form-$ts", $secret);
-        if (!\hash_equals($expected, $token)) {
+        if (!\hash_equals($this->generateSpamToken('login-form', $ts), $token)) {
             throw new \Exception('Invalid request', 403);
         }
 

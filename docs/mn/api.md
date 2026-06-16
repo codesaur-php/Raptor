@@ -92,7 +92,7 @@ Request-аас PDO instance-г авч `$this->pdo`-д оноох.
 Template үүсгэх. Автоматаар `user`, `index`, `localization`, `request` хувьсагчид нэмэгдэнэ. `text` болон `link` filter-ууд бүртгэгдэнэ.
 
 #### `respondJSON(array $response, int|string $code = 0): void`
-JSON хариулт хэвлэх. `Content-Type: application/json` header тохируулна.
+JSON хариулт хэвлэх. `Content-Type: application/json` header тохируулна. `$code` нь хүчинтэй HTTP статус (100-599) бол `headerResponseCode()`-оор онооно; эс бөгөөс хариу `200` хэвээр үлдэнэ.
 
 #### `redirectTo(string $routeName, array $params = []): void`
 Route нэрээр 302 redirect хийх. `exit` дуудна.
@@ -122,7 +122,7 @@ $this->invalidateCache('languages');
 ```
 
 #### `headerResponseCode(int|string $code): void`
-HTTP response code тохируулах. Стандарт бус код бол алгасна.
+HTTP response code-ыг зөвхөн `$code` нь тоон утга бөгөөд стандарт HTTP мужид (RFC 9110: 100-599) багтах үед онооно. Тоон бус, мужаас гадуур, эсвэл `200` (default) бол алгасна - стандарт бус код хэзээ ч илгээгдэхгүй.
 
 #### `getScriptPath(): string`
 Script path буцаах (subdirectory дэмжлэг).

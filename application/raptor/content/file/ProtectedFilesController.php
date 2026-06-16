@@ -163,6 +163,10 @@ class ProtectedFilesController extends FilesController
             }
 
             \header("Content-Type: $mimeType");
+            // URL нь өргөтгөлгүй (/protected/file) тул filename өгснөөр татах үед
+            // зөв нэр/өргөтгөлтэй болж хадгалагдана (дэмждэг браузер inline харуулна).
+            \header('Content-Disposition: inline; filename="' . \basename($filePath) . '"');
+            \header('Content-Length: ' . \filesize($filePath));
             \readfile($filePath);
         } catch (\Throwable $err) {
             if (CODESAUR_DEVELOPMENT) {

@@ -300,7 +300,7 @@
                     /* preConfirm -> сервер рүү DELETE хүсэлт илгээнэ */
                     preConfirm: (reason) => {
                         return csrfFetch(
-                            `{{ 'delete-language'|link }}`,
+                            `{{ 'language-delete'|link }}`,
                             {
                                 method: 'DELETE',
                                 headers: {

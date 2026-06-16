@@ -161,9 +161,8 @@ class ShopController extends TemplateController
             $record['review_count'] = (int)($stats['review_count'] ?? 0);
 
             $ts = \time();
-            $secret = $this->getJwtSecret();
             $record['spam_ts'] = $ts;
-            $record['spam_token'] = \hash_hmac('sha256', "review-$id-$ts", $secret);
+            $record['spam_token'] = $this->generateSpamToken("review-$id", $ts);
             $record['turnstile_site_key'] = $this->getTurnstileSiteKey();
         }
 
@@ -208,9 +207,8 @@ class ShopController extends TemplateController
         }
 
         $ts = \time();
-        $secret = $this->getJwtSecret();
         $vars['spam_ts'] = $ts;
-        $vars['spam_token'] = \hash_hmac('sha256', "order-form-$ts", $secret);
+        $vars['spam_token'] = $this->generateSpamToken('order-form', $ts);
         $vars['turnstile_site_key'] = $this->getTurnstileSiteKey();
 
         $vars['title'] = $this->text('order');
@@ -414,21 +412,6 @@ class ShopController extends TemplateController
         } catch (\Throwable $err) {
             $this->respondJSON(['message' => $err->getMessage()], $err->getCode() ?: 500);
         }
-    }
-
-    /**
-     * JWT нууц түлхүүрийг environment-ээс авах.
-     *
-     * @return string JWT secret
-     * @throws \RuntimeException Environment variable тохируулаагүй бол
-     */
-    private function getJwtSecret(): string
-    {
-        $secret = $_ENV['RAPTOR_JWT_SECRET'] ?? '';
-        if (empty($secret)) {
-            throw new \RuntimeException('RAPTOR_JWT_SECRET environment variable is not set');
-        }
-        return $secret;
     }
 
     /**

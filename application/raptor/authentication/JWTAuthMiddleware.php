@@ -299,8 +299,17 @@ class JWTAuthMiddleware implements MiddlewareInterface
                 $scriptPath = '';
             }
 
-            // Login хуудас дээр биш бол redirect хийнэ (handle() дуудахгүй, early return)
-            if ((\explode('/', $path)[2] ?? '') !== 'login') {
+            // Login хуудас, эсвэл /protected/* замууд дээр login-redirect ХИЙХГҮЙ:
+            //  - login     : anonymous-аар login form-оо render хийх ёстой.
+            //  - protected : файл/API замууд (зураг, татац гэх мэт) тул HTML login
+            //                руу 302 биш, цэвэр 401/403 буцаах ёстой.
+            //
+            // КОНВЕНЦ: /protected/* segment доорх БҮХ route нь (одоогийн ба ирээдүйн)
+            // anonymous-аар controller руу унаж, ӨӨРСДӨӨ auth шалгана - login-redirect-д
+            // найдахгүй. Шинэ /protected/* route нэмэхдээ controller дотроо
+            // isUserAuthorized() шалгаж 401/403 буцаахаа мартаж болохгүй.
+            $segment = \explode('/', $path)[2] ?? '';
+            if ($segment !== 'login' && $segment !== 'protected') {
                 $loginUri = (string) $request->getUri()->withPath("$scriptPath/dashboard/login");
                 return $this->redirectResponse($request, $loginUri, 302);
             }

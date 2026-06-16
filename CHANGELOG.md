@@ -6,6 +6,33 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 
 ---
 
+## [4.1.0] - 2026-06-16
+[4.1.0]: https://github.com/codesaur-php/Raptor/compare/v4.0.0...v4.1.0
+
+### Added
+
+- **PHPStan static analysis (dev-only).** `phpstan/phpstan` added to `require-dev` (excluded from production via `composer install --no-dev`; zero runtime/request-path impact). Config in `phpstan.neon.dist` runs at a conservative `level: 1` over `application/`, with `phpstan-bootstrap.php` defining the runtime-only `CODESAUR_DEVELOPMENT` constant for analysis. The 301 pre-existing findings are frozen in `phpstan-baseline.neon` so the check is green and only NEW code is analyzed; the level can be raised over time. Run with `composer phpstan`; regenerate the baseline with `composer phpstan:baseline`. This catches the class of typo that caused the 4.0.0 `ReasonPrhase` bug (undefined-class reference) automatically. PHPStan reads code structure/types only - Mongolian text in strings/comments/docblock descriptions is never flagged, and code formatting/naming is out of scope (that is PHP_CodeSniffer/CS-Fixer territory).
+
+### Changed
+
+- **HTTP status code validation switched from a `ReasonPhrase::STATUS_*` constant lookup to a numeric 100-599 range check (RFC 9110).** `Controller::headerResponseCode()`, `Controller::respondJSON()`, `Raptor\Exception\JsonExceptionHandler`, `Raptor\Exception\ErrorHandler`, and `Web\Template\ExceptionHandler` previously validated a code with `\defined(ReasonPhrase::class . "::STATUS_$code")`. That pattern is silently fragile: a wrong class reference (the `ReasonPrhase` typo fixed in 4.0.0) resolves to a literal string and `\defined()` just returns `false`, so validation cannot distinguish "unknown code" from "wrong class name". Validation is now `\is_numeric($code) && $code >= 100 && $code <= 599`, which has no class coupling and cannot be disabled by a symbol typo. `respondJSON()` now delegates status handling to `headerResponseCode()`, removing a duplicated check and an inconsistency (the old `respondJSON` used `\is_int()`, so it rejected numeric-string codes like `'403'` that `headerResponseCode` accepted). The now-unused `use codesaur\Http\Message\ReasonPhrase;` import was removed from all four files; the `ReasonPhrase` class itself is unchanged and still used for PSR-7 reason-phrase text. Docs (`docs/en/api.md`, `docs/mn/api.md`) updated to describe the 100-599 range.
+- **`delete-language` route renamed to `language-delete`** (`LocalizationRouter`) to match the `{entity}-delete` naming convention used by every other delete route (`text-delete`, `news-delete`, `user-delete`, etc.). The `{{ 'delete-language'|link }}` reference in `localization-index.html` was updated; the unrelated `.delete-language` CSS class on the button is unchanged. No DB impact (route names are code-only).
+- **Reference-table cache coupling documented.** Added comments in `TemplateService::loadAllForCode()` (the literal `reference.templates.$code` read/write key) and the three `ReferencesController` `invalidateCache("reference.$table.{code}")` calls, recording the invariant that only the `templates` reference table is cached, so invalidating any other table is a harmless no-op.
+
+### Removed
+
+- **`templates_index` permission removed** from `PermissionsSeed.php` and the `manager`/`editor` assignments in `RolePermissionSeed.php`. It was redundant: it only gated the "Reference Tables" sidebar menu entry while `ReferencesController` actually authorizes on `system_content_index`. The `MenuSeed` entry for `/references` now uses `system_content_index`, aligning menu visibility with the controller's real access check. Also dropped from the RBAC manual tables (`rbac-manual-{mn,en}.html`). **Deploy note:** for already-deployed databases, write a migration to delete the `templates_index` rows from `rbac_permissions`/`rbac_role_permission` and to update the `raptor_menu` row's permission to `system_content_index` (seed files only run on fresh installs).
+
+### Security
+
+
+### Fixed
+
+- **`ProtectedFilesController::read()` now returns a real `401` for unauthenticated requests instead of being short-circuited by the login redirect.** The route (`/dashboard/protected/file`) is in the dashboard app, where `JWTAuthMiddleware` redirected every unauthenticated non-login route to `/dashboard/login` *before* the controller ran - so the controller's own `if (!isUserAuthorized()) throw 401` never executed, and a protected-file URL embedded in an `<img>`/download for a logged-out user received `302` + login HTML instead of a clean `401`. `JWTAuthMiddleware` now exempts the `/dashboard/protected/*` path segment from the login redirect (alongside the existing `login` exemption): on auth failure it falls through anonymously so `read()` runs and returns its own `401`/`403`/`404`. Established as a convention: every route under `/dashboard/protected/*` (current and future) falls through anonymously and must enforce its own auth (return `401`/`403`) instead of relying on the redirect - so adding a new protected route needs no middleware change. (Pairs with the earlier `headerResponseCode` range-check fix, which is what now actually emits the `401`.) The route stays at `/dashboard/protected/file` so the mount-aware `generateRouteLink('protected-file-read')` links generated across the dashboard controllers keep resolving.
+- **Protected file serving now sends `Content-Disposition` and `Content-Length`.** `ProtectedFilesController::read()` previously emitted only `Content-Type` + `readfile()`. Since the route URL carries no file extension (`/dashboard/protected/file`), a saved file defaulted to the name `file` with no extension. `read()` now adds `Content-Disposition: inline; filename="<basename>"` (a save/download gets the real name and extension; browsers that can render the type may show it inline) and `Content-Length` (enables download progress). Whether a given type renders inline or downloads remains the browser's/OS's decision - the server only supplies the correct headers.
+
+---
+
 ## [4.0.0] - 2026-06-13
 [4.0.0]: https://github.com/codesaur-php/Raptor/compare/v3.1.0...v4.0.0
 

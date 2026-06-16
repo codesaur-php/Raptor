@@ -75,8 +75,14 @@ class LoginRouter extends Router
          * ---------------------------------------------------------------
          * 6. Хэл солих (GET)
          * ---------------------------------------------------------------
-         * Хэрэглэгч login хуудасны интерфейсийн хэлийг солих.
-         * Dynamic parameter: {code}
+         * Системд ажиллах хэлийг солих. Хоёр төлөвт ажиллана:
+         *   - Нэвтрээгүй (login хуудас): зөвхөн session-ий хэлийг солино.
+         *     LoginController::language() нь auth шаарддаггүй тул
+         *     JWTAuthMiddleware-д 'login' segment нь login-redirect-ээс
+         *     чөлөөлөгдсөн (anonymous-аар controller руу унадаг).
+         *   - Нэвтэрсэн (dashboard): session-ий хэлийг солихоос гадна
+         *     хэрэглэгчийн profile-д ('code') хадгалж, өөрчлөлтийг лог-д бичнэ.
+         * Dynamic parameter: {code} - хэлний код (жишээ: mn, en)
          * Жишээ: GET /dashboard/login/language/mn
          */
         $this->GET('/login/language/{code}', [LoginController::class, 'language'])->name('language');

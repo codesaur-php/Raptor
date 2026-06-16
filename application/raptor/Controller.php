@@ -5,7 +5,6 @@ namespace Raptor;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Container\ContainerInterface;
 use codesaur\Template\FileTemplate;
-use codesaur\Http\Message\ReasonPhrase;
 
 use Raptor\Authentication\User;
 use Raptor\Log\Logger;
@@ -233,13 +232,13 @@ abstract class Controller extends \codesaur\Http\Application\Controller
     /**
      * HTTP Response Code-г header-аар тохируулах.
      *
-     * Энэ функц нь зөвхөн стандарт HTTP статус код
-     * (ReasonPhrase::STATUS_XXX гэж тодорхойлогдсон) үед л
-     * `http_response_code()`-г дуудах бөгөөд дараах тохиолдолд ямар ч үйлдэл хийгдэхгүй:
+     * Энэ функц нь зөвхөн стандарт HTTP статус кодын мужид (RFC 9110-ийн
+     * дагуу 100-599) багтах үед л `http_response_code()`-г дуудах бөгөөд
+     * дараах тохиолдолд ямар ч үйлдэл хийгдэхгүй:
      *
      *   - Header аль хэдийн илгээгдсэн бол
-     *   - Код хоосон буюу 200 (OK) бол
-     *   - ReasonPhrase-д бүртгэгдээгүй, стандарт HTTP статус биш бол
+     *   - Код тоон утга биш, эсвэл 200 (OK, default) бол
+     *   - 100-599 мужаас гадуур, стандарт бус HTTP статус бол
      *
      * Өөрөөр хэлбэл, **стандарт бус HTTP код илгээгдэхээс сэргийлж юу ч хийхгүйгээр шууд буцна.**
      *
@@ -248,13 +247,16 @@ abstract class Controller extends \codesaur\Http\Application\Controller
      */
     protected function headerResponseCode(int|string $code)
     {
-        if (\headers_sent() || empty($code) || $code == 200
-            || !\defined(ReasonPhrase::class . "::STATUS_$code")
-        ) {
+        if (\headers_sent() || !\is_numeric($code)) {
             return; // үйлдэл хийхгүй
         }
 
-        \http_response_code($code);
+        // Стандарт HTTP статус кодын муж нь 100-599 (RFC 9110). Default 200-г
+        // дахин оноох шаардлагагүй тул алгасна.
+        $code = (int) $code;
+        if ($code !== 200 && $code >= 100 && $code <= 599) {
+            \http_response_code($code);
+        }
     }
 
     /**
@@ -437,13 +439,13 @@ abstract class Controller extends \codesaur\Http\Application\Controller
      *
      * Status code оноох дүрэм:
      * ----------------------------------------------------
-     *   * $code нь зөв HTTP integer (ReasonPhrase::STATUS_* доторх тогтмол,
+     *   * $code нь зөв HTTP код (RFC 9110-ийн 100-599 мужид багтах,
      *     жишээ 400/401/403/404/500) бол -> тэрхүү HTTP response code-ыг
      *     бодитоор буцаана (http_response_code).
      *   * $code = 0 (default) бол -> 200 OK (амжилттай хариу).
-     *   * $code нь string (жишээ 'invalid-email') ЭСВЭЛ танигдахгүй
-     *     integer бол -> HTTP status code-д ямар ч нөлөө үзүүлэхгүй (IGNORE),
-     *     200 хэвээр үлдэнэ. Энэ тохиолдолд алдааг JSON body доторх
+     *   * $code нь тоон бус string (жишээ 'invalid-email') ЭСВЭЛ 100-599
+     *     мужаас гадуур код бол -> HTTP status code-д ямар ч нөлөө үзүүлэхгүй
+     *     (IGNORE), 200 хэвээр үлдэнэ. Энэ тохиолдолд алдааг JSON body доторх
      *     `status: 'error'` envelope-оор клиентэд дамжуулна (frontend нь
      *     HTTP кодыг биш, тэрхүү envelope-ийг уншдаг).
      *
@@ -463,24 +465,12 @@ abstract class Controller extends \codesaur\Http\Application\Controller
     {
         // Хэрвээ headers хараахан илгээгдээгүй бол л HTTP header бичнэ
         if (!\headers_sent()) {
-            // HTTP статус кодыг зөв оноох
-            // 
-            // Асуудал:
-            //  - $code 0 бол -> default 200 OK
-            //  - $code int биш бол алгасна
-            //  - STATUS_XXX гэж ReasonPhrase class доторх тогтмол байвал -> HTTP code-ыг онооно
-            //
-            // Example:
+            // HTTP статус кодыг оноох (зөвхөн 100-599 мужид багтах стандарт
+            // код; 0/default, тоон бус string, эсвэл мужаас гадуур бол үл тооцно).
             //  - respondJSON([..], 403) -> HTTP 403 Forbidden
-            //  - respondJSON([..], 200) -> HTTP 200 OK
-            if (!empty($code)
-                && \is_int($code)
-                && $code != 200
-                && \defined(ReasonPhrase::class . "::STATUS_$code")
-            ) {
-                \http_response_code($code);
-            }
-            
+            //  - respondJSON([..], 200) -> HTTP 200 OK (default)
+            $this->headerResponseCode($code);
+
             // HTTP хариулт нь JSON гэж зарлах стандарт header
             \header('Content-Type: application/json');
         }
