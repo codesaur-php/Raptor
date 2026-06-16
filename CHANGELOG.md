@@ -25,6 +25,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 
 ### Security
 
+- **Removed the hardcoded fallback secret for the login anti-spam HMAC token.** `LoginController` generated and verified the login form's spam token with `$_ENV['RAPTOR_JWT_SECRET'] ?? 'raptor-form-secret'`. The fallback is a public, source-visible string, so a deployment that forgot to set `RAPTOR_JWT_SECRET` would silently sign tokens with a known key, making the anti-spam HMAC forgeable while still appearing to work. Spam-token handling is now centralized in `SpamProtectionTrait`: a new `getSpamSecret()` (fail-loud - throws `RuntimeException` if `RAPTOR_JWT_SECRET` is unset, no default) and `generateSpamToken($formName, $ts)`. `LoginController` (generate + verify) and the web `ContactController`, `NewsController`, `ShopController` (which each previously duplicated a private `getJwtSecret()` and an inline `hash_hmac()` generation call) now route both generation and validation through `generateSpamToken()`, so the two sides provably share one formula and one fail-loud secret source. The four duplicate `getJwtSecret()` methods were deleted.
 
 ### Fixed
 
