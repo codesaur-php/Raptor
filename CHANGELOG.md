@@ -16,7 +16,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 ---
 
 ## [4.1.1] - 2026-06-16
-[4.1.1]: https://github.com/codesaur-php/Raptor/compare/v4.0.0...v4.1.1
 
 ### Security
 
