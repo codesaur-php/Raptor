@@ -347,7 +347,6 @@
                 fileAction = '';
 
                 const mime = file['mime_content_type'];
-
                 if (mime === 'application/pdf') {
                     fileIcon = '<i class="bi bi-file-earmark-pdf" style="font-size:2rem;color:#dc3545"></i>';
                     const caption = file['description']
@@ -482,7 +481,6 @@
                         /* Show thumbnail in confirm dialog if image */
                         const imgNode = row.children[0].querySelector('img');
                         let imgSrc = '';
-
                         if (imgNode) {
                             imgSrc = imgNode.src;
                         } else {
@@ -628,7 +626,6 @@
                     const ext = file.name.split('.').pop().toLowerCase();
                     let status = '';
                     let statusClass = '';
-
                     if (!allowedExtensions.includes(ext)) {
                         status = `<em class="text-danger">.${escapeStr(ext)}</em>`;
                         statusClass = 'text-muted';
@@ -692,7 +689,6 @@
                         });
 
                         const res = await response.json();
-
                         if (res && res.path) {
                             if (rowEl) {
                                 const b = rowEl.querySelector('b');
@@ -712,7 +708,7 @@
                         } else {
                             const errorMessage = (res && res.error && res.error.message)
                                 ? res.error.message
-                                : '{{ 'error'|text|e("js") }}';
+                                : `{{ 'error'|text|e("js") }}`;
 
                             if (rowEl) {
                                 const b = rowEl.querySelector('b');

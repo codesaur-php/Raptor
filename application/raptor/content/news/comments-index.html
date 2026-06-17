@@ -35,112 +35,64 @@
 </table>
 
 <script type="text/javascript">
-    document.addEventListener('DOMContentLoaded', function () {
-        const table = new motable('table#comments', { freezeColumns: [1] });
-        const commentViewPattern = `{{ 'comments-view'|pattern }}`;
+document.addEventListener('DOMContentLoaded', function () {
+    const table = new motable('table#comments', { freezeColumns: [1] });
+    const commentViewPattern = `{{ 'comments-view'|pattern }}`;
 
-        csrfFetch(
-            `{{ 'comments-list'|link }}`
-        ).then(res => {
-            if (res.headers.get('content-type')?.includes('application/json')) return res.json();
-            throw new Error(`HTTP [${res.status}]: ${res.statusText}`);
-        }).then(data => {
-            if (!data.list) throw new Error(data.message ?? 'Invalid response!');
+    csrfFetch(
+        `{{ 'comments-list'|link }}`
+    ).then(res => {
+        if (res.headers.get('content-type')?.includes('application/json')) return res.json();
+        throw new Error(`HTTP [${res.status}]: ${res.statusText}`);
+    }).then(data => {
+        if (!data.list) throw new Error(data.message ?? 'Invalid response!');
 
-            let rowsHTML = '';
-            data.list.forEach(record => {
-                const id = record.id;
-                const isAdmin = record.created_by != null;
-                const isReply = record.parent_id != null;
-                const icon = isAdmin ? '<i class="bi bi-shield-check text-primary me-1"></i>' : '';
-                const replyIcon = isReply ? '<i class="bi bi-reply text-muted me-1"></i>' : '';
-                const msg = record.comment.length > 60
-                    ? record.comment.substring(0, 60) + '...'
-                    : record.comment;
-                const newsTitle = record.news_title
-                    ? `<small>${record.news_title}</small>`
-                    : `<small class="text-muted">#${record.news_id}</small>`;
+        let rowsHTML = '';
+        data.list.forEach(record => {
+            const id = record.id;
+            const isAdmin = record.created_by != null;
+            const isReply = record.parent_id != null;
+            const icon = isAdmin ? '<i class="bi bi-shield-check text-primary me-1"></i>' : '';
+            const replyIcon = isReply ? '<i class="bi bi-reply text-muted me-1"></i>' : '';
+            const msg = record.comment.length > 60
+                ? record.comment.substring(0, 60) + '...'
+                : record.comment;
+            const newsTitle = record.news_title
+                ? `<small>${record.news_title}</small>`
+                : `<small class="text-muted">#${record.news_id}</small>`;
 
-                const actions = `<a class="btn btn-sm btn-outline-info" href="${commentViewPattern.replace('{id}', id)}" title="View Comment"><i class="bi bi-eye"></i></a>`;
+            const actions = `<a class="btn btn-sm btn-outline-info" href="${commentViewPattern.replace('{id}', id)}" title="View Comment"><i class="bi bi-eye"></i></a>`;
 
-                rowsHTML += `<tr>
-                    <td>${id}<br><small class="text-muted">${record.created_at}</small></td>
-                    <td>${replyIcon}${icon}${record.name}</td>
-                    <td><small>${msg}</small></td>
-                    <td>${newsTitle}</td>
-                    <td>${actions}</td>
-                </tr>`;
-            });
-
-            table.setBody(rowsHTML);
-        }).catch(err => {
-            table.setBody(`<tr><td colspan="5" class="text-center text-danger">${err.message}</td></tr>`);
+            rowsHTML += `<tr>
+                <td>${id}<br><small class="text-muted">${record.created_at}</small></td>
+                <td>${replyIcon}${icon}${record.name}</td>
+                <td><small>${msg}</small></td>
+                <td>${newsTitle}</td>
+                <td>${actions}</td>
+            </tr>`;
         });
-        // Comment email мэдэгдэл toggle (ON = email тохируулах, OFF = email хоослох)
-        const commentEmailToggle = document.getElementById('commentEmailToggle');
-        if (commentEmailToggle) {
-            commentEmailToggle.addEventListener('change', function () {
-                if (commentEmailToggle.checked) {
-                    // ON -> email оруулах
-                    commentEmailToggle.checked = false;
-                    Swal.fire({
-                        title: 'Email',
-                        text: `{{ 'email'|text|e('js') }}`,
-                        input: 'email',
-                        inputValue: `{{ settings_email|e('js') }}`,
-                        inputPlaceholder: 'email@example.com',
-                        showCancelButton: true,
-                        confirmButtonText: `{{ 'save'|text|e('js') }}`,
-                        cancelButtonText: `{{ 'cancel'|text|e('js') }}`,
-                        inputValidator: v => !v ? `{{ 'email'|text|e('js') }}` : null
-                    }).then(result => {
-                        if (!result.isConfirmed) return;
-                        csrfFetch(`{{ 'settings-env'|link }}`, {
-                            method: 'PATCH',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ name: 'RAPTOR_COMMENT_EMAIL_TO', value: result.value, type: 'email' })
-                        }).then(r => r.json()).then(res => {
-                            if (res.status !== 'success') return Notify('danger', res.title, res.message);
-                            document.getElementById('commentEmailDisplay').textContent = res.value;
-                            commentEmailToggle.checked = true;
-                            Notify('success', res.title, res.message);
-                        }).catch(err => Notify('danger', `{{ 'error'|text|e('js') }}`, err.message));
-                    });
-                } else {
-                    // OFF -> email хоослох
-                    csrfFetch(`{{ 'settings-env'|link }}`, {
-                        method: 'PATCH',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ name: 'RAPTOR_COMMENT_EMAIL_TO', value: '', type: 'email' })
-                    }).then(r => r.json()).then(res => {
-                        if (res.status === 'success') {
-                            document.getElementById('commentEmailDisplay').textContent = '-';
-                            commentEmailToggle.checked = false;
-                            Notify('success', res.title, res.message);
-                        } else {
-                            commentEmailToggle.checked = true;
-                            Notify('danger', res.title ?? `{{ 'error'|text|e('js') }}`, res.message);
-                        }
-                    }).catch(err => {
-                        commentEmailToggle.checked = true;
-                        Notify('danger', `{{ 'error'|text|e('js') }}`, err.message);
-                    });
-                }
-            });
-        }
 
-        const commentEmailEdit = document.getElementById('commentEmailEdit');
-        if (commentEmailEdit) {
-            commentEmailEdit.addEventListener('click', function () {
-                const current = document.getElementById('commentEmailDisplay').textContent.trim();
+        table.setBody(rowsHTML);
+    }).catch(err => {
+        table.setBody(`<tr><td colspan="5" class="text-center text-danger">${err.message}</td></tr>`);
+    });
+    // Comment email мэдэгдэл toggle (ON = email тохируулах, OFF = email хоослох)
+    const commentEmailToggle = document.getElementById('commentEmailToggle');
+    if (commentEmailToggle) {
+        commentEmailToggle.addEventListener('change', function () {
+            if (commentEmailToggle.checked) {
+                // ON -> email оруулах
+                commentEmailToggle.checked = false;
                 Swal.fire({
                     title: 'Email',
+                    text: `{{ 'email'|text|e('js') }}`,
                     input: 'email',
-                    inputValue: current === '-' ? '' : current,
+                    inputValue: `{{ settings_email|e('js') }}`,
                     inputPlaceholder: 'email@example.com',
                     showCancelButton: true,
                     confirmButtonText: `{{ 'save'|text|e('js') }}`,
-                    cancelButtonText: `{{ 'cancel'|text|e('js') }}`
+                    cancelButtonText: `{{ 'cancel'|text|e('js') }}`,
+                    inputValidator: v => !v ? `{{ 'email'|text|e('js') }}` : null
                 }).then(result => {
                     if (!result.isConfirmed) return;
                     csrfFetch(`{{ 'settings-env'|link }}`, {
@@ -148,20 +100,68 @@
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ name: 'RAPTOR_COMMENT_EMAIL_TO', value: result.value, type: 'email' })
                     }).then(r => r.json()).then(res => {
-                        if (res.status === 'success') {
-                            document.getElementById('commentEmailDisplay').textContent = res.value || '-';
-                            if (commentEmailToggle) {
-                                commentEmailToggle.checked = !!res.value;
-                            }
-                            Notify('success', res.title, res.message);
-                        } else {
-                            Notify('danger', res.title ?? `{{ 'error'|text|e('js') }}`, res.message);
+                        if (res.status !== 'success') return Notify('danger', res.title, res.message);
+                        document.getElementById('commentEmailDisplay').textContent = res.value;
+                        commentEmailToggle.checked = true;
+                        Notify('success', res.title, res.message);
+                    }).catch(err => Notify('danger', `{{ 'error'|text|e('js') }}`, err.message));
+                });
+            } else {
+                // OFF -> email хоослох
+                csrfFetch(`{{ 'settings-env'|link }}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: 'RAPTOR_COMMENT_EMAIL_TO', value: '', type: 'email' })
+                }).then(r => r.json()).then(res => {
+                    if (res.status === 'success') {
+                        document.getElementById('commentEmailDisplay').textContent = '-';
+                        commentEmailToggle.checked = false;
+                        Notify('success', res.title, res.message);
+                    } else {
+                        commentEmailToggle.checked = true;
+                        Notify('danger', res.title ?? `{{ 'error'|text|e('js') }}`, res.message);
+                    }
+                }).catch(err => {
+                    commentEmailToggle.checked = true;
+                    Notify('danger', `{{ 'error'|text|e('js') }}`, err.message);
+                });
+            }
+        });
+    }
+
+    const commentEmailEdit = document.getElementById('commentEmailEdit');
+    if (commentEmailEdit) {
+        commentEmailEdit.addEventListener('click', function () {
+            const current = document.getElementById('commentEmailDisplay').textContent.trim();
+            Swal.fire({
+                title: 'Email',
+                input: 'email',
+                inputValue: current === '-' ? '' : current,
+                inputPlaceholder: 'email@example.com',
+                showCancelButton: true,
+                confirmButtonText: `{{ 'save'|text|e('js') }}`,
+                cancelButtonText: `{{ 'cancel'|text|e('js') }}`
+            }).then(result => {
+                if (!result.isConfirmed) return;
+                csrfFetch(`{{ 'settings-env'|link }}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: 'RAPTOR_COMMENT_EMAIL_TO', value: result.value, type: 'email' })
+                }).then(r => r.json()).then(res => {
+                    if (res.status === 'success') {
+                        document.getElementById('commentEmailDisplay').textContent = res.value || '-';
+                        if (commentEmailToggle) {
+                            commentEmailToggle.checked = !!res.value;
                         }
-                    }).catch(err => {
-                        Notify('danger', `{{ 'error'|text|e('js') }}`, err.message);
-                    });
+                        Notify('success', res.title, res.message);
+                    } else {
+                        Notify('danger', res.title ?? `{{ 'error'|text|e('js') }}`, res.message);
+                    }
+                }).catch(err => {
+                    Notify('danger', `{{ 'error'|text|e('js') }}`, err.message);
                 });
             });
-        }
-    });
+        });
+    }
+});
 </script>

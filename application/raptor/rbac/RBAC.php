@@ -13,7 +13,7 @@ namespace Raptor\RBAC;
  *  RolePermission  -> Роль ямар permission-тэй вэ?
  *  UserRole        -> Хэрэглэгч ямар рольтой вэ?
  *
- *  -> RBAC.php      -> Runtime-д хэрэглэгчийн эрхийг нэгтгэх "core"
+ *  -> RBAC.php     -> Runtime-д хэрэглэгчийн эрхийг нэгтгэх "core"
  *
  * Энэ класс нь:
  *   - Хэрэглэгчид оноосон бүх роль (UserRole)

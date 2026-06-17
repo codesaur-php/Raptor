@@ -32,13 +32,11 @@
 
     <div class="col">
         <div class="card mb-4 rounded-3 shadow-sm{{ current ? ' border-primary' : '' }}">
-            
             <div class="card-header py-3{{ current ? ' text-white bg-primary border-primary text-uppercase' : '' }}">
                 <h6 class="my-0 fw-normal text-truncate">{{ org['name'] }}</h6>
             </div>
 
             <div class="card-body">
-
                 <ul class="list-unstyled mb-3">
                     <li>
                         {% if org['logo'] is defined and org['logo'] is not empty %}
@@ -57,7 +55,6 @@
                    href="{{ 'login-select-organization'|link({'id': org['id']|int}) }}">
                     {{ 'select'|text }}
                 </a>
-
             </div>
         </div>
     </div>

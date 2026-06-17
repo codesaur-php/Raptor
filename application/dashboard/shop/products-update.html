@@ -237,7 +237,7 @@
             },
             titleSelector: 'input[name="title"]',
             ai_helper: `{{ 'moedit-ai'|link }}`,
-            {% if record['photo'] is not empty %}headerImage: '{{ record['photo']|e }}',{% endif %}
+            {% if record['photo'] is not empty %}headerImage: `{{ record['photo']|e }}`,{% endif %}
             sourceMode: type.value === 'embed',
             attachments: [
                 {% for file in files %}
@@ -317,6 +317,5 @@
                 });
             });
         }
-
     });
 </script>

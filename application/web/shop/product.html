@@ -71,7 +71,6 @@
 </style>
 
 <article class="container product-article mt-3">
-
     <!-- Media gallery: undsen photo + attachment media -->
     {% set media_files = [] %}
     {% set doc_files = [] %}
@@ -250,7 +249,6 @@
     </div>
     {% endif %}
 
-
     <div class="text-center my-4">
         <a class="btn btn-lg btn-success shadow" href="{{ 'order'|link }}?product_id={{ id }}">
             <i class="bi bi-cart-plus me-1"></i>{{ 'order-now'|text }}
@@ -424,19 +422,19 @@
                 const rating = parseInt(ratingInput.value);
 
                 if (rating < 1) {
-                    showModal('error', '{{ 'error'|text }}', '{{ localization.code == 'mn' ? 'Үнэлгээ сонгоно уу' : 'Please select a rating' }}');
+                    showModal('error', `{{ 'error'|text }}`, `{{ localization.code == 'mn' ? 'Үнэлгээ сонгоно уу' : 'Please select a rating' }}`);
                     return;
                 }
                 if (!name) {
-                    showModal('error', '{{ 'error'|text }}', '{{ localization.code == 'mn' ? 'Нэрээ оруулна уу' : 'Please enter your name' }}');
+                    showModal('error', `{{ 'error'|text }}`, `{{ localization.code == 'mn' ? 'Нэрээ оруулна уу' : 'Please enter your name' }}`);
                     return;
                 }
                 if (!comment) {
-                    showModal('error', '{{ 'error'|text }}', '{{ localization.code == 'mn' ? 'Сэтгэгдлээ бичнэ үү' : 'Please write your review' }}');
+                    showModal('error', `{{ 'error'|text }}`, `{{ localization.code == 'mn' ? 'Сэтгэгдлээ бичнэ үү' : 'Please write your review' }}`);
                     return;
                 }
                 if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-                    showModal('error', '{{ 'error'|text }}', '{{ localization.code == 'mn' ? 'Зөв имэйл хаяг оруулна уу' : 'Please enter a valid email address' }}');
+                    showModal('error', `{{ 'error'|text }}`, `{{ localization.code == 'mn' ? 'Зөв имэйл хаяг оруулна уу' : 'Please enter a valid email address' }}`);
                     return;
                 }
 
@@ -448,18 +446,18 @@
                     body: new FormData(form)
                 }).then(res => {
                     if (res.headers.get('content-type')?.includes('application/json')) return res.json();
-                    throw new Error('{{ 'server-error'|text }}');
+                    throw new Error(`{{ 'server-error'|text }}`);
                 }).then(response => {
                     if (response.status !== 'success') {
-                        throw new Error(response.message || '{{ 'error'|text }}');
+                        throw new Error(response.message || `{{ 'error'|text }}`);
                     }
-                    showModal('success', '{{ 'thank-you'|text }}', response.message);
+                    showModal('success', `{{ 'thank-you'|text }}`, response.message);
                     form.reset();
                     updateStars(0);
                     ratingInput.value = 0;
                     setTimeout(() => location.reload(), 2000);
                 }).catch(error => {
-                    showModal('error', '{{ 'error'|text }}', error.message);
+                    showModal('error', `{{ 'error'|text }}`, error.message);
                 }).finally(() => {
                     btn.disabled = false;
                     btn.innerHTML = `<i class="bi bi-send me-1"></i>{{ 'send'|text }}`;
@@ -468,35 +466,33 @@
         });
     </script>
     {% endif %}
-
 </article>
 
 <script type="text/javascript">
-    document.addEventListener('DOMContentLoaded', function () {
-        Fancybox.bind('[data-fancybox="gallery"]', { groupAll: true });
+document.addEventListener('DOMContentLoaded', function () {
+    Fancybox.bind('[data-fancybox="gallery"]', { groupAll: true });
 
-        const main = document.getElementById('gallery-main');
-        const thumbs = document.getElementById('gallery-thumbs');
-        if (!main || !thumbs) return;
+    const main = document.getElementById('gallery-main');
+    const thumbs = document.getElementById('gallery-thumbs');
+    if (!main || !thumbs) return;
 
-        thumbs.querySelectorAll('.product-thumb, .product-thumb-icon').forEach(thumb => {
-            thumb.addEventListener('click', function () {
-                thumbs.querySelectorAll('.product-thumb, .product-thumb-icon').forEach(t => t.classList.remove('active'));
-                this.classList.add('active');
+    thumbs.querySelectorAll('.product-thumb, .product-thumb-icon').forEach(thumb => {
+        thumb.addEventListener('click', function () {
+            thumbs.querySelectorAll('.product-thumb, .product-thumb-icon').forEach(t => t.classList.remove('active'));
+            this.classList.add('active');
 
-                const type = this.dataset.type;
-                const src = this.dataset.src;
-
-                if (type === 'image') {
-                    main.innerHTML = `<img src="${src}" alt="" data-fancybox="gallery" data-src="${src}" style="max-height:480px;max-width:100%;object-fit:contain;cursor:zoom-in">`;
-                    Fancybox.bind('[data-fancybox="gallery"]', { groupAll: true });
-                } else if (type === 'video') {
-                    main.innerHTML = `<video controls autoplay style="max-height:480px;max-width:100%"><source src="${src}" type="${this.dataset.mime}"></video>`;
-                } else if (type === 'audio') {
-                    const name = this.dataset.name || '';
-                    main.innerHTML = `<div class="text-center py-4"><i class="bi bi-music-note-beamed text-info" style="font-size:3rem"></i><div class="mt-2 mb-3 small text-muted">${name}</div><audio controls autoplay><source src="${src}" type="${this.dataset.mime}"></audio></div>`;
-                }
-            });
+            const type = this.dataset.type;
+            const src = this.dataset.src;
+            if (type === 'image') {
+                main.innerHTML = `<img src="${src}" alt="" data-fancybox="gallery" data-src="${src}" style="max-height:480px;max-width:100%;object-fit:contain;cursor:zoom-in">`;
+                Fancybox.bind('[data-fancybox="gallery"]', { groupAll: true });
+            } else if (type === 'video') {
+                main.innerHTML = `<video controls autoplay style="max-height:480px;max-width:100%"><source src="${src}" type="${this.dataset.mime}"></video>`;
+            } else if (type === 'audio') {
+                const name = this.dataset.name || '';
+                main.innerHTML = `<div class="text-center py-4"><i class="bi bi-music-note-beamed text-info" style="font-size:3rem"></i><div class="mt-2 mb-3 small text-muted">${name}</div><audio controls autoplay><source src="${src}" type="${this.dataset.mime}"></audio></div>`;
+            }
         });
     });
+});
 </script>

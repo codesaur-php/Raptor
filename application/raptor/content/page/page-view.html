@@ -145,11 +145,10 @@
 </div>
 {% endif %}
 <script type="text/javascript">
-    document.addEventListener('DOMContentLoaded', function () {
-        const fromPage = new URLSearchParams(window.location.search).get('from');
-        if (fromPage === 'nav') {
-            document.querySelectorAll('a.back-link').forEach(a => { a.href = `{{ 'pages'|link }}`; });
-        }
-
-    });
+document.addEventListener('DOMContentLoaded', function () {
+    const fromPage = new URLSearchParams(window.location.search).get('from');
+    if (fromPage === 'nav') {
+        document.querySelectorAll('a.back-link').forEach(a => { a.href = `{{ 'pages'|link }}`; });
+    }
+});
 </script>

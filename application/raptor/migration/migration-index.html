@@ -103,304 +103,304 @@ CREATE INDEX idx_products_category ON products (category);</code></pre>
 </div>
 
 <script type="text/javascript">
-(function() {
-    var statusUrl   = '{{ 'migrations-status'|link }}';
-    var viewUrl     = '{{ 'migrations-view'|link }}';
-    var uploadUrl   = '{{ 'migrations-upload'|link }}';
-    var applyUrl    = '{{ 'migrations-apply'|link }}';
-    var deleteUrl   = '{{ 'migrations-delete'|link }}';
+    (function() {
+        var statusUrl   = `{{ 'migrations-status'|link }}`;
+        var viewUrl     = `{{ 'migrations-view'|link }}`;
+        var uploadUrl   = `{{ 'migrations-upload'|link }}`;
+        var applyUrl    = `{{ 'migrations-apply'|link }}`;
+        var deleteUrl   = `{{ 'migrations-delete'|link }}`;
 
-    var statusArea  = document.getElementById('statusArea');
-    var foldersWrap = document.getElementById('foldersWrap');
-    var fileInput   = document.getElementById('mFileInput');
-    var confirmBody = document.getElementById('applyConfirmBody');
-    var btnConfirm  = document.getElementById('btnConfirmApply');
-    var applyModalEl = document.getElementById('applyConfirmModal');
-    // Lazy: bootstrap JS is loaded with `defer`, so it isn't available during inline parse.
-    var _applyModal = null;
-    function applyModal() {
-        if (_applyModal === null) {
-            _applyModal = new bootstrap.Modal(applyModalEl);
-        }
-        return _applyModal;
-    }
-
-    function esc(s) {
-        var div = document.createElement('div');
-        div.appendChild(document.createTextNode(String(s == null ? '' : s)));
-        return div.innerHTML;
-    }
-
-    function showError(title, message) {
-        if (typeof Swal !== 'undefined') {
-            Swal.fire({ icon: 'error', title: title, text: message });
-        } else {
-            alert(title + ': ' + message);
-        }
-    }
-
-    function bindRowButtons() {
-        foldersWrap.querySelectorAll('.ajax-modal').forEach(function(a) {
-            a.addEventListener('click', function(e) {
-                e.preventDefault();
-                ajaxModal(a);
-            });
-        });
-        foldersWrap.querySelectorAll('button[data-action="apply"]').forEach(function(b) {
-            b.addEventListener('click', function() {
-                // First attempt with no confirm; backend returns needs_confirm if warnings exist.
-                performApply(b.dataset.folder, b.dataset.file, '');
-            });
-        });
-        foldersWrap.querySelectorAll('button[data-action="delete"]').forEach(function(b) {
-            b.addEventListener('click', function() {
-                deletePending(b.dataset.folder, b.dataset.file);
-            });
-        });
-    }
-
-    function renderFolders(folders) {
-        if (!folders.length) {
-            foldersWrap.innerHTML = '<div class="p-4 text-center text-muted">No migration folders. Upload a .sql file to create yours.</div>';
-            return;
+        var statusArea  = document.getElementById('statusArea');
+        var foldersWrap = document.getElementById('foldersWrap');
+        var fileInput   = document.getElementById('mFileInput');
+        var confirmBody = document.getElementById('applyConfirmBody');
+        var btnConfirm  = document.getElementById('btnConfirmApply');
+        var applyModalEl = document.getElementById('applyConfirmModal');
+        // Lazy: bootstrap JS is loaded with `defer`, so it isn't available during inline parse.
+        var _applyModal = null;
+        function applyModal() {
+            if (_applyModal === null) {
+                _applyModal = new bootstrap.Modal(applyModalEl);
+            }
+            return _applyModal;
         }
 
-        var html = '';
-        folders.forEach(function(folder) {
-            var pending = folder.pending || [];
-            var ran = folder.ran || [];
-            html += '<div class="border-bottom">';
-            html +=   '<div class="px-3 py-2 bg-body-tertiary fw-bold small">';
-            html +=     '<i class="bi bi-folder2-open"></i> ' + esc(folder.label);
-            html +=     ' <span class="badge bg-warning text-dark ms-2">' + pending.length + ' pending</span>';
-            html +=     ' <span class="badge bg-success ms-1">' + ran.length + ' ran</span>';
-            html +=   '</div>';
-            html +=   '<table class="table table-hover mb-0 small align-middle">';
-            html +=     '<thead class="table-secondary"><tr>';
-            html +=       '<th class="text-nowrap" style="width:30px">#</th>';
-            html +=       '<th class="text-nowrap">File</th>';
-            html +=       '<th class="text-nowrap">Summary</th>';
-            html +=       '<th class="text-nowrap">Modified</th>';
-            html +=       '<th class="text-nowrap">Status</th>';
-            html +=       '<th class="text-nowrap text-center" style="width:140px">Actions</th>';
-            html +=     '</tr></thead><tbody>';
+        function esc(s) {
+            var div = document.createElement('div');
+            div.appendChild(document.createTextNode(String(s == null ? '' : s)));
+            return div.innerHTML;
+        }
 
-            var rows = [];
-            pending.forEach(function(f) { rows.push({ f: f, state: 'pending' }); });
-            ran.forEach(function(f) { rows.push({ f: f, state: 'ran' }); });
-
-            if (!rows.length) {
-                html += '<tr><td colspan="6" class="text-center text-muted py-3">empty</td></tr>';
+        function showError(title, message) {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({ icon: 'error', title: title, text: message });
             } else {
-                rows.forEach(function(row, i) {
-                    var f = row.f;
-                    var state = row.state;
-                    var badge = state === 'ran'
-                        ? '<span class="badge bg-success">Ran</span>'
-                        : '<span class="badge bg-warning text-dark">Pending</span>';
-                    var viewLink = viewUrl + '?folder=' + encodeURIComponent(folder.label)
-                        + '&state=' + encodeURIComponent(state)
-                        + '&file='  + encodeURIComponent(f.file);
-                    var actions = '<a href="' + viewLink + '" class="ajax-modal btn btn-sm btn-outline-secondary"'
-                        + ' data-bs-toggle="modal" data-bs-target="#static-modal" title="View"><i class="bi bi-eye"></i></a>';
-                    if (state === 'pending') {
-                        actions += '<button class="btn btn-sm btn-outline-success" data-action="apply"'
-                            + ' data-folder="' + esc(folder.label) + '" data-file="' + esc(f.file)
-                            + '" title="Apply"><i class="bi bi-play-fill"></i></button>';
-                        actions += '<button class="btn btn-sm btn-outline-danger" data-action="delete"'
-                            + ' data-folder="' + esc(folder.label) + '" data-file="' + esc(f.file)
-                            + '" title="Delete pending"><i class="bi bi-trash"></i></button>';
-                    }
-                    html += '<tr>'
-                        + '<td>' + (i + 1) + '</td>'
-                        + '<td class="font-monospace">' + esc(f.file) + '</td>'
-                        + '<td class="text-muted" style="max-width:380px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="' + esc(f.summary) + '">' + esc(f.summary) + '</td>'
-                        + '<td class="text-nowrap">' + esc(f.modified) + '</td>'
-                        + '<td>' + badge + '</td>'
-                        + '<td><div class="d-flex flex-wrap gap-1 justify-content-center">' + actions + '</div></td>'
-                        + '</tr>';
+                alert(title + ': ' + message);
+            }
+        }
+
+        function bindRowButtons() {
+            foldersWrap.querySelectorAll('.ajax-modal').forEach(function(a) {
+                a.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    ajaxModal(a);
                 });
-            }
-            html += '</tbody></table></div>';
-        });
-        foldersWrap.innerHTML = html;
-        bindRowButtons();
-    }
-
-    function loadStatus() {
-        statusArea.textContent = 'Loading...';
-        csrfFetch(statusUrl)
-        .then(function(r) { return r.json(); })
-        .then(function(data) {
-            if (data.error) {
-                statusArea.textContent = 'Error: ' + data.error;
-                return;
-            }
-            var folders = data.folders || [];
-            var pendingTotal = 0, ranTotal = 0;
-            folders.forEach(function(f) {
-                pendingTotal += (f.pending || []).length;
-                ranTotal     += (f.ran || []).length;
             });
-            statusArea.textContent = folders.length + ' folder(s), '
-                + ranTotal + ' ran, ' + pendingTotal + ' pending';
-            renderFolders(folders);
-        })
-        .catch(function(err) {
-            statusArea.textContent = 'Network error: ' + err.message;
-        });
-    }
-
-    function uploadFile(file) {
-        if (!file) return;
-        if (!/\.sql$/i.test(file.name)) {
-            showError('Invalid file', 'Only .sql files are accepted');
-            return;
-        }
-        var maxSize = parseInt(fileInput.dataset.maxSize, 10) || 0;
-        var maxSizeHuman = fileInput.dataset.maxSizeHuman || '';
-        if (maxSize > 0 && file.size > maxSize) {
-            showError('File too large', 'Max upload size on this server is ' + maxSizeHuman + '.');
-            return;
-        }
-        var fd = new FormData();
-        fd.append('file', file);
-
-        statusArea.textContent = 'Uploading ' + file.name + '...';
-        csrfFetch(uploadUrl, { method: 'POST', body: fd })
-        .then(function(r) { return r.json(); })
-        .then(function(data) {
-            if (data.error) {
-                statusArea.textContent = 'Upload failed';
-                showError('Upload rejected', data.error);
-                return;
-            }
-            statusArea.textContent = 'Uploaded ' + data.folder + '/' + data.file;
-            loadStatus();
-        })
-        .catch(function(err) {
-            statusArea.textContent = 'Network error';
-            showError('Network error', err.message);
-        });
-
-        fileInput.value = '';
-    }
-
-    function openApplyModal(folder, file, warnings) {
-        warnings = warnings || [];
-        var html = '<div class="mb-2"><strong>File:</strong> <code>' + esc(folder) + '/' + esc(file) + '</code></div>';
-        if (warnings.length) {
-            html += '<div class="alert alert-warning"><strong><i class="bi bi-exclamation-triangle"></i> Security warnings:</strong>';
-            html += '<ul class="mb-0 mt-1">';
-            warnings.forEach(function(w) {
-                html += '<li>' + esc(w.reason) + '</li>';
+            foldersWrap.querySelectorAll('button[data-action="apply"]').forEach(function(b) {
+                b.addEventListener('click', function() {
+                    // First attempt with no confirm; backend returns needs_confirm if warnings exist.
+                    performApply(b.dataset.folder, b.dataset.file, '');
+                });
             });
-            html += '</ul></div>';
-            html += '<div class="mb-2">Type <code>CONFIRM</code> (uppercase) to proceed:</div>';
-            html += '<input type="text" class="form-control" id="confirmInput" autocomplete="off">';
-            btnConfirm.disabled = true;
-        } else {
-            html += '<p>Apply this migration?</p>';
-            btnConfirm.disabled = false;
-        }
-        confirmBody.innerHTML = html;
-
-        btnConfirm.dataset.folder = folder;
-        btnConfirm.dataset.file = file;
-        btnConfirm.dataset.needsConfirm = warnings.length ? '1' : '0';
-
-        var input = document.getElementById('confirmInput');
-        if (input) {
-            input.addEventListener('input', function() {
-                btnConfirm.disabled = (input.value !== 'CONFIRM');
+            foldersWrap.querySelectorAll('button[data-action="delete"]').forEach(function(b) {
+                b.addEventListener('click', function() {
+                    deletePending(b.dataset.folder, b.dataset.file);
+                });
             });
         }
 
-        applyModal().show();
-    }
-
-    function performApply(folder, file, confirmValue) {
-        statusArea.textContent = 'Applying ' + folder + '/' + file + '...';
-        btnConfirm.disabled = true;
-        var fd = new FormData();
-        fd.append('folder', folder);
-        fd.append('file', file);
-        if (confirmValue) fd.append('confirm', confirmValue);
-
-        csrfFetch(applyUrl, { method: 'POST', body: fd })
-        .then(function(r) { return r.json(); })
-        .then(function(data) {
-            if (data.needs_confirm) {
-                openApplyModal(folder, file, data.warnings || []);
+        function renderFolders(folders) {
+            if (!folders.length) {
+                foldersWrap.innerHTML = '<div class="p-4 text-center text-muted">No migration folders. Upload a .sql file to create yours.</div>';
                 return;
             }
-            applyModal().hide();
-            if (data.ok) {
-                statusArea.textContent = 'Applied: moved to ' + data.moved_to;
-            } else {
-                statusArea.textContent = 'Apply failed';
-                showError('Apply failed', data.error || 'unknown error');
-            }
-            loadStatus();
-        })
-        .catch(function(err) {
-            statusArea.textContent = 'Network error';
-            showError('Network error', err.message);
-            btnConfirm.disabled = false;
-        });
-    }
 
-    function deletePending(folder, file) {
-        Swal.fire({
-            title: 'Delete pending migration?',
-            text: folder + '/' + file,
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonText: 'Delete',
-            confirmButtonColor: '#dc3545'
-        }).then(function(result) {
-            if (!result.isConfirmed) return;
-            var fd = new FormData();
-            fd.append('folder', folder);
-            fd.append('file', file);
-            csrfFetch(deleteUrl, { method: 'POST', body: fd })
+            var html = '';
+            folders.forEach(function(folder) {
+                var pending = folder.pending || [];
+                var ran = folder.ran || [];
+                html += '<div class="border-bottom">';
+                html +=   '<div class="px-3 py-2 bg-body-tertiary fw-bold small">';
+                html +=     '<i class="bi bi-folder2-open"></i> ' + esc(folder.label);
+                html +=     ' <span class="badge bg-warning text-dark ms-2">' + pending.length + ' pending</span>';
+                html +=     ' <span class="badge bg-success ms-1">' + ran.length + ' ran</span>';
+                html +=   '</div>';
+                html +=   '<table class="table table-hover mb-0 small align-middle">';
+                html +=     '<thead class="table-secondary"><tr>';
+                html +=       '<th class="text-nowrap" style="width:30px">#</th>';
+                html +=       '<th class="text-nowrap">File</th>';
+                html +=       '<th class="text-nowrap">Summary</th>';
+                html +=       '<th class="text-nowrap">Modified</th>';
+                html +=       '<th class="text-nowrap">Status</th>';
+                html +=       '<th class="text-nowrap text-center" style="width:140px">Actions</th>';
+                html +=     '</tr></thead><tbody>';
+
+                var rows = [];
+                pending.forEach(function(f) { rows.push({ f: f, state: 'pending' }); });
+                ran.forEach(function(f) { rows.push({ f: f, state: 'ran' }); });
+
+                if (!rows.length) {
+                    html += '<tr><td colspan="6" class="text-center text-muted py-3">empty</td></tr>';
+                } else {
+                    rows.forEach(function(row, i) {
+                        var f = row.f;
+                        var state = row.state;
+                        var badge = state === 'ran'
+                            ? '<span class="badge bg-success">Ran</span>'
+                            : '<span class="badge bg-warning text-dark">Pending</span>';
+                        var viewLink = viewUrl + '?folder=' + encodeURIComponent(folder.label)
+                            + '&state=' + encodeURIComponent(state)
+                            + '&file='  + encodeURIComponent(f.file);
+                        var actions = '<a href="' + viewLink + '" class="ajax-modal btn btn-sm btn-outline-secondary"'
+                            + ' data-bs-toggle="modal" data-bs-target="#static-modal" title="View"><i class="bi bi-eye"></i></a>';
+                        if (state === 'pending') {
+                            actions += '<button class="btn btn-sm btn-outline-success" data-action="apply"'
+                                + ' data-folder="' + esc(folder.label) + '" data-file="' + esc(f.file)
+                                + '" title="Apply"><i class="bi bi-play-fill"></i></button>';
+                            actions += '<button class="btn btn-sm btn-outline-danger" data-action="delete"'
+                                + ' data-folder="' + esc(folder.label) + '" data-file="' + esc(f.file)
+                                + '" title="Delete pending"><i class="bi bi-trash"></i></button>';
+                        }
+                        html += '<tr>'
+                            + '<td>' + (i + 1) + '</td>'
+                            + '<td class="font-monospace">' + esc(f.file) + '</td>'
+                            + '<td class="text-muted" style="max-width:380px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="' + esc(f.summary) + '">' + esc(f.summary) + '</td>'
+                            + '<td class="text-nowrap">' + esc(f.modified) + '</td>'
+                            + '<td>' + badge + '</td>'
+                            + '<td><div class="d-flex flex-wrap gap-1 justify-content-center">' + actions + '</div></td>'
+                            + '</tr>';
+                    });
+                }
+                html += '</tbody></table></div>';
+            });
+            foldersWrap.innerHTML = html;
+            bindRowButtons();
+        }
+
+        function loadStatus() {
+            statusArea.textContent = 'Loading...';
+            csrfFetch(statusUrl)
             .then(function(r) { return r.json(); })
             .then(function(data) {
                 if (data.error) {
-                    statusArea.textContent = 'Delete failed';
-                    showError('Delete failed', data.error);
+                    statusArea.textContent = 'Error: ' + data.error;
                     return;
                 }
-                statusArea.textContent = 'Deleted ' + folder + '/' + file;
+                var folders = data.folders || [];
+                var pendingTotal = 0, ranTotal = 0;
+                folders.forEach(function(f) {
+                    pendingTotal += (f.pending || []).length;
+                    ranTotal     += (f.ran || []).length;
+                });
+                statusArea.textContent = folders.length + ' folder(s), '
+                    + ranTotal + ' ran, ' + pendingTotal + ' pending';
+                renderFolders(folders);
+            })
+            .catch(function(err) {
+                statusArea.textContent = 'Network error: ' + err.message;
+            });
+        }
+
+        function uploadFile(file) {
+            if (!file) return;
+            if (!/\.sql$/i.test(file.name)) {
+                showError('Invalid file', 'Only .sql files are accepted');
+                return;
+            }
+            var maxSize = parseInt(fileInput.dataset.maxSize, 10) || 0;
+            var maxSizeHuman = fileInput.dataset.maxSizeHuman || '';
+            if (maxSize > 0 && file.size > maxSize) {
+                showError('File too large', 'Max upload size on this server is ' + maxSizeHuman + '.');
+                return;
+            }
+            var fd = new FormData();
+            fd.append('file', file);
+
+            statusArea.textContent = 'Uploading ' + file.name + '...';
+            csrfFetch(uploadUrl, { method: 'POST', body: fd })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.error) {
+                    statusArea.textContent = 'Upload failed';
+                    showError('Upload rejected', data.error);
+                    return;
+                }
+                statusArea.textContent = 'Uploaded ' + data.folder + '/' + data.file;
                 loadStatus();
             })
             .catch(function(err) {
                 statusArea.textContent = 'Network error';
                 showError('Network error', err.message);
             });
-        });
-    }
 
-    // First click on Apply: send without confirm; server will return needs_confirm if warnings exist.
-    btnConfirm.addEventListener('click', function() {
-        var folder = btnConfirm.dataset.folder;
-        var file = btnConfirm.dataset.file;
-        var needsConfirm = btnConfirm.dataset.needsConfirm === '1';
-        var confirmValue = needsConfirm ? 'CONFIRM' : '';
-        performApply(folder, file, confirmValue);
-    });
-
-    fileInput.addEventListener('change', function() {
-        if (fileInput.files && fileInput.files[0]) {
-            uploadFile(fileInput.files[0]);
+            fileInput.value = '';
         }
-    });
-    document.getElementById('btnRefresh').addEventListener('click', loadStatus);
 
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', loadStatus);
-    } else {
-        loadStatus();
-    }
-})();
+        function openApplyModal(folder, file, warnings) {
+            warnings = warnings || [];
+            var html = '<div class="mb-2"><strong>File:</strong> <code>' + esc(folder) + '/' + esc(file) + '</code></div>';
+            if (warnings.length) {
+                html += '<div class="alert alert-warning"><strong><i class="bi bi-exclamation-triangle"></i> Security warnings:</strong>';
+                html += '<ul class="mb-0 mt-1">';
+                warnings.forEach(function(w) {
+                    html += '<li>' + esc(w.reason) + '</li>';
+                });
+                html += '</ul></div>';
+                html += '<div class="mb-2">Type <code>CONFIRM</code> (uppercase) to proceed:</div>';
+                html += '<input type="text" class="form-control" id="confirmInput" autocomplete="off">';
+                btnConfirm.disabled = true;
+            } else {
+                html += '<p>Apply this migration?</p>';
+                btnConfirm.disabled = false;
+            }
+            confirmBody.innerHTML = html;
+
+            btnConfirm.dataset.folder = folder;
+            btnConfirm.dataset.file = file;
+            btnConfirm.dataset.needsConfirm = warnings.length ? '1' : '0';
+
+            var input = document.getElementById('confirmInput');
+            if (input) {
+                input.addEventListener('input', function() {
+                    btnConfirm.disabled = (input.value !== 'CONFIRM');
+                });
+            }
+
+            applyModal().show();
+        }
+
+        function performApply(folder, file, confirmValue) {
+            statusArea.textContent = 'Applying ' + folder + '/' + file + '...';
+            btnConfirm.disabled = true;
+            var fd = new FormData();
+            fd.append('folder', folder);
+            fd.append('file', file);
+            if (confirmValue) fd.append('confirm', confirmValue);
+
+            csrfFetch(applyUrl, { method: 'POST', body: fd })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.needs_confirm) {
+                    openApplyModal(folder, file, data.warnings || []);
+                    return;
+                }
+                applyModal().hide();
+                if (data.ok) {
+                    statusArea.textContent = 'Applied: moved to ' + data.moved_to;
+                } else {
+                    statusArea.textContent = 'Apply failed';
+                    showError('Apply failed', data.error || 'unknown error');
+                }
+                loadStatus();
+            })
+            .catch(function(err) {
+                statusArea.textContent = 'Network error';
+                showError('Network error', err.message);
+                btnConfirm.disabled = false;
+            });
+        }
+
+        function deletePending(folder, file) {
+            Swal.fire({
+                title: 'Delete pending migration?',
+                text: folder + '/' + file,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Delete',
+                confirmButtonColor: '#dc3545'
+            }).then(function(result) {
+                if (!result.isConfirmed) return;
+                var fd = new FormData();
+                fd.append('folder', folder);
+                fd.append('file', file);
+                csrfFetch(deleteUrl, { method: 'POST', body: fd })
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    if (data.error) {
+                        statusArea.textContent = 'Delete failed';
+                        showError('Delete failed', data.error);
+                        return;
+                    }
+                    statusArea.textContent = 'Deleted ' + folder + '/' + file;
+                    loadStatus();
+                })
+                .catch(function(err) {
+                    statusArea.textContent = 'Network error';
+                    showError('Network error', err.message);
+                });
+            });
+        }
+
+        // First click on Apply: send without confirm; server will return needs_confirm if warnings exist.
+        btnConfirm.addEventListener('click', function() {
+            var folder = btnConfirm.dataset.folder;
+            var file = btnConfirm.dataset.file;
+            var needsConfirm = btnConfirm.dataset.needsConfirm === '1';
+            var confirmValue = needsConfirm ? 'CONFIRM' : '';
+            performApply(folder, file, confirmValue);
+        });
+
+        fileInput.addEventListener('change', function() {
+            if (fileInput.files && fileInput.files[0]) {
+                uploadFile(fileInput.files[0]);
+            }
+        });
+        document.getElementById('btnRefresh').addEventListener('click', loadStatus);
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', loadStatus);
+        } else {
+            loadStatus();
+        }
+    })();
 </script>

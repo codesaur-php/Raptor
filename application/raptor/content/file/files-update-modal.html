@@ -35,7 +35,6 @@
                   action="{{ 'files-update'|link({'table':table, 'id':record['id']}) }}"
                   method="PATCH"
                   enctype="multipart/form-data">
-
                 <!-- KEYWORD -->
                 <div class="row mb-3">
                     <label class="col-3 col-form-label text-end">
@@ -84,7 +83,6 @@
 <script type="text/javascript">
     /* FORM VALIDATION + SUBMISSION */
     const formUpdate = document.querySelector('form#files_update');
-
     if (!formUpdate) {
         Notify('danger', `{{ 'error'|text|e }}`, 'Form not found!');
     } else {

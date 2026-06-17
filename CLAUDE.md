@@ -377,12 +377,12 @@ The `database/migrations/` folder is **git-ignored**. Each environment uploads i
 Directory layout:
 ```
 database/migrations/
-├── .gitkeep
-├── README.md
-└── {userId}-{username}/         <- per-user folder, created on first upload
-    ├── pending_file.sql         <- pending
-    └── ran/
-        └── applied_file.sql     <- successfully applied
+|-- .gitkeep
+|-- README.md
+`-- {userId}-{username}/         <- per-user folder, created on first upload
+    |-- pending_file.sql         <- pending
+    `-- ran/
+        `-- applied_file.sql     <- successfully applied
 ```
 
 State derivation: file at `{folder}/*.sql` = **pending**; file at `{folder}/ran/*.sql` = **applied**.

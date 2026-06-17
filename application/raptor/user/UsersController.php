@@ -1751,7 +1751,7 @@ class UsersController extends FileController
      * Онцгой нөхцөлүүд (system_coder дүрийн):
      *   * id=1 хэрэглэгч (root) -> coder дүрийг хасах/нэмэх эрх зөвхөн root coder-т байдаг
      *   * Root хэрэглэгчээс coder дүрийг хасахыг хэзээ ч зөвшөөрөхгүй
-     *   * Root биш хэрэглэгч coder дүр нэмэхийг хориглоно
+     *   * Root биш хэрэглэгч бусдад coder дүр нэмэхийг хориглоно
      *
      * @param int $id  RBAC дүр солих гэж буй хэрэглэгчийн primary key
      * @return void
@@ -1906,7 +1906,7 @@ class UsersController extends FileController
      *
      * Аюулгүй байдлын гол зарчмууд:
      *   * id = 1 хэрэглэгч -> coder дүрийг хэзээ ч хасахгүй
-     *   * coder роль (role_id = 1) -> зөвхөн root coder өөрчилнө
+     *   * coder роль (role_id = 1) -> зөвхөн root хэрэглэгч л бусад coder-ийг өөрчилнө
      *   * Жирийн хэрэглэгч coder role хасах/нэмэх боломжгүй
      *
      * @param int   $id        Дүр солигдож буй хэрэглэгчийн ID

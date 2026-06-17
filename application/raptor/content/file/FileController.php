@@ -596,5 +596,4 @@ class FileController extends \Raptor\Controller
             return false;
         }
     }
-
 }

@@ -62,13 +62,13 @@
     </form>
 </div>
 <script type="text/javascript">
-    document.addEventListener('DOMContentLoaded', function () {
-        const form = document.getElementById('order_form');
-        const btn = document.getElementById('submit_order');
-        if (!form) return;
-        form.addEventListener('submit', function () {
-            btn.disabled = true;
-            btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>{{ 'sending'|text }}...`;
-        });
+document.addEventListener('DOMContentLoaded', function () {
+    const form = document.getElementById('order_form');
+    const btn = document.getElementById('submit_order');
+    if (!form) return;
+    form.addEventListener('submit', function () {
+        btn.disabled = true;
+        btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>{{ 'sending'|text }}...`;
     });
+});
 </script>

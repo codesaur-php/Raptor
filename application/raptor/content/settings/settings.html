@@ -17,8 +17,8 @@
     ТАБ МЕНЮ  
     ----------------------------------------------------
     Settings нь 3 үндсэн бүлэгтэй:
-        1) Meta  -> гарчиг, тайлбар, хаяг, холбоо барих
-        2) Logo  -> сайтын logo, faviconn, apple-touch-icon
+        1) Meta   -> гарчиг, тайлбар, хаяг, холбоо барих
+        2) Logo   -> сайтын logo, faviconn, apple-touch-icon
         3) Config -> JSON тохиргоо
 -->
 <ul class="nav nav-tabs mt-1" role="tablist">    
@@ -187,7 +187,6 @@
             -->
             {% for code,language in localization.language %}
                 <div class="form-floating mt-2">
-
                     <textarea class="form-control"
                               name="contact[{{ code }}]"
                               id="contact_{{ code }}"
@@ -215,7 +214,6 @@
             -->
             {% for code,language in localization.language %}
                 <div class="form-floating mt-2">
-
                     <textarea class="form-control"
                               name="address[{{ code }}]"
                               id="address_{{ code }}"
@@ -244,7 +242,6 @@
             -->
             {% for code,language in localization.language %}
                 <div class="form-floating mt-2">
-
                     <input class="form-control"
                            name="copyright[{{ code }}]"
                            value="{{ record['localized'][code]['copyright']|e }}"
@@ -261,7 +258,6 @@
                              width="16" height="12"
                              alt="{{ language['title']|e }}">
                     </label>
-
                 </div>
             {% endfor %}
 
@@ -546,7 +542,6 @@
               action="{{ 'settings'|link }}"
               method="POST"
               enctype="multipart/form-data">
-
             <!-- 
                 JSON valid байх ёстой гэдгийг сануулах жижиг тайлбар.
             -->
@@ -792,7 +787,6 @@
         });
     });
 
-
     /* 
         FORM SUBMIT (AJAX FETCH)
         ------------------------------------------------------
@@ -860,5 +854,4 @@
             });
         });
     });
-
 </script>

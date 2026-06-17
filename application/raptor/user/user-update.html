@@ -61,10 +61,8 @@
       method="PUT"
       enctype="multipart/form-data">
     <div class="tab-content">
-        
         <!-- 1-р таб - Хувийн мэдээллийн талбарууд -->
         <div class="tab-pane active show" id="tab-personal" role="tabpanel">
-            
             <!-- Нэвтрэх нэр -->
             <div class="mb-3">
                 <label class="form-label">{{ 'login'|text }}</label>
@@ -131,15 +129,12 @@
                     <div class="invalid-feedback">{{ 'enter-valid-email'|text }}</div>
                 </div>
             </div>
-                
         </div>
 
         <!-- 2-р таб - Хэрэглэгчийн зураг тохиргоо -->
         <div class="tab-pane" id="tab-picture" role="tabpanel">
-
             <!-- Файлын нэр + Худал file input -->
             <div class="input-group">
-
                 <!-- Сонгосон файлын нэр харагдах disabled input -->
                 <input class="form-control"
                        type="text"
@@ -150,7 +145,6 @@
 
                 <div class="input-group-append">
                     <div class="btn-group">
-
                         <!-- Жинхэнэ file input (нуусан) -->
                         <input type="file"
                                name="photo"
@@ -176,7 +170,6 @@
 
                         <!-- Backend рүү зураг устгасан эсэхийг илгээнэ -->
                         <input type="hidden" name="photo_removed" value="0">
-
                     </div>
                 </div>
             </div>
@@ -199,7 +192,6 @@
 
         <!-- 3-р таб - Байгууллага / Role сонголтууд -->
         <div class="tab-pane" id="tab-options" role="tabpanel">
-
             {% if user.can('system_user_organization_set') %}
                 <!-- Байгууллага сонгох -->
                 <label class="form-label">{{ 'organization'|text }}</label>
@@ -212,7 +204,6 @@
                         name="organizations[]"
                         id="organizations"
                         aria-describedby="organzationHelpBlock">
-
                     {% for organization in organizations %}
                         <option value="{{ organization['id'] }}"
                                 {% if current_organizations[organization['id']] %} selected{% endif %}>
@@ -234,7 +225,6 @@
                         name="roles[]"
                         id="roles"
                         aria-describedby="roleHelpBlock">
-
                     {% for key,data in roles %}
                         <optgroup label="{{ rbacs[key]|e }}" alias="{{ key|e }}">
                             {% for value,name in data %}
@@ -247,7 +237,6 @@
                     {% endfor %}
                 </select>
             {% endif %}
-
         </div>
 
     </div>
@@ -269,209 +258,206 @@
 </div>
 
 <script type="text/javascript">
-/* Зураг сонгох үед ажиллах event handler -> fileInput.id = "photo" */
-const onFileInput = function (fileInput) {
-    /* file input-д id байх ёстой */
-    const id = fileInput?.id;
-    if (!id) {
-        return Notify('warning', `{{ 'error'|text|e }}`, 'File input ID заагдаагүй байна!');
-    }
+    /* Зураг сонгох үед ажиллах event handler -> fileInput.id = "photo" */
+    const onFileInput = function (fileInput) {
+        /* file input-д id байх ёстой */
+        const id = fileInput?.id;
+        if (!id) {
+            return Notify('warning', `{{ 'error'|text|e }}`, 'File input ID заагдаагүй байна!');
+        }
 
-    /* Сонгосон файл */
-    const file = fileInput.files?.[0];
-    if (!file) return;
+        /* Сонгосон файл */
+        const file = fileInput.files?.[0];
+        if (!file) return;
 
-    /* Файлын нэрийг input-д оруулах -> photo_name */
-    const nameInput = document.getElementById(`${id}_name`);
-    if (nameInput) {
-        nameInput.value = file.name;
-    }
+        /* Файлын нэрийг input-д оруулах -> photo_name */
+        const nameInput = document.getElementById(`${id}_name`);
+        if (nameInput) {
+            nameInput.value = file.name;
+        }
 
-    /* Browse -> Change */
-    const browseBtn = fileInput.nextElementSibling;
-    if (browseBtn) {
-        browseBtn.textContent = `{{ 'change'|text|e }}`;
-    }
+        /* Browse -> Change */
+        const browseBtn = fileInput.nextElementSibling;
+        if (browseBtn) {
+            browseBtn.textContent = `{{ 'change'|text|e }}`;
+        }
 
-    /* Remove товчийг харуулах */
-    const removeBtn = browseBtn?.nextElementSibling;
-    if (removeBtn && removeBtn.style.display === 'none') {
-        removeBtn.style.display = 'block';
-    }
+        /* Remove товчийг харуулах */
+        const removeBtn = browseBtn?.nextElementSibling;
+        if (removeBtn && removeBtn.style.display === 'none') {
+            removeBtn.style.display = 'block';
+        }
 
-    /* photo_removed = 0 -> зураг устгагдаагүй */
-    const fileDeletedInput = removeBtn?.nextElementSibling;
-    if (fileDeletedInput) {
-        fileDeletedInput.value = 0;
-    }
+        /* photo_removed = 0 -> зураг устгагдаагүй */
+        const fileDeletedInput = removeBtn?.nextElementSibling;
+        if (fileDeletedInput) {
+            fileDeletedInput.value = 0;
+        }
 
-    /* Зургийн хэмжээ info текстэнд */
-    const info = document.getElementById(`${id}_info`);
-    if (info) {
-        const sizeKB = (file.size / 1024).toFixed(1);
-        info.textContent = `${sizeKB} KB`;
-        info.style.display = 'block';
-    }
+        /* Зургийн хэмжээ info текстэнд */
+        const info = document.getElementById(`${id}_info`);
+        if (info) {
+            const sizeKB = (file.size / 1024).toFixed(1);
+            info.textContent = `${sizeKB} KB`;
+            info.style.display = 'block';
+        }
 
-    /* Урьдчилсан харагдац зураг үзүүлэх -> photo_preview */
-    const reader = new FileReader();
-    reader.onload = function (e) {
-        const previewImg = document.getElementById(`${id}_preview`);
+        /* Урьдчилсан харагдац зураг үзүүлэх -> photo_preview */
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            const previewImg = document.getElementById(`${id}_preview`);
+            if (previewImg) {
+                previewImg.src = e.target.result;
+                previewImg.style.display = 'block';
+            }
+        };
+
+        reader.readAsDataURL(file);
+    };
+
+    /* Зураг устгах функц */
+    const onFileClear = function (removeBtn) {
+        /* removeBtn -> browseBtn -> fileInput */
+        const browseBtn = removeBtn?.previousElementSibling;
+        const fileInput = browseBtn?.previousElementSibling;
+        if (!fileInput || fileInput.tagName !== 'INPUT' || fileInput.type !== 'file') {
+            return;
+        }
+
+        /* Preview устгах */
+        const previewImg = document.getElementById(`${fileInput.id}_preview`);
         if (previewImg) {
-            previewImg.src = e.target.result;
-            previewImg.style.display = 'block';
+            previewImg.removeAttribute('src');
+            previewImg.style.display = 'none';
+        }
+
+        /* Файлын нэрийг цэвэрлэх */
+        const nameInput = document.getElementById(`${fileInput.id}_name`);
+        if (nameInput) {
+            nameInput.value = '';
+        }
+
+        /* Browse товчийг reset хийх */
+        if (browseBtn) {
+            browseBtn.textContent = `{{ 'choose'|text|e }}`;
+        }
+
+        /* Remove товчийг нуух */
+        removeBtn.style.display = 'none';
+
+        /* file input-г reset хийх */
+        fileInput.value = '';
+
+        /* Backend-д илгээх -> зураг устгасан төлөв */
+        const fileDeletedInput = removeBtn.nextElementSibling;
+        if (fileDeletedInput) {
+            fileDeletedInput.value = 1;
         }
     };
 
-    reader.readAsDataURL(file);
-};
-
-/* Зураг устгах функц */
-const onFileClear = function (removeBtn) {
-    /* removeBtn -> browseBtn -> fileInput */
-    const browseBtn = removeBtn?.previousElementSibling;
-    const fileInput = browseBtn?.previousElementSibling;
-
-    if (!fileInput || fileInput.tagName !== 'INPUT' || fileInput.type !== 'file') {
-        return;
-    }
-
-    /* Preview устгах */
-    const previewImg = document.getElementById(`${fileInput.id}_preview`);
-    if (previewImg) {
-        previewImg.removeAttribute('src');
-        previewImg.style.display = 'none';
-    }
-
-    /* Файлын нэрийг цэвэрлэх */
-    const nameInput = document.getElementById(`${fileInput.id}_name`);
-    if (nameInput) {
-        nameInput.value = '';
-    }
-
-    /* Browse товчийг reset хийх */
-    if (browseBtn) {
-        browseBtn.textContent = `{{ 'choose'|text|e }}`;
-    }
-
-    /* Remove товчийг нуух */
-    removeBtn.style.display = 'none';
-
-    /* file input-г reset хийх */
-    fileInput.value = '';
-
-    /* Backend-д илгээх -> зураг устгасан төлөв */
-    const fileDeletedInput = removeBtn.nextElementSibling;
-    if (fileDeletedInput) {
-        fileDeletedInput.value = 1;
-    }
-};
-
-/* FORM SUBMIT - Хэрэглэгчийн мэдээллийг PUT ашиглан шинэчлэх */
-document.addEventListener('DOMContentLoaded', function () {
-
-    /* Choices.js - олон сонголттой select-үүдийг сайжруулав */
-    const orgSelect = document.getElementById('organizations');
-    if (orgSelect) {
-        new Choices(orgSelect, { removeItemButton: true });
-    }
-
-    const roleSelect = document.getElementById('roles');
-    if (roleSelect) {
-        new Choices(roleSelect, { removeItemButton: true });
-    }
-
-    /* UPDATE FORM */
-    const formUpdate = document.getElementById('user_update');
-
-    if (!formUpdate) {
-        return Notify('danger', `{{ 'error'|text|e }}`, 'Form not found!');
-    }
-
-    /* Submit товчнууд (дээр/доор хоёулаа) */
-    const submitButtons = document.querySelectorAll('button.submit-update');
-
-    /* Submit товч дарахад form.requestSubmit() ажиллана */
-    submitButtons.forEach(btn => {
-        btn.addEventListener('click', function (e) {
-            e.preventDefault();
-            formUpdate.requestSubmit();
-        });
-    });
-
-    /* ФОРМ SUBMIT event */
-    formUpdate.addEventListener('submit', function (event) {
-        event.preventDefault();
-
-        /* Built-in validation */
-        const isValid = this.checkValidity();
-        this.classList.add('was-validated');
-
-        if (!isValid) {
-            event.stopPropagation();
-
-            /* Эхний invalid input-ыг олж, хамаарах таб руу шилжээд focus хийнэ */
-            const firstInvalid = this.querySelector(':invalid');
-            if (firstInvalid) {
-                const tabPane = firstInvalid.closest('.tab-pane');
-                if (tabPane) {
-                    const tabBtn = document.querySelector(`a.nav-link[href="#${tabPane.id}"], button.nav-link[data-bs-target="#${tabPane.id}"]`);
-                    if (tabBtn) {
-                        bootstrap.Tab.getOrCreateInstance(tabBtn).show();
-                    }
-                }
-                /* Tab transition дууссаны дараа focus хийхээр setTimeout */
-                setTimeout(() => firstInvalid.focus(), 200);
-            }
-
-            return Notify(
-                'danger',
-                `{{ 'error'|text|e }}`,
-                `{{ 'u-have-some-form-errors'|text|e }}`
-            );
+    /* FORM SUBMIT - Хэрэглэгчийн мэдээллийг PUT ашиглан шинэчлэх */
+    document.addEventListener('DOMContentLoaded', function () {
+        /* Choices.js - олон сонголттой select-үүдийг сайжруулав */
+        const orgSelect = document.getElementById('organizations');
+        if (orgSelect) {
+            new Choices(orgSelect, { removeItemButton: true });
         }
 
-        /* Submit товчийг анимэйшнтэй болгон блоклоно */
-        submitButtons.forEach(btn => btn.growNstop());
+        const roleSelect = document.getElementById('roles');
+        if (roleSelect) {
+            new Choices(roleSelect, { removeItemButton: true });
+        }
 
-        /* FormData бэлдэх */
-        const data = new FormData(this);
+        /* UPDATE FORM */
+        const formUpdate = document.getElementById('user_update');
+        if (!formUpdate) {
+            return Notify('danger', `{{ 'error'|text|e }}`, 'Form not found!');
+        }
 
-        /* UPDATE хүсэлт backend рүү илгээх */
-        csrfFetch(this.action, {
-            method: this.getAttribute('method') ?? 'PUT',
-            body: data
-        })
-        .then(res => {
-            const contentType = res.headers.get('content-type') || '';
-            if (contentType.includes('application/json')) return res.json();
+        /* Submit товчнууд (дээр/доор хоёулаа) */
+        const submitButtons = document.querySelectorAll('button.submit-update');
 
-            throw new Error(`HTTP [${res.status}]: ${res.statusText}`);
-        })
-        .then(response => {
-            if (response.status !== 'success') {
-                throw new Error(response.message || 'Invalid response!');
+        /* Submit товч дарахад form.requestSubmit() ажиллана */
+        submitButtons.forEach(btn => {
+            btn.addEventListener('click', function (e) {
+                e.preventDefault();
+                formUpdate.requestSubmit();
+            });
+        });
+
+        /* ФОРМ SUBMIT event */
+        formUpdate.addEventListener('submit', function (event) {
+            event.preventDefault();
+
+            /* Built-in validation */
+            const isValid = this.checkValidity();
+            this.classList.add('was-validated');
+
+            if (!isValid) {
+                event.stopPropagation();
+
+                /* Эхний invalid input-ыг олж, хамаарах таб руу шилжээд focus хийнэ */
+                const firstInvalid = this.querySelector(':invalid');
+                if (firstInvalid) {
+                    const tabPane = firstInvalid.closest('.tab-pane');
+                    if (tabPane) {
+                        const tabBtn = document.querySelector(`a.nav-link[href="#${tabPane.id}"], button.nav-link[data-bs-target="#${tabPane.id}"]`);
+                        if (tabBtn) {
+                            bootstrap.Tab.getOrCreateInstance(tabBtn).show();
+                        }
+                    }
+                    /* Tab transition дууссаны дараа focus хийхээр setTimeout */
+                    setTimeout(() => firstInvalid.focus(), 200);
+                }
+
+                return Notify(
+                    'danger',
+                    `{{ 'error'|text|e }}`,
+                    `{{ 'u-have-some-form-errors'|text|e }}`
+                );
             }
 
-            /* update амжилттай -> redirect */
-            {% if user.can('system_user_index') %}
-                window.location.href = `{{ 'users'|link }}`;
-            {% else %}
-                window.location.href = `{{ 'home'|link }}`;
-            {% endif %}
-
-            Notify(
-                response.type ?? 'success',
-                response.title ?? `{{ 'success'|text|e }}`,
-                response.message ?? 'User updated'
-            );
-        })
-        .catch(error => {
-            Notify('danger', `{{ 'error'|text|e }}`, error.message);
-
-            /* Submit анимэйшн зогсоож товчлууруудын блок арилна */
+            /* Submit товчийг анимэйшнтэй болгон блоклоно */
             submitButtons.forEach(btn => btn.growNstop());
+
+            /* FormData бэлдэх */
+            const data = new FormData(this);
+
+            /* UPDATE хүсэлт backend рүү илгээх */
+            csrfFetch(this.action, {
+                method: this.getAttribute('method') ?? 'PUT',
+                body: data
+            })
+            .then(res => {
+                const contentType = res.headers.get('content-type') || '';
+                if (contentType.includes('application/json')) return res.json();
+
+                throw new Error(`HTTP [${res.status}]: ${res.statusText}`);
+            })
+            .then(response => {
+                if (response.status !== 'success') {
+                    throw new Error(response.message || 'Invalid response!');
+                }
+
+                /* update амжилттай -> redirect */
+                {% if user.can('system_user_index') %}
+                    window.location.href = `{{ 'users'|link }}`;
+                {% else %}
+                    window.location.href = `{{ 'home'|link }}`;
+                {% endif %}
+
+                Notify(
+                    response.type ?? 'success',
+                    response.title ?? `{{ 'success'|text|e }}`,
+                    response.message ?? 'User updated'
+                );
+            })
+            .catch(error => {
+                Notify('danger', `{{ 'error'|text|e }}`, error.message);
+
+                /* Submit анимэйшн зогсоож товчлууруудын блок арилна */
+                submitButtons.forEach(btn => btn.growNstop());
+            });
         });
     });
-});
 </script>

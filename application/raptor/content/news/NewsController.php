@@ -819,5 +819,4 @@ class NewsController extends FileController
             return [];
         }
     }
-
 }

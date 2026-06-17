@@ -2,7 +2,6 @@
      Modal-lg / modal-centered = төвд том харуулах -->
 <div class="modal-lg modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content">
-
         <!-- Modal Header - Гарчиг + X товч -->
         <div class="modal-header">
             <h3 class="modal-title fs-6 text-uppercase">
@@ -16,7 +15,6 @@
 
         <!-- Modal Body - Form хэсэг -->
         <div class="modal-body">
-
             <!-- Хэрэглэгчийн байгууллага тохируулах FORM -->
             <form autocomplete="off"
                   id="set_user_organization"
@@ -26,7 +24,6 @@
                   enctype="multipart/form-data">
                 <div style="height:400px;overflow-y:auto;overflow-x:hidden;">
                     <div class="form-group">
-                        
                         <!-- Хэрэглэгчийн нэр + логин + email -->
                         <label>
                             {{ profile['first_name'] ~ ' ' ~ profile['last_name'] ~
@@ -39,7 +36,6 @@
                                 multiple
                                 name="organizations[]"
                                 id="user_organizations">
-                            
                             {% for organization in organizations %}
                             <option value="{{ organization['id'] }}"
                                     {% if current_organizations[organization['id']] %}
@@ -48,7 +44,6 @@
                                 {{ organization['name'] }}
                             </option>
                             {% endfor %}
-
                         </select>
                     </div>
                 </div>
@@ -73,85 +68,84 @@
 </div>
 
 <script type="text/javascript">
-/* Choices.js ашиглан олон сонголттой select сайжруулж байна */
-const userOrgs = document.getElementById('user_organizations');
-if (userOrgs) {
-    new Choices(userOrgs, { removeItemButton: true });
-}
+    /* Choices.js ашиглан олон сонголттой select сайжруулж байна */
+    const userOrgs = document.getElementById('user_organizations');
+    if (userOrgs) {
+        new Choices(userOrgs, { removeItemButton: true });
+    }
 
-/* FORM submit логик */
-const userOrgsForm = document.querySelector('form#set_user_organization');
+    /* FORM submit логик */
+    const userOrgsForm = document.querySelector('form#set_user_organization');
+    if (!userOrgsForm) {
+        /* Хэрэв form олдохгүй бол алдаа харуулах */
+        Notify('danger', `{{ 'error'|text|e }}`, 'Form not found!');
+    } else {
+        /* Хадгалах товч */
+        const submitter = document.querySelector('button.submit-set-organization');
 
-if (!userOrgsForm) {
-    /* Хэрэв form олдохгүй бол алдаа харуулах */
-    Notify('danger', `{{ 'error'|text|e }}`, 'Form not found!');
-} else {
-    /* Хадгалах товч */
-    const submitter = document.querySelector('button.submit-set-organization');
+        /* Save товч -> form.requestSubmit()  */
+        submitter.addEventListener('click', function (e) {
+            e.preventDefault();
+            userOrgsForm.requestSubmit();
+        });
 
-    /* Save товч -> form.requestSubmit()  */
-    submitter.addEventListener('click', function (e) {
-        e.preventDefault();
-        userOrgsForm.requestSubmit();
-    });
+        /* FORM submit event */
+        userOrgsForm.addEventListener('submit', function (event) {
+            event.preventDefault();
 
-    /* FORM submit event */
-    userOrgsForm.addEventListener('submit', function (event) {
-        event.preventDefault();
+            /* HTML5 validation шалгалт */
+            const isValid = this.checkValidity();
+            this.classList.add('was-validated');
 
-        /* HTML5 validation шалгалт */
-        const isValid = this.checkValidity();
-        this.classList.add('was-validated');
-
-        if (!isValid) {
-            event.stopPropagation();
-            return Notify(
-                'danger',
-                `{{ 'error'|text|e }}`,
-                `{{ 'u-have-some-form-errors'|text|e }}`
-            );
-        }
-
-        /* Ажиллаж буй эффектийг харуулах */
-        submitter.growNstop();
-
-        /* FormData бэлдэх */
-        const data = new FormData(this);
-
-        /* fetch ашиглан backend рүү form илгээх */
-        csrfFetch(this.action, {
-            body: data,
-            method: this.getAttribute('method') ?? 'POST'
-        })
-        .then(res => {
-            /* JSON эсэхийг шалгах */
-            const contentType = res.headers.get('content-type') || '';
-            if (contentType.includes('application/json')) return res.json();
-
-            throw new Error(`HTTP [${res.status}]: ${res.statusText}`);
-        })
-        .then(response => {
-            /* Backend business алдаа */
-            if (response.status !== 'success') {
-                throw new Error(response.message || 'Invalid response!');
+            if (!isValid) {
+                event.stopPropagation();
+                return Notify(
+                    'danger',
+                    `{{ 'error'|text|e }}`,
+                    `{{ 'u-have-some-form-errors'|text|e }}`
+                );
             }
 
-            /* Амжилттай -> Page refresh */
-            window.location.reload();
-
-            Notify(
-                response.type ?? 'success',
-                response.title ?? `{{ 'success'|text|e }}`,
-                response.message ?? 'User organization set'
-            );
-        })
-        .catch(error => {
-            /* Алдаа гарвал */
-            Notify('danger', `{{ 'error'|text|e }}`, error.message);
-
-            /* Анимэйшн зогсоох */
+            /* Ажиллаж буй эффектийг харуулах */
             submitter.growNstop();
+
+            /* FormData бэлдэх */
+            const data = new FormData(this);
+
+            /* fetch ашиглан backend рүү form илгээх */
+            csrfFetch(this.action, {
+                body: data,
+                method: this.getAttribute('method') ?? 'POST'
+            })
+            .then(res => {
+                /* JSON эсэхийг шалгах */
+                const contentType = res.headers.get('content-type') || '';
+                if (contentType.includes('application/json')) return res.json();
+
+                throw new Error(`HTTP [${res.status}]: ${res.statusText}`);
+            })
+            .then(response => {
+                /* Backend business алдаа */
+                if (response.status !== 'success') {
+                    throw new Error(response.message || 'Invalid response!');
+                }
+
+                /* Амжилттай -> Page refresh */
+                window.location.reload();
+
+                Notify(
+                    response.type ?? 'success',
+                    response.title ?? `{{ 'success'|text|e }}`,
+                    response.message ?? 'User organization set'
+                );
+            })
+            .catch(error => {
+                /* Алдаа гарвал */
+                Notify('danger', `{{ 'error'|text|e }}`, error.message);
+
+                /* Анимэйшн зогсоох */
+                submitter.growNstop();
+            });
         });
-    });
-}
+    }
 </script>

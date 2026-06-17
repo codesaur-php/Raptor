@@ -13,7 +13,6 @@
 
 <div class="modal-xl modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content">
-
         <!-- ---------------- Modal Header ---------------- -->
         <div class="modal-header">
             <h3 class="modal-title fs-6 text-uppercase text-primary">
@@ -30,17 +29,14 @@
 
         <!-- ---------------- Modal Body ---------------- -->
         <div class="modal-body">
-
             <!-- Засварлах форм -->
             <form class="needs-validation" novalidate
                   id="organization_update"
                   action="{{ 'organization-update'|link({id: record['id']}) }}"
                   method="PUT"
                   enctype="multipart/form-data">
-
                 <!-- Parent селектор + RBAC alias -->
                 <div class="row">
-
                     <!-- Parent Organization -->
                     <div class="col">
                         <div class="form-floating">
@@ -111,7 +107,6 @@
 
                     <div class="input-group-append">
                         <div class="btn-group">
-
                             <!-- Хэрэглэгчээс шинэ зураг авах -->
                             <input type="file"
                                    name="logo"
@@ -149,7 +144,6 @@
 
         <!-- ---------------- Modal Footer ---------------- -->
         <div class="modal-footer">
-
             <!-- UPDATE permission -->
             {% if user.can('system_organization_update') %}
                 <button class="submit-organization btn btn-primary shadow-sm">
@@ -167,137 +161,136 @@
 </div>
 
 <script type="text/javascript">
-/* LOGO FILE HANDLING (preview, remove, reset) */
-const logo = document.querySelector('input[name="logo"]');
-const logoName = document.getElementById('logo_name');
-const logoBrowse = document.querySelector('button.logo-browse');
-const logoPreview = document.getElementById('logo_preview');
-const logoRemoved = document.querySelector('input[name="logo_removed"]');
+    /* LOGO FILE HANDLING (preview, remove, reset) */
+    const logo = document.querySelector('input[name="logo"]');
+    const logoName = document.getElementById('logo_name');
+    const logoBrowse = document.querySelector('button.logo-browse');
+    const logoPreview = document.getElementById('logo_preview');
+    const logoRemoved = document.querySelector('input[name="logo_removed"]');
 
-/* 
-    fileClear(button)
-    -----------------
-    Хэрэглэгч шинэ зураг сонгосон эсвэл устгах үед
-    форм дээрх preview болон input-үүдийг цэвэрлэнэ.
-*/
-const fileClear = function (button) {
-    logoPreview.removeAttribute('src');
-    logoPreview.style.display = 'none';
+    /* 
+        fileClear(button)
+        -----------------
+        Хэрэглэгч шинэ зураг сонгосон эсвэл устгах үед
+        форм дээрх preview болон input-үүдийг цэвэрлэнэ.
+    */
+    const fileClear = function (button) {
+        logoPreview.removeAttribute('src');
+        logoPreview.style.display = 'none';
 
-    logoName.value = '';
-    logoBrowse.innerHTML = `{{ 'choose'|text|e }}`;
+        logoName.value = '';
+        logoBrowse.innerHTML = `{{ 'choose'|text|e }}`;
 
-    logo.value = '';
-    logo.removeAttribute('name');
+        logo.value = '';
+        logo.removeAttribute('name');
 
-    logoRemoved.value = 1; /* серверт -> зураг устгасан мэдээлнэ */
+        logoRemoved.value = 1; /* серверт -> зураг устгасан мэдээлнэ */
 
-    button.remove();
-};
+        button.remove();
+    };
 
-/* Хуучин лого устгах товч (exists only if record had a logo) */
-const logoRemove = document.querySelector('button.logo-remove');
-if (logoRemove) {
-    logoRemove.addEventListener('click', function (e) {
-        e.preventDefault();
-        fileClear(this);
-    });
-}
-
-/* Лого сонгох үед preview шинэчлэх */
-logo.addEventListener('change', function (e) {
-    e.preventDefault();
-
-    logoRemoved.value = 0; /* зураг солигдсон -> устгаагүй */
-
-    logo.name = 'logo';
-    logoName.value = logo.files[0].name;
-
-    logoBrowse.innerHTML = `{{ 'change'|text|e }}`;
-
-    /* Clear button үүсгэх */
-    if (logoBrowse.nextElementSibling?.tagName !== 'BUTTON') {
-        const logoClear = document.createElement('button');
-        logoClear.classList.add('btn', 'btn-danger');
-        logoClear.type = 'button';
-        logoClear.innerHTML = `{{ 'remove'|text }}`;
-        logoClear.addEventListener('click', function (e) {
+    /* Хуучин лого устгах товч (exists only if record had a logo) */
+    const logoRemove = document.querySelector('button.logo-remove');
+    if (logoRemove) {
+        logoRemove.addEventListener('click', function (e) {
             e.preventDefault();
             fileClear(this);
         });
-
-        if (logoBrowse.nextSibling) {
-            logoBrowse.parentNode.insertBefore(logoClear, logoBrowse.nextSibling);
-        } else {
-            logoBrowse.parentNode.appendChild(logoClear);
-        }
     }
 
-    /* Preview зураг унших */
-    const reader = new FileReader();
-    reader.onload = function (e) {
-        logoPreview.src = e.target.result;
-        logoPreview.style.display = 'block';
-    };
-    reader.readAsDataURL(logo.files[0]);
-});
-
-
-/* FORM SUBMISSION (fetch API) */
-const formUpdate = document.querySelector('form#organization_update');
-if (!formUpdate) {
-    Notify('danger', `{{ 'error'|text|e }}`, 'Form not found!');
-} else {
-    const submitter = document.querySelector('button.submit-organization');
-
-    /* Submit товч -> form.requestSubmit() */
-    submitter.addEventListener('click', function (e) {
+    /* Лого сонгох үед preview шинэчлэх */
+    logo.addEventListener('change', function (e) {
         e.preventDefault();
-        formUpdate.requestSubmit();
-    });
 
-    /* Form submit */
-    formUpdate.addEventListener('submit', function (event) {
-        event.preventDefault();
+        logoRemoved.value = 0; /* зураг солигдсон -> устгаагүй */
 
-        /* HTML5 валидаци */
-        const _valid = this.checkValidity();
-        this.classList.add('was-validated');
-        if (!_valid) {
-            event.stopPropagation();
-            return Notify('danger', `{{ 'error'|text|e }}`, `{{ 'u-have-some-form-errors'|text|e }}`);
+        logo.name = 'logo';
+        logoName.value = logo.files[0].name;
+
+        logoBrowse.innerHTML = `{{ 'change'|text|e }}`;
+
+        /* Clear button үүсгэх */
+        if (logoBrowse.nextElementSibling?.tagName !== 'BUTTON') {
+            const logoClear = document.createElement('button');
+            logoClear.classList.add('btn', 'btn-danger');
+            logoClear.type = 'button';
+            logoClear.innerHTML = `{{ 'remove'|text }}`;
+            logoClear.addEventListener('click', function (e) {
+                e.preventDefault();
+                fileClear(this);
+            });
+
+            if (logoBrowse.nextSibling) {
+                logoBrowse.parentNode.insertBefore(logoClear, logoBrowse.nextSibling);
+            } else {
+                logoBrowse.parentNode.appendChild(logoClear);
+            }
         }
 
-        submitter.growNstop();
+        /* Preview зураг унших */
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            logoPreview.src = e.target.result;
+            logoPreview.style.display = 'block';
+        };
+        reader.readAsDataURL(logo.files[0]);
+    });
 
-        const data = new FormData(this);
+    /* FORM SUBMISSION (fetch API) */
+    const formUpdate = document.querySelector('form#organization_update');
+    if (!formUpdate) {
+        Notify('danger', `{{ 'error'|text|e }}`, 'Form not found!');
+    } else {
+        const submitter = document.querySelector('button.submit-organization');
 
-        /* Fetch PUT -> JSON хариу */
-        csrfFetch(this.action, {
-            body: data,
-            method: this.getAttribute('method') ?? 'PUT'
-        })
-        .then(res => {
-            const contentType = res.headers.get('content-type') || '';
-            if (contentType.includes('application/json')) return res.json();
-            
-            throw new Error(`HTTP [${res.status}]: ${res.statusText}`);
-        })
-        .then(response => {
-            if (response.status !== 'success') {
-                throw new Error(response.message ?? 'Invalid response!');
+        /* Submit товч -> form.requestSubmit() */
+        submitter.addEventListener('click', function (e) {
+            e.preventDefault();
+            formUpdate.requestSubmit();
+        });
+
+        /* Form submit */
+        formUpdate.addEventListener('submit', function (event) {
+            event.preventDefault();
+
+            /* HTML5 валидаци */
+            const _valid = this.checkValidity();
+            this.classList.add('was-validated');
+            if (!_valid) {
+                event.stopPropagation();
+                return Notify('danger', `{{ 'error'|text|e }}`, `{{ 'u-have-some-form-errors'|text|e }}`);
             }
 
-            window.location.reload();
-
-            Notify(response.type ?? 'success',
-                      response.title ?? `{{ 'success'|text|e }}`,
-                      response.message ?? 'Organization updated');
-        })
-        .catch(error => {
-            Notify('danger', `{{ 'error'|text|e }}`, error.message);
             submitter.growNstop();
+
+            const data = new FormData(this);
+
+            /* Fetch PUT -> JSON хариу */
+            csrfFetch(this.action, {
+                body: data,
+                method: this.getAttribute('method') ?? 'PUT'
+            })
+            .then(res => {
+                const contentType = res.headers.get('content-type') || '';
+                if (contentType.includes('application/json')) return res.json();
+            
+                throw new Error(`HTTP [${res.status}]: ${res.statusText}`);
+            })
+            .then(response => {
+                if (response.status !== 'success') {
+                    throw new Error(response.message ?? 'Invalid response!');
+                }
+
+                window.location.reload();
+
+                Notify(response.type ?? 'success',
+                          response.title ?? `{{ 'success'|text|e }}`,
+                          response.message ?? 'Organization updated');
+            })
+            .catch(error => {
+                Notify('danger', `{{ 'error'|text|e }}`, error.message);
+                submitter.growNstop();
+            });
         });
-    });
-}
+    }
 </script>

@@ -1,7 +1,6 @@
 <!-- Шинээр хэрэглэгч болох хүсэлтүүдийн Modal (signup requests) -->
 <div class="modal-xl modal-dialog modal-dialog-scrollable" role="document">
     <div class="modal-content">
-
         <!-- Modal Header -->
         <div class="modal-header">
             <h3 class="modal-title fs-6 text-uppercase text-primary">
@@ -14,7 +13,6 @@
 
         <!-- Modal Body -->
         <div class="modal-body">
-
             <!-- Signup хүсэлтүүдийн хүснэгт -->
             <table class="table table-hover table-striped-columns table-bordered" id="signup">
                 <thead>
@@ -29,11 +27,9 @@
                     </tr>
                 </thead>
                 <tbody>
-
                     <!-- Backend-аас ирсэн signup хүсэлтүүдийг давтаж харуулж байна -->
                     {% for row in rows %}
                         <tr>
-
                             <!-- Username -->
                             <td scope="row"><strong>{{ row['username'] }}</strong></td>
 
@@ -87,7 +83,6 @@
                                     {% endif %}
                                 {% endif %}
                             </td>
-
                         </tr>
                     {% endfor %}
                 </tbody>
@@ -100,7 +95,6 @@
                 {{ 'close'|text }}
             </button>
         </div>
-
     </div>
 </div>
 
@@ -126,7 +120,6 @@
     const requestWaits = newbies.table.querySelectorAll('.approve-user-request');
     requestWaits.forEach(btn =>
         btn.addEventListener('click', function (e) {
-
             e.preventDefault();
 
             /* Мөрийг олж авах */
@@ -202,7 +195,6 @@
     const requestDeactivates = newbies.table.querySelectorAll('.deactivate-user-request');
     requestDeactivates.forEach(btn =>
         btn.addEventListener('click', function (e) {
-
             e.preventDefault();
 
             const thisRow = btn.closest('tr');

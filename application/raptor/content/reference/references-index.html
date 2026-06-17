@@ -41,7 +41,6 @@
              id="{{ table }}-tab-pane"
              role="tabpanel"
              aria-labelledby="{{ table }}-tab">
-
             <!-- Хэрэв хэрэглэгч шинэ бичлэг үүсгэх эрхтэй бол "New" action -->
             {% if can_insert %}
                 <a class="btn btn-sm btn-outline-success text-uppercase shadow-sm"
@@ -226,7 +225,6 @@
                                     `{{ 'success'|text|e }}`,
                                     response.message ?? `Reference ${keyword} deleted`
                                 );
-
                             })
                             .catch(error => {
                                 Swal.showValidationMessage(error.message);

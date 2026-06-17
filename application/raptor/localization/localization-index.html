@@ -30,7 +30,6 @@
 
 <!-- Табуудын агуулга -->
 <div class="tab-content pt-1">
-
     <!-- 1-р таб: Хэлүүдийн жагсаалт -->
     <div class="tab-pane active show" id="tab-language" role="tabpanel">
         {% if can_insert %}
@@ -126,7 +125,6 @@
 
     <!-- 2-р таб: Орчуулгын текстүүд -->
     <div class="tab-pane" id="tab-text" role="tabpanel">
-
         <!-- Шинэ текст нэмэх товч -->
         {% if can_insert %}
             <a class="btn btn-sm btn-outline-success text-uppercase shadow-sm mt-2"
@@ -229,66 +227,152 @@
 {% endif %}
 
 <script type="text/javascript">
-    /* Document бүрэн уншигдсаны дараах бүх UI event binding ажиллана */
-    document.addEventListener('DOMContentLoaded', function () {
-        /* URL дээр hash (жишээ: #tab-text) байвал тухайн табыг идэвхжүүлнэ.
-         * Tabs нь <button data-bs-target="#tab-..."> хэлбэртэй тул Bootstrap Tab API ашиглана.
-         * bootstrap нь defer-ээр ачаалагддаг тул заавал DOMContentLoaded дотор хийнэ. */
-        const tabLink = window.location.hash;
-        if (tabLink) {
-            const targetBtn = document.querySelector(`ul.nav.nav-tabs button[data-bs-target="${tabLink}"]`);
-            if (targetBtn) {
-                bootstrap.Tab.getOrCreateInstance(targetBtn).show();
-            }
+/* Document бүрэн уншигдсаны дараах бүх UI event binding ажиллана */
+document.addEventListener('DOMContentLoaded', function () {
+    /* URL дээр hash (жишээ: #tab-text) байвал тухайн табыг идэвхжүүлнэ.
+     * Tabs нь <button data-bs-target="#tab-..."> хэлбэртэй тул Bootstrap Tab API ашиглана.
+     * bootstrap нь defer-ээр ачаалагддаг тул заавал DOMContentLoaded дотор хийнэ. */
+    const tabLink = window.location.hash;
+    if (tabLink) {
+        const targetBtn = document.querySelector(`ul.nav.nav-tabs button[data-bs-target="${tabLink}"]`);
+        if (targetBtn) {
+            bootstrap.Tab.getOrCreateInstance(targetBtn).show();
         }
+    }
 
-        /* "languages" хүснэгтийг motable ашиглан амьлуулж, код баганыг наая */
-        const languages = new motable('table#languages', { freezeColumns: [0] });
+    /* "languages" хүснэгтийг motable ашиглан амьлуулж, код баганыг наая */
+    const languages = new motable('table#languages', { freezeColumns: [0] });
 
-        /* Хэл устгах товчлууруудыг цуглуулна */
-        const deleteLanguages = languages.table.querySelectorAll('.delete-language');
-        deleteLanguages.forEach(btn =>
+    /* Хэл устгах товчлууруудыг цуглуулна */
+    const deleteLanguages = languages.table.querySelectorAll('.delete-language');
+    deleteLanguages.forEach(btn =>
+        btn.addEventListener('click', function (e) {
+            e.preventDefault();
+
+            /* Устгах гэж буй мөрийг олж авах */
+            const thisRow = btn.closest('tr');
+            if (!thisRow) {
+                return Notify('warning', `{{ 'error'|text|e }}`, 'Cannot select row!');
+            }
+
+            /* Хэл устгах баталгаажуулах асуултын текст бэлдэх */
+            let questiondel;
+            if (document.documentElement.lang === 'mn') {
+                questiondel =
+                    `<p class="text-danger mb-3">
+                        Та ({0}) хэлийг бүрэн устгахдаа итгэлтэй байна уу?
+                        <br/><small class="text-body-secondary">Энэ үйлдлийг буцаах боломжгүй.</small>
+                    </p>`;
+            } else {
+                questiondel =
+                    `<p class="text-danger mb-3">
+                        Are you sure you want to permanently delete the language ({0})?
+                        <br/><small class="text-body-secondary">This action cannot be undone.</small>
+                    </p>`;
+            }
+
+            /* Таблицын гурав дахь багана - Locale/Title */
+            const title = thisRow.children[3]?.innerHTML;
+            const cleanTitle = title.replace(/<\/?[^>]+(>|$)/g, '');
+            const ask = questiondel.replace('{0}', cleanTitle);
+
+            /* Тугны зураг */
+            let src = '';
+            const flag = thisRow.children[1].querySelector('img');
+            if (flag) src = flag.src;
+
+            /* SweetAlert - Устгах баталгаажуулалт */
+            Swal.fire({
+                imageUrl: src,
+                imageHeight: 16,
+                html: ask,
+                input: 'text',
+                showCancelButton: true,
+                cancelButtonText: `{{ 'cancel'|text|e }}`,
+                confirmButtonText: `<i class="bi bi-trash"></i> {{ 'delete'|text|e }}`,
+                confirmButtonColor: '#df4759',
+                showLoaderOnConfirm: true,
+                allowOutsideClick: () => !Swal.isLoading(),
+                backdrop: true,
+
+                /* preConfirm -> сервер рүү DELETE хүсэлт илгээнэ */
+                preConfirm: (reason) => {
+                    return csrfFetch(
+                        `{{ 'language-delete'|link }}`,
+                        {
+                            method: 'DELETE',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                title,
+                                reason,
+                                id: btn.value
+                            })
+                        }
+                    )
+                    .then(res => res.json())
+                    .then(response => {
+                        if (response.status !== 'success') {
+                            throw new Error(response.message ?? 'Invalid response!');
+                        }
+
+                        /* Амжилттай тул хуудас шинэчилнэ */
+                        window.location.reload();
+
+                        Notify(
+                            'success',
+                            `{{ 'success'|text|e }}`,
+                            response.message ?? `Language (${title}) deleted`
+                        );
+                    })
+                    .catch(error => {
+                        Swal.showValidationMessage(error.message);
+                    });
+                }
+            });
+        })
+    );
+        
+    /* Орчуулгын текстийн хүснэгтийг motable ашиглан тохируулна */
+    const textsTable = document.querySelector('table#texts');
+    if (textsTable) {
+        const text = new motable(textsTable, { freezeColumns: [0] });
+        text.setReady();
+
+        /* Бүх "устгах" товчлууруудыг цуглуулах */
+        const deleteText = text.table.querySelectorAll('.delete-text');
+        deleteText.forEach(btn =>
             btn.addEventListener('click', function (e) {
                 e.preventDefault();
 
-                /* Устгах гэж буй мөрийг олж авах */
+                /* Устгах гэж буй мөрийг тодорхойлох */
                 const thisRow = btn.closest('tr');
                 if (!thisRow) {
                     return Notify('warning', `{{ 'error'|text|e }}`, 'Cannot select row!');
                 }
 
-                /* Хэл устгах баталгаажуулах асуултын текст бэлдэх */
+                /* Баталгаажуулах асуултын үндсэн текст */
                 let questiondel;
                 if (document.documentElement.lang === 'mn') {
                     questiondel =
                         `<p class="text-danger mb-3">
-                            Та ({0}) хэлийг бүрэн устгахдаа итгэлтэй байна уу?
-                            <br/><small class="text-body-secondary">Энэ үйлдлийг буцаах боломжгүй.</small>
-                        </p>`;
+                            Та [{0}] текст бичлэгийг устгахдаа итгэлтэй байна уу?
+                         </p>`;
                 } else {
                     questiondel =
                         `<p class="text-danger mb-3">
-                            Are you sure you want to permanently delete the language ({0})?
-                            <br/><small class="text-body-secondary">This action cannot be undone.</small>
-                        </p>`;
+                            Are you sure to delete the text with keyword [{0}]?
+                         </p>`;
                 }
 
-                /* Таблицын гурав дахь багана - Locale/Title */
-                const title = thisRow.children[3]?.innerHTML;
-                const cleanTitle = title.replace(/<\/?[^>]+(>|$)/g, '');
-                const ask = questiondel.replace('{0}', cleanTitle);
+                const keyword = thisRow.children[0]?.innerHTML;
+                const cleanedKeyword = keyword.replace(/<\/?[^>]+(>|$)/g, '');
+                const question = questiondel.replace('{0}', cleanedKeyword);
 
-                /* Тугны зураг */
-                let src = '';
-                const flag = thisRow.children[1].querySelector('img');
-                if (flag) src = flag.src;
-
-                /* SweetAlert - Устгах баталгаажуулалт */
+                /* SweetAlert - Устгах баталгаажуулах цонх */
                 Swal.fire({
-                    imageUrl: src,
-                    imageHeight: 16,
-                    html: ask,
-                    input: 'text',
+                    html: question,
                     showCancelButton: true,
                     cancelButtonText: `{{ 'cancel'|text|e }}`,
                     confirmButtonText: `<i class="bi bi-trash"></i> {{ 'delete'|text|e }}`,
@@ -296,19 +380,17 @@
                     showLoaderOnConfirm: true,
                     allowOutsideClick: () => !Swal.isLoading(),
                     backdrop: true,
-
                     /* preConfirm -> сервер рүү DELETE хүсэлт илгээнэ */
-                    preConfirm: (reason) => {
+                    preConfirm: () => {
                         return csrfFetch(
-                            `{{ 'language-delete'|link }}`,
+                            `{{ 'text-delete'|link }}`,
                             {
                                 method: 'DELETE',
                                 headers: {
                                     'Content-Type': 'application/json'
                                 },
                                 body: JSON.stringify({
-                                    title,
-                                    reason,
+                                    keyword,
                                     id: btn.value
                                 })
                             }
@@ -319,13 +401,16 @@
                                 throw new Error(response.message ?? 'Invalid response!');
                             }
 
-                            /* Амжилттай тул хуудас шинэчилнэ */
-                            window.location.reload();
+                            /* Амжилттай тул мөрийг DOM-оос устгана */
+                            Swal.close();
+
+                            thisRow.remove();
+                            text.setReady(); /* motable-ийг дахин бэлэн болгоно */
 
                             Notify(
                                 'success',
                                 `{{ 'success'|text|e }}`,
-                                response.message ?? `Language (${title}) deleted`
+                                response.message ?? `Text ${keyword} deleted`
                             );
                         })
                         .catch(error => {
@@ -335,94 +420,6 @@
                 });
             })
         );
-        
-        /* Орчуулгын текстийн хүснэгтийг motable ашиглан тохируулна */
-        const textsTable = document.querySelector('table#texts');
-        if (textsTable) {
-            const text = new motable(textsTable, { freezeColumns: [0] });
-            text.setReady();
-
-            /* Бүх "устгах" товчлууруудыг цуглуулах */
-            const deleteText = text.table.querySelectorAll('.delete-text');
-            deleteText.forEach(btn =>
-                btn.addEventListener('click', function (e) {
-                    e.preventDefault();
-
-                    /* Устгах гэж буй мөрийг тодорхойлох */
-                    const thisRow = btn.closest('tr');
-                    if (!thisRow) {
-                        return Notify('warning', `{{ 'error'|text|e }}`, 'Cannot select row!');
-                    }
-
-                    /* Баталгаажуулах асуултын үндсэн текст */
-                    let questiondel;
-                    if (document.documentElement.lang === 'mn') {
-                        questiondel =
-                            `<p class="text-danger mb-3">
-                                Та [{0}] текст бичлэгийг устгахдаа итгэлтэй байна уу?
-                             </p>`;
-                    } else {
-                        questiondel =
-                            `<p class="text-danger mb-3">
-                                Are you sure to delete the text with keyword [{0}]?
-                             </p>`;
-                    }
-
-                    const keyword = thisRow.children[0]?.innerHTML;
-                    const cleanedKeyword = keyword.replace(/<\/?[^>]+(>|$)/g, '');
-                    const question = questiondel.replace('{0}', cleanedKeyword);
-
-                    /* SweetAlert - Устгах баталгаажуулах цонх */
-                    Swal.fire({
-                        html: question,
-                        showCancelButton: true,
-                        cancelButtonText: `{{ 'cancel'|text|e }}`,
-                        confirmButtonText: `<i class="bi bi-trash"></i> {{ 'delete'|text|e }}`,
-                        confirmButtonColor: '#df4759',
-                        showLoaderOnConfirm: true,
-                        allowOutsideClick: () => !Swal.isLoading(),
-                        backdrop: true,
-                        /* preConfirm -> сервер рүү DELETE хүсэлт илгээнэ */
-                        preConfirm: () => {
-                            return csrfFetch(
-                                `{{ 'text-delete'|link }}`,
-                                {
-                                    method: 'DELETE',
-                                    headers: {
-                                        'Content-Type': 'application/json'
-                                    },
-                                    body: JSON.stringify({
-                                        keyword,
-                                        id: btn.value
-                                    })
-                                }
-                            )
-                            .then(res => res.json())
-                            .then(response => {
-                                if (response.status !== 'success') {
-                                    throw new Error(response.message ?? 'Invalid response!');
-                                }
-
-                                /* Амжилттай тул мөрийг DOM-оос устгана */
-                                Swal.close();
-
-                                thisRow.remove();
-                                text.setReady(); /* motable-ийг дахин бэлэн болгоно */
-
-                                Notify(
-                                    'success',
-                                    `{{ 'success'|text|e }}`,
-                                    response.message ?? `Text ${keyword} deleted`
-                                );
-                            })
-                            .catch(error => {
-                                Swal.showValidationMessage(error.message);
-                            });
-                        }
-                    });
-                })
-            );
-        }
-
-    });
+    }
+});
 </script>

@@ -115,91 +115,91 @@
 </div>
 
 <script type="text/javascript">
-    document.addEventListener('DOMContentLoaded', function () {
-        // Focus comment руу scroll хийх
-        const focusEl = document.getElementById('comment-{{ focus_comment_id }}');
-        if (focusEl) {
-            setTimeout(() => {
-                focusEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                focusEl.classList.add('bg-warning', 'bg-opacity-25');
-                setTimeout(() => focusEl.classList.remove('bg-warning', 'bg-opacity-25'), 3000);
-            }, 500);
-        }
+document.addEventListener('DOMContentLoaded', function () {
+    // Focus comment руу scroll хийх
+    const focusEl = document.getElementById('comment-{{ focus_comment_id }}');
+    if (focusEl) {
+        setTimeout(() => {
+            focusEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            focusEl.classList.add('bg-warning', 'bg-opacity-25');
+            setTimeout(() => focusEl.classList.remove('bg-warning', 'bg-opacity-25'), 3000);
+        }, 500);
+    }
 
-        // Reply
-        const wrap = document.getElementById('reply-form-wrap');
-        const form = document.getElementById('reply-form');
-        const parentInput = document.getElementById('reply-parent-id');
-        const label = document.getElementById('reply-to-label');
-        const btn = document.getElementById('reply-submit-btn');
+    // Reply
+    const wrap = document.getElementById('reply-form-wrap');
+    const form = document.getElementById('reply-form');
+    const parentInput = document.getElementById('reply-parent-id');
+    const label = document.getElementById('reply-to-label');
+    const btn = document.getElementById('reply-submit-btn');
 
-        document.querySelectorAll('.reply-btn').forEach(b => {
-            b.addEventListener('click', function () {
-                parentInput.value = this.dataset.id;
-                label.textContent = '@' + this.dataset.name;
-                wrap?.classList.remove('d-none');
-                form?.querySelector('textarea').focus();
-            });
+    document.querySelectorAll('.reply-btn').forEach(b => {
+        b.addEventListener('click', function () {
+            parentInput.value = this.dataset.id;
+            label.textContent = '@' + this.dataset.name;
+            wrap?.classList.remove('d-none');
+            form?.querySelector('textarea').focus();
         });
+    });
 
-        document.getElementById('reply-cancel')?.addEventListener('click', function () {
-            wrap?.classList.add('d-none');
-            form?.reset();
+    document.getElementById('reply-cancel')?.addEventListener('click', function () {
+        wrap?.classList.add('d-none');
+        form?.reset();
+    });
+
+    form?.addEventListener('submit', function (e) {
+        e.preventDefault();
+        if (btn.disabled) return;
+        const comment = form.querySelector('textarea').value.trim();
+        if (!comment) return;
+
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+
+        csrfFetch(`{{ 'news-comment-reply'|pattern }}`.replace('{id}', parentInput.value), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ comment })
+        }).then(r => r.json()).then(res => {
+            if (res.status === 'success') {
+                location.reload();
+            } else {
+                Notify('error', res.title, res.message);
+            }
+        }).finally(() => {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-send me-1"></i>{{ 'send'|text }}';
         });
+    });
 
-        form?.addEventListener('submit', function (e) {
-            e.preventDefault();
-            if (btn.disabled) return;
-            const comment = form.querySelector('textarea').value.trim();
-            if (!comment) return;
-
-            btn.disabled = true;
-            btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
-
-            csrfFetch(`{{ 'news-comment-reply'|pattern }}`.replace('{id}', parentInput.value), {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ comment })
-            }).then(r => r.json()).then(res => {
-                if (res.status === 'success') {
-                    location.reload();
-                } else {
-                    Notify('error', res.title, res.message);
-                }
-            }).finally(() => {
-                btn.disabled = false;
-                btn.innerHTML = '<i class="bi bi-send me-1"></i>{{ 'send'|text }}';
-            });
-        });
-
-        // Delete
-        document.querySelectorAll('.delete-comment').forEach(b => {
-            b.addEventListener('click', function () {
-                const id = this.dataset.id;
-                const isRoot = this.dataset.root === '1';
-                Swal.fire({
-                    title: `{{ 'confirm-delete'|text|e('js') }}`,
-                    text: isRoot ? `{{ 'delete-with-replies'|text|e('js') }}` : '',
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#d33',
-                    confirmButtonText: `{{ 'delete'|text|e('js') }}`,
-                    cancelButtonText: `{{ 'cancel'|text|e('js') }}`
-                }).then(result => {
-                    if (!result.isConfirmed) return;
-                    csrfFetch(`{{ 'comments-delete'|link }}`, {
-                        method: 'DELETE',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ id })
-                    }).then(r => r.json()).then(res => {
-                        if (res.status === 'success') {
-                            window.location.href = window.location.pathname;
-                        } else {
-                            Swal.fire(`{{ 'error'|text|e('js') }}`, res.message, 'error');
-                        }
-                    });
+    // Delete
+    document.querySelectorAll('.delete-comment').forEach(b => {
+        b.addEventListener('click', function () {
+            const id = this.dataset.id;
+            const isRoot = this.dataset.root === '1';
+            Swal.fire({
+                title: `{{ 'confirm-delete'|text|e('js') }}`,
+                text: isRoot ? `{{ 'delete-with-replies'|text|e('js') }}` : '',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                confirmButtonText: `{{ 'delete'|text|e('js') }}`,
+                cancelButtonText: `{{ 'cancel'|text|e('js') }}`
+            }).then(result => {
+                if (!result.isConfirmed) return;
+                csrfFetch(`{{ 'comments-delete'|link }}`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id })
+                }).then(r => r.json()).then(res => {
+                    if (res.status === 'success') {
+                        window.location.href = window.location.pathname;
+                    } else {
+                        Swal.fire(`{{ 'error'|text|e('js') }}`, res.message, 'error');
+                    }
                 });
             });
         });
     });
+});
 </script>

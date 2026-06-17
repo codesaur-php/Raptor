@@ -6,13 +6,14 @@ use PHPUnit\Framework\TestCase;
 use Web\Shop\ShopController;
 
 /**
- * ShopController::getJwtSecret() - JWT secret fallback устгасан эсэхийг тестлэх.
+ * ShopController-ийн spam-token secret (SpamProtectionTrait::getSpamSecret())
+ * - JWT secret fallback устгасан эсэхийг тестлэх.
  *
  * Env тохируулаагүй бол RuntimeException шидэх ёстой.
  */
 class ShopControllerJwtSecretTest extends TestCase
 {
-    private \ReflectionMethod $getJwtSecret;
+    private \ReflectionMethod $getSpamSecret;
     private ShopController $controller;
 
     protected function setUp(): void
@@ -22,8 +23,8 @@ class ShopControllerJwtSecretTest extends TestCase
         $ref = new \ReflectionClass(ShopController::class);
         $this->controller = $ref->newInstanceWithoutConstructor();
 
-        $this->getJwtSecret = new \ReflectionMethod(ShopController::class, 'getJwtSecret');
-        $this->getJwtSecret->setAccessible(true);
+        $this->getSpamSecret = new \ReflectionMethod(ShopController::class, 'getSpamSecret');
+        $this->getSpamSecret->setAccessible(true);
     }
 
     /**
@@ -35,7 +36,7 @@ class ShopControllerJwtSecretTest extends TestCase
         $_ENV['RAPTOR_JWT_SECRET'] = 'test-secret-key-12345';
 
         try {
-            $result = $this->getJwtSecret->invoke($this->controller);
+            $result = $this->getSpamSecret->invoke($this->controller);
             $this->assertEquals('test-secret-key-12345', $result);
         } finally {
             // Restore
@@ -58,7 +59,7 @@ class ShopControllerJwtSecretTest extends TestCase
         try {
             $this->expectException(\RuntimeException::class);
             $this->expectExceptionMessage('RAPTOR_JWT_SECRET environment variable is not set');
-            $this->getJwtSecret->invoke($this->controller);
+            $this->getSpamSecret->invoke($this->controller);
         } finally {
             if ($original !== null) {
                 $_ENV['RAPTOR_JWT_SECRET'] = $original;
@@ -76,7 +77,7 @@ class ShopControllerJwtSecretTest extends TestCase
 
         try {
             $this->expectException(\RuntimeException::class);
-            $this->getJwtSecret->invoke($this->controller);
+            $this->getSpamSecret->invoke($this->controller);
         } finally {
             if ($original === null) {
                 unset($_ENV['RAPTOR_JWT_SECRET']);

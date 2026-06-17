@@ -7,14 +7,14 @@ This directory holds per-environment SQL migrations. The framework uses a
 
 ```
 database/migrations/
-├── .gitkeep                       <- placeholder, keeps folder in git
-├── README.md                      <- you are here
-├── {userId}-{username}/           <- per-user folder (created on first upload)
-│   ├── 2026-05-13_add_index.sql   <- pending
-│   ├── 2026-05-12_bad.sql         <- pending (apply failed; see dashboard log)
-│   └── ran/
-│       └── 2026-05-10_alter.sql   <- successfully applied
-└── ...
+|-- .gitkeep                       <- placeholder, keeps folder in git
+|-- README.md                      <- you are here
+|-- {userId}-{username}/           <- per-user folder (created on first upload)
+|   |-- 2026-05-13_add_index.sql   <- pending
+|   |-- 2026-05-12_bad.sql         <- pending (apply failed; see dashboard log)
+|   `-- ran/
+|       `-- 2026-05-10_alter.sql   <- successfully applied
+`-- ...
 ```
 
 State derivation:
@@ -28,9 +28,12 @@ State derivation:
 3. The coder clicks Apply. The framework scans the SQL for writes against
    sensitive tables (`users`, `rbac_*`, `organizations*`, `localization_language`,
    `raptor_menu`) and requires a typed `CONFIRM` if warnings are present.
-4. On success, the file moves to `{userId}-{username}/ran/`.
-5. On failure, the file stays pending; the error is captured in the
-   `dashboard_log` table with `action: migration-apply`.
+4. On success, the file moves to `{userId}-{username}/ran/` and the framework
+   clears the application cache - a migration may have changed cached data
+   (`rbac_*` permissions, `raptor_menu`, `localization_*` translations, settings),
+   so the cache is flushed to avoid serving stale rows until the TTL expires.
+5. On failure, the file stays pending, the cache is left untouched, and the
+   error is captured in the `dashboard_log` table with `action: migration-apply`.
 
 ## SQL file format
 

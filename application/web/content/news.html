@@ -296,7 +296,7 @@
                 if (!name || !comment) return;
 
                 if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-                    showModal('error', '{{ 'error'|text }}', '{{ localization.code == 'mn' ? 'Зөв имэйл хаяг оруулна уу' : 'Please enter a valid email address' }}');
+                    showModal('error', `{{ 'error'|text }}`, `{{ localization.code == 'mn' ? 'Зөв имэйл хаяг оруулна уу' : 'Please enter a valid email address' }}`);
                     return;
                 }
 
@@ -308,16 +308,16 @@
                     body: new FormData(form)
                 }).then(res => {
                     if (res.headers.get('content-type')?.includes('application/json')) return res.json();
-                    throw new Error('{{ 'server-error'|text }}');
+                    throw new Error(`{{ 'server-error'|text }}`);
                 }).then(response => {
                     if (response.status !== 'success') {
-                        throw new Error(response.message || '{{ 'error'|text }}');
+                        throw new Error(response.message || `{{ 'error'|text }}`);
                     }
-                    showModal('success', '{{ 'thank-you'|text }}', response.message);
+                    showModal('success', `{{ 'thank-you'|text }}`, response.message);
                     form.reset();
                     setTimeout(() => location.reload(), 2000);
                 }).catch(error => {
-                    showModal('error', '{{ 'error'|text }}', error.message);
+                    showModal('error', `{{ 'error'|text }}`, error.message);
                 }).finally(() => {
                     btn.disabled = false;
                     btn.innerHTML = `<i class="bi bi-send me-1"></i>{{ 'send'|text }}`;
@@ -326,13 +326,12 @@
         });
     </script>
     {% endif %}
-
 </article>
 
 <script type="text/javascript">
-    document.addEventListener('DOMContentLoaded', function () {
-        Fancybox.bind('[file-data-fancybox]', {
-            groupAll: true
-        });
+document.addEventListener('DOMContentLoaded', function () {
+    Fancybox.bind('[file-data-fancybox]', {
+        groupAll: true
     });
+});
 </script>

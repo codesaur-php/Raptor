@@ -226,5 +226,4 @@ class ContactController extends TemplateController
             }
         }
     }
-
 }

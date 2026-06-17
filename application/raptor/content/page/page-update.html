@@ -236,7 +236,7 @@
                 },
                 titleSelector: 'input[name="title"]',
                 ai_helper: `{{ 'moedit-ai'|link }}`,
-                {% if record['photo'] is not empty %}headerImage: '{{ record['photo']|e }}',{% endif %}
+                {% if record['photo'] is not empty %}headerImage: `{{ record['photo']|e }}`,{% endif %}
                 attachments: [
                     {% for file in files %}
                     JSON.parse(`{{ file|json_encode|e('js') }}`),
@@ -281,7 +281,6 @@
                 submitters.forEach(function (btn) { btn.growNstop(); });
 
                 const data = new FormData(this);
-
                 if (content?._moedit) {
                     data.append('files', JSON.stringify(content._moedit.getFiles()));
                 }
@@ -318,6 +317,5 @@
                 });
             });
         }
-
     });
 </script>

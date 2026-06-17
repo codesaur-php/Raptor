@@ -14,12 +14,14 @@ use Psr\Log\LogLevel;
  *
  * Workflow:
  *   1. Coder Migration хуудаснаас .sql файл upload хийнэ
- *      → `database/migrations/{userId}-{username}/{file}.sql` хадгалагдана
+ *      -> `database/migrations/{userId}-{username}/{file}.sql` хадгалагдана
  *   2. Status хуудаснаа pending файл харагдана
- *   3. Apply товч дарвал security scan ажиллана → warning байвал
+ *   3. Apply товч дарвал security scan ажиллана -> warning байвал
  *      confirm modal-д "CONFIRM" гэж бичүүлж баталгаажуулна
- *   4. Apply амжилттай → файл `{userId}-{username}/ran/{file}.sql` руу зөөгдөнө
- *   5. Apply амжилтгүй → файл pending хэвээр, error log-д бичигдэнэ
+ *   4. Apply амжилттай -> файл `{userId}-{username}/ran/{file}.sql` руу зөөгдөнө
+ *      ба cache цэвэрлэгдэнэ (migration нь cached дата - эрх, цэс, орчуулга,
+ *      тохиргоо - өөрчилсөн байж болзошгүй тул)
+ *   5. Apply амжилтгүй -> файл pending хэвээр, cache хэвээр, error log-д бичигдэнэ
  *
  * @package Raptor\Migration
  */
@@ -301,7 +303,8 @@ class MigrationController extends \Raptor\Controller
      * Body: {folder, file, confirm: "CONFIRM"}
      *
      * Warning байгаа бол `confirm === 'CONFIRM'` шаардана.
-     * Амжилттай бол файл `ran/` руу зөөгдөнө.
+     * Амжилттай бол файл `ran/` руу зөөгдөж, cache цэвэрлэгдэнэ (migration нь
+     * cached дата - эрх, цэс, орчуулга, тохиргоо - өөрчилсөн байж болзошгүй тул).
      */
     public function apply()
     {
@@ -334,6 +337,12 @@ class MigrationController extends \Raptor\Controller
             }
 
             $result = $runner->apply($folder, $file);
+
+            // Migration нь cached дата (эрх, цэс, орчуулга, тохиргоо) өөрчилсөн
+            // байж болзошгүй тул амжилттай apply болсны дараа бүх cache-г цэвэрлэнэ.
+            if (!empty($result['ok']) && $this->hasService('cache')) {
+                $this->getService('cache')->clear();
+            }
 
             $this->log(
                 'dashboard',

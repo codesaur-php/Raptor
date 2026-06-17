@@ -32,7 +32,7 @@ class TemplateRouter extends Router
      *   GET    /dashboard/manage/menu             -> Меню удирдлага хуудас
      *   POST   /dashboard/manage/menu/insert      -> Шинэ меню үүсгэх
      *   PUT    /dashboard/manage/menu/update      -> Одоогийн менюг шинэчлэх
-     *   DELETE /dashboard/manage/menu/delete       -> Менюг устгах
+     *   DELETE /dashboard/manage/menu/delete      -> Менюг устгах
      */
     public function __construct()
     {

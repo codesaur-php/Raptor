@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 
 ---
 
+## [4.2.1] - 2026-06-17
+[4.2.1]: https://github.com/codesaur-php/Raptor/compare/v4.2.0...v4.2.1
+
+### Fixed
+
+- **Editing a menu item with no `href`/`icon` no longer shows the literal string `"null"` in the form, nor emits PHP warnings.** This was one bug with two surfaces, both in the dashboard menu manager (`application/raptor/template/`). On the client (`manage-menu.html`), the edit/view modal populated the inputs with `record.icon` / `record.href` directly; for a section-header menu (Contents, System, etc.) those columns are `NULL`, and assigning `null` to an `<input>`'s `value` IDL attribute coerces to the string `"null"` (the `value` setter has no `[LegacyNullToEmptyString]`), so the field showed `null` instead of being empty. Now guarded with `record.icon ?? ''` / `record.href ?? ''`. On the server (`TemplateController::manageMenuUpdate()`), the change-detection loop compared `$record[$index]` / `$record['localized'][$key][$index]` against the submitted value; for a header menu with no `href`/`icon` column those keys are undefined, raising `Undefined array key "href"`/`"icon"` warnings in `error.log` on every menu update. Both comparisons now use `?? null` (kept as `null`, not `''`, so the `!=` change check still distinguishes an unset column from a submitted empty value).
+
+### Changed
+
+- **Applying a migration now auto-clears the cache.** A migration can write to any table - including the ones whose rows are cached (`rbac_*` permissions, `raptor_menu`, `localization_*` translations, settings). Previously those caches kept serving stale data after a successful apply until their 12-hour TTL expired or an unrelated admin CRUD action happened to invalidate them. `MigrationController::apply()` now calls `cache->clear()` (guarded by `hasService('cache')`, fail-safe) right after a successful apply, matching the full-clear pattern already used for RBAC changes. Only runs on `$result['ok']`; a failed apply leaves the cache untouched. Documented in `database/migrations/README.md` (workflow step 4) and the controller PHPDoc.
+- **`codesaur/dataobject` upgraded from `^10.0.1` to `^10.1.0`** (`composer.json` + `composer.lock`). The 10.1.0 release broadens cross-driver column type conversion in `TableTrait::getSyntax()`, so a column type declared for one database resolves to a valid native type on the others instead of reaching the engine verbatim and raising a runtime SQL error - e.g. `double`/`float` and the `*blob`/`binary`/`varbinary` family now map correctly to PostgreSQL (`double precision`/`real`/`bytea`), while `jsonb`/`uuid`/`inet`/`cidr`/`bytea`/`double precision` map back on MySQL and SQLite. It also stops emitting an invalid `(length)` suffix on length-less types (no more malformed DDL like `bytea(16)`). This directly strengthens the framework's "raw SQL/models must work on both MySQL and PostgreSQL" invariant; no application code changes were required (the public API is unchanged from 10.0.x).
+- **Code-style cleanup only (no behavior change):** removed redundant blank lines (block-start/block-end and double blanks), fixed indentation, switched single-quoted template expressions containing inner quotes to backticks, and converted Unicode box-drawing tree diagrams to ASCII across PHP, HTML template, and Markdown files.
+
+---
+
 ## [4.2.0] - 2026-06-16
 [4.2.0]: https://github.com/codesaur-php/Raptor/compare/v4.0.0...v4.2.0
 

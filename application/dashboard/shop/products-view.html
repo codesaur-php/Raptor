@@ -213,41 +213,41 @@
     {% endif %}
 </div>
 <script type="text/javascript">
-    document.addEventListener('DOMContentLoaded', function () {
-        document.querySelectorAll('.delete-review').forEach(b => {
-            b.addEventListener('click', function () {
-                const id = this.dataset.id;
-                Swal.fire({
-                    title: `{{ 'confirm-delete'|text|e('js') }}`,
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#d33',
-                    confirmButtonText: `{{ 'delete'|text|e('js') }}`,
-                    cancelButtonText: `{{ 'cancel'|text|e('js') }}`
-                }).then(result => {
-                    if (!result.isConfirmed) return;
-                    csrfFetch(`{{ 'products-reviews-delete'|link }}`, {
-                        method: 'DELETE',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ id })
-                    }).then(r => r.json()).then(res => {
-                        if (res.status === 'success') {
-                            location.reload();
-                        } else {
-                            Swal.fire(`{{ 'error'|text|e('js') }}`, res.message, 'error');
-                        }
-                    });
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.delete-review').forEach(b => {
+        b.addEventListener('click', function () {
+            const id = this.dataset.id;
+            Swal.fire({
+                title: `{{ 'confirm-delete'|text|e('js') }}`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                confirmButtonText: `{{ 'delete'|text|e('js') }}`,
+                cancelButtonText: `{{ 'cancel'|text|e('js') }}`
+            }).then(result => {
+                if (!result.isConfirmed) return;
+                csrfFetch(`{{ 'products-reviews-delete'|link }}`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id })
+                }).then(r => r.json()).then(res => {
+                    if (res.status === 'success') {
+                        location.reload();
+                    } else {
+                        Swal.fire(`{{ 'error'|text|e('js') }}`, res.message, 'error');
+                    }
                 });
             });
         });
-
-        if (window.location.hash === '#reviews-section') {
-            const el = document.getElementById('reviews-section');
-            if (el) {
-                setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }), 300);
-            }
-        }
     });
+
+    if (window.location.hash === '#reviews-section') {
+        const el = document.getElementById('reviews-section');
+        if (el) {
+            setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }), 300);
+        }
+    }
+});
 </script>
 {% endif %}
 {% if user.can('system_logger') %}

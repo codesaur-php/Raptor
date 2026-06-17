@@ -7,7 +7,7 @@ use Psr\Log\LogLevel;
 /**
  * Class SettingsController
  *
- * Raptor CMS-ийн "Тохиргоо" (Settings) модулийн удирдлагын controller.
+ * "Тохиргоо" (Settings) модулийн удирдлагын controller.
  * Энэ контроллер нь дараах үндсэн үүргийг гүйцэтгэнэ:
  *
  *  1) Тохиргоо харах UI-г render хийх (`index`)

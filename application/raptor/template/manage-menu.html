@@ -654,271 +654,270 @@
 {% endif %}
 
 <script type="text/javascript">
-    document.addEventListener('DOMContentLoaded', function () {
-        /* motable - Raptor стандарт хүснэгт helper */
-        const menu = new motable('table#raptor_menu');
-        menu.setReady();
+document.addEventListener('DOMContentLoaded', function () {
+    /* motable - Raptor стандарт хүснэгт helper */
+    const menu = new motable('table#raptor_menu');
+    menu.setReady();
 
-        /* Цэс устгах товч (trash icon) дээрх click event */
-        const deletes = menu.table.querySelectorAll('.delete-item');
-        deletes.forEach(btn => btn.addEventListener('click', function (e) {
-            e.preventDefault();
+    /* Цэс устгах товч (trash icon) дээрх click event */
+    const deletes = menu.table.querySelectorAll('.delete-item');
+    deletes.forEach(btn => btn.addEventListener('click', function (e) {
+        e.preventDefault();
 
-            const thisRow = btn.closest('tr');
-            if (!thisRow) {
-                return Notify('warning', `{{ 'error'|text|e }}`, 'Cannot select row!');
+        const thisRow = btn.closest('tr');
+        if (!thisRow) {
+            return Notify('warning', `{{ 'error'|text|e }}`, 'Cannot select row!');
+        }
+
+        const caption = thisRow.children[1].innerHTML;
+        const cleanCaption = caption.replace(/<\/?[^>]+(>|$)/g, '');
+        let ask =
+            document.documentElement.lang === 'mn'
+                ? `<p class="text-danger mb-3">Та (${cleanCaption}) цэсийг устгахдаа итгэлтэй байна уу?</p><p>Хэрвээ тийм бол шалтгаан тайлбар бичнэ үү</p>`
+                : `<p class="text-danger mb-3">Are you sure to delete the menu (${cleanCaption})?</p><p>If so, please provide a reason</p>`;
+
+        const icon = thisRow.children[0].querySelector('i');
+        if (icon) {
+            ask = `<p>${icon.parentElement.innerHTML}</p>${ask}`;
+        }
+
+        /* SweetAlert2 - Устгахыг баталгаажуулах dialog */
+        Swal.fire({
+            html: ask,
+            input: 'text',
+            showCancelButton: true,
+            cancelButtonText: `{{ 'cancel'|text|e }}`,
+            confirmButtonText: `<i class="bi bi-trash"></i> {{ 'delete'|text|e }}`,
+            confirmButtonColor: '#df4759',
+            showLoaderOnConfirm: true,
+            allowOutsideClick: () => !Swal.isLoading(),
+            backdrop: true,
+            preConfirm: (reason) => {
+                return csrfFetch(
+                    `{{ 'manage-menu-delete'|link }}`,
+                    {
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            reason,
+                            caption,
+                            id: btn.value
+                        })
+                    }
+                ).then(res => {
+                    return res.json();
+                }).then(response => {
+                    if (response.status !== 'success') {
+                        throw new Error(response.message ?? 'Invalid response!');
+                    }
+
+                    Swal.close();
+
+                    /* Тухайн мөрийг хүснэгтээс хасна */
+                    thisRow.remove();
+                    menu.setReady();
+
+                    /* UI-г шинэчлэх (refresh) */
+                    window.location.reload();
+
+                    Notify(
+                        'success',
+                        `{{ 'success'|text|e }}`,
+                        response.message ?? `Menu (${caption}) deleted`
+                    );
+                }).catch(error => {
+                    Swal.showValidationMessage(error.message);
+                });
             }
+        });
+    }));
 
-            const caption = thisRow.children[1].innerHTML;
-            const cleanCaption = caption.replace(/<\/?[^>]+(>|$)/g, '');
-            let ask =
-                document.documentElement.lang === 'mn'
-                    ? `<p class="text-danger mb-3">Та (${cleanCaption}) цэсийг устгахдаа итгэлтэй байна уу?</p><p>Хэрвээ тийм бол шалтгаан тайлбар бичнэ үү</p>`
-                    : `<p class="text-danger mb-3">Are you sure to delete the menu (${cleanCaption})?</p><p>If so, please provide a reason</p>`;
-
-            const icon = thisRow.children[0].querySelector('i');
-            if (icon) {
-                ask = `<p>${icon.parentElement.innerHTML}</p>${ask}`;
-            }
-
-            /* SweetAlert2 - Устгахыг баталгаажуулах dialog */
-            Swal.fire({
-                html: ask,
-                input: 'text',
-                showCancelButton: true,
-                cancelButtonText: `{{ 'cancel'|text|e }}`,
-                confirmButtonText: `<i class="bi bi-trash"></i> {{ 'delete'|text|e }}`,
-                confirmButtonColor: '#df4759',
-                showLoaderOnConfirm: true,
-                allowOutsideClick: () => !Swal.isLoading(),
-                backdrop: true,
-                preConfirm: (reason) => {
-                    return csrfFetch(
-                        `{{ 'manage-menu-delete'|link }}`,
-                        {
-                            method: 'DELETE',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                reason,
-                                caption,
-                                id: btn.value
-                            })
-                        }
-                    ).then(res => {
-                        return res.json();
-                    }).then(response => {
-                        if (response.status !== 'success') {
-                            throw new Error(response.message ?? 'Invalid response!');
-                        }
-
-                        Swal.close();
-
-                        /* Тухайн мөрийг хүснэгтээс хасна */
-                        thisRow.remove();
-                        menu.setReady();
-
-                        /* UI-г шинэчлэх (refresh) */
-                        window.location.reload();
-
-                        Notify(
-                            'success',
-                            `{{ 'success'|text|e }}`,
-                            response.message ?? `Menu (${caption}) deleted`
-                        );
-                    }).catch(error => {
-                        Swal.showValidationMessage(error.message);
-                    });
-                }
-            });
-        }));
-
-        /* UPDATE MODAL - Мөр дээрх "Edit" товч дарахад form-ийг populate хийнэ */
-        const updates = menu.table.querySelectorAll('button[data-bs-target="#menu-update-modal"]');
-        updates.forEach(btn => btn.addEventListener('click', function () {
-            const thisRow = btn.closest('tr');
-            const record = JSON.parse(thisRow.dataset.record ?? '{}');
-            if (record.id === undefined) return;
+    /* UPDATE MODAL - Мөр дээрх "Edit" товч дарахад form-ийг populate хийнэ */
+    const updates = menu.table.querySelectorAll('button[data-bs-target="#menu-update-modal"]');
+    updates.forEach(btn => btn.addEventListener('click', function () {
+        const thisRow = btn.closest('tr');
+        const record = JSON.parse(thisRow.dataset.record ?? '{}');
+        if (record.id === undefined) return;
             
-            const updateModal = document.querySelector('div#menu-update-modal');
-            updateModal.querySelector('input[name="id"]').value = record.id;
-            updateModal.querySelector('select[name="parent_id"]').value = record.parent_id;
-            updateModal.querySelector('input[name="position"]').value = record.position;
-            updateModal.querySelector('input[name="is_visible"]').checked = record.is_visible == 1;
-            updateModal.querySelector('input[name="icon"]').value = record.icon;
-            updateModal.querySelector('input[name="href"]').value = record.href;
-            updateModal.querySelector('select[name="alias"]').value = record.alias;
-            updateModal.querySelector('select[name="permission"]').value = record.permission;
+        const updateModal = document.querySelector('div#menu-update-modal');
+        updateModal.querySelector('input[name="id"]').value = record.id;
+        updateModal.querySelector('select[name="parent_id"]').value = record.parent_id;
+        updateModal.querySelector('input[name="position"]').value = record.position;
+        updateModal.querySelector('input[name="is_visible"]').checked = record.is_visible == 1;
+        updateModal.querySelector('input[name="icon"]').value = record.icon ?? '';
+        updateModal.querySelector('input[name="href"]').value = record.href ?? '';
+        updateModal.querySelector('select[name="alias"]').value = record.alias;
+        updateModal.querySelector('select[name="permission"]').value = record.permission;
 
-            for (const code in record.localized) {
-                if (record.localized.hasOwnProperty(code)) {
-                    const localizedItem = record.localized[code];
-                    const titleInput = updateModal.querySelector(`input#title_${code}`);
-                    if (titleInput && localizedItem) {
-                        titleInput.value = localizedItem.title || '';
-                    }
+        for (const code in record.localized) {
+            if (record.localized.hasOwnProperty(code)) {
+                const localizedItem = record.localized[code];
+                const titleInput = updateModal.querySelector(`input#title_${code}`);
+                if (titleInput && localizedItem) {
+                    titleInput.value = localizedItem.title || '';
                 }
             }
-        }));
+        }
+    }));
 
-        /* VIEW MODAL - Мөр дээрх "View" товч дарахад readonly form-ийг populate хийнэ */
-        const views = menu.table.querySelectorAll('button[data-bs-target="#menu-view-modal"]');
-        views.forEach(btn => btn.addEventListener('click', function () {
-            const thisRow = btn.closest('tr');
-            const record = JSON.parse(thisRow.dataset.record ?? '{}');
-            if (record.id === undefined) return;
+    /* VIEW MODAL - Мөр дээрх "View" товч дарахад readonly form-ийг populate хийнэ */
+    const views = menu.table.querySelectorAll('button[data-bs-target="#menu-view-modal"]');
+    views.forEach(btn => btn.addEventListener('click', function () {
+        const thisRow = btn.closest('tr');
+        const record = JSON.parse(thisRow.dataset.record ?? '{}');
+        if (record.id === undefined) return;
 
-            const viewModal = document.querySelector('div#menu-view-modal');
-            viewModal.querySelector('input[name="id"]').value = record.id;
-            viewModal.querySelector('select[name="parent_id"]').value = record.parent_id;
-            viewModal.querySelector('input[name="position"]').value = record.position;
-            viewModal.querySelector('input[name="is_visible"]').checked = record.is_visible == 1;
-            viewModal.querySelector('input[name="icon"]').value = record.icon;
-            viewModal.querySelector('input[name="href"]').value = record.href;
-            viewModal.querySelector('select[name="alias"]').value = record.alias;
-            viewModal.querySelector('select[name="permission"]').value = record.permission;
+        const viewModal = document.querySelector('div#menu-view-modal');
+        viewModal.querySelector('input[name="id"]').value = record.id;
+        viewModal.querySelector('select[name="parent_id"]').value = record.parent_id;
+        viewModal.querySelector('input[name="position"]').value = record.position;
+        viewModal.querySelector('input[name="is_visible"]').checked = record.is_visible == 1;
+        viewModal.querySelector('input[name="icon"]').value = record.icon ?? '';
+        viewModal.querySelector('input[name="href"]').value = record.href ?? '';
+        viewModal.querySelector('select[name="alias"]').value = record.alias;
+        viewModal.querySelector('select[name="permission"]').value = record.permission;
 
-            for (const code in record.localized) {
-                if (record.localized.hasOwnProperty(code)) {
-                    const localizedItem = record.localized[code];
-                    const titleInput = viewModal.querySelector(`input#title_${code}`);
-                    if (titleInput && localizedItem) {
-                        titleInput.value = localizedItem.title || '';
-                    }
+        for (const code in record.localized) {
+            if (record.localized.hasOwnProperty(code)) {
+                const localizedItem = record.localized[code];
+                const titleInput = viewModal.querySelector(`input#title_${code}`);
+                if (titleInput && localizedItem) {
+                    titleInput.value = localizedItem.title || '';
                 }
             }
-            viewModal.querySelector('input[name="created_at"]').value = record.created_at;
-            viewModal.querySelector('input[name="created_by"]').value = record.created_by;
-            viewModal.querySelector('input[name="updated_at"]').value = record.updated_at;
-            viewModal.querySelector('input[name="updated_by"]').value = record.updated_by;
-        }));
-
-        /* MENU INSERT FORM - Шинэ цэс нэмэх submit логик */
-        const formInsert = document.querySelector('form#menu_insert');
-        if (!formInsert) {
-            Notify('danger', `{{ 'error'|text|e }}`, 'Form not found!');
-        } else {
-            const submitter = document.querySelector('button.insert-menu');
-            submitter.addEventListener('click', function (e) {
-                e.preventDefault();
-                formInsert.requestSubmit();
-            });
-
-            formInsert.addEventListener('submit', function (event) {
-                event.preventDefault();
-
-                const _valid = this.checkValidity();
-                this.classList.add('was-validated');
-                if (!_valid) {
-                    event.stopPropagation();
-                    return Notify(
-                        'danger',
-                        `{{ 'error'|text|e }}`,
-                        `{{ 'u-have-some-form-errors'|text|e }}`
-                    );
-                }
-
-                submitter.growNstop();
-
-                const data = new FormData(this);
-                const visible = this.querySelector('input[name="is_visible"]');
-                if (visible) { /* CHECKBOX NORMALIZE: is_visible -> 1/0 */
-                    data.set('is_visible', visible.checked ? '1' : '0');
-                }
-                csrfFetch(
-                    this.action,
-                    {
-                        body: data,
-                        method: this.getAttribute('method') ?? 'POST'
-                    }
-                ).then(res => {
-                    const contentType = res.headers.get('content-type') || '';
-                    if (contentType.includes('application/json')) return res.json();
-                    throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-                }).then(response => {
-                    if (response.status !== 'success') {
-                        throw new Error(response.message ? response.message : 'Invalid response!');
-                    }
-
-                    /* Шинээр нэмэгдсэн цэсийг UI дээр харахын тулд refresh */
-                    window.location.reload();
-
-                    Notify(
-                        response.type ?? 'success',
-                        response.title ?? `{{ 'success'|text|e }}`,
-                        response.message ?? 'Menu created'
-                    );
-                }).catch(error => {
-                    Notify('danger', `{{ 'error'|text|e }}`, error.message);
-                    submitter.growNstop();
-                });
-            });
         }
+        viewModal.querySelector('input[name="created_at"]').value = record.created_at;
+        viewModal.querySelector('input[name="created_by"]').value = record.created_by;
+        viewModal.querySelector('input[name="updated_at"]').value = record.updated_at;
+        viewModal.querySelector('input[name="updated_by"]').value = record.updated_by;
+    }));
 
-        /* MENU UPDATE FORM - Цэс засварлах submit логик */
-        const formUpdate = document.querySelector('form#menu_update');
-        if (!formUpdate) {
-            Notify('danger', `{{ 'error'|text|e }}`, 'Form not found!');
-        } else {
-            const submitter = document.querySelector('button.update-menu');
-            submitter.addEventListener('click', function (e) {
-                e.preventDefault();
-                formUpdate.requestSubmit();
-            });
+    /* MENU INSERT FORM - Шинэ цэс нэмэх submit логик */
+    const formInsert = document.querySelector('form#menu_insert');
+    if (!formInsert) {
+        Notify('danger', `{{ 'error'|text|e }}`, 'Form not found!');
+    } else {
+        const submitter = document.querySelector('button.insert-menu');
+        submitter.addEventListener('click', function (e) {
+            e.preventDefault();
+            formInsert.requestSubmit();
+        });
 
-            formUpdate.addEventListener('submit', function (event) {
-                event.preventDefault();
+        formInsert.addEventListener('submit', function (event) {
+            event.preventDefault();
 
-                const _valid = this.checkValidity();
-                this.classList.add('was-validated');
-                if (!_valid) {
-                    event.stopPropagation();
-                    return Notify(
-                        'danger',
-                        `{{ 'error'|text|e }}`,
-                        `{{ 'u-have-some-form-errors'|text|e }}`
-                    );
+            const _valid = this.checkValidity();
+            this.classList.add('was-validated');
+            if (!_valid) {
+                event.stopPropagation();
+                return Notify(
+                    'danger',
+                    `{{ 'error'|text|e }}`,
+                    `{{ 'u-have-some-form-errors'|text|e }}`
+                );
+            }
+
+            submitter.growNstop();
+
+            const data = new FormData(this);
+            const visible = this.querySelector('input[name="is_visible"]');
+            if (visible) { /* CHECKBOX NORMALIZE: is_visible -> 1/0 */
+                data.set('is_visible', visible.checked ? '1' : '0');
+            }
+            csrfFetch(
+                this.action,
+                {
+                    body: data,
+                    method: this.getAttribute('method') ?? 'POST'
+                }
+            ).then(res => {
+                const contentType = res.headers.get('content-type') || '';
+                if (contentType.includes('application/json')) return res.json();
+                throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+            }).then(response => {
+                if (response.status !== 'success') {
+                    throw new Error(response.message ? response.message : 'Invalid response!');
                 }
 
+                /* Шинээр нэмэгдсэн цэсийг UI дээр харахын тулд refresh */
+                window.location.reload();
+
+                Notify(
+                    response.type ?? 'success',
+                    response.title ?? `{{ 'success'|text|e }}`,
+                    response.message ?? 'Menu created'
+                );
+            }).catch(error => {
+                Notify('danger', `{{ 'error'|text|e }}`, error.message);
                 submitter.growNstop();
-
-                const data = new FormData(this);
-                console.log(data);
-                const visible = this.querySelector('input[name="is_visible"]');
-                if (visible) { /* CHECKBOX NORMALIZE: is_visible -> 1/0 */
-                    data.set('is_visible', visible.checked ? '1' : '0');
-                }
-                console.log(data);
-                csrfFetch(
-                    this.action,
-                    {
-                        body: data,
-                        method: this.getAttribute('method') ?? 'PUT'
-                    }
-                ).then(res => {
-                    const contentType = res.headers.get('content-type') || '';
-                    if (contentType.includes('application/json')) return res.json();
-                     throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-                }).then(response => {
-                    if (response.status !== 'success') {
-                        throw new Error(response.message ? response.message : 'Invalid response!');
-                    }
-
-                    /* Засварын дараа UI-г шинэчлэх */
-                    window.location.reload();
-
-                    Notify(
-                        response.type ?? 'success',
-                        response.title ?? `{{ 'success'|text|e }}`,
-                        response.message ?? 'Menu updated'
-                    );
-                }).catch(error => {
-                    Notify('danger', `{{ 'error'|text|e }}`, error.message);
-                    submitter.growNstop();
-                });
             });
-        }
+        });
+    }
 
-    });
+    /* MENU UPDATE FORM - Цэс засварлах submit логик */
+    const formUpdate = document.querySelector('form#menu_update');
+    if (!formUpdate) {
+        Notify('danger', `{{ 'error'|text|e }}`, 'Form not found!');
+    } else {
+        const submitter = document.querySelector('button.update-menu');
+        submitter.addEventListener('click', function (e) {
+            e.preventDefault();
+            formUpdate.requestSubmit();
+        });
+
+        formUpdate.addEventListener('submit', function (event) {
+            event.preventDefault();
+
+            const _valid = this.checkValidity();
+            this.classList.add('was-validated');
+            if (!_valid) {
+                event.stopPropagation();
+                return Notify(
+                    'danger',
+                    `{{ 'error'|text|e }}`,
+                    `{{ 'u-have-some-form-errors'|text|e }}`
+                );
+            }
+
+            submitter.growNstop();
+
+            const data = new FormData(this);
+            console.log(data);
+            const visible = this.querySelector('input[name="is_visible"]');
+            if (visible) { /* CHECKBOX NORMALIZE: is_visible -> 1/0 */
+                data.set('is_visible', visible.checked ? '1' : '0');
+            }
+            console.log(data);
+            csrfFetch(
+                this.action,
+                {
+                    body: data,
+                    method: this.getAttribute('method') ?? 'PUT'
+                }
+            ).then(res => {
+                const contentType = res.headers.get('content-type') || '';
+                if (contentType.includes('application/json')) return res.json();
+                 throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+            }).then(response => {
+                if (response.status !== 'success') {
+                    throw new Error(response.message ? response.message : 'Invalid response!');
+                }
+
+                /* Засварын дараа UI-г шинэчлэх */
+                window.location.reload();
+
+                Notify(
+                    response.type ?? 'success',
+                    response.title ?? `{{ 'success'|text|e }}`,
+                    response.message ?? 'Menu updated'
+                );
+            }).catch(error => {
+                Notify('danger', `{{ 'error'|text|e }}`, error.message);
+                submitter.growNstop();
+            });
+        });
+    }
+});
 </script>

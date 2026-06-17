@@ -13,10 +13,10 @@ use codesaur\DataObject\Constants;
  *   DB хүснэгт ашиглахгүй. Файлын байршил нь state-ийг тодорхойлно.
  *
  *     database/migrations/
- *       └── {userId}-{username}/
- *             ├── pending_file.sql       <- pending
- *             └── ran/
- *                   └── applied_file.sql <- applied
+ *       `-- {userId}-{username}/
+ *             |-- pending_file.sql       <- pending
+ *             `-- ran/
+ *                   `-- applied_file.sql <- applied
  *
  * Файлын формат: ердийн SQL - бүх statement-уудыг дарааллаар нь ажиллуулна.
  * Аль нэг statement унавал бусад нь зогсож, файл pending хэвээр үлдэнэ
@@ -173,12 +173,12 @@ class MigrationRunner
     }
 
     /**
-     * Upload-той ижил байх ёстой validation: filename → user folder.
+     * Upload-той ижил байх ёстой validation: filename -> user folder.
      *
      * Cross-OS folder name шалгуур:
      *   - Allow list: A-Z a-z 0-9 . _ -    (Windows-ийн forbidden chars автоматаар хасагдана)
-     *   - Trailing `.`, `-`, `_`, space → хасна (Windows NTFS trailing dot stripping-ээс)
-     *   - Leading `.` → хасна (Unix hidden file-аас сэргийлэх)
+     *   - Trailing `.`, `-`, `_`, space -> хасна (Windows NTFS trailing dot stripping-ээс)
+     *   - Leading `.` -> хасна (Unix hidden file-аас сэргийлэх)
      *   - Result `.`, `..` эсвэл хоосон бол `user`-р орлуулна
      *   - Max 50 char-аар хязгаарлана (path length / Windows MAX_PATH-ийн нөөц)
      *

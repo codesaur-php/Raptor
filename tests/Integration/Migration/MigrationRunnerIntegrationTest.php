@@ -135,7 +135,7 @@ class MigrationRunnerIntegrationTest extends IntegrationTestCase
         $folder = $this->userFolder('12-john');
         \file_put_contents($folder . '/safe.sql', 'SELECT 1;');
 
-        // .. as folder/file → resolved to null
+        // .. as folder/file -> resolved to null
         $result = $this->createRunner()->apply('..', 'safe.sql');
         $this->assertFalse($result['ok']);
 
@@ -198,7 +198,7 @@ class MigrationRunnerIntegrationTest extends IntegrationTestCase
     {
         $runner = $this->createRunner();
         $path = $runner->getUserFolderPath(42, 'john/../etc');
-        // / → _ ; no leading/trailing to trim
+        // / -> _ ; no leading/trailing to trim
         $this->assertSame('42-john_.._etc', \basename($path));
     }
 
@@ -231,7 +231,7 @@ class MigrationRunnerIntegrationTest extends IntegrationTestCase
     {
         $runner = $this->createRunner();
         $this->assertSame('5-user', \basename($runner->getUserFolderPath(5, '')));
-        // Pure Unicode: all chars become _, then trim → empty → user
+        // Pure Unicode: all chars become _, then trim -> empty -> user
         $this->assertSame('5-user', \basename($runner->getUserFolderPath(5, 'Наранхүү')));
     }
 

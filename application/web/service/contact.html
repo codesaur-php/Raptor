@@ -169,70 +169,68 @@
 </style>
 
 <script type="text/javascript">
-    document.addEventListener('DOMContentLoaded', function () {
-        const contactForm = document.getElementById('contact_form');
-        const submitBtn = document.getElementById('submit_contact');
+document.addEventListener('DOMContentLoaded', function () {
+    const contactForm = document.getElementById('contact_form');
+    const submitBtn = document.getElementById('submit_contact');
+    if (!contactForm) return;
 
-        if (!contactForm) return;
+    function showModal(type, title, message) {
+        const icon = document.getElementById('contactModalIcon');
+        icon.className = type === 'success'
+            ? 'bi bi-check-circle text-success'
+            : 'bi bi-exclamation-circle text-danger';
+        document.getElementById('contactModalTitle').textContent = title;
+        document.getElementById('contactModalMessage').textContent = message;
+        new bootstrap.Modal(document.getElementById('contactModal')).show();
+    }
 
-        function showModal(type, title, message) {
-            const icon = document.getElementById('contactModalIcon');
-            icon.className = type === 'success'
-                ? 'bi bi-check-circle text-success'
-                : 'bi bi-exclamation-circle text-danger';
-            document.getElementById('contactModalTitle').textContent = title;
-            document.getElementById('contactModalMessage').textContent = message;
-            new bootstrap.Modal(document.getElementById('contactModal')).show();
+    contactForm.addEventListener('submit', function (e) {
+        e.preventDefault();
+        if (submitBtn.disabled) return;
+
+        const valid = this.checkValidity();
+        this.classList.add('was-validated');
+        if (!valid) {
+            e.stopPropagation();
+            return;
         }
 
-        contactForm.addEventListener('submit', function (e) {
-            e.preventDefault();
-            if (submitBtn.disabled) return;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>{{ 'sending'|text }}...`;
 
-            const valid = this.checkValidity();
-            this.classList.add('was-validated');
-            if (!valid) {
-                e.stopPropagation();
-                return;
+        const data = new FormData(this);
+        fetch(
+            `{{ 'contact-send'|link }}`,
+            {
+                method: 'POST',
+                body: data
+            }
+        ).then(res => {
+            let contentType = res.headers.get('content-type') || '';
+            if (contentType.includes('application/json')) {
+                return res.json();
+            }
+            throw new Error(`{{ 'server-error'|text }}`);
+        }).then(response => {
+            if (response.status !== 'success') {
+                throw new Error(response.message || `{{ 'error'|text }}`);
             }
 
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>{{ 'sending'|text }}...`;
-
-            const data = new FormData(this);
-            fetch(
-                `{{ 'contact-send'|link }}`,
-                {
-                    method: 'POST',
-                    body: data
-                }
-            ).then(res => {
-                let contentType = res.headers.get('content-type') || '';
-                if (contentType.includes('application/json')) {
-                    return res.json();
-                }
-                throw new Error('{{ 'server-error'|text }}');
-            }).then(response => {
-                if (response.status !== 'success') {
-                    throw new Error(response.message || '{{ 'error'|text }}');
-                }
-
-                showModal('success', '{{ 'thank-you'|text }}', response.message);
-                contactForm.reset();
-                contactForm.classList.remove('was-validated');
-
-            }).catch(error => {
-                showModal('error', '{{ 'error'|text }}', error.message);
-            }).finally(() => {
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = `<i class="bi bi-send me-2"></i>{{ 'send'|text }}`;
-            });
+            showModal('success', `{{ 'thank-you'|text }}`, response.message);
+            contactForm.reset();
+            contactForm.classList.remove('was-validated');
+        }).catch(error => {
+            showModal('error', `{{ 'error'|text }}`, error.message);
+        }).finally(() => {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = `<i class="bi bi-send me-2"></i>{{ 'send'|text }}`;
         });
     });
+});
 
-    document.addEventListener('DOMContentLoaded', function () {
-        Fancybox.bind('[file-data-fancybox]', {
-            groupAll: true
-        });
+document.addEventListener('DOMContentLoaded', function () {
+    Fancybox.bind('[file-data-fancybox]', {
+        groupAll: true
     });
+});
 </script>

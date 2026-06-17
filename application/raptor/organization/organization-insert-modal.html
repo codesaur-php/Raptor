@@ -2,7 +2,6 @@
      Том хэмжээтэй modal ашиглаж байна: .modal-xl -->
 <div class="modal-xl modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content">
-
         <!-- Modal-ийн толгой хэсэг = Гарчиг + Хаах товч -->
         <div class="modal-header">
             <h3 class="modal-title fs-6 text-uppercase text-success">
@@ -17,7 +16,6 @@
 
         <!-- Modal-ийн үндсэн (body) хэсэг = Байгууллага оруулах форм -->
         <div class="modal-body">
-
             <!-- Байгууллага бүртгэх үндсэн FORM -->
             <form class="needs-validation"
                   novalidate
@@ -25,7 +23,6 @@
                   action="{{ 'organization-insert'|link }}"
                   method="POST"
                   enctype="multipart/form-data">
-
                 <!-- Эцэг байгууллага сонгох + RBAC alias -->
                 <div class="row">
                     <!-- Эцэг байгууллага сонгох select -->
@@ -89,7 +86,6 @@
                     <!-- "Choose" товч -> file input-г нээдэг -->
                     <div class="input-group-append">
                         <div class="btn-group">
-
                             <!-- Жинхэнэ file input (нуусан) -->
                             <input type="file"
                                    name="logo"
@@ -112,7 +108,6 @@
                      id="logo_preview"
                      src=""
                      style="max-height:200px;display:none;">
-
             </form>
         </div>
 

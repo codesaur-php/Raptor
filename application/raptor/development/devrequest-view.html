@@ -202,50 +202,50 @@
 
 <!-- ========== JAVASCRIPT ========== -->
 <script type="text/javascript">
-    document.addEventListener('DOMContentLoaded', function () {
-        const form = document.getElementById('respond-form');
-        if (!form) return;
+document.addEventListener('DOMContentLoaded', function () {
+    const form = document.getElementById('respond-form');
+    if (!form) return;
 
-        const respondBtn = document.getElementById('respond-btn');
+    const respondBtn = document.getElementById('respond-btn');
 
-        form.addEventListener('submit', function (e) {
-            e.preventDefault();
+    form.addEventListener('submit', function (e) {
+        e.preventDefault();
 
-            const responseText = form.querySelector('#response').value.trim();
-            if (!responseText) {
-                return Notify('warning', `{{ 'warning'|text|e }}`, `{{ 'invalid-request'|text|e }}`);
+        const responseText = form.querySelector('#response').value.trim();
+        if (!responseText) {
+            return Notify('warning', `{{ 'warning'|text|e }}`, `{{ 'invalid-request'|text|e }}`);
+        }
+
+        respondBtn.disabled = true;
+        respondBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>';
+
+        const formData = new FormData(form);
+
+        csrfFetch(`{{ 'dev-requests-respond'|link }}`, {
+            method: 'POST',
+            body: formData
+        }).then(res => {
+            if (res.headers.get('content-type')?.includes('application/json')) return res.json();
+            throw new Error(`HTTP [${res.status}]: ${res.statusText}`);
+        }).then(data => {
+            if (data.status === 'success') {
+                Swal.fire({
+                    icon: 'success',
+                    title: data.title,
+                    text: data.message,
+                    confirmButtonText: 'OK'
+                }).then(() => {
+                    window.location.reload();
+                });
+            } else {
+                throw new Error(data.message || 'Error');
             }
-
-            respondBtn.disabled = true;
-            respondBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>';
-
-            const formData = new FormData(form);
-
-            csrfFetch(`{{ 'dev-requests-respond'|link }}`, {
-                method: 'POST',
-                body: formData
-            }).then(res => {
-                if (res.headers.get('content-type')?.includes('application/json')) return res.json();
-                throw new Error(`HTTP [${res.status}]: ${res.statusText}`);
-            }).then(data => {
-                if (data.status === 'success') {
-                    Swal.fire({
-                        icon: 'success',
-                        title: data.title,
-                        text: data.message,
-                        confirmButtonText: 'OK'
-                    }).then(() => {
-                        window.location.reload();
-                    });
-                } else {
-                    throw new Error(data.message || 'Error');
-                }
-            }).catch(err => {
-                Notify('error', `{{ 'error'|text|e }}`, err.message);
-            }).finally(() => {
-                respondBtn.disabled = false;
-                respondBtn.innerHTML = '<i class="bi bi-send"></i> {{ 'send'|text|e }}';
-            });
+        }).catch(err => {
+            Notify('error', `{{ 'error'|text|e }}`, err.message);
+        }).finally(() => {
+            respondBtn.disabled = false;
+            respondBtn.innerHTML = '<i class="bi bi-send"></i> {{ 'send'|text|e }}';
         });
     });
+});
 </script>

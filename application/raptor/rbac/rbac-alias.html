@@ -154,83 +154,82 @@
 {% endif %}
 
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const apiUrl = `{{ 'rbac-set-role-permission'|link({'alias':alias}) }}`;
-        const requesting = document.querySelector('div.requesting');
+document.addEventListener('DOMContentLoaded', function () {
+    const apiUrl = `{{ 'rbac-set-role-permission'|link({'alias':alias}) }}`;
+    const requesting = document.querySelector('div.requesting');
 
-        // Update badge counts
-        function updateCounts() {
-            {% for role in roles %}
-            {
-                const checked = document.querySelectorAll(
-                    'input.perm-check[data-role="{{ role['id'] }}"]:checked'
-                ).length;
-                const badge = document.getElementById('count-{{ role['id'] }}');
-                if (badge) badge.textContent = checked;
+    // Update badge counts
+    function updateCounts() {
+        {% for role in roles %}
+        {
+            const checked = document.querySelectorAll(
+                'input.perm-check[data-role="{{ role['id'] }}"]:checked'
+            ).length;
+            const badge = document.getElementById('count-{{ role['id'] }}');
+            if (badge) badge.textContent = checked;
+        }
+        {% endfor %}
+    }
+    updateCounts();
+
+    // Toggle single permission
+    function togglePermission(checkbox) {
+        if (requesting) requesting.style.display = 'block';
+        const formData = new FormData();
+        formData.append('role_id', checkbox.dataset.role);
+        formData.append('permission_id', checkbox.dataset.perm);
+        return csrfFetch(apiUrl, {
+            method: checkbox.checked ? 'POST' : 'DELETE',
+            body: formData
+        }).then(res => {
+            if (!res.headers.get('content-type')?.includes('application/json')) {
+                throw new Error(`HTTP ${res.status}: ${res.statusText}`);
             }
-            {% endfor %}
-        }
-        updateCounts();
-
-        // Toggle single permission
-        function togglePermission(checkbox) {
-            if (requesting) requesting.style.display = 'block';
-            const formData = new FormData();
-            formData.append('role_id', checkbox.dataset.role);
-            formData.append('permission_id', checkbox.dataset.perm);
-            return csrfFetch(apiUrl, {
-                method: checkbox.checked ? 'POST' : 'DELETE',
-                body: formData
-            }).then(res => {
-                if (!res.headers.get('content-type')?.includes('application/json')) {
-                    throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-                }
-                return res.json();
-            }).then(response => {
-                Notify(
-                    response.type ?? 'warning',
-                    response.title ?? `{{ 'notice'|text|e('js') }}`,
-                    response.message ?? 'Role permission set'
-                );
-            }).catch(error => {
-                checkbox.checked = !checkbox.checked;
-                Notify('danger', `{{ 'error'|text|e('js') }}`, error.message);
-            }).finally(() => {
-                updateCounts();
-                if (requesting) requesting.style.display = 'none';
-            });
-        }
-
-        // Bind checkbox clicks
-        document.querySelectorAll('input.perm-check').forEach(cb => {
-            cb.addEventListener('change', function () { togglePermission(this); });
+            return res.json();
+        }).then(response => {
+            Notify(
+                response.type ?? 'warning',
+                response.title ?? `{{ 'notice'|text|e('js') }}`,
+                response.message ?? 'Role permission set'
+            );
+        }).catch(error => {
+            checkbox.checked = !checkbox.checked;
+            Notify('danger', `{{ 'error'|text|e('js') }}`, error.message);
+        }).finally(() => {
+            updateCounts();
+            if (requesting) requesting.style.display = 'none';
         });
+    }
 
-        // Select all / Deselect all buttons
-        document.querySelectorAll('.select-all-btn').forEach(btn => {
-            btn.addEventListener('click', async function () {
-                const roleId = this.dataset.role;
-                const unchecked = document.querySelectorAll(
-                    `input.perm-check[data-role="${roleId}"]:not(:checked)`
-                );
-                for (const cb of unchecked) {
-                    cb.checked = true;
-                    await togglePermission(cb);
-                }
-            });
-        });
-        document.querySelectorAll('.deselect-all-btn').forEach(btn => {
-            btn.addEventListener('click', async function () {
-                const roleId = this.dataset.role;
-                const checked = document.querySelectorAll(
-                    `input.perm-check[data-role="${roleId}"]:checked`
-                );
-                for (const cb of checked) {
-                    cb.checked = false;
-                    await togglePermission(cb);
-                }
-            });
-        });
-
+    // Bind checkbox clicks
+    document.querySelectorAll('input.perm-check').forEach(cb => {
+        cb.addEventListener('change', function () { togglePermission(this); });
     });
+
+    // Select all / Deselect all buttons
+    document.querySelectorAll('.select-all-btn').forEach(btn => {
+        btn.addEventListener('click', async function () {
+            const roleId = this.dataset.role;
+            const unchecked = document.querySelectorAll(
+                `input.perm-check[data-role="${roleId}"]:not(:checked)`
+            );
+            for (const cb of unchecked) {
+                cb.checked = true;
+                await togglePermission(cb);
+            }
+        });
+    });
+    document.querySelectorAll('.deselect-all-btn').forEach(btn => {
+        btn.addEventListener('click', async function () {
+            const roleId = this.dataset.role;
+            const checked = document.querySelectorAll(
+                `input.perm-check[data-role="${roleId}"]:checked`
+            );
+            for (const cb of checked) {
+                cb.checked = false;
+                await togglePermission(cb);
+            }
+        });
+    });
+});
 </script>

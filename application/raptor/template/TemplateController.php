@@ -242,14 +242,14 @@ class TemplateController extends \Raptor\Controller
                     foreach ($value as $key => $value) {
                         $content[$key][$index] = $value;
 
-                        if ($record['localized'][$key][$index] != $value) {
+                        if (($record['localized'][$key][$index] ?? null) != $value) {
                             $updates[] = "{$key}_{$index}";
                         }
                     }
                 } else {
                     $payload[$index] = $value;
 
-                    if ($record[$index] != $value) {
+                    if (($record[$index] ?? null) != $value) {
                         $updates[] = $index;
                     }
                 }
