@@ -409,7 +409,6 @@ moedit.prototype._insertLink = function() {
 /* ============================================
    Image Upload
    ============================================ */
-
 moedit.prototype._insertImage = function() {
   /* Selection хадгалах */
   let savedRange = null;
