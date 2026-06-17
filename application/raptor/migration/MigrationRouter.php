@@ -1,4 +1,4 @@
-W<?php
+<?php
 
 namespace Raptor\Migration;
 
