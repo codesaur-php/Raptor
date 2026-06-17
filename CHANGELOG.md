@@ -6,6 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 
 ---
 
+## [4.2.3] - 2026-06-17
+[4.2.3]: https://github.com/codesaur-php/Raptor/compare/v4.2.1...v4.2.3
+
+### Fixed
+
+- **A stray `W` before the opening `<?php` tag in `application/raptor/migration/MigrationRouter.php` is removed.** The file's first line was `W<?php` - a leftover keystroke. Because the character sits outside the PHP tag, PHP treats it as raw output and echoes it the moment the file is autoloaded, printing a stray `W` at the top of the response body and triggering "headers already sent" warnings on any request that loaded the migration router. The line is now a clean `<?php`.
+
+### Changed
+
+- **Code-style cleanup only (no behavior change):** removed a redundant blank line in `public_html/assets/moedit/moedit.ui.js` (before `_insertImage`), continuing the formatting pass started in 4.2.1.
+
+### Notes
+
+- **Release-process correction for Packagist version immutability.** `v4.2.1` was first tagged at commit `1fc8c5d` and published to Packagist, then the tag was deleted, re-created on a later commit, and force-pushed. Packagist rejected the update because a published stable version's source/dist reference is immutable - once a tag is published it must keep pointing at the same commit forever. To realign, `v4.2.1` was restored to its originally published commit (`1fc8c5d`) and the two follow-up fixes above were shipped as this fresh version instead of by re-tagging. Going forward the rule is one version number = exactly one commit: published tags are never moved or recreated; any further change ships under a new, higher version (which is why this release is `4.2.3`).
+
+---
+
 ## [4.2.1] - 2026-06-17
 [4.2.1]: https://github.com/codesaur-php/Raptor/compare/v4.2.0...v4.2.1
 
