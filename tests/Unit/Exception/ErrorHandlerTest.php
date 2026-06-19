@@ -3,6 +3,7 @@
 namespace Tests\Unit\Exception;
 
 use PHPUnit\Framework\TestCase;
+
 use Raptor\Exception\ErrorHandler;
 
 /**

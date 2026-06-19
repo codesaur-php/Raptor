@@ -31,19 +31,27 @@ use Psr\Http\Message\ResponseInterface;
  *    attribute болгон inject хийгдсэн байна. Web ба Dashboard аль аль
  *    нь нэг л холболтыг (`\Raptor\DatabaseConnection`) ашиглана.
  *
- * 2) **ContainerMiddleware**
+ * 2) **MethodOverrideMiddleware**
+ *    - PUT/PATCH/DELETE verb-ийг X-HTTP-Method-Override header-аас сэргээх (WAF)
+ *    - "Request normalization" тул Session/routing-аас өмнө ажиллана
+ *
+ * 3) **BodyEncodingMiddleware**
+ *    - base64 body decode (WAF body-inspection-ийн шийдэл)
+ *    - Header-gated тул web-ийн ердийн form-д нөлөөлөхгүй
+ *
+ * 4) **ContainerMiddleware**
  *    - Dependency Injection Container-г request attributes-д inject хийнэ
  *    - Service factory-ууд PDO-г request attribute-аас (`pdo`) шууд уншина
  *
- * 3) **SessionMiddleware**
+ * 5) **SessionMiddleware**
  *    - PHP session удирдах
  *    - Хэрэглэгчийн authentication / session-based data хадгалах
  *
- * 4) **LocalizationMiddleware**
+ * 6) **LocalizationMiddleware**
  *    - Системийн хэл (mn/en/...) тодорхойлох
  *    - Template-д localization объект дамжуулах
  *
- * 5) **SettingsMiddleware**
+ * 7) **SettingsMiddleware**
  *    - System settings (branding, favicon, footer, title, зэрэг)
  *    - Хуудсуудад дамжуулах болно
  *
@@ -85,6 +93,14 @@ class Application extends \codesaur\Http\Application\Application
 
         // Template тулгуурласан Error Handler
         $this->use(new Template\ExceptionHandler());
+
+        // HTTP method override + WAF body decode (shared hosting compat).
+        // "Request normalization" тул Session/routing зэрэг method/body-д
+        // тулгуурладаг давхаргаас өмнө ажиллана. Header-gated тул web-ийн ердийн
+        // form-д нөлөөлөхгүй; ирээдүйд web талд csrfFetch-төстэй wrapper нэмбэл
+        // автоматаар хамаарна.
+        $this->use(new \Raptor\MethodOverrideMiddleware());
+        $this->use(new \Raptor\BodyEncodingMiddleware());
 
         // Container middleware
         $this->use(new \Raptor\ContainerMiddleware());

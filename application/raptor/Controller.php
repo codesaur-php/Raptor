@@ -4,6 +4,7 @@ namespace Raptor;
 
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Container\ContainerInterface;
+
 use codesaur\Template\FileTemplate;
 
 use Raptor\Authentication\User;
@@ -253,9 +254,9 @@ abstract class Controller extends \codesaur\Http\Application\Controller
 
         // Стандарт HTTP статус кодын муж нь 100-599 (RFC 9110). Default 200-г
         // дахин оноох шаардлагагүй тул алгасна.
-        $code = (int) $code;
-        if ($code !== 200 && $code >= 100 && $code <= 599) {
-            \http_response_code($code);
+        $intcode = (int) $code;
+        if ($intcode !== 200 && $intcode >= 100 && $intcode <= 599) {
+            \http_response_code($intcode);
         }
     }
 
@@ -374,6 +375,14 @@ abstract class Controller extends \codesaur\Http\Application\Controller
             $_SESSION['CSRF_TOKEN'] = \bin2hex(\random_bytes(32));
         }
         $tmplte->set('csrf_token', $_SESSION['CSRF_TOKEN'] ?? '');
+
+        // WAF body-encoding флаг (<meta name="waf-body-encoding">). true үед
+        // csrfFetch нь form талбаруудыг base64-аар кодолж mod_security WAF-ийн
+        // body-inspection-ийг тойрно. RAPTOR_WAF_BODY_ENCODING env-ээр удирдана
+        // (default асаалттай). index.php дахь Dotenv bool хувиргалтын дараа
+        // утга нь bool болсон байдаг.
+        $wafBodyEncoding = $_ENV['RAPTOR_WAF_BODY_ENCODING'] ?? true;
+        $tmplte->set('waf_body_encoding', $wafBodyEncoding ? '1' : '0');
 
         // Localization filter: {{ 'keyword'|text }}
         $tmplte->addFilter('text', function (string $key, $default = null): string {

@@ -39,6 +39,7 @@ Clean architecture object-oriented web development framework
 - SEO: Хайлт, Sitemap, XML Sitemap, RSS feed
 - Спам хамгаалалт (honeypot, HMAC token, rate limiting, Cloudflare Turnstile)
 - CSRF хамгаалалт (CsrfMiddleware, csrfFetch)
+- Shared hosting / WAF тохиромж (cPanel/LiteSpeed/mod_security): session найдвартай хадгалалт, HTTP method override, body encoding
 - File-based DB cache (PSR-16 SimpleCache) - автомат invalidation-тэй
 - Устгасан бичлэгийг сэргээх Trash систем
 - Dashboard sidebar badge систем (уншаагүй үйлдлийн тоолуур)
@@ -76,6 +77,7 @@ The framework operates in two layers - **Web** (public website) and **Dashboard*
 - SEO: Search, Sitemap, XML Sitemap, RSS feed
 - Spam protection (honeypot, HMAC token, rate limiting, Cloudflare Turnstile)
 - CSRF protection (CsrfMiddleware, csrfFetch)
+- Shared hosting / WAF compatibility (cPanel/LiteSpeed/mod_security): session hardening, HTTP method override, body encoding
 - File-based DB cache (PSR-16 SimpleCache) with auto-invalidation
 - Trash system for deleted records recovery
 - Dashboard sidebar badge system (unseen activity counters)
@@ -115,6 +117,9 @@ cp docs/conf.example/.env.example .env
 
 Server configuration examples / Серверийн тохиргооны жишээ: [`docs/conf.example/`](docs/conf.example/)
 
+> **Document root MUST be `public_html/`** (never the project root) - everything else (`.env`, `application/`, `protected/`, `vendor/`, ...) lives above it and must stay unreachable by URL. This is the primary, server-agnostic protection on both Apache and Nginx.
+> **Document root заавал `public_html/` байх ёстой** (project root биш) - бусад бүх зүйл (`.env`, `application/`, `protected/`, `vendor/`, ...) түүнээс дээр байрладаг тул URL-аар хүршгүй байх ёстой. Энэ нь Apache, Nginx хоёуланд server-аас үл хамаарах үндсэн хамгаалалт.
+
 Гол тохиргоонууд / Key configuration:
 
 ```env
@@ -130,6 +135,11 @@ RAPTOR_DB_PASSWORD=
 # JWT (secret is auto-generated)
 RAPTOR_JWT_ALGORITHM=HS256
 RAPTOR_JWT_LIFETIME=2592000
+
+# Shared hosting / WAF compatibility
+RAPTOR_SESSION_SAVE_PATH=
+RAPTOR_SESSION_LIFETIME=2592000
+RAPTOR_WAF_BODY_ENCODING=true
 ```
 
 ### Quick Architecture
@@ -137,7 +147,7 @@ RAPTOR_JWT_LIFETIME=2592000
 ```
 public_html/index.php
  |-- /dashboard/* -> Dashboard\Application (Admin Panel)
- |    |-- Middleware stack (Session, JWT, Container, Localization, Settings; CSRF per-route)
+ |    |-- Middleware stack (MethodOverride, BodyEncoding, Session, JWT, Container, Localization, Settings; CSRF per-route)
  |    |-- Routers (Login, Users, Organization, RBAC, Content, Logs, Shop, Development, Migration)
  |    \-- Controllers -> Templates
  |
@@ -158,6 +168,7 @@ raptor/
 |   |   |-- Application.php, Controller.php           # Dashboard app + base controller
 |   |   |-- DatabaseConnection.php                    # Single PDO factory (driver from RAPTOR_DB_DRIVER)
 |   |   |-- SessionMiddleware.php, ContainerMiddleware.php, CsrfMiddleware.php  # PSR-15 middleware
+|   |   |-- MethodOverrideMiddleware.php, BodyEncodingMiddleware.php   # Shared hosting / WAF compatibility
 |   |   |-- CacheService.php, SpamProtectionTrait.php # Cache + spam helpers
 |   |   |-- authentication/  # Login, JWT, Session
 |   |   |-- content/         # CMS (files, messages, news, pages, references, settings, AI)
@@ -223,7 +234,7 @@ raptor/
 > so adapt the code directly to your own detailed requirements. Only the `vendor/*` packages
 > are Composer-managed dependencies (updated via `composer update`); leave those untouched.
 
-### Testing / Тестчилгээ
+### Testing / Тест
 
 PHPUnit 11 суурьтай unit болон integration тестүүдтэй.
 Includes PHPUnit 11 test suite with unit and integration tests.

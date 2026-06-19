@@ -3,6 +3,7 @@
 namespace Tests\Unit\Log;
 
 use Tests\Support\RaptorTestCase;
+
 use Raptor\Log\Logger;
 
 /**

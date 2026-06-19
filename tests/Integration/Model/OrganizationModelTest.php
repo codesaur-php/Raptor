@@ -3,6 +3,7 @@
 namespace Tests\Integration\Model;
 
 use Tests\Support\IntegrationTestCase;
+
 use Raptor\Organization\OrganizationModel;
 
 class OrganizationModelTest extends IntegrationTestCase

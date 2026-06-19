@@ -154,6 +154,68 @@ if (!empty($_ENV['CODESAUR_APP_TIME_ZONE'])) {
 }
 
 // ---------------------------------------------------------------------------
+// 6.5. Session-ийн найдвартай хадгалалт (cPanel/shared hosting-д чухал)
+// ---------------------------------------------------------------------------
+/**
+ * Default-аар session нь shared /tmp-д хадгалагдаж, cPanel/LiteSpeed-ийн
+ * system cron түүнийг идэвхтэй цэвэрлэдэг. session.gc_maxlifetime (ихэвчлэн
+ * 1440 сек) өнгөрөнгүүт session файл устах боломжтой бөгөөд тэр үед
+ * $_SESSION['CSRF_TOKEN'] хоосорч, mutating хүсэлт CsrfMiddleware-ийн
+ * 403-д өртөнө (заримдаа амжилттай, заримдаа 403 гэдэг шинж тэмдэг).
+ *
+ * Шийдэл: session-г өөрийн protected/ доторх хавтаст хадгалж (system cron
+ * хүрэхгүй), GC насыг cookie-тэй ижил болгоно. protected/ нь web root
+ * (public_html)-ийн гадна байрладаг тул URL-аар хүршгүй - энэ нь Apache,
+ * Nginx алинд ч адил үйлчилнэ (docroot нь public_html). Дотор нь байгаа
+ * .htaccess (deny from all) нь зөвхөн Apache-д үйлчлэх нэмэлт fallback -
+ * docroot-ийг андуурч project root болгосон тохиолдлоос сэргийлнэ.
+ *
+ * RAPTOR_SESSION_SAVE_PATH хоосон бол protected/sessions автоматаар.
+ * RAPTOR_SESSION_LIFETIME (секунд) нь cookie + gc насыг тодорхойлно.
+ *
+ * Зарим host (open_basedir, эрхийн хязгаарлалт) protected/sessions-д бичихийг
+ * зөвшөөрөхгүй байж болзошгүй. Тийм үед session_save_path-ийг огт дуудахгүй,
+ * PHP өөрийн default зам руу аюулгүйгээр буцаж унана (юу ч эвдрэхгүй). Гэхдээ
+ * тэр default зам нь дахин cron-purge-д өртөж болзошгүй тул developer RAPTOR_SESSION_SAVE_PATH
+ * дээр бичих боломжтой зам зааж өгөхийг анхааруулж log тэмдэглэнэ.
+ */
+$sessionLifetime = (int)($_ENV['RAPTOR_SESSION_LIFETIME'] ?? 2592000); // 30 хоног
+// RAPTOR_SESSION_SAVE_PATH нь үнэмлэхүй зам байх ёстой (утгыг шууд ашиглана).
+// Хоосон бол default protected/sessions (web root-ийн гадна тул URL-аар хүршгүй).
+$sessionPath = \trim($_ENV['RAPTOR_SESSION_SAVE_PATH'] ?? '');
+if ($sessionPath === '') {
+    $sessionPath = "$root_dir/protected/sessions";
+}
+if (!\is_dir($sessionPath)) {
+    @\mkdir($sessionPath, 0700, true);
+}
+if (\is_dir($sessionPath) && \is_writable($sessionPath)) {
+    \session_save_path($sessionPath);
+} else {
+    // Бичих боломжгүй тул PHP-ийн default зам руу унаж байна.
+    // Developer RAPTOR_SESSION_SAVE_PATH-аар бичих боломжтой зам зааж,
+    // зарим хост дээр гарч болзошгүй /tmp purge-ийн эрсдэлээс сэргийлнэ.
+    //
+    // Misconfiguration тогтвортой байвал хүсэлт бүрт лог бичих нь log файлыг
+    // асар томруулдаг. Тиймээс sentinel-ийн mtime-аар throttle хийж, өдөрт нэг
+    // удаа л бичнэ (sys_get_temp_dir нь PHP session/upload-д шаардлагатай тул
+    // бараг үргэлж бичигддэг; purge боллоо гэж үзэхэд sentinel алга болоод
+    // дахин нэг удаа л бичих тул дэмий давтагдахгүй).
+    $warnFlag = \sys_get_temp_dir() . '/raptor_sess_path_warn';
+    if (!\is_file($warnFlag) || (\time() - (int)@\filemtime($warnFlag)) > 86400) {
+        @\touch($warnFlag);
+        \error_log(
+            "Raptor: session save path '$sessionPath' is not writable; "
+            . 'falling back to the PHP default. Set RAPTOR_SESSION_SAVE_PATH to a '
+            . 'writable directory to avoid the shared /tmp session purges some hosts perform.'
+        );
+    }
+}
+\ini_set('session.gc_maxlifetime', (string)$sessionLifetime);
+\ini_set('session.gc_probability', '1');
+\ini_set('session.gc_divisor', '100');
+
+// ---------------------------------------------------------------------------
 // 7. PSR-7 дагуу ServerRequest-г глобал орчноос үүсгэх
 // ---------------------------------------------------------------------------
 /**
@@ -220,7 +282,7 @@ if (($length = \strlen(\dirname($request->getServerParams()['SCRIPT_NAME']))) > 
  *
  * NonBodyResponse - Application-ийн constructor-д дамжуулж буй хариуны
  * fallback prototype:
- *   - Controller/action нь ResponseInterface БИШ төрөл буцаавал Application
+ *   - Controller/action нь ResponseInterface биш төрөл буцаавал Application
  *     дотор энэ prototype-оос clone хийж хүчинтэй PSR-7 хариу болгоно.
  *   - Body stream огт агуулаагүй (getBody() дуудвал RuntimeException шиднэ),
  *     учир нь Raptor-ийн controller-ууд контентоо output buffer-аар шууд

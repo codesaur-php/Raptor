@@ -3,6 +3,7 @@
 namespace Tests\Integration\RBAC;
 
 use Tests\Support\IntegrationTestCase;
+
 use Raptor\RBAC\Roles;
 use Raptor\RBAC\Permissions;
 use Raptor\RBAC\RolePermission;

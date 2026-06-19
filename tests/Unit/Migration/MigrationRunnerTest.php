@@ -3,6 +3,7 @@
 namespace Tests\Unit\Migration;
 
 use Tests\Support\RaptorTestCase;
+
 use Raptor\Migration\MigrationRunner;
 
 /**
@@ -73,7 +74,7 @@ class MigrationRunnerTest extends RaptorTestCase
 
     public function testDollarSignNotDollarQuotedOnMysql(): void
     {
-        // MySQL дээр $$ нь dollar-quote БИШ - statement-ууд ; дээр зөв хуваагдана.
+        // MySQL дээр $$ нь dollar-quote биш - statement-ууд ; дээр зөв хуваагдана.
         // (pgsql-д бол $$...$$ хооронд байх ; залгигдах байсан)
         $sql = "SELECT a\$\$b; SELECT 2;";
         $this->assertSame(['SELECT a$$b', 'SELECT 2'], $this->runner->splitStatements($sql));

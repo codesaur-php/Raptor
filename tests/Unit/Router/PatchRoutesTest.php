@@ -3,6 +3,7 @@
 namespace Tests\Unit\Router;
 
 use PHPUnit\Framework\TestCase;
+
 use codesaur\Router\Router;
 
 /**

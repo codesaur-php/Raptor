@@ -3,6 +3,7 @@
 namespace Tests\Unit\Template;
 
 use Tests\Support\RaptorTestCase;
+
 use Raptor\Template\BadgeController;
 
 /**

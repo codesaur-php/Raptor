@@ -3,6 +3,7 @@
 namespace Tests\Unit\Migration;
 
 use Tests\Support\RaptorTestCase;
+
 use Raptor\Migration\MigrationSecurityScanner;
 
 /**

@@ -76,7 +76,7 @@
     {% set doc_files = [] %}
     {% if files is defined and files is not empty %}
         {% for file in files %}
-            {% if file['type'] == 'image' or file['type'] == 'video' or file['type'] == 'audio' %}
+            {% if file['type'] in ['image', 'video', 'audio'] %}
                 {% set media_files = media_files|merge([file]) %}
             {% else %}
                 {% set doc_files = doc_files|merge([file]) %}

@@ -50,6 +50,7 @@
 - SEO: Search, Sitemap, XML Sitemap, RSS feed
 - Spam protection (honeypot, HMAC token, rate limiting, Cloudflare Turnstile)
 - CSRF protection (CsrfMiddleware, csrfFetch)
+- Shared hosting / WAF compatibility (cPanel/LiteSpeed/mod_security): session hardening, HTTP method override, body encoding
 - File-based DB cache (PSR-16 SimpleCache) with auto-invalidation
 - Contact form with message management
 - News article comments with 1-level reply
@@ -151,6 +152,40 @@ RAPTOR_JWT_SECRET=auto-generated
 - `RAPTOR_JWT_LIFETIME` - Token validity in seconds (2592000 = 30 days)
 - `RAPTOR_JWT_LEEWAY` - Clock skew tolerance in seconds
 
+### Shared Hosting / WAF Compatibility
+
+```env
+RAPTOR_SESSION_SAVE_PATH=
+RAPTOR_SESSION_LIFETIME=2592000
+RAPTOR_WAF_BODY_ENCODING=true
+```
+
+- `RAPTOR_SESSION_SAVE_PATH` - Where sessions are stored. Empty = auto `protected/sessions` (keeps sessions out of the shared `/tmp` that cPanel/LiteSpeed cron purges, which otherwise drops the CSRF token and causes intermittent 403s).
+- `RAPTOR_SESSION_LIFETIME` - Session cookie + server-side gc lifetime in seconds (2592000 = 30 days).
+- `RAPTOR_WAF_BODY_ENCODING` - When `true` (default), `csrfFetch()` base64-encodes form field values so a mod_security-style WAF cannot flag HTML/JS-like rich-text in the POST body; `BodyEncodingMiddleware` decodes them server-side. Set `false` on hosts without a body-inspecting WAF. See the "Shared Hosting / WAF Compatibility" section in `CLAUDE.md` for the full mechanism.
+
+#### "Why does my PUT/DELETE request show up as POST in the browser?"
+
+This is expected, not a bug. When you open DevTools -> Network and submit a dashboard form declared `method="PUT"` (or PATCH/DELETE), you will see the request go out as **POST**. `csrfFetch()` deliberately rewrites these verbs to POST and carries the real verb in the **`X-HTTP-Method-Override`** request header, because many shared hosts (cPanel/LiteSpeed + mod_security) block PUT/PATCH/DELETE at the web-server level before PHP ever runs. On the server, `MethodOverrideMiddleware` reads that header and restores the real method before routing, so `GET_PUT('/news/{id}')` still dispatches to its PUT handler.
+
+How to confirm what is happening in DevTools -> Network -> (the request) -> Headers:
+
+- **Request method:** `POST` (the tunnel)
+- **`X-HTTP-Method-Override: PUT`** - the real verb the route receives
+- **`X-Body-Encoding: base64`** - present when body encoding is on; the form body shows as base64 instead of readable HTML (this is also intentional - see below)
+
+The URL and the JSON response are identical to a native PUT, so nothing downstream changes.
+
+#### Disabling body encoding
+
+If your host has no body-inspecting WAF and you would rather see/inspect raw form bodies:
+
+1. **Site-wide:** set `RAPTOR_WAF_BODY_ENCODING=false` in `.env`. `Controller::template()` then emits `<meta name="waf-body-encoding" content="0">` and `csrfFetch()` stops encoding. (The server-side decode is header-gated, so it simply never triggers - safe either way.)
+2. **Custom layouts:** the `<meta name="waf-body-encoding">` tag is the only channel that carries this flag to the browser. If you do not use the shipped `dashboard.html`, you must include it, or the `=false` setting is silently ignored on the client.
+3. **One-off raw request:** `csrfFetch()` has no per-call opt-out. To send a single request with the verb and body verbatim, call plain `fetch()` instead - but add the `X-CSRF-TOKEN` header yourself (`getCsrfToken()`) for CSRF-protected routes. This is mainly for calling non-dashboard/external endpoints; for dashboard routes prefer `csrfFetch()`.
+
+Note: method override (the verb -> POST rewrite) has no off switch - it is always on but is a no-op unless the override header is present, so it never needs disabling. To hit an endpoint with a genuine PUT/DELETE verb, the host must allow those verbs and you must use a client other than `csrfFetch()` (e.g. plain `fetch()`).
+
 ### Email
 
 ```env
@@ -209,6 +244,17 @@ RAPTOR_CONTENT_IMG_QUALITY=90
 - Used by `DiscordNotifier` service for system event notifications
 
 ### Server Configuration
+
+> **CRITICAL: the web server document root MUST be `public_html/`, never the project root.**
+> `public_html/` is the only directory meant to be web-served; everything else
+> (`application/`, `protected/`, `database/`, `vendor/`, `.env`, `logs/`, ...)
+> lives one level above it and must stay unreachable by URL. Pointing the docroot
+> at the project root would expose source code, the `.env` secrets, uploaded
+> files, and session data. This single rule is the primary, server-agnostic
+> protection (Apache and Nginx alike) - the `.htaccess` / nginx `deny` rules are
+> only a secondary fallback for exactly this misconfiguration. On shared hosting,
+> set the domain's document root to `.../public_html`; the example configs below
+> already do this.
 
 Example configuration files for Apache and Nginx are available in [`docs/conf.example/`](../conf.example/):
 
@@ -302,7 +348,7 @@ For Linux servers with SSH access (VPS, cloud VM, dedicated). Add the following 
 public_html/index.php (Entry point)
 |
 |-- /dashboard/* -> Dashboard\Application (Admin Panel)
-|    |-- Middleware: ErrorHandler -> Session -> JWT -> Container -> Localization -> Settings (CSRF is per-route)
+|    |-- Middleware: ErrorHandler -> MethodOverride -> BodyEncoding -> Session -> JWT -> Container -> Localization -> Settings (CSRF is per-route)
 |    |-- Routers: Login, Users, Organization, RBAC, Localization, Contents, Messages, Comments, Logs, Template, Shop, Development, Migration
 |    \-- Controllers -> Templates -> HTML Response
 |
@@ -433,11 +479,13 @@ request's `pdo` attribute.
 | # | Middleware | Purpose |
 |---|-----------|---------|
 | 1 | `ErrorHandler` | Returns errors as JSON/HTML |
-| 2 | `SessionMiddleware` | Starts and manages PHP session |
-| 3 | `JWTAuthMiddleware` | Validates JWT and creates `User` object |
-| 4 | `ContainerMiddleware` | Injects DI Container |
-| 5 | `LocalizationMiddleware` | Determines language and translations |
-| 6 | `SettingsMiddleware` | Injects system settings |
+| 2 | `MethodOverrideMiddleware` | Restores PUT/PATCH/DELETE from `X-HTTP-Method-Override` (WAF verb-block workaround). Runs before Session/routing so the real verb is visible everywhere |
+| 3 | `BodyEncodingMiddleware` | base64-decodes form fields sent with `X-Body-Encoding` (WAF body-inspection workaround) |
+| 4 | `SessionMiddleware` | Starts and manages PHP session |
+| 5 | `JWTAuthMiddleware` | Validates JWT and creates `User` object |
+| 6 | `ContainerMiddleware` | Injects DI Container |
+| 7 | `LocalizationMiddleware` | Determines language and translations |
+| 8 | `SettingsMiddleware` | Injects system settings |
 
 > `CsrfMiddleware` is NOT in the app-wide pipeline - it is attached per-route to each mutating route in the router (see 6.20).
 
@@ -851,13 +899,13 @@ Use these alternatives in `codesaur/template`:
 | Twig (unsupported) | Replacement |
 |--------------------|-------------|
 | `{% for i in 1..5 %}` | `{% for i in range(1, 5) %}` |
-| `{% if x in list %}` | `{% if list[x] is defined %}` (use lookup map) or explicit `or` chain |
-| `ends with`, `matches` | not available (only `starts with` works) |
 | `**`, `//` operators | use `*`, `/` |
-| `is odd/even/divisible/same` | not available |
+| `is divisible by`, `is same as` | not available |
 | `loop.revindex`, `loop.parent` | not available (use `loop.length - loop.index0`) |
 | `{% verbatim %}`, `{% include %}`, `{% extends %}` | not available |
 | `\|date(format='Y-m-d')` | `\|date('Y-m-d')` (positional only) |
+
+> Since `codesaur/template` 4.1.0, `in` / `not in` membership, `ends with`, `matches` (regex), and `is even` / `is odd` ARE supported - e.g. `{% if type in ['image', 'video'] %}`.
 
 ### Example
 

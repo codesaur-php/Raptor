@@ -41,8 +41,22 @@ class SessionMiddleware implements MiddlewareInterface
         \session_name('raptor');
 
         if (\session_status() != \PHP_SESSION_ACTIVE) {
-            $lifetime = \time() + 30 * 24 * 60 * 60; // 30 хоног
-            \session_set_cookie_params($lifetime);
+            // session_set_cookie_params-ийн lifetime нь үргэлжлэх хугацаа (секунд),
+            // absolute timestamp биш. Хугацааг RAPTOR_SESSION_LIFETIME env-ээс авна
+            // (default 30 хоног). secure flag-г HTTPS үед л идэвхжүүлнэ (local http
+            // dev болон proxy-ийн ард ажиллахын тул X-Forwarded-Proto-г шалгана).
+            $lifetime = (int)($_ENV['RAPTOR_SESSION_LIFETIME'] ?? 2592000);
+            $params = $request->getServerParams();
+            $isHttps = (!empty($params['HTTPS']) && $params['HTTPS'] !== 'off')
+                || (($params['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https')
+                || (($params['SERVER_PORT'] ?? '') == 443);
+            \session_set_cookie_params([
+                'lifetime' => $lifetime,
+                'path'     => '/',
+                'secure'   => $isHttps,
+                'httponly' => true,
+                'samesite' => 'Lax',
+            ]);
             \session_start();
         }
 

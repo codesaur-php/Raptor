@@ -6,6 +6,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 
 ---
 
+## [4.3.0] - 2026-06-19
+[4.3.0]: https://github.com/codesaur-php/Raptor/compare/v4.2.3...v4.3.0
+
+### Added
+
+- **Shared hosting / WAF compatibility layer.** Many cPanel/LiteSpeed hosts with mod_security broke dashboard saves in three ways; all are now handled framework-wide with no per-module code. (1) `MethodOverrideMiddleware` (new) tunnels PUT/PATCH/DELETE through POST via the `X-HTTP-Method-Override` header for hosts that block those verbs before PHP - POST-only, never overrides to GET, so CsrfMiddleware still applies. (2) `BodyEncodingMiddleware` (new) base64-decodes form field values when the client sends `X-Body-Encoding: base64`, defeating WAF XSS rules that flag HTML/JS-like rich-text content in the POST body (strict base64, recursive, header-gated, files/field-names untouched; works because every controller reads `getParsedBody()`, none read `$_POST`). Both are registered in `Raptor\Application` and `Web\Application`. The client side lives in `csrfFetch()` (`dashboard.js`): it rewrites verbs and base64-encodes `FormData` string values (UTF-8-safe, files skipped), gated by the `<meta name="waf-body-encoding">` flag that `Controller::template()` emits. Single encode / single decode, so already-base64 content (inline `data:` image URIs) round-trips byte-for-byte. New env vars (see below); `dashboard.js` bumped to `?v=5`. Tests: `MethodOverrideMiddlewareTest`, `BodyEncodingMiddlewareTest`.
+
+### Fixed
+
+- **Intermittent CSRF 403 on shared hosting from lost sessions.** Sessions stored in the shared `/tmp` were purged by system cron / a short `session.gc_maxlifetime`, emptying `$_SESSION['CSRF_TOKEN']` so a later mutating request failed `CsrfMiddleware`. `public_html/index.php` now stores sessions in `protected/sessions` (outside `/tmp`, already web-blocked by `.htaccess`) and raises `gc_maxlifetime`. `SessionMiddleware` cookie params are corrected: `session_set_cookie_params()` was passing an absolute timestamp where a duration (seconds) is expected; it now passes a real lifetime plus `httponly`/`samesite=Lax` and `secure` only on HTTPS (honouring `X-Forwarded-Proto` behind a proxy). `ProtectedFilesController` now blocks `protected/sessions/` from the file-read API the same way `protected/cache/` is blocked.
+
+### Configuration
+
+- New `.env` keys under "Shared Hosting / WAF Compatibility": `RAPTOR_SESSION_SAVE_PATH` (empty = auto `protected/sessions`), `RAPTOR_SESSION_LIFETIME` (seconds, default `2592000` = 30 days; drives both the session cookie and server-side gc), and `RAPTOR_WAF_BODY_ENCODING` (default `true`; set `false` on hosts without a body-inspecting WAF to skip client-side base64 encoding).
+
+### Changed
+
+- **Started using `codesaur/template` ^4.1.0**, which adds the Twig-compatible `in` / `not in`, `ends with`, `matches`, and `is even` / `is odd` operators. The shop product template now uses `{% if file['type'] in ['image', 'video', 'audio'] %}` instead of the previous `or`-chain.
+
+---
+
 ## [4.2.3] - 2026-06-17
 [4.2.3]: https://github.com/codesaur-php/Raptor/compare/v4.2.1...v4.2.3
 

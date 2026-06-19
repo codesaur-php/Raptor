@@ -40,16 +40,87 @@ function getCsrfToken() {
 }
 
 /**
+ * wafBodyEncodingEnabled()
+ * - <meta name="waf-body-encoding"> флагийг уншина (RAPTOR_WAF_BODY_ENCODING).
+ *   "1" бол body-г base64-аар кодолж WAF-ийн body-inspection-ийг тойрно. */
+function wafBodyEncodingEnabled() {
+    const meta = document.querySelector('meta[name="waf-body-encoding"]');
+    return !meta || meta.getAttribute('content') !== '0';
+}
+
+/**
+ * b64EncodeUnicode(str)
+ * - UTF-8 (Монгол кирилл г.м.)-д аюулгүй base64 encode. btoa() нь Unicode-г
+ *   шууд боловсруулдаггүй тул эхлээд UTF-8 байт болгоно. Том агуулгыг
+ *   chunk-аар боловсруулна (call stack overflow-оос сэргийлж). */
+function b64EncodeUnicode(str) {
+    const bytes = new TextEncoder().encode(str);
+    let bin = '';
+    const chunk = 0x8000;
+    for (let i = 0; i < bytes.length; i += chunk) {
+        bin += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+    }
+    return btoa(bin);
+}
+
+/**
  * csrfFetch(url, options)
- * - fetch() wrapper, CSRF token header автоматаар нэмнэ */
+ * - fetch() wrapper, CSRF token header автоматаар нэмнэ
+ * - PUT/PATCH/DELETE-г POST болгож, жинхэнэ method-ийг X-HTTP-Method-Override
+ *   header-аар дамжуулна. Зарим shared hosting (cPanel/LiteSpeed/mod_security)
+ *   эдгээр verb-ийг server түвшинд 403-аар блоклодог; server тал дахь
+ *   MethodOverrideMiddleware override header-аас method-ийг сэргээнэ.
+ * - WAF body-encoding идэвхтэй үед FormData body-гийн string талбаруудыг
+ *   base64-аар кодолно. mod_security WAF нь body дахь HTML/JS-төстэй агуулгыг
+ *   (rich-text content, <a>, <img>, <script>) XSS гэж андуурч 403 буцаадаг;
+ *   кодлосноор WAF-д ил харагдахгүй. Server тал BodyEncodingMiddleware
+ *   буцааж decode хийнэ. Файл (File/Blob) болон талбарын нэрс хөндөгдөхгүй. */
 function csrfFetch(url, options = {}) {
     if (!options.headers) {
         options.headers = {};
     }
+
+    // Verb tunneling: PUT/PATCH/DELETE -> POST + override header
+    let overrideMethod = null;
+    const method = (options.method || 'GET').toUpperCase();
+    if (method === 'PUT' || method === 'PATCH' || method === 'DELETE') {
+        overrideMethod = method;
+        options.method = 'POST';
+    }
+
+    // FormData string талбаруудыг base64-аар кодлох (WAF body-inspection-ийг тойрох).
+    let bodyEncoded = false;
+    if (wafBodyEncodingEnabled() && options.body instanceof FormData) {
+        const encoded = new FormData();
+        for (const [name, value] of options.body.entries()) {
+            if (typeof value === 'string') {
+                encoded.append(name, b64EncodeUnicode(value));
+                bodyEncoded = true;
+            } else {
+                encoded.append(name, value);
+            }
+        }
+        if (bodyEncoded) {
+            options.body = encoded;
+        }
+    }
+
     if (options.headers instanceof Headers) {
         options.headers.append('X-CSRF-TOKEN', getCsrfToken());
+        if (overrideMethod) {
+            options.headers.append('X-HTTP-Method-Override', overrideMethod);
+        }
+        if (bodyEncoded) {
+            options.headers.append('X-Body-Encoding', 'base64');
+        }
     } else {
         options.headers['X-CSRF-TOKEN'] = getCsrfToken();
+        if (overrideMethod) {
+            options.headers['X-HTTP-Method-Override'] = overrideMethod;
+        }
+        if (bodyEncoded) {
+            options.headers['X-Body-Encoding'] = 'base64';
+        }
     }
     return fetch(url, options);
 }

@@ -204,12 +204,14 @@ request's `pdo` attribute.
 ### Constructor Pipeline
 
 1. `ErrorHandler` - Error handling
-2. `SessionMiddleware` - Session management
-3. `JWTAuthMiddleware` - JWT authentication
-4. `ContainerMiddleware` - DI Container
-5. `LocalizationMiddleware` - Multi-language
-6. `SettingsMiddleware` - System settings
-7. `LoginRouter`, `UsersRouter`, `OrganizationRouter`, `RBACRouter`, `LocalizationRouter`, `ContentsRouter`, `LogsRouter`, `DevelopmentRouter`, `MigrationRouter`, `TemplateRouter`, `BadgeRouter`
+2. `MethodOverrideMiddleware` - Restores PUT/PATCH/DELETE from `X-HTTP-Method-Override` (WAF verb-block workaround); runs before Session/routing so the real verb is visible everywhere
+3. `BodyEncodingMiddleware` - base64-decodes form fields sent with `X-Body-Encoding` (WAF body-inspection workaround)
+4. `SessionMiddleware` - Session management
+5. `JWTAuthMiddleware` - JWT authentication
+6. `ContainerMiddleware` - DI Container
+7. `LocalizationMiddleware` - Multi-language
+8. `SettingsMiddleware` - System settings
+9. `LoginRouter`, `UsersRouter`, `OrganizationRouter`, `RBACRouter`, `LocalizationRouter`, `ContentsRouter`, `LogsRouter`, `DevelopmentRouter`, `MigrationRouter`, `TemplateRouter`, `BadgeRouter`
 
 `CsrfMiddleware` is NOT in the app-wide pipeline - it is attached per-route to each mutating route in the router.
 

@@ -3,6 +3,7 @@
 namespace Tests\Integration\Migration;
 
 use Tests\Support\IntegrationTestCase;
+
 use Raptor\Migration\MigrationRunner;
 
 /**

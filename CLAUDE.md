@@ -126,15 +126,13 @@ Register routes in a Router class extending `codesaur\Router\Router`.
 
 **Template engine = `codesaur/template` (NOT Twig).** The syntax mimics Twig but is a custom parser. Twig features that are NOT supported (use the listed alternative):
 - `..` range operator -> `range(a, b)` function. e.g. `{% for i in 1..5 %}` -> `{% for i in range(1, 5) %}`
-- `in` membership -> explicit `==`/`or` chain or `[key] is defined` lookup map
-- `ends with`, `matches` operators (only `starts with` works)
 - `**` power, `//` integer division
-- `is odd`, `is even`, `is divisible by`, `is same as` tests
+- `is divisible by`, `is same as` tests
 - `loop.revindex`, `loop.revindex0`, `loop.parent`
 - `{% verbatim %}`, `{% spaceless %}`, `{% apply %}`, `{% extends %}`, `{% block %}`, `{% include %}`
 - Named filter arguments (`|date(format='Y-m-d')`) - only positional
 
-Supported and works as in Twig: `if/elseif/else/endif`, `for/else/endfor`, `set`, `macro/endmacro`, `is defined`, `is empty`, `is null`, `is iterable`, `loop.{first,last,index,index0,length}`, `?:`, `??`, `~` concat, `starts with`, ternary, hash/array literals, dot/bracket access, filter chains, `range()`, `max()`, `min()`, `attribute()` functions, plus 30+ built-in filters (`e`, `date`, `length`, `keys`, `slice`, `json_encode`, `merge`, `trim`, `nl2br`, `number_format`, `format`, `replace`, `column`, `batch`, `wordwrap`, etc.).
+Supported and works as in Twig: `if/elseif/else/endif`, `for/else/endfor`, `set`, `macro/endmacro`, `is defined`, `is empty`, `is null`, `is iterable`, `is even`, `is odd`, `loop.{first,last,index,index0,length}`, `?:`, `??`, `~` concat, `in`, `not in` (membership: array/string/Traversable), `starts with`, `ends with`, `matches` (regex), ternary, hash/array literals, dot/bracket access, filter chains, `range()`, `max()`, `min()`, `attribute()` functions, plus 30+ built-in filters (`e`, `date`, `length`, `keys`, `slice`, `json_encode`, `merge`, `trim`, `nl2br`, `number_format`, `format`, `replace`, `column`, `batch`, `wordwrap`, etc.). (`in`/`not in`, `ends with`, `matches`, `is even`/`is odd` require `codesaur/template` >= 4.1.0.)
 
 Object method calls work: `{{ user.can('perm') }}`, `{% if auth.is('role') %}` - the engine dispatches to public PHP methods on `is_object($val)`.
 
@@ -320,6 +318,25 @@ $this->POST('/news/insert', [NewsController::class, 'insert'])
 **For new dashboard modules**: every mutating route (POST/PUT/PATCH/DELETE and `GET_POST`/`GET_PUT` compounds) MUST add `->middleware([CsrfMiddleware::class])` (with `use Raptor\CsrfMiddleware;` in the router) - it is NOT automatic. Login routes are the only exempt mutating routes (do not attach it there; the token is created during login). On the client, use `csrfFetch()` instead of `fetch()` for all mutating requests; GET requests can use either. `csrfFetch()` is defined in `dashboard.js` and auto-adds the CSRF header.
 
 **For standalone pages** (not using `dashboard.html` layout, e.g. login): use plain `fetch()` since `dashboard.js` is not loaded and login routes carry no CsrfMiddleware anyway.
+
+### Shared Hosting / WAF Compatibility
+
+Many shared hosts (cPanel/LiteSpeed with mod_security) interfere with normal dashboard saves in three ways. The framework works around all three automatically - no per-module code needed. These are registered as app-wide middleware in both `Raptor\Application` and `Web\Application`, and wired into `csrfFetch()` on the client.
+
+1. **Session loss -> intermittent CSRF 403.** The shared `/tmp` session store gets purged by system cron / a short `gc_maxlifetime`, emptying `$_SESSION['CSRF_TOKEN']` so a later save fails CsrfMiddleware. `public_html/index.php` stores sessions in `protected/sessions` (out of `/tmp`; `protected/` sits OUTSIDE the web root `public_html`, so it is not URL-reachable on any server - Apache or Nginx - and the `protected/.htaccess` deny is just an Apache-only fallback for a misconfigured docroot) and raises `gc_maxlifetime`. `SessionMiddleware` sets correct cookie params (duration not timestamp; `httponly`/`samesite=Lax`; `secure` only on HTTPS incl. `X-Forwarded-Proto`). Configurable via `RAPTOR_SESSION_SAVE_PATH` (empty = auto) and `RAPTOR_SESSION_LIFETIME` (seconds).
+
+2. **Blocked verbs -> 403 on PUT/PATCH/DELETE.** WAFs often reject these verbs before PHP runs. `MethodOverrideMiddleware` reads `X-HTTP-Method-Override` and restores the real verb before routing; `csrfFetch()` sends mutating requests as POST + that header. POST-only, never overrides to GET, so CSRF still applies. Always on (zero downside).
+
+3. **Blocked body content -> 403 on HTML-rich saves.** WAF XSS rules flag rich-text content (`<a>`, `<img>`, `<script>`, pasted markup) in the POST body. When `RAPTOR_WAF_BODY_ENCODING=true` (default), `csrfFetch()` base64-encodes FormData string field VALUES (files and field names untouched) so the raw body carries no HTML; `BodyEncodingMiddleware` decodes them back (header-gated by `X-Body-Encoding: base64`, strict base64, recursive). Works because no controller reads `$_POST` directly - all use `getParsedBody()`. The flag reaches the client via `<meta name="waf-body-encoding">` set by `Controller::template()`. Single encode/single decode, so already-base64 content (inline `data:` image URIs) round-trips byte-for-byte.
+
+When adding new modules: keep using `method="PUT"` forms + `csrfFetch()`; tunneling and encoding are transparent. A dashboard save 403 on this kind of host is a WAF symptom, NOT a CSRF bug. Web (public) forms only get the server-side middleware - they have no `csrfFetch`, so add an equivalent client wrapper if a public form needs HTML body encoding.
+
+**Defaults are fail-safe (always ON):** every layer defaults to encoding enabled - env unset (`Controller` `?? true`), template var unset (`?? '1'`), and meta tag missing (`csrfFetch` treats absent meta as enabled). So a misconfiguration can never silently re-introduce the WAF 403; worst case is harmless extra payload on a non-WAF host. The one consequence: the `<meta name="waf-body-encoding">` tag is the ONLY channel carrying the env value to the client. **If you build a custom dashboard layout (not the shipped `dashboard.html`), you MUST include this meta tag** - otherwise `RAPTOR_WAF_BODY_ENCODING=false` is silently ignored on the client (encoding stays on). The server side stays correct regardless (it is gated by the `X-Body-Encoding` header, not by env), so nothing breaks - the toggle just won't take effect.
+
+**Sending a request the "plain" way (no method override, no body encoding):** there are two levels.
+
+- **Site-wide:** set `RAPTOR_WAF_BODY_ENCODING=false` to turn off body encoding everywhere (hosts with no body-inspecting WAF). Method override has no site-wide switch - it is always registered but is a no-op unless the client sends `X-HTTP-Method-Override`, so it costs nothing and never needs disabling.
+- **Per request:** `csrfFetch()` ALWAYS tunnels verbs and (when enabled) encodes the body - there is no per-call opt-out flag. To bypass both for a single request, call plain `fetch()` instead of `csrfFetch()`: it sends the verb and body verbatim with no transformation. The catch - `fetch()` does NOT add the `X-CSRF-TOKEN` header, so against a CsrfMiddleware-protected (mutating) route it will 403; add it yourself with `getCsrfToken()` (GET/HEAD/OPTIONS are exempt and need nothing). The legitimate use for plain `fetch()` is calling a NON-dashboard / external endpoint where you must not leak your CSRF token or send override/encoding headers; for dashboard routes always prefer `csrfFetch()` since the transformations are exactly what makes them work behind a WAF.
 
 ### LocalizationMiddleware
 

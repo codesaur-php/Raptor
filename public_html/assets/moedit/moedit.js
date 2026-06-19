@@ -67,10 +67,10 @@ class moedit {
     this._isMn = document.documentElement.lang === 'mn';
     const isMn = this._isMn;
 
-    /* toolbarPosition default утга - _createWrapper дуудахаас ӨМНӨ тохируулах */
+    /* toolbarPosition default утга - _createWrapper дуудахаас өмнө тохируулах */
     if (!opts.toolbarPosition) opts.toolbarPosition = 'right';
 
-    /* headerImage default утга - _createWrapper дуудахаас ӨМНӨ тохируулах */
+    /* headerImage default утга - _createWrapper дуудахаас өмнө тохируулах */
     if (opts.headerImage === undefined) opts.headerImage = true;
     if (opts.onHeaderImageChange && !opts.headerImage) opts.headerImage = true;
 

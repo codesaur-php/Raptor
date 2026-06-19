@@ -3,6 +3,7 @@
 namespace Tests\Unit\Controller;
 
 use Tests\Support\RaptorTestCase;
+
 use Raptor\Authentication\User;
 
 /**

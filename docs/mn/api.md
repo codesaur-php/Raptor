@@ -178,13 +178,13 @@ public function process($request, $handler): ResponseInterface
         \error_log($e->getMessage());
     }
     return $handler->handle($request->withAttribute('data', $data));
-    //     ^^^^^^^^^^^^^^^ зөвхөн НЭГ удаа, try-ийн гадна дуудагдана
+    //     ^^^^^^^^^^^^^^^ зөвхөн нэг удаа, try-ийн гадна дуудагдана
 }
 ```
 
 **Дүрмүүд:**
-- `$handler->handle()` нь middleware бүрт яг **НЭГ** удаа дуудагдах ёстой
-- Тэр дуудалт нь `try/catch` блокийн **ГАДНА** байх ёстой
+- `$handler->handle()` нь middleware бүрт яг **нэг** удаа дуудагдах ёстой
+- Тэр дуудалт нь `try/catch` блокийн **гадна** байх ёстой
 - `try/catch` нь зөвхөн data бэлтгэх логикийг (DB query, cache read, validation) хамрах ёстой
 - `catch` блок нь алдааг зохицуулаад (лог, default утга), гүйцэтгэлийг ганц `handle()` дуудалт руу урсгах ёстой
 
@@ -204,14 +204,16 @@ PDO холболт нь `public_html/index.php` дотор
 ### Constructor Pipeline
 
 1. `ErrorHandler` - Алдаа барих
-2. `SessionMiddleware` - Session удирдлага
-3. `JWTAuthMiddleware` - JWT баталгаажуулалт
-4. `ContainerMiddleware` - DI Container
-5. `LocalizationMiddleware` - Олон хэл
-6. `SettingsMiddleware` - Тохиргоо
-7. `LoginRouter`, `UsersRouter`, `OrganizationRouter`, `RBACRouter`, `LocalizationRouter`, `ContentsRouter`, `LogsRouter`, `DevelopmentRouter`, `MigrationRouter`, `TemplateRouter`, `BadgeRouter`
+2. `MethodOverrideMiddleware` - `X-HTTP-Method-Override`-аас PUT/PATCH/DELETE-г сэргээнэ (WAF verb-block-ийн шийдэл); Session/routing-аас өмнө ажиллаж жинхэнэ verb-ийг бүх давхаргад харагдуулна
+3. `BodyEncodingMiddleware` - `X-Body-Encoding`-той ирсэн form талбаруудыг base64-аас decode хийнэ (WAF body-inspection-ийн шийдэл)
+4. `SessionMiddleware` - Session удирдлага
+5. `JWTAuthMiddleware` - JWT баталгаажуулалт
+6. `ContainerMiddleware` - DI Container
+7. `LocalizationMiddleware` - Олон хэл
+8. `SettingsMiddleware` - Тохиргоо
+9. `LoginRouter`, `UsersRouter`, `OrganizationRouter`, `RBACRouter`, `LocalizationRouter`, `ContentsRouter`, `LogsRouter`, `DevelopmentRouter`, `MigrationRouter`, `TemplateRouter`, `BadgeRouter`
 
-`CsrfMiddleware` нь app-wide pipeline-д БИШ - router дээр mutating route бүрд per-route наагдана.
+`CsrfMiddleware` нь app-wide pipeline-д биш - router дээр mutating route бүрд per-route наагдана.
 
 `Dashboard\Application` нэмдэг: `HomeRouter`, `ShopRouter` (products + orders + reviews), `ManualRouter`
 

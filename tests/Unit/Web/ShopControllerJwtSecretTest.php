@@ -3,6 +3,7 @@
 namespace Tests\Unit\Web;
 
 use PHPUnit\Framework\TestCase;
+
 use Web\Shop\ShopController;
 
 /**

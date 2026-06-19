@@ -117,7 +117,7 @@
             <label class="form-label text-muted">{{ 'files'|text }}</label>
             <div class="list-group">
                 {% for file in files %}
-                {% set previewable = file.type == 'image' or file.type == 'video' or file.type == 'audio' or file.mime_content_type == 'application/pdf' %}
+                {% set previewable = file.type in ['image', 'video', 'audio'] or file.mime_content_type == 'application/pdf' %}
                 <a href="{{ file.path|e }}" {{ previewable ? 'target="_blank"' : 'download' }} class="list-group-item list-group-item-action d-flex align-items-center gap-2">
                     {% if file.type == 'image' %}
                         <i class="bi bi-file-image text-success"></i>

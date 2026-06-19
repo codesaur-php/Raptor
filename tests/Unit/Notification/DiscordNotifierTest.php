@@ -3,6 +3,7 @@
 namespace Tests\Unit\Notification;
 
 use PHPUnit\Framework\TestCase;
+
 use Raptor\Notification\DiscordNotifier;
 
 /**

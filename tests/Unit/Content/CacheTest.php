@@ -3,6 +3,7 @@
 namespace Tests\Unit\Content;
 
 use PHPUnit\Framework\TestCase;
+
 use Raptor\CacheService;
 
 /**
@@ -340,10 +341,11 @@ class CacheTest extends TestCase
             'ProtectedFilesController::read() should check for cache directory'
         );
 
+        // read() нь cache-аас гадна sessions хавтсыг ч блоклоно
         $this->assertStringContainsString(
-            'cacheDir',
+            'sessions',
             $source,
-            'ProtectedFilesController should define cacheDir path for blocking'
+            'ProtectedFilesController should also block the sessions directory'
         );
     }
 
@@ -367,11 +369,11 @@ class CacheTest extends TestCase
             dirname(__DIR__, 3) . '/application/raptor/content/file/ProtectedFilesController.php'
         );
 
-        // read() deer cache folder -> Forbidden shiddeg eseh
+        // read() deer cache/sessions folder -> Forbidden shiddeg eseh
         $this->assertMatchesRegularExpression(
-            '/cacheDir.*?Forbidden/s',
+            '/cache.*?sessions.*?Forbidden/s',
             $source,
-            'read() should throw Forbidden for cache directory access'
+            'read() should throw Forbidden for cache/sessions directory access'
         );
     }
 

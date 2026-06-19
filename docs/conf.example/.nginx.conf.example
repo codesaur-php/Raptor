@@ -32,7 +32,10 @@ server {
     ssl_certificate_key /etc/nginx/ssl/example.com.key;
 
     # ------------------------------------------------------------------
-    # Web root (Raptor/public_html директор)
+    # Web root - заавал public_html байх ёстой (project root биш).
+    # Бусад зүйл (.env, application/, protected/, vendor/, logs/) түүнээс
+    # дээр байрлаж URL-аар хүршгүй үлдэх ёстой. Project root руу чиглүүлбэл
+    # эх код, нууц утга, session, upload файл бүгд ил гарна.
     # ------------------------------------------------------------------
     root /path/to/Raptor/public_html;
     index index.php;
@@ -83,6 +86,17 @@ server {
     # SQL migration файлуудыг хориглох
     # ------------------------------------------------------------------
     location ~* \.sql$ {
+        deny all;
+    }
+
+    # ------------------------------------------------------------------
+    # protected/ хавтсыг хориглох (defense-in-depth)
+    # ------------------------------------------------------------------
+    # protected/ нь үнэндээ web root (public_html)-ийн гадна байрладаг тул
+    # дээрх `root` зөв тохируулсан үед URL-аар хүршгүй. Энэ дүрэм нь зөвхөн
+    # docroot-ийг андуурч project root болгосон тохиолдлын fallback (Apache
+    # дахь protected/.htaccess deny from all-ийн nginx эквивалент).
+    location ^~ /protected/ {
         deny all;
     }
 

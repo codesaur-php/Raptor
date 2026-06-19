@@ -17,7 +17,7 @@ use Psr\Http\Server\RequestHandlerInterface;
  * ----------------------------------------------------
  * LocalizationMiddleware-ээс ирсэн хэлний кодоор тохирох контентыг авах
  * SettingsModel-ийг ашиглан p (primary) + c (content) хүснэгтийг JOIN хийх
- * тохиргооноос зөвхөн НЭГ мөрийг унших
+ * тохиргооноос зөвхөн нэг мөрийг унших
  * config талбар JSON бол автоматаар decode хийх
  * Request объектод 'settings' аттрибутаар дамжуулж өгөх
  *
@@ -43,7 +43,7 @@ use Psr\Http\Server\RequestHandlerInterface;
  * дахин handle() дуудвал pointer хэтэрч current() нь false буцаана.
  *
  * Тиймээс: try дотор зөвхөн data бэлтгэх (cache, DB query).
- * handle() нь зөвхөн НЭГ удаа, try блокийн ГАДНА дуудагдах ёстой.
+ * handle() нь зөвхөн нэг удаа, try блокийн гадна дуудагдах ёстой.
  *
  * @package Raptor\Content
  */

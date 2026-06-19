@@ -7,6 +7,7 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\UriInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Server\RequestHandlerInterface;
+
 use Raptor\CsrfMiddleware;
 
 /**
@@ -14,7 +15,7 @@ use Raptor\CsrfMiddleware;
  *
  * CsrfMiddleware нь per-route validator - router дээр mutating route бүрд
  * `->middleware([CsrfMiddleware::class])`-аар наагдана. Token үүсгэх, attribute
- * тавих, login-exempt зэрэг нь middleware-ийн хариуцлага БИШ:
+ * тавих, login-exempt зэрэг нь middleware-ийн хариуцлага биш:
  *   - Token үүсгэлт: login + Controller::template() (session-аас).
  *   - Login exempt: login route-д middleware наахгүйгээр шийдэгдэнэ.
  *

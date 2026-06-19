@@ -3,8 +3,10 @@
 namespace Tests\Unit\Web;
 
 use PHPUnit\Framework\TestCase;
-use Web\Template\ExceptionHandler;
+
 use Raptor\Exception\ErrorHandler;
+
+use Web\Template\ExceptionHandler;
 
 /**
  * ExceptionHandler болон ErrorHandler дахь XSS хамгаалалтыг тестлэх.

@@ -15,12 +15,17 @@ use Psr\Http\Message\ResponseInterface;
  *
  * Middleware pipeline нь дараах дарааллаар ажиллана:
  *
- *   1) ErrorHandler           - Алдаа барих, JSON/HTML error
- *   2) SessionMiddleware      - PHP session удирдлага
- *   3) JWTAuthMiddleware      - JWT шалгаж User объект үүсгэх
- *   4) ContainerMiddleware    - DI Container inject
- *   5) LocalizationMiddleware - Хэл, орчуулга inject
- *   6) SettingsMiddleware     - Системийн тохиргоо inject
+ *   1) ErrorHandler             - Алдаа барих, JSON/HTML error
+ *   2) MethodOverrideMiddleware - PUT/PATCH/DELETE verb-ийг header-аас сэргээх (WAF)
+ *   3) BodyEncodingMiddleware   - base64 body decode (WAF)
+ *   4) SessionMiddleware        - PHP session удирдлага
+ *   5) JWTAuthMiddleware        - JWT шалгаж User объект үүсгэх
+ *   6) ContainerMiddleware      - DI Container inject
+ *   7) LocalizationMiddleware   - Хэл, орчуулга inject
+ *   8) SettingsMiddleware       - Системийн тохиргоо inject
+ *
+ * MethodOverride ба BodyEncoding нь "request normalization" тул Session/JWT/
+ * routing зэрэг method/body-д тулгуурладаг бүх давхаргаас өмнө байрлана.
  *
  * CSRF хамгаалалт нь app-wide биш - CsrfMiddleware нь mutating route бүрд
  * router дээр `->middleware([CsrfMiddleware::class])`-аар per-route наагдана.
@@ -72,22 +77,37 @@ abstract class Application extends \codesaur\Http\Application\Application
         // 1. Error handler
         $this->use(new Exception\ErrorHandler());
 
-        // 2. Session
+        // 2. HTTP method override (PUT/PATCH/DELETE-г POST-оор tunnel хийх).
+        // Зарим shared hosting (cPanel/LiteSpeed/mod_security) PUT/PATCH/DELETE
+        // verb-ийг server түвшинд блоклодог тул X-HTTP-Method-Override header-аас
+        // жинхэнэ method-ийг сэргээнэ. Энэ нь "request normalization" тул Session,
+        // JWT, routing зэрэг method-д тулгуурладаг бүх давхаргаас өмнө ажиллах ёстой
+        // (жишээ нь SessionMiddleware-ийн needsWrite closure $method-ийг хүлээж авдаг).
+        $this->use(new MethodOverrideMiddleware());
+
+        // 3. Body encoding (base64) decode. mod_security WAF нь body дахь
+        // HTML/JS-төстэй агуулгыг XSS гэж андуурч 403 буцаадаг тул клиент тал
+        // (RAPTOR_WAF_BODY_ENCODING=true үед) form талбаруудыг base64-аар
+        // кодолж илгээдэг; энд буцааж decode хийнэ (header-gated).
+        // Method-той ижил request normalization тул эрт ажиллана.
+        $this->use(new BodyEncodingMiddleware());
+
+        // 4. Session
         $this->use(new SessionMiddleware(
             fn(string $path, string $method): bool =>
                 \str_contains($path, '/login') || empty($_SESSION['CSRF_TOKEN'])
         ));
 
-        // 3. JWT Authentication
+        // 5. JWT Authentication
         $this->use(new Authentication\JWTAuthMiddleware());
 
-        // 4. DI Container
+        // 6. DI Container
         $this->use(new ContainerMiddleware());
 
-        // 5. Localization
+        // 7. Localization
         $this->use(new Localization\LocalizationMiddleware());
 
-        // 6. Settings
+        // 8. Settings
         $this->use(new Content\SettingsMiddleware());
 
         // Route mapping

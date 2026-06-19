@@ -45,7 +45,7 @@ trait ReadNewsTrait
 
     /**
      * Мэдээг уншсан гэж тэмдэглэх (cookie бичнэ).
-     * render()-ээс ӨМНӨ дуудах ёстой, эс бөгөөс header-ийг оройтож илгээнэ.
+     * render()-ээс өмнө дуудах ёстой, эс бөгөөс header-ийг оройтож илгээнэ.
      */
     protected function markNewsAsRead(int $id): void
     {

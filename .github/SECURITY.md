@@ -44,6 +44,7 @@ When contributing to or deploying Raptor, be mindful of:
 - **File uploads** - The framework validates file types and sizes; do not bypass these checks
 - **RBAC permissions** - Always verify user permissions before granting access to protected resources
 - **CSRF protection** - Dashboard POST/PUT/PATCH/DELETE requests are protected by CsrfMiddleware. Use `csrfFetch()` for all state-changing requests in dashboard JS
+- **HTTP method override** - `MethodOverrideMiddleware` lets a POST carry `X-HTTP-Method-Override` to be routed as PUT/PATCH/DELETE (shared-hosting WAF workaround). It only overrides POST and never to GET/HEAD/OPTIONS, so the overridden request is still a non-safe method and CsrfMiddleware validation still applies - it cannot be used to bypass CSRF
 - **Login rate limiting** - Failed login attempts are tracked in logs; 10+ failures within 15 minutes triggers lockout
 - **Password reset cooldown** - Forgot password requests are rate-limited per email address via `RAPTOR_PASSWORD_RESET_MINUTES`
 - **SQL injection** - All user input in JSON context filters is sanitized with allowlist regex; ORDER BY and LIMIT are validated
