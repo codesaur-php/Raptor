@@ -3,6 +3,7 @@
 namespace Tests\Unit\Content;
 
 use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 /**
  * ProtectedFilesController::read() - blocked file extension/name test.
@@ -25,9 +26,8 @@ class ProtectedFilesBlockedTest extends TestCase
     // Blocked extensions
     // =============================================
 
-    /**
-     * @dataProvider blockedExtensionsProvider
-     */
+    /*     */
+    #[DataProvider('blockedExtensionsProvider')]
     public function testBlockedExtensionExists(string $ext): void
     {
         $this->assertStringContainsString(
@@ -57,9 +57,8 @@ class ProtectedFilesBlockedTest extends TestCase
     // Blocked file names
     // =============================================
 
-    /**
-     * @dataProvider blockedFilesProvider
-     */
+    /*     */
+    #[DataProvider('blockedFilesProvider')]
     public function testBlockedFileExists(string $file): void
     {
         $this->assertStringContainsString(

@@ -677,8 +677,13 @@ function initLoggerProtocol() {
             })
         })
         .then(function (res) {
-            if (!res.ok) throw new Error('HTTP ' + res.status);
-            return res.json();
+            return res.text().then(function (text) {
+                let data;
+                try { data = JSON.parse(text); }
+                catch (e) { throw new Error('HTTP ' + res.status + (res.statusText ? ' ' + res.statusText : '')); }
+                if (!res.ok && !data.error) throw new Error('HTTP ' + res.status + (res.statusText ? ' ' + res.statusText : ''));
+                return data;
+            });
         })
         .then(function (response) {
             if (response.error) throw new Error(response.error);

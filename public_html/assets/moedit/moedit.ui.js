@@ -186,8 +186,16 @@ moedit.prototype._uploadFileToServer = function(file) {
   var doFetch = typeof csrfFetch === 'function' ? csrfFetch : fetch;
   return doFetch(this.opts.upload.url, { method: 'POST', body: fd })
     .then(res => {
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      return res.json();
+      /* Header-т найдалгүй body-г шууд parse оролдоно. JSON бол доорх data.error-оор
+         server-ийн тодорхой мессежийг гаргана (4xx/5xx үед ч). JSON биш бол (WAF HTML
+         block page г.м) л HTTP статус шиднэ. */
+      return res.text().then(text => {
+        let data;
+        try { data = JSON.parse(text); }
+        catch (e) { throw new Error(`HTTP ${res.status}${res.statusText ? ' ' + res.statusText : ''}`); }
+        if (!res.ok && !(data.error && data.error.message)) throw new Error(`HTTP ${res.status}${res.statusText ? ' ' + res.statusText : ''}`);
+        return data;
+      });
     })
     .then(data => {
       if (data.error) throw new Error(data.error.message || 'Upload failed');
@@ -1916,18 +1924,18 @@ moedit.prototype._shine = async function() {
         body: JSON.stringify({ html: html, prompt: customPrompt })
       });
 
-      /* HTTP алдаа шалгах */
-      if (!response.ok) {
-        throw new Error(this._isMn ? `Сервер алдаа: ${response.status} ${response.statusText}` : `Server error: ${response.status} ${response.statusText}`);
-      }
-
-      /* JSON эсэхийг шалгах */
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
+      /* Header-т найдалгүй body-г шууд parse оролдоно. JSON бол доорх data.message-ээр
+         server-ийн тодорхой мессежийг гаргана (4xx/5xx үед ч). JSON биш бол л HTTP статус шиднэ. */
+      const rawText = await response.text();
+      let data;
+      try {
+        data = JSON.parse(rawText);
+      } catch (e) {
+        if (!response.ok) {
+          throw new Error(this._isMn ? `Сервер алдаа: ${response.status} ${response.statusText}` : `Server error: ${response.status} ${response.statusText}`);
+        }
         throw new Error(this._isMn ? 'Shine API endpoint тохируулаагүй байна' : 'Shine API endpoint is not configured');
       }
-
-      const data = await response.json();
 
       if (data.status === 'success' && data.html) {
         newHtml = data.html;
@@ -2517,11 +2525,15 @@ moedit.prototype._ocr = async function() {
         })
       });
 
-      if (!response.ok) {
+      /* Header-т найдалгүй body-г шууд parse оролдоно. JSON бол доорх data.message-ээр
+         server-ийн тодорхой мессежийг гаргана (4xx/5xx үед ч). JSON биш бол л HTTP статус шиднэ. */
+      const rawText = await response.text();
+      let data;
+      try {
+        data = JSON.parse(rawText);
+      } catch (e) {
         throw new Error(this._isMn ? `AI OCR алдаа: ${response.status} ${response.statusText}` : `AI OCR error: ${response.status} ${response.statusText}`);
       }
-
-      const data = await response.json();
 
       if (data.status === 'success' && data.html) {
         newHtml = data.html;
@@ -4409,11 +4421,15 @@ moedit.prototype._insertPdf = async function() {
         })
       });
 
-      if (!response.ok) {
+      /* Header-т найдалгүй body-г шууд parse оролдоно. JSON бол доорх data.message-ээр
+         server-ийн тодорхой мессежийг гаргана (4xx/5xx үед ч). JSON биш бол л HTTP статус шиднэ. */
+      const rawText = await response.text();
+      let data;
+      try {
+        data = JSON.parse(rawText);
+      } catch (e) {
         throw new Error(this._isMn ? `AI OCR алдаа: ${response.status} ${response.statusText}` : `AI OCR error: ${response.status} ${response.statusText}`);
       }
-
-      const data = await response.json();
 
       if (data.status === 'success' && data.html) {
         if (totalSelected > 1) {

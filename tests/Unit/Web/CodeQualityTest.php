@@ -3,6 +3,7 @@
 namespace Tests\Unit\Web;
 
 use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 /**
  * Кодын чанарын тест - бидний хийсэн засваруудыг source level-д шалгах.
@@ -26,9 +27,8 @@ class CodeQualityTest extends TestCase
     // \Error -> \Exception солигдсон эсэх
     // =============================================
 
-    /**
-     * @dataProvider webControllerFilesProvider
-     */
+    /*     */
+    #[DataProvider('webControllerFilesProvider')]
     public function testNoThrowErrorInWebControllers(string $file): void
     {
         $source = file_get_contents(self::$appDir . '/web/' . $file);
@@ -75,9 +75,8 @@ class CodeQualityTest extends TestCase
     // read_count - атомик UPDATE болсон эсэх
     // =============================================
 
-    /**
-     * @dataProvider webControllerFilesProvider
-     */
+    /*     */
+    #[DataProvider('webControllerFilesProvider')]
     public function testAtomicReadCountUpdate(string $file): void
     {
         $source = file_get_contents(self::$appDir . '/web/' . $file);

@@ -3,6 +3,7 @@
 namespace Tests\Unit\Router;
 
 use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 use codesaur\Router\Router;
 
@@ -22,9 +23,8 @@ class PatchRoutesTest extends TestCase
     // Router-level PATCH matching
     // =========================================================
 
-    /**
-     * @dataProvider patchRouteProvider
-     */
+    /*     */
+    #[DataProvider('patchRouteProvider')]
     public function testPatchRouteMatches(string $pattern, string $path, string $routeName): void
     {
         $router = new Router();
@@ -35,9 +35,8 @@ class PatchRoutesTest extends TestCase
         $this->assertNotNull($callback, "PATCH $path should match route $routeName");
     }
 
-    /**
-     * @dataProvider patchRouteProvider
-     */
+    /*     */
+    #[DataProvider('patchRouteProvider')]
     public function testPutDoesNotMatchPatchRoute(string $pattern, string $path, string $routeName): void
     {
         $router = new Router();
@@ -303,9 +302,8 @@ class PatchRoutesTest extends TestCase
     // Source code verification - Frontend templates
     // =========================================================
 
-    /**
-     * @dataProvider frontendPatchProvider
-     */
+    /*     */
+    #[DataProvider('frontendPatchProvider')]
     public function testFrontendTemplateUsesPatch(string $relPath, string $description): void
     {
         $source = \file_get_contents(\dirname(__DIR__, 3) . '/' . $relPath);

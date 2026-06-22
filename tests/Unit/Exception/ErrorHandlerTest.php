@@ -3,6 +3,7 @@
 namespace Tests\Unit\Exception;
 
 use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 use Raptor\Exception\ErrorHandler;
 
@@ -96,9 +97,8 @@ class ErrorHandlerTest extends TestCase
     // HTTP status codes
     // =============================================
 
-    /**
-     * @dataProvider httpStatusCodeProvider
-     */
+    /*     */
+    #[DataProvider('httpStatusCodeProvider')]
     public function testExceptionTitleIncludesCode(int $code, string $expectedTitle): void
     {
         $handler = new ErrorHandler();

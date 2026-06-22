@@ -39,7 +39,7 @@ Clean architecture object-oriented web development framework
 - SEO: Хайлт, Sitemap, XML Sitemap, RSS feed
 - Спам хамгаалалт (honeypot, HMAC token, rate limiting, Cloudflare Turnstile)
 - CSRF хамгаалалт (CsrfMiddleware, csrfFetch)
-- Shared hosting / WAF тохиромж (cPanel/LiteSpeed/mod_security): session найдвартай хадгалалт, HTTP method override, body encoding
+- Shared hosting / WAF тохиромж (cPanel/LiteSpeed/mod_security): HTTP method override, body encoding
 - File-based DB cache (PSR-16 SimpleCache) - автомат invalidation-тэй
 - Устгасан бичлэгийг сэргээх Trash систем
 - Dashboard sidebar badge систем (уншаагүй үйлдлийн тоолуур)
@@ -77,7 +77,7 @@ The framework operates in two layers - **Web** (public website) and **Dashboard*
 - SEO: Search, Sitemap, XML Sitemap, RSS feed
 - Spam protection (honeypot, HMAC token, rate limiting, Cloudflare Turnstile)
 - CSRF protection (CsrfMiddleware, csrfFetch)
-- Shared hosting / WAF compatibility (cPanel/LiteSpeed/mod_security): session hardening, HTTP method override, body encoding
+- Shared hosting / WAF compatibility (cPanel/LiteSpeed/mod_security): HTTP method override, body encoding
 - File-based DB cache (PSR-16 SimpleCache) with auto-invalidation
 - Trash system for deleted records recovery
 - Dashboard sidebar badge system (unseen activity counters)
@@ -136,9 +136,7 @@ RAPTOR_DB_PASSWORD=
 RAPTOR_JWT_ALGORITHM=HS256
 RAPTOR_JWT_LIFETIME=2592000
 
-# Shared hosting / WAF compatibility
-RAPTOR_SESSION_SAVE_PATH=
-RAPTOR_SESSION_LIFETIME=2592000
+# WAF compatibility (mod_security)
 RAPTOR_WAF_BODY_ENCODING=true
 ```
 

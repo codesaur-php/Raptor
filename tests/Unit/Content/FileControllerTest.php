@@ -3,6 +3,7 @@
 namespace Tests\Unit\Content;
 
 use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 /**
  * FileController-ийн pure logic тестүүд.
@@ -47,9 +48,8 @@ class FileControllerTest extends TestCase
         return $method->invoke($instance, $size);
     }
 
-    /**
-     * @dataProvider phpSizeBytesProvider
-     */
+    /*     */
+    #[DataProvider('phpSizeBytesProvider')]
     public function testConvertPHPSizeToBytes(string $input, int $expected): void
     {
         $this->assertSame($expected, $this->callConvertPHPSizeToBytes($input));
@@ -102,9 +102,8 @@ class FileControllerTest extends TestCase
         return $method->invoke($instance, $bytes);
     }
 
-    /**
-     * @dataProvider formatSizeProvider
-     */
+    /*     */
+    #[DataProvider('formatSizeProvider')]
     public function testFormatSizeUnits(?int $bytes, string $expected): void
     {
         $this->assertSame($expected, $this->callFormatSizeUnits($bytes));
@@ -173,9 +172,8 @@ class FileControllerTest extends TestCase
     // allowCommonTypes() - түгээмэл файл өргөтгөлүүд
     // =============================================
 
-    /**
-     * @dataProvider commonTypesProvider
-     */
+    /*     */
+    #[DataProvider('commonTypesProvider')]
     public function testAllowCommonTypesContainsExtension(string $ext): void
     {
         \preg_match('/function\s+allowCommonTypes\s*\(\).*?\{(.+?)\}/s', self::$source, $m);

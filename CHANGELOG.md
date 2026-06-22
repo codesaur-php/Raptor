@@ -6,6 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 
 ---
 
+## [4.3.1] - 2026-06-22
+[4.3.1]: https://github.com/codesaur-php/Raptor/compare/v4.3.0...v4.3.1
+
+### Reverted
+
+- **The server-side session management added in 4.3.0 is reverted - server-side session lifetime now follows host defaults.** Raptor no longer forces `session.save_path`, `session.gc_maxlifetime`, or `session.gc_probability` from code. Removed: the `protected/sessions` storage block and gc tweaks in `index.php`, the `protected/sessions/` block in `ProtectedFilesController`, and the `RAPTOR_SESSION_SAVE_PATH` / `RAPTOR_SESSION_LIFETIME` env keys. Reason: forcing a 30-day `gc_maxlifetime` from code was unreliable on shared hosting (runtime `ini_set` is ignored by the Debian `sessionclean` cron; shared `/tmp` and host crons purge files independently) and added a session-file accumulation / cleanup burden, while not being the actual fix for the reported 403s. Raptor does NOT configure the server-side session lifetime - that is left to the host's `php.ini` / `.user.ini`, and developers may optionally configure it - see `docs/en/SESSION-LIFETIME.md` and `docs/mn/SESSION-LIFETIME.md`.
+
+### Added
+
+- **`docs/en/SESSION-LIFETIME.md` and `docs/mn/SESSION-LIFETIME.md`** - a per-environment guide (Ubuntu/Debian VPS, cPanel shared hosting, Windows XAMPP/WAMP, macOS Homebrew/MAMP, Nginx-FPM/Docker/mod_php) for configuring `session.gc_maxlifetime` correctly. Linked from each language's README and `api.md`.
+
+### Kept
+
+- `SessionMiddleware` still sets the session cookie lifetime to 30 days via `session_set_cookie_params(2592000)` (client-side cookie only - this is what keeps an admin logged in across browser restarts).
+- The WAF-compatibility feature from 4.3.0 (`MethodOverrideMiddleware`, `BodyEncodingMiddleware`, `csrfFetch` verb tunneling + body encoding, `RAPTOR_WAF_BODY_ENCODING`) is unchanged.
+
+---
+
 ## [4.3.0] - 2026-06-19
 [4.3.0]: https://github.com/codesaur-php/Raptor/compare/v4.2.3...v4.3.0
 

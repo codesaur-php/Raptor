@@ -5,6 +5,7 @@ namespace Tests\Unit\Authentication;
 use Tests\Support\RaptorTestCase;
 
 use Raptor\Authentication\LoginController;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 /**
  * LoginController-ийн spam хамгаалалтын private методуудыг тестлэх.
@@ -37,9 +38,8 @@ class LoginSpamProtectionTest extends RaptorTestCase
     // isGibberishUsername() - Gibberish илрүүлэх
     // =============================================
 
-    /**
-     * @dataProvider validUsernameProvider
-     */
+    /*     */
+    #[DataProvider('validUsernameProvider')]
     public function testValidUsernamesAreNotGibberish(string $username): void
     {
         $this->assertFalse(
@@ -48,9 +48,8 @@ class LoginSpamProtectionTest extends RaptorTestCase
         );
     }
 
-    /**
-     * @dataProvider gibberishUsernameProvider
-     */
+    /*     */
+    #[DataProvider('gibberishUsernameProvider')]
     public function testGibberishUsernamesAreDetected(string $username): void
     {
         $this->assertTrue(
@@ -120,9 +119,8 @@ class LoginSpamProtectionTest extends RaptorTestCase
     // normalizeEmail() - Gmail normalization
     // =============================================
 
-    /**
-     * @dataProvider gmailNormalizationProvider
-     */
+    /*     */
+    #[DataProvider('gmailNormalizationProvider')]
     public function testGmailNormalization(string $input, string $expected): void
     {
         $this->assertEquals(
@@ -170,9 +168,8 @@ class LoginSpamProtectionTest extends RaptorTestCase
         ];
     }
 
-    /**
-     * @dataProvider nonGmailProvider
-     */
+    /*     */
+    #[DataProvider('nonGmailProvider')]
     public function testNonGmailEmailsNotModified(string $input, string $expected): void
     {
         $this->assertEquals(

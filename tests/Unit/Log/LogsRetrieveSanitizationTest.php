@@ -3,6 +3,7 @@
 namespace Tests\Unit\Log;
 
 use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 /**
  * LogsController::retrieve() - SQL injection хамгаалалтын тест.
@@ -21,9 +22,8 @@ class LogsRetrieveSanitizationTest extends TestCase
 
     /**
      * Зөвшөөрөгдөх field нэрүүд.
-     *
-     * @dataProvider validFieldNamesProvider
      */
+    #[DataProvider('validFieldNamesProvider')]
     public function testValidFieldNamesAreAccepted(string $field): void
     {
         $this->assertMatchesRegularExpression('/^[a-zA-Z0-9_.]+$/', $field);
@@ -43,9 +43,8 @@ class LogsRetrieveSanitizationTest extends TestCase
 
     /**
      * SQL injection оролдлого бүхий field нэрүүд хаагдах ёстой.
-     *
-     * @dataProvider maliciousFieldNamesProvider
      */
+    #[DataProvider('maliciousFieldNamesProvider')]
     public function testMaliciousFieldNamesAreRejected(string $field): void
     {
         $this->assertDoesNotMatchRegularExpression(
@@ -130,9 +129,8 @@ class LogsRetrieveSanitizationTest extends TestCase
 
     /**
      * Зөв ORDER BY утга зөвшөөрөгдөнө.
-     *
-     * @dataProvider validOrderByProvider
      */
+    #[DataProvider('validOrderByProvider')]
     public function testValidOrderByIsAccepted(string $orderBy): void
     {
         $this->assertMatchesRegularExpression(
@@ -153,9 +151,8 @@ class LogsRetrieveSanitizationTest extends TestCase
 
     /**
      * SQL injection оролдлого бүхий ORDER BY утгууд хаагдах ёстой.
-     *
-     * @dataProvider maliciousOrderByProvider
      */
+    #[DataProvider('maliciousOrderByProvider')]
     public function testMaliciousOrderByIsRejected(string $orderBy): void
     {
         $this->assertDoesNotMatchRegularExpression(
@@ -203,9 +200,8 @@ class LogsRetrieveSanitizationTest extends TestCase
 
     /**
      * SQL injection оролдлого бүхий LIMIT утгууд хаагдах ёстой.
-     *
-     * @dataProvider maliciousLimitProvider
      */
+    #[DataProvider('maliciousLimitProvider')]
     public function testMaliciousLimitIsRejected(mixed $limit): void
     {
         $this->assertFalse(
@@ -281,9 +277,8 @@ class LogsRetrieveSanitizationTest extends TestCase
 
     /**
      * Table нэр зөвхөн a-z, 0-9, _, - тэмдэгтүүдийг зөвшөөрнө.
-     *
-     * @dataProvider maliciousTableNamesProvider
      */
+    #[DataProvider('maliciousTableNamesProvider')]
     public function testTableNameSanitization(string $input, string $expected): void
     {
         $sanitized = \preg_replace('/[^A-Za-z0-9_-]/', '', $input);

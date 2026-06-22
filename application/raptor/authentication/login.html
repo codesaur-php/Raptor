@@ -229,12 +229,17 @@
                     }
                 }
                 
-                function parseJSON(res)
+                async function parseJSON(res)
                 {
-                    if (!res.ok || !res.headers.get('content-type')?.includes('application/json')) {
-                        throw new Error(`{{ 'something-went-wrong'|text|e }} (HTTP ${res.status})`);
+                    // Алдааны хариу (4xx/5xx) дээр ч JSON body-г уншиж, server-ийн
+                    // тодорхой мессежийг (жишээ: "Invalid username or password")
+                    // гаргана. Body нь JSON биш үед л ерөнхий мессеж рүү буцна.
+                    const isJSON = res.headers.get('content-type')?.includes('application/json');
+                    const body = isJSON ? await res.json() : null;
+                    if (!res.ok || !isJSON) {
+                        throw new Error(body?.message ?? `{{ 'something-went-wrong'|text|e }} (HTTP ${res.status})`);
                     }
-                    return res.json();
+                    return body;
                 }
 
                 function validateEmail(email)

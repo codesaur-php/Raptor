@@ -41,22 +41,20 @@ class SessionMiddleware implements MiddlewareInterface
         \session_name('raptor');
 
         if (\session_status() != \PHP_SESSION_ACTIVE) {
-            // session_set_cookie_params-ийн lifetime нь үргэлжлэх хугацаа (секунд),
-            // absolute timestamp биш. Хугацааг RAPTOR_SESSION_LIFETIME env-ээс авна
-            // (default 30 хоног). secure flag-г HTTPS үед л идэвхжүүлнэ (local http
-            // dev болон proxy-ийн ард ажиллахын тул X-Forwarded-Proto-г шалгана).
-            $lifetime = (int)($_ENV['RAPTOR_SESSION_LIFETIME'] ?? 2592000);
-            $params = $request->getServerParams();
-            $isHttps = (!empty($params['HTTPS']) && $params['HTTPS'] !== 'off')
-                || (($params['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https')
-                || (($params['SERVER_PORT'] ?? '') == 443);
-            \session_set_cookie_params([
-                'lifetime' => $lifetime,
-                'path'     => '/',
-                'secure'   => $isHttps,
-                'httponly' => true,
-                'samesite' => 'Lax',
-            ]);
+            // Session cookie-ийн амьдрах хугацааг 30 хоног (2592000 сек) болгоно.
+            // Энэ нь зөвхөн client талын cookie-д үйлчилнэ; server талын session
+            // файлын цэвэрлэгээ (session.gc_maxlifetime) нь host php.ini-аар
+            // удирдагдсаар байна. Энэ ганц мөр нь Раптор фреймворкийг олон жилийн турш
+            // Монголын олон cPanel хост / VPS серверүүд дээр нэмэлт тохиргоогүйгээр шууд
+            // ажиллуулж, админы нэвтрэлт browser хаагдсан ч хадгалагдах practical
+            // default-ыг хангаж ирсэн.
+            //
+            // Developer session-ийн хугацааг бүхэлд нь PHP-ийн өөрийн тохиргоо
+            // (php.ini / .user.ini)-д даатгахыг хүсвэл доорх `session_set_cookie_params(...)`
+            // мөрийг устгаад php.ini-д тохируулна (docs/mn/SESSION-LIFETIME.md-г үзээрэй).
+            \session_set_cookie_params(2592000);
+
+            // Session идэвхгүй (эхлээгүй) байгаа тул эхлүүлнэ
             \session_start();
         }
 

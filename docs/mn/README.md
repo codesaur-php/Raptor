@@ -50,7 +50,7 @@
 - SEO: Хайлт, Sitemap, XML Sitemap, RSS feed
 - Спам хамгаалалт (honeypot, HMAC token, rate limiting, Cloudflare Turnstile)
 - CSRF хамгаалалт (CsrfMiddleware, csrfFetch)
-- Shared hosting / WAF тохиромж (cPanel/LiteSpeed/mod_security): session найдвартай хадгалалт, HTTP method override, body encoding
+- Shared hosting / WAF тохиромж (cPanel/LiteSpeed/mod_security): HTTP method override, body encoding
 - File-based DB cache (PSR-16 SimpleCache) - автомат invalidation-тэй
 - Холбоо барих форм, мессеж удирдлага
 - Мэдээний сэтгэгдэл, 1 түвшний хариулт
@@ -152,17 +152,15 @@ RAPTOR_JWT_SECRET=auto-generated
 - `RAPTOR_JWT_LIFETIME` - Токений хүчинтэй хугацаа секундээр (2592000 = 30 хоног)
 - `RAPTOR_JWT_LEEWAY` - Серверийн цагийн зөрөөг зөвшөөрөх хугацаа
 
-### Shared Hosting / WAF Compatibility
+### WAF Compatibility (mod_security)
 
 ```env
-RAPTOR_SESSION_SAVE_PATH=
-RAPTOR_SESSION_LIFETIME=2592000
 RAPTOR_WAF_BODY_ENCODING=true
 ```
 
-- `RAPTOR_SESSION_SAVE_PATH` - Session-г хадгалах зам. Хоосон = автоматаар `protected/sessions` (cPanel/LiteSpeed cron цэвэрлэдэг shared `/tmp`-ээс session-г гаргаснаар CSRF token алдагдаж 403 өгөхөөс сэргийлнэ).
-- `RAPTOR_SESSION_LIFETIME` - Session cookie болон server-side gc-ийн хугацаа секундээр (2592000 = 30 хоног).
 - `RAPTOR_WAF_BODY_ENCODING` - `true` (default) үед `csrfFetch()` form талбаруудыг base64-аар кодолж, mod_security маягийн WAF-д POST body доторх HTML/JS-төстэй rich-text харагдахгүй болгоно; `BodyEncodingMiddleware` server тал дээр decode хийнэ. Body-inspection хийдэг WAF-гүй хост дээр `false` болго. Дэлгэрэнгүйг `CLAUDE.md`-ийн "Shared Hosting / WAF Compatibility" хэсгээс үз.
+
+> **Session cookie-ийн хугацааг** Raptor `SessionMiddleware` дотроос **30 хоног** болгож тохируулдаг (`session_set_cookie_params(2592000)`) - энэ нь зөвхөн client талын cookie бөгөөд практик дээр админ browser хаасан ч удаан нэвтэрсэн хэвээр үлддэг нь батлагдсан. Харин **server талын** session файлын цэвэрлэгээ (`session.gc_maxlifetime`) нь Raptor-аар бус host-ийн php.ini-аар удирдагдана; session file-ийг найдвартай хадгалж хугацаанд нь цэвэрлэдэг байлгахыг хүсвэл host бүрд түүнийг тохируулна - [SESSION-LIFETIME.md](SESSION-LIFETIME.md)-г үз.
 
 #### "Яагаад миний PUT/DELETE хүсэлт browser дээр POST болж харагдаж байна вэ?"
 

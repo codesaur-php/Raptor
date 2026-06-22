@@ -3,6 +3,7 @@
 namespace Tests\Unit\Content;
 
 use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 /**
  * Бүх delete method-ууд TrashModel::store() дуудаж байгаа эсэхийг шалгана.
@@ -35,9 +36,8 @@ class DeleteTrashIntegrationTest extends TestCase
         ];
     }
 
-    /**
-     * @dataProvider deleteControllersProvider
-     */
+    /*     */
+    #[DataProvider('deleteControllersProvider')]
     public function testControllerStoresInTrashAfterDelete(string $file, string $module): void
     {
         $path = \dirname(__DIR__, 3) . '/application/' . $file;
@@ -85,9 +85,8 @@ class DeleteTrashIntegrationTest extends TestCase
         ];
     }
 
-    /**
-     * @dataProvider attachmentControllersProvider
-     */
+    /*     */
+    #[DataProvider('attachmentControllersProvider')]
     public function testAttachmentDeleteStoresInTrash(string $file, string $module): void
     {
         $path = \dirname(__DIR__, 3) . '/application/' . $file;
@@ -122,9 +121,8 @@ class DeleteTrashIntegrationTest extends TestCase
         ];
     }
 
-    /**
-     * @dataProvider noDeactivateProvider
-     */
+    /*     */
+    #[DataProvider('noDeactivateProvider')]
     public function testControllerDoesNotUseDeactivateById(string $file): void
     {
         $path = \dirname(__DIR__, 3) . '/application/' . $file;

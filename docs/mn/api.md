@@ -249,6 +249,8 @@ JWT decode + validate хийх. Хугацаа дууссан бол `RuntimeExc
 Dashboard болон Web app хоёуланд ашиглагдах session middleware.
 Session эхлүүлж, read-only route дээр write-lock-ийг эрт суллана.
 
+Raptor нь session cookie-ийн хугацааг кодоос 30 хоног болгодог (`session_set_cookie_params(2592000)`); server талын `gc_maxlifetime` / `save_path` нь PHP / host тохиргоогоор ажиллана. Host бүрд тааруулах (эсвэл тэр мөрийг устгаад php.ini-д даатгах) талаар [SESSION-LIFETIME.md](SESSION-LIFETIME.md)-аас үз.
+
 Constructor-аар `needsWrite` closure авна:
 - Dashboard: `fn($path, $method) => str_contains($path, '/login')`
 - Web: `fn($path, $method) => str_starts_with($path, '/language/') || ...`

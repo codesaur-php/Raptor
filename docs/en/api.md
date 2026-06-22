@@ -249,6 +249,8 @@ Decodes and validates JWT. Throws `RuntimeException` if expired. Requires `user_
 Shared middleware for both Dashboard and Web apps.
 Starts PHP session and releases write-lock early on read-only routes.
 
+Raptor sets the session cookie lifetime to 30 days from code (`session_set_cookie_params(2592000)`); the server-side `gc_maxlifetime` / `save_path` use PHP / host config. To tune session longevity per host (or remove that line and rely on php.ini), see [SESSION-LIFETIME.md](SESSION-LIFETIME.md).
+
 Constructor accepts a `needsWrite` closure to define which routes need session writes:
 - Dashboard: `fn($path, $method) => str_contains($path, '/login')`
 - Web: `fn($path, $method) => str_starts_with($path, '/language/') || ...`

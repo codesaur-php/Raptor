@@ -3,6 +3,7 @@
 namespace Tests\Unit\Content;
 
 use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 use Raptor\CacheService;
 
@@ -341,11 +342,10 @@ class CacheTest extends TestCase
             'ProtectedFilesController::read() should check for cache directory'
         );
 
-        // read() нь cache-аас гадна sessions хавтсыг ч блоклоно
         $this->assertStringContainsString(
-            'sessions',
+            'cacheDir',
             $source,
-            'ProtectedFilesController should also block the sessions directory'
+            'ProtectedFilesController should define cacheDir path for blocking'
         );
     }
 
@@ -369,11 +369,11 @@ class CacheTest extends TestCase
             dirname(__DIR__, 3) . '/application/raptor/content/file/ProtectedFilesController.php'
         );
 
-        // read() deer cache/sessions folder -> Forbidden shiddeg eseh
+        // read() deer cache folder -> Forbidden shiddeg eseh
         $this->assertMatchesRegularExpression(
-            '/cache.*?sessions.*?Forbidden/s',
+            '/cacheDir.*?Forbidden/s',
             $source,
-            'read() should throw Forbidden for cache/sessions directory access'
+            'read() should throw Forbidden for cache directory access'
         );
     }
 
@@ -485,9 +485,8 @@ class CacheTest extends TestCase
     // Cache invalidation зөв газарт байгаа эсэх
     // =============================================
 
-    /**
-     * @dataProvider invalidationProvider
-     */
+    /*     */
+    #[DataProvider('invalidationProvider')]
     public function testInvalidationInTryBlock(string $file, string $cacheKey): void
     {
         $source = file_get_contents(dirname(__DIR__, 3) . '/' . $file);

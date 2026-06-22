@@ -26,12 +26,16 @@
 
         Promise.all([
             fetch(`{{ 'dashboard-stats'|link }}`).then(function(r) {
-                if (!r.ok) throw new Error('Stats: HTTP ' + r.status);
-                return r.json();
+                return r.text().then(function(t) {
+                    try { return JSON.parse(t); }
+                    catch (e) { throw new Error('Stats: non-JSON response, HTTP ' + r.status); }
+                });
             }),
             fetch(`{{ 'dashboard-log-stats'|link }}`).then(function(r) {
-                if (!r.ok) throw new Error('Log stats: HTTP ' + r.status);
-                return r.json();
+                return r.text().then(function(t) {
+                    try { return JSON.parse(t); }
+                    catch (e) { throw new Error('Log stats: non-JSON response, HTTP ' + r.status); }
+                });
             })
         ])
         .then(function(results) {

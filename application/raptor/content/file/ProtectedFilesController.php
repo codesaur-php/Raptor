@@ -48,7 +48,7 @@ namespace Raptor\Content;
  *   - moveUploaded()
  *   - uniqueName()
  *   - formatSizeUnits()
- *   - db ажиллагаа
+ *   - dБ ажиллагаа
  *
  * зэрэг бүх файлын менежментийн боломжуудыг өвлөн ашиглана.
  *
@@ -67,17 +67,14 @@ class ProtectedFilesController extends FilesController
      * protected файлуудыг public URL-аар шууд гаргахгүй!
      *   -> зөвхөн read() function-аар дамжина.
      *
-     * cache/ болон sessions/ хавтас хамгаалагдсан - RuntimeException (403) шиднэ.
+     * cache/ хавтас хамгаалагдсан - RuntimeException (403) шиднэ.
      *
      * @param string $folder     Файл хадгалах хавтас
      */
     public function setFolder(string $folder)
     {
-        $trimmed = \trim($folder, '/');
-        if (\str_starts_with($trimmed, 'cache')
-            || \str_starts_with($trimmed, 'sessions')
-        ) {
-            throw new \RuntimeException('System folder is protected', 403);
+        if (\str_starts_with(\trim($folder, '/'), 'cache')) {
+            throw new \RuntimeException('Cache folder is protected', 403);
         }
         $this->local_folder = $this->getDocumentPath("/../protected{$folder}");
         // Named route ашиглан mount-aware public URL үүсгэнэ. generateRouteLink()
@@ -116,7 +113,7 @@ class ProtectedFilesController extends FilesController
      *  - Зөвхөн read() -> authentication -> файлыг унших -> буцаах
      *  - Directory traversal халдлагаас хамгаална
      *      ../ болон бусад тэмдэгтүүдийг getDocumentPath() автоматаар цэвэрлэдэг
-     *  - protected/cache/ болон protected/sessions/ хавтас руу хандахыг хориглоно
+     *  - protected/cache/ хавтас руу хандахыг хориглоно
      *
      * ----------------------------------------------------------
      * @throws Exception:
@@ -141,14 +138,11 @@ class ProtectedFilesController extends FilesController
                 throw new \Exception('Not Found', 404);
             }
 
-            // Cache болон sessions folder-т хандахыг хориглох
+            // Cache folder-т хандахыг хориглох
             $protectedDir = $this->getDocumentPath('/../protected');
-            $realFile = \realpath($filePath) ?: $filePath;
-            foreach (['cache', 'sessions'] as $blockedDir) {
-                $dir = $protectedDir . '/' . $blockedDir;
-                if (\str_starts_with($realFile, \realpath($dir) ?: $dir)) {
-                    throw new \Exception('Forbidden', 403);
-                }
+            $cacheDir = $protectedDir . '/cache';
+            if (\str_starts_with(\realpath($filePath) ?: $filePath, \realpath($cacheDir) ?: $cacheDir)) {
+                throw new \Exception('Forbidden', 403);
             }
 
             // Системийн чухал файлуудыг уншихаас хамгаалах

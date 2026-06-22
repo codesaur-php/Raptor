@@ -50,7 +50,7 @@
 - SEO: Search, Sitemap, XML Sitemap, RSS feed
 - Spam protection (honeypot, HMAC token, rate limiting, Cloudflare Turnstile)
 - CSRF protection (CsrfMiddleware, csrfFetch)
-- Shared hosting / WAF compatibility (cPanel/LiteSpeed/mod_security): session hardening, HTTP method override, body encoding
+- Shared hosting / WAF compatibility (cPanel/LiteSpeed/mod_security): HTTP method override, body encoding
 - File-based DB cache (PSR-16 SimpleCache) with auto-invalidation
 - Contact form with message management
 - News article comments with 1-level reply
@@ -152,17 +152,15 @@ RAPTOR_JWT_SECRET=auto-generated
 - `RAPTOR_JWT_LIFETIME` - Token validity in seconds (2592000 = 30 days)
 - `RAPTOR_JWT_LEEWAY` - Clock skew tolerance in seconds
 
-### Shared Hosting / WAF Compatibility
+### WAF Compatibility (mod_security)
 
 ```env
-RAPTOR_SESSION_SAVE_PATH=
-RAPTOR_SESSION_LIFETIME=2592000
 RAPTOR_WAF_BODY_ENCODING=true
 ```
 
-- `RAPTOR_SESSION_SAVE_PATH` - Where sessions are stored. Empty = auto `protected/sessions` (keeps sessions out of the shared `/tmp` that cPanel/LiteSpeed cron purges, which otherwise drops the CSRF token and causes intermittent 403s).
-- `RAPTOR_SESSION_LIFETIME` - Session cookie + server-side gc lifetime in seconds (2592000 = 30 days).
 - `RAPTOR_WAF_BODY_ENCODING` - When `true` (default), `csrfFetch()` base64-encodes form field values so a mod_security-style WAF cannot flag HTML/JS-like rich-text in the POST body; `BodyEncodingMiddleware` decodes them server-side. Set `false` on hosts without a body-inspecting WAF. See the "Shared Hosting / WAF Compatibility" section in `CLAUDE.md` for the full mechanism.
+
+> **The session cookie lifetime** is set to **30 days** by Raptor in `SessionMiddleware` (`session_set_cookie_params(2592000)`) - a client-side cookie that, in practice, keeps an admin logged in even after closing the browser. The **server-side** session file cleanup (`session.gc_maxlifetime`), however, follows the host's php.ini rather than the framework; to store session files reliably and have them cleaned up on schedule, configure it per host - see [SESSION-LIFETIME.md](SESSION-LIFETIME.md).
 
 #### "Why does my PUT/DELETE request show up as POST in the browser?"
 

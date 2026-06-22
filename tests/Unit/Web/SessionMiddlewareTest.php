@@ -3,6 +3,7 @@
 namespace Tests\Unit\Web;
 
 use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\UriInterface;
 use Psr\Http\Server\RequestHandlerInterface;
@@ -104,9 +105,8 @@ class SessionMiddlewareTest extends TestCase
         );
     }
 
-    /**
-     * @dataProvider webReadOnlyRoutesProvider
-     */
+    /*     */
+    #[DataProvider('webReadOnlyRoutesProvider')]
     public function testWebReadOnlyRoutes(string $path): void
     {
         $this->assertFalse(
@@ -149,9 +149,8 @@ class SessionMiddlewareTest extends TestCase
         );
     }
 
-    /**
-     * @dataProvider dashboardReadOnlyRoutesProvider
-     */
+    /*     */
+    #[DataProvider('dashboardReadOnlyRoutesProvider')]
     public function testDashboardReadOnlyRoutes(string $path): void
     {
         $this->assertFalse(
