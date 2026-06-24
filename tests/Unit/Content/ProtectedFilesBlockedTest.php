@@ -8,8 +8,8 @@ use PHPUnit\Framework\Attributes\DataProvider;
 /**
  * ProtectedFilesController::read() - blocked file extension/name test.
  *
- * Source code-d blockedExtensions, blockedFiles, .env* shalgalt
- * zuw bichigdsen esehiig batalgaajuulna.
+ * Source code-д blockedExtensions, blockedFiles, .env* шалгалт
+ * зөв бичигдсэн эсэхийг баталгаажуулна.
  */
 class ProtectedFilesBlockedTest extends TestCase
 {
@@ -81,7 +81,7 @@ class ProtectedFilesBlockedTest extends TestCase
     }
 
     // =============================================
-    // .env* prefix shalgalt
+    // .env* prefix шалгалт
     // =============================================
 
     public function testEnvPrefixBlocked(): void
@@ -94,7 +94,7 @@ class ProtectedFilesBlockedTest extends TestCase
     }
 
     // =============================================
-    // blockedExtensions array baidag eseh
+    // blockedExtensions array байдаг эсэх
     // =============================================
 
     public function testBlockedExtensionsArrayExists(): void
@@ -107,7 +107,7 @@ class ProtectedFilesBlockedTest extends TestCase
     }
 
     // =============================================
-    // blockedFiles array baidag eseh
+    // blockedFiles array байдаг эсэх
     // =============================================
 
     public function testBlockedFilesArrayExists(): void
@@ -120,7 +120,7 @@ class ProtectedFilesBlockedTest extends TestCase
     }
 
     // =============================================
-    // 403 Forbidden shiddag eseh
+    // 403 Forbidden шиддэг эсэх
     // =============================================
 
     public function testThrowsForbiddenException(): void
@@ -133,7 +133,7 @@ class ProtectedFilesBlockedTest extends TestCase
     }
 
     // =============================================
-    // strtolower ashiglaj case-insensitive bolgoson eseh
+    // strtolower ашиглаж case-insensitive болгосон эсэх
     // =============================================
 
     public function testCaseInsensitiveCheck(): void

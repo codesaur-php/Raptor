@@ -119,7 +119,9 @@ class moedit {
         tabUpload: isMn ? 'Компьютерээс' : 'From Computer',
         tabUrl: isMn ? 'URL хаягаар' : 'From URL',
         urlLabel: isMn ? 'Зургийн URL хаяг' : 'Image URL',
-        urlPlaceholder: 'https://example.com/image.jpg'
+        urlPlaceholder: 'https://example.com/image.jpg',
+        invalidUrl: isMn ? 'Энэ URL зураг биш байна. Зөв зургийн хаяг оруулна уу.' : 'This URL is not a valid image. Please enter a valid image URL.',
+        youtubeHint: isMn ? 'Энэ нь YouTube видео линк байна. Видео оруулахын тулд "YouTube видео оруулах" товчийг ашиглана уу.' : 'This is a YouTube video link. Use the "Insert YouTube Video" button to embed a video.'
       },
       /* Video modal */
       videoModal: {
@@ -135,6 +137,18 @@ class moedit {
         tabUrl: isMn ? 'URL хаягаар' : 'From URL',
         urlLabel: isMn ? 'Видеоны URL хаяг' : 'Video URL',
         urlPlaceholder: 'https://example.com/video.mp4'
+      },
+      /* Video poster - видеоны кадрыг толгой зураг болгох */
+      videoPosterModal: {
+        title: isMn ? 'Толгой зураг болгох уу?' : 'Set as header image?',
+        message: isMn
+          ? 'Энэ видеоны эхний кадрыг агуулгын толгой зураг болгох уу?'
+          : 'Use the first frame of this video as the header image?',
+        okText: isMn ? 'Тийм, болгоё' : 'Yes, use it',
+        cancelText: isMn ? 'Үгүй' : 'No',
+        capturing: isMn ? 'Кадр авч байна...' : 'Capturing frame...',
+        success: isMn ? 'Толгой зураг болголоо' : 'Header image set',
+        error: isMn ? 'Видеоны кадр авах боломжгүй байна' : 'Could not capture a frame from this video'
       },
       /* Audio modal */
       audioModal: {
@@ -447,12 +461,17 @@ Instructions:
         if (removeBtn) removeBtn.style.display = 'none';
       } else {
         if (changeBtn) {
-          changeBtn.addEventListener('click', () => this._selectHeaderImage());
+          this._boundHandlers.headerImageChange = () => this._selectHeaderImage();
+          changeBtn.addEventListener('click', this._boundHandlers.headerImageChange);
         }
         if (removeBtn) {
-          removeBtn.addEventListener('click', () => this._removeHeaderImage());
+          this._boundHandlers.headerImageRemove = () => this._removeHeaderImage();
+          removeBtn.addEventListener('click', this._boundHandlers.headerImageRemove);
         }
       }
+
+      /** @private Одоогийн header image серверийн path */
+      this._headerImagePath = null;
 
       /* headerImage нь URL string бол анхны зургийг харуулах */
       if (typeof this.opts.headerImage === 'string' && this.opts.headerImage) {
@@ -473,9 +492,6 @@ Instructions:
 
     /** @private Зураг optimize хийх эсэх */
     this._optimizeImages = true;
-
-    /** @private Одоогийн header image серверийн path */
-    this._headerImagePath = null;
 
     /** @private Header image устгагдсан эсэх */
     this._headerImageRemoved = false;
@@ -738,6 +754,18 @@ Instructions:
     }
     if (this._boundHandlers.sourceKeydown) {
       this.source.removeEventListener('keydown', this._boundHandlers.sourceKeydown);
+    }
+
+    /* Header image button listeners устгах */
+    if (this.headerImageArea) {
+      const changeBtn = this.headerImageArea.querySelector('.moedit-header-image-change');
+      const removeBtn = this.headerImageArea.querySelector('.moedit-header-image-remove');
+      if (changeBtn && this._boundHandlers.headerImageChange) {
+        changeBtn.removeEventListener('click', this._boundHandlers.headerImageChange);
+      }
+      if (removeBtn && this._boundHandlers.headerImageRemove) {
+        removeBtn.removeEventListener('click', this._boundHandlers.headerImageRemove);
+      }
     }
 
     /* References цэвэрлэх */

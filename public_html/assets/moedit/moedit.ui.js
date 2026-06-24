@@ -46,6 +46,248 @@ moedit.prototype._notify = function(type, msg) {
 };
 
 /* ============================================
+   Confirm Dialog - Тийм/Үгүй асуулт
+   ============================================ */
+
+/**
+ * moedit-ийн өөрийн modal загвараар тийм/үгүй асуулт харуулна.
+ * @param {Object} opts - { title, message, okText, cancelText, icon }
+ * @returns {Promise<boolean>} OK дарвал true, бусад тохиолдолд false
+ */
+moedit.prototype._confirmDialog = function(opts) {
+  opts = opts || {};
+  return new Promise((resolve) => {
+    const dialogId = 'moedit-confirm-' + Date.now();
+    const dialog = document.createElement('div');
+    dialog.id = dialogId;
+    dialog.className = 'moedit-modal-overlay';
+    dialog.innerHTML = `
+      <div class="moedit-modal">
+        <h5 class="moedit-modal-title"><i class="${opts.icon || 'mi-image'}"></i> <span class="moedit-confirm-title"></span></h5>
+        <div class="moedit-modal-field"><p style="margin:0" class="moedit-confirm-msg"></p></div>
+        <div class="moedit-modal-buttons">
+          <button type="button" class="moedit-modal-btn moedit-modal-btn-secondary" id="${dialogId}-cancel"></button>
+          <button type="button" class="moedit-modal-btn moedit-modal-btn-primary" id="${dialogId}-ok"></button>
+        </div>
+      </div>
+    `;
+    /* Текстийг textContent-ээр оноож XSS sink-ээс сэргийлнэ (ирээдгүйд user string дамжуулж болзошгүй) */
+    dialog.querySelector('.moedit-confirm-title').textContent = opts.title || '';
+    dialog.querySelector('.moedit-confirm-msg').textContent = opts.message || '';
+    dialog.querySelector(`#${dialogId}-cancel`).textContent = opts.cancelText || 'Cancel';
+    dialog.querySelector(`#${dialogId}-ok`).textContent = opts.okText || 'OK';
+    document.body.appendChild(dialog);
+
+    let settled = false;
+    const finish = (val) => {
+      if (settled) return;
+      settled = true;
+      document.removeEventListener('keydown', escHandler);
+      dialog.remove();
+      resolve(val);
+    };
+    const escHandler = (e) => { if (e.key === 'Escape') finish(false); };
+
+    document.getElementById(`${dialogId}-ok`).addEventListener('click', () => finish(true));
+    document.getElementById(`${dialogId}-cancel`).addEventListener('click', () => finish(false));
+    dialog.addEventListener('click', (e) => { if (e.target === dialog) finish(false); });
+    document.addEventListener('keydown', escHandler);
+  });
+};
+
+/* ============================================
+   Video Poster - Видеоны кадрыг толгой зураг болгох
+   ============================================ */
+
+/**
+ * Видео файлын эхний кадрыг canvas руу зурж JPEG blob болгож авна.
+ * Зөвхөн local file (object URL) болон same-origin/CORS-зөвшөөрсөн URL дээр
+ * ажиллана - cross-origin эх сурвалж дээр canvas "tainted" болж алдана.
+ * @param {string} src - Видеоны object URL эсвэл шууд URL
+ * @param {number} seekTime - Авах агшин (секундээр), default 1
+ * @returns {Promise<Blob>}
+ */
+moedit.prototype._captureVideoPosterBlob = function(src, seekTime) {
+  seekTime = (typeof seekTime === 'number') ? seekTime : 1;
+  return new Promise((resolve, reject) => {
+    const video = document.createElement('video');
+    video.muted = true;
+    video.crossOrigin = 'anonymous';
+    video.preload = 'auto';
+    video.playsInline = true;
+
+    let done = false;
+    const cleanup = () => { video.removeAttribute('src'); video.load(); };
+    const fail = (msg) => { if (done) return; done = true; clearTimeout(timer); cleanup(); reject(new Error(msg)); };
+
+    const timer = setTimeout(() => fail('Video frame capture timed out'), 15000);
+
+    const captureFrame = () => {
+      if (done) return;
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        if (!canvas.width || !canvas.height) return fail('Video has no visual dimensions');
+        canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+        canvas.toBlob((blob) => {
+          done = true;
+          clearTimeout(timer);
+          cleanup();
+          blob ? resolve(blob) : reject(new Error('Canvas export failed'));
+        }, 'image/jpeg', 0.85);
+      } catch (err) {
+        /* SecurityError - cross-origin tainted canvas */
+        fail(err.message || 'Canvas is tainted (cross-origin video)');
+      }
+    };
+
+    video.addEventListener('loadeddata', () => {
+      /* Богино видеонд seekTime хэтрэхээс сэргийлж дотор нь оруулна */
+      const dur = isFinite(video.duration) ? video.duration : 0;
+      const target = dur > 0 ? Math.min(seekTime, Math.max(0, dur - 0.1)) : 0;
+      /* target == одоогийн currentTime бол 'seeked' гарахгүй (тийм утга оноох нь
+         seek биш) - 15 сек hang болохоос сэргийлж шууд кадрыг авна */
+      if (Math.abs(target - video.currentTime) < 0.01) {
+        captureFrame();
+      } else {
+        video.currentTime = target;
+      }
+    });
+
+    video.addEventListener('seeked', captureFrame, { once: true });
+
+    video.addEventListener('error', () => fail('Video failed to load'));
+    video.src = src;
+  });
+};
+
+/**
+ * YouTube thumbnail-ийг татаж JPEG blob болгож авна.
+ * i.ytimg.com нь CORS зөвшөөрдөг тул crossOrigin img -> canvas ажиллана.
+ * maxres байхгүй бол (placeholder 120px) hqdefault руу шилжинэ.
+ * @param {string} videoId
+ * @returns {Promise<Blob>}
+ */
+moedit.prototype._youtubePosterBlob = function(videoId) {
+  const loadImg = (url) => new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error('thumbnail load failed'));
+    img.src = url;
+  });
+  const toBlob = (img) => new Promise((resolve, reject) => {
+    const canvas = document.createElement('canvas');
+    canvas.width = img.naturalWidth;
+    canvas.height = img.naturalHeight;
+    try {
+      canvas.getContext('2d').drawImage(img, 0, 0);
+      canvas.toBlob((b) => b ? resolve(b) : reject(new Error('export failed')), 'image/jpeg', 0.9);
+    } catch (err) {
+      reject(err);
+    }
+  });
+  const base = 'https://i.ytimg.com/vi/' + videoId + '/';
+  /* maxres ачаалагдсан ч placeholder (<=120px) бол хэрэггүй гэж тооцоод
+     Promise.reject хийнэ. Тэгснээр .catch нь maxres-ийн алдаа болон
+     placeholder хоёуланд нь нэг удаа л hqdefault татна. */
+  return loadImg(base + 'maxresdefault.jpg')
+    .then(img => (img.naturalWidth > 120 ? img : Promise.reject(new Error('placeholder'))))
+    .catch(() => loadImg(base + 'hqdefault.jpg'))
+    .then(img => {
+      /* hqdefault ч байхгүй бол YouTube 120x90 саарал placeholder буцаадаг -
+         үүнийг толгой зураг болгох нь хэрэггүй тул алдаа болгоно */
+      if (img.naturalWidth <= 120) throw new Error('No real thumbnail available');
+      return toBlob(img);
+    });
+};
+
+/**
+ * Blob-ийг толгой зураг болгож upload хийгээд moedit-ийн header image
+ * төлвийг шинэчилнэ (_selectHeaderImage-ийн амжилтын урсгалтай ижил).
+ * @param {Blob} blob
+ * @param {string} name - Файлын нэр
+ * @returns {Promise<Object>} upload-ийн буцаасан data
+ */
+moedit.prototype._applyHeaderImageFromBlob = function(blob, name) {
+  const file = new File([blob], name, { type: blob.type || 'image/jpeg' });
+  /* img.src нь browser-ийн absolutized URL тул _headerImagePath-ийг ашиглана */
+  const prevSrc = this._headerImagePath || '';
+  const localUrl = URL.createObjectURL(blob);
+
+  /* Шууд preview харуулах */
+  if (this.headerImageArea && this.headerImagePreview) {
+    this.headerImagePreview.src = localUrl;
+    this.headerImageArea.style.display = 'block';
+    this.headerImageArea.classList.remove('moedit-header-image-error');
+  }
+
+  return this._uploadFileToServer(file).then(data => {
+    if (!data.path) throw new Error('Upload returned no path');
+    this._headerImagePath = data.path;
+    this._headerImageData = { ...data, name };
+    this._headerImageRemoved = false;
+    if (this.headerImagePreview) this.headerImagePreview.src = data.path;
+    URL.revokeObjectURL(localUrl);
+    if (typeof this.opts.onHeaderImageChange === 'function') {
+      this.opts.onHeaderImageChange(file, data.path);
+    }
+    return data;
+  }).catch(err => {
+    URL.revokeObjectURL(localUrl);
+    if (this.headerImageArea && this.headerImagePreview) {
+      if (prevSrc) {
+        this.headerImagePreview.src = prevSrc;
+      } else {
+        this.headerImageArea.style.display = 'none';
+        this.headerImagePreview.src = '';
+      }
+    }
+    throw err;
+  });
+};
+
+/**
+ * Видео амжилттай орсны дараа admin-аас "толгой зураг болгох уу?" гэж асууж,
+ * зөвшөөрвөл кадр/thumbnail авч header image болгоно.
+ * @param {Object} source - { type: 'file', file } эсвэл { type: 'youtube', videoId }
+ */
+moedit.prototype._offerVideoPoster = function(source) {
+  /* Header image боломж идэвхгүй бол санал болгохгүй */
+  if (!this.opts.headerImage || !this.headerImageArea) return;
+
+  const config = this.opts.videoPosterModal;
+  this._confirmDialog({
+    icon: 'mi-image',
+    title: config.title,
+    message: config.message,
+    okText: config.okText,
+    cancelText: config.cancelText
+  }).then(ok => {
+    if (!ok) return;
+    this._notify('info', config.capturing);
+
+    let blobPromise, name;
+    if (source.type === 'youtube') {
+      blobPromise = this._youtubePosterBlob(source.videoId);
+      name = 'youtube-' + source.videoId + '.jpg';
+    } else {
+      const objectUrl = URL.createObjectURL(source.file);
+      blobPromise = this._captureVideoPosterBlob(objectUrl, 1)
+        .finally(() => URL.revokeObjectURL(objectUrl));
+      const baseName = (source.file.name || 'video').replace(/\.[^.]+$/, '');
+      name = baseName + '-poster.jpg';
+    }
+
+    blobPromise
+      .then(blob => this._applyHeaderImageFromBlob(blob, name))
+      .then(() => this._notify('success', config.success))
+      .catch(err => this._notify('danger', config.error + (err.message ? ' - ' + err.message : '')));
+  });
+};
+
+/* ============================================
    Paste Handler - Clean HTML автоматаар
    ============================================ */
 
@@ -331,17 +573,16 @@ moedit.prototype._insertLink = function() {
     });
   });
 
-  const closeDialog = () => dialog.remove();
+  let escHandler = null;
+  const closeDialog = () => {
+    if (escHandler) document.removeEventListener('keydown', escHandler);
+    dialog.remove();
+  };
 
   cancelBtn.addEventListener('click', closeDialog);
   dialog.addEventListener('click', (e) => { if (e.target === dialog) closeDialog(); });
 
-  const escHandler = (e) => {
-    if (e.key === 'Escape') {
-      closeDialog();
-      document.removeEventListener('keydown', escHandler);
-    }
-  };
+  escHandler = (e) => { if (e.key === 'Escape') closeDialog(); };
   document.addEventListener('keydown', escHandler);
 
   /* Enter дарахад OK */
@@ -366,7 +607,6 @@ moedit.prototype._insertLink = function() {
     }
 
     closeDialog();
-    document.removeEventListener('keydown', escHandler);
 
     /* URL/Email форматлах */
     if (isEmail) {
@@ -469,10 +709,16 @@ moedit.prototype._showImageUrlDialog = function(savedRange) {
   const okBtn = dialog.querySelector(`#${dialogId}-ok`);
   const cancelBtn = dialog.querySelector(`#${dialogId}-cancel`);
 
-  const closeDialog = () => dialog.remove();
+  let debounceTimer = null;
+
+  let escHandler = null;
+  const closeDialog = () => {
+    if (escHandler) document.removeEventListener('keydown', escHandler);
+    clearTimeout(debounceTimer);
+    dialog.remove();
+  };
 
   /* URL оруулахад preview харуулах */
-  let debounceTimer;
   urlInput.addEventListener('input', () => {
     clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => {
@@ -491,7 +737,7 @@ moedit.prototype._showImageUrlDialog = function(savedRange) {
   okBtn.addEventListener('click', () => {
     const url = urlInput.value.trim();
     if (url) {
-      this._insertImageByUrl(url, savedRange);
+      this._insertImageByUrl(url, savedRange, null, true);
     }
     closeDialog();
   });
@@ -503,12 +749,7 @@ moedit.prototype._showImageUrlDialog = function(savedRange) {
   dialog.addEventListener('click', (e) => { if (e.target === dialog) closeDialog(); });
 
   /* Escape товч */
-  const escHandler = (e) => {
-    if (e.key === 'Escape') {
-      closeDialog();
-      document.removeEventListener('keydown', escHandler);
-    }
-  };
+  escHandler = (e) => { if (e.key === 'Escape') closeDialog(); };
   document.addEventListener('keydown', escHandler);
 
   /* Enter товч */
@@ -601,7 +842,12 @@ moedit.prototype._showImageUploadDialog = function(savedRange) {
   let isBusy = false;
   let urlPreviewTimeout = null;
 
-  const closeDialog = () => dialog.remove();
+  let escHandler = null;
+  const closeDialog = () => {
+    if (escHandler) document.removeEventListener('keydown', escHandler);
+    clearTimeout(urlPreviewTimeout);
+    dialog.remove();
+  };
 
   /* Tab switching */
   const switchTab = (tab) => {
@@ -685,12 +931,7 @@ moedit.prototype._showImageUploadDialog = function(savedRange) {
   cancelBtn.addEventListener('click', () => { if (!isBusy) closeDialog(); });
   dialog.addEventListener('click', (e) => { if (e.target === dialog && !isBusy) closeDialog(); });
 
-  const escHandler = (e) => {
-    if (e.key === 'Escape' && !isBusy) {
-      closeDialog();
-      document.removeEventListener('keydown', escHandler);
-    }
-  };
+  escHandler = (e) => { if (e.key === 'Escape' && !isBusy) closeDialog(); };
   document.addEventListener('keydown', escHandler);
 
   /* OK button click */
@@ -700,8 +941,7 @@ moedit.prototype._showImageUploadDialog = function(savedRange) {
       const url = urlInput.value.trim();
       if (!url) return;
       closeDialog();
-      document.removeEventListener('keydown', escHandler);
-      this._insertImageByUrl(url, savedRange);
+      this._insertImageByUrl(url, savedRange, null, true);
     } else {
       /* Upload tab - файл upload хийх */
       if (!selectedFile) return;
@@ -717,7 +957,6 @@ moedit.prototype._showImageUploadDialog = function(savedRange) {
       this._uploadFileToServer(selectedFile)
         .then(data => {
           closeDialog();
-          document.removeEventListener('keydown', escHandler);
 
           if (data.path) {
             this._insertImageByUrl(data.path, savedRange, selectedFile.name);
@@ -749,7 +988,51 @@ moedit.prototype._showImageUploadDialog = function(savedRange) {
   });
 };
 
-moedit.prototype._insertImageByUrl = function(url, savedRange, fileName) {
+moedit.prototype._insertImageByUrl = function(url, savedRange, fileName, validate) {
+  const config = this.opts.imageUploadModal;
+
+  /* validate=true (URL tab) үед хаягийг шалгана. Upload-ийн серверийн path-ыг
+     дахин шалгахгүй (тэр аль хэдийн баталгаатай зураг). */
+  if (validate) {
+    /* YouTube/видео линкийг зураг гэж андуурахаас сэргийлэх */
+    if (this._extractYouTubeId(url)) {
+      this._notify('danger', config.youtubeHint);
+      return;
+    }
+    /* URL үнэхээр зураг мөн эсэхийг ачаалж шалгана - алдвал success харуулахгүй */
+    const probe = new Image();
+    let probeSettled = false;
+    const probeTimer = setTimeout(() => {
+      if (probeSettled) return;
+      probeSettled = true;
+      probe.src = '';
+      this._notify('danger', config.invalidUrl);
+    }, 30000);
+    probe.onload = () => {
+      if (probeSettled) return;
+      probeSettled = true;
+      clearTimeout(probeTimer);
+      this._doInsertImage(url, savedRange);
+    };
+    probe.onerror = () => {
+      if (probeSettled) return;
+      probeSettled = true;
+      clearTimeout(probeTimer);
+      this._notify('danger', config.invalidUrl);
+    };
+    probe.src = url;
+    return;
+  }
+
+  this._doInsertImage(url, savedRange);
+};
+
+/**
+ * <img> элементийг editor-т бодитоор оруулна (баталгаажуулалтгүй).
+ * @param {string} url
+ * @param {Range|null} savedRange
+ */
+moedit.prototype._doInsertImage = function(url, savedRange) {
   this._ensureVisualMode();
   this._focusEditor();
 
@@ -765,8 +1048,10 @@ moedit.prototype._insertImageByUrl = function(url, savedRange, fileName) {
   img.style.maxWidth = '100%';
   img.style.height = 'auto';
 
+  /* Курсор editor дотор байвал тэнд, эс бөгөөс editor-ийн төгсгөлд оруулна.
+     Ингэснээр selection editor-оос гадуур байсан ч зураг алга болохгүй */
   const selection = window.getSelection();
-  if (selection.rangeCount > 0) {
+  if (selection.rangeCount > 0 && this.editor && this.editor.contains(selection.anchorNode)) {
     const range = selection.getRangeAt(0);
     range.deleteContents();
     range.insertNode(img);
@@ -776,12 +1061,18 @@ moedit.prototype._insertImageByUrl = function(url, savedRange, fileName) {
     newRange.collapse(true);
     selection.removeAllRanges();
     selection.addRange(newRange);
+  } else if (this.editor) {
+    this.editor.appendChild(img);
   }
 
   this._emitChange();
 
-  /* Notify if available */
-  this._notify('success', this.opts.imageUploadModal.successMessage);
+  /* Зураг үнэхээр орсон эсэхийг шалгаж байж амжилт мэдэгдэнэ */
+  if (this.editor && this.editor.contains(img)) {
+    this._notify('success', this.opts.imageUploadModal.successMessage);
+  } else {
+    this._notify('danger', this.opts.imageUploadModal.invalidUrl);
+  }
 };
 
 /* ============================================
@@ -875,8 +1166,13 @@ moedit.prototype._showVideoUploadDialog = function(savedRange) {
   let activeTab = 'upload';
   let isBusy = false;
   let urlPreviewTimeout = null;
+  let previewObjectUrl = null;
 
-  const closeDialog = () => dialog.remove();
+  const closeDialog = () => {
+    if (previewObjectUrl) URL.revokeObjectURL(previewObjectUrl);
+    clearTimeout(urlPreviewTimeout);
+    dialog.remove();
+  };
 
   const switchTab = (tab) => {
     activeTab = tab;
@@ -911,8 +1207,10 @@ moedit.prototype._showVideoUploadDialog = function(savedRange) {
       selectedFile = this.files[0];
       filenameInput.value = selectedFile.name;
 
-      const url = URL.createObjectURL(selectedFile);
-      previewVideoUpload.src = url;
+      /* Өмнөх preview-ийн object URL-ийг чөлөөлж шинээр үүсгэнэ (memory leak-ээс сэргийлэх) */
+      if (previewObjectUrl) URL.revokeObjectURL(previewObjectUrl);
+      previewObjectUrl = URL.createObjectURL(selectedFile);
+      previewVideoUpload.src = previewObjectUrl;
       previewDivUpload.style.display = 'block';
 
       okBtn.disabled = false;
@@ -984,6 +1282,8 @@ moedit.prototype._showVideoUploadDialog = function(savedRange) {
             if (this.opts.onUploadSuccess) {
               this.opts.onUploadSuccess(data);
             }
+            /* Толгой зураг болгох санал (кадр авах) */
+            this._offerVideoPoster({ type: 'file', file: selectedFile });
           } else {
             throw new Error(config.errorMessage);
           }
@@ -1098,8 +1398,15 @@ moedit.prototype._showAudioUploadDialog = function(savedRange) {
   let activeTab = 'upload';
   let isBusy = false;
   let urlPreviewTimeout = null;
+  let previewAudioObjectUrl = null;
 
-  const closeDialog = () => dialog.remove();
+  let escHandler = null;
+  const closeDialog = () => {
+    if (escHandler) document.removeEventListener('keydown', escHandler);
+    clearTimeout(urlPreviewTimeout);
+    if (previewAudioObjectUrl) URL.revokeObjectURL(previewAudioObjectUrl);
+    dialog.remove();
+  };
 
   const switchTab = (tab) => {
     activeTab = tab;
@@ -1134,8 +1441,9 @@ moedit.prototype._showAudioUploadDialog = function(savedRange) {
       selectedFile = this.files[0];
       filenameInput.value = selectedFile.name;
 
-      const url = URL.createObjectURL(selectedFile);
-      previewAudioUpload.src = url;
+      if (previewAudioObjectUrl) URL.revokeObjectURL(previewAudioObjectUrl);
+      previewAudioObjectUrl = URL.createObjectURL(selectedFile);
+      previewAudioUpload.src = previewAudioObjectUrl;
       previewDivUpload.style.display = 'block';
 
       okBtn.disabled = false;
@@ -1169,12 +1477,7 @@ moedit.prototype._showAudioUploadDialog = function(savedRange) {
   cancelBtn.addEventListener('click', () => { if (!isBusy) closeDialog(); });
   dialog.addEventListener('click', (e) => { if (e.target === dialog && !isBusy) closeDialog(); });
 
-  const escHandler = (e) => {
-    if (e.key === 'Escape' && !isBusy) {
-      closeDialog();
-      document.removeEventListener('keydown', escHandler);
-    }
-  };
+  escHandler = (e) => { if (e.key === 'Escape' && !isBusy) closeDialog(); };
   document.addEventListener('keydown', escHandler);
 
   okBtn.addEventListener('click', () => {
@@ -1182,7 +1485,6 @@ moedit.prototype._showAudioUploadDialog = function(savedRange) {
       const url = urlInput.value.trim();
       if (!url) return;
       closeDialog();
-      document.removeEventListener('keydown', escHandler);
       this._insertMediaByUrl('audio', url, savedRange);
     } else {
       if (!selectedFile) return;
@@ -1198,7 +1500,6 @@ moedit.prototype._showAudioUploadDialog = function(savedRange) {
       this._uploadFileToServer(selectedFile)
         .then(data => {
           closeDialog();
-          document.removeEventListener('keydown', escHandler);
 
           if (data.path) {
             this._insertMediaByUrl('audio', data.path, savedRange, selectedFile.name);
@@ -1273,7 +1574,11 @@ moedit.prototype._showMediaUrlDialog = function(type, savedRange) {
 
   let urlPreviewTimeout = null;
 
-  const closeDialog = () => dialog.remove();
+  let escHandler = null;
+  const closeDialog = () => {
+    if (escHandler) document.removeEventListener('keydown', escHandler);
+    dialog.remove();
+  };
 
   urlInput.addEventListener('input', () => {
     clearTimeout(urlPreviewTimeout);
@@ -1301,19 +1606,13 @@ moedit.prototype._showMediaUrlDialog = function(type, savedRange) {
   cancelBtn.addEventListener('click', closeDialog);
   dialog.addEventListener('click', (e) => { if (e.target === dialog) closeDialog(); });
 
-  const escHandler = (e) => {
-    if (e.key === 'Escape') {
-      closeDialog();
-      document.removeEventListener('keydown', escHandler);
-    }
-  };
+  escHandler = (e) => { if (e.key === 'Escape') closeDialog(); };
   document.addEventListener('keydown', escHandler);
 
   okBtn.addEventListener('click', () => {
     const url = urlInput.value.trim();
     if (!url) return;
     closeDialog();
-    document.removeEventListener('keydown', escHandler);
     this._insertMediaByUrl(type, url, savedRange);
   });
 
@@ -1325,6 +1624,62 @@ moedit.prototype._showMediaUrlDialog = function(type, savedRange) {
    ============================================ */
 
 moedit.prototype._insertMediaByUrl = function(type, url, savedRange, fileName) {
+  /* Видео URL талбарт YouTube линк тавьсан бол <video src> биш, зөв embed болгоно.
+     (Upload-ийн серверийн path нь YouTube байх боломжгүй тул энэ нь зөвхөн URL-д нөлөөлнө) */
+  if (type === 'video') {
+    const ytId = this._extractYouTubeId(url);
+    if (ytId) {
+      this._insertYouTubeEmbed(ytId, savedRange);
+      return;
+    }
+  }
+
+  const config = type === 'video' ? this.opts.videoModal : this.opts.audioModal;
+
+  /* fileName байгаа = upload-ийн серверийн path (баталгаатай). fileName байхгүй =
+     хэрэглэгчийн гараар оруулсан URL - энэ нь үнэхээр тоглогддог медиа мөн эсэхийг
+     ачаалж шалгана. Буруу URL (ж: YouTube хуудас, зураг, 404) бол эвдэрсэн player
+     оруулж "амжилттай" гэж хуурахгүй. */
+  if (!fileName) {
+    const probe = document.createElement(type === 'video' ? 'video' : 'audio');
+    probe.preload = 'metadata';
+    probe.muted = true;
+    let settled = false;
+    const abortProbe = () => { probe.removeAttribute('src'); probe.load(); };
+    const timer = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      abortProbe();
+      this._notify('danger', config.errorMessage);
+    }, 15000);
+    probe.addEventListener('loadedmetadata', () => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      abortProbe();
+      this._doInsertMedia(type, url, savedRange, fileName);
+    });
+    probe.addEventListener('error', () => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      this._notify('danger', config.errorMessage);
+    });
+    probe.src = url;
+    return;
+  }
+
+  this._doInsertMedia(type, url, savedRange, fileName);
+};
+
+/**
+ * Video/audio элементийг editor-т бодитоор оруулна (баталгаажуулалтгүй).
+ * @param {string} type - 'video' | 'audio'
+ * @param {string} url
+ * @param {Range|null} savedRange
+ * @param {string} [fileName]
+ */
+moedit.prototype._doInsertMedia = function(type, url, savedRange, fileName) {
   this._ensureVisualMode();
   this._focusEditor();
 
@@ -1476,8 +1831,13 @@ moedit.prototype._insertTable = function() {
   /* OK товч */
   okBtn.addEventListener('click', () => {
     const tableType = typeSelect.value;
-    const rows = parseInt(rowsInput.value) || 3;
-    const cols = parseInt(colsInput.value) || 3;
+    const rows = parseInt(rowsInput.value, 10);
+    const cols = parseInt(colsInput.value, 10);
+
+    if (!(rows >= 1) || !(cols >= 1)) {
+      this._notify('danger', this._isMn ? 'Мөр болон баганын тоо 1-ээс их байх ёстой' : 'Rows and columns must be at least 1');
+      return;
+    }
 
     closeDialog();
     document.removeEventListener('keydown', escHandler);
@@ -1660,7 +2020,11 @@ moedit.prototype._insertAccordion = function() {
   countInput.focus();
   countInput.select();
 
-  const closeDialog = () => dialog.remove();
+  let escHandler = null;
+  const closeDialog = () => {
+    if (escHandler) document.removeEventListener('keydown', escHandler);
+    dialog.remove();
+  };
 
   cancelBtn.addEventListener('click', closeDialog);
 
@@ -1668,12 +2032,7 @@ moedit.prototype._insertAccordion = function() {
     if (e.target === dialog) closeDialog();
   });
 
-  const escHandler = (e) => {
-    if (e.key === 'Escape') {
-      closeDialog();
-      document.removeEventListener('keydown', escHandler);
-    }
-  };
+  escHandler = (e) => { if (e.key === 'Escape') closeDialog(); };
   document.addEventListener('keydown', escHandler);
 
   const enterHandler = (e) => {
@@ -1685,16 +2044,21 @@ moedit.prototype._insertAccordion = function() {
   countInput.addEventListener('keydown', enterHandler);
 
   okBtn.addEventListener('click', () => {
-    const count = parseInt(countInput.value) || 3;
+    const count = parseInt(countInput.value, 10);
     const mode = modeSelect.value;
 
+    if (!(count >= 1)) {
+      this._notify('danger', this._isMn ? 'Хэсгийн тоо 1-ээс их байх ёстой' : 'Count must be at least 1');
+      return;
+    }
+
     closeDialog();
-    document.removeEventListener('keydown', escHandler);
 
     if (count > 0) {
       const groupName = mode === 'exclusive' ? 'accordion-' + Date.now() : '';
 
       const wrapper = document.createDocumentFragment();
+      let firstDetails = null;
       for (let i = 0; i < count; i++) {
         const details = document.createElement('details');
         if (groupName) details.setAttribute('name', groupName);
@@ -1709,6 +2073,7 @@ moedit.prototype._insertAccordion = function() {
         details.appendChild(content);
 
         wrapper.appendChild(details);
+        if (!firstDetails) firstDetails = details;
       }
 
       /* Selection сэргээх */
@@ -1725,10 +2090,9 @@ moedit.prototype._insertAccordion = function() {
         range.deleteContents();
         range.insertNode(wrapper);
 
-        /* Cursor-ийг эхний summary дээр байрлуулах */
-        const firstSummary = sel.anchorNode.parentElement.querySelector
-          ? sel.anchorNode.parentElement.querySelector('details summary')
-          : null;
+        /* insertNode нь DocumentFragment-ийг drain хийдэг тул wrapper дотор байхгүй -
+           cursor-ийн байрлалд firstDetails-ийн summary-г ашиглана */
+        const firstSummary = firstDetails ? firstDetails.querySelector('summary') : null;
         if (firstSummary) {
           const newRange = document.createRange();
           newRange.selectNodeContents(firstSummary);
@@ -1792,17 +2156,16 @@ moedit.prototype._showAiConfigNotice = function(title, feature) {
   document.body.appendChild(dialog);
 
   const closeBtn = dialog.querySelector('.btn-close-notice');
-  const closeDialog = () => dialog.remove();
+  let escHandler = null;
+  const closeDialog = () => {
+    if (escHandler) document.removeEventListener('keydown', escHandler);
+    dialog.remove();
+  };
 
   closeBtn.addEventListener('click', closeDialog);
   dialog.addEventListener('click', (e) => { if (e.target === dialog) closeDialog(); });
 
-  const escHandler = (e) => {
-    if (e.key === 'Escape') {
-      closeDialog();
-      document.removeEventListener('keydown', escHandler);
-    }
-  };
+  escHandler = (e) => { if (e.key === 'Escape') closeDialog(); };
   document.addEventListener('keydown', escHandler);
 };
 
@@ -1890,17 +2253,16 @@ moedit.prototype._shine = async function() {
     promptTextarea.value = defaultPrompt;
   });
 
-  const closeDialog = () => dialog.remove();
+  let escHandler = null;
+  const closeDialog = () => {
+    if (escHandler) document.removeEventListener('keydown', escHandler);
+    dialog.remove();
+  };
 
   cancelBtn.addEventListener('click', () => { if (!isBusy) closeDialog(); });
   dialog.addEventListener('click', (e) => { if (e.target === dialog && !isBusy) closeDialog(); });
 
-  const escHandler = (e) => {
-    if (e.key === 'Escape' && !isBusy) {
-      closeDialog();
-      document.removeEventListener('keydown', escHandler);
-    }
-  };
+  escHandler = (e) => { if (e.key === 'Escape' && !isBusy) closeDialog(); };
   document.addEventListener('keydown', escHandler);
 
   /* Shine товч дарахад API дуудах */
@@ -2155,6 +2517,15 @@ moedit.prototype._cleanToVanillaHTML = function(html) {
       }
     }
     attrsToRemove.forEach(attr => el.removeAttribute(attr));
+
+    /* href/src дотор аюултай схем (javascript:, vbscript:, data: HTML/XML/script) байвал
+       устгана - буулгасан HTML дотор XSS орохоос сэргийлнэ */
+    ['href', 'src'].forEach(name => {
+      const val = el.getAttribute(name);
+      if (val && /^\s*(javascript:|vbscript:|data\s*:\s*(text\/(html|xml|javascript)|application\/(xhtml\+xml|xml|javascript|ecmascript)))/i.test(val)) {
+        el.removeAttribute(name);
+      }
+    });
   };
 
   /**
@@ -2450,17 +2821,16 @@ moedit.prototype._ocr = async function() {
   let newHtml = null;
   let isBusy = false;
 
-  const closeDialog = () => dialog.remove();
+  let escHandler = null;
+  const closeDialog = () => {
+    if (escHandler) document.removeEventListener('keydown', escHandler);
+    dialog.remove();
+  };
 
   cancelBtn.addEventListener('click', () => { if (!isBusy) closeDialog(); });
   dialog.addEventListener('click', (e) => { if (e.target === dialog && !isBusy) closeDialog(); });
 
-  const escHandler = (e) => {
-    if (e.key === 'Escape' && !isBusy) {
-      closeDialog();
-      document.removeEventListener('keydown', escHandler);
-    }
-  };
+  escHandler = (e) => { if (e.key === 'Escape' && !isBusy) closeDialog(); };
   document.addEventListener('keydown', escHandler);
 
   browseBtn.addEventListener('click', () => fileInput.click());
@@ -2584,7 +2954,6 @@ moedit.prototype._ocr = async function() {
     }
 
     closeDialog();
-    document.removeEventListener('keydown', escHandler);
   });
 };
 
@@ -2606,7 +2975,7 @@ moedit.prototype._print = function() {
     if (titleEl) {
       const titleVal = (titleEl.value || titleEl.textContent || '').trim();
       if (titleVal) {
-        titleHtml = `<h2 style="margin:0 0 1rem 0;">${titleVal}</h2>`;
+        titleHtml = `<h2 style="margin:0 0 1rem 0;">${this._escapeHtml(titleVal)}</h2>`;
       }
     }
   }
@@ -2852,7 +3221,7 @@ moedit.prototype._preview = function() {
     if (titleEl) {
       const titleVal = (titleEl.value || titleEl.textContent || '').trim();
       if (titleVal) {
-        titleHtml = `<h2>${titleVal}</h2>`;
+        titleHtml = `<h2>${this._escapeHtml(titleVal)}</h2>`;
       }
     }
   }
@@ -3268,6 +3637,88 @@ moedit.prototype._insertEmail = function() {
   }
 };
 
+/**
+ * YouTube видео ID-г URL/embed кодоос задлах.
+ * Дэмжих: watch?v=, youtu.be/, embed/, shorts/, v/, <iframe src>, 11-тэмдэгт ID.
+ * @param {string} input
+ * @returns {string|null} videoId эсвэл null
+ */
+moedit.prototype._extractYouTubeId = function(input) {
+  if (!input) return null;
+  input = input.trim();
+
+  /* iframe tag-аас src гаргах */
+  const iframeMatch = input.match(/<iframe[^>]+src=["']([^"']+)["']/i);
+  if (iframeMatch) {
+    input = iframeMatch[1];
+  }
+
+  const patterns = [
+    /(?:youtube\.com\/watch\?v=|youtube\.com\/embed\/|youtu\.be\/|youtube\.com\/v\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/,
+    /^([a-zA-Z0-9_-]{11})$/
+  ];
+  for (const pattern of patterns) {
+    const match = input.match(pattern);
+    if (match) return match[1];
+  }
+  return null;
+};
+
+/**
+ * YouTube embed iframe-ийг editor-т оруулж, толгой зураг болгох санал гаргана.
+ * @param {string} videoId
+ * @param {Range|null} savedRange
+ */
+moedit.prototype._insertYouTubeEmbed = function(videoId, savedRange) {
+  this._ensureVisualMode();
+  this._focusEditor();
+  if (savedRange) {
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(savedRange);
+  }
+
+  /* Block элемент учир P tag нэмэх */
+  const fragment = document.createDocumentFragment();
+
+  const pBefore = document.createElement('p');
+  pBefore.innerHTML = '<br>';
+
+  const iframe = document.createElement('iframe');
+  iframe.src = 'https://www.youtube.com/embed/' + videoId;
+  iframe.width = '560';
+  iframe.height = '315';
+  iframe.style.cssText = 'border:none;overflow:hidden';
+  iframe.frameBorder = '0';
+  iframe.allowFullscreen = true;
+  iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+
+  const pAfter = document.createElement('p');
+  pAfter.innerHTML = '<br>';
+
+  fragment.appendChild(pBefore);
+  fragment.appendChild(iframe);
+  fragment.appendChild(pAfter);
+
+  const sel = window.getSelection();
+  if (sel.rangeCount > 0) {
+    const range = sel.getRangeAt(0);
+    range.deleteContents();
+    range.insertNode(fragment);
+
+    const newRange = document.createRange();
+    newRange.setStart(pAfter, 0);
+    newRange.collapse(true);
+    sel.removeAllRanges();
+    sel.addRange(newRange);
+  }
+
+  this._emitChange();
+
+  /* Толгой зураг болгох санал (YouTube thumbnail) */
+  this._offerVideoPoster({ type: 'youtube', videoId });
+};
+
 moedit.prototype._insertYouTube = function() {
   /* Selection хадгалах */
   let savedRange = null;
@@ -3312,38 +3763,11 @@ moedit.prototype._insertYouTube = function() {
 
   urlInput.focus();
 
-  /**
-   * YouTube видео ID задлах
-   * Дэмжих форматууд:
-   * 1. <iframe src="..."></iframe> - embed код
-   * 2. https://www.youtube.com/watch?v=VIDEO_ID
-   * 3. https://youtu.be/VIDEO_ID
-   * 4. https://www.youtube.com/embed/VIDEO_ID
-   * 5. https://www.youtube.com/shorts/VIDEO_ID
-   * 6. VIDEO_ID шууд (11 тэмдэгт)
-   */
-  const extractYouTubeId = (input) => {
-    input = input.trim();
-
-    /* iframe tag-аас src гаргах */
-    const iframeMatch = input.match(/<iframe[^>]+src=["']([^"']+)["']/i);
-    if (iframeMatch) {
-      input = iframeMatch[1];
-    }
-
-    const patterns = [
-      /(?:youtube\.com\/watch\?v=|youtube\.com\/embed\/|youtu\.be\/|youtube\.com\/v\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/,
-      /^([a-zA-Z0-9_-]{11})$/
-    ];
-    for (const pattern of patterns) {
-      const match = input.match(pattern);
-      if (match) return match[1];
-    }
-    return null;
-  };
+  /* YouTube ID задлах нь _extractYouTubeId prototype методод төвлөрсөн */
+  const extractYouTubeId = (input) => this._extractYouTubeId(input);
 
   /* URL өөрчлөгдөхөд preview харуулах */
-  let debounceTimer;
+  let debounceTimer = null;
   urlInput.addEventListener('input', () => {
     clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => {
@@ -3364,7 +3788,10 @@ moedit.prototype._insertYouTube = function() {
     }, 300);
   });
 
+  let escHandler = null;
   const closeDialog = () => {
+    if (escHandler) document.removeEventListener('keydown', escHandler);
+    clearTimeout(debounceTimer);
     previewIframe.src = '';
     dialog.remove();
   };
@@ -3372,12 +3799,7 @@ moedit.prototype._insertYouTube = function() {
   cancelBtn.addEventListener('click', closeDialog);
   dialog.addEventListener('click', (e) => { if (e.target === dialog) closeDialog(); });
 
-  const escHandler = (e) => {
-    if (e.key === 'Escape') {
-      closeDialog();
-      document.removeEventListener('keydown', escHandler);
-    }
-  };
+  escHandler = (e) => { if (e.key === 'Escape') closeDialog(); };
   document.addEventListener('keydown', escHandler);
 
   /* OK товч */
@@ -3393,53 +3815,9 @@ moedit.prototype._insertYouTube = function() {
     }
 
     closeDialog();
-    document.removeEventListener('keydown', escHandler);
 
-    /* Selection сэргээх */
-    this._ensureVisualMode();
-    this._focusEditor();
-    if (savedRange) {
-      const sel = window.getSelection();
-      sel.removeAllRanges();
-      sel.addRange(savedRange);
-    }
-
-    /* Block элемент учир P tag нэмэх */
-    const fragment = document.createDocumentFragment();
-
-    const pBefore = document.createElement('p');
-    pBefore.innerHTML = '<br>';
-
-    const iframe = document.createElement('iframe');
-    iframe.src = 'https://www.youtube.com/embed/' + videoId;
-    iframe.width = '560';
-    iframe.height = '315';
-    iframe.style.cssText = 'border:none;overflow:hidden';
-    iframe.frameBorder = '0';
-    iframe.allowFullscreen = true;
-    iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
-
-    const pAfter = document.createElement('p');
-    pAfter.innerHTML = '<br>';
-
-    fragment.appendChild(pBefore);
-    fragment.appendChild(iframe);
-    fragment.appendChild(pAfter);
-
-    const sel = window.getSelection();
-    if (sel.rangeCount > 0) {
-      const range = sel.getRangeAt(0);
-      range.deleteContents();
-      range.insertNode(fragment);
-
-      const newRange = document.createRange();
-      newRange.setStart(pAfter, 0);
-      newRange.collapse(true);
-      sel.removeAllRanges();
-      sel.addRange(newRange);
-    }
-
-    this._emitChange();
+    /* Embed оруулах + толгой зураг болгох санал (нэг дор) */
+    this._insertYouTubeEmbed(videoId, savedRange);
   });
 };
 
@@ -3515,7 +3893,7 @@ moedit.prototype._insertFacebook = function() {
   };
 
   /* URL өөрчлөгдөхөд preview харуулах */
-  let debounceTimer;
+  let debounceTimer = null;
   urlInput.addEventListener('input', () => {
     clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => {
@@ -3532,7 +3910,10 @@ moedit.prototype._insertFacebook = function() {
     }, 500);
   });
 
+  let escHandler = null;
   const closeDialog = () => {
+    if (escHandler) document.removeEventListener('keydown', escHandler);
+    clearTimeout(debounceTimer);
     previewIframe.src = '';
     dialog.remove();
   };
@@ -3540,12 +3921,7 @@ moedit.prototype._insertFacebook = function() {
   cancelBtn.addEventListener('click', closeDialog);
   dialog.addEventListener('click', (e) => { if (e.target === dialog) closeDialog(); });
 
-  const escHandler = (e) => {
-    if (e.key === 'Escape') {
-      closeDialog();
-      document.removeEventListener('keydown', escHandler);
-    }
-  };
+  escHandler = (e) => { if (e.key === 'Escape') closeDialog(); };
   document.addEventListener('keydown', escHandler);
 
   /* OK товч */
@@ -3558,7 +3934,6 @@ moedit.prototype._insertFacebook = function() {
     }
 
     closeDialog();
-    document.removeEventListener('keydown', escHandler);
 
     /* Selection сэргээх */
     this._ensureVisualMode();
@@ -3683,7 +4058,7 @@ moedit.prototype._insertTwitter = function() {
   };
 
   /* URL өөрчлөгдөхөд preview харуулах */
-  let debounceTimer;
+  let debounceTimer = null;
   urlInput.addEventListener('input', () => {
     clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => {
@@ -3704,7 +4079,10 @@ moedit.prototype._insertTwitter = function() {
     }, 300);
   });
 
+  let escHandler = null;
   const closeDialog = () => {
+    if (escHandler) document.removeEventListener('keydown', escHandler);
+    clearTimeout(debounceTimer);
     previewIframe.src = '';
     dialog.remove();
   };
@@ -3712,12 +4090,7 @@ moedit.prototype._insertTwitter = function() {
   cancelBtn.addEventListener('click', closeDialog);
   dialog.addEventListener('click', (e) => { if (e.target === dialog) closeDialog(); });
 
-  const escHandler = (e) => {
-    if (e.key === 'Escape') {
-      closeDialog();
-      document.removeEventListener('keydown', escHandler);
-    }
-  };
+  escHandler = (e) => { if (e.key === 'Escape') closeDialog(); };
   document.addEventListener('keydown', escHandler);
 
   /* OK товч */
@@ -3733,7 +4106,6 @@ moedit.prototype._insertTwitter = function() {
     }
 
     closeDialog();
-    document.removeEventListener('keydown', escHandler);
 
     /* Selection сэргээх */
     this._ensureVisualMode();
@@ -3851,30 +4223,12 @@ moedit.prototype._insertMap = function() {
       return input;
     }
 
-    /* Place URL -> embed болгох */
-    const placeMatch = input.match(/google\.com\/maps\/place\/([^\/\?]+)/);
-    if (placeMatch) {
-      const place = placeMatch[1];
-      return `https://www.google.com/maps/embed/v1/place?key=&q=${encodeURIComponent(place.replace(/\+/g, ' '))}`;
-    }
-
-    /* Search URL -> embed болгох */
-    const searchMatch = input.match(/google\.com\/maps\?q=([^&]+)/);
-    if (searchMatch) {
-      return `https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d10000!2d0!3d0!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sen!2s!4v1!5m2!1sen!2s&q=${searchMatch[1]}`;
-    }
-
-    /* @координат байвал */
-    const coordMatch = input.match(/@(-?\d+\.?\d*),(-?\d+\.?\d*)/);
-    if (coordMatch) {
-      const lat = coordMatch[1];
-      const lng = coordMatch[2];
-      return `https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d5000!2d${lng}!3d${lat}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sen!2s!4v1`;
-    }
-
-    /* Google Maps домэйн байвал ерөнхий embed үүсгэх */
+    /* Жирийн share/place/search URL-ээс ажиллах embed үүсгэх боломжгүй:
+       - /maps/embed/v1/place нь API key шаарддаг (key=&... нь алдаатай газрын зураг)
+       - pb= блобыг гараар угсрах (зөвхөн lat/lng-тэй) ихэвчлэн эвдэрсэн зураг гаргадаг
+       Тиймээс зөвхөн жинхэнэ pb= утгатай URL-ийг л зөвшөөрнө. Бусдад хэрэглэгчийг
+       "Share -> Embed a map" ашиглахыг (hint дотор) чиглүүлж null буцаана. */
     if (input.includes('google.com/maps') || input.includes('maps.google.com') || input.includes('goo.gl/maps')) {
-      /* URL-ээс pb= параметр хайх */
       const pbMatch = input.match(/[?&]pb=([^&]+)/);
       if (pbMatch) {
         return `https://www.google.com/maps/embed?pb=${pbMatch[1]}`;
@@ -3885,7 +4239,7 @@ moedit.prototype._insertMap = function() {
   };
 
   /* URL өөрчлөгдөхөд preview харуулах */
-  let debounceTimer;
+  let debounceTimer = null;
   urlInput.addEventListener('input', () => {
     clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => {
@@ -3899,7 +4253,10 @@ moedit.prototype._insertMap = function() {
     }, 500);
   });
 
+  let escHandler = null;
   const closeDialog = () => {
+    if (escHandler) document.removeEventListener('keydown', escHandler);
+    clearTimeout(debounceTimer);
     previewIframe.src = '';
     dialog.remove();
   };
@@ -3907,12 +4264,7 @@ moedit.prototype._insertMap = function() {
   cancelBtn.addEventListener('click', closeDialog);
   dialog.addEventListener('click', (e) => { if (e.target === dialog) closeDialog(); });
 
-  const escHandler = (e) => {
-    if (e.key === 'Escape') {
-      closeDialog();
-      document.removeEventListener('keydown', escHandler);
-    }
-  };
+  escHandler = (e) => { if (e.key === 'Escape') closeDialog(); };
   document.addEventListener('keydown', escHandler);
 
   /* OK товч */
@@ -3932,7 +4284,6 @@ moedit.prototype._insertMap = function() {
     }
 
     closeDialog();
-    document.removeEventListener('keydown', escHandler);
 
     /* Selection сэргээх */
     this._ensureVisualMode();
@@ -4189,17 +4540,18 @@ moedit.prototype._insertPdf = async function() {
     promptTextarea.value = defaultPrompt;
   });
 
-  const closeDialog = () => dialog.remove();
+  let escHandler = null;
+  const closeDialog = () => {
+    if (escHandler) document.removeEventListener('keydown', escHandler);
+    /* PDF.js document-ийг чөлөөлж worker/buffer leak-ээс сэргийлэх */
+    if (pdfDoc) { try { pdfDoc.destroy(); } catch (e) { /* аль хэдийн устсан */ } pdfDoc = null; }
+    dialog.remove();
+  };
 
   cancelBtn.addEventListener('click', () => { if (!isBusy) closeDialog(); });
   dialog.addEventListener('click', (e) => { if (e.target === dialog && !isBusy) closeDialog(); });
 
-  const escHandler = (e) => {
-    if (e.key === 'Escape' && !isBusy) {
-      closeDialog();
-      document.removeEventListener('keydown', escHandler);
-    }
-  };
+  escHandler = (e) => { if (e.key === 'Escape' && !isBusy) closeDialog(); };
   document.addEventListener('keydown', escHandler);
 
   browseBtn.addEventListener('click', () => fileInput.click());
@@ -4542,7 +4894,9 @@ moedit.prototype._selectHeaderImage = function() {
   fileInput.style.display = 'none';
   document.body.appendChild(fileInput);
 
+  let fileInputDone = false;
   fileInput.addEventListener('change', () => {
+    fileInputDone = true;
     if (fileInput.files && fileInput.files[0]) {
       const file = fileInput.files[0];
 
@@ -4550,7 +4904,8 @@ moedit.prototype._selectHeaderImage = function() {
       const reader = new FileReader();
       reader.onload = (e) => {
         const dataUrl = e.target.result;
-        const prevSrc = this.headerImagePreview?.src || '';
+        /* img.src нь browser-ийн absolutized URL тул _headerImagePath-ийг ашиглана */
+        const prevSrc = this._headerImagePath || '';
 
         /* Preview шууд харуулах */
         if (this.headerImageArea && this.headerImagePreview) {
@@ -4561,6 +4916,8 @@ moedit.prototype._selectHeaderImage = function() {
 
         /* Серверт upload хийх */
         this._uploadFileToServer(file).then(data => {
+          /* Серверээс path ирээгүй бол алдаа болгож catch руу шилжүүлнэ */
+          if (!data.path) throw new Error(this._isMn ? 'Серверээс зам ирсэнгүй' : 'Upload returned no path');
           /* Амжилттай: серверийн path болон бүрэн data хадгалах */
           this._headerImagePath = data.path;
           this._headerImageData = { ...data, name: file.name };
@@ -4573,7 +4930,7 @@ moedit.prototype._selectHeaderImage = function() {
 
           /* Callback дуудах */
           if (typeof this.opts.onHeaderImageChange === 'function') {
-            this.opts.onHeaderImageChange(data.path, data.path);
+            this.opts.onHeaderImageChange(file, data.path);
           }
 
           this._notify('success', this._isMn ? 'Толгой зураг амжилттай upload хийгдлээ' : 'Header image uploaded');
@@ -4599,8 +4956,15 @@ moedit.prototype._selectHeaderImage = function() {
 
   /* Cancel хийхэд цэвэрлэх */
   fileInput.addEventListener('cancel', () => {
+    fileInputDone = true;
     fileInput.remove();
   });
+
+  /* 'cancel' event дэмжихгүй хуучин browser-т fallback: window focus буцаж ирэхэд цэвэрлэх */
+  const onWindowFocus = () => {
+    setTimeout(() => { if (!fileInputDone && fileInput.isConnected) fileInput.remove(); }, 500);
+  };
+  window.addEventListener('focus', onWindowFocus, { once: true });
 
   /* File picker нээх */
   fileInput.click();

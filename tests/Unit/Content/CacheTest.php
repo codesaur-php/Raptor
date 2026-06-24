@@ -355,7 +355,7 @@ class CacheTest extends TestCase
             dirname(__DIR__, 3) . '/application/raptor/content/file/ProtectedFilesController.php'
         );
 
-        // setFolder method deer cache shalgalt baidag eseh
+        // setFolder method дээр cache шалгалт байдаг эсэх
         $this->assertMatchesRegularExpression(
             '/function setFolder.*?cache/s',
             $source,
@@ -369,7 +369,7 @@ class CacheTest extends TestCase
             dirname(__DIR__, 3) . '/application/raptor/content/file/ProtectedFilesController.php'
         );
 
-        // read() deer cache folder -> Forbidden shiddeg eseh
+        // read() дээр cache folder -> Forbidden шиддэг эсэх
         $this->assertMatchesRegularExpression(
             '/cacheDir.*?Forbidden/s',
             $source,
@@ -383,7 +383,7 @@ class CacheTest extends TestCase
             dirname(__DIR__, 3) . '/application/raptor/content/file/ProtectedFilesController.php'
         );
 
-        // setFolder() deer cache -> RuntimeException shiddeg eseh
+        // setFolder() дээр cache -> RuntimeException шиддэг эсэх
         $this->assertMatchesRegularExpression(
             "/str_starts_with.*cache.*403/s",
             $source,

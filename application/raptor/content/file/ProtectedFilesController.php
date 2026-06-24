@@ -112,7 +112,7 @@ class ProtectedFilesController extends FilesController
      *  - Protected файлуудыг шууд /uploads/ гэх мэт замаар өгдөггүй
      *  - Зөвхөн read() -> authentication -> файлыг унших -> буцаах
      *  - Directory traversal халдлагаас хамгаална
-     *      ../ болон бусад тэмдэгтүүдийг getDocumentPath() автоматаар цэвэрлэдэг
+     *      canonical зам (realpath) protected хавтсан дотор байгааг шалгана
      *  - protected/cache/ хавтас руу хандахыг хориглоно
      *
      * ----------------------------------------------------------
@@ -133,21 +133,43 @@ class ProtectedFilesController extends FilesController
 
             // URL parameter: ?name=/folder/file.ext
             $fileName = $this->getQueryParams()['name'] ?? '';
-            $filePath = $this->getDocumentPath('/../protected' . $fileName);
-            if (empty($fileName) || !\file_exists($filePath)) {
+            if (empty($fileName)) {
                 throw new \Exception('Not Found', 404);
             }
 
-            // Cache folder-т хандахыг хориглох
+            // Хүссэн файлын бодит (canonical) замыг тооцоолно. realpath() нь
+            // бүх ../, symlink, давхар slash-ийг шийддэг тул цаашид зөвхөн
+            // $realFile-ийг ашиглана. getDocumentPath() нь string-ийг шууд
+            // холбодог тул ../-ийг өөрөө цэвэрлэдэггүй. is_file() нь хавтас
+            // биш, нэрээр нь үнэхээр файл байгааг баталгаажуулна.
             $protectedDir = $this->getDocumentPath('/../protected');
-            $cacheDir = $protectedDir . '/cache';
-            if (\str_starts_with(\realpath($filePath) ?: $filePath, \realpath($cacheDir) ?: $cacheDir)) {
+            $filePath = $this->getDocumentPath('/../protected' . $fileName);
+            $realProtected = \realpath($protectedDir);
+            $realFile = \realpath($filePath);
+            if ($realFile === false || !\is_file($realFile)) {
+                throw new \Exception('Not Found', 404);
+            }
+
+            // Directory traversal-аас хамгаалах (containment): уншиж буй файл
+            // заавал protected хавтсын дотор байх ёстой. ж: name=/../../../
+            // somesecret/info.txt гэх мэт оролдлогыг блоклоно. Trailing
+            // DIRECTORY_SEPARATOR нь /protected-evil зэрэг prefix-collision
+            // bypass-аас сэргийлнэ.
+            if ($realProtected === false
+                || !\str_starts_with($realFile, $realProtected . \DIRECTORY_SEPARATOR)
+            ) {
+                throw new \Exception('Forbidden', 403);
+            }
+
+            // Cache folder-т хандахыг хориглох
+            $cacheDir = $realProtected . \DIRECTORY_SEPARATOR . 'cache';
+            if (\str_starts_with($realFile, $cacheDir . \DIRECTORY_SEPARATOR)) {
                 throw new \Exception('Forbidden', 403);
             }
 
             // Системийн чухал файлуудыг уншихаас хамгаалах
-            $basename = \strtolower(\basename($filePath));
-            $ext = \strtolower(\pathinfo($filePath, \PATHINFO_EXTENSION));
+            $basename = \strtolower(\basename($realFile));
+            $ext = \strtolower(\pathinfo($realFile, \PATHINFO_EXTENSION));
             $blockedExtensions = ['php', 'phtml', 'phar', 'sh', 'bat', 'cmd', 'exe', 'ini', 'log', 'sql'];
             $blockedFiles = ['.env', '.htaccess', '.htpasswd', '.gitignore', 'composer.json', 'composer.lock'];
             if (\in_array($ext, $blockedExtensions, true)
@@ -157,7 +179,7 @@ class ProtectedFilesController extends FilesController
                 throw new \Exception('Forbidden', 403);
             }
 
-            $mimeType = \mime_content_type($filePath);
+            $mimeType = \mime_content_type($realFile);
             if ($mimeType === false) {
                 throw new \Exception('No Content', 204);
             }
@@ -165,9 +187,9 @@ class ProtectedFilesController extends FilesController
             \header("Content-Type: $mimeType");
             // URL нь өргөтгөлгүй (/protected/file) тул filename өгснөөр татах үед
             // зөв нэр/өргөтгөлтэй болж хадгалагдана (дэмждэг браузер inline харуулна).
-            \header('Content-Disposition: inline; filename="' . \basename($filePath) . '"');
-            \header('Content-Length: ' . \filesize($filePath));
-            \readfile($filePath);
+            \header('Content-Disposition: inline; filename="' . \basename($realFile) . '"');
+            \header('Content-Length: ' . \filesize($realFile));
+            \readfile($realFile);
         } catch (\Throwable $err) {
             if (CODESAUR_DEVELOPMENT) {
                 \error_log($err->getMessage());
