@@ -6,6 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 
 ---
 
+## [4.4.1] - 2026-06-27
+[4.4.1]: https://github.com/codesaur-php/Raptor/compare/v4.4.0...v4.4.1
+
+### Fixed
+
+- **RBAC permission uniqueness contradicted the `{alias}_{name}` key design.** The runtime permission key is built as `{alias}_{name}` (see `Role::fetchPermissions()` and `RBAC`), so the same `name` is meant to be reusable under different aliases - e.g. `system_request_update` and `common_request_update`. But `Permissions` declared the `name` column `->unique()` on its own, so only one row per `name` could ever exist; the second `INSERT` failed with a raw `Duplicate entry '...' for key 'name'` and the two keys could never coexist. This was dormant in the shipped framework only because every seeded permission carries a globally-unique, module-prefixed `name` (`user_insert`, `content_index`, ...) all under `alias = 'system'`. The constraint is now composite `UNIQUE (alias, name)`, matching the key semantics.
+
+### Changed
+
+- **`rbac_permissions` unique constraint: `(name)` -> `(alias, name)`.** `Permissions` no longer marks `name` as `->unique()`; instead `__initial()` adds `ADD CONSTRAINT rbac_permissions_uq_alias_name UNIQUE (alias, name)` (raw `ALTER`, works on both MySQL and PostgreSQL).
+- **`RolePermissionSeed` permission lookups narrowed to `alias = 'system'`.** Both the `admin` bulk assignment and `assignPermissions()` matched permissions by `name` alone (`p.name IN (...)`). With the composite constraint allowing same-named permissions under different aliases, those queries could match and assign more than the intended system permissions, so `AND p.alias = 'system'` is now part of both - this is exactly the seed's intent (default roles get the default system permissions).
+
+### Added
+
+- **`Permissions::assertValidIdentity()` insert/update validation.** Surfaces clear errors before the database constraint is hit, following the existing `system_coder` guard style (English `\RuntimeException`, surfaced to the UI via the controller's `getMessage()`): (1) rejects an `alias` containing `_`, because the separator-less `{alias}_{name}` concatenation would otherwise let `(system_request, update)` and `(system, request_update)` collide into the same key - aliases are clean grouping values (`system`, `common`, ...) tied to the sidebar menu and never need an underscore; (2) pre-checks `(alias, name)` for duplicates and throws `Permission "..." already exists.` instead of leaking the raw SQL `Duplicate entry` exception.
+
+---
+
 ## [4.4.0] - 2026-06-24
 [4.4.0]: https://github.com/codesaur-php/Raptor/compare/v4.3.1...v4.4.0
 

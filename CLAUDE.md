@@ -163,6 +163,8 @@ Add new permissions to `PermissionsSeed.php` and assign to roles in `RolePermiss
 
 Permission format: `{alias}_{name}` - e.g. `system_content_index`, `system_product_delete`
 
+Uniqueness is the composite `(alias, name)`, not `name` alone - the same `name` may be reused under different aliases (e.g. `system_content_update` and `common_content_update`). The runtime key is the separator-less concatenation `{alias}_{name}`, so `alias` MUST NOT contain an underscore (it is a clean grouping value tied to the sidebar menu: `system`, `common`, ...); `name` carries the underscores. `Permissions::insert()/updateById()` enforce both rules (reject underscore in alias, reject duplicate `(alias, name)`) before the DB constraint is hit. When matching permissions by `name` in seeds/queries, qualify with `alias` too (`AND p.alias = '...'`) - matching by `name` alone can now hit rows under other aliases.
+
 Seed files only run on fresh installs. If the system is already deployed, also write a migration SQL to insert the new permissions and role assignments into the live database.
 
 ### 8. Add Menu Entry (dashboard modules)

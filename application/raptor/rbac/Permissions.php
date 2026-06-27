@@ -85,7 +85,7 @@ class Permissions extends Model
         
         $this->setColumns([
            (new Column('id',          'bigint'))->primary(),
-           (new Column('name',        'varchar', 128))->unique()->notNull(),
+           (new Column('name',        'varchar', 128))->notNull(),
            (new Column('module',      'varchar', 128))->default('general'),
             new Column('description', 'varchar', 255),
            (new Column('alias',       'varchar', 64))->notNull(),
@@ -115,6 +115,17 @@ class Permissions extends Model
             ON UPDATE CASCADE
         ");
         
+        // Permission key нь "{alias}_{name}" форматтай тул нэг name өөр өөр
+        // alias дор давтагдаж болно (жишээ: system_request_update ба
+        // common_request_update). Тиймээс unique-г (name) биш (alias, name)
+        // хосоор тавина - эс бөгөөс ижил name-тэй хоёр permission зэрэг
+        // оршиж чадахгүй.
+        $this->exec("
+            ALTER TABLE $table
+            ADD CONSTRAINT {$table}_uq_alias_name
+            UNIQUE (alias, name)
+        ");
+
         PermissionsSeed::seed($table, $this->pdo);
     }
 
@@ -136,6 +147,7 @@ class Permissions extends Model
                 'Cannot create "system_coder" permission: it is a reserved RBAC role name, not a permission.'
             );
         }
+        $this->assertValidIdentity($record);
         $record['created_at'] ??= \date('Y-m-d H:i:s');
         return parent::insert($record);
     }
@@ -155,6 +167,50 @@ class Permissions extends Model
                 'Cannot rename permission to "system_coder": it is a reserved RBAC role name, not a permission.'
             );
         }
+        $this->assertValidIdentity($record, $id);
         return parent::updateById($id, $record);
+    }
+
+    /**
+     * Permission identity (alias, name)-ийн бүрэн бүтэн байдлыг шалгах.
+     *
+     * Хоёр зүйл баталгаажуулна:
+     *  1) alias нь underscore агуулахгүй. Permission key нь тусгаарлагчгүй
+     *     "{alias}_{name}" хэлбэрээр угсардаг тул alias дотор "_" байвал
+     *     (system_request, update) ба (system, request_update) гэсэн өөр өөр
+     *     хоёр мөр ижил key руу мөргөлдөх эрсдэлтэй. alias нь sidebar menu-тэй
+     *     уялдсан цэвэр grouping утга (system, common ...) тул "_" хэрэггүй.
+     *  2) (alias, name) хос давхардаагүй. UNIQUE(alias, name) constraint руу
+     *     хүрэхээс өмнө ойлгомжтой алдаа буцааж, raw SQL exception-ийг
+     *     хэрэглэгчид харуулахгүй.
+     *
+     * @param array    $record
+     * @param int|null $excludeId  updateById үед өөрийн мөрийг алгасах ID
+     * @return void
+     * @throws \RuntimeException alias буруу эсвэл (alias, name) давхардсан бол
+     */
+    private function assertValidIdentity(array $record, ?int $excludeId = null): void
+    {
+        $alias = $record['alias'] ?? '';
+        $name  = $record['name'] ?? '';
+        if ($alias === '' || $name === '') {
+            return;
+        }
+        if (\str_contains($alias, '_')) {
+            throw new \RuntimeException('Permission alias cannot contain an underscore.');
+        }
+
+        $table  = $this->getName();
+        $sql    = "SELECT id FROM $table WHERE alias = :alias AND name = :name";
+        $params = [':alias' => $alias, ':name' => $name];
+        if ($excludeId !== null) {
+            $sql .= ' AND id <> :id';
+            $params[':id'] = $excludeId;
+        }
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        if ($stmt->fetch()) {
+            throw new \RuntimeException("Permission \"{$alias}_{$name}\" already exists.");
+        }
     }
 }

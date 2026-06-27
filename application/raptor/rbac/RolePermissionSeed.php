@@ -53,7 +53,7 @@ class RolePermissionSeed
             INSERT INTO $table (created_at, role_id, permission_id, alias)
             SELECT :now, r.id, p.id, p.alias
             FROM $roles r, $perms p
-            WHERE r.name = 'admin'
+            WHERE r.name = 'admin' AND p.alias = 'system'
         ")->execute([':now' => $now]);
 
         // manager
@@ -96,7 +96,7 @@ class RolePermissionSeed
             INSERT INTO $table (created_at, role_id, permission_id, alias)
             SELECT :now, r.id, p.id, p.alias
             FROM $roles r, $perms p
-            WHERE r.name = :role AND p.name IN ($placeholders)
+            WHERE r.name = :role AND p.alias = 'system' AND p.name IN ($placeholders)
         ");
         $params = [':now' => $now, ':role' => $roleName];
         foreach ($permNames as $i => $name) {
