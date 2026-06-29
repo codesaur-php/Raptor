@@ -26,3 +26,8 @@ composer.lock
 /database/migrations/*
 !/database/migrations/.gitkeep
 !/database/migrations/README.md
+
+# PHP error_log - сервер дээр PHP ажиллахад (ж: tidy.so missing warning)
+# үүсдэг. Git clone-ийн working tree-г бохирлож, cPanel deploy-г
+# "uncommitted changes"-ээр блокдог тул ignore хийнэ.
+error_log
