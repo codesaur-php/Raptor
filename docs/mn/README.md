@@ -134,7 +134,7 @@ RAPTOR_DB_COLLATION=utf8mb4_unicode_ci
 RAPTOR_DB_PERSISTENT=false
 ```
 
-- Шинэ орчинд хоосон өгөгдлийн санг developer өөрөө ззавал урьдчилж үүсгэнэ - Raptor зөвхөн бэлэн сан руу холбогддог, санг өөрөө үүсгэдэггүй (жишээ нь MySQL дээр: `CREATE DATABASE raptor CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`)
+- Шинэ орчинд хоосон өгөгдлийн санг developer өөрөө заавал урьдчилж үүсгэнэ - Raptor зөвхөн бэлэн сан руу холбогддог, санг өөрөө үүсгэдэггүй (жишээ нь MySQL дээр: `CREATE DATABASE raptor CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`)
 - Харин сан доторх бүх хүснэгт болон анхны seed өгөгдлийг (permission, role, орчуулга, цэс, жишээ контент) Raptor анх ажиллах үедээ Model классуудаараа автоматаар үүсгэнэ
 - Хүснэгтүүдийг гараар үүсгэж болохгүй - бүтэц нь зөрсөн хүснэгт дээр код ажиллахгүй
 
