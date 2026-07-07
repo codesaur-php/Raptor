@@ -51,7 +51,12 @@
 #
 # Тэмдэглэл:
 #   - .env файл серверт гараар үүсгэж тохируулна (deploy хийгдэхгүй)
-#   - logs/ хавтас серверт автомат үүсдэг, deploy хийх шаардлагагүй
+#   - Runtime хавтаснууд (cache/, logs/, protected/, public_html/public/,
+#     database/migrations/) guard файлуудтайгаа (.htaccess г.м.) deploy
+#     хийгдэж серверт үүснэ, харин доторх runtime агуулгад нь (кэш, лог,
+#     upload файл, migration SQL) deploy халдахгүй - устгахгүй, дарахгүй.
+#     Гурван арга үүнийг өөр өөр механизмаар хангадаг тул exclude
+#     жагсаалтууд нь хоорондоо ижил биш байгаа нь зориудынх.
 #   - Олон deploy зэрэг тохируулж болно (жишээ: staging = Windows,
 #     production = SSH) - тус тусдаа ажиллана
 # ======================================================================
@@ -112,6 +117,11 @@ jobs:
       - name: Install production dependencies
         run: composer install --no-dev --optimize-autoloader --no-interaction
 
+      # Энэ action state-file-д үндэслэн ажилладаг: өөрөө upload хийгээгүй
+      # (сервер дээр үүссэн) файлыг хэзээ ч устгадаггүй. Тиймээс runtime
+      # хавтаснуудыг (cache/, logs/, protected/ г.м.) энд exclude хийх
+      # шаардлагагүй - хавтас нь .htaccess-тэйгээ серверт очиж үүснэ,
+      # доторх runtime агуулгад нь халдахгүй.
       - name: Deploy via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.4.0
         with:
@@ -126,9 +136,7 @@ jobs:
             **/docs/**
             **/tests/**
             **/.env*
-            **/logs/**
             **/nbproject/**
-            **/protected/**
             **/phpunit.xml
 
   # ====================================================================
@@ -153,26 +161,44 @@ jobs:
       - name: Install production dependencies
         run: composer install --no-dev --optimize-autoloader --no-interaction
 
+      # Энэ action-д "exclude" гэдэг input байдаггүй тул бүх шүүлтүүр
+      # switches дотор rsync-ийн өөрийнх нь --include/--exclude хэлбэрээр
+      # явна. rsync-д эхэлж таарсан дүрэм ялдаг тул runtime хавтаснуудын
+      # guard файлын include нь агуулгын exclude-ээсээ өмнө байх ёстой.
+      # "--exclude=/x/*" хэлбэр (эхний / нь transfer root) нь хавтсыг
+      # өөрийг нь серверт үүсгэж, доторх агуулгыг нь transfer болон
+      # --delete хоёуланд нь хамааруулахгүй орхино (--delete нь excluded
+      # файлыг устгадаггүй).
       - name: Deploy via rsync
         uses: burnett01/rsync-deployments@7.0.2
         with:
-          switches: -avz --delete
+          switches: >-
+            -avz --delete
+            --include=/cache/.htaccess
+            --include=/logs/.htaccess
+            --include=/protected/.htaccess
+            --include=/public_html/public/.htaccess
+            --include=/database/migrations/.gitkeep
+            --include=/database/migrations/README.md
+            --exclude=/cache/*
+            --exclude=/logs/*
+            --exclude=/protected/*
+            --exclude=/public_html/public/*
+            --exclude=/database/migrations/*
+            --exclude=.git*
+            --exclude=/.github
+            --exclude=/docs
+            --exclude=/tests
+            --exclude=.env*
+            --exclude=/nbproject
+            --exclude=/phpunit.xml
+            --exclude=error_log
           path: ./
           remote_path: ${{ secrets.SSH_DEPLOY_DIR }}/
           remote_host: ${{ secrets.SSH_HOST }}
           remote_port: ${{ secrets.SSH_PORT || 22 }}
           remote_user: ${{ secrets.SSH_USERNAME }}
           remote_key: ${{ secrets.SSH_KEY }}
-          exclude: |
-            .git*
-            .github/
-            docs/
-            tests/
-            .env*
-            logs/
-            nbproject/
-            protected/
-            phpunit.xml
 
       - name: Post-deploy commands
         uses: appleboy/ssh-action@v1.2.2
@@ -197,11 +223,29 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
 
+      # Runtime хавтаснуудыг (cache, logs, protected, public_html\public,
+      # database\migrations) /XD-д эх болон зорьсон талын бүтэн замаар нь
+      # хослуулж өгнө: эх талынх нь transfer-ээс, зорьсон талынх нь /MIR-ийн
+      # устгалтаас хамгаална. Нүцгэн нэр ашиглаж болохгүй - robocopy нэрээр
+      # мод даяар таардаг тул application\dashboard\protected модулийг хамт
+      # хасчихна. Дараагийн жижиг robocopy-нууд (/MIR-гүй, юу ч устгадаггүй)
+      # guard файлуудыг хуулж хавтаснуудыг серверт үүсгэнэ.
       - name: Sync files to deploy path
         shell: cmd
         run: |
-          robocopy "%GITHUB_WORKSPACE%" "${{ vars.DEPLOY_PATH }}" /MIR /XD .git .github docs tests logs nbproject protected /XF .env .env.* phpunit.xml /NFL /NDL /NJH /NJS /R:3 /W:5
-          if %ERRORLEVEL% LEQ 7 (exit /b 0) else (exit /b 1)
+          robocopy "%GITHUB_WORKSPACE%" "${{ vars.DEPLOY_PATH }}" /MIR /XD .git .github docs tests nbproject "%GITHUB_WORKSPACE%\cache" "%GITHUB_WORKSPACE%\logs" "%GITHUB_WORKSPACE%\protected" "%GITHUB_WORKSPACE%\public_html\public" "%GITHUB_WORKSPACE%\database\migrations" "${{ vars.DEPLOY_PATH }}\cache" "${{ vars.DEPLOY_PATH }}\logs" "${{ vars.DEPLOY_PATH }}\protected" "${{ vars.DEPLOY_PATH }}\public_html\public" "${{ vars.DEPLOY_PATH }}\database\migrations" /XF .env .env.* phpunit.xml error_log /NFL /NDL /NJH /NJS /R:3 /W:5
+          if %ERRORLEVEL% GTR 7 exit /b 1
+          robocopy "%GITHUB_WORKSPACE%\cache" "${{ vars.DEPLOY_PATH }}\cache" .htaccess /NJH /NJS /R:3 /W:5
+          if %ERRORLEVEL% GTR 7 exit /b 1
+          robocopy "%GITHUB_WORKSPACE%\logs" "${{ vars.DEPLOY_PATH }}\logs" .htaccess /NJH /NJS /R:3 /W:5
+          if %ERRORLEVEL% GTR 7 exit /b 1
+          robocopy "%GITHUB_WORKSPACE%\protected" "${{ vars.DEPLOY_PATH }}\protected" .htaccess /NJH /NJS /R:3 /W:5
+          if %ERRORLEVEL% GTR 7 exit /b 1
+          robocopy "%GITHUB_WORKSPACE%\public_html\public" "${{ vars.DEPLOY_PATH }}\public_html\public" .htaccess /NJH /NJS /R:3 /W:5
+          if %ERRORLEVEL% GTR 7 exit /b 1
+          robocopy "%GITHUB_WORKSPACE%\database\migrations" "${{ vars.DEPLOY_PATH }}\database\migrations" .gitkeep README.md /NJH /NJS /R:3 /W:5
+          if %ERRORLEVEL% GTR 7 exit /b 1
+          exit /b 0
 
       - name: Install/update production dependencies
         shell: cmd

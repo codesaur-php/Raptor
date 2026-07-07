@@ -2,9 +2,9 @@
 /public_html/public/*
 !/public_html/public/.htaccess
 
-# Protected protected файлууд - бүх файлыг ignore хийнэ, зөвхөн .htaccess үлдэнэ
-/protected/*
-!/protected/.htaccess
+# Runtime хавтаснууд (cache/, logs/, protected/) өөр өөрийн .gitignore-той -
+# хавтас бүр guard файлуудаа (.gitignore, .htaccess) git-д үлдээж,
+# доторх runtime агуулгаа бүхэлд нь ignore хийдэг нэг ижил загвартай.
 
 # Composer vendor - автоматаар татагддаг тул оруулахгүй
 /vendor/

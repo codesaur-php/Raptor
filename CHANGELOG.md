@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 
 ---
 
+## [4.5.2] - 2026-07-07
+[4.5.2]: https://github.com/codesaur-php/Raptor/compare/v4.5.1...v4.5.2
+
+### Fixed
+
+- **SSH deploy silently ignored its entire `exclude:` list - every deploy would have wiped server-side runtime data.** The `burnett01/rsync-deployments` action has no `exclude` input, so the list the workflow passed was discarded (GitHub Actions only emits an "unexpected input" warning) and the job ran plain `rsync -avz --delete`. That both uploaded repo-only files (`.git`, `docs/`, `tests/`, `phpunit.xml`) to the server and, far worse, deleted every server-generated file the repo does not track: uploaded images under `public_html/public/`, protected files, `logs/`, `cache/` and the per-environment migration audit trail under `database/migrations/`. All filters now live in `switches` as native rsync rules, ordered include-before-exclude (rsync is first-match-wins): guard-file `--include`s first, then anchored content excludes in the `--exclude=/folder/*` form - which transfers the folder itself (so it is created on a fresh server) while leaving its contents out of both the transfer and `--delete` (rsync never deletes excluded files without `--delete-excluded`).
+- **Name-based deploy excludes also excluded the `application/dashboard/protected/` module.** FTP's `**/protected/**` glob and robocopy's bare-name `/XD protected` match a directory called `protected` at any depth, so `ProtectedFilesController.php` / `ProtectedRouter.php` never reached the server - fatal on a fresh deploy, since `Dashboard\Application` registers `ProtectedRouter` unconditionally. The FTP job no longer excludes runtime folders at all (see Changed), and the robocopy `/XD` entries for runtime folders are now full source+destination path pairs (`"%GITHUB_WORKSPACE%\protected" "%DEPLOY_PATH%\protected"`) - the source side keeps the folder out of the transfer, the destination side keeps `/MIR` from deleting the server's copy, and nested module folders are untouched. Verified with a full robocopy simulation (runtime files survive `/MIR`, the module deploys, stale files still get mirrored away).
+- **`logs/` was never created by the FTP/SSH/Windows deploy paths, silently losing the PHP error log.** The workflow header claimed "logs/ is auto-created on the server" but nothing creates it - `public_html/index.php` points `error_log` at `logs/code.log` and PHP does not create missing directories, so on a deployed server without the folder every logged error vanished without trace. All three paths now deploy the runtime folders themselves (with their `.htaccess` guard files) while leaving their contents alone; the false header note is replaced with the real semantics.
+- **`cache/` was wiped on every SSH/Windows deploy.** It appeared in no exclude list, so `rsync --delete` / `robocopy /MIR` mirrored it back to the two guard files the repo tracks on every run - a needless cache cold start (and a behavior the FTP path did not share). It is now protected like the other runtime folders on all three paths.
+
+### Changed
+
+- **Runtime folders unified: one gitignore pattern, one deploy semantic.** `cache/`, `logs/` and `protected/` now each carry the same self-contained `.gitignore` (`*`, `*/`, `!.gitignore`, `!.htaccess`) plus a `deny from all` `.htaccess` - `protected/` gets its own `.gitignore` (its block moves out of the root `.gitignore`), `logs/` gains the `.htaccess` it was missing. The deploy semantic across all three workflow paths (plus `public_html/public/` and `database/migrations/`, which fall in the same class): the folder and its guard files deploy and are created on the server; the runtime contents (cache entries, logs, uploads, migration SQL) are never uploaded, overwritten or deleted. Each path implements this with its own mechanism, so the three filter lists intentionally differ: FTP relies on the action's state-file (it never deletes files it did not upload, so runtime folders need no exclude at all), rsync uses include-before-exclude `/folder/*` rules inside `switches`, robocopy uses `/XD` source+destination path pairs plus small non-`/MIR` guard-file copies. The workflow header documents this so the lists do not get "harmonized" back into a bug.
+
+---
+
 ## [4.5.1] - 2026-07-07
 [4.5.1]: https://github.com/codesaur-php/Raptor/compare/v4.5.0...v4.5.1
 

@@ -351,9 +351,8 @@ Full guide: [`docs/mn/CPANEL.md`](../mn/CPANEL.md)
 #### Excluded from deployment
 
 - **`.env`** - Create and configure manually on the server
-- **`logs/`** - Created automatically by the application
-- **`protected/`** - Protected files outside the web root, accessible to authenticated users (subject to the `authorizeRead()` permission hook); not reachable by a direct public request, served only via the `/dashboard/protected/file` endpoint (the framework file cache lives separately in the top-level `cache/` directory)
-- **`docs/`** - Documentation only
+- **Runtime folder contents** - `cache/`, `logs/`, `protected/`, `public_html/public/` and `database/migrations/` deploy as folders with their guard files (`.htaccess` etc.) and are created on the server, but their runtime contents (cache entries, logs, uploaded files, migration SQL) are never uploaded, overwritten or deleted by a deploy. Each deploy path enforces this with its own mechanism, so the three filter lists in `deploy.yml` intentionally differ - see the comments there before "harmonizing" them.
+- **`docs/`, `tests/`** - Development only
 - **`vendor/`** - Built during the workflow with `composer install/update --no-dev`
 
 ---
