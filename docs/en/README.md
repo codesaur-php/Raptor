@@ -14,7 +14,7 @@
 3. [Configuration (.env)](#3-configuration)
 4. [Architecture](#4-architecture)
 5. [Middleware Pipeline](#5-middleware-pipeline)
-6. [Modules](#6-modules) (6.1-6.13 Core | 6.14-6.29 Shop, Reviews, Event/Notification, Development, SEO, Spam, CSRF, Migration, Messages, Comments, Badges, Home, Manual, AI, Seed, Trash)
+6. [Modules](#6-modules) - one subsection per module
 7. [Template System](#7-template-system)
 8. [Routing](#8-routing)
 9. [Controller](#9-controller)
@@ -397,88 +397,11 @@ one folder, rather than splitting them across separate layer directories (there 
 no top-level `Models/`, `Controllers/`, or `Views/`). Adding or removing a feature
 is as simple as copying or deleting one folder.
 
-```
-raptor/
-|-- application/
-|   |-- raptor/                    # Core framework (Dashboard + shared)
-|   |   |-- Application.php        # Dashboard Application base
-|   |   |-- Controller.php         # Base Controller for all controllers
-|   |   |-- CacheService.php       # File-based DB cache (PSR-16 SimpleCache)
-|   |   |-- CsrfMiddleware.php     # CSRF token validation
-|   |   |-- SpamProtectionTrait.php # Honeypot, HMAC, rate limit, Turnstile
-|   |   |-- DatabaseConnection.php        # PDO factory (driver selected via RAPTOR_DB_DRIVER: mysql | pgsql)
-|   |   |-- ContainerMiddleware.php       # PSR-11 DI container wiring (events, cache, mailer, Discord)
-|   |   |-- SessionMiddleware.php         # Shared session lifecycle (write-close optimization)
-|   |   |-- authentication/        # Login, JWT
-|   |   |-- content/               # CMS modules
-|   |   |   |-- AIHelper.php       # OpenAI integration (moedit)
-|   |   |   |-- ContentsRouter.php # Central content router
-|   |   |   |-- HtmlValidationTrait.php # Server-side HTML validation
-|   |   |   |-- file/              # File management + upload base
-|   |   |   |-- news/              # News
-|   |   |   |-- page/              # Pages
-|   |   |   |-- messages/          # Contact form messages
-|   |   |   |-- reference/         # References + email templates
-|   |   |   \-- settings/          # System settings
-|   |   |-- localization/          # Languages & translations
-|   |   |-- organization/          # Organization management
-|   |   |-- rbac/                  # Access control + seed data
-|   |   |-- user/                  # User management
-|   |   |-- template/              # Dashboard UI, menu, badges
-|   |   |-- log/                   # PSR-3 logging
-|   |   |-- mail/                  # Email (Brevo API, SMTP, PHP mail)
-|   |   |-- notification/          # PSR-14 Event Dispatcher + Discord webhook listener
-|   |   |-- trash/                 # Trash module (deleted record recovery)
-|   |   |-- migration/             # Database migration system
-|   |   \-- exception/             # Error handling
-|   |-- dashboard/                 # Dashboard Application
-|   |   |-- Application.php
-|   |   |-- badge/                 # Sidebar badge system
-|   |   |-- development/           # Dev request tracking
-|   |   |-- home/                  # Dashboard Home, search, stats
-|   |   |-- manual/                # Help documentation viewer
-|   |   |-- protected/             # Protected file serving (authorizeRead hook)
-|   |   \-- shop/                  # Shop module (Products, Orders, Reviews)
-|   \-- web/                       # Web Application
-|       |-- Application.php
-|       |-- WebRouter.php         # Web routes
-|       |-- HomeController.php     # Home, language
-|       |-- content/               # Pages, News
-|       |-- shop/                  # Products, Orders, Reviews
-|       |-- service/               # Search, Sitemap, RSS, Contact
-|       \-- template/              # Web layout
-|           |-- TemplateController.php
-|           |-- ExceptionHandler.php
-|           \-- index.html
-|-- public_html/
-|   |-- index.php                  # Entry point
-|   |-- .htaccess                  # Apache URL rewrite
-|   |-- robots.txt                 # Search engine bot rules
-|   \-- assets/                    # CSS, JS (dashboard, moedit, motable)
-|-- docs/
-|   |-- conf.example/              # Server configuration examples
-|   |   |-- .env.example           # Environment variables
-|   |   |-- .htaccess.example      # Apache rewrite rules
-|   |   |-- .nginx.conf.example    # Nginx server config
-|   |   |-- .cpanel.yml.example    # cPanel Git deploy task list
-|   |   \-- auto-deploy.sh.example # cPanel cron deploy script
-|   |-- en/                        # English documentation
-|   \-- mn/                        # Mongolian documentation
-|       \-- CPANEL.md              # Fallback deploy guide for SSH-less cPanel hosts
-|-- tests/                         # PHPUnit tests (unit, integration)
-|-- database/
-|   \-- migrations/                # SQL migration files (git-ignored, per-user folder)
-|-- .github/
-|   \-- workflows/
-|       |-- ci.yml                 # CI code quality checks (push, PR)
-|       \-- deploy.yml             # Auto deploy (FTP / SSH / Windows Server)
-|-- logs/                          # Error log files
-|-- cache/                         # Framework file cache (PSR-16)
-|-- protected/                     # Protected files (project uploads outside docroot)
-|-- composer.json
-|-- phpunit.xml                    # PHPUnit configuration
-\-- LICENSE
-```
+`application/` holds the three app layers: `raptor/` (core framework modules,
+used by both dashboard and web), `dashboard/` (admin panel application) and
+`web/` (public website application). See the "Directory Structure" section of
+the root `README.md` for the app-level layout. Each module's folder location
+and classes are documented in its own subsection of section 6.
 
 > **Everything outside `vendor/` is yours.** After `composer create-project`,
 > `application/`, `public_html/`, `database/`, `tests/`, `docs/` and the config

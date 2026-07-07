@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 
 ---
 
+## [4.5.1] - 2026-07-07
+[4.5.1]: https://github.com/codesaur-php/Raptor/compare/v4.5.0...v4.5.1
+
+### Changed
+
+- **Directory trees in the docs de-duplicated to a single app-level diagram.** The root `README.md` "Directory Structure" tree is now the only tree, trimmed to the app level (no per-module enumeration); `docs/mn/README.md` and `docs/en/README.md` replace their deep trees with a short pointer to it (module locations stay documented in each module's own section 6 subsection), and `CLAUDE.md` drops its module lists too. The router enumeration in the root README "Quick Architecture" block is generalized the same way (`Routers (one per feature module, registered in Application.php)` instead of naming each router), and the docs READMEs' table-of-contents entry for section 6 drops its module-name list and hardcoded subsection ranges (`6.1-6.13 Core | 6.14-6.29 Shop, ...`) - the numbering shifted on every module addition, making it the most drift-prone line of all. Deep trees duplicated in four files rotted silently on every module move (the 4.5.0 development-module relocation left the root README tree showing `development/` under `raptor/`) - one shallow tree has nothing left to drift.
+
+---
+
 ## [4.5.0] - 2026-07-07
 [4.5.0]: https://github.com/codesaur-php/Raptor/compare/v4.4.1...v4.5.0
 

@@ -149,7 +149,7 @@ RAPTOR_WAF_BODY_ENCODING=true
 public_html/index.php
  |-- /dashboard/* -> Dashboard\Application (Admin Panel)
  |    |-- Middleware stack (MethodOverride, BodyEncoding, Session, JWT, Container, Localization, Settings; CSRF per-route)
- |    |-- Routers (Login, Users, Organization, RBAC, Content, Logs, Shop, Development, Migration)
+ |    |-- Routers (one per feature module, registered in Application.php)
  |    \-- Controllers -> Templates
  |
  \-- /* -> Web\Application (Public Website)
@@ -164,63 +164,28 @@ public_html/index.php
 
 ```
 raptor/
-|-- application/
-|   |-- raptor/              # Core framework (Controllers, Models, Middleware)
-|   |   |-- Application.php, Controller.php           # Dashboard app + base controller
-|   |   |-- DatabaseConnection.php                    # Single PDO factory (driver from RAPTOR_DB_DRIVER)
-|   |   |-- SessionMiddleware.php, ContainerMiddleware.php, CsrfMiddleware.php  # PSR-15 middleware
-|   |   |-- MethodOverrideMiddleware.php, BodyEncodingMiddleware.php   # Shared hosting / WAF compatibility
-|   |   |-- CacheService.php, SpamProtectionTrait.php # Cache + spam helpers
-|   |   |-- authentication/  # Login, JWT, Session
-|   |   |-- content/         # CMS (files, messages, news, pages, references, settings, AI)
-|   |   |-- localization/    # Languages & translations
-|   |   |-- organization/    # Organization management
-|   |   |-- rbac/            # Roles & permissions
-|   |   |-- user/            # User management
-|   |   |-- template/        # Dashboard UI, menu, badges
-|   |   |-- exception/       # Exception handler
-|   |   |-- log/             # Logging
-|   |   |-- mail/            # Email (Brevo API, SMTP, PHP mail)
-|   |   |-- notification/    # PSR-14 events, Discord webhook notifications
-|   |   |-- trash/           # Trash system for deleted records recovery
-|   |   |-- development/     # Dev request tracking
-|   |   \-- migration/       # Database migration system
-|   |-- dashboard/           # Dashboard application
-|   |   |-- badge/           # Sidebar badge system
-|   |   |-- home/            # Dashboard home
-|   |   |-- manual/          # Manual pages
-|   |   |-- protected/       # Protected file serving
-|   |   \-- shop/            # Shop module (Products, Orders, Reviews)
+|-- application/             # PHP application code (package-by-feature modules)
+|   |-- raptor/              # Core framework modules (shared by dashboard + web)
+|   |-- dashboard/           # Admin panel application
 |   \-- web/                 # Public website application
-|       |-- WebRouter.php    # Web routes
-|       |-- content/         # Pages, News
-|       |-- shop/            # Products, Orders, Reviews
-|       |-- service/         # Search, Sitemap, RSS, Contact
-|       \-- template/        # Web layout, exception handler
-|-- public_html/             # Document root
-|   |-- index.php            # Entry point
-|   |-- .htaccess            # Apache URL rewrite
-|   |-- robots.txt           # Search engine bot rules
-|   \-- assets/              # CSS, JS (dashboard, moedit, motable etc)
+|-- public_html/             # Document root (index.php entry point, assets/)
 |-- database/
 |   \-- migrations/          # SQL migration files
 |-- tests/                   # PHPUnit tests (unit, integration)
-|-- docs/
-|   |-- conf.example/        # Server config examples
-|   |-- en/                  # English documentation
-|   \-- mn/                  # Mongolian documentation (incl. CPANEL.md deploy guide)
+|-- docs/                    # Documentation (en/, mn/, conf.example/)
 |-- .github/
-|   \-- workflows/
-|       |-- ci.yml           # CI code quality checks (push, PR)
-|       \-- deploy.yml       # Auto deploy (FTP / SSH / Windows Server)
+|   \-- workflows/           # CI code quality checks + auto deploy
 |-- logs/                    # Error logs
 |-- cache/                   # Framework file cache (PSR-16)
 |-- protected/               # Protected files (project uploads outside docroot)
-|-- .env.testing             # Test environment variables
 |-- composer.json            # Dependencies
 |-- phpunit.xml              # PHPUnit configuration
 \-- LICENSE                  # MIT License
 ```
+
+Each feature module is a single folder bundling its Controller, Model and
+templates. Module locations and classes are documented per module in
+`docs/en/README.md` / `docs/mn/README.md` (section 6).
 
 > **`vendor/`-оос бусад бүх директор хөгжүүлэгчийн мэдэлд.** `composer create-project`-оор
 > татсаны дараа `application/`, `public_html/`, `database/`, `tests/`, `docs/`,

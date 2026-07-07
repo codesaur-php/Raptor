@@ -8,13 +8,9 @@ Raptor is a PHP framework following the MVC pattern with a modular (package-by-f
 
 ```
 application/
-  raptor/          # Core framework (controllers, models, middleware, RBAC, localization)
-  dashboard/       # Admin panel (badge, home, manual, protected, shop modules)
-  web/             # Public website
-    content/       # Pages, News controllers + templates
-    shop/          # Products, Orders controllers + templates
-    service/       # Search, Sitemap, RSS, Contact controllers + templates
-    template/      # Web layout, exception handler
+  raptor/          # Core framework modules (shared by dashboard + web)
+  dashboard/       # Admin panel application
+  web/             # Public website application
 public_html/       # Document root (index.php entry point, assets/)
 database/
   migrations/      # Pending SQL migration files

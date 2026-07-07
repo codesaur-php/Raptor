@@ -14,7 +14,7 @@
 3. [Тохиргоо (.env)](#3-тохиргоо)
 4. [Архитектур](#4-архитектур)
 5. [Middleware pipeline](#5-middleware-pipeline)
-6. [Модулиуд](#6-модулиуд) (6.1-6.13 Суурь | 6.14-6.29 Дэлгүүр, Үнэлгээ, Event/Мэдэгдэл, Хөгжүүлэлт, SEO, Спам, CSRF, Migration, Мессеж, Сэтгэгдэл, Badge, Home, Manual, AI, Seed, Хогийн сав)
+6. [Модулиуд](#6-модулиуд) - модуль бүр өөрийн дэд бүлэгтэй
 7. [Template систем](#7-template-систем)
 8. [Routing](#8-routing)
 9. [Controller](#9-controller)
@@ -397,88 +397,11 @@ Raptor нь MVC pattern-г баримталдаг ч **модульчилсан 
 `Controllers/`, `Views/`) салгадаггүй. Модуль нэмэх, устгах нь нэг хавтсыг хуулах,
 устгахтай адил энгийн.
 
-```
-raptor/
-|-- application/
-|   |-- raptor/                    # Суурь framework (Dashboard + shared)
-|   |   |-- Application.php        # Dashboard Application суурь
-|   |   |-- Controller.php         # Бүх Controller-ийн суурь анги
-|   |   |-- CacheService.php       # Файл суурьтай DB cache (PSR-16 SimpleCache)
-|   |   |-- CsrfMiddleware.php     # CSRF token шалгалт
-|   |   |-- SpamProtectionTrait.php # Honeypot, HMAC, rate limit, Turnstile
-|   |   |-- DatabaseConnection.php        # PDO factory (driver сонголт RAPTOR_DB_DRIVER-ээр: mysql | pgsql)
-|   |   |-- ContainerMiddleware.php       # PSR-11 DI container залгах (events, cache, mailer, Discord)
-|   |   |-- SessionMiddleware.php         # Session lifecycle (shared, write-close оптимизаци)
-|   |   |-- authentication/        # Login, JWT
-|   |   |-- content/               # CMS модулиуд
-|   |   |   |-- AIHelper.php       # OpenAI интеграци (moedit)
-|   |   |   |-- ContentsRouter.php # Контентын төв router
-|   |   |   |-- HtmlValidationTrait.php # Серверийн HTML шалгалт
-|   |   |   |-- file/              # Файлын менежмент + upload суурь
-|   |   |   |-- news/              # Мэдээ
-|   |   |   |-- page/              # Хуудас
-|   |   |   |-- messages/          # Холбоо барих мессежүүд
-|   |   |   |-- reference/         # Лавлагаа + и-мэйл загварууд
-|   |   |   \-- settings/          # Системийн тохиргоо
-|   |   |-- localization/          # Хэл, орчуулга
-|   |   |-- organization/          # Байгууллага
-|   |   |-- rbac/                  # Эрхийн удирдлага + seed дата
-|   |   |-- user/                  # Хэрэглэгч
-|   |   |-- template/              # Dashboard UI, цэс, badge
-|   |   |-- log/                   # PSR-3 лог
-|   |   |-- mail/                  # И-мэйл (Brevo API, SMTP, PHP mail)
-|   |   |-- notification/          # PSR-14 Event Dispatcher + Discord webhook listener
-|   |   |-- trash/                 # Хогийн сав модуль (устгасан бичлэг сэргээх)
-|   |   |-- migration/             # Өгөгдлийн сангийн migration систем
-|   |   \-- exception/             # Алдаа барих
-|   |-- dashboard/                 # Dashboard Application
-|   |   |-- Application.php
-|   |   |-- badge/                 # Sidebar badge систем
-|   |   |-- development/           # Хөгжүүлэлтийн хүсэлт хянах
-|   |   |-- home/                  # Dashboard Home, хайлт, статистик
-|   |   |-- manual/                # Гарын авлага харагч
-|   |   |-- protected/             # Protected файл дамжуулагч (authorizeRead hook)
-|   |   \-- shop/                  # Дэлгүүр модуль (Бүтээгдэхүүн, Захиалга, Үнэлгээ)
-|   \-- web/                       # Web Application
-|       |-- Application.php
-|       |-- WebRouter.php         # Web маршрутууд
-|       |-- HomeController.php     # Нүүр, хэл солих
-|       |-- content/               # Хуудас, Мэдээ
-|       |-- shop/                  # Бүтээгдэхүүн, Захиалга, Үнэлгээ
-|       |-- service/               # Хайлт, Sitemap, RSS, Холбоо барих
-|       \-- template/              # Web layout
-|           |-- TemplateController.php
-|           |-- ExceptionHandler.php
-|           \-- index.html
-|-- public_html/
-|   |-- index.php                  # Entry point
-|   |-- .htaccess                  # Apache URL rewrite
-|   |-- robots.txt                 # Хайлтын системийн бот удирдлага
-|   \-- assets/                    # CSS, JS (dashboard, moedit, motable)
-|-- docs/
-|   |-- conf.example/              # Серверийн тохиргооны жишээ
-|   |   |-- .env.example           # Орчны тохиргоо
-|   |   |-- .htaccess.example      # Apache rewrite дүрмүүд
-|   |   |-- .nginx.conf.example    # Nginx серверийн тохиргоо
-|   |   |-- .cpanel.yml.example    # cPanel Git deploy task list
-|   |   \-- auto-deploy.sh.example # cPanel cron deploy script
-|   |-- en/                        # Англи баримтжуулалт
-|   \-- mn/                        # Монгол баримтжуулалт
-|       \-- CPANEL.md              # SSH-гүй cPanel хостын fallback deploy заавар
-|-- tests/                         # PHPUnit тестүүд (unit, integration)
-|-- database/
-|   \-- migrations/                # SQL migration файлууд (git-ignored, per-user folder)
-|-- .github/
-|   \-- workflows/
-|       |-- ci.yml                 # CI код чанарын шалгалт (push, PR)
-|       \-- deploy.yml             # Автомат deploy (FTP / SSH / Windows Server)
-|-- logs/                          # Алдааны лог файлууд
-|-- cache/                         # Framework файл cache (PSR-16)
-|-- protected/                     # Хамгаалагдсан файлууд (developer-ийн upload)
-|-- composer.json
-|-- phpunit.xml                    # PHPUnit тохиргоо
-\-- LICENSE
-```
+`application/` доторх гурван давхарга: `raptor/` (суурь framework-ийн модулиуд -
+dashboard + web хоёулаа хэрэглэнэ), `dashboard/` (удирдлагын самбарын application),
+`web/` (нийтийн вэбийн application). Апп түвшний директорийн бүдүүвчийг үндсэн
+`README.md`-ийн "Directory Structure" хэсгээс харна уу. Модуль бүрийн хавтасны
+байршил, ангиудыг 6-р бүлгийн тухайн модулийн хэсэгт баримтжуулсан.
 
 > **`vendor/`-оос бусад бүх директор хөгжүүлэгчийн мэдэлд.** `composer create-project`-оор
 > татсаны дараа `application/`, `public_html/`, `database/`, `tests/`, `docs/`,
