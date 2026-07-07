@@ -170,12 +170,16 @@ $request = (new ServerRequest())->initFromGlobal();
 // ---------------------------------------------------------------------------
 /**
  * Web ба Dashboard аппликейшнүүд аль аль нь нэг бааз ашиглах ёстой тул
- * entry point дээр нэг л удаа PDO нээж, request-д attribute болгон
- * дамжуулна. Driver сонголт .env-ийн RAPTOR_DB_DRIVER хувьсагчаар
- * удирдагдана.
+ * entry point дээр нэг л удаа PDO нээж, request-д attribute болгон дамжуулна.
+ * Driver сонголт .env-ийн RAPTOR_DB_DRIVER хувьсагчаар удирдагдана.
  *
- * Database нь аль хэдийн үүссэн байх ёстой - шинэ системд developer
- * CREATE DATABASE-ийг өөрөө ажиллуулна.
+ * Database нь аль хэдийн үүссэн байх ёстой - шинэ орчинд developer
+ * зөвхөн хоосон санг л гараар урьдчилж үүсгээд орхино: өөрийн DB
+ * хэрэгслээр (mysql/psql CLI, phpMyAdmin, hosting panel г.м.)
+ * CREATE DATABASE ажиллуулна - үүнд ямар нэг код бичих шаардлагагүй.
+ * Доторх бүх хүснэгт болон анхны seed өгөгдлийг Raptor анх ажиллах
+ * үедээ Model классуудаараа автоматаар үүсгэдэг тул хүснэгтүүдийг
+ * гараар бүү үүсгэ.
  */
 try {
     $pdo = \Raptor\DatabaseConnection::connect();

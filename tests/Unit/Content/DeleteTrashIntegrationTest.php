@@ -30,7 +30,7 @@ class DeleteTrashIntegrationTest extends TestCase
             ['dashboard/shop/ProductsController.php', 'products'],
             ['raptor/content/news/CommentsController.php', 'news'],
             ['dashboard/shop/ReviewsController.php', 'products'],
-            ['raptor/development/DevRequestController.php', 'dev_requests'],
+            ['dashboard/development/DevRequestController.php', 'dev_requests'],
             ['raptor/content/messages/MessagesController.php', 'messages'],
             ['raptor/localization/language/LanguageController.php', 'content'],
         ];
@@ -116,7 +116,7 @@ class DeleteTrashIntegrationTest extends TestCase
             ['dashboard/shop/ProductsController.php'],
             ['raptor/content/news/CommentsController.php'],
             ['dashboard/shop/ReviewsController.php'],
-            ['raptor/development/DevRequestController.php'],
+            ['dashboard/development/DevRequestController.php'],
             ['raptor/content/messages/MessagesController.php'],
         ];
     }

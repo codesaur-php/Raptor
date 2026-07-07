@@ -211,11 +211,11 @@ request's `pdo` attribute.
 6. `ContainerMiddleware` - DI Container
 7. `LocalizationMiddleware` - Multi-language
 8. `SettingsMiddleware` - System settings
-9. `LoginRouter`, `UsersRouter`, `OrganizationRouter`, `RBACRouter`, `LocalizationRouter`, `ContentsRouter`, `LogsRouter`, `DevelopmentRouter`, `MigrationRouter`, `TemplateRouter`
+9. `LoginRouter`, `UsersRouter`, `OrganizationRouter`, `RBACRouter`, `LocalizationRouter`, `ContentsRouter`, `LogsRouter`, `MigrationRouter`, `TemplateRouter`
 
 `CsrfMiddleware` is NOT in the app-wide pipeline - it is attached per-route to each mutating route in the router.
 
-`Dashboard\Application` adds: `HomeRouter`, `ShopRouter` (products + orders + reviews), `ManualRouter`, `Protected\ProtectedRouter`, `Badge\BadgeRouter` (the sidebar badge system lives in `application/dashboard/badge/`).
+`Dashboard\Application` adds: `HomeRouter`, `ShopRouter` (products + orders + reviews), `ManualRouter`, `Development\DevelopmentRouter` (dev requests live in `application/dashboard/development/`), `Protected\ProtectedRouter`, `Badge\BadgeRouter` (the sidebar badge system lives in `application/dashboard/badge/`).
 
 #### `overrideDashboardLayout(string $filename, string $customFile): static`
 
@@ -1448,7 +1448,7 @@ Handles development request events (new request, new response).
 
 ### DevelopmentRouter
 
-**File:** `application/raptor/development/DevelopmentRouter.php`
+**File:** `application/dashboard/development/DevelopmentRouter.php`
 
 | Route | Method | Name | Description |
 |-------|--------|------|-------------|
@@ -1460,7 +1460,7 @@ Handles development request events (new request, new response).
 | `/dashboard/dev-requests/respond` | POST | `dev-requests-respond` | Add response |
 | `/dashboard/dev-requests/delete` | DELETE | `dev-requests-delete` | Delete (stores in Trash) |
 
-Protected by `development:development` RBAC permission.
+Access rules: every route requires an authenticated user. Any logged-in user can create requests and can view, respond to and delete only their own or assigned ones (`created_by`/`assigned_to`). Users holding the `system_development` permission (permission record: alias=`system`, name=`development`) can view, respond to and delete any request.
 
 ---
 

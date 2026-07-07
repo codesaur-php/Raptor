@@ -52,7 +52,7 @@ cp docs/conf.example/.env.example .env
 
 4. **Set up database:**
 
-Configure your database connection in `.env`:
+Create the empty database yourself (e.g. `CREATE DATABASE raptor CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`), then configure the connection in `.env`:
 
 ```env
 RAPTOR_DB_HOST=localhost
@@ -60,6 +60,8 @@ RAPTOR_DB_NAME=raptor
 RAPTOR_DB_USERNAME=root
 RAPTOR_DB_PASSWORD=
 ```
+
+Do NOT create any tables by hand - Raptor auto-creates all tables and initial seed data on first run, and the code will not work against a mismatched schema.
 
 5. **Access the application:**
 

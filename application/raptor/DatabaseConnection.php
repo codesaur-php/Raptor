@@ -36,8 +36,12 @@ final class DatabaseConnection
     /**
      * Тохиргооны дагуу өгөгдлийн санд холбогдож PDO instance буцаах.
      *
-     * Database нь аль хэдийн үүссэн байх ёстой. Шинэ системд developer
-     * өөрөө CREATE DATABASE ажиллуулна - implicit auto-create байхгүй.
+     * Database нь аль хэдийн үүссэн байх ёстой - шинэ орчинд developer
+     * зөвхөн хоосон санг л гараар урьдчилж үүсгээд орхино: өөрийн DB
+     * хэрэгслээр (mysql/psql CLI, phpMyAdmin, hosting panel г.м.)
+     * CREATE DATABASE ажиллуулна - үүнд ямар нэг код бичих шаардлагагүй.
+     * Доторх хүснэгт, seed өгөгдлийг Raptor анх ажиллахдаа автоматаар
+     * үүсгэнэ - implicit auto-create нь зөвхөн database-д байхгүй.
      */
     public static function connect(): \PDO
     {

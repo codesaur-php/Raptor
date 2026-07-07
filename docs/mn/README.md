@@ -134,6 +134,10 @@ RAPTOR_DB_COLLATION=utf8mb4_unicode_ci
 RAPTOR_DB_PERSISTENT=false
 ```
 
+- Шинэ орчинд хоосон өгөгдлийн санг developer өөрөө ззавал урьдчилж үүсгэнэ - Raptor зөвхөн бэлэн сан руу холбогддог, санг өөрөө үүсгэдэггүй (жишээ нь MySQL дээр: `CREATE DATABASE raptor CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`)
+- Харин сан доторх бүх хүснэгт болон анхны seed өгөгдлийг (permission, role, орчуулга, цэс, жишээ контент) Raptor анх ажиллах үедээ Model классуудаараа автоматаар үүсгэнэ
+- Хүснэгтүүдийг гараар үүсгэж болохгүй - бүтэц нь зөрсөн хүснэгт дээр код ажиллахгүй
+
 ### JWT (JSON Web Token)
 
 ```env
@@ -426,11 +430,11 @@ raptor/
 |   |   |-- notification/          # PSR-14 Event Dispatcher + Discord webhook listener
 |   |   |-- trash/                 # Хогийн сав модуль (устгасан бичлэг сэргээх)
 |   |   |-- migration/             # Өгөгдлийн сангийн migration систем
-|   |   |-- development/           # Хөгжүүлэлтийн хүсэлт хянах
 |   |   \-- exception/             # Алдаа барих
 |   |-- dashboard/                 # Dashboard Application
 |   |   |-- Application.php
 |   |   |-- badge/                 # Sidebar badge систем
+|   |   |-- development/           # Хөгжүүлэлтийн хүсэлт хянах
 |   |   |-- home/                  # Dashboard Home, хайлт, статистик
 |   |   |-- manual/                # Гарын авлага харагч
 |   |   |-- protected/             # Protected файл дамжуулагч (authorizeRead hook)
@@ -729,7 +733,9 @@ $this->isUserCan('news_edit');
 **Классууд:** `DevelopmentRouter`, `DevRequestController`, `DevRequestModel`, `DevResponseModel`
 
 - Хөгжүүлэлтийн хүсэлт хянах систем (хүсэлт илгээх, хариулах, түүх харах)
-- `development:development` RBAC эрхээр хамгаалагдсан
+- `application/dashboard/development/` хавтаст байрлана (`Dashboard\Development` namespace)
+- Нэвтэрсэн бүх хэрэглэгч хүсэлт үүсгэж, зөвхөн өөрийн үүсгэсэн болон өөрт хуваарилагдсан хүсэлтийг харах, хариулах, устгах боломжтой
+- `system_development` эрхтэй хэрэглэгч бүх хүсэлтийг харах, хариулах, устгах бүрэн эрхтэй
 
 ### 6.18 Site Service (Web)
 

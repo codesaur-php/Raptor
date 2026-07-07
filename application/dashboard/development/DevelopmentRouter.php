@@ -1,6 +1,6 @@
 <?php
 
-namespace Raptor\Development;
+namespace Dashboard\Development;
 
 use codesaur\Router\Router;
 
@@ -11,7 +11,7 @@ use Raptor\CsrfMiddleware;
  * ------------------------------------------------------------------
  * Хөгжүүлэлтийн модулийн маршрутын тохиргоо.
  *
- * @package Raptor\Development
+ * @package Dashboard\Development
  */
 class DevelopmentRouter extends Router
 {

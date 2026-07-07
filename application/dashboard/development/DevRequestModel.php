@@ -1,6 +1,6 @@
 <?php
 
-namespace Raptor\Development;
+namespace Dashboard\Development;
 
 use codesaur\DataObject\Model;
 use codesaur\DataObject\Column;
@@ -12,7 +12,7 @@ use codesaur\DataObject\Column;
  *
  * `dev_requests` хүснэгтэд хандаж CRUD үйлдлүүд гүйцэтгэнэ.
  *
- * @package Raptor\Development
+ * @package Dashboard\Development
  */
 class DevRequestModel extends Model
 {

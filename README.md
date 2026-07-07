@@ -140,6 +140,9 @@ RAPTOR_JWT_LIFETIME=2592000
 RAPTOR_WAF_BODY_ENCODING=true
 ```
 
+> **Create the empty database yourself** - Raptor never creates the database itself, but all tables and initial seed data ARE auto-created on first run, so never create tables by hand.
+> **Хоосон өгөгдлийн санг өөрөө үүсгэнэ** - Raptor санг автоматаар үүсгэдэггүй, харин доторх бүх хүснэгт болон анхны seed өгөгдлийг анх ажиллахдаа автоматаар үүсгэдэг тул хүснэгтүүдийг гараар үүсгэх шаардлагагүй.
+
 ### Quick Architecture
 
 ```

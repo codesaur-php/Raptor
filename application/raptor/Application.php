@@ -48,12 +48,12 @@ use Psr\Http\Message\ServerRequestInterface;
  *   - LocalizationRouter   -> Хэл болон орчуулга
  *   - ContentsRouter       -> File, News, Page, Reference, Settings модулиуд
  *   - LogsRouter           -> Системийн логийн индекс, харах
- *   - DevelopmentRouter    -> Хөгжүүлэлтийн хүсэлт (dev-requests)
  *   - MigrationRouter      -> Database migration upload / apply
  *   - TrashRouter          -> Хогийн сав (сэргээх / бүрэн устгах)
  *   - TemplateRouter       -> Dashboard UI-ийн template харгалзах маршрут
  *
- * (Sidebar badge систем нь Dashboard\Badge\BadgeRouter болон
+ * (Sidebar badge систем Dashboard\Badge\BadgeRouter, хөгжүүлэлтийн
+ *  хүсэлт Dashboard\Development\DevelopmentRouter болж
  *  Dashboard\Application руу шилжсэн.)
  *
  * Энэхүү Application нь Dashboard талын бүх маршрут + middleware-г
@@ -135,7 +135,6 @@ abstract class Application extends \codesaur\Http\Application\Application
         $this->use(new Localization\LocalizationRouter());
         $this->use(new Content\ContentsRouter());
         $this->use(new Log\LogsRouter());
-        $this->use(new Development\DevelopmentRouter());
         $this->use(new Migration\MigrationRouter());
         $this->use(new Trash\TrashRouter());
         $this->use(new Template\TemplateRouter());

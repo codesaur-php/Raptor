@@ -35,6 +35,7 @@ class Application extends \Raptor\Application
      *  2) Home\HomeRouter -> Dashboard-ийн үндсэн router-ийг бүртгэнэ
      *  3) Shop\ShopRouter -> Дэлгүүрийн (products, orders, reviews) router-ийг бүртгэнэ
      *  4) Manual\ManualRouter -> Гарын авлагын router-ийг бүртгэнэ
+     *  5) Development\DevelopmentRouter -> Хөгжүүлэлтийн хүсэлтийн (dev-requests) router-ийг бүртгэнэ
      * Нэмэх боломж:
      *  - Хэрэв дараа нь шинэ модуль нэмэх бол түүний Router-г
      *    $this->use(new {Module}\{Module}Router());
@@ -55,6 +56,9 @@ class Application extends \Raptor\Application
 
         // Гарын авлага
         $this->use(new Manual\ManualRouter());
+
+        // Хөгжүүлэлтийн хүсэлт (dev-requests)
+        $this->use(new Development\DevelopmentRouter());
 
         // Protected файл унших (authorizeRead() hook-той).
         $this->use(new Protected\ProtectedRouter());

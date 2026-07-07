@@ -52,6 +52,7 @@
             "Dashboard\\Manual\\": "application/dashboard/manual",
             "Dashboard\\Protected\\": "application/dashboard/protected",
             "Dashboard\\Badge\\": "application/dashboard/badge",
+            "Dashboard\\Development\\": "application/dashboard/development",
             
             "Raptor\\": "application/raptor/",
             "Raptor\\Exception\\": "application/raptor/exception/",
@@ -77,7 +78,6 @@
             "Raptor\\Notification\\": "application/raptor/notification/",
             "Raptor\\Mail\\": "application/raptor/mail/",
             "Raptor\\Log\\": "application/raptor/log/",
-            "Raptor\\Development\\": "application/raptor/development/",
             "Raptor\\Migration\\": "application/raptor/migration/",
             "Raptor\\Trash\\": "application/raptor/trash/"
         }

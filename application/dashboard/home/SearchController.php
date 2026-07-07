@@ -6,10 +6,10 @@ use Raptor\Content\CommentsModel;
 use Raptor\Content\MessagesModel;
 use Raptor\Content\NewsModel;
 use Raptor\Content\PagesModel;
-use Raptor\Development\DevRequestModel;
 use Raptor\Organization\OrganizationModel;
 use Raptor\User\UsersModel;
 
+use Dashboard\Development\DevRequestModel;
 use Dashboard\Shop\ProductsModel;
 use Dashboard\Shop\ProductOrdersModel;
 use Dashboard\Shop\ReviewsModel;

@@ -1,6 +1,6 @@
 <?php
 
-namespace Raptor\Development;
+namespace Dashboard\Development;
 
 use codesaur\DataObject\Model;
 use codesaur\DataObject\Column;
@@ -13,7 +13,7 @@ use codesaur\DataObject\Column;
  * Нэг хүсэлтэд олон хариулт бичигдэх боломжтой.
  * Хариулт бүр хэн, хэзээ бичсэн мэдээлэлтэй.
  *
- * @package Raptor\Development
+ * @package Dashboard\Development
  */
 class DevResponseModel extends Model
 {

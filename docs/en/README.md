@@ -134,6 +134,10 @@ RAPTOR_DB_COLLATION=utf8mb4_unicode_ci
 RAPTOR_DB_PERSISTENT=false
 ```
 
+- In a new environment you MUST create the empty database yourself - Raptor only connects to an existing database, it never creates one (e.g. on MySQL: `CREATE DATABASE raptor CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`)
+- All tables inside it and the initial seed data (permissions, roles, translations, menu, sample content) are created automatically by Raptor's Model classes on first run
+- Never create the tables by hand - the code will not work against a mismatched schema
+
 ### JWT (JSON Web Token)
 
 ```env
@@ -426,11 +430,11 @@ raptor/
 |   |   |-- notification/          # PSR-14 Event Dispatcher + Discord webhook listener
 |   |   |-- trash/                 # Trash module (deleted record recovery)
 |   |   |-- migration/             # Database migration system
-|   |   |-- development/           # Dev request tracking
 |   |   \-- exception/             # Error handling
 |   |-- dashboard/                 # Dashboard Application
 |   |   |-- Application.php
 |   |   |-- badge/                 # Sidebar badge system
+|   |   |-- development/           # Dev request tracking
 |   |   |-- home/                  # Dashboard Home, search, stats
 |   |   |-- manual/                # Help documentation viewer
 |   |   |-- protected/             # Protected file serving (authorizeRead hook)
@@ -728,7 +732,9 @@ $this->isUserCan('news_edit');
 **Classes:** `DevelopmentRouter`, `DevRequestController`, `DevRequestModel`, `DevResponseModel`
 
 - Development request tracking system (submit requests, respond, view history)
-- Protected by `development:development` RBAC permission
+- Lives in `application/dashboard/development/` (`Dashboard\Development` namespace)
+- Any authenticated user can create requests and can view, respond to and delete only their own or assigned ones
+- Users with the `system_development` permission manage all requests (view, respond, delete any)
 
 ### 6.18 Site Service (Web)
 

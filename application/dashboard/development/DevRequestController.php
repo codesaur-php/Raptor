@@ -1,6 +1,6 @@
 <?php
 
-namespace Raptor\Development;
+namespace Dashboard\Development;
 
 use Psr\Log\LogLevel;
 
@@ -25,7 +25,7 @@ use Raptor\Content\FilesModel;
  * `system_development` эрхтэй хэрэглэгч бүх хүсэлтийг харах, хариулах, устгах эрхтэй.
  * Файл хавсаргах боломжтой (FileController-ийг өргөтгөсөн).
  *
- * @package Raptor\Development
+ * @package Dashboard\Development
  */
 class DevRequestController extends FileController
 {
@@ -731,7 +731,7 @@ class DevRequestController extends FileController
             "OR ur.role_id IN (" .
             "  SELECT rp.role_id FROM $rolePerms rp " .
             "  INNER JOIN $permissions p ON rp.permission_id = p.id " .
-            "  WHERE p.name = 'development'" .
+            "  WHERE p.alias = 'system' AND p.name = 'development'" .
             ")";
 
         $stmt = $this->prepare($sql);
