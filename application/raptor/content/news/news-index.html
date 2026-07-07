@@ -1,7 +1,6 @@
 <!-- SweetAlert2 сан - устгах үед баталгаажуулах цонх гаргахад ашиглана -->
 <script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-<!-- ========== ТОЛГОЙ ХЭСЭГ ========== -->
 <div class="d-flex justify-content-between align-items-center">
     <h5 class="text-info text-uppercase"><i class="bi bi-book"></i> {{ 'news'|text }}</h5>
     <div class="ms-auto">
@@ -14,7 +13,6 @@
     </div>
 </div>
 
-<!-- ========== ШҮҮЛТҮҮР + ШИНЭ ТОВЧ ========== -->
 <style>
 .btn-filter {
     --bs-btn-color: var(--bs-emphasis-color);
@@ -55,7 +53,6 @@
     {% endfor %}
 </div>
 
-<!-- ========== МЭДЭЭНИЙ ХҮСНЭГТ ========== -->
 <!-- Мэдээний жагсаалтыг харуулах хүснэгт - JavaScript-ээр өгөгдөл дүүргэнэ -->
 <table class="table table-sm table-hover table-striped table-bordered" id="news">
     <thead>
@@ -72,7 +69,6 @@
     </thead>
 </table>
 
-<!-- ========== JAVASCRIPT ХЭСЭГ ========== -->
 <script type="text/javascript">
     /* URL-ээс параметрүүдийг унших */
     const urlParams = new URLSearchParams(window.location.search);
@@ -120,7 +116,7 @@
         }
     }
 
-    /* ========== ШҮҮЛТҮҮРИЙН DROPDOWN СОНГОЛТУУДАД EVENT LISTENER НЭМЭХ ========== */
+    /* Шүүлтүүрийн dropdown сонголтуудад event listener нэмэх */
     filterBtns.forEach(filter => {
         document.querySelectorAll(`.filter-values-${filter.dataset.name}`).forEach(btn => {
             btn.addEventListener('click', function (e) {
@@ -132,7 +128,7 @@
         });
     });
 
-    /* ========== ШҮҮЛТҮҮР ХЭРЭГЛЭХ ТОВЧНЫ EVENT ========== */
+    /* Шүүлтүүр хэрэглэх товчны event */
     filterAction.addEventListener('click', function (e) {
         e.preventDefault();
         /* Фильтргүй үед анхааруулга */
@@ -151,7 +147,7 @@
         window.location.href = window.location.pathname + '?' + params.join('&');
     });
 
-    /* ========== DOM БЭЛЭН БОЛСНЫ ДАРАА АЖИЛЛАХ КОД ========== */
+    /* DOM бэлэн болсны дараа ажиллах код */
     document.addEventListener('DOMContentLoaded', function () {
         /* URL-д параметр байвал шүүлтүүрийн төлвийг сэргээх */
         if (urlParams?.size > 0) {
@@ -168,7 +164,7 @@
             onFilterChange();
         }
 
-        /* ========== МЭДЭЭНИЙ ХҮСНЭГТИЙГ ЭХЛҮҮЛЭХ ========== */
+        /* Мэдээний хүснэгтийг эхлүүлэх */
         const news = new motable('table#news', { freezeColumns: [0] });
 
         /* Серверээс мэдээний жагсаалтыг татах */
@@ -184,7 +180,7 @@
                 throw new Error(data.message ?? 'Invalid response!');
             }
 
-            /* ========== ХҮСНЭГТИЙН МӨРҮҮДИЙГ ҮҮСГЭХ ========== */
+            /* Хүснэгтийн мөрүүдийг үүсгэх */
             let rowsHTML = '';
             const viewPattern = `{{ 'news-view'|pattern }}`;
             const updatePattern = `{{ 'news-update'|pattern }}`;
@@ -225,7 +221,7 @@
                     published += `<br/><a class="text-decoration-none" href="${viewPattern.replace('{id}', record.id)}#comments" title="Comments"><i class="bi bi-chat-dots"></i> ${badge}</a>`;
                 }
 
-                /* ========== ҮЙЛДЛИЙН ТОВЧНУУДЫГ ҮҮСГЭХ ========== */
+                /* Үйлдлийн товчнуудыг үүсгэх */
                 const buttons = [];
                 buttons.push(`<a class="btn btn-sm btn-info mt-1 shadow-sm" href="${viewPattern.replace('{id}', record.id)}"><i class="bi bi-eye"></i></a>`);          /* Харах товч */
 
@@ -243,7 +239,7 @@
                 rowsHTML += `<tr><th scope="row"><span class="text-secondary">${id} /</span> ${record['created_date']}</th><td>${flag} <span class="text-secondary fw-lighter">${record.code}</span> </td><td>${image}</td><td>${record.title}</td><td>${data.files_counts[id]?.attach || ''}</td><td>${type_category}</td><td>${published}</td><td>${actions}</td></tr>`;
             });
 
-            // Жишиг дата байвал reset товч харуулах
+            /* Жишиг дата байвал reset товч харуулах */
             if (data.is_sample && canDelete) {
                 const resetDiv = document.createElement('div');
                 resetDiv.className = 'alert alert-warning d-flex align-items-center mt-3';
@@ -294,13 +290,13 @@
             /* Алдаа гарвал хүснэгтэд харуулах */
             news.error(err);
         }).finally(() => {
-            /* ========== AJAX MODAL ТОВЧНУУДАД EVENT НЭМЭХ ========== */
+            /* AJAX modal товчнуудад event нэмэх */
             const modals = news.table.querySelectorAll('.ajax-modal');
             modals.forEach(a => a.addEventListener('click', function () {
                 ajaxModal(a);
             }));
 
-            /* ========== МЭДЭЭ УСТГАХ ТОВЧНУУДЫН EVENT ========== */
+            /* Мэдээ устгах товчнуудын event */
             const deletes = news.table.querySelectorAll('.delete-news');
             deletes.forEach(btn => btn.addEventListener('click', function (e) {
                 e.preventDefault();
@@ -327,7 +323,7 @@
                     question = `<i class="bi bi-question-circle text-danger mb-4" style="font-size:3rem"></i>${question}`;
                 }
 
-                /* ========== SWEETALERT БАТАЛГААЖУУЛАХ ЦОНХ ========== */
+                /* Sweetalert баталгаажуулах цонх */
                 Swal.fire({
                     imageUrl: src,
                     imageHeight: 64,

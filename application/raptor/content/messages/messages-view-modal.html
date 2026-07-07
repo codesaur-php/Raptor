@@ -27,7 +27,7 @@
     <hr>
     <strong>{{ 'message'|text }}:</strong>
     <div class="border rounded p-3 mt-2 bg-light">
-        {{ record.message|nl2br }}
+        {{ record.message|e|nl2br }}
     </div>
     <div class="mt-3">
         {% if record.is_read == 0 %}

@@ -7,9 +7,7 @@
  * @requires moedit
  */
 
-/* ============================================
-   Notify Helper - Мэдэгдэл харуулах
-   ============================================ */
+/* Notify Helper - Мэдэгдэл харуулах */
 
 /**
  * Built-in мэдэгдэл
@@ -45,9 +43,7 @@ moedit.prototype._notify = function(type, msg) {
   }, 2500);
 };
 
-/* ============================================
-   Confirm Dialog - Тийм/Үгүй асуулт
-   ============================================ */
+/* Confirm Dialog - Тийм/Үгүй асуулт */
 
 /**
  * moedit-ийн өөрийн modal загвараар тийм/үгүй асуулт харуулна.
@@ -95,9 +91,7 @@ moedit.prototype._confirmDialog = function(opts) {
   });
 };
 
-/* ============================================
-   Video Poster - Видеоны кадрыг толгой зураг болгох
-   ============================================ */
+/* Video Poster - Видеоны кадрыг толгой зураг болгох */
 
 /**
  * Видео файлын эхний кадрыг canvas руу зурж JPEG blob болгож авна.
@@ -164,7 +158,7 @@ moedit.prototype._captureVideoPosterBlob = function(src, seekTime) {
 
 /**
  * YouTube thumbnail-ийг татаж JPEG blob болгож авна.
- * i.ytimg.com нь CORS зөвшөөрдөг тул crossOrigin img -> canvas ажиллана.
+ * i.ytimg.com нь cors зөвшөөрдөг тул crossOrigin img -> canvas ажиллана.
  * maxres байхгүй бол (placeholder 120px) hqdefault руу шилжинэ.
  * @param {string} videoId
  * @returns {Promise<Blob>}
@@ -287,9 +281,7 @@ moedit.prototype._offerVideoPoster = function(source) {
   });
 };
 
-/* ============================================
-   Paste Handler - Clean HTML автоматаар
-   ============================================ */
+/* Paste Handler - Clean HTML автоматаар */
 
 /**
  * Paste event handler
@@ -398,9 +390,7 @@ moedit.prototype._insertHtmlAtCursor = function(html) {
   this._emitChange();
 };
 
-/* ============================================
-   Shared Upload Helper
-   ============================================ */
+/* Shared Upload Helper */
 
 /**
  * Файлыг серверт upload хийх (бүх upload нэг дор явагдана)
@@ -430,7 +420,7 @@ moedit.prototype._uploadFileToServer = function(file) {
     .then(res => {
       /* Header-т найдалгүй body-г шууд parse оролдоно. JSON бол доорх data.error-оор
          server-ийн тодорхой мессежийг гаргана (4xx/5xx үед ч). JSON биш бол (WAF HTML
-         block page г.м) л HTTP статус шиднэ. */
+         block page г.м) л http статус шиднэ. */
       return res.text().then(text => {
         let data;
         try { data = JSON.parse(text); }
@@ -445,9 +435,7 @@ moedit.prototype._uploadFileToServer = function(file) {
     });
 };
 
-/* ============================================
-   Clipboard-аас зураг upload хийх
-   ============================================ */
+/* Clipboard-аас зураг upload хийх */
 
 /**
  * Clipboard-аас авсан зургийг upload хийж оруулах
@@ -497,9 +485,7 @@ moedit.prototype._uploadAndInsertImage = function(file) {
     });
 };
 
-/* ============================================
-   Link Dialog
-   ============================================ */
+/* Link Dialog */
 
 moedit.prototype._insertLink = function() {
   /* Selection хадгалах */
@@ -654,9 +640,7 @@ moedit.prototype._insertLink = function() {
   });
 };
 
-/* ============================================
-   Image Upload
-   ============================================ */
+/* Image Upload */
 moedit.prototype._insertImage = function() {
   /* Selection хадгалах */
   let savedRange = null;
@@ -1075,9 +1059,7 @@ moedit.prototype._doInsertImage = function(url, savedRange) {
   }
 };
 
-/* ============================================
-   Video Upload
-   ============================================ */
+/* Video Upload */
 
 moedit.prototype._insertVideo = function() {
   let savedRange = null;
@@ -1307,9 +1289,7 @@ moedit.prototype._showVideoUploadDialog = function(savedRange) {
   });
 };
 
-/* ============================================
-   Audio Upload
-   ============================================ */
+/* Audio Upload */
 
 moedit.prototype._insertAudio = function() {
   let savedRange = null;
@@ -1531,9 +1511,7 @@ moedit.prototype._showAudioUploadDialog = function(savedRange) {
   });
 };
 
-/* ============================================
-   Media URL Dialog (for video/audio without upload)
-   ============================================ */
+/* Media URL Dialog (for video/audio without upload) */
 
 moedit.prototype._showMediaUrlDialog = function(type, savedRange) {
   const config = type === 'video' ? this.opts.videoModal : this.opts.audioModal;
@@ -1619,9 +1597,7 @@ moedit.prototype._showMediaUrlDialog = function(type, savedRange) {
   setTimeout(() => urlInput.focus(), 100);
 };
 
-/* ============================================
-   Insert Media (Video/Audio) by URL
-   ============================================ */
+/* Insert Media (Video/Audio) by URL */
 
 moedit.prototype._insertMediaByUrl = function(type, url, savedRange, fileName) {
   /* Видео URL талбарт YouTube линк тавьсан бол <video src> биш, зөв embed болгоно.
@@ -1745,9 +1721,7 @@ moedit.prototype._doInsertMedia = function(type, url, savedRange, fileName) {
   this._notify('success', config.successMessage);
 };
 
-/* ============================================
-   Table Dialog
-   ============================================ */
+/* Table Dialog */
 
 moedit.prototype._insertTable = function() {
   /* Selection хадгалах */
@@ -1809,7 +1783,7 @@ moedit.prototype._insertTable = function() {
     if (e.target === dialog) closeDialog();
   });
 
-  /* ESC дарахад хаах */
+  /* esc дарахад хаах */
   const escHandler = (e) => {
     if (e.key === 'Escape') {
       closeDialog();
@@ -1924,9 +1898,7 @@ moedit.prototype._insertTable = function() {
   });
 };
 
-/* ============================================
-   Toggle Mark (Highlight)
-   ============================================ */
+/* Toggle Mark (Highlight) */
 
 moedit.prototype._toggleMark = function() {
   const selection = window.getSelection();
@@ -1972,9 +1944,7 @@ moedit.prototype._toggleMark = function() {
   this._emitChange();
 };
 
-/* ============================================
-   Insert Accordion (details/summary)
-   ============================================ */
+/* Insert Accordion (details/summary) */
 
 moedit.prototype._insertAccordion = function() {
   const isMn = this._isMn;
@@ -2107,10 +2077,10 @@ moedit.prototype._insertAccordion = function() {
   });
 };
 
-/* ============================================
+/* 
    AI Config Notice Dialog
    ai_helper тохируулаагүй үед тайлбарлах dialog харуулна
-   ============================================ */
+    */
 
 moedit.prototype._showAiConfigNotice = function(title, feature) {
   const dialogId = 'moedit-ai-config-notice-' + Date.now();
@@ -2169,9 +2139,7 @@ moedit.prototype._showAiConfigNotice = function(title, feature) {
   document.addEventListener('keydown', escHandler);
 };
 
-/* ============================================
-   AI Shine Dialog
-   ============================================ */
+/* AI Shine Dialog */
 
 moedit.prototype._shine = async function() {
   const html = this.getHTML();
@@ -2287,7 +2255,7 @@ moedit.prototype._shine = async function() {
       });
 
       /* Header-т найдалгүй body-г шууд parse оролдоно. JSON бол доорх data.message-ээр
-         server-ийн тодорхой мессежийг гаргана (4xx/5xx үед ч). JSON биш бол л HTTP статус шиднэ. */
+         server-ийн тодорхой мессежийг гаргана (4xx/5xx үед ч). JSON биш бол л http статус шиднэ. */
       const rawText = await response.text();
       let data;
       try {
@@ -2339,7 +2307,7 @@ moedit.prototype._shine = async function() {
 
 /**
  * HTML-ийг vanilla HTML болгон цэвэрлэх (offline)
- * - БҮХ class, style устгана (зөвхөн шаардлагатай inline style нэмнэ)
+ * - бүх class, style устгана (зөвхөн шаардлагатай inline style нэмнэ)
  * - Шаардлагагүй wrapper tag-уудыг unwrap хийнэ
  * - Хамгийн энгийн, нүцгэн HTML болгоно
  * @private
@@ -2371,9 +2339,7 @@ moedit.prototype._cleanToVanillaHTML = function(html) {
     return { html: lines.map(line => `<p>${this._escapeHtml(line.trim())}</p>`).join('\n'), hasWordImages };
   }
 
-  /* ============================================
-     1. Word local file зургийг устгах (file:///)
-     ============================================ */
+  /* 1. Word local file зургийг устгах (file:///) */
   tempDiv.querySelectorAll('img').forEach(img => {
     const src = (img.getAttribute('src') || '').toLowerCase();
     /* Word-оос хуулсан local file зураг эсэхийг шалгах */
@@ -2390,9 +2356,7 @@ moedit.prototype._cleanToVanillaHTML = function(html) {
     el.remove();
   });
 
-  /* ============================================
-     2. Facebook emoji зургийг жинхэнэ emoji болгох
-     ============================================ */
+  /* 2. Facebook emoji зургийг жинхэнэ emoji болгох */
   tempDiv.querySelectorAll('img').forEach(img => {
     const src = img.getAttribute('src') || '';
     const alt = img.getAttribute('alt') || '';
@@ -2405,9 +2369,7 @@ moedit.prototype._cleanToVanillaHTML = function(html) {
     }
   });
 
-  /* ============================================
-     3. Facebook tracking URL цэвэрлэх
-     ============================================ */
+  /* 3. Facebook tracking URL цэвэрлэх */
   tempDiv.querySelectorAll('a').forEach(a => {
     let href = a.getAttribute('href') || '';
 
@@ -2447,9 +2409,7 @@ moedit.prototype._cleanToVanillaHTML = function(html) {
     a.setAttribute('href', href);
   });
 
-  /* ============================================
-     4. Nested div flatten хийх (зөвхөн нэг div child-тай div-үүдийг unwrap)
-     ============================================ */
+  /* 4. Nested div flatten хийх (зөвхөн нэг div child-тай div-үүдийг unwrap) */
   const flattenNestedDivs = () => {
     let changed = true;
     while (changed) {
@@ -2638,7 +2598,7 @@ moedit.prototype._cleanToVanillaHTML = function(html) {
     Array.from(el.children).forEach(child => convertDivToP(child));
 
     if (el.tagName === 'DIV') {
-      /* DIV дотор block element байгаа эсэхийг шалгах */
+      /* div дотор block element байгаа эсэхийг шалгах */
       const blockTags = ['P', 'DIV', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'UL', 'OL', 'TABLE', 'BLOCKQUOTE', 'PRE', 'HR', 'ARTICLE', 'SECTION'];
       const hasBlockChild = Array.from(el.children).some(child => blockTags.includes(child.tagName));
 
@@ -2720,9 +2680,7 @@ moedit.prototype._cleanToVanillaHTML = function(html) {
   return { html: result.trim(), hasWordImages };
 };
 
-/* ============================================
-   AI OCR Dialog (Зураг сонгох -> HTML)
-   ============================================ */
+/* AI ocr Dialog (Зураг сонгох -> HTML) */
 
 moedit.prototype._ocr = async function() {
   const cfg = this.opts.ocrModal;
@@ -2896,7 +2854,7 @@ moedit.prototype._ocr = async function() {
       });
 
       /* Header-т найдалгүй body-г шууд parse оролдоно. JSON бол доорх data.message-ээр
-         server-ийн тодорхой мессежийг гаргана (4xx/5xx үед ч). JSON биш бол л HTTP статус шиднэ. */
+         server-ийн тодорхой мессежийг гаргана (4xx/5xx үед ч). JSON биш бол л http статус шиднэ. */
       const rawText = await response.text();
       let data;
       try {
@@ -2957,9 +2915,7 @@ moedit.prototype._ocr = async function() {
   });
 };
 
-/* ============================================
-   Print Function
-   ============================================ */
+/* Print Function */
 
 moedit.prototype._print = function() {
   const printWindow = window.open('', '_blank');
@@ -3317,9 +3273,7 @@ moedit.prototype._preview = function() {
   previewWindow.focus();
 };
 
-/* ============================================
-   Font & Color Functions
-   ============================================ */
+/* Font & Color Functions */
 
 moedit.prototype._setFontSize = function(size) {
   if (size) {
@@ -3599,9 +3553,7 @@ moedit.prototype._removeFontColor = function() {
   this._emitChange();
 };
 
-/* ============================================
-   Insert Functions
-   ============================================ */
+/* Insert Functions */
 
 moedit.prototype._insertHR = function() {
   const hr = document.createElement('hr');
@@ -3987,9 +3939,7 @@ moedit.prototype._insertFacebook = function() {
   });
 };
 
-/* ============================================
-   Twitter/X Embed
-   ============================================ */
+/* Twitter/X Embed */
 
 moedit.prototype._insertTwitter = function() {
   /* Selection хадгалах */
@@ -4153,9 +4103,7 @@ moedit.prototype._insertTwitter = function() {
   });
 };
 
-/* ============================================
-   Google Maps Embed
-   ============================================ */
+/* Google Maps Embed */
 
 moedit.prototype._insertMap = function() {
   /* Selection хадгалах */
@@ -4353,9 +4301,7 @@ moedit.prototype._paste = function() {
   });
 };
 
-/* ============================================
-   PDF to HTML Dialog
-   ============================================ */
+/* PDF to HTML Dialog */
 
 /**
  * PDF.js санг динамикаар ачаалах
@@ -4734,7 +4680,7 @@ moedit.prototype._insertPdf = async function() {
   };
 
   /**
-   * AI OCR ашиглан текст задлах (OpenAI Vision)
+   * AI ocr ашиглан текст задлах (OpenAI Vision)
    * Зөвхөн сонгосон хуудсуудыг боловсруулна
    * @param {string} customPrompt - Хэрэглэгчийн оруулсан prompt
    */
@@ -4774,7 +4720,7 @@ moedit.prototype._insertPdf = async function() {
       });
 
       /* Header-т найдалгүй body-г шууд parse оролдоно. JSON бол доорх data.message-ээр
-         server-ийн тодорхой мессежийг гаргана (4xx/5xx үед ч). JSON биш бол л HTTP статус шиднэ. */
+         server-ийн тодорхой мессежийг гаргана (4xx/5xx үед ч). JSON биш бол л http статус шиднэ. */
       const rawText = await response.text();
       let data;
       try {
@@ -4822,7 +4768,7 @@ moedit.prototype._insertPdf = async function() {
     pagesContainerEl.style.display = 'none';  /* Хуудасны сонголтыг нуух */
 
     try {
-      /* AI OCR - OpenAI Vision (зөвхөн сонгосон хуудсуудыг) */
+      /* AI ocr - OpenAI Vision (зөвхөн сонгосон хуудсуудыг) */
       const result = await extractTextWithAiOcr(customPrompt);
       const pageCount = result.pages;
       newHtml = result.html;
@@ -4878,9 +4824,7 @@ moedit.prototype._insertPdf = async function() {
   });
 };
 
-/* ============================================
-   Header Image - Толгой зураг сонгох
-   ============================================ */
+/* Header Image - Толгой зураг сонгох */
 
 /**
  * Толгой зураг сонгох dialog эсвэл file picker нээх

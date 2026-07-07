@@ -146,7 +146,7 @@ class MigrationRunner
      * Үгүй бол statement-уудаас уншиж "ALTER TABLE x: ADD COLUMN y" гэх мэт
      * товч мэдээллийг үүсгэнэ.
      *
-     * @return string  ≤500 тэмдэгт
+     * @return string  <=500 тэмдэгт
      */
     public function summarize(string $sql): string
     {
@@ -374,7 +374,7 @@ class MigrationRunner
                 // MySQL дээр quote-г backslash-аар escape хийдэг. Гэхдээ өмнөх
                 // backslash-ууд хосоороо (\\) бол тэдгээр нь literal backslash тул
                 // quote escape хийгдээгүй. Тиймээс өмнөх дараалсан backslash-уудын
-                // тоог тоолж, СОНДГОЙ үед л quote escape хийгдсэн гэж үзнэ.
+                // тоог тоолж, сондгой үед л quote escape хийгдсэн гэж үзнэ.
                 $backslashEscaped = false;
                 if ($mysqlEscape) {
                     $backslashes = 0;

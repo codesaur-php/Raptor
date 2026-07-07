@@ -38,7 +38,7 @@
 
                             <!-- Хэл -> flag дүрс -->
                             <td>
-                                <!-- EN бол -> US flag, бусад хэл -> өөрийн code -->
+                                <!-- En бол -> us flag, бусад хэл -> өөрийн code -->
                                 {% set flag =  row['code'] == 'en' ? 'us' :  row['code'] %}
                                 <img src="https://flagcdn.com/20x15/{{ flag }}.png"
                                      srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x"
@@ -48,20 +48,20 @@
                             <!-- Огноо -->
                             <td>{{ row['created_at'] }}</td>
 
-                            <!-- Хүсэлтийн төлөв -->
+                            <!-- Хүсэлтийн төлөв (status: pending | approved | rejected) -->
                             <td>
-                                {% if row['is_active'] == 2 %}
+                                {% if row['status'] == 'approved' %}
                                     <span class="badge bg-info">approved</span>
-                                {% elseif row['is_active'] == 0 %}
-                                    <span class="badge bg-danger">deactivated</span>
+                                {% elseif row['status'] == 'rejected' %}
+                                    <span class="badge bg-danger">rejected</span>
                                 {% else %}
-                                    <span class="badge bg-warning">waiting</span>
+                                    <span class="badge bg-warning">pending</span>
                                 {% endif %}
                             </td>
 
-                            <!-- Үйлдэлүүд - зөвхөн waiting төлөвт харагдана -->
+                            <!-- Үйлдэлүүд - pending: батлах/татгалзах, rejected: бүрэн устгах -->
                             <td>
-                                {% if row['is_active'] == 1 %}
+                                {% if row['status'] == 'pending' %}
                                     {% if user.can('system_user_insert') %}
                                         <button class="approve-user-request btn btn-sm btn-success mb-1 shadow-sm"
                                                 value="{{ row['id'] }}" type="button">
@@ -69,12 +69,12 @@
                                         </button>
                                     {% endif %}
                                     {% if user.can('system_user_delete') %}
-                                        <button class="deactivate-user-request btn btn-sm btn-danger mb-1 shadow-sm"
+                                        <button class="reject-user-request btn btn-sm btn-danger mb-1 shadow-sm"
                                                 value="{{ row['id'] }}" type="button">
                                             <i class="bi bi-trash"></i> {{ 'delete'|text }}
                                         </button>
                                     {% endif %}
-                                {% elseif row['is_active'] == 0 %}
+                                {% elseif row['status'] == 'rejected' %}
                                     {% if user.can('system_user_delete') %}
                                         <button class="delete-signup btn btn-sm btn-danger mb-1 shadow-sm"
                                                 value="{{ row['id'] }}" type="button">
@@ -100,17 +100,17 @@
 
 <script type="text/javascript">
     /* Хэлнээс хамаарсан баталгаажуулах асуултыг функц болгов */
-    let acceptQuestion, questionDeletion;
+    let acceptQuestion, questionRejection;
     if (document.documentElement.lang === 'mn') {
         acceptQuestion = name =>
             `<p class="text-primary">Та (${name}) хэрэглэгчийн бүртгүүлэх хүсэлтийг зөвшөөрөхдөө итгэлтэй байна уу?</p>`;
-        questionDeletion = name =>
-            `<p class="text-danger">Та (${name}) хэрэглэгчийн бүртгүүлэх хүсэлтийг идэвхгүй болгохдоо итгэлтэй байна уу?</p>`;
+        questionRejection = name =>
+            `<p class="text-danger">Та (${name}) хэрэглэгчийн бүртгүүлэх хүсэлтийг татгалзахдаа итгэлтэй байна уу?</p><p class="text-muted">Татгалзсан хүсэлтийн мөр устгагдтал ижил нэр/хаягаар дахин хүсэлт өгөх боломжгүй</p>`;
     } else {
         acceptQuestion = name =>
             `<p class="text-primary">Are you sure to accept this user request (${name})?</p>`;
-        questionDeletion = name =>
-            `<p class="text-danger">Are you sure to deactivate this user request (${name})?</p>`;
+        questionRejection = name =>
+            `<p class="text-danger">Are you sure to reject this user request (${name})?</p><p class="text-muted">The same name/email cannot be used for a new request until the rejected row is deleted</p>`;
     }
 
     /* motable - хүснэгтийн UI helper */
@@ -192,8 +192,8 @@
     );
 
     /* "Delete" button -> хүсэлтийг идэвхгүй болгох */
-    const requestDeactivates = newbies.table.querySelectorAll('.deactivate-user-request');
-    requestDeactivates.forEach(btn =>
+    const requestRejects = newbies.table.querySelectorAll('.reject-user-request');
+    requestRejects.forEach(btn =>
         btn.addEventListener('click', function (e) {
             e.preventDefault();
 
@@ -204,11 +204,11 @@
 
             const name = `${thisRow.children[0].innerText} => ${thisRow.children[1].innerText}`;
 
-            /* Deactivate хийх SweetAlert */
+            /* Татгалзах SweetAlert */
             Swal.fire({
                 html:
                    `<i class="bi bi-person-x-fill text-danger mb-2" style="font-size:3rem"></i>
-                    ${questionDeletion(name)}
+                    ${questionRejection(name)}
                 `,
                 showCancelButton: true,
                 cancelButtonText: `{{ 'no'|text|e }}`,
@@ -218,12 +218,12 @@
                 allowOutsideClick: () => !Swal.isLoading(),
                 backdrop: true,
 
-                /* DELETE API дуудна */
+                /* Reject API дуудна */
                 preConfirm: () => {
                     return csrfFetch(
-                        `{{ 'user-signup-deactivate'|link }}`,
+                        `{{ 'user-signup-reject'|link }}`,
                         {
-                            method: 'DELETE',
+                            method: 'PUT',
                             headers: {'Content-Type': 'application/json'},
                             body: JSON.stringify({id: btn.value, name})
                         }
@@ -239,13 +239,21 @@
                         Notify(
                             'success',
                             `{{ 'success'|text|e }}`,
-                            response.message ?? `User (${name}) request deactivated`
+                            response.message ?? `User (${name}) request rejected`
                         );
 
                         /* UI дээр badge өөрчлөх */
                         thisRow.children[4].innerHTML =
-                            '<span class="badge bg-danger">deactivated</span>';
-                        thisRow.children[5].innerHTML = '';
+                            '<span class="badge bg-danger">rejected</span>';
+
+                        /* Үйлдлийн баганад бүрэн устгах (Trash руу) товчийг шууд
+                         * харуулна - modal-ыг дахин нээх шаардлагагүй */
+                        thisRow.children[5].innerHTML =
+                            `<button class="delete-signup btn btn-sm btn-danger mb-1 shadow-sm"
+                                     value="${btn.value}" type="button">
+                                <i class="bi bi-fire"></i> {{ 'delete'|text|e }}
+                            </button>`;
+                        attachSignupHardDelete(thisRow.children[5].querySelector('.delete-signup'));
 
                         newbies.setReady();
                     })
@@ -255,18 +263,19 @@
         })
     );
 
-    /* Идэвхгүй signup хүсэлтийг бүрэн устгах (hard delete) */
+    /* Татгалзсан signup хүсэлтийг бүрэн устгах (hard delete -> Trash) */
     let questionHardDelete;
     if (document.documentElement.lang === 'mn') {
         questionHardDelete = name =>
-            `<p class="text-danger"><strong>АНХААРУУЛГА!</strong> Та (${name}) хүсэлтийг бүрэн устгахдаа итгэлтэй байна уу?</p><p class="text-muted">Энэ үйлдлийг буцаах боломжгүй</p>`;
+            `<p class="text-danger"><strong>АНХААРУУЛГА!</strong> Та (${name}) хүсэлтийг бүрэн устгахдаа итгэлтэй байна уу?</p><p class="text-muted">Устгасан хүсэлт Хогийн сав (Trash) руу орох бөгөөд шаардлагатай бол дараа нь сэргээх боломжтой</p>`;
     } else {
         questionHardDelete = name =>
-            `<p class="text-danger"><strong>WARNING!</strong> Are you sure to permanently delete this request (${name})?</p><p class="text-muted">This action cannot be undone</p>`;
+            `<p class="text-danger"><strong>WARNING!</strong> Are you sure to permanently delete this request (${name})?</p><p class="text-muted">The deleted request is moved to Trash and can be restored later if needed</p>`;
     }
 
-    const hardDeletes = newbies.table.querySelectorAll('.delete-signup');
-    hardDeletes.forEach(btn =>
+    /* Товчинд hard delete handler холбоно - deactivate хийсний дараа шинээр
+     * үүссэн товч мөн энэ функцээр холбогдоно */
+    function attachSignupHardDelete(btn) {
         btn.addEventListener('click', function (e) {
             e.preventDefault();
 
@@ -310,6 +319,7 @@
                     .catch(error => Swal.showValidationMessage(error.message));
                 }
             });
-        })
-    );
+        });
+    }
+    newbies.table.querySelectorAll('.delete-signup').forEach(attachSignupHardDelete);
 </script>

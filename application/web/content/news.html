@@ -182,7 +182,7 @@
                         </div>
                         <small class="text-muted">{{ c.created_at }}</small>
                     </div>
-                    <div>{{ c.comment|nl2br }}</div>
+                    <div>{{ c.comment|e|nl2br }}</div>
                     {% if not c.parent_id %}
                     <button class="btn btn-sm btn-link text-muted p-0 mt-1 reply-toggle no-print" data-id="{{ c.id }}" data-name="{{ c.name|e }}">
                         <i class="bi bi-reply me-1"></i>{{ 'reply'|text }}

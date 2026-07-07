@@ -55,5 +55,53 @@ class Application extends \Raptor\Application
 
         // Гарын авлага
         $this->use(new Manual\ManualRouter());
+
+        // Protected файл унших (authorizeRead() hook-той).
+        $this->use(new Protected\ProtectedRouter());
+
+        // Sidebar badge систем. BADGE_MAP/PERMISSION_MAP болон
+        // orgScopedModules() тохиргоог Dashboard\Badge\BadgeController дотор засна.
+        $this->use(new Badge\BadgeRouter());
+
+        // ------------------------------------------------------------------
+        // Dashboard layout-ийг өөрийн файлаар солих (заавал биш - жишээ).
+        // ------------------------------------------------------------------
+        // application/raptor/template/ доторх 3 layout-ийн оронд өөрийн
+        // design-тай файлыг рендерт ашиглуулж болно. Raptor-ийн бодит файлууд
+        // диск дээрээ огт өөрчлөгдөхгүй, хуулагдахгүй - DashboardTrait рендер
+        // хийхдээ raptor-ийн файлын оронд энд бүртгэсэн файлыг уншина:
+        //   - dashboard.html              (мастер layout: topbar/sidebar/main)
+        //   - alert-no-permission.html    (эрхгүй үеийн бүтэн хуудасны alert)
+        //   - modal-no-permission.html    (эрхгүй үеийн modal)
+        //
+        // overrideDashboardLayout() нь Raptor\Application дээр тодорхойлогдсон.
+        // Router-ийн override()-той ижил зарчим: override нь энэ constructor-ийг
+        // уншихад ил харагдана. Бүртгэсэн файл байхгүй бол шууд
+        // InvalidArgumentException шидэж (fail-fast) анхны request дээр мэдэгдэнэ.
+        //
+        // Хэрхэн ашиглах:
+        //   1) Солих гэж буй core файлаа application/raptor/template/-ээс хуулж
+        //      аваад засна (жишээ нь application/dashboard/myspecial/dashboard.html
+        //      болгож - фолдерын нэрийг raptor-ийн template/-ээс ялгаатай, өөрийн
+        //      хүссэнээр өг). Хуулж авснаар доорх contract автоматаар хадгалагдана.
+        //      Custom dashboard.html-д заавал байх зүйлс (эс тэгвэл эвдэрнэ):
+        //        - {{ content }}                       - контент рендер хийгдэх цэг
+        //        - <meta name="csrf-token" ...>        - үгүй бол бүх мутаци 403
+        //        - <meta name="waf-body-encoding" ...> - WAF body-encoding client флаг
+        //        - dashboard.js / dashboard.css        - badge, search, csrfFetch,
+        //                                                org switcher, dark mode
+        //      Сонголтоор (developer хүссэнээрээ): sidemenu давталт - зүүн цэс.
+        //      Заавал биш, өөрийн навигацийг ямар ч хэлбэрээр бүтээж болно
+        //      (RBAC-аар шүүсэн бэлэн цэс хэрэгтэй бол sidemenu давталтыг үлдээ).
+        //   2) Файлаа энд бүртгэнэ (parent::__construct()-ийн дараа хаана ч болно):
+        //
+        //   $this->overrideDashboardLayout('dashboard.html', __DIR__ . '/myspecial/dashboard.html')
+        //        ->overrideDashboardLayout('alert-no-permission.html', __DIR__ . '/myspecial/alert.html')
+        //        ->overrideDashboardLayout('modal-no-permission.html', __DIR__ . '/myspecial/modal.html');
+        //
+        // Тэмдэглэл: login гэх мэт өөрийн route-тэй хуудсыг энд биш - түүнийг
+        // router override-оор ($this->override(new MyLoginRouter())) солино.
+        // Энэ map нь зөвхөн route-гүй, DashboardTrait-ийн гүнд дуудагддаг
+        // дээрх 3 layout файлд зориулагдсан.
     }
 }

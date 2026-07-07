@@ -10,6 +10,7 @@ use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Psr\Http\Message\ResponseFactoryInterface;
 
+use Raptor\CacheService;
 use Raptor\RBAC\RBAC;
 use Raptor\User\UsersModel;
 use Raptor\Authentication\User;
@@ -120,7 +121,7 @@ class JWTAuthMiddleware implements MiddlewareInterface
     public function generate(array $data): string
     {
         $issuedAt = \time();
-        $lifeSeconds = (int) ($_ENV['RAPTOR_JWT_LIFETIME'] ?? 604800); // 604800 гэдэг бол 7 хоног
+        $lifeSeconds = (int) ($_ENV['RAPTOR_JWT_LIFETIME'] ?? 2592000); // 30 хоног - SessionMiddleware-ийн cookie lifetime-тай ижил
         $payload = [
             'iat' => $issuedAt,
             'exp' => $issuedAt + $lifeSeconds,
@@ -158,7 +159,7 @@ class JWTAuthMiddleware implements MiddlewareInterface
 
     /**
      * Redirect хийх универсал PSR-7 арга.
-     * ResponseFactory -> Response -> header()  гэсэн 3 шаттай fallback.
+     * ResponseFactory -> Response -> header() гэсэн 3 шаттай fallback.
      *
      * @param ServerRequestInterface $request
      * @param string $location
@@ -233,39 +234,68 @@ class JWTAuthMiddleware implements MiddlewareInterface
             unset($profile['password']);
 
             // -------------------------------------------------------------
-            // 4. Хэрэглэгч тухайн байгууллагад харьяалагдах эсэхийг шалгах
+            // 4. RBAC эрхүүдийг ачаалах (cache-тэй)
+            //    Байгууллагын шалгалтаас өмнө ачаална - хэрэглэгч system_coder
+            //    эсэхийг мэдэж, cross-tenant хандалтыг рольоор шийдэхийн тулд.
+            //
+            //    Cache-ийг container-аас биш, шууд CacheService::fromDefaultPath()-
+            //    аас авна: ContainerMiddleware энэ middleware-ээс хойно ажилладаг
+            //    тул 'container' attribute энд хараахан байхгүй (өмнө нь энэ нь
+            //    үргэлж null болж rbac cache огт ажилладаггүй байсан). Нэг хавтас
+            //    ашигладаг тул RBACController-ийн cache invalidation хэвээр ажиллана.
             // -------------------------------------------------------------
-            $orgModel     = new OrganizationModel($pdo);
-            $orgUserModel = new OrganizationUserModel($pdo);
-            // Хүснэгтийн нэрийг OrganizationModel болон OrganizationUserModel-ийн getName() метод ашиглан динамикаар авна.
-            // Ирээдүйд хүснэгтийн нэр өөрчлөгдвөл Model класс дахь setTable() засах хангалттай.
-            $stmt = $orgUserModel->prepare(
-                'SELECT t2.* ' .
-                "FROM {$orgUserModel->getName()} t1 " .
-                "INNER JOIN {$orgModel->getName()} t2 ON t1.organization_id=t2.id " .
-                'WHERE t1.user_id=:user AND t1.organization_id=:org AND t2.is_active=1 LIMIT 1'
-            );
-            $stmt->bindParam(':user', $result['user_id'], \PDO::PARAM_INT);
-            $stmt->bindParam(':org',  $result['organization_id'], \PDO::PARAM_INT);
-            if (!$stmt->execute() || $stmt->rowCount() !== 1) {
-                throw new \RuntimeException('Хэрэглэгч тухайн байгууллагад харьяалагдахгүй байна.', 406);
-            }
-            $organization = $stmt->fetch();
-
-            // -------------------------------------------------------------
-            // 5. RBAC эрхүүдийг ачаалан User объект үүсгэх (cache-тэй)
-            // -------------------------------------------------------------
-            $cache = $request->getAttribute('container')?->get('cache');
+            $cache = CacheService::fromDefaultPath();
             $rbacKey = "rbac.{$profile['id']}";
             $permissions = $cache?->get($rbacKey);
             if ($permissions === null) {
                 $permissions = (new RBAC($pdo, $profile['id']))->jsonSerialize();
                 $cache?->set($rbacKey, $permissions);
             }
+
+            // -------------------------------------------------------------
+            // 5. Хэрэглэгч тухайн байгууллагад хандах эрхтэй эсэхийг шалгах
+            // -------------------------------------------------------------
+            // Хүснэгтийн нэрийг Model-ийн getName() метод ашиглан динамикаар авна.
+            // Ирээдүйд хүснэгтийн нэр өөрчлөгдвөл Model класс дахь setTable() засах хангалттай.
+            $orgModel = new OrganizationModel($pdo);
+            if (isset($permissions['system_coder'])) {
+                // system_coder бол cross-tenant superuser: гишүүнчлэл шаардахгүй,
+                // зөвхөн байгууллага идэвхтэй мөн эсэхийг шалгаад шууд оруулна.
+                // organizations_users-т хуурамч мөр нэмэхгүй - хандах эрхийг
+                // рольоос гаргаж авна, өгөгдлөөс биш. Ингэснээр role хасагдвал
+                // хандалт нь өөрөө хаагдана (эрхийн үлдэгдэл үүсэхгүй).
+                $stmt = $orgModel->prepare(
+                    "SELECT * FROM {$orgModel->getName()} WHERE id=:org AND is_active=1 LIMIT 1"
+                );
+                $stmt->bindParam(':org', $result['organization_id'], \PDO::PARAM_INT);
+                if (!$stmt->execute() || $stmt->rowCount() !== 1) {
+                    throw new \RuntimeException('Байгууллага олдсонгүй эсвэл идэвхгүй байна.', 406);
+                }
+                $organization = $stmt->fetch();
+            } else {
+                // Энгийн хэрэглэгч: тухайн байгууллагад заавал харьяалагдах ёстой.
+                $orgUserModel = new OrganizationUserModel($pdo);
+                $stmt = $orgUserModel->prepare(
+                    'SELECT t2.* ' .
+                    "FROM {$orgUserModel->getName()} t1 " .
+                    "INNER JOIN {$orgModel->getName()} t2 ON t1.organization_id=t2.id " .
+                    'WHERE t1.user_id=:user AND t1.organization_id=:org AND t2.is_active=1 LIMIT 1'
+                );
+                $stmt->bindParam(':user', $result['user_id'], \PDO::PARAM_INT);
+                $stmt->bindParam(':org',  $result['organization_id'], \PDO::PARAM_INT);
+                if (!$stmt->execute() || $stmt->rowCount() !== 1) {
+                    throw new \RuntimeException('Хэрэглэгч тухайн байгууллагад харьяалагдахгүй байна.', 406);
+                }
+                $organization = $stmt->fetch();
+            }
+
+            // -------------------------------------------------------------
+            // 6. User объект үүсгэх
+            // -------------------------------------------------------------
             $userObject = new User($profile, $organization, $permissions);
 
             // -------------------------------------------------------------
-            // 6. Request-д user attribute нэмнэ (handle()-г try-ийн гадна нэг л удаа дуудна)
+            // 7. Request-д user attribute нэмнэ (handle()-г try-ийн гадна нэг л удаа дуудна)
             // -------------------------------------------------------------
             $request = $request->withAttribute('user', $userObject);
         }
@@ -299,13 +329,13 @@ class JWTAuthMiddleware implements MiddlewareInterface
                 $scriptPath = '';
             }
 
-            // Login хуудас, эсвэл /protected/* замууд дээр login-redirect ХИЙХГҮЙ:
+            // Login хуудас, эсвэл /protected/* замууд дээр login-redirect хийхгүй:
             //  - login     : anonymous-аар login form-оо render хийх ёстой.
             //  - protected : файл/API замууд (зураг, татац гэх мэт) тул HTML login
             //                руу 302 биш, цэвэр 401/403 буцаах ёстой.
             //
-            // КОНВЕНЦ: /protected/* segment доорх БҮХ route нь (одоогийн ба ирээдүйн)
-            // anonymous-аар controller руу унаж, ӨӨРСДӨӨ auth шалгана - login-redirect-д
+            // Конвенц: /protected/* segment доорх бүх route нь (одоогийн ба ирээдүйн)
+            // anonymous-аар controller руу унаж, өөрсдөө auth шалгана - login-redirect-д
             // найдахгүй. Шинэ /protected/* route нэмэхдээ controller дотроо
             // isUserAuthorized() шалгаж 401/403 буцаахаа мартаж болохгүй.
             $segment = \explode('/', $path)[2] ?? '';

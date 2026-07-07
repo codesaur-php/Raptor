@@ -25,8 +25,8 @@ use codesaur\DataObject\Constants;
  *
  * Нэмэлт функцууд:
  *  - generateSlug() - Монгол/олон хэлний гарчгаас URL slug үүсгэх
- *  - getBySlug() - Slug-аар хуудас хайх
- *  - getExcerpt() - HTML контентоос товч текст гаргах
+ *  - getBySlug()    - Slug-аар хуудас хайх
+ *  - getExcerpt()   - HTML контентоос товч текст гаргах
  *
  * @package Raptor\Content
  */
@@ -226,7 +226,7 @@ class PagesModel extends Model
      *
      * @param array $pages    id => row бүтэцтэй хуудсуудын массив
      * @param int   $parentId Эхлэх parent ID (0 = root)
-     * @return array Submenu бүтэцтэй навигацийн массив
+     * @return array          Submenu бүтэцтэй навигацийн массив
      */
     private function buildTree(array $pages, int $parentId = 0): array
     {

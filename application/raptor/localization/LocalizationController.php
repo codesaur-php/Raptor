@@ -42,7 +42,6 @@ class LocalizationController extends \Raptor\Controller
     public function index()
     {        
         try {
-            // Хэрэглэгч эрхгүй бол -> алдаа
             if (!$this->isUserCan('system_localization_index')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }

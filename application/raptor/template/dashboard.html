@@ -14,76 +14,152 @@
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-4Q6Gf2aSP4eDXB8Miphtr37CMZZQ5oXLH2yaXMJ2w8e2ZtHTl7GptT4jmndRuHDT" crossorigin="anonymous">
         <script defer src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js" integrity="sha384-j1CDi7MgGQ12Z7Qab0qlWQ/Qqz24Gc6BM0thvEMVjHnfYGF0rmFCozFSxQBxwHKO" crossorigin="anonymous"></script>
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
-        <link href="{{ index }}/assets/dashboard/dashboard.css?v=3" rel="stylesheet">
-        <script defer src="{{ index }}/assets/dashboard/dashboard.js?v=5"></script>
+        <link href="{{ index }}/assets/dashboard/dashboard.css?v=4" rel="stylesheet">
+        <script defer src="{{ index }}/assets/dashboard/dashboard.js?v=6"></script>
         <link href="{{ index }}/assets/motable/motable.css" rel="stylesheet">
         <script defer src="{{ index }}/assets/motable/motable.js"></script>
     </head>
     <body>
-        <!-- TOPBAR (бүтэн өргөнтэй, бүх дэлгэцэнд харагдана) -->
+        <!-- Topbar (бүтэн өргөнтэй, бүх дэлгэцэнд харагдана) -->
         <header class="dashboard-topbar sticky-top bg-primary shadow">
             <div class="d-flex align-items-center justify-content-between px-3 py-2">
                 <!-- Brand / Organization -->
-                <a class="d-flex align-items-center text-white text-decoration-none text-uppercase" href="{{ 'home'|link }}">
-                    {% if user.organization['logo'] is not empty %}
-                        <img class="topbar-brand-logo me-2" src="{{ user.organization['logo'] }}">
-                    {% endif %}
-                    <span style="position:relative;top:1px">{{ user.organization['name'] }}</span>
-                </a>
-                <!-- Search (desktop only) -->
-                <div class="d-none d-md-block topbar-search">
-                    <button class="topbar-search-trigger" type="button" onclick="this.parentElement.classList.add('open');this.nextElementSibling.querySelector('input').focus();">
-                        <i class="bi bi-search me-1"></i>{{ 'search'|text }}
-                    </button>
-                    <div class="topbar-search-input">
-                        <div class="input-group input-group-sm">
-                            <span class="input-group-text bg-white border-0"><i class="bi bi-search text-muted"></i></span>
-                            <input id="topbar-search-q" type="text" class="form-control border-0 shadow-none"
-                                   placeholder="{{ 'search'|text }}..." autocomplete="off">
-                        </div>
-                        <div id="topbar-search-results" class="topbar-search-results"></div>
-                    </div>
-                </div>
-                <div class="d-flex align-items-center">
-                    <!-- User dropdown -->
+                {% if user_organizations|length > 1 %}
                     <div class="dropdown">
-                        <a class="d-flex align-items-center text-white text-decoration-none dropdown-toggle"
-                           href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            {% if user.profile['photo'] is not empty %}
-                                <img class="rounded-circle me-1" src="{{ user.profile['photo'] }}"
-                                     width="26" height="26" style="object-fit:cover">
-                            {% else %}
-                                <i class="bi bi-person-circle fs-5 me-1"></i>
+                        <a class="d-flex align-items-center text-white text-decoration-none text-uppercase dropdown-toggle"
+                           href="#" role="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
+                            {% if user.organization['logo'] is not empty %}
+                                <img class="topbar-brand-logo me-2" src="{{ user.organization['logo'] }}">
                             {% endif %}
-                            <span class="d-none d-sm-inline">{{ user.profile['first_name'] ~ ' ' ~ user.profile['last_name'] }}</span>
+                            <span class="topbar-brand-name" style="position:relative;top:1px">{{ user.organization['name']|e }}</span>
                         </a>
-                        <ul class="dropdown-menu dropdown-menu-end shadow">
-                            <li>
-                                <a class="dropdown-item" href="{{ 'user-update'|link({'id': user.profile['id']}) }}">
-                                    <i class="bi bi-person me-2"></i>{{ 'user'|text }}
-                                </a>
+                        <ul class="dropdown-menu shadow topbar-org-menu" id="topbar-org-switcher">
+                            {% if user_organizations|length > 10 %}
+                            <li class="topbar-org-head px-2 pt-1 pb-2">
+                                <input type="search" class="form-control form-control-sm topbar-org-search"
+                                       placeholder="{{ 'search'|text }}..." autocomplete="off">
+                                <div class="small text-muted mt-1 px-1">
+                                    {{ 'organization'|text }}:
+                                    <span class="topbar-org-shown">{{ user_organizations|length }}</span>
+                                    / {{ user_organizations|length }}
+                                </div>
                             </li>
+                            <li><hr class="dropdown-divider my-1"></li>
+                            {% endif %}
                             <li>
-                                <a class="dropdown-item" href="{{ 'organization-user'|link }}">
-                                    <i class="bi bi-building me-2"></i>{{ 'organization'|text }}
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item"
-                                   data-bs-toggle="modal"
-                                   data-bs-target="#static-modal"
-                                   href="{{ 'user-option'|link }}">
-                                    <i class="bi bi-sliders me-2"></i>Language & Options
-                                </a>
-                            </li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li>
-                                <a class="dropdown-item text-danger" href="{{ 'logout'|link }}">
-                                    <i class="bi bi-box-arrow-left me-2"></i>{{ 'logout'|text }}
-                                </a>
+                                <div class="topbar-org-list">
+                                    {% for org in user_organizations %}
+                                        {% set is_current = org['id'] == user.organization['id'] %}
+                                        {% if is_current %}
+                                            {% set org_href = 'home'|link %}
+                                        {% else %}
+                                            {% set org_href = 'login-select-organization'|link({'id': org['id']}) %}
+                                        {% endif %}
+                                        <a class="dropdown-item d-flex align-items-center topbar-org-item{{ is_current ? ' active' : '' }}"
+                                           href="{{ org_href }}" data-org-name="{{ org['name']|e }}">
+                                            {% if org['logo'] is not empty %}
+                                                <img class="topbar-org-logo me-2" src="{{ org['logo'] }}">
+                                            {% else %}
+                                                <i class="bi bi-building topbar-org-ico me-2"></i>
+                                            {% endif %}
+                                            <span class="text-truncate">{{ org['name']|e }}</span>
+                                            {% if is_current %}
+                                                <i class="bi bi-check-lg ms-auto ps-2"></i>
+                                            {% endif %}
+                                        </a>
+                                    {% endfor %}
+                                    <div class="dropdown-item-text text-muted small topbar-org-empty" style="display:none">
+                                        {{ 'no-results-found'|text }}
+                                    </div>
+                                </div>
                             </li>
                         </ul>
                     </div>
+                {% else %}
+                    <a class="d-flex align-items-center text-white text-decoration-none text-uppercase" href="{{ 'home'|link }}">
+                        {% if user.organization['logo'] is not empty %}
+                            <img class="topbar-brand-logo me-2" src="{{ user.organization['logo'] }}">
+                        {% endif %}
+                        <span class="topbar-brand-name" style="position:relative;top:1px">{{ user.organization['name']|e }}</span>
+                    </a>
+                {% endif %}
+                <div class="d-flex align-items-center topbar-actions">
+                    <!-- Search (Ctrl+K) - хайлтын modal нээнэ -->
+                    <button class="topbar-icon" type="button" id="global-search-trigger"
+                            title="{{ 'search'|text }} (Ctrl+K)">
+                        <i class="bi bi-search"></i>
+                    </button>
+                    <!-- Language dropdown (ганц хэлтэй бол нуугдана) -->
+                    {% if localization.language|length > 1 %}
+                    <div class="dropdown">
+                        <button class="topbar-icon" type="button"
+                                data-bs-toggle="dropdown" aria-expanded="false"
+                                title="{{ 'language'|text }}">
+                            <i class="bi bi-translate"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow">
+                            {% for code,language in localization.language %}
+                            <li>
+                                <a class="dropdown-item d-flex align-items-center{{ code == lang ? ' active' : '' }}"
+                                   href="#" data-language-url="{{ 'language'|link({'code': code}) }}">
+                                    {% set flag = code == 'en' ? 'us' : code %}
+                                    <img class="me-2" src="https://flagcdn.com/20x15/{{ flag }}.png"
+                                         srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x"
+                                         width="20" height="15" alt="{{ code }}">
+                                    <span>{{ language['title']|e }}</span>
+                                    {% if code == lang %}<i class="bi bi-check-lg ms-auto ps-2"></i>{% endif %}
+                                </a>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                    <!-- Theme dropdown -->
+                    <div class="dropdown">
+                        <button class="topbar-icon" type="button"
+                                data-bs-toggle="dropdown" aria-expanded="false"
+                                title="{{ 'theme'|text }}" aria-label="{{ 'theme'|text }}">
+                            <i class="bi bi-circle-half"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow">
+                            <li>
+                                <button class="dropdown-item d-flex align-items-center" type="button" data-theme="light">
+                                    <i class="bi bi-sun me-2"></i>{{ 'theme-light'|text }}
+                                </button>
+                            </li>
+                            <li>
+                                <button class="dropdown-item d-flex align-items-center" type="button" data-theme="dark">
+                                    <i class="bi bi-moon-stars me-2"></i>{{ 'theme-dark'|text }}
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
+                    <!-- Separator: quick icons | user -->
+                    <span class="topbar-sep"></span>
+                    <!-- User profile link (dropdown-гүй, шууд профайл руу) -->
+                    <a class="d-flex align-items-center text-white text-decoration-none"
+                       href="{{ 'user-update'|link({'id': user.profile['id']}) }}"
+                       title="{{ 'my-profile'|text }}">
+                        <!-- me-sm-1: нэр зөвхөн sm+ дээр харагддаг тул зургийн margin ч
+                             мөн sm+ дээр л хэрэгтэй - mobile-д орфон зай үүсгэхгүй -->
+                        {% if user.profile['photo'] is not empty %}
+                            <img class="rounded-circle me-sm-1" src="{{ user.profile['photo'] }}"
+                                 width="26" height="26" style="object-fit:cover">
+                        {% else %}
+                            <i class="bi bi-person-circle fs-5 me-sm-1"></i>
+                        {% endif %}
+                        <span class="d-none d-sm-inline">{{ user.profile['first_name']|e ~ ' ' ~ user.profile['last_name']|e }}</span>
+                    </a>
+                    <!-- Separator: user | logout -->
+                    <span class="topbar-sep"></span>
+                    <!-- Logout (initLogoutConfirm - dashboard.js: Bootstrap modal,
+                         эс бөгөөс native confirm fallback-аар баталгаажуулна) -->
+                    <button class="topbar-icon" type="button" id="topbar-logout"
+                            data-logout-url="{{ 'logout'|link }}"
+                            data-confirm="{{ 'confirm-logout'|text }}"
+                            title="{{ 'logout'|text }}" aria-label="{{ 'logout'|text }}">
+                        <i class="bi bi-box-arrow-right"></i>
+                    </button>
                     <!-- Mobile sidebar toggle -->
                     <button class="btn text-white ms-2 p-0 d-md-none"
                             type="button"
@@ -94,10 +170,10 @@
                 </div>
             </div>
         </header>
-        <!-- MAIN LAYOUT GRID -->
+        <!-- Main layout grid -->
         <div class="container-fluid">
             <div class="row">
-                <!-- LEFT SIDEBAR (desktop) / OFFCANVAS (mobile) -->
+                <!-- Left sidebar (desktop) / offcanvas (mobile) -->
                 <div class="sidebar border border-right col-md-3 col-lg-2 p-0 bg-dark">
                     <nav class="offcanvas-md offcanvas-end"
                          tabindex="-1"
@@ -106,7 +182,7 @@
                         <div class="offcanvas-header bg-dark">
                             <a href="{{ 'home'|link }}">
                                 <h5 class="offcanvas-title text-light">
-                                    {{ user.organization['name'] }}
+                                    {{ user.organization['name']|e }}
                                 </h5>
                             </a>
                             <button class="btn-close text-bg-light"
@@ -116,17 +192,26 @@
                                     aria-label="Close">
                             </button>
                         </div>
-                        <!-- SIDEBAR BODY -->
+                        <!-- Sidebar body -->
                         <div class="sidebar-menu offcanvas-body bg-dark d-md-flex flex-column p-0 overflow-y-auto">
+                            <!-- Home / Dashboard link (hardcode - үргэлж хамгийн дээр, permission/alias шүүлтгүй) -->
+                            <ul class="nav flex-column mt-2">
+                                <li class="nav-item">
+                                    <a class="nav-link" href="{{ 'home'|link }}">
+                                        <i class="bi bi-speedometer2"></i>
+                                        {{ 'dashboard'|text }}
+                                    </a>
+                                </li>
+                            </ul>
                             <!-- Dynamic sidebar menu loops -->
                             {% for menu in sidemenu %}
-                                <h6 class="px-3 mt-3 mb-1">{{ menu['title'] }}</h6>
+                                <h6 class="px-3 mt-3 mb-1">{{ menu['title']|e }}</h6>
                                 <ul class="nav flex-column">
                                     {% for item in menu['submenu'] %}
                                         <li class="nav-item">
                                             <a class="nav-link" href="{{ item['href'] }}">
                                                 <i class="{{ item['icon'] }}"></i>
-                                                {{ item['title'] }}
+                                                {{ item['title']|e }}
                                             </a>
                                         </li>
                                     {% endfor %}
@@ -136,13 +221,30 @@
                     </nav>
                 </div>
 
-                <!-- MAIN CONTENT AREA -->
+                <!-- Main content area -->
                 <main class="col-md-9 col-lg-10 ms-auto"
                       style="margin-top:.8rem!important;margin-bottom:1.2rem!important">
                     {{ content }}
                 </main>
 
-                <!-- STATIC MODAL (Ajax modal loader) -->
+                <!-- Global search (Ctrl+K - хайлтын modal) -->
+                <div class="modal fade" id="global-search" tabindex="-1" aria-hidden="true"
+                     role="dialog" aria-label="{{ 'search'|text }}">
+                    <div class="modal-dialog global-search-dialog">
+                        <div class="modal-content">
+                            <div class="global-search-input-wrap">
+                                <i class="bi bi-search text-muted"></i>
+                                <input id="global-search-input" type="text" class="form-control border-0 shadow-none"
+                                       placeholder="{{ 'search'|text }}..." autocomplete="off"
+                                       aria-label="{{ 'search'|text }}">
+                                <kbd>Esc</kbd>
+                            </div>
+                            <div id="global-search-results" class="global-search-results"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Static modal (Ajax modal loader) -->
                 <div class="modal fade" id="static-modal" tabindex="-1">
                     <div class="modal-dialog">
                         <div class="modal-content">
@@ -156,17 +258,52 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Logout confirm modal (initLogoutConfirm - dashboard.js) -->
+                <div class="modal fade" id="logout-confirm-modal" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered modal-sm">
+                        <div class="modal-content">
+                            <div class="modal-body text-center pt-4">
+                                <i class="bi bi-box-arrow-right fs-1 text-danger"></i>
+                                <p class="mt-2 mb-0">{{ 'confirm-logout'|text }}</p>
+                            </div>
+                            <div class="modal-footer border-0 justify-content-center pt-0">
+                                <button class="btn btn-secondary btn-sm" type="button" data-bs-dismiss="modal">
+                                    {{ 'cancel'|text }}
+                                </button>
+                                <a class="btn btn-danger btn-sm" href="{{ 'logout'|link }}">
+                                    <i class="bi bi-box-arrow-left me-1"></i>{{ 'logout'|text }}
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
         <script>
             document.addEventListener('DOMContentLoaded', function () {
+                /* Нэвтэрсний дараах буух цэг болох dashboard root home линкийг идэвхжүүлнэ
+                   - линкний href нь home хуудас руу заадаг тул activateLink-ийн prefix тааруулалтад ордоггүй */
+                if (window.location.pathname.replace(/\/+$/, '') === "{{ index }}/dashboard") {
+                    const home = document.querySelector('.sidebar-menu a.nav-link[href="{{ 'home'|link }}"]');
+                    if (home) home.classList.add('active');
+                }
+
                 initSidebarBadges("{{ 'dashboard-badges'|link }}");
-                initTopbarSearch("{{ 'dashboard-search'|link }}", {
-                    news:     "{{ 'news-view'|pattern }}",
-                    pages:    "{{ 'page-view'|pattern }}",
-                    products: "{{ 'product-view'|pattern }}",
-                    orders:   "{{ 'order-view'|pattern }}",
-                    users:    "{{ 'user-view'|pattern }}"
+                initGlobalSearch({
+                    searchUrl: "{{ 'dashboard-search'|link }}",
+                    patterns: {
+                        news:            "{{ 'news-view'|pattern }}",
+                        pages:           "{{ 'page-view'|pattern }}",
+                        products:        "{{ 'product-view'|pattern }}",
+                        orders:          "{{ 'order-view'|pattern }}",
+                        users:           "{{ 'user-view'|pattern }}",
+                        organizations:   "{{ 'organization-view'|pattern }}",
+                        'dev-requests':  "{{ 'dev-requests-view'|pattern }}",
+                        messages:        "{{ 'messages-view'|pattern }}",
+                        comments:        "{{ 'comments-view'|pattern }}",
+                        reviews:         "{{ 'products-reviews'|link }}"
+                    }
                 });
             });
         </script>

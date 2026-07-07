@@ -5,6 +5,7 @@ namespace Raptor\Organization;
 use Psr\Log\LogLevel;
 
 use Raptor\Content\FileController;
+use Raptor\Trash\TrashModel;
 
 /**
  * Class OrganizationController
@@ -78,15 +79,16 @@ class OrganizationController extends FileController
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
 
-            // organization хүснэгтийн нэрийг OrganizationModel::getName() ашиглан динамикаар авна. Ирээдүйд refactor хийхэд бэлэн байна.
+            // Идэвхгүй болгосон (soft-delete, is_active=0) байгууллагуудыг мөн буцаана.
+            // Ингэснээр жагсаалтад "идэвхгүй" төлөвтэй мөр гарч, түүн дээр
+            // бүрэн устгаж Trash руу оруулах товч харагдана. Идэвхтэйг нь эхэнд эрэмбэлнэ.
             $table = (new OrganizationModel($this->pdo))->getName();
             $this->respondJSON([
                 'status' => 'success',
                 'list' => $this->query(
-                    "SELECT id,name,alias,logo,logo_size 
-                     FROM $table 
-                     WHERE is_active=1 
-                     ORDER BY id"
+                    "SELECT id,name,alias,logo,logo_size,is_active
+                     FROM $table
+                     ORDER BY is_active DESC, id"
                 )->fetchAll()
             ]);
         } catch (\Throwable $err) {
@@ -124,7 +126,6 @@ class OrganizationController extends FileController
                     throw new \InvalidArgumentException($this->text('invalid-request'), 400);
                 }
 
-                // Мөр үүсгэх
                 $record = $model->insert($payload + ['created_by' => $this->getUserId()]);
                 if (empty($record)) {
                     throw new \Exception($this->text('record-insert-error'));
@@ -143,7 +144,6 @@ class OrganizationController extends FileController
                     ]);
                 }
 
-                // Амжилттай insert JSON хэвлэе
                 $this->respondJSON([
                     'status'  => 'success',
                     'message' => $this->text('record-insert-success')
@@ -332,7 +332,6 @@ class OrganizationController extends FileController
                 // Update metadata
                 $payload['updated_at'] = \date('Y-m-d H:i:s');
                 $payload['updated_by'] = $this->getUserId();
-                // Update хийе
                 $updated = $model->updateById($id, $payload);
                 if (empty($updated)) {
                     // Амжилтгүй тул алдаа шиднээ
@@ -347,7 +346,6 @@ class OrganizationController extends FileController
                     \unlink($oldLogoFile);
                 }
 
-                // Амжилттай JSON
                 $this->respondJSON([
                     'status'  => 'success',
                     'type'    => 'primary',
@@ -520,8 +518,14 @@ class OrganizationController extends FileController
 
             $model->deleteById($id);
 
+            // Устгасны дараа Trash-д хадгална - deleteById() амжилттай болсны дараа л
+            // хадгалснаар зөвхөн үнэхээр устгагдсан бичлэг trash-д орно. Log channel =
+            // 'organizations' (organizations_log) - restore хийхэд "restored" мөр
+            // тухайн байгууллагын Logger Protocol дээр гарч ирнэ.
+            (new TrashModel($this->pdo))->store('organizations', $model->getName(), $id, $org, $this->getUserId());
+
             if (!empty($org['logo'])) {
-                $logoPath = $this->getPublicPath() . $org['logo'];
+                $logoPath = $this->getStoredFilePhysicalPath($org['logo']);
                 if (\file_exists($logoPath)) {
                     \unlink($logoPath);
                 }

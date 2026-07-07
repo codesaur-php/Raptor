@@ -1,4 +1,4 @@
-<!-- can_update_me: Засах эрхтэй эсэх, эсвэл өөрийн профайл уу -->
+<!-- Can_update_me: Засах эрхтэй эсэх, эсвэл өөрийн профайл уу -->
 {% set can_update_me = user.can('system_user_update') or (user.profile['id'] == record['id']) %}
 
 <!-- Choices.js plugin-ийн CSS -->
@@ -52,7 +52,7 @@
     </li>
 </ul>
 
-<!-- Хэрэглэгчийн мэдээлэл шинэчлэх FORM
+<!-- Хэрэглэгчийн мэдээлэл шинэчлэх form
      method="PUT" -> fetch ашиглан илгээгдэх -->
 <form class="needs-validation pt-3"
       novalidate
@@ -180,7 +180,7 @@
                  src="{{ record['photo']|e }}"
                  style="{% if record['photo'] is empty %}display:none;{% endif %}">
 
-            <!-- Зургийн хэмжээ (KB) -->
+            <!-- Зургийн хэмжээ (kb) -->
             <div id="photo_info"
                  class="form-text text-muted"
                  style="{% if record['photo'] is empty %}display:none;{% endif %}font-size:0.7rem;">
@@ -385,7 +385,7 @@
             });
         });
 
-        /* ФОРМ SUBMIT event */
+        /* Форм submit event */
         formUpdate.addEventListener('submit', function (event) {
             event.preventDefault();
 

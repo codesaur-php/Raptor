@@ -88,7 +88,7 @@
                     {% endif %}
                 </div>
             </div>
-            <div class="mt-1">{{ c.comment|nl2br }}</div>
+            <div class="mt-1">{{ c.comment|e|nl2br }}</div>
         </div>
         {% endfor %}
     </div>
@@ -116,7 +116,7 @@
 
 <script type="text/javascript">
 document.addEventListener('DOMContentLoaded', function () {
-    // Focus comment руу scroll хийх
+    /* Focus comment руу scroll хийх */
     const focusEl = document.getElementById('comment-{{ focus_comment_id }}');
     if (focusEl) {
         setTimeout(() => {
@@ -126,7 +126,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }, 500);
     }
 
-    // Reply
+    /* Reply */
     const wrap = document.getElementById('reply-form-wrap');
     const form = document.getElementById('reply-form');
     const parentInput = document.getElementById('reply-parent-id');
@@ -172,7 +172,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    // Delete
+    /* Delete */
     document.querySelectorAll('.delete-comment').forEach(b => {
         b.addEventListener('click', function () {
             const id = this.dataset.id;

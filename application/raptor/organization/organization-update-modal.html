@@ -1,8 +1,8 @@
 <!--
-    ORGANIZATION UPDATE MODAL
+    Organization update modal
     ------------------------------------------------------------
     Энэ modal нь байгууллагын бүртгэлд засвар хийх боломж олгодог.
-    Форм нь PUT дүрмээр ажиллана.
+    Форм нь put дүрмээр ажиллана.
 
     Агуулга:
       - Parent organization сонгох
@@ -13,7 +13,6 @@
 
 <div class="modal-xl modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content">
-        <!-- ---------------- Modal Header ---------------- -->
         <div class="modal-header">
             <h3 class="modal-title fs-6 text-uppercase text-primary">
                 <i class="bi bi-pencil-square"></i>
@@ -27,7 +26,6 @@
             </button>
         </div>
 
-        <!-- ---------------- Modal Body ---------------- -->
         <div class="modal-body">
             <!-- Засварлах форм -->
             <form class="needs-validation" novalidate
@@ -142,9 +140,8 @@
             </form>
         </div>
 
-        <!-- ---------------- Modal Footer ---------------- -->
         <div class="modal-footer">
-            <!-- UPDATE permission -->
+            <!-- Update permission -->
             {% if user.can('system_organization_update') %}
                 <button class="submit-organization btn btn-primary shadow-sm">
                     <i class="bi bi-check"></i> {{ 'submit'|text }}

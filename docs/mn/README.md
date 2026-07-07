@@ -3,7 +3,7 @@
 [![PHP Version](https://img.shields.io/badge/php-%5E8.2.1-777BB4.svg?logo=php)](https://www.php.net/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](../../LICENSE)
 
-> **codesaur/raptor** - PSR стандартууд дээр суурилсан, олон давхаргат архитектуртай PHP CMS фреймворк.
+> **codesaur/raptor** - PSR стандартууд дээр суурилсан, олон давхаргат архитектуртай, олон байгууллагын (multi-tenant) PHP CMS фреймворк.
 
 ---
 
@@ -28,13 +28,11 @@
 
 `codesaur/raptor` нь **Web** (нийтийн вебсайт) болон **Dashboard** (админ панель) гэсэн хоёр давхаргат бүтэцтэй, PSR-7/PSR-15 middleware суурьтай PHP фреймворк юм.
 
-> **Тэмдэглэл:** Энэ package нь `codesaur/indodaptor` (500+ install) package-ийн залгамжлагч бөгөөд Packagist-ээс устгагдсан. "Indoraptor" нэр нь Universal Pictures-ийн trademark тул `codesaur/raptor` нэрээр шинээр үүсгэж, кодыг бүрэн refactor хийсэн.
-
 ### Гол боломжууд
 
 - **PSR-7/PSR-15** middleware суурьтай архитектур
 - **JWT + Session** нэвтрэлт баталгаажуулалт
-- **RBAC** (Role-Based Access Control) эрхийн удирдлага
+- **Олон байгууллагын (multi-tenant)** RBAC эрхийн удирдлага
 - **Олон хэл** дэмжлэг (Localization)
 - CMS модулиуд: Мэдээ, Хуудас, Файл, Лавлах, Тохиргоо
 - **Дэлгүүр** модуль (Бүтээгдэхүүн, Захиалга, Үнэлгээ)
@@ -136,9 +134,6 @@ RAPTOR_DB_COLLATION=utf8mb4_unicode_ci
 RAPTOR_DB_PERSISTENT=false
 ```
 
-- Localhost (127.0.0.1) дээр ажиллаж байвал database автоматаар үүсгэнэ
-- `RAPTOR_DB_PERSISTENT=true` байвал PDO persistent холболт ашиглана
-
 ### JWT (JSON Web Token)
 
 ```env
@@ -160,7 +155,7 @@ RAPTOR_WAF_BODY_ENCODING=true
 
 - `RAPTOR_WAF_BODY_ENCODING` - `true` (default) үед `csrfFetch()` form талбаруудыг base64-аар кодолж, mod_security маягийн WAF-д POST body доторх HTML/JS-төстэй rich-text харагдахгүй болгоно; `BodyEncodingMiddleware` server тал дээр decode хийнэ. Body-inspection хийдэг WAF-гүй хост дээр `false` болго. Дэлгэрэнгүйг `CLAUDE.md`-ийн "Shared Hosting / WAF Compatibility" хэсгээс үз.
 
-> **Session cookie-ийн хугацааг** Raptor `SessionMiddleware` дотроос **30 хоног** болгож тохируулдаг (`session_set_cookie_params(2592000)`) - энэ нь зөвхөн client талын cookie бөгөөд практик дээр админ browser хаасан ч удаан нэвтэрсэн хэвээр үлддэг нь батлагдсан. Харин **server талын** session файлын цэвэрлэгээ (`session.gc_maxlifetime`) нь Raptor-аар бус host-ийн php.ini-аар удирдагдана; session file-ийг найдвартай хадгалж хугацаанд нь цэвэрлэдэг байлгахыг хүсвэл host бүрд түүнийг тохируулна - [SESSION-LIFETIME.md](SESSION-LIFETIME.md)-г үз.
+> **Session cookie-ийн хугацааг** Raptor `SessionMiddleware` дотроос **30 хоног** болгож тохируулдаг (`session_set_cookie_params(...)`) - энэ нь зөвхөн client талын cookie бөгөөд практик дээр админ browser хаасан ч удаан нэвтэрсэн хэвээр үлддэг нь батлагдсан. Харин **server талын** session файлын цэвэрлэгээ (`session.gc_maxlifetime`) нь Raptor-аар бус host-ийн php.ini-аар удирдагдана; session file-ийг найдвартай хадгалж хугацаанд нь цэвэрлэдэг байлгахыг хүсвэл host бүрд түүнийг тохируулна - [SESSION-LIFETIME.md](SESSION-LIFETIME.md)-г үз.
 
 #### "Яагаад миний PUT/DELETE хүсэлт browser дээр POST болж харагдаж байна вэ?"
 
@@ -243,7 +238,7 @@ RAPTOR_CONTENT_IMG_QUALITY=90
 
 ### Серверийн тохиргоо
 
-> **АНХААР: web серверийн document root нь заавал `public_html/` байх ёстой, project root биш.**
+> **Анхаар: web серверийн document root нь заавал `public_html/` байх ёстой, project root биш.**
 > Зөвхөн `public_html/`-ийг web-ээр үйлчлүүлэхээр зориулсан; бусад бүх зүйл
 > (`application/`, `protected/`, `database/`, `vendor/`, `.env`, `logs/`, ...)
 > түүний нэг шатнаас дээр байрладаг бөгөөд URL-аар хүршгүй байх ёстой. Docroot-ийг
@@ -279,6 +274,8 @@ Repo-д анхнаасаа орсон default workflow. Push болон pull req
 #### Deploy (`.github/workflows/deploy.yml`)
 
 Нэгдсэн deploy workflow, 3 job-той: **FTP**, **SSH**, болон **Windows Server self-hosted runner**. Job бүр зөвхөн шаардлагатай secrets/variables тохируулсан үед ажиллана. Тохируулсан бүх job-ууд зэрэг (parallel) ажиллана.
+
+Доорх **A / B / C** нь энэ workflow-ийн job-ууд бөгөөд shared hosting, VPS, cloud VM, dedicated, Windows Server гээд бараг бүх орчныг хамарна. **D** нь workflow-оос гаднах, зөвхөн A/B/C-гийн аль нь ч сервер лүү хүрч чадахгүй онцгой орчны fallback.
 
 **Ажиллах дараалал:**
 
@@ -326,13 +323,32 @@ SSH хандалттай Linux серверт (VPS, cloud VM, dedicated). **Sett
 
 3. PHP болон Composer серверийн system PATH-д байх ёстой.
 
+**D) cPanel Git Deploy (fallback - зөвхөн A/B/C-гийн аль нь ч боломжгүй үед)**
+
+Дээрх гурван зам бол стандарт бөгөөд cPanel хосттой байлаа ч гэсэн FTP (A) эсвэл
+SSH (B) хандалт нээлттэй л бол тэдгээрийг ашиглана - cPanel дээр байршсан гэдэг
+нь дангаараа энэ D замыг сонгох шалтгаан биш.
+
+Харин GitHub Actions-ийн аль ч job сервер лүү хүрч чадахгүй онцгой орчин цөөн ч
+гэсэн байдаг: SSH/Terminal хаалттай, гаднаас FTP холбогдох боломжгүй cPanel
+shared hosting. Ийм орчны нэг бодит жишээ нь Монгол Улсын Үндэсний Дата Төвийн
+төрийн байгууллагуудын веб порталд зориулсан shared hosting юм. Зөвхөн ийм
+тохиолдолд cPanel-ийн өөрийн Git + cron дээр суурилсан scaffold-ийг ашиглана:
+
+| Файл | Үүрэг |
+|------|-------|
+| [`docs/conf.example/.cpanel.yml.example`](../conf.example/.cpanel.yml.example) | Repo root-д `.cpanel.yml` нэрээр хуулна - cPanel Git deploy task list |
+| [`docs/conf.example/auto-deploy.sh.example`](../conf.example/auto-deploy.sh.example) | `deploy/auto-deploy.sh` болгон хуулж cron-оор ажиллуулна |
+
+Бүрэн заавар: [`docs/mn/CPANEL.md`](CPANEL.md)
+
 **Анхаарах:** Deploy workflow нь CI (`ci.yml`) байхыг шаарддаг. CI workflow-г устгасан бол deploy trigger хийгдэхгүй.
 
 #### Deploy хийгдэхгүй файлууд
 
 - **`.env`** - Серверт гараар үүсгэж тохируулна
 - **`logs/`** - Аппликейшн автоматаар үүсгэнэ
-- **`protected/`** - public web root-аас гадуурх файлууд ба cache; public request дээр шууд хандах боломжгүй, зөвхөн authenticated `/dashboard/protected/file` endpoint-аар үйлчилнэ
+- **`protected/`** - Web root-аас гадуурх хамгаалагдсан файлууд, нэвтэрсэн хэрэглэгчид хандах боломжтой (`authorizeRead()` hook-ийн эрхийн зохицуулалтаар); public request дээр шууд хандах боломжгүй, зөвхөн `/dashboard/protected/file` endpoint-аар үйлчилнэ (framework файл cache нь тусад нь дээд түвшний `cache/` хавтаст байрлана)
 - **`docs/`** - Зөвхөн баримтжуулалт
 - **`vendor/`** - Workflow дотор `composer install/update --no-dev` ажиллуулж build хийнэ
 
@@ -414,8 +430,10 @@ raptor/
 |   |   \-- exception/             # Алдаа барих
 |   |-- dashboard/                 # Dashboard Application
 |   |   |-- Application.php
+|   |   |-- badge/                 # Sidebar badge систем
 |   |   |-- home/                  # Dashboard Home, хайлт, статистик
 |   |   |-- manual/                # Гарын авлага харагч
+|   |   |-- protected/             # Protected файл дамжуулагч (authorizeRead hook)
 |   |   \-- shop/                  # Дэлгүүр модуль (Бүтээгдэхүүн, Захиалга, Үнэлгээ)
 |   \-- web/                       # Web Application
 |       |-- Application.php
@@ -437,9 +455,12 @@ raptor/
 |   |-- conf.example/              # Серверийн тохиргооны жишээ
 |   |   |-- .env.example           # Орчны тохиргоо
 |   |   |-- .htaccess.example      # Apache rewrite дүрмүүд
-|   |   \-- .nginx.conf.example    # Nginx серверийн тохиргоо
+|   |   |-- .nginx.conf.example    # Nginx серверийн тохиргоо
+|   |   |-- .cpanel.yml.example    # cPanel Git deploy task list
+|   |   \-- auto-deploy.sh.example # cPanel cron deploy script
 |   |-- en/                        # Англи баримтжуулалт
 |   \-- mn/                        # Монгол баримтжуулалт
+|       \-- CPANEL.md              # SSH-гүй cPanel хостын fallback deploy заавар
 |-- tests/                         # PHPUnit тестүүд (unit, integration)
 |-- database/
 |   \-- migrations/                # SQL migration файлууд (git-ignored, per-user folder)
@@ -448,7 +469,8 @@ raptor/
 |       |-- ci.yml                 # CI код чанарын шалгалт (push, PR)
 |       \-- deploy.yml             # Автомат deploy (FTP / SSH / Windows Server)
 |-- logs/                          # Алдааны лог файлууд
-|-- protected/                     # Хамгаалагдсан файлууд (upload, cache)
+|-- cache/                         # Framework файл cache (PSR-16)
+|-- protected/                     # Хамгаалагдсан файлууд (developer-ийн upload)
 |-- composer.json
 |-- phpunit.xml                    # PHPUnit тохиргоо
 \-- LICENSE
@@ -542,6 +564,8 @@ RAPTOR_DB_DRIVER=pgsql
 - Байгууллагын CRUD
 - Хэрэглэгч-байгууллагын холбоос удирдлага
 - Нэг хэрэглэгч олон байгууллагад харьяалагдах боломжтой
+- Topbar байгууллага солих dropdown: олон байгууллагатай хэрэглэгч topbar-ийн brand хэсгээс шууд солино (10-аас олон бол хайлтын шүүлтүүр гарна)
+- `system_coder` аль ч идэвхтэй байгууллага руу шилжинэ - хандах эрх рольоос гарна, гишүүнчлэлийн мөр үүсгэхгүй
 
 ### 6.4 RBAC (Эрхийн удирдлага)
 
@@ -563,7 +587,7 @@ $this->isUserCan('news_edit');
 
 ### 6.5 Content - Files (Файл)
 
-**Классууд:** `FilesController`, `FilesModel`, `ProtectedFilesController`
+**Классууд:** `FilesController`, `FilesModel` (protected файл үйлчлэл нь `Dashboard\Protected\ProtectedFilesController` руу шилжсэн - api.md-ийн Protected files хэсгийг үз)
 
 - Файл upload (native JS, FormData)
 - Зураг optimize хийх (GD)
@@ -769,7 +793,7 @@ Sitemap: https://example.com/sitemap.xml
 - Advisory lock (`GET_LOCK` / `pg_try_advisory_lock`) зэрэгцээ apply-аас хамгаална
 - `dashboard_log`-д бүх upload/apply/delete үйлдлийг SHA-256 hash, statement тоо, warning тоотойгоор бичнэ
 - Зөвхөн `system_coder` role-той хэрэглэгчид хандах боломжтой
-- `.htaccess` хамгаалалт SQL файлуудад шууд хандахыг хаана
+- Эцэг `database/.htaccess` (deny from all) хамгаалалт SQL файлуудад шууд хандахыг хаана
 
 ### 6.22 Messages (Холбоо барих мессеж)
 
@@ -802,10 +826,11 @@ Sitemap: https://example.com/sitemap.xml
 
 ### 6.24 Badge систем (Sidebar Badge)
 
-**Классууд:** `BadgeController`, `BadgeRouter`, `AdminBadgeSeenModel`
+**Классууд:** `Dashboard\Badge\BadgeController`, `Dashboard\Badge\BadgeRouter`, `Dashboard\Badge\AdminBadgeSeenModel` (`application/dashboard/badge/`)
 
 - Sidebar цэсний зүйлс дээр модуль тус бүрийн уншаагүй үйлдлийн тоог өнгөт badge-ээр харуулна
 - `*_log` хүснэгтүүдээс уншина - тусдаа event хүснэгт шаардахгүй
+- Multi-tenant: `orgScopedModules()` жагсаасан модулийн badge-ийг харж буй админы байгууллагаар хязгаарлана (`system_coder` тойрно)
 - Badge өнгө: ногоон (create), цэнхэр (update), улаан (delete)
 - Модуль бүрт 3 хүртэл badge, зүүнээс баруун тийш ногоон-цэнхэр-улаан дарааллаар
 - Админы эрхээр шүүж (PERMISSION_MAP), өөрийн үйлдлийг хасна
@@ -818,7 +843,7 @@ Sitemap: https://example.com/sitemap.xml
 **Классууд:** `HomeRouter`, `SearchController`, `WebLogStatsController`, `WebLogStats`
 
 - Dashboard нүүр хуудас системийн ерөнхий мэдээлэлтэй
-- Мэдээ, хуудас, бүтээгдэхүүн, захиалга, хэрэглэгчээс ерөнхий хайлт (RBAC шүүлтүүртэй)
+- Topbar түргэн icon-ууд (хайлт | хэл | загвар): хайлтын modal (Ctrl+K) - мэдээ, хуудас, бүтээгдэхүүн, захиалга, хэрэглэгч, байгууллага, хөгжүүлэлтийн хүсэлт, мессеж, сэтгэгдэл, үнэлгээнээс (RBAC шүүлтүүртэй - эх сурвалж бүр модулийнхаа index permission эсвэл мөрийн түвшний шүүлтээр хамгаалагдана); хэл солих dropdown (session-д хадгалагдана); цайвар/бараан загварын dropdown (reload-гүй шууд)
 - Вэб зочилсон статистик: график, шилдэг хуудас/мэдээ/бүтээгдэхүүн, IP хаяг
 - Системийн `*_log` хүснэгтүүдийн статистик (өнөөдөр/долоо хоног/нийт)
 - `web_log_cache` хүснэгт гүйцэтгэлийг хурдасгахад ашиглана
@@ -836,8 +861,8 @@ Sitemap: https://example.com/sitemap.xml
 **Классууд:** `AIHelper`
 
 - moedit WYSIWYG editor-ийн OpenAI API интеграци
-- HTML горим: GPT-4o-mini ашиглан контент сайжруулалт (Bootstrap 5 компонент)
-- Vision горим: GPT-4o ашиглан зургаас текст таних (OCR)
+- HTML горим: контент сайжруулалт (Bootstrap 5 компонент) - модель `RAPTOR_OPENAI_MODEL` (.env, default `gpt-5-mini`)
+- Vision горим: зургаас текст таних (OCR) - модель `RAPTOR_OPENAI_VISION_MODEL` (.env, default `gpt-5.1`)
 - Endpoint: `POST /dashboard/content/moedit/ai`
 - `.env`-д `RAPTOR_OPENAI_API_KEY` шаардлагатай
 
@@ -848,7 +873,7 @@ Sitemap: https://example.com/sitemap.xml
 - Шинэ суулгалтад өгөгдлийн сангийг Model `__initial()` методоор автоматаар дүүргэнэ
 - Эрхүүд: `system_` угтвартай 18+ системийн эрх
 - Role-ууд: coder, admin, manager, editor, viewer - эрхийн оноолттой
-- Цэс: 3 хэсэгтэй dashboard sidebar (Contents, Shop, System), олон хэлтэй
+- Цэс: 4 хэсэгтэй dashboard sidebar (Contents, Shop, System, Coder - сүүлийнх нь зөвхөн system_coder-д), олон хэлтэй
 - Орчуулга: 100+ системийн UI keyword MN/EN хэлээр
 - Лавлагаа загварууд: 11+ и-мэйл загвар (нууц үг сэргээх, мэдэгдлүүд, захиалга) + Нөхцөл/Нууцлал
 - Жишиг дата: демо мэдээ (6), хуудас (14+), бүтээгдэхүүн (4) - dashboard-ийн "Reset" товчоор устгах боломжтой

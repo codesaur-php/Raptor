@@ -18,7 +18,7 @@ use Psr\Http\Server\RequestHandlerInterface;
  * 403 Forbidden буцаадаг. Үүний улмаас Facebook-оос хуулсан зэрэг агуулга
  * бүхий мэдээ хадгалах боломжгүй болдог.
  *
- * Шийдэл: клиент тал (csrfFetch) mutating хүсэлтийн form талбаруудын УТГЫГ
+ * Шийдэл: клиент тал (csrfFetch) mutating хүсэлтийн form талбаруудын утгыг
  * base64-аар кодлож, raw body-г WAF-д ил харагдахгүй болгоно. Энэ middleware
  * нь X-Body-Encoding: base64 header байгаа үед parsedBody-гийн scalar string
  * утгуудыг буцааж decode хийнэ. Талбарын нэрс кодлогдохгүй (нэр нь XSS

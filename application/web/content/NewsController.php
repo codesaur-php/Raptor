@@ -266,8 +266,7 @@ class NewsController extends TemplateController
      * Мэдээнд сэтгэгдэл бичих (AJAX).
      *
      * Spam хамгаалалт: honeypot, HMAC token, timestamp, rate limit, Cloudflare Turnstile.
-     * auth_user-г id-гүйгээр log context-д нэмнэ (badge системд
-     * web frontend хэрэглэгчийг admin-аас ялгах зорилготой).
+     * auth_user-г id-гүйгээр log context-д нэмнэ (badge системд web frontend хэрэглэгчийг admin-аас ялгах зорилготой).
      *
      * @param int $id Мэдээний ID
      * @return void

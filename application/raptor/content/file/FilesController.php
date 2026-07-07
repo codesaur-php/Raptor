@@ -108,7 +108,6 @@ class FilesController extends FileController
         $dashboard->set('title', $this->text('files'));
         $dashboard->render();
 
-        // Лог бичих
         $this->log(
             $table,
             LogLevel::NOTICE,
@@ -139,6 +138,11 @@ class FilesController extends FileController
             if (!$this->isUserCan('system_content_index')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
+
+            // {table} route segment нь untyped (DEFAULT_REGEX ганц хашилт зөвшөөрдөг)
+            // тул SQL-д шууд interpolate хийхээс өмнө цагаан жагсаалтаар цэвэрлэнэ
+            // (index() болон бусад action-уудын setTable()-тэй ижил зан төлөв).
+            $table = \preg_replace('/[^A-Za-z0-9_-]/', '', $table);
 
             // Хүснэгт байгаа эсэх баталгаажуулалт (нэрийг яг таруулна, LIKE wildcard-аас зайлсхийнэ)
             if ($this->getDriverName() == Constants::DRIVER_PGSQL) {
@@ -291,7 +295,6 @@ class FilesController extends FileController
     public function post(string $table, int $record_id = 0)
     {
         try {
-            // Хэрэглэгч нэвтэрсэн байх ёстой
             if (!$this->isUserAuthorized()) {
                 throw new \Exception('Unauthorized', 401);
             }
@@ -315,7 +318,6 @@ class FilesController extends FileController
             }
 
             if ($record_id > 0) {
-                // Холбох content record id дугаар
                 $uploaded['record_id'] = $record_id;
             }
 
@@ -341,7 +343,6 @@ class FilesController extends FileController
                 \unlink($uploaded['file']);
             }
         } finally {
-            // Лог бичих
             $context = ['action' => 'files-post', 'table' => $table];
             if (isset($record['id'])) {
                 $context += $record;
@@ -372,7 +373,6 @@ class FilesController extends FileController
     public function modal(string $table)
     {
         try {
-            // Хэрэглэгч нэвтэрсэн байх ёстой
             if (!$this->isUserAuthorized()) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
@@ -513,7 +513,6 @@ class FilesController extends FileController
         } catch (\Throwable $err) {
             $this->respondJSON(['message' => $err->getMessage()], $err->getCode());
         } finally {
-            // Лог бичих
             if (empty($updated)) {
                 $level = LogLevel::ERROR;
                 $message = '{id} дугаартай файлын бичлэгийг засах үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
@@ -584,7 +583,6 @@ class FilesController extends FileController
             );
             $deleted = true;
 
-            // Амжилттай хариу
             $this->respondJSON([
                 'status'  => 'success',
                 'title'   => $this->text('success'),
@@ -597,7 +595,6 @@ class FilesController extends FileController
                 'message' => $err->getMessage()
             ], $err->getCode());
         } finally {
-            // Лог бичих
             if ($deleted ?? false) {
                 $level = LogLevel::ALERT;
                 $message = '{id} дугаартай [{path}] файлын бичлэгийг устгалаа. Бодит файл [{file}] устаагүй болно.';

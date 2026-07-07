@@ -1,7 +1,6 @@
 <!--
-    File Location Modal
-    ------------------------------------------------------------
-    Энэ modal нь тухайн файлын хаягийг (URL) харуулах зорилготой.
+    File location modal.
+    Энэ modal нь тухайн файлын хаягийг (url) харуулах зорилготой.
     Хоёр хэлбэрээр үзүүлнэ:
         * Relative URL  -> серверийн domain агуулаагүй дотоод зам
         * Absolute URL  -> бүрэн URL (host + path)
@@ -28,7 +27,7 @@
         <div class="modal-body">
             <!-- Relative URL хэсэг -->
             <strong>Relative URL:</strong>
-            <!-- copy товч - "<pre id='relative_url'>" доторх текстийг хуулна -->
+            <!-- Copy товч - "<pre id='relative_url'>" доторх текстийг хуулна -->
             <a class="btn btn-sm btn-info" onclick="copyContent('relative_url');">copy</a>
             <!-- Файлын харьцангуй зам -->
             <pre class="border border-info" id="relative_url" style="white-space:pre-wrap">{{ record['path'] }}</pre>
@@ -37,7 +36,7 @@
 
             <!-- Absolute URL хэсэг -->
             <strong>Absolute URL:</strong>
-            <!-- copy товч -->
+            <!-- Copy товч -->
             <a class="btn btn-sm btn-info" onclick="copyContent('absolute_url');">copy</a>
 
             <!-- Файлын бүрэн зам (host + path) -->

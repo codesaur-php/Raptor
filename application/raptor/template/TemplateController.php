@@ -17,7 +17,6 @@ use Raptor\RBAC\Permissions;
  * зэрэг контентыг удирдах үндсэн үйлдлүүдийг хариуцна.
  *
  * Үндсэн боломжууд:
- *   - Хэрэглэгчийн UI тохиргооны modal харуулах
  *   - Dashboard менюг харах, үүсгэх, засах, устгах
  *   - LocalizedModel-ын бүтэцтэй меню дээр олон хэлтэй контент удирдах
  *   - RBAC эрх дээр тулгуурлан зөвшөөрөл шалгах
@@ -28,16 +27,6 @@ use Raptor\RBAC\Permissions;
 class TemplateController extends \Raptor\Controller
 {
     use DashboardTrait;
-
-    /**
-     * Хэрэглэгчийн DASHBOARD UI тохиргооны modal-ийг рендерлэнэ.
-     *
-     * @return void
-     */
-    public function userOption()
-    {
-        $this->template(__DIR__ . '/user-option-modal.html')->render();
-    }
 
     /**
      * Цэсний (menu) жагсаалтыг харах Dashboard хуудас.
@@ -58,7 +47,6 @@ class TemplateController extends \Raptor\Controller
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
 
-            // Меню жагсаалт
             $model = new MenuModel($this->pdo);
             $menu = $model->getRows(['ORDER BY' => 'p.position']);
 
@@ -75,7 +63,6 @@ class TemplateController extends \Raptor\Controller
 
             // Байгууллагын alias жагсаалт
             $aliases = ['common'];
-            // organization хүснэгтийн нэрийг OrganizationModel::getName() ашиглан динамикаар авна. Ирээдүйд refactor хийхэд бэлэн байна.
             $org_table = (new OrganizationModel($this->pdo))->getName();
             $alias_results = $this->query(
                 "SELECT alias FROM $org_table WHERE alias!='common' AND is_active=1 GROUP BY alias"
@@ -86,7 +73,6 @@ class TemplateController extends \Raptor\Controller
 
             // Permission жагсаалт
             $permissions = [];
-            // permissions хүснэгтийн нэрийг Permissions::getName() ашиглан динамикаар авна. Ирээдүйд refactor хийхэд бэлэн байна.
             $permissions_table = (new Permissions($this->pdo))->getName();
             $concat_expr = ($this->getDriverName() == Constants::DRIVER_PGSQL)
                 ? "alias || '_' || name"
@@ -98,7 +84,6 @@ class TemplateController extends \Raptor\Controller
                 $permissions[] = $row['permission'];
             }
 
-            // Dashboard руу дамжуулах
             $this->dashboardTemplate(
                 __DIR__ . '/manage-menu.html',
                 ['menu' => $menu, 'aliases' => $aliases, 'permissions' => $permissions]
@@ -106,7 +91,6 @@ class TemplateController extends \Raptor\Controller
         } catch (\Throwable $err) {
             $this->dashboardProhibited($err->getMessage(), $err->getCode())->render();
         } finally {
-            // Logging
             $context = ['action' => 'template-menu-manage'];
             if (isset($err)) {
                 $this->log(
@@ -160,7 +144,6 @@ class TemplateController extends \Raptor\Controller
                 throw new \InvalidArgumentException($this->text('invalid-request'), 400);
             }
 
-            // Мэдээллийн сан руу бичих
             $model = new MenuModel($this->pdo);
             $record = $model->insert(
                 $payload + ['created_by' => $this->getUserId()],
@@ -226,7 +209,6 @@ class TemplateController extends \Raptor\Controller
             $id = (int) $parsedBody['id'];
             unset($parsedBody['id']);
 
-            // Record-н хуучин мэдээллийг авах
             $model = new MenuModel($this->pdo);
             $record = $model->getById($id);
             if (empty($record)) {

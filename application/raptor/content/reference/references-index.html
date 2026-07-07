@@ -79,13 +79,11 @@
                             <td>{{ row['category'] }}</td>
 
                             <td>
-                                <!-- ----------------- VIEW ------------------ -->
                                 <a class="ajax-modal btn btn-sm btn-info mt-1 shadow-sm"
                                    href="{{ 'reference-view'|link({'table':table,'id':row['id']}) }}">
                                     <i class="bi bi-eye"></i>
                                 </a>
 
-                                <!-- ----------------- UPDATE ---------------- -->
                                 {% if can_update %}
                                     <a class="ajax-modal btn btn-sm btn-primary mt-1 shadow-sm"
                                        href="{{ 'reference-update'|link({'table':table,'id':row['id']}) }}">
@@ -93,7 +91,6 @@
                                     </a>
                                 {% endif %}
 
-                                <!-- ----------------- DELETE ---------------- -->
                                 {% if can_delete %}
                                     <button class="delete-reference btn btn-sm btn-danger mt-1 shadow-sm"
                                             value="{{ row['id'] }}" type="button">

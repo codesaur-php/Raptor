@@ -79,7 +79,7 @@ use Raptor\Log\Logger;
  *          $this->exec($sql)        - DDL/DML (CREATE, UPDATE ...)-г шууд гүйцэтгэх
  *          $this->quote($string)    - драйверт тохирсон escape
  *          $this->hasTable($table)  - хүснэгт байгаа эсэхийг шалгах
- *          $this->getDriverName()   - идэвхтэй драйвер (mysql | pgsql | sqlite)
+ *          $this->getDriverName()   - идэвхтэй драйвер (mysql | pgsql)
  *
  *      Жишээ:
  *          $stmt = $this->prepare('SELECT id FROM users WHERE email=:email');
@@ -104,7 +104,6 @@ abstract class Controller extends \codesaur\Http\Application\Controller
     {
         parent::__construct($request);
 
-        // Database connection
         $this->pdo = $request->getAttribute('pdo');
     }
 
@@ -347,7 +346,7 @@ abstract class Controller extends \codesaur\Http\Application\Controller
      * request attributes дээр inject хийгдсэн байдаг.
      *
      * Мөн дараах function-үүдийг бүртгэж өгнө:
-     *   - {{ text('key') }}          -> Localization орчуулга
+     *   - {{ text('key') }}           -> Localization орчуулга
      *   - {{ link('route', params) }} -> Route name ашиглан URL үүсгэх
      *
      * @param string $template  Рендерлэх template файл
@@ -452,7 +451,7 @@ abstract class Controller extends \codesaur\Http\Application\Controller
      *     жишээ 400/401/403/404/500) бол -> тэрхүү HTTP response code-ыг
      *     бодитоор буцаана (http_response_code).
      *   * $code = 0 (default) бол -> 200 OK (амжилттай хариу).
-     *   * $code нь тоон бус string (жишээ 'invalid-email') ЭСВЭЛ 100-599
+     *   * $code нь тоон бус string (жишээ 'invalid-email') эсвэл 100-599
      *     мужаас гадуур код бол -> HTTP status code-д ямар ч нөлөө үзүүлэхгүй
      *     (IGNORE), 200 хэвээр үлдэнэ. Энэ тохиолдолд алдааг JSON body доторх
      *     `status: 'error'` envelope-оор клиентэд дамжуулна (frontend нь
@@ -480,7 +479,6 @@ abstract class Controller extends \codesaur\Http\Application\Controller
             //  - respondJSON([..], 200) -> HTTP 200 OK (default)
             $this->headerResponseCode($code);
 
-            // HTTP хариулт нь JSON гэж зарлах стандарт header
             \header('Content-Type: application/json');
         }
 
@@ -565,7 +563,8 @@ abstract class Controller extends \codesaur\Http\Application\Controller
             }
 
             // Authenticated user metadata
-            $auth_user = $this->getUser()?->profile ?? [];
+            $user = $this->getUser();
+            $auth_user = $user?->profile ?? [];
             if (isset($auth_user['id']) && !isset($context['auth_user'])) {
                 $context['auth_user'] = [
                     'id'         => $auth_user['id'],
@@ -574,6 +573,8 @@ abstract class Controller extends \codesaur\Http\Application\Controller
                     'last_name'  => $auth_user['last_name'],
                     'phone'      => $auth_user['phone'],
                     'email'      => $auth_user['email'],
+                    // Үйлдлийг хийсэн байгууллагын ID - multi-tenant audit-д ашиглана
+                    'organization_id' => $user?->organization['id'] ?? null,
                 ];
             }
 

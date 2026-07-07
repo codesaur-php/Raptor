@@ -62,7 +62,6 @@ class TextModel extends LocalizedModel
             new Column('text', 'varchar', 255)
         ]);
 
-        // Хүснэгтийн нэрийг тогтоох
         parent::setTable('localization_text');
     }
 

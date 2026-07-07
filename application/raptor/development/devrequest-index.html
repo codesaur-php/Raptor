@@ -1,16 +1,15 @@
 <!--
-  devrequest-index.html
+  Devrequest-index.HTML
   ------------------------------------------------------------------
   Хөгжүүлэлтийн хүсэлтүүдийн жагсаалтын хуудас (Dashboard).
  
   Controller: Dashboard\DevRequest\DevRequestController::index()
-  Route: GET /dashboard/dev-requests
+  Route: get /dashboard/dev-requests
  
-  JS: SweetAlert2, motable
+  js: SweetAlert2, motable
  -->
 <script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
 
-<!-- ========== ТОЛГОЙ ХЭСЭГ ========== -->
 <div class="d-flex justify-content-between align-items-center">
     <h5 class="text-info text-uppercase"><i class="bi bi-code-slash"></i> {{ 'dev-requests'|text }}</h5>
     <a class="btn btn-sm btn-outline-secondary" href="{{ 'manual-view'|link({'file': 'devrequests-manual-' ~ localization.code ~ '.html'}) }}" title="{{ 'manual'|text }}" target="_blank">
@@ -18,7 +17,6 @@
     </a>
 </div>
 
-<!-- ========== ШҮҮЛТҮҮР + ШИНЭ ТОВЧ ========== -->
 <style>
 .btn-filter {
     --bs-btn-color: var(--bs-emphasis-color);
@@ -56,7 +54,6 @@
     </div>
 </div>
 
-<!-- ========== ХҮСНЭГТ ========== -->
 <table class="table table-sm table-hover table-striped table-bordered" id="dev-requests">
     <thead>
         <tr class="text-uppercase">
@@ -72,7 +69,6 @@
     </thead>
 </table>
 
-<!-- ========== JAVASCRIPT ========== -->
 <script type="text/javascript">
     const urlParams = new URLSearchParams(window.location.search);
     const filterAction = document.getElementById('filter_action');

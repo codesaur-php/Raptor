@@ -15,7 +15,7 @@ class MenuSeed
     /**
      * Dashboard-ийн үндсэн цэсний бүтцийг үүсгэх.
      *
-     * Contents, Shop, System гэсэн 3 үндсэн хэсэгтэй.
+     * Contents, Shop, System, Coder (зөвхөн system_coder-д) гэсэн 4 үндсэн хэсэгтэй.
      *
      * @param MenuModel $model
      */
@@ -56,7 +56,6 @@ class MenuSeed
                 ],
                 ['mn' => ['title' => 'Веблүү очих'], 'en' => ['title' => 'Visit Website']]
             );
-            // Мессежүүд
             $model->insert(
                 [
                     'parent_id' => $contents['id'],
@@ -68,7 +67,6 @@ class MenuSeed
                 ],
                 ['mn' => ['title' => 'Мессежүүд'], 'en' => ['title' => 'Messages']]
             );
-            // Хуудсууд
             $model->insert(
                 [
                     'parent_id' => $contents['id'],
@@ -80,7 +78,6 @@ class MenuSeed
                 ],
                 ['mn' => ['title' => 'Хуудсууд'], 'en' => ['title' => 'Pages']]
             );
-            // Мэдээнүүд
             $model->insert(
                 [
                     'parent_id' => $contents['id'],
@@ -92,7 +89,6 @@ class MenuSeed
                 ],
                 ['mn' => ['title' => 'Мэдээнүүд'], 'en' => ['title' => 'News']]
             );
-            // Файлууд
             $model->insert(
                 [
                     'parent_id' => $contents['id'],
@@ -104,7 +100,6 @@ class MenuSeed
                 ],
                 ['mn' => ['title' => 'Файлууд'], 'en' => ['title' => 'Files']]
             );
-            // Localization
             $model->insert(
                 [
                     'parent_id' => $contents['id'],
@@ -116,7 +111,6 @@ class MenuSeed
                 ],
                 ['mn' => ['title' => 'Нутагшуулалт'], 'en' => ['title' => 'Localization']]
             );
-            // Reference tables
             $model->insert(
                 [
                     'parent_id' => $contents['id'],
@@ -128,7 +122,6 @@ class MenuSeed
                 ],
                 ['mn' => ['title' => 'Лавлах хүснэгтүүд'], 'en' => ['title' => 'Reference Tables']]
             );
-            // Settings
             $model->insert(
                 [
                     'parent_id' => $contents['id'],
@@ -144,7 +137,7 @@ class MenuSeed
 
         /**
          * ----------------------------------------
-         * 2. ХУДАЛДАА (Products & Orders)
+         * 2. Products & Orders
          * ----------------------------------------
          */
         $shop = $model->insert(
@@ -152,7 +145,6 @@ class MenuSeed
             ['mn' => ['title' => 'Дэлгүүр'], 'en' => ['title' => 'Shop']]
         );
         if (isset($shop['id'])) {
-            // Бүтээгдэхүүнүүд
             $model->insert(
                 [
                     'parent_id' => $shop['id'],
@@ -164,7 +156,6 @@ class MenuSeed
                 ],
                 ['mn' => ['title' => 'Бүтээгдэхүүн'], 'en' => ['title' => 'Products']]
             );
-            // Захиалгууд
             $model->insert(
                 [
                     'parent_id' => $shop['id'],
@@ -188,7 +179,6 @@ class MenuSeed
             ['mn' => ['title' => 'Систем'], 'en' => ['title' => 'System']]
         );
         if (isset($system['id'])) {
-            // Хэрэглэгчид
             $model->insert(
                 [
                     'parent_id' => $system['id'],
@@ -199,7 +189,6 @@ class MenuSeed
                 ],
                 ['mn' => ['title' => 'Хэрэглэгчид'], 'en' => ['title' => 'Users']]
             );
-            // Байгууллагууд
             $model->insert(
                 [
                     'parent_id' => $system['id'],
@@ -210,7 +199,6 @@ class MenuSeed
                 ],
                 ['mn' => ['title' => 'Байгууллагууд'], 'en' => ['title' => 'Organizations']]
             );
-            // Logs
             $model->insert(
                 [
                     'parent_id' => $system['id'],
@@ -221,7 +209,6 @@ class MenuSeed
                 ],
                 ['mn' => ['title' => 'Хандалтын протокол'], 'en' => ['title' => 'Access logs']]
             );
-            // Хөгжүүлэлтийн хүсэлт
             $model->insert(
                 [
                     'parent_id' => $system['id'],
@@ -232,7 +219,6 @@ class MenuSeed
                 ],
                 ['mn' => ['title' => 'Хөгжүүлэлтийн хүсэлт'], 'en' => ['title' => 'Dev Requests']]
             );
-            // Гарын авлага
             $model->insert(
                 [
                     'parent_id' => $system['id'],
@@ -242,15 +228,37 @@ class MenuSeed
                 ],
                 ['mn' => ['title' => 'Гарын авлага'], 'en' => ['title' => 'Manual']]
             );
+        }
 
-            // Raptor Migrations & Хогийн сав & Цэс удирдах
-            // permission => 'system_coder': system_coder нь role, permission биш.
-            // Coder role-тэй хэрэглэгчид isUserCan() бүх утганд true буцаадаг
-            // тул зөвхөн coder-д харагдана.
+        /**
+         * ----------------------------------------
+         * 4. КОДЕР үндсэн хэсэг (зөвхөн system_coder)
+         * ----------------------------------------
+         * Framework-ийн засвар үйлчилгээний хэрэгслүүд - Migrations,
+         * Хогийн сав, Цэс удирдах. Систем хэсгээс тусад нь бүлэглэсэн.
+         *
+         * permission => 'system_coder': system_coder нь role, permission биш.
+         * Coder role-тэй хэрэглэгчид isUserCan() бүх утганд true буцаадаг
+         * тул зөвхөн coder-д харагдана. Энэ нь 'system_coder' нь reserved
+         * permission (Permissions::RESERVED) байж, ижил нэртэй бодит
+         * permission хэзээ ч үүсэхгүй гэдэгт найдна - эс бөгөөс тэр
+         * permission-той дурын роль эдгээр coder-only цэсийг харах эрсдэлтэй.
+         * Parent өөрөө ч permission болон alias-тай тул coder биш хэрэглэгчид
+         * (мөн system биш байгууллагад) хоосон гарчиг харагдахгүй.
+         */
+        $coder = $model->insert(
+            [
+                'position' => '990',
+                'alias' => 'system',
+                'permission' => 'system_coder'
+            ],
+            ['mn' => ['title' => 'Кодер'], 'en' => ['title' => 'Coder']]
+        );
+        if (isset($coder['id'])) {
             $model->insert(
                 [
-                    'parent_id' => $system['id'],
-                    'position' => '960',
+                    'parent_id' => $coder['id'],
+                    'position' => '991',
                     'alias' => 'system',
                     'permission' => 'system_coder',
                     'icon' => 'bi bi-database-gear',
@@ -260,8 +268,8 @@ class MenuSeed
             );
             $model->insert(
                 [
-                    'parent_id' => $system['id'],
-                    'position' => '970',
+                    'parent_id' => $coder['id'],
+                    'position' => '992',
                     'alias' => 'system',
                     'permission' => 'system_coder',
                     'icon' => 'bi bi-trash3',
@@ -271,8 +279,8 @@ class MenuSeed
             );
             $model->insert(
                 [
-                    'parent_id' => $system['id'],
-                    'position' => '980',
+                    'parent_id' => $coder['id'],
+                    'position' => '993',
                     'alias' => 'system',
                     'permission' => 'system_coder',
                     'icon' => 'bi bi-menu-button-wide-fill',

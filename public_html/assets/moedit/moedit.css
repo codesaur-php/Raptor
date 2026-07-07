@@ -1,6 +1,5 @@
 /**
  * moedit CSS
- * -----------------------------------
  * Dark mode: prefers-color-scheme, data-theme, data-bs-theme дэмжинэ.
  */
 
@@ -504,9 +503,7 @@
   max-height:none;
 }
 
-/* ============================================
-   Modal/Dialog Styles
-   ============================================ */
+/* Modal/Dialog Styles */
 
 .moedit-modal-overlay{
   position:fixed;
@@ -846,9 +843,7 @@
   border-color:#dc7c7c;
 }
 
-/* ============================================
-   Responsive - Mobile/Tablet
-   ============================================ */
+/* Responsive - Mobile/Tablet */
 
 @media (max-width: 576px) {
   .moedit-toolbar{
@@ -953,9 +948,7 @@
   }
 }
 
-/* ============================================
-   Header Image - Толгой зураг
-   ============================================ */
+/* Header Image - Толгой зураг */
 
 .moedit-header-image{
   position:relative;
@@ -1049,10 +1042,8 @@
   border-top-right-radius:0;
 }
 
-/* ============================================
-   Right Toolbar Layout (Desktop only)
-   Mobile-д дээр, Desktop-д баруун талд
-   ============================================ */
+/* Right Toolbar Layout (Desktop only)
+   Mobile-д дээр, Desktop-д баруун талд */
 
 /* Desktop (768px+) дээр баруун талд toolbar */
 @media (min-width: 768px) {

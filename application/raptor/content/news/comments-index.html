@@ -76,12 +76,12 @@ document.addEventListener('DOMContentLoaded', function () {
     }).catch(err => {
         table.setBody(`<tr><td colspan="5" class="text-center text-danger">${err.message}</td></tr>`);
     });
-    // Comment email мэдэгдэл toggle (ON = email тохируулах, OFF = email хоослох)
+    /* Comment email мэдэгдэл toggle (ON = email тохируулах, OFF = email хоослох) */
     const commentEmailToggle = document.getElementById('commentEmailToggle');
     if (commentEmailToggle) {
         commentEmailToggle.addEventListener('change', function () {
             if (commentEmailToggle.checked) {
-                // ON -> email оруулах
+                /* ON -> email оруулах */
                 commentEmailToggle.checked = false;
                 Swal.fire({
                     title: 'Email',
@@ -107,7 +107,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     }).catch(err => Notify('danger', `{{ 'error'|text|e('js') }}`, err.message));
                 });
             } else {
-                // OFF -> email хоослох
+                /* OFF -> email хоослох */
                 csrfFetch(`{{ 'settings-env'|link }}`, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },

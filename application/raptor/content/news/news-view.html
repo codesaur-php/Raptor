@@ -150,7 +150,7 @@
                     {% endif %}
                 </div>
             </div>
-            <div class="mt-1">{{ c.comment|nl2br }}</div>
+            <div class="mt-1">{{ c.comment|e|nl2br }}</div>
         </div>
         {% endfor %}
     </div>

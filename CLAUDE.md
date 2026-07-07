@@ -9,7 +9,7 @@ Raptor is a PHP framework following the MVC pattern with a modular (package-by-f
 ```
 application/
   raptor/          # Core framework (controllers, models, middleware, RBAC, localization)
-  dashboard/       # Admin panel (home, shop, manual modules)
+  dashboard/       # Admin panel (badge, home, manual, protected, shop modules)
   web/             # Public website
     content/       # Pages, News controllers + templates
     shop/          # Products, Orders controllers + templates
@@ -79,6 +79,19 @@ $this->dispatch(new \Raptor\Notification\ContentEvent(
 
 **Rule:** When you need the standard layout (navbar/sidebar, footer, settings), use `dashboardTemplate()` or `webTemplate()`. These call `template()` internally to build layout + content. When you need full control over the output without any layout, use `template()` directly.
 
+**DashboardTrait method collision rule:** a controller that uses `Raptor\Template\DashboardTrait` MUST NOT define a method with the same name as any of the trait's public API (`dashboardTemplate`, `dashboardProhibited`, `modalProhibited`, `getUserMenu`, `getUserOrganizations`). In PHP a class method silently overrides the trait method, so the trait's internal calls (e.g. `dashboardTemplate()` calling `getUserOrganizations()` for the topbar org switcher) would dispatch to the controller's unrelated version and break the layout. If a controller needs a similar helper, pick a distinct name (e.g. `getMemberOrganizations()`).
+
+**Custom dashboard layout (`overrideDashboardLayout`):** the three layout templates DashboardTrait renders internally (`dashboard.html`, `alert-no-permission.html`, `modal-no-permission.html`) can be replaced from the developer's own Application - an alternative to editing the raptor templates in place (both are valid; the override keeps the baseline files intact). Register in the Application constructor (same explicit-override philosophy as router `override()`):
+
+```php
+// application/{myapp}/Application.php
+parent::__construct($response);
+// Use a folder name distinct from raptor's own `template/` to avoid confusion.
+$this->overrideDashboardLayout('dashboard.html', __DIR__ . '/myspecial/dashboard.html');
+```
+
+The map travels as the `dashboard_layouts` request attribute (injected in `Raptor\Application::handle()`) and is resolved by `DashboardTrait::layout()`. Registration fail-fasts with `InvalidArgumentException` if the custom file does not exist. When writing a custom `dashboard.html`, start from a copy of the core file - it must keep `{{ content }}`, the `csrf-token` and `waf-body-encoding` meta tags, and the `dashboard.js`/`dashboard.css` includes, otherwise CSRF, WAF encoding, badges and the org switcher break. The sidemenu loop is optional - the developer can build their own navigation any way they like (keep the loop only if you want the ready-made RBAC-filtered menu). Pages that have their own route (login etc.) are NOT part of this map - override their route instead.
+
 ```php
 // AJAX modal - standalone, no layout
 $this->template(__DIR__ . '/role-insert-modal.html', $vars)->render();
@@ -117,11 +130,13 @@ Register routes in a Router class extending `codesaur\Router\Router`.
 - Give a route `->name()` only when referenced from templates (`{{ 'name'|link }}`) or PHP (`generateRouteLink()`). Routes called dynamically from JS do not need a name.
 - Register the router in the app's `Application.php`.
 - **CSRF**: every mutating dashboard route (POST/PUT/PATCH/DELETE and `GET_POST`/`GET_PUT` compounds) MUST chain `->middleware([CsrfMiddleware::class])` (with `use Raptor\CsrfMiddleware;`) - CSRF is per-route, not app-wide. Only login routes are exempt. See "CsrfMiddleware" below.
+- **Dashboard home route**: the named `'home'` route lives at `/home`, and `/` (dashboard root) stays registered WITHOUT a name - both point to `HomeController::index` (see `HomeRouter`). Do not merge them: sidebar active-detection uses prefix matching (`href.startsWith(link)`), so naming `/` as home would keep the home link active on every page; removing `/` would 404 the public web's `{{ index }}/dashboard` CTA/footer links. The bare dashboard root (where login lands) does not prefix-match the `/home` link, so `dashboard.html`'s inline script adds `active` to the home link when `window.location.pathname` equals `{{ index }}/dashboard`.
 
 ### 5. Create Templates
 
 - Use vanilla HTML comments (`<!-- -->`), not template engine comments (`{# #}`)
 - Never use `{{ }}` or `{% %}` inside comments - template may evaluate them. Document variables by name only, e.g. `<!-- Variables: max_file_size, record, files -->`
+- In inline `<script>` blocks use `/* ... */` comments, NEVER `//` line comments - HTML minification can collapse newlines, and a `//` would then comment out all following code on the merged line
 - `|text` filter returns the keyword itself when not found, so do NOT add `|default` after it - `{{ 'keyword'|text }}` is always safe
 
 **Template engine = `codesaur/template` (NOT Twig).** The syntax mimics Twig but is a custom parser. Twig features that are NOT supported (use the listed alternative):
@@ -169,7 +184,7 @@ Seed files only run on fresh installs. If the system is already deployed, also w
 
 ### 8. Add Menu Entry (dashboard modules)
 
-Add the module's index link to `MenuSeed.php` so it appears in the dashboard sidebar. Set `permission` to control visibility by role. Place under an existing section (Contents, Shop, System) if it fits, or create a new section if the module is a separate concern.
+Add the module's index link to `MenuSeed.php` so it appears in the dashboard sidebar. Set `permission` to control visibility by role. Place under an existing section (Contents, Shop, System; the Coder section is reserved for `system_coder`-only framework tools) if it fits, or create a new section if the module is a separate concern.
 
 Seed files only run on fresh installs. If the system is already deployed, also write a migration SQL to insert the new menu entry into the live database. The migration must insert into the correct parent menu (use SELECT to find parent_id by title).
 
@@ -437,7 +452,7 @@ For touching the sensitive table list, see `MigrationSecurityScanner::SENSITIVE_
 
 ## Cache
 
-Custom file-based cache (PSR-16 SimpleCache). Гадаад dependency-гүй, зөвхөн `psr/simple-cache` interface ашиглана. Stored in `protected/cache/`. Registered as `cache` container service. TTL: 12 hours (safety net - primary invalidation is explicit).
+Custom file-based cache (PSR-16 SimpleCache). Гадаад dependency-гүй, зөвхөн `psr/simple-cache` interface ашиглана. Stored in `cache/` (a dedicated top-level directory outside the document root, sibling of `logs/`; kept in git via its own `.gitignore`, contents ignored). Registered as `cache` container service via `ContainerMiddleware`. TTL: 12 hours (safety net - primary invalidation is explicit).
 
 ### Cached Data
 
@@ -479,7 +494,11 @@ if ($data === null) {
 
 ### ProtectedFilesController
 
-`protected/cache/` is protected from `ProtectedFilesController` - both `read()` and `setFolder()` block access to the cache directory.
+`Dashboard\Protected\ProtectedFilesController` (`application/dashboard/protected/`) serves files from the document-root-external `/protected` folder through the `GET /dashboard/protected/file?name=...` route (`ProtectedRouter`, registered in `Dashboard\Application`). It lives in `application/dashboard/` because no shipped module uses protected storage - every shipped module stores files in `/public` via `FileController::setFolder()`. Protected storage is a per-project decision, so this is a reference implementation to customize.
+
+Authorization is an overridable hook: `read()` calls `protected function authorizeRead(string $relativePath): bool` before serving. The default is permissive - any authenticated user may read (`system_coder` always). To restrict, either edit `authorizeRead()` in place or subclass `ProtectedFilesController`, override `authorizeRead()` and `$this->override(...)` the route to your controller - both ways apply your module's index/view permission or tenant-ownership rule (the method carries a commented org-id example). Because the default is permissive, a project that stores sensitive per-tenant files under `/protected` MUST tighten `authorizeRead()` - otherwise any logged-in user of any tenant can read every protected file.
+
+`read()` also blocks directory traversal (realpath containment) and a denylist of executable/sensitive extensions and filenames (php, .env, .htaccess, etc.). (The framework cache lives in the top-level `cache/` directory, not under `/protected`, so the controller has no cache-specific logic.)
 
 ## Frontend
 
@@ -489,12 +508,14 @@ The current codebase uses these libraries, but none are required by the framewor
 
 - Bootstrap 5.3.6 (CDN), Bootstrap Icons 1.13.1
 - `motable.js` - Data table, `moedit.js` - Rich text editor
-- `dashboard.js` - AJAX modals, notifications, search, sidebar badges, CSRF fetch wrapper, log protocol loader, dark mode
+- `dashboard.js` - AJAX modals, notifications, search modal (Ctrl+K), topbar language/theme dropdowns, sidebar badges, CSRF fetch wrapper, log protocol loader, dark mode
 - SweetAlert2 - Confirmation dialogs
 
 ### Asset Versioning
 
 When making significant changes to JS or CSS files, bump `?v=` in Templates (e.g. `dashboard.css?v=1` -> `dashboard.css?v=2`). Only local assets, not CDN.
+
+`?v=` increments by exactly 1 per RELEASE, relative to the last git tag - not once per change. If the file already got its `+1` since the last tag, further edits in the same release keep that number (check with `git show <last-tag>:<template> | grep '?v='`). Only bump files whose content actually changed since the tag; an untouched file keeps its old `?v=`.
 
 ### UI Conventions
 
@@ -506,15 +527,19 @@ When making significant changes to JS or CSS files, bump `?v=` in Templates (e.g
 
 ## Dashboard Sidebar Badge System
 
-Colored badge pills on sidebar menu items showing unseen activity counts per admin. Reads directly from existing `*_log` tables - no separate event table.
+Colored badge pills on sidebar menu items showing unseen activity counts per admin. Reads directly from existing `*_log` tables - no separate event table. The whole feature lives in the dashboard app layer (namespace `Dashboard\Badge`, folder `application/dashboard/badge/`) where per-project customization (`BADGE_MAP` / `PERMISSION_MAP` / `orgScopedModules()`) is expected to happen - edit it directly.
 
 ### Architecture
 
-- `BadgeController` (`raptor/template/`) - BADGE_MAP, PERMISSION_MAP, badge counting + seen API
-- `AdminBadgeSeenModel` (`raptor/template/`) - stores `checked_at` per admin per module
-- `BadgeRouter` (`raptor/template/`) - GET `/dashboard/badges`, POST `/dashboard/badges/seen`. Registered in `Raptor\Application`
+- `BadgeController` (`Dashboard\Badge`, `application/dashboard/badge/`) - BADGE_MAP, PERMISSION_MAP, `orgScopedModules()`, badge counting + seen API
+- `AdminBadgeSeenModel` (`Dashboard\Badge`) - stores `checked_at` per admin per module
+- `BadgeRouter` (`Dashboard\Badge`) - GET `/dashboard/badges`, POST `/dashboard/badges/seen`. Registered in `Dashboard\Application`
 - `dashboard.js` - `initSidebarBadges()` AJAX fetch + DOM render
 - `dashboard.css` - sidebar badge flex layout + pill styles
+
+### Multi-tenant org scoping
+
+`BadgeController::orgScopedModules()` (default `[]`) returns mount-naive module paths whose badges must be scoped to the viewing admin's current organization. For those modules the count query adds `context.auth_user.organization_id == currentOrgId` (log entries with a NULL org - old/web-frontend - still count for all, backward-compatible; `system_coder` bypasses scoping entirely as a cross-tenant superuser). The shipped content modules (news/pages/products/orders/messages) are global (no `organization_id` column) so the default list is empty; a multi-tenant app lists its tenant-scoped modules in `orgScopedModules()` (e.g. `['/request']`) - edit the method body directly, or override it in a subclass. The actor's org is recorded in every log entry by `Controller::log()` (`auth_user.organization_id`).
 
 ### Badge Colors
 
@@ -563,6 +588,22 @@ $this->log('messages', LogLevel::INFO, 'message', [
 
 For modules not tracked in logs (manual, migrations), badges are based on file count. The system compares current `glob()` count against `last_seen_count` stored in `admin_badge_seen`.
 
+## Dashboard Global Search + Topbar Quick Icons
+
+The topbar right side is flat (no user dropdown): **search | language | theme | user | logout**.
+
+- **Search** opens a centered modal (`#global-search`, also via Ctrl+K). `SearchController` (`application/dashboard/home/`) powers it: per-module LIKE queries returning grouped JSON results. `initGlobalSearch()` in `dashboard.js` handles open/close, debounced search and keyboard navigation (arrows + Enter). If the search route is not registered (`|link` returns `'#'`) the function removes the topbar search icon and exits; results whose view-route pattern resolves to `'#'` are hidden from the list.
+- **Language** is a dropdown listing active languages (hidden when only one language is active, per UI convention). Selecting fetches the `language` route (session-persisted) and reloads - handled by `initTopbarQuick()` via `data-language-url` attributes.
+- **Theme** is a light/dark dropdown applied instantly through `localStorage` + `data-bs-theme` (no reload) - handled by `initTopbarQuick()` via `data-theme` attributes. These dropdowns replaced the old "Language & Options" modal (`user-option` route, removed).
+- **User** (avatar + name) links straight to the admin's own profile page (`user-update` route) - no dropdown in between.
+- **Logout** is an icon-only button after a separator. Because logout is a plain GET link, it always asks for confirmation (`initLogoutConfirm()` in `dashboard.js`): a Bootstrap modal (`#logout-confirm-modal` in `dashboard.html`) when Bootstrap JS is available, falling back to native `confirm()` when the CDN failed to load - so logout works even fully offline. A custom dashboard layout that keeps the shipped logout button must also keep the `#logout-confirm-modal` markup (or accept the `confirm()` fallback).
+
+**Permission invariant:** every source block in `search()` MUST be gated with the SAME permission (or row-level filter) the module's own index page requires: news/pages/messages/comments -> `system_content_index`, products/orders/reviews -> `system_product_index`, users -> `system_user_index`, organizations -> `system_organization_index`, dev-requests -> any authorized user but WITHOUT `system_development` only own/assigned rows (`created_by`/`assigned_to`), mirroring `DevRequestController::list()`. Search results must be a subset of what the user could see by browsing - if the module's index page would render `dashboardProhibited`, its records must never appear in search (orders/messages carry customer PII, so a wrong gate is a data leak, not just a UX bug). When adding a module to search, copy the exact `isUserCan()` check from that module's index action.
+
+**Result click targets:** modules with a full view page link directly (news, pages, products, orders, users, dev-requests; comments link via `news_id` to the news page `#comments` anchor); modules whose view is a modal fragment (organizations, messages) are marked `modal: true` in `SOURCE_META` (`dashboard.js`) and load inside `#static-modal`; reviews have no per-record view so they link to the reviews index.
+
+Global search is optional: a project that does not need it can delete `SearchController`, its route in `HomeRouter`, plus the search icon and `#global-search` modal markup in `dashboard.html`. The language/theme dropdowns are independent and unaffected.
+
 ## Logger Protocol (View/Update Page Log Display)
 
 `initLoggerProtocol()` in `dashboard.js` auto-loads log entries for view/update pages. No JS needed in templates - just add data attributes to the `<ul>` element:
@@ -598,6 +639,12 @@ Common context patterns:
 
 **Convention:** any log entry tied to a record must use `'record_id' => $id` in the context array - never `'id' => $id`. This single convention keeps Logger Protocol filters consistent across modules. The separate `auth_user.id` field has its own semantic (used by the Badge system to filter out the actor's own actions) and is unrelated.
 
+## Deployment
+
+All standard deploy paths live in `.github/workflows/deploy.yml` (runs after CI succeeds; target auto-selected by configured secrets/variables): **A) FTP**, **B) SSH**, **C) Windows self-hosted runner**. Setup instructions are in that file's header comments.
+
+As a fallback (**deploy path D** in the READMEs) for the rare environments none of those jobs can reach - cPanel shared hosting with SSH/Terminal disabled and no reachable FTP (real-world example: the National Data Center of Mongolia shared hosting for government agency portals); being on cPanel alone does NOT imply this path, use A/B when the host offers FTP/SSH - a cPanel Git scaffold ships in `docs/conf.example/`: `.cpanel.yml.example` (copy to repo root as `.cpanel.yml`) and `auto-deploy.sh.example` (copy to `deploy/auto-deploy.sh`, run via cron). The scaffold handles `vendor/`-less repos by running `composer install` when `composer.lock` changes and `composer dump-autoload -o` when only `composer.json` changes (new PSR-4 module maps). Read `docs/mn/CPANEL.md` BEFORE touching that scaffold's behavior - it documents the PascalCase-vs-lowercase module folder naming rule, the CLI-SAPI php lookup gotcha, and the two-phase sequencing rule for changing the deploy script itself (a deploy that updates `auto-deploy.sh` still runs the OLD logic that cycle - land script changes one deploy BEFORE the changes that depend on them).
+
 ## Code Style
 
 ### Use Statement Order
@@ -612,11 +659,11 @@ Write in Mongolian Cyrillic or English. Applies to `*.md`, PHPDoc, HTMLDoc, JSDo
 - When changing code, update related docs in the same commit
 
 **Allowed Unicode exceptions** (do not "fix" these):
-- `🦖` dinosaur emoji - Raptor brand identity. Allowed in `README.md` (title) and `application/raptor/migration/migration-index.html` (header).
+- `🦖` dinosaur emoji - Raptor brand identity. Allowed in `README.md` (title).
 - Emoji in `application/dashboard/manual/*-manual-*.html` - allowed for admin clarity in user-facing manual pages.
 - Emoji in `application/raptor/notification/DiscordNotifier.php` - allowed because Discord notifications use emoji as their primary visual language for admin clarity.
-- IPA pronunciation characters (e.g. `/vɪˈlɒsɪræptər/`) in `application/raptor/content/page/PagesSamples.php` and `README.md` "Did You Know?" trivia - educational content, not docs/comments.
 - Superscript/subscript characters (`²`, `₂` etc.) in `application/dashboard/manual/moedit-manual-*.html` - chemistry/math notation examples in moedit manual.
+- Non-ASCII characters in test DATA (string literals exercising UTF-8 handling, e.g. `BodyEncodingMiddlewareTest`) - functional payload, not documentation.
 
 ### error_log Usage
 

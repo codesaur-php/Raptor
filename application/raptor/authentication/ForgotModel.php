@@ -55,7 +55,6 @@ class ForgotModel extends Model
             new Column('updated_at', 'datetime')
         ]);
         
-        // Хүснэгтийн нэр
         $this->setTable('forgot');
     }
     

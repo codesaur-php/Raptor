@@ -246,7 +246,6 @@ If your change affects usage or public API:
 For security-related issues, please follow the instructions in [SECURITY.md](SECURITY.md) or contact the maintainer directly:
 
 - **Email:** codesaur@gmail.com
-- **Phone:** +976 99000287
 
 ---
 

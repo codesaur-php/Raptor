@@ -185,4 +185,50 @@ class SessionMiddlewareTest extends TestCase
 
         $this->assertInstanceOf(ResponseInterface::class, $response);
     }
+
+    // =============================================
+    // Session cookie аюулгүй байдлын flag-ууд
+    // (session_set_cookie_params-ийг CLI-д ажиллуулж болохгүй тул
+    //  source-code түвшинд flag-ууд байгааг баталгаажуулна)
+    // =============================================
+
+    private static function source(): string
+    {
+        return \file_get_contents(
+            \dirname(__DIR__, 3) . '/application/raptor/SessionMiddleware.php'
+        );
+    }
+
+    public function testCookieHttpOnly(): void
+    {
+        $this->assertMatchesRegularExpression(
+            "/'httponly'\s*=>\s*true/",
+            self::source(),
+            'Session cookie must be HttpOnly (XSS session theft mitigation)'
+        );
+    }
+
+    public function testCookieSameSiteLax(): void
+    {
+        $this->assertMatchesRegularExpression(
+            "/'samesite'\s*=>\s*'Lax'/",
+            self::source(),
+            'Session cookie must set SameSite=Lax (CSRF mitigation)'
+        );
+    }
+
+    public function testCookieSecureFollowsHttps(): void
+    {
+        $source = self::source();
+
+        // secure flag нь HTTPS илрүүлэлтээс хамаарна (hardcode true/false биш)
+        $this->assertMatchesRegularExpression(
+            "/'secure'\s*=>\s*\\\$isHttps/",
+            $source,
+            'Session cookie secure flag must follow HTTPS detection'
+        );
+        // HTTPS илрүүлэлт нь HTTPS, порт 443, proxy-ийн X-Forwarded-Proto-г шалгана
+        $this->assertStringContainsString('HTTPS', $source);
+        $this->assertStringContainsString('HTTP_X_FORWARDED_PROTO', $source);
+    }
 }

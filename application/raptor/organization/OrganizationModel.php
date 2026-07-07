@@ -57,7 +57,6 @@ class OrganizationModel extends Model
             new Column('updated_by', 'bigint')                      // Сүүлд зассан хэрэглэгч
         ]);
 
-        // Хүснэгтийн нэр: organizations
         $this->setTable('organizations');
     }
     

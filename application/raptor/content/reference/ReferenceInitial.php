@@ -17,6 +17,8 @@ namespace Raptor\Content;
  * reference_{name} хүснэгт үүсэх үед энд байгаа
  * public static function reference_{name}(ReferenceModel $model)
  * автоматаар дуудагдаж анхны контентуудыг insert хийнэ.
+ *
+ * @see ReferenceModel::__initial()
  */
 class ReferenceInitial
 {
@@ -31,12 +33,16 @@ class ReferenceInitial
      *  - approve-new-user         - Бүртгэл баталгаажсан имэйл
      *  - dev-request-new          - Шинэ хөгжүүлэлтийн хүсэлт имэйл
      *  - dev-request-response     - Хүсэлтийн хариулт имэйл
-     *  - contact-message-notify    - Холбоо барих мессеж админд мэдэгдэх имэйл
+     *  - contact-message-notify   - Холбоо барих мессеж админд мэдэгдэх имэйл
      *  - order-status-update      - Захиалгын төлөв шинэчлэгдсэн имэйл
      *  - order-confirmation       - Захиалга баталгаажсан имэйл
      *  - order-notify             - Шинэ захиалга ирсэн тухай админд мэдэгдэх имэйл
      *  - comment-notify           - Шинэ сэтгэгдэл ирсэн тухай админд мэдэгдэх имэйл
      *  - review-notify            - Шинэ үнэлгээ ирсэн тухай админд мэдэгдэх имэйл
+     *
+     * email category-ийн загварууд inline style ашигладаг нь зориудынх:
+     * имэйл клиентүүд (Gmail, Outlook г.м.) <style> блок болон гадаад CSS-ийг
+     * хаядаг тул имэйлийн HTML-д tag бүр дээрх inline style л найдвартай.
      *
      * @param ReferenceModel $model
      */
@@ -71,7 +77,7 @@ class ReferenceInitial
                         . 'Материалыг харах эрхгүй болсон болон лиценз цуцлагдсан үед '
                         . 'татаж авсан бүх електрон болон хэвлэсэн хэлбэрээр байгаа материалуудыг устгах ёстой.</li></ol>'
                         . '<h5>3. Татгалзах</h5>'
-                        . '<ol type="a"><li>Bебсайтад байрлаж буй материалууд нь өөрийн байгаа хэлбэрээрээ байршсан болно. '
+                        . '<ol type="a"><li>Вебсайтад байрлаж буй материалууд нь өөрийн байгаа хэлбэрээрээ байршсан болно. '
                         . 'Веб систем нь хязгаарлалтгүй, битүү баталгаа эсвэл энгийн хэрэглээнд нийцэх байдлын нөхцөл, '
                         . 'зохих зорилгын таарамж, эсвэл оюуны өмчийн халдашгүй байдал болон бусад эрхийн зөрчил зэрэг байдлуудад '
                         . 'аливаа баталгаа гаргахгүй болно.</li></ol>'
@@ -177,7 +183,7 @@ class ReferenceInitial
             ['keyword' => 'forgotten-password-reset', 'category' => 'email'],
             [
                 'mn' => [
-                    'title' => 'Нууг үг дахин тааруулах',
+                    'title' => 'Нууц үг дахин тааруулах',
                     'content' =>
                         '<p>Хэн нэгэн (таныг гэж найдаж байна) системийн {{ email }} хаяг бүхий хэрэглэгчийн нууц үгийг шинээр тааруулах хүсэлт илгээсэн байна.</p>'
                         . '<p>Одоогоор таны хэрэглэгчийн тохиргоонд ямар нэгэн өөрчлөлт ороогүй байгаа билээ.</p>'
@@ -186,7 +192,7 @@ class ReferenceInitial
                         . '<p>{{ link }}</p>'
                         . '<p> </p>'
                         . '<p>Хэрвээ та энэхүү хүсэлтийг илгээгүй бол, бидэнд хариу бичиж энэ тухайгаа мэдэгдэнэ үү.</p>'
-                        . '<p>Нууг үгийг солих холбоос зөвхөн {{ minutes }} минутын туршид хүчинтэй байх болно.</p>'
+                        . '<p>Нууц үгийг солих холбоос зөвхөн {{ minutes }} минутын туршид хүчинтэй байх болно.</p>'
                         . '<p> </p>'
                         . '<p>Хүндэтгэсэн,</p>'
                         . '<p>Хөгжүүлэгчдийн баг.</p>'
@@ -200,7 +206,7 @@ class ReferenceInitial
                         . '<p>You can reset your password by clicking the link below:</p>'
                         . '<p>{{ link }}</p>'
                         . '<p> </p>'
-                        . '<p>If you did no request a new password, please let us know immediately by replying to this email.</p>'
+                        . '<p>If you did not request a new password, please let us know immediately by replying to this email.</p>'
                         . '<p>This password reset is only valid for the next {{ minutes }} minutes.</p>'
                         . '<p> </p>'
                         . '<p>Yours,</p>'
@@ -216,13 +222,16 @@ class ReferenceInitial
             ['keyword' => 'request-new-user', 'category' => 'email'],
             [
                 'mn' => [
-                    'title' => 'Хэрэглэгчээр бүртгүүлэх хүсэлт',
+                    'title' => 'Хэрэглэгчээр бүртгүүлэх хүсэлт - Имэйлээ баталгаажуулна уу',
                     'content' =>
                         '<p>Сайн байна уу, эрхэм {{ username }}!</p>'
                         . '<p> </p>'
                         . '<p>Та манай систем дээр [{{ username }}] нэр, [{{ email }}] хаяг бүхий шинэ хэрэглэгч бүртгүүлэх хүсэлт илгээсэн байна.</p>'
-                        . '<p>Одоогоор уг хүсэлтийн дагуу шинэ хэрэглэгчийг бид системдээ албан ёсоор бүртгээгүй байгаа билээ.</p>'
-                        . '<p>Манай систем админ хүсэлтийн дагуу мэдээллийг шалгаж үзээд тохирох үйлдлийг хийх болно.</p>'
+                        . '<p>Хүсэлтээ үргэлжлүүлэхийн тулд та дараах холбоос дээр дарж имэйл хаягаа баталгаажуулна уу:</p>'
+                        . '<p>{{ link }}</p>'
+                        . '<p>Баталгаажуулах холбоос зөвхөн {{ hours }} цагийн туршид хүчинтэй.</p>'
+                        . '<p> </p>'
+                        . '<p>Имэйл баталгаажсаны дараа манай систем админ хүсэлтийн дагуу мэдээллийг шалгаж үзээд тохирох үйлдлийг хийх болно.</p>'
                         . '<p>Бидний зүгээс баталгаажсан хариуг дахин илгээх хүртэл та түр хүлээнэ үү.</p>'
                         . '<p> </p>'
                         . '<p>Хэрвээ та энэхүү хүсэлтийг илгээгүй бол, бидэнд хариу бичиж энэ тухайгаа мэдэгдэнэ үү.</p>'
@@ -231,19 +240,22 @@ class ReferenceInitial
                         . '<p>Хөгжүүлэгчдийн баг.</p>'
                 ],
                 'en' => [
-                    'title' => 'New user registration request',
+                    'title' => 'New user registration request - Please verify your email',
                     'content' =>
-                        '<p>Сайн байна уу, эрхэм {{ username }}!</p>'
+                        '<p>Hello, dear {{ username }}!</p>'
                         . '<p> </p>'
-                        . '<p>Та манай систем дээр [{{ username }}] нэр, [{{ email }}] хаяг бүхий шинэ хэрэглэгч бүртгүүлэх хүсэлт илгээсэн байна.</p>'
-                        . '<p>Одоогоор уг хүсэлтийн дагуу шинэ хэрэглэгчийг бид системдээ албан ёсоор бүртгээгүй байгаа билээ.</p>'
-                        . '<p>Манай систем админ хүсэлтийн дагуу мэдээллийг шалгаж үзээд тохирох үйлдлийг хийх болно.</p>'
-                        . '<p>Бидний зүгээс баталгаажсан хариуг дахин илгээх хүртэл та түр хүлээнэ үү.</p>'
+                        . '<p>You have requested a new user account with the name [{{ username }}] and email [{{ email }}] on our system.</p>'
+                        . '<p>To continue with your request, please verify your email address by clicking the link below:</p>'
+                        . '<p>{{ link }}</p>'
+                        . '<p>The verification link is only valid for the next {{ hours }} hours.</p>'
                         . '<p> </p>'
-                        . '<p>Хэрвээ та энэхүү хүсэлтийг илгээгүй бол, бидэнд хариу бичиж энэ тухайгаа мэдэгдэнэ үү.</p>'
+                        . '<p>After your email is verified, our system administrator will review your request and take the appropriate action.</p>'
+                        . '<p>Please wait until we send you a confirmation response.</p>'
                         . '<p> </p>'
-                        . '<p>Хүндэтгэсэн,</p>'
-                        . '<p>Хөгжүүлэгчдийн баг.</p>'
+                        . '<p>If you did not send this request, please let us know immediately by replying to this email.</p>'
+                        . '<p> </p>'
+                        . '<p>Yours,</p>'
+                        . '<p>Support Team</p>'
                 ]
             ]
         );
@@ -270,15 +282,14 @@ class ReferenceInitial
                 'en' => [
                     'title' => 'User registration approved',
                     'content' =>
-                        '<p>Сайн байна уу, эрхэм {{ username }}?</p>'
-                        . '<p>Таньд энэ өдрийн мэнд хүргэе!</p>'
+                        '<p>Hello, dear {{ username }}!</p>'
                         . '<p> </p>'
-                        . '<p>Таны бүртгэл баталгаажиж хэрэглэгч амжилттай үүслээ.</p>'
-                        . '<p>Та {{ login }} хаягаар зочилж, өөрийн бүртгүүлсэн нууц үгээ ашиглан системд нэвтэрнэ үү.</p>'
-                        . '<p>Нэвтрэх нэр: <strong>{{ username }}</strong> эсвэл <strong>{{ email }}</strong></p>'
+                        . '<p>Your registration has been approved and your user account was created successfully.</p>'
+                        . '<p>Please visit {{ login }} and sign in using the password you registered with.</p>'
+                        . '<p>Login name: <strong>{{ username }}</strong> or <strong>{{ email }}</strong></p>'
                         . '<p> </p>'
-                        . '<p>Хүндэтгэсэн,</p>'
-                        . '<p>Хөгжүүлэгчдийн баг.</p>'
+                        . '<p>Yours,</p>'
+                        . '<p>Support Team</p>'
                 ]
             ]
         );

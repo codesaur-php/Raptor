@@ -2,26 +2,36 @@
 
 namespace Dashboard\Home;
 
+use Raptor\Content\CommentsModel;
+use Raptor\Content\MessagesModel;
 use Raptor\Content\NewsModel;
 use Raptor\Content\PagesModel;
+use Raptor\Development\DevRequestModel;
+use Raptor\Organization\OrganizationModel;
 use Raptor\User\UsersModel;
 
 use Dashboard\Shop\ProductsModel;
 use Dashboard\Shop\ProductOrdersModel;
+use Dashboard\Shop\ReviewsModel;
 
 /**
  * Class SearchController
  *
- * Dashboard-ийн topbar хайлтын endpoint.
- * Бүх үндсэн хүснэгтүүдээс (news, pages, products, orders, users гэх мэт)
- * LIKE хайлт хийж JSON үр дүн буцаана.
+ * Dashboard-ийн topbar хайлтын modal (Ctrl+K)-ийн endpoint.
+ * Бүх үндсэн хүснэгтүүдээс (news, pages, products, orders, users,
+ * organizations, dev-requests, messages, comments, reviews) LIKE хайлт
+ * хийж JSON үр дүн буцаана.
+ *
+ * Чухал инвариант: блок бүр тухайн модулийн index хуудасны ижил
+ * permission-ээр хамгаалагдана - хайлтын үр дүн нь хэрэглэгч browse
+ * хийгээд харж чадах зүйлсийн дэд олонлог байх ёстой.
  *
  * @package Dashboard\Home
  */
 class SearchController extends \Raptor\Controller
 {
     /**
-     * Dashboard-ийн topbar search.
+     * Dashboard-ийн topbar хайлтын modal (Ctrl+K) search.
      *
      * Бүх үндсэн хүснэгтүүдээс (news, pages, products, orders, users)
      * title/name талбараар LIKE хайлт хийж JSON үр дүн буцаана.
@@ -62,7 +72,12 @@ class SearchController extends \Raptor\Controller
                             $results[] = $row;
                         }
                     }
-                } catch (\Throwable) {
+                } catch (\Throwable $err) {
+                    // Хүснэгт байхгүй (хагас суулгац) бол зүгээр өнгөрнө, гэхдээ
+                    // жинхэнэ query алдааг dev горимд харуулж regression-ийг нуухгүй.
+                    if (CODESAUR_DEVELOPMENT) {
+                        \error_log('Search module query failed: ' . $err->getMessage());
+                    }
                 }
             }
 
@@ -86,12 +101,17 @@ class SearchController extends \Raptor\Controller
                             $results[] = $row;
                         }
                     }
-                } catch (\Throwable) {
+                } catch (\Throwable $err) {
+                    // Хүснэгт байхгүй (хагас суулгац) бол зүгээр өнгөрнө, гэхдээ
+                    // жинхэнэ query алдааг dev горимд харуулж regression-ийг нуухгүй.
+                    if (CODESAUR_DEVELOPMENT) {
+                        \error_log('Search module query failed: ' . $err->getMessage());
+                    }
                 }
             }
 
-            // PRODUCTS
-            if ($this->isUserCan('system_content_index')) {
+            // PRODUCTS - shop модулийн index хуудастай ижил permission
+            if ($this->isUserCan('system_product_index')) {
                 try {
                     $table = (new ProductsModel($this->pdo))->getName();
                     $stmt = $this->prepare(
@@ -109,12 +129,18 @@ class SearchController extends \Raptor\Controller
                             $results[] = $row;
                         }
                     }
-                } catch (\Throwable) {
+                } catch (\Throwable $err) {
+                    // Хүснэгт байхгүй (хагас суулгац) бол зүгээр өнгөрнө, гэхдээ
+                    // жинхэнэ query алдааг dev горимд харуулж regression-ийг нуухгүй.
+                    if (CODESAUR_DEVELOPMENT) {
+                        \error_log('Search module query failed: ' . $err->getMessage());
+                    }
                 }
             }
 
-            // ORDERS
-            if ($this->isUserCan('system_content_index')) {
+            // ORDERS - захиалагчийн PII агуулдаг тул shop модулийн index
+            // хуудастай ижил permission (system_product_index) шаардана
+            if ($this->isUserCan('system_product_index')) {
                 try {
                     $table = (new ProductOrdersModel($this->pdo))->getName();
                     $stmt = $this->prepare(
@@ -133,7 +159,12 @@ class SearchController extends \Raptor\Controller
                             $results[] = $row;
                         }
                     }
-                } catch (\Throwable) {
+                } catch (\Throwable $err) {
+                    // Хүснэгт байхгүй (хагас суулгац) бол зүгээр өнгөрнө, гэхдээ
+                    // жинхэнэ query алдааг dev горимд харуулж regression-ийг нуухгүй.
+                    if (CODESAUR_DEVELOPMENT) {
+                        \error_log('Search module query failed: ' . $err->getMessage());
+                    }
                 }
             }
 
@@ -160,7 +191,152 @@ class SearchController extends \Raptor\Controller
                             $results[] = $row;
                         }
                     }
-                } catch (\Throwable) {
+                } catch (\Throwable $err) {
+                    // Хүснэгт байхгүй (хагас суулгац) бол зүгээр өнгөрнө, гэхдээ
+                    // жинхэнэ query алдааг dev горимд харуулж regression-ийг нуухгүй.
+                    if (CODESAUR_DEVELOPMENT) {
+                        \error_log('Search module query failed: ' . $err->getMessage());
+                    }
+                }
+            }
+
+            // ORGANIZATIONS - байгууллагын модулийн index хуудастай ижил permission
+            if ($this->isUserCan('system_organization_index')) {
+                try {
+                    $table = (new OrganizationModel($this->pdo))->getName();
+                    $stmt = $this->prepare(
+                        "SELECT id, name AS title, alias AS code, 'organizations' AS source
+                         FROM $table
+                         WHERE is_active=1 AND name LIKE :q
+                         ORDER BY name LIMIT 10"
+                    );
+                    $stmt->bindValue(':q', $like);
+                    if ($stmt->execute()) {
+                        while ($row = $stmt->fetch()) {
+                            $results[] = $row;
+                        }
+                    }
+                } catch (\Throwable $err) {
+                    // Хүснэгт байхгүй (хагас суулгац) бол зүгээр өнгөрнө, гэхдээ
+                    // жинхэнэ query алдааг dev горимд харуулж regression-ийг нуухгүй.
+                    if (CODESAUR_DEVELOPMENT) {
+                        \error_log('Search module query failed: ' . $err->getMessage());
+                    }
+                }
+            }
+
+            // DEV REQUESTS - жагсаалтын хуудастай ижил хандалт:
+            // system_development -> бүх хүсэлт, бусад -> зөвхөн өөрийн
+            // үүсгэсэн эсвэл өөрт хуваарилагдсан хүсэлтүүд
+            try {
+                $table = (new DevRequestModel($this->pdo))->getName();
+                $sql =
+                    "SELECT id, title, status, content, 'dev-requests' AS source
+                     FROM $table
+                     WHERE (title LIKE :q OR content LIKE :q2)";
+                if (!$this->isUserCan('system_development')) {
+                    $sql .= ' AND (created_by=:uid OR assigned_to=:uid2)';
+                }
+                $sql .= ' ORDER BY created_at DESC LIMIT 10';
+                $stmt = $this->prepare($sql);
+                $stmt->bindValue(':q', $like);
+                $stmt->bindValue(':q2', $like);
+                if (!$this->isUserCan('system_development')) {
+                    $stmt->bindValue(':uid', $this->getUserId(), \PDO::PARAM_INT);
+                    $stmt->bindValue(':uid2', $this->getUserId(), \PDO::PARAM_INT);
+                }
+                if ($stmt->execute()) {
+                    while ($row = $stmt->fetch()) {
+                        $results[] = $row;
+                    }
+                }
+            } catch (\Throwable $err) {
+                // Хүснэгт байхгүй (хагас суулгац) бол зүгээр өнгөрнө, гэхдээ
+                // жинхэнэ query алдааг dev горимд харуулж regression-ийг нуухгүй.
+                if (CODESAUR_DEVELOPMENT) {
+                    \error_log('Search module query failed: ' . $err->getMessage());
+                }
+            }
+
+            // MESSAGES (холбоо барих) - messages index хуудастай ижил permission
+            if ($this->isUserCan('system_content_index')) {
+                try {
+                    $table = (new MessagesModel($this->pdo))->getName();
+                    $stmt = $this->prepare(
+                        "SELECT id, name AS title, email, message, 'messages' AS source
+                         FROM $table
+                         WHERE name LIKE :q OR email LIKE :q2 OR message LIKE :q3
+                         ORDER BY created_at DESC LIMIT 10"
+                    );
+                    $stmt->bindValue(':q', $like);
+                    $stmt->bindValue(':q2', $like);
+                    $stmt->bindValue(':q3', $like);
+                    if ($stmt->execute()) {
+                        while ($row = $stmt->fetch()) {
+                            $results[] = $row;
+                        }
+                    }
+                } catch (\Throwable $err) {
+                    // Хүснэгт байхгүй (хагас суулгац) бол зүгээр өнгөрнө, гэхдээ
+                    // жинхэнэ query алдааг dev горимд харуулж regression-ийг нуухгүй.
+                    if (CODESAUR_DEVELOPMENT) {
+                        \error_log('Search module query failed: ' . $err->getMessage());
+                    }
+                }
+            }
+
+            // COMMENTS (мэдээний сэтгэгдэл) - comments index хуудастай ижил permission.
+            // comments-view route нь news_id хүлээж аваад мэдээний #comments руу
+            // чиглүүлдэг тул холбоосын id болгож news_id-г буцаана.
+            if ($this->isUserCan('system_content_index')) {
+                try {
+                    $table = (new CommentsModel($this->pdo))->getName();
+                    $stmt = $this->prepare(
+                        "SELECT news_id AS id, name AS title, email, comment, 'comments' AS source
+                         FROM $table
+                         WHERE name LIKE :q OR comment LIKE :q2
+                         ORDER BY created_at DESC LIMIT 10"
+                    );
+                    $stmt->bindValue(':q', $like);
+                    $stmt->bindValue(':q2', $like);
+                    if ($stmt->execute()) {
+                        while ($row = $stmt->fetch()) {
+                            $results[] = $row;
+                        }
+                    }
+                } catch (\Throwable $err) {
+                    // Хүснэгт байхгүй (хагас суулгац) бол зүгээр өнгөрнө, гэхдээ
+                    // жинхэнэ query алдааг dev горимд харуулж regression-ийг нуухгүй.
+                    if (CODESAUR_DEVELOPMENT) {
+                        \error_log('Search module query failed: ' . $err->getMessage());
+                    }
+                }
+            }
+
+            // REVIEWS (бүтээгдэхүүний үнэлгээ) - reviews index хуудастай ижил permission.
+            // Тусдаа view хуудасгүй тул холбоос reviews index руу очно.
+            if ($this->isUserCan('system_product_index')) {
+                try {
+                    $table = (new ReviewsModel($this->pdo))->getName();
+                    $stmt = $this->prepare(
+                        "SELECT id, name AS title, email, comment, 'reviews' AS source
+                         FROM $table
+                         WHERE name LIKE :q OR comment LIKE :q2
+                         ORDER BY created_at DESC LIMIT 10"
+                    );
+                    $stmt->bindValue(':q', $like);
+                    $stmt->bindValue(':q2', $like);
+                    if ($stmt->execute()) {
+                        while ($row = $stmt->fetch()) {
+                            $results[] = $row;
+                        }
+                    }
+                } catch (\Throwable $err) {
+                    // Хүснэгт байхгүй (хагас суулгац) бол зүгээр өнгөрнө, гэхдээ
+                    // жинхэнэ query алдааг dev горимд харуулж regression-ийг нуухгүй.
+                    if (CODESAUR_DEVELOPMENT) {
+                        \error_log('Search module query failed: ' . $err->getMessage());
+                    }
                 }
             }
 
@@ -185,7 +361,7 @@ class SearchController extends \Raptor\Controller
                 'results' => $best_results
             ]);
         } catch (\Throwable $err) {
-            $this->respondJSON(['message' => $err->getMessage()], $err->getCode());
+            $this->respondJSON(['message' => $err->getMessage()], $err->getCode() ?: 500);
         }
     }
 }

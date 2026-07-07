@@ -2,7 +2,11 @@
 
 ## Танилцуулга
 
-Raptor нь нэвтэрсэн админы session-ийг удаан хадгалахын тулд `SessionMiddleware` дотроос session **cookie-ийн амьдрах хугацааг 30 хоног** болгож тохируулдаг (`session_set_cookie_params(2592000)`). Ингэснээр админ browser-ээ хаагаад дахин нээсэн ч нэвтэрсэн хэвээр үлдэж, session дотор хадгалагдсан JWT болон CSRF token эрт алдагдахгүй. Энэ энгийн арга нь олон жилийн турш Монголын олон cPanel хост / VPS серверүүд дээр нэмэлт тохиргоогүйгээр найдвартай ажиллаж ирсэн.
+Raptor нь нэвтэрсэн админы session-ийг удаан хадгалахын тулд `SessionMiddleware` дотроос session **cookie-ийн амьдрах хугацааг 30 хоног** болгож тохируулдаг (`session_set_cookie_params(...)`). Ингэснээр админ browser-ээ хаагаад дахин нээсэн ч нэвтэрсэн хэвээр үлдэж, session дотор хадгалагдсан JWT болон CSRF token эрт алдагдахгүй. Энэ энгийн арга нь олон жилийн турш Монголын олон cPanel хост / VPS серверүүд дээр нэмэлт тохиргоогүйгээр найдвартай ажиллаж ирсэн.
+
+Мөн энэ `session_set_cookie_params(...)` дуудлага (array хэлбэр) cookie-ийн аюулгүйн flag-уудыг php.ini-д орхилгүй ил тодоор тохируулна: `httponly => true`, `samesite => 'Lax'`, `secure` нь HTTPS-ээс автоматаар (`HTTPS` / порт 443 / `X-Forwarded-Proto`) илэрч, HTTPS дээр Secure болж, локал HTTP хөгжүүлэлт дээр мөн ажиллана.
+
+Эдгээр flag нь lifetime-тэй **ижил** дуудлагад байгаа тул доор өгүүлэх "`session_set_cookie_params(...)` дуудлагыг устгаж session-ийн удирдлагыг бүхэлд нь PHP-д даатгах" нь одоо зөвхөн хугацаа биш **аюулгүйн flag-уудыг ч** php.ini-д шилжүүлнэ - тэр амлалттай бүрэн нийцнэ, зүгээр цар хүрээ нь өргөжсөн. Тиймээс дуудлагыг устгавал аюулгүйн хамгаалалтаа хадгалахын тулд flag-уудыг php.ini-д тохируул: `session.cookie_httponly=1`, `session.cookie_samesite=Lax`, `session.cookie_secure=1` (HTTPS дээр). Зөвхөн **хугацааг** солиж flag-уудыг хэвээр үлдээхийг хүсвэл бүтэн дуудлагыг устгахын оронд array дахь `lifetime` утгыг засна. Доорх бүх зүйл зөвхөн **хугацааны** тухай.
 
 Энэ нь зөвхөн **client талын cookie**-д л үйлчилнэ. Raptor нь session-ийн **server талын** удирдлагыг - файлын цэвэрлэгээ (`session.gc_maxlifetime`), хадгалах зам (`session.save_path`) - кодоос **тулгадаггүй**, харин host-ийн PHP тохиргоонд (php.ini) даатгадаг. Учир нь server талын session хугацааг кодоос албадах нь зарим орчинд найдваргүй:
 
@@ -10,7 +14,7 @@ Raptor нь нэвтэрсэн админы session-ийг удаан хадга
 - **Хуваалцсан `/tmp` дахь зөрчил.** Олон сайт нэг session хавтас хуваалцах үед, өөр түрээслэгчийн GC (богино `gc_maxlifetime`-тай) танай файлыг ч устгана.
 - **Системийн cron-ы purge.** cPanel/LiteSpeed, macOS зэрэг нь /tmp-г PHP-ийн тохиргооноос үл хамааран бие даан цэвэрлэдэг.
 
-Тиймээс session-ийн server талын бодлого (хугацаа, хадгалах зам, цэвэрлэгээ) нь тухайн серверт тохирч **developer-ийн мэдэлд** үлддэг. Хүсвэл developer session-ийн удирдлагыг **бүхэлд нь** PHP тохиргоонд шилжүүлж болно: `SessionMiddleware` доторх `session_set_cookie_params(2592000)` мөрийг **устгаад**, бүх session-ийн хугацаа/зам/цэвэрлэгээг php.ini / .user.ini-д тохируулна (доорх заавраас үз).
+Тиймээс session-ийн server талын бодлого (хугацаа, хадгалах зам, цэвэрлэгээ) нь тухайн серверт тохирч **developer-ийн мэдэлд** үлддэг. Хүсвэл developer session-ийн удирдлагыг **бүхэлд нь** PHP тохиргоонд шилжүүлж болно: `SessionMiddleware` доторх `session_set_cookie_params(...)` мөрийг **устгаад**, бүх session-ийн хугацаа/зам/цэвэрлэгээ - **мөн cookie-ийн аюулгүйн flag-уудыг** (`cookie_httponly` / `cookie_samesite` / `cookie_secure`, дээрх тэмдэглэлийг үз) - php.ini / .user.ini-д тохируулна (доорх заавраас үз).
 
 ---
 
@@ -18,11 +22,11 @@ Raptor нь нэвтэрсэн админы session-ийг удаан хадга
 
 `SessionMiddleware` нь:
 
-- **Session cookie-ийн амьдрах хугацааг 30 хоног болгоно** - `session_set_cookie_params(2592000)`. Энэ нь ЗӨВХӨН client талын cookie бөгөөд олон cPanel/VPS host дээр нэмэлт тохиргоогүйгээр шууд ажиллах practical default юм (админ browser хаасан ч нэвтэрсэн хэвээр).
+- **Session cookie-ийн амьдрах хугацааг 30 хоног болгоно** - `session_set_cookie_params(...)`. Энэ нь зөвхөн client талын cookie бөгөөд олон cPanel/VPS host дээр нэмэлт тохиргоогүйгээр шууд ажиллах practical default юм (админ browser хаасан ч нэвтэрсэн хэвээр).
 - `session.save_path`, `session.gc_maxlifetime`, `session.gc_probability`-д **кодоос гар хүрэхгүй** - эдгээр (ялангуяа server талын файлын цэвэрлэгээ) нь host php.ini-аар тодорхойлогдоно.
 - `session_name('raptor')` + `session_start()`, мөн session-д бичдэггүй route дээр `session_write_close()`-оор эрт хаах (concurrency) оновчлол.
 
-> **PHP тохиргоонд бүрэн даатгах:** session-ийн хугацааг бүхэлд нь host php.ini-д удирдахыг хүсвэл `SessionMiddleware` доторх `session_set_cookie_params(2592000)` мөрийг **устгаад** php.ini-д тохируул (доорх заавар).
+> **PHP тохиргоонд бүрэн даатгах:** session-ийн хугацааг бүхэлд нь host php.ini-д удирдахыг хүсвэл `SessionMiddleware` доторх `session_set_cookie_params(...)` мөрийг **устгаад** php.ini-д тохируул (доорх заавар).
 
 ---
 
@@ -167,7 +171,7 @@ find /Users/USERNAME/.php-sessions -name 'sess_*' -mtime +30 -delete
 PHP-ийн анхдагч утгуудаар:
 
 - **`session.gc_maxlifetime`** (server тал) - анхдагч ихэвчлэн **1440 секунд (24 минут)**. Session файл сүүлд хандсанаас хойш энэ хугацаа өнгөрвөл GC/cron түүнийг устгах боломжтой болно. Өөрөөр хэлбэл админ **~24 минут идэвхгүй** байвал session устаж магадгүй (хост бүрд харилцан адилгүй - зарим хост үүнийг өндөр тавьсан байдаг).
-- **`session.cookie_lifetime`** (client тал) - PHP-ийн анхдагч нь **0** (browser хаах хүртэл) боловч **Raptor үүнийг кодоос 30 хоног болгодог** (`SessionMiddleware`). Тиймээс default-аар cookie 30 хоног хадгалагдана; `session_set_cookie_params(2592000)` мөрийг устгасан үед л **0** (browser хаах хүртэл) болно.
+- **`session.cookie_lifetime`** (client тал) - PHP-ийн анхдагч нь **0** (browser хаах хүртэл) боловч **Raptor үүнийг кодоос 30 хоног болгодог** (`SessionMiddleware`). Тиймээс default-аар cookie 30 хоног хадгалагдана. `session_set_cookie_params(...)` мөрийг устгавал cookie нь php.ini-ийн `session.cookie_lifetime`-д буцна - тохируулаагүй бол `0`. Яг ийм учраас `cookie_lifetime` нь дээрх зааврын **гурван утгын** нэг: php.ini-ийн замаар явахдаа түүнийг `gc_maxlifetime`/`save_path`-ийн хамт заавал (жишээ нь `2592000`) тохируулна, эс бөгөөс cookie browser хаахад устна.
 
 ### Raptor-д хэрхэн нөлөөлөх вэ
 
@@ -199,9 +203,9 @@ Browser-аар нээж `session.gc_maxlifetime`-ийн **"Local Value"** = `259
 
 ## Гол зарчмууд (давтан)
 
-1. **Raptor default-аар session cookie-ийн хугацааг 30 хоног болгодог** - нэвтэрсэн админы session-ийг удаан хадгалахын тулд `SessionMiddleware` дотроос `session_set_cookie_params(2592000)`-аар тохируулдаг. Энэ нь зөвхөн client талын cookie бөгөөд админ browser-ээ хаагаад дахин нээсэн ч нэвтэрсэн хэвээр үлдэнэ.
+1. **Raptor default-аар session cookie-ийн хугацааг 30 хоног болгодог** - нэвтэрсэн админы session-ийг удаан хадгалахын тулд `SessionMiddleware` дотроос `session_set_cookie_params(...)`-аар тохируулдаг. Энэ нь зөвхөн client талын cookie бөгөөд админ browser-ээ хаагаад дахин нээсэн ч нэвтэрсэн хэвээр үлдэнэ.
 2. **php.ini / .user.ini түвшинд** тохируул - runtime `ini_set()` нь системийн cron-д хүрдэггүй тул найдваргүй.
 3. **Хувийн `save_path` + `gc_maxlifetime` + `cookie_lifetime` гурвыг хамтад нь** - host purge-аас сэргийлж урт хугацаа үнэхээр ажиллана. Зөвхөн `gc_maxlifetime`-г хуваалцсан /tmp-д тавих нь найдваргүй.
 4. **Web SAPI-д** тохируулж, web server / FPM-ийг restart хий.
 5. Нэвтрэлтийн UX тогтвортой байлгахын тулд session-ы хугацааг **`RAPTOR_JWT_LIFETIME`-тэй ойролцоо** тавь.
-6. Тохиргоо хийхгүй бол server талын session файл PHP-ийн default `gc_maxlifetime`-аар (ихэвчлэн богино) цэвэрлэгдэж болзошгүй ба админ дахин нэвтэрнэ - энэ нь хэвийн, аюулгүй зан төлөв. Client cookie нь дээрх #1-ийн дагуу 30 хоног хэвээр; **харин хэрэв developer `SessionMiddleware` дээрээс `session_set_cookie_params(2592000)` мөрийг устгасан бол** cookie ч PHP-ийн default буюу `0` (browser хаах хүртэл) болно.
+6. Тохиргоо хийхгүй бол server талын session файл PHP-ийн default `gc_maxlifetime`-аар (ихэвчлэн богино) цэвэрлэгдэж болзошгүй ба админ дахин нэвтэрнэ - энэ нь хэвийн, аюулгүй зан төлөв. Client cookie нь дээрх #1-ийн дагуу 30 хоног хэвээр; **харин хэрэв developer `SessionMiddleware` дээрээс `session_set_cookie_params(...)` мөрийг php.ini-д `session.cookie_lifetime` тохируулалгүйгээр устгавал** cookie нь PHP-ийн default буюу `0` (browser хаах хүртэл) болно - мөрийг устгах нь зөвхөн дээрх гурван утгын php.ini зааврыг бүрэн дагасан үед л аюулгүй.

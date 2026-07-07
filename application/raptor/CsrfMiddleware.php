@@ -32,7 +32,6 @@ class CsrfMiddleware implements MiddlewareInterface
 
         $sessionToken = $_SESSION['CSRF_TOKEN'] ?? '';
         $headerToken  = $request->getHeaderLine('X-CSRF-TOKEN');
-
         if (empty($sessionToken) || empty($headerToken) || !\hash_equals($sessionToken, $headerToken)) {
             if (!\headers_sent()) {
                 \http_response_code(403);

@@ -33,9 +33,9 @@ use Psr\Http\Server\RequestHandlerInterface;
  * - Энэ middleware-ээс өмнө *LocalizationMiddleware* заавал ажилласан байх ёстой
  *   Учир нь хэлний код (c.code) нь localization attribute-аас авдаг.
  *
- * ЧУХАЛ - Middleware-ийн handle() дуудах зарчим:
+ * Чухал - Middleware-ийн handle() дуудах зарчим:
  * ----------------------------------------------------
- * $handler->handle()-г try блок дотор ХЭЗЭЭ Ч дуудаж БОЛОХГҮЙ.
+ * $handler->handle()-г try блок дотор хэзээ ч дуудаж болохгүй.
  * Middleware runner нь дотоод array pointer (current/next) ашиглан queue
  * дамждаг. handle() дуудагдах бүрт pointer нэг алхам ахина. Хэрвээ
  * try дотор handle() дуудаад, гүнд exception уусвал catch блок барьж
@@ -75,7 +75,6 @@ class SettingsMiddleware implements MiddlewareInterface
                 // Request attribute-оос PDO-г авах (Application-с дамждаг)
                 $pdo = $request->getAttribute('pdo');
 
-                // SettingsModel instance
                 $model = new SettingsModel($pdo);
 
                 // SQL statement - идэвхтэй + тухайн хэлний контентыг авах
@@ -86,7 +85,6 @@ class SettingsMiddleware implements MiddlewareInterface
                     "INNER JOIN {$model->getContentName()} AS c ON p.id = c.parent_id " .
                     'WHERE c.code = :code LIMIT 1'
                 );
-                // Хэлний кодыг bind хийх
                 $stmt->bindParam(':code', $code, \PDO::PARAM_STR);
                 // Гүйцэтгээд settings мөрийг унших
                 if ($stmt->execute()) {

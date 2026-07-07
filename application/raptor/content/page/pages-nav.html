@@ -1,7 +1,6 @@
 <!-- SweetAlert2 сан - устгах үед баталгаажуулах цонх гаргахад ашиглана -->
 <script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-<!-- ========== ТОЛГОЙ ХЭСЭГ ========== -->
 <div class="d-flex justify-content-between align-items-center">
     <h5 class="text-primary text-uppercase"><i class="bi bi-diagram-3"></i> {{ 'pages-navigation'|text }}</h5>
     <div>
@@ -14,7 +13,6 @@
     </div>
 </div>
 
-<!-- ========== TREE VIEW ========== -->
 <div id="pages-tree-loading" class="text-center py-5">
     <div class="spinner-border text-primary" role="status">
         <span class="visually-hidden">Loading...</span>
@@ -50,7 +48,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const pages = data.list;
         const infos = data.infos;
 
-        // Хэл тус бүрээр ялган бүлэглэх
+        /* Хэл тус бүрээр ялган бүлэглэх */
         const byLang = {};
         pages.forEach(page => {
             const code = page.code || 'unknown';
@@ -58,8 +56,8 @@ document.addEventListener('DOMContentLoaded', function () {
             byLang[code].push(page);
         });
 
-        // Хэл бүрийн tree тус тусдаа render (default хэл эхэнд)
-        // Бүх тохируулсан хэлүүдийг card-д харуулах (хоосон ч гэсэн)
+        /* Хэл бүрийн tree тус тусдаа render (default хэл эхэнд) */
+        /* Бүх тохируулсан хэлүүдийг card-д харуулах (хоосон ч гэсэн) */
         Object.keys(languages).forEach(code => {
             if (!byLang[code]) byLang[code] = [];
         });
@@ -75,11 +73,11 @@ document.addEventListener('DOMContentLoaded', function () {
             const langPages = byLang[code];
             langPages.sort((a, b) => (a.position || 0) - (b.position || 0) || a.id - b.id);
 
-            // Хэлний flag, нэр
+            /* Хэлний flag, нэр */
             const flagCode = code === 'en' ? 'us' : code;
             const langTitle = languages[code]?.title ?? code.toUpperCase();
 
-            // Tree бүтэц бэлдэх
+            /* Tree бүтэц бэлдэх */
             const childrenMap = {};
             const roots = [];
             langPages.forEach(page => {
@@ -122,7 +120,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         treeContainer.innerHTML = html;
 
-        // Жишиг дата байвал reset товч харуулах
+        /* Жишиг дата байвал reset товч харуулах */
         if (data.is_sample && canDelete) {
             const resetDiv = document.createElement('div');
             resetDiv.className = 'alert alert-warning d-flex align-items-center mt-3';
@@ -157,7 +155,7 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         }
 
-        // Chevron rotation on expand/collapse
+        /* Chevron rotation on expand/collapse */
         treeContainer.querySelectorAll('.tree-toggle').forEach(toggle => {
             const targetId = toggle.getAttribute('href').substring(1);
             const collapseEl = document.getElementById(targetId);
@@ -171,7 +169,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
 
-        // Per-card Expand All / Collapse All
+        /* Per-card Expand All / Collapse All */
         treeContainer.querySelectorAll('.expand-all-btn').forEach(btn => {
             btn.addEventListener('click', function () {
                 const card = btn.closest('.card');
@@ -195,7 +193,7 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         });
 
-        // Delete buttons
+        /* Delete buttons */
         treeContainer.querySelectorAll('.delete-page').forEach(btn => {
             btn.addEventListener('click', function (e) {
                 e.preventDefault();
@@ -250,21 +248,21 @@ document.addEventListener('DOMContentLoaded', function () {
         errorEl.textContent = err.message;
     });
 
-    // HTML attribute-д аюулгүй болгох
+    /* HTML attribute-д аюулгүй болгох */
     function escAttr(str) {
         const div = document.createElement('div');
         div.appendChild(document.createTextNode(str));
         return div.innerHTML;
     }
 
-    // HTML tag хасаж цэвэр текст авах
+    /* HTML tag хасаж цэвэр текст авах */
     function stripTags(str) {
         const div = document.createElement('div');
         div.innerHTML = str;
         return div.textContent || div.innerText || '';
     }
 
-    // Recursive render
+    /* Recursive render */
     function renderTree(items, childrenMap, depth, langCode) {
         if (!items || items.length === 0) return '<div class="text-muted ps-3 small">-</div>';
 
@@ -275,17 +273,17 @@ document.addEventListener('DOMContentLoaded', function () {
             const hasChildren = children && children.length > 0;
             const collapseId = `tree-node-${id}`;
 
-            // Type / Category badge
+            /* Type / Category badge */
             let typeBadge = `<span class="badge bg-warning text-dark">${page.type}</span>`;
             typeBadge += ` <span class="badge bg-secondary">${page.category}</span>`;
 
-            // Published
+            /* Published */
             const isPublished = page.published == 1;
             const publishedIcon = isPublished
                 ? '<i class="bi bi-check-circle-fill text-success" title="Published"></i>'
                 : '<i class="bi bi-eye-slash text-muted" title="Unpublished"></i>';
 
-            // Actions
+            /* Actions */
             let actions = '';
             actions += `<a class="btn btn-sm btn-info py-0 px-1" href="${viewPattern.replace('{id}', id)}?from=nav" title="View"><i class="bi bi-eye"></i></a>`;
             if (canUpdate) {
@@ -295,7 +293,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 actions += ` <button class="delete-page btn btn-sm btn-danger py-0 px-1" type="button" value="${id}" data-title="${escAttr(stripTags(page.title))}"${page.photo ? ` data-photo="${page.photo}"` : ''} title="Delete"><i class="bi bi-trash"></i></button>`;
             }
 
-            // Toggle / leaf icon
+            /* Toggle / leaf icon */
             let toggleBtn = '';
             if (hasChildren) {
                 toggleBtn = `<a class="text-decoration-none me-1 tree-toggle" data-bs-toggle="collapse" href="#${collapseId}" role="button" aria-expanded="false"><i class="bi bi-chevron-right tree-chevron"></i></a>`;

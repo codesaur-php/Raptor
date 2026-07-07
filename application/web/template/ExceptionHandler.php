@@ -49,7 +49,7 @@ class ExceptionHandler implements ExceptionHandlerInterface
         if (CODESAUR_DEVELOPMENT) {
             $vars['message'] .=
                 '<pre class="bg-dark text-light rounded p-3 small">'
-                . \json_encode($throwable->getTrace(), \JSON_PRETTY_PRINT) . '</pre>';
+                . \json_encode($throwable->getTrace(), \JSON_PRETTY_PRINT | \JSON_HEX_TAG | \JSON_HEX_AMP | \JSON_HEX_APOS | \JSON_HEX_QUOT) . '</pre>';
         }
         
         (new FileTemplate($errorTemplate, $vars))->render();

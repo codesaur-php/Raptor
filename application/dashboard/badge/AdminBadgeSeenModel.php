@@ -1,6 +1,6 @@
 <?php
 
-namespace Raptor\Template;
+namespace Dashboard\Badge;
 
 use codesaur\DataObject\Model;
 use codesaur\DataObject\Column;
@@ -18,10 +18,17 @@ use codesaur\DataObject\Column;
  * ---------------------------------------------------------------
  * id              - Primary key (bigint, auto increment)
  * admin_id        - Нэвтэрсэн admin-ий хэрэглэгчийн ID
- * module          - Module-ийн path (жишээ: '/dashboard/news', '/dashboard/manual')
+ * module          - Module-ийн path (жишээ: '/dashboard/news', '/dashboard/manual').
+ *                   BadgeController-ийн BADGE_MAP/PERMISSION_MAP-аас ялгаатай нь
+ *                   энд mount prefix-тэй бүтэн key хадгалагдана - client-ийн
+ *                   seen POST body sidebar href-ээс ирдэг тул. Иймд mount path
+ *                   ('/dashboard') өөрчлөгдвөл хуучин мөрүүд таарахаа больж,
+ *                   admin бүр 30 хоногийн default тоололд буцаж орно
+ *                   (алдаа биш, зөвхөн нэг удаагийн badge давталт)
  * checked_at      - Admin тухайн module-ийн sidebar линк дээр сүүлд дарсан
- *                   datetime. BadgeController::list() энэ цагаас хойшхи
- *                   log бичлэгүүдийг тоолж badge тоог гаргана
+ *                   datetime. {@see BadgeController::list()} энэ цагаас хойшхи
+ *                   log бичлэгүүдийг тоолж badge тоог гаргана. Байгууллага
+ *                   ялгахгүй - admin + module түвшинд нэг л цаг хадгална
  * last_seen_count - File-count badge-д зориулсан тоолуур. Manual болон
  *                   migrations гэх мэт log-д бичигддэггүй module-уудад
  *                   admin сүүлд үзэх үедээ хавтас дахь файлын тоог энд
@@ -29,7 +36,7 @@ use codesaur\DataObject\Column;
  *                   файлын тоо > last_seen_count бол зөрүүг badge-ээр
  *                   харуулна. Log-д суурилсан module-уудад 0 байна
  *
- * @package Raptor\Template
+ * @package Dashboard\Badge
  */
 class AdminBadgeSeenModel extends Model
 {

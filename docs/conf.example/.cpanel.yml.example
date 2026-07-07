@@ -1,0 +1,30 @@
+---
+# Raptor deploy scaffold - cPanel Git Version Control "Deploy HEAD Commit" task list.
+#
+# Ашиглахын өмнө:
+#   1) Энэ файлыг repo-гийн root-д `.cpanel.yml` нэрээр хуулж тавь.
+#   2) Доорх USERNAME-ийг cPanel хэрэглэгчийн нэрээр (home directory) сольж бич.
+#   3) composer binary зам (/opt/cpanel/composer/bin/composer) хост дээрээ шалга.
+#
+# Тэмдэглэл:
+#   - application/ - цэвэр sync: устгаад дахин хуулна (хуучин/зөөгдсөн класс арилна).
+#   - public_html/ - overlay (upload-уудыг устгахгүй).
+#   - vendor/ git-д ороогүй тул composer install/dump-autoload серверт ажиллана.
+deployment:
+  tasks:
+    - export DEPLOYPATH=/home/USERNAME
+    # application/ - цэвэр sync: устгаад дахин хуулна (хуучин/зөөгдсөн класс арилна)
+    - /bin/rm -rf $DEPLOYPATH/application && /bin/cp -a application $DEPLOYPATH/application
+    # public_html/ - overlay (upload-уудыг устгахгүй)
+    - /bin/cp -af public_html/. $DEPLOYPATH/public_html/
+    # Үндсэн файлууд
+    - /bin/cp -f composer.json $DEPLOYPATH/composer.json
+    - /bin/cp -f composer.lock $DEPLOYPATH/composer.lock
+    - /bin/cp -f README.md $DEPLOYPATH/README.md
+    - /bin/cp -f CHANGELOG.md $DEPLOYPATH/CHANGELOG.md
+    # composer.lock өөрчлөгдвөл vendor дахин суулгана (autoload-ыг мөн дахин үүсгэнэ)
+    - /opt/cpanel/composer/bin/composer install --no-dev --optimize-autoloader --no-interaction --working-dir=$DEPLOYPATH 2>&1 || true
+    # composer.json-ий autoload (PSR-4 map) өөрчлөгдсөн ч classmap шинэчлэгдэхийн
+    # тулд dump-autoload-ыг ялгаж дуудна (install no-op байсан ч шинэ модуль/
+    # namespace бүртгэгдэнэ). || true - deploy зогсохгүй.
+    - /opt/cpanel/composer/bin/composer dump-autoload --optimize --no-interaction --working-dir=$DEPLOYPATH 2>&1 || true

@@ -211,11 +211,22 @@ request's `pdo` attribute.
 6. `ContainerMiddleware` - DI Container
 7. `LocalizationMiddleware` - Multi-language
 8. `SettingsMiddleware` - System settings
-9. `LoginRouter`, `UsersRouter`, `OrganizationRouter`, `RBACRouter`, `LocalizationRouter`, `ContentsRouter`, `LogsRouter`, `DevelopmentRouter`, `MigrationRouter`, `TemplateRouter`, `BadgeRouter`
+9. `LoginRouter`, `UsersRouter`, `OrganizationRouter`, `RBACRouter`, `LocalizationRouter`, `ContentsRouter`, `LogsRouter`, `DevelopmentRouter`, `MigrationRouter`, `TemplateRouter`
 
 `CsrfMiddleware` is NOT in the app-wide pipeline - it is attached per-route to each mutating route in the router.
 
-`Dashboard\Application` adds: `HomeRouter`, `ShopRouter` (products + orders + reviews), `ManualRouter`
+`Dashboard\Application` adds: `HomeRouter`, `ShopRouter` (products + orders + reviews), `ManualRouter`, `Protected\ProtectedRouter`, `Badge\BadgeRouter` (the sidebar badge system lives in `application/dashboard/badge/`).
+
+#### `overrideDashboardLayout(string $filename, string $customFile): static`
+
+Replaces one of the three layout templates `DashboardTrait` renders internally (`dashboard.html`, `alert-no-permission.html`, `modal-no-permission.html`) with the developer's own file - no need to touch `application/raptor/`. Call it in the app's constructor after `parent::__construct()`; throws `InvalidArgumentException` if the custom file does not exist (fail-fast). The map is injected as the `dashboard_layouts` request attribute in `handle()` and resolved by `DashboardTrait::layout()`. Pages with their own route (login etc.) are out of scope - override their route instead.
+
+```php
+// application/{myapp}/Application.php
+parent::__construct($response);
+// Use a folder name distinct from raptor's own `template/` to avoid confusion.
+$this->overrideDashboardLayout('dashboard.html', __DIR__ . '/myspecial/dashboard.html');
+```
 
 ---
 
@@ -236,8 +247,8 @@ Decodes and validates JWT. Throws `RuntimeException` if expired. Requires `user_
 1. Reads `$_SESSION['RAPTOR_JWT']`
 2. Validates JWT
 3. Fetches user profile from DB
-4. Verifies organization membership
-5. Loads RBAC permissions
+4. Loads RBAC permissions (cached as `rbac.{userId}`) - BEFORE the organization check, so the coder role is known
+5. Verifies organization access: regular users need an `organizations_users` membership row; `system_coder` is a cross-tenant superuser and only needs the target organization to be active (access is derived from the role - no membership row is required or created)
 6. Creates `User` object and adds to request attributes
 7. On failure, redirects to `/dashboard/login`
 
@@ -249,7 +260,7 @@ Decodes and validates JWT. Throws `RuntimeException` if expired. Requires `user_
 Shared middleware for both Dashboard and Web apps.
 Starts PHP session and releases write-lock early on read-only routes.
 
-Raptor sets the session cookie lifetime to 30 days from code (`session_set_cookie_params(2592000)`); the server-side `gc_maxlifetime` / `save_path` use PHP / host config. To tune session longevity per host (or remove that line and rely on php.ini), see [SESSION-LIFETIME.md](SESSION-LIFETIME.md).
+Raptor sets the session cookie lifetime to 30 days from code (`session_set_cookie_params(...)`); the server-side `gc_maxlifetime` / `save_path` use PHP / host config. To tune session longevity per host (or remove that line and rely on php.ini), see [SESSION-LIFETIME.md](SESSION-LIFETIME.md).
 
 Constructor accepts a `needsWrite` closure to define which routes need session writes:
 - Dashboard: `fn($path, $method) => str_contains($path, '/login')`
@@ -285,6 +296,7 @@ If closure is null, all routes are read-only (session_write_close on every reque
 | Method | Description |
 |--------|-------------|
 | `is(string $role): bool` | Check role |
+| `hasRoleAlias(string $alias): bool` | Check whether the user holds ANY role under the given alias (role keys are `{alias}_{name}`) - used to gate multi-tenant visibility by role alias |
 | `can(string $permission): bool` | Check permission |
 
 ---
@@ -420,7 +432,14 @@ Stores file metadata. Table name is dynamic (`setTable()`).
 | `/dashboard/files/modal/{table}` | GET | `files-modal` |
 | `/dashboard/files/{table}/{uint:id}` | PATCH | `files-update` |
 | `/dashboard/files/{table}/delete` | DELETE | `files-delete` |
-| `/dashboard/protected/file` | GET | - |
+
+**Protected files** (separate `Dashboard\Protected\ProtectedRouter`, registered in `Dashboard\Application`):
+
+| Route | Method | Name |
+|-------|--------|------|
+| `/dashboard/protected/file` | GET | `protected-file-read` |
+
+`Dashboard\Protected\ProtectedFilesController` (`application/dashboard/protected/`) serves files from the document-root-external `/protected` folder. It is a reference implementation to customize (no shipped module uses protected storage). Authorization is the `authorizeRead(string $relativePath): bool` hook - default is permissive (any authenticated user; `system_coder` always). Tighten it with your module's index/view permission or tenant-ownership rule to restrict access to sensitive files - edit the method in place, or subclass and override it.
 
 ---
 
@@ -934,8 +953,13 @@ Checks for unclosed HTML comments (`<!-- -->`), parses with DOMDocument, compare
 
 Provides dashboard UI rendering, permission alerts, sidebar menu generation, and user detail retrieval.
 
+Controllers using this trait MUST NOT define methods with the same names as the trait's public API (`dashboardTemplate`, `dashboardProhibited`, `modalProhibited`, `getUserMenu`, `getUserOrganizations`) - a class method silently overrides the trait method and breaks the trait's internal calls.
+
+#### `layout(string $filename): string` (private)
+Resolves the final path of a layout template: returns the developer's custom file when one was registered via `Application::overrideDashboardLayout()` (delivered as the `dashboard_layouts` request attribute), otherwise the core default in `raptor/template/`.
+
 #### `dashboardTemplate(string $template, array $vars = []): FileTemplate`
-Renders content within `dashboard.html` layout with sidebar menu and system settings. Loads menu from cache (`menu.{code}` key).
+Renders content within the `dashboard.html` layout with sidebar menu, the topbar organization switcher list (`user_organizations`) and system settings. Loads menu from cache (`menu.{code}` key).
 
 #### `dashboardProhibited(?string $alert = null, int|string $code = 0): FileTemplate`
 Shows permission denial alert within dashboard layout.
@@ -945,6 +969,9 @@ Shows permission denial modal (standalone, no layout wrapper).
 
 #### `getUserMenu(): array`
 Builds sidebar menu array filtered by user permissions, organization alias, visibility, and activity status.
+
+#### `getUserOrganizations(): array`
+Returns the list of active organizations for the topbar organization switcher as `[['id' => ..., 'name' => ..., 'logo' => ...], ...]`. All active organizations for `system_coder` (cross-tenant role), membership-only for everyone else; the currently selected organization is always included. Organization `id=1` (the system's primary organization) always comes first when present; the rest are sorted by name. The dropdown is shown when the list has more than one entry, and gains a search filter above 10 entries.
 
 #### `retrieveUsersDetail(?int ...$ids): array`
 Returns `[user_id => "username - First Last (email)"]` map for audit/log display. Returns all users if no IDs provided.
@@ -987,9 +1014,9 @@ OpenAI API integration for moedit WYSIWYG editor. Provides HTML content enhancem
 #### `moeditAI(): void`
 POST `/dashboard/content/moedit/ai` - Main endpoint with two modes:
 
-**HTML mode** (`mode: 'html'`): Enhances HTML content using GPT-4o-mini. Request body: `{mode, html, prompt}`.
+**HTML mode** (`mode: 'html'`): Enhances HTML content using `RAPTOR_OPENAI_MODEL` (.env, default `gpt-5-mini`). Request body: `{mode, html, prompt}`.
 
-**Vision mode** (`mode: 'vision'`): Extracts text from images using GPT-4o vision. Request body: `{mode, images[], prompt}`.
+**Vision mode** (`mode: 'vision'`): Extracts text from images using `RAPTOR_OPENAI_VISION_MODEL` (.env, default `gpt-5.1`). Request body: `{mode, images[], prompt}`.
 
 Response: `{status: 'success', html: '...'}` or `{status: 'error', message: '...'}`.
 
@@ -1001,7 +1028,7 @@ Requires `RAPTOR_OPENAI_API_KEY` in `.env`. Auth required (any logged-in user).
 
 ### BadgeController
 
-**File:** `application/raptor/template/BadgeController.php`
+**File:** `application/dashboard/badge/BadgeController.php`
 **Extends:** `Raptor\Controller`
 
 Dashboard sidebar badge system showing unseen activity counts per module. Reads from existing `*_log` tables.
@@ -1021,7 +1048,7 @@ Both maps key on the **mount-naive** path (`/news`, not `/dashboard/news`). The 
 
 ### BadgeRouter
 
-**File:** `application/raptor/template/BadgeRouter.php`
+**File:** `application/dashboard/badge/BadgeRouter.php`
 
 | Route | Method | Name |
 |-------|--------|------|
@@ -1030,7 +1057,7 @@ Both maps key on the **mount-naive** path (`/news`, not `/dashboard/news`). The 
 
 ### AdminBadgeSeenModel
 
-**File:** `application/raptor/template/AdminBadgeSeenModel.php`
+**File:** `application/dashboard/badge/AdminBadgeSeenModel.php`
 **Extends:** `codesaur\DataObject\Model`
 
 Tracks when each admin last viewed each module. Columns: `admin_id`, `module`, `checked_at`, `last_seen_count`. Unique index on `(admin_id, module)`.
@@ -1074,10 +1101,13 @@ Dashboard sidebar menu items with multilingual titles and parent/child hierarchy
 
 | Route | Method | Name |
 |-------|--------|------|
-| `/dashboard` | GET | `dashboard` |
+| `/dashboard/home` | GET | `home` |
+| `/dashboard` | GET | - |
 | `/dashboard/search` | GET | - |
 | `/dashboard/stats` | GET | - |
 | `/dashboard/log-stats` | GET | - |
+
+The named `home` route lives at `/dashboard/home`; `/dashboard` (root) stays registered WITHOUT a name as an alias to the same `HomeController::index`. Sidebar active-detection is prefix-based, so a home link at the root would be active on every page; the root itself is kept because the public web layout links to `{{ index }}/dashboard` directly.
 
 ### SearchController
 
@@ -1085,7 +1115,7 @@ Dashboard sidebar menu items with multilingual titles and parent/child hierarchy
 **Extends:** `Raptor\Controller`
 
 #### `search(): void`
-Dashboard global search. Searches across news, pages, products, orders, and users tables using LIKE queries. Results filtered by RBAC permissions. Returns JSON.
+Dashboard global search - powers the topbar search modal (Ctrl+K). Searches across news, pages, products, orders, users, organizations, dev-requests, messages, comments and reviews using LIKE queries. Each source block is gated with the SAME permission (or row-level filter) its module's index page requires (news/pages/messages/comments -> `system_content_index`, products/orders/reviews -> `system_product_index`, users -> `system_user_index`, organizations -> `system_organization_index`, dev-requests -> own/assigned rows unless `system_development`). Returns JSON.
 
 ### WebLogStatsController
 
@@ -1502,7 +1532,7 @@ Sensitive tables (`SENSITIVE_TABLES` const): `users`, `rbac_roles`, `rbac_permis
 **File:** `application/raptor/CacheService.php`
 **Namespace:** `Raptor`
 
-Custom file-based DB cache (PSR-16 SimpleCache). No external dependency beyond `psr/simple-cache`. Stored in `protected/cache/`. Registered as `cache` container service via `ContainerMiddleware`. TTL: 12 hours (safety net). Fail-safe: returns `null` if unavailable.
+Custom file-based DB cache (PSR-16 SimpleCache). No external dependency beyond `psr/simple-cache`. Stored in the top-level `cache/` directory (outside the document root, sibling of `logs/`). Registered as `cache` container service via `ContainerMiddleware`. TTL: 12 hours (safety net). Fail-safe: returns `null` if unavailable.
 
 | Method | Description |
 |--------|-------------|

@@ -1,5 +1,5 @@
 <!-- 
-    ORGANIZATION RETRIEVE MODAL
+    Organization retrieve modal
     ------------------------------------------------------------
     Энэ modal нь байгууллагын бүртгэлийн дэлгэрэнгүй мэдээллийг 
     зөвхөн унших (read-only) хэлбэрээр харуулдаг.
@@ -20,7 +20,6 @@
 -->
 <div class="modal-lg modal-dialog modal-dialog-centered modal-dialog-scrollable" role="document">
     <div class="modal-content">
-        <!-- ---------------- Modal Header ---------------- -->
         <div class="modal-header">
             <!-- Гарчиг нь байгууллагын нэр -->
             <h3 class="modal-title fs-6 text-uppercase text-info">
@@ -34,7 +33,6 @@
             </button>
         </div>
 
-        <!-- ---------------- Modal Body ---------------- -->
         <div class="modal-body">
             <!-- ID -->
             <div class="row">
@@ -66,7 +64,7 @@
                              src="{{ record['logo'] }}"
                              style="max-height:240px">
 
-                        <!-- Логогийн хэмжээ (KB) -->
+                        <!-- Логогийн хэмжээ (kb) -->
                         {% if record['logo_size'] is not empty %}
                             <div class="text-muted small">
                                 {{ (record['logo_size'] / 1024)|number_format(1, '.', ',') }} KB
@@ -140,7 +138,6 @@
             </div>
         </div>
 
-        <!-- ---------------- Modal Footer ---------------- -->
         <div class="modal-footer">
             <button class="btn btn-info shadow-sm"
                     data-bs-dismiss="modal"

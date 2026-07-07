@@ -327,71 +327,6 @@ class CacheTest extends TestCase
     }
 
     // =============================================
-    // ProtectedFilesController cache хамгаалалт
-    // =============================================
-
-    public function testProtectedFilesReadBlocksCache(): void
-    {
-        $source = file_get_contents(
-            dirname(__DIR__, 3) . '/application/raptor/content/file/ProtectedFilesController.php'
-        );
-
-        $this->assertStringContainsString(
-            'cache',
-            $source,
-            'ProtectedFilesController::read() should check for cache directory'
-        );
-
-        $this->assertStringContainsString(
-            'cacheDir',
-            $source,
-            'ProtectedFilesController should define cacheDir path for blocking'
-        );
-    }
-
-    public function testProtectedFilesSetFolderBlocksCache(): void
-    {
-        $source = file_get_contents(
-            dirname(__DIR__, 3) . '/application/raptor/content/file/ProtectedFilesController.php'
-        );
-
-        // setFolder method дээр cache шалгалт байдаг эсэх
-        $this->assertMatchesRegularExpression(
-            '/function setFolder.*?cache/s',
-            $source,
-            'ProtectedFilesController::setFolder() should block cache folder'
-        );
-    }
-
-    public function testReadMethodBlocksCacheWithForbidden(): void
-    {
-        $source = file_get_contents(
-            dirname(__DIR__, 3) . '/application/raptor/content/file/ProtectedFilesController.php'
-        );
-
-        // read() дээр cache folder -> Forbidden шиддэг эсэх
-        $this->assertMatchesRegularExpression(
-            '/cacheDir.*?Forbidden/s',
-            $source,
-            'read() should throw Forbidden for cache directory access'
-        );
-    }
-
-    public function testSetFolderBlocksCacheWithException(): void
-    {
-        $source = file_get_contents(
-            dirname(__DIR__, 3) . '/application/raptor/content/file/ProtectedFilesController.php'
-        );
-
-        // setFolder() дээр cache -> RuntimeException шиддэг эсэх
-        $this->assertMatchesRegularExpression(
-            "/str_starts_with.*cache.*403/s",
-            $source,
-            'setFolder() should throw 403 for cache folder'
-        );
-    }
-
-    // =============================================
     // CacheService container бүртгэл
     // =============================================
 
@@ -416,14 +351,45 @@ class CacheTest extends TestCase
 
     public function testContainerCacheFailSafe(): void
     {
-        $source = file_get_contents(
+        // Fail-safe (алдаа гарвал null буцаах) нь CacheService::fromDefaultPath()-д
+        // амьдардаг; ContainerMiddleware-ийн 'cache' service үүнд delegate хийнэ.
+        $container = file_get_contents(
             dirname(__DIR__, 3) . '/application/raptor/ContainerMiddleware.php'
         );
-
         $this->assertStringContainsString(
-            'return null',
+            'CacheService::fromDefaultPath()',
+            $container,
+            "ContainerMiddleware's cache service should delegate to CacheService::fromDefaultPath()"
+        );
+
+        $cacheService = file_get_contents(
+            dirname(__DIR__, 3) . '/application/raptor/CacheService.php'
+        );
+        $this->assertMatchesRegularExpression(
+            '/function fromDefaultPath.*?return null/s',
+            $cacheService,
+            'CacheService::fromDefaultPath() should return null on failure (fail-safe)'
+        );
+    }
+
+    public function testJwtRbacCacheUsesFactoryNotContainer(): void
+    {
+        // Regression guard: JWTAuthMiddleware нь ContainerMiddleware-ээс өмнө
+        // ажилладаг тул cache-ийг container-аас биш, шууд factory-аас авах ёстой.
+        // (Өмнө нь getAttribute('container')?->get('cache') үргэлж null болж
+        // rbac cache огт ажилладаггүй байсан.)
+        $source = file_get_contents(
+            dirname(__DIR__, 3) . '/application/raptor/authentication/JWTAuthMiddleware.php'
+        );
+        $this->assertStringContainsString(
+            'CacheService::fromDefaultPath()',
             $source,
-            'Cache factory should return null on failure (fail-safe)'
+            'JWTAuthMiddleware should build the RBAC cache via CacheService::fromDefaultPath()'
+        );
+        $this->assertDoesNotMatchRegularExpression(
+            "/getAttribute\('container'\)\s*\?->\s*get\('cache'\)/",
+            $source,
+            'JWTAuthMiddleware must NOT read cache from the container (unavailable at that stage)'
         );
     }
 

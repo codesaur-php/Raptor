@@ -29,13 +29,11 @@ use Raptor\Organization\OrganizationUserModel;
  *   - language()             -> Login интерфейсийн хэлийг солих
  *
  * Тус Controller нь:
- *   UsersModel, OrganizationModel, ForgotModel гэх мэт мэдээллийн сангийн
- *     загваруудыг ашиглана
+ *   UsersModel, OrganizationModel, ForgotModel гэх мэт мэдээллийн сангийн загваруудыг ашиглана
  *   JWTAuthMiddleware-ийг ашиглан нэвтрэх токен үүсгэнэ
  *   MemoryTemplate / FileTemplate ашиглан template рендерлэнэ
  *   PSR-3 стандартын LogLevel ашиглан бүх үйлдлийг системийн лог руу бичнэ
- *   LocalizationMiddleware-аар дамжсан хэл, орчуулгын мэдээллийг
- *     автоматаар хэрэглэнэ
+ *   LocalizationMiddleware-аар дамжсан хэл, орчуулгын мэдээллийг автоматаар хэрэглэнэ
  *
  * Энэ бол Raptor Dashboard-ын authentication pipeline-ийн "зүрх".
  */
@@ -81,13 +79,40 @@ class LoginController extends \Raptor\Controller
         if (!empty($forgot_id)) {
             return $this->forgotPassword($forgot_id);
         }
+
+        // 1a) Хэрэв signup имэйл баталгаажуулах линк ашиглаж байгаа бол
+        $signup_token = $this->getQueryParams()['signup'] ?? false;
+        if (!empty($signup_token)) {
+            return $this->signupVerify((string) $signup_token);
+        }
+
         // 2) Хэрэглэгч аль хэдийн нэвтэрсэн бол
-        elseif ($this->isUserAuthorized()) {
+        if ($this->isUserAuthorized()) {
             return $this->redirectTo('home');
         }
 
+        $this->renderLogin();
+    }
+
+    /**
+     * Login template-г бэлтгэж рендерлэх туслах функц.
+     *
+     * index() болон signupVerify() хоёулаа энэ функцээр дамжин
+     * login.html-ийг рендерлэнэ.
+     *
+     * @param array|null $flash  ['type' => 'success|info|warning|danger', 'message' => '...']
+     *                           хэлбэрийн alert мессеж (login.html -> flash_alert)
+     * @return void
+     */
+    private function renderLogin(?array $flash = null)
+    {
         // 3) Login template-г ачаалах
         $login = $this->template(__DIR__ . '/login.html');
+
+        // Signup имэйл баталгаажуулалт зэрэг үйлдлийн үр дүнг alert хэлбэрээр харуулах
+        if (!empty($flash)) {
+            $login->set('flash_alert', $flash);
+        }
 
         // Spam хамгаалалтын timestamp + token (SpamProtectionTrait-ийн нэгдсэн логик)
         $ts = \time();
@@ -224,19 +249,28 @@ class LoginController extends \Raptor\Controller
                 }
             }
 
-            // 6) JWT үүсгэх
+            // 6) Session fixation-аас сэргийлэх: нэвтрэх (эрх ахих) агшинд
+            // session ID-г шинэчилнэ (true -> хуучин session файлыг устгана).
+            // Ингэснээр нэвтрэхээс өмнө халдагчийн тогтоосон session ID хүчингүй
+            // болно. respondJSON-оос өмнө дуудагдана (Set-Cookie header тул
+            // headers_sent болохоос өмнө байх ёстой).
+            if (\session_status() === \PHP_SESSION_ACTIVE) {
+                \session_regenerate_id(true);
+            }
+
+            // 7) JWT үүсгэх
             $_SESSION['RAPTOR_JWT'] = (new JWTAuthMiddleware())->generate($login_info);
 
-            // 6.5) CSRF token
+            // 8) CSRF token
             $_SESSION['CSRF_TOKEN'] = \bin2hex(\random_bytes(32));
 
-            // 7) JSON хариу
+            // 9) JSON хариу
             $this->respondJSON([
                 'status'  => 'success',
                 'message' => "Хэрэглэгч {$user['first_name']} системд нэвтрэв"
             ]);
 
-            // 8) Хэл тохируулах
+            // 10) Хэл тохируулах
             if (empty($user['code'])) {
                 $users->updateById($user['id'], ['code' => $this->getLanguageCode()]);
             } elseif ($user['code'] != $this->getLanguageCode()
@@ -389,28 +423,29 @@ class LoginController extends \Raptor\Controller
                 throw new \Exception('Invalid organization', 403);
             }
 
-            // 4) Хэрэглэгч тухайн байгууллагад харьяалагдсан эсэх
+            // 4) Хэрэглэгч тухайн байгууллагад хандах эрхтэй эсэх
+            //    system_coder бол cross-tenant superuser тул аль ч идэвхтэй
+            //    байгууллага руу орно - гишүүнчлэл шаардахгүй, бүртгэл ч нэмэхгүй.
+            //    Хандах эрхийг рольоос гаргаж авдаг тул organizations_users-г
+            //    бохирдуулахгүй (эрхийн үлдэгдэл үүсэхээс сэргийлнэ).
+            //    Энгийн хэрэглэгч заавал тухайн байгууллагад харьяалагдсан байх ёстой.
             $user_id = $this->getUserId();
-            $org_user_model = new OrganizationUserModel($this->pdo);
-            $org_user = $org_user_model->retrieve($id, $user_id);
-            if (empty($org_user)) {
-                // 5) Онцгой эрх: system_coder -> байгууллагад автоматаар нэмнэ
-                if (!$this->isUser('system_coder')) {
+            if (!$this->isUser('system_coder')) {
+                $org_user_model = new OrganizationUserModel($this->pdo);
+                if (empty($org_user_model->retrieve($id, $user_id))) {
                     throw new \Exception('User does not belong to an organization', 406);
-                }
-
-                if (
-                    empty($org_user_model->insert([
-                        'user_id'         => $user_id,
-                        'organization_id' => $id,
-                        'created_by'      => $user_id
-                    ]))
-                ) {
-                    throw new \RuntimeException('User can not select an organization');
                 }
             }
 
-            // 6) JWT токен шинэчлэх
+            // 6) Session fixation-аас сэргийлэх: байгууллага солих нь эрх/
+            // tenant контекстийг өөрчилдөг тул нэвтрэлттэй ижил зэрэглэлийн
+            // үйлдэл - session ID-г шинэчилнэ (true -> хуучин session файлыг
+            // устгана).
+            if (\session_status() === \PHP_SESSION_ACTIVE) {
+                \session_regenerate_id(true);
+            }
+
+            // 7) JWT токен шинэчлэх
             $jwt = (new JWTAuthMiddleware())->generate([
                 'user_id'         => $user_id,
                 'organization_id' => $id
@@ -580,28 +615,34 @@ class LoginController extends \Raptor\Controller
                 throw new \Exception("Бүртгэлтэй [{$payload['username']}] хэрэглэгчийн нэрээр шинэ хэрэглэгч үүсгэх хүсэлт ирүүллээ. Татгалзав.", 403);
             }
 
-            // Signup хүсэлт өмнө өгсөн эсэх
+            // Signup хүсэлт өмнө өгсөн эсэх (username/email UNIQUE тул талбар
+            // бүрд хамгийн ихдээ нэг л мөр байна)
             $userRequest = new SignupModel($this->pdo);
-            if (!empty($userRequest->getRowWhere([
-                'is_active' => 1,
-                'email'     => $payload['email']
-            ]))) {
+            foreach (['email', 'username'] as $field) {
+                $existing = $userRequest->getRowWhere([$field => $payload[$field]]);
+                if (empty($existing)) {
+                    continue;
+                }
+                // Имэйлээ баталгаажуулж амжаагүй хуучин pending хүсэлт байвал
+                // шинэ хүсэлтээр солино - баталгаажуулах имэйл нь хүрээгүй,
+                // устсан байх магадлалтай тул дахин оролдох боломж олгоно
+                if ($existing['status'] == SignupModel::STATUS_PENDING
+                    && empty($existing['verified_at'])
+                ) {
+                    $userRequest->deleteById($existing['id']);
+                    continue;
+                }
+                // Баталгаажсан pending / rejected / approved хүсэлт - бүгдийг хаана.
+                // Rejected мөрийг админ бүрэн устгаснаар (Trash) л ижил нэр/хаягаар
+                // дахин хүсэлт өгөх боломж нээгдэнэ.
                 throw new \Exception(
-                    "Шинээр [{$payload['email']}] хаягтай хэрэглэгч үүсгэх хүсэлт ирүүлсэн боловч, урьд нь хүсэлт өгч байсан тул татгалзав.",
-                    403
-                );
-            }
-            if (!empty($userRequest->getRowWhere([
-                'is_active' => 1,
-                'username'  => $payload['username']
-            ]))) {
-                throw new \Exception(
-                    "Шинээр [{$payload['username']}] нэртэй хэрэглэгч үүсгэх хүсэлт ирүүлсэн боловч, урьд нь хүсэлт өгч байсан тул татгалзав.",
+                    "Шинээр [{$payload['username']}] нэртэй [{$payload['email']}] хаягтай хэрэглэгч үүсгэх хүсэлт ирүүлсэн боловч, урьд нь хүсэлт өгч байсан тул татгалзав.",
                     403
                 );
             }
 
-            // 4) Signup хүсэлт DB-д insert хийх
+            // 4) Signup хүсэлт DB-д insert хийх (имэйл баталгаажуулах токентой)
+            $payload['token'] = \bin2hex(\random_bytes(32));
             $profile = $userRequest->insert($payload);
             if (empty($profile)) {
                 throw new \Exception(
@@ -610,10 +651,15 @@ class LoginController extends \Raptor\Controller
                 );
             }
 
-            // 5) Email илгээх
+            // 5) Имэйл баталгаажуулах линктэй email илгээх
             $memtemplate = new MemoryTemplate();
             $memtemplate->set('email',    $profile['email']);
             $memtemplate->set('username', $profile['username']);
+            $memtemplate->set('hours',    RAPTOR_SIGNUP_VERIFY_HOURS);
+            $memtemplate->set(
+                'link',
+                "{$this->generateRouteLink('login', [], true)}?signup={$profile['token']}"
+            );
             $memtemplate->source($template['content']);
             if (
                 $this->getService('mailer')
@@ -635,7 +681,6 @@ class LoginController extends \Raptor\Controller
                 'signup', $profile['username'], $profile['email']
             ));
         } catch (\Throwable $e) {
-            // Error хэвлэнэ
             $this->respondJSON(
                 [
                     'message' =>
@@ -664,6 +709,111 @@ class LoginController extends \Raptor\Controller
                 ['action' => 'signup', 'auth_user' => []] + $context
             );
         }
+    }
+
+    /**
+     * Signup хүсэлтийн имэйл баталгаажуулалт (double opt-in).
+     *
+     * Хэрэглэгч signup хийсний дараа имэйлээр очсон
+     *     GET /login?signup={token}
+     * линк дээр дарахад index()-ээс энэ функц дуудагдана.
+     *
+     * Workflow:
+     * ---------------------------------------------------------------
+     *  1) Токен форматыг шалгах (64 hex тэмдэгт)
+     *  2) SignupModel-оос токеноор хүсэлтийг хайх
+     *     - Олдохгүй -> алдаа (хүчингүй холбоос)
+     *  3) Аль хэдийн баталгаажсан бол -> info мессеж
+     *  4) Хугацаа шалгах (created_at + RAPTOR_SIGNUP_VERIFY_HOURS цаг)
+     *     - Дууссан бол мөрийг устгана (UNIQUE суллаж дахин хүсэлт
+     *       өгөх боломж нээнэ) -> warning мессеж
+     *  5) verified_at-д огноо тавьж баталгаажуулна -> success мессеж
+     *     Үүний дараа л хүсэлт админы жагсаалтад харагдана
+     *
+     * Бүх тохиолдолд login хуудсыг flash alert-тэй рендерлэнэ.
+     *
+     * @param string $token Имэйлээр очсон баталгаажуулах токен
+     * @return void
+     */
+    private function signupVerify(string $token)
+    {
+        $mn = $this->getLanguageCode() == 'mn';
+        try {
+            // 1) Токен формат шалгах - bin2hex(random_bytes(32)) = 64 hex тэмдэгт
+            if (!\preg_match('/^[0-9a-f]{64}$/', $token)) {
+                throw new \InvalidArgumentException(
+                    $mn ? 'Баталгаажуулах холбоос буруу байна!' : 'Invalid verification link!',
+                    400
+                );
+            }
+
+            // 2) Токеноор хүсэлтийг хайх
+            $model = new SignupModel($this->pdo);
+            $signup = $model->getRowWhere(['token' => $token]);
+            if (empty($signup)) {
+                throw new \Exception(
+                    $mn ? 'Хүчингүй эсвэл ашиглагдсан баталгаажуулах холбоос байна!' : 'Invalid or already used verification link!',
+                    404
+                );
+            }
+
+            // 3) Аль хэдийн баталгаажсан бол
+            if (!empty($signup['verified_at'])) {
+                $flash = [
+                    'type' => 'info',
+                    'message' => $mn
+                        ? 'Таны имэйл аль хэдийн баталгаажсан байна. Админ хүсэлтийг хянан баталсны дараа та нэвтрэх боломжтой болно.'
+                        : 'Your email is already verified. You will be able to sign in after an administrator approves your request.'
+                ];
+            } else {
+                // 4) Хугацаа шалгах
+                $expires = \strtotime($signup['created_at']) + RAPTOR_SIGNUP_VERIFY_HOURS * 3600;
+                if (\time() > $expires) {
+                    // Хугацаа дууссан хүсэлтийг устгаж, UNIQUE username/email-ийг
+                    // суллаж дахин хүсэлт өгөх боломж нээнэ
+                    $model->deleteById($signup['id']);
+                    throw new \Exception(
+                        $mn
+                            ? 'Баталгаажуулах холбоосын хугацаа дууссан байна. Дахин шинээр бүртгүүлэх хүсэлт өгнө үү.'
+                            : 'The verification link has expired. Please submit a new signup request.',
+                        403
+                    );
+                }
+
+                // 5) Имэйлийг баталгаажуулах
+                $model->updateById($signup['id'], ['verified_at' => \date('Y-m-d H:i:s')]);
+                $flash = [
+                    'type' => 'success',
+                    'message' => $mn
+                        ? 'Таны имэйл амжилттай баталгаажлаа. Админ хүсэлтийг хянан баталсны дараа та нэвтрэх боломжтой болно.'
+                        : 'Your email has been verified successfully. You will be able to sign in after an administrator approves your request.'
+                ];
+            }
+        } catch (\Throwable $e) {
+            $flash = [
+                'type' => $e->getCode() == 403 ? 'warning' : 'danger',
+                'message' => $e->getMessage()
+            ];
+        } finally {
+            // Лог протокол
+            if (isset($e) && $e instanceof \Throwable) {
+                $level = LogLevel::ERROR;
+                $message = 'Signup имэйл баталгаажуулалт амжилтгүй боллоо';
+                $context = ['error' => ['code' => $e->getCode(), 'message' => $e->getMessage()]];
+            } else {
+                $level = LogLevel::INFO;
+                $message = '{signup.username} нэртэй {signup.email} хаягтай signup хүсэлтийн имэйл баталгаажлаа';
+                $context = ['signup' => $signup];
+            }
+            $this->log(
+                'dashboard',
+                $level,
+                $message,
+                ['action' => 'signup-verify', 'auth_user' => []] + $context
+            );
+        }
+
+        $this->renderLogin($flash);
     }
 
     // =========================================================================
@@ -812,7 +962,6 @@ class LoginController extends \Raptor\Controller
                 );
             }
         } catch (\Throwable $e) {
-            // Error хэвлэнэ
             $this->respondJSON(
                 [
                     'message' =>

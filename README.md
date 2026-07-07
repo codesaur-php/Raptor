@@ -16,7 +16,7 @@ Clean architecture object-oriented web development framework
 
 ## 1. Монгол тайлбар
 
-`codesaur/raptor` нь PSR стандартууд (PSR-3, PSR-4, PSR-7, PSR-11, PSR-12, PSR-14, PSR-15, PSR-16) дээр суурилсан, **олон давхаргат архитектуртай**, **бүрэн CMS боломжтой** PHP веб фреймворк юм.
+`codesaur/raptor` нь PSR стандартууд (PSR-3, PSR-4, PSR-7, PSR-11, PSR-12, PSR-14, PSR-15, PSR-16) дээр суурилсан, **олон давхаргат архитектуртай**, **олон байгууллагын (multi-tenant)**, **бүрэн CMS боломжтой** PHP веб фреймворк юм.
 
 Фреймворк нь **Web** (нийтийн вебсайт) болон **Dashboard** (админ панель) гэсэн хоёр давхаргад хуваагдан ажилладаг бөгөөд codesaur экосистемийн бусад packages-тэй хамтран ажиллана.
 
@@ -24,7 +24,7 @@ Clean architecture object-oriented web development framework
 
 - PSR-7/PSR-15 middleware суурьтай архитектур
 - JWT + Session нэвтрэлт баталгаажуулалт
-- RBAC (Role-Based Access Control) эрхийн удирдлага
+- Олон байгууллагын (multi-tenant) RBAC эрхийн удирдлага
 - Олон хэл дэмжлэг (Localization)
 - CMS модулиуд: Мэдээ, Хуудас, Файл, Лавлах, Тохиргоо
 - Дэлгүүр модуль: Бүтээгдэхүүн, Захиалга, Үнэлгээ (e-commerce)
@@ -54,7 +54,7 @@ Clean architecture object-oriented web development framework
 
 ## 2. English Description
 
-`codesaur/raptor` is a **multi-layered**, **full-featured CMS** PHP web framework built on PSR standards (PSR-3, PSR-4, PSR-7, PSR-11, PSR-12, PSR-14, PSR-15, PSR-16).
+`codesaur/raptor` is a **multi-layered**, **multi-tenant**, **full-featured CMS** PHP web framework built on PSR standards (PSR-3, PSR-4, PSR-7, PSR-11, PSR-12, PSR-14, PSR-15, PSR-16).
 
 The framework operates in two layers - **Web** (public website) and **Dashboard** (admin panel) - and works together with other packages in the codesaur ecosystem.
 
@@ -62,7 +62,7 @@ The framework operates in two layers - **Web** (public website) and **Dashboard*
 
 - PSR-7/PSR-15 middleware-based architecture
 - JWT + Session authentication
-- RBAC (Role-Based Access Control)
+- Multi-tenant organizations with RBAC (Role-Based Access Control)
 - Multi-language support (Localization)
 - CMS modules: News, Pages, Files, References, Settings
 - Shop module: Products, Orders, Reviews (e-commerce)
@@ -183,9 +183,11 @@ raptor/
 |   |   |-- development/     # Dev request tracking
 |   |   \-- migration/       # Database migration system
 |   |-- dashboard/           # Dashboard application
+|   |   |-- badge/           # Sidebar badge system
 |   |   |-- home/            # Dashboard home
-|   |   |-- shop/            # Shop module (Products, Orders, Reviews)
-|   |   \-- manual/          # Manual pages
+|   |   |-- manual/          # Manual pages
+|   |   |-- protected/       # Protected file serving
+|   |   \-- shop/            # Shop module (Products, Orders, Reviews)
 |   \-- web/                 # Public website application
 |       |-- WebRouter.php    # Web routes
 |       |-- content/         # Pages, News
@@ -203,13 +205,14 @@ raptor/
 |-- docs/
 |   |-- conf.example/        # Server config examples
 |   |-- en/                  # English documentation
-|   \-- mn/                  # Mongolian documentation
+|   \-- mn/                  # Mongolian documentation (incl. CPANEL.md deploy guide)
 |-- .github/
 |   \-- workflows/
 |       |-- ci.yml           # CI code quality checks (push, PR)
 |       \-- deploy.yml       # Auto deploy (FTP / SSH / Windows Server)
 |-- logs/                    # Error logs
-|-- protected/               # Protected files (uploads, cache)
+|-- cache/                   # Framework file cache (PSR-16)
+|-- protected/               # Protected files (project uploads outside docroot)
 |-- .env.testing             # Test environment variables
 |-- composer.json            # Dependencies
 |-- phpunit.xml              # PHPUnit configuration
@@ -249,21 +252,19 @@ Integration tests use `.env.testing` config with a separate test database. Each 
 
 ---
 
-## History
+## Why "Raptor"?
 
-> **Note:** This package is the successor of `codesaur/indodaptor` (500+ installs), which has been removed from Packagist. A new package `codesaur/raptor` was created with a full code refactor, as the name "Indoraptor" is a trademark of Universal Pictures.
+Дэлхийд анх удаа **Монголын говиос** (1923) олдсон **Velociraptor** хэмээх гайхалтай динозаврыг бэлэгдэж өгсөн нэр. Зохиогч **Наранхүү** динозавр, байгалийн түүхийг сонирхон уншиж судалдаг хүн. **codesaur** гэдэг нь `code` + `saur` - тэрбээр 1997 оноос C хэл дээр эхлэн програм зохиосон өөрийгөө "хуучин цагийн код бичигч динозавр" хэмээн хөгжилтэйгээр нэрлэсэн билээ.
+
+The name honors the remarkable **Velociraptor**, a dinosaur whose fossils were first unearthed in **Mongolia's Gobi Desert** (1923). Its author, **Narankhuu**, is a keen reader on dinosaurs and natural history. **codesaur** is his own playful name - `code` + `saur` - a nod to writing C since 1997: an old-school "coding dinosaur".
 
 ---
 
-## Did You Know?
-
-**Velociraptor** (/vɪˈlɒsɪræptər/ - Латинаар "swift seizer" буюу "хурдан баригч") нь Cretaceous галавын сүүл үе буюу ойролцоогоор 75-71 сая жилийн өмнө амьдарч байсан dromaeosaurid theropod үлэг гүрвэлийн төрөл юм. Одоогоор хоёр зүйлийг хүлээн зөвшөөрсөн бөгөөд *V. mongoliensis* энэ зүйлийн олдворуудыг **Монгол** улсаас олсон байдаг. Хоёр дахь зүйл *V. osmolskae*-г 2008 онд Өвөр Монголоос олдсон гавлын материалаар нэрлэсэн.
-
 ## Acknowledgements
 
-Энэ фреймворкийг хөгжүүлэхэд [**Gerege Systems LLC**](https://gerege.com/) ивээн тэтгэж, компанийн үүсгэн байгуулагч **Ц.Эрдэнэбат** багш удирдан зааварлаж чиглүүлсэн билээ.
+Миний хөгжүүлж буй энэ framework-т санхүүгийн дэмжлэг үзүүлж, зарим хэрэгтэй санал хэлж байсан [**Gerege Systems LLC**](https://gerege.com/) болон түүний үүсгэн байгуулагч **Ц.Эрдэнэбат** багшид талархал илэрхийлье.
 
-This framework was developed with the sponsorship of [**Gerege Systems LLC**](https://gerege.com/) and under the guidance of **Erdenebat Ts**, founder of Gerege Systems.
+Thanks to [**Gerege Systems LLC**](https://gerege.com/) and its founder **Erdenebat Ts** for their financial support and valuable input during the development of this framework.
 
 ---
 
@@ -288,7 +289,7 @@ This project is licensed under the MIT License.
 
 **Narankhuu**  
 Email: codesaur@gmail.com  
-Phone: +976 99000287  
+Phone: +976 99073907  
 Web: https://github.com/codesaur
 
 **codesaur ecosystem:** https://codesaur.net

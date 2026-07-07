@@ -46,7 +46,11 @@ class NewsController extends FileController
         }
         
         $filters = [];
-        // news хүснэгтийн нэрийг NewsModel::getName() ашиглан динамикаар авна. Ирээдүйд refactor хийхэд бэлэн байна.
+        // Raw SQL query-д хүснэгтийн нэрийг hardcode ("news") хийхгүй, харин
+        // Model::getName()-ээр динамикаар авна. Ингэснээр Model дотор setTable()
+        // нэрийг өөрчлөхөд эдгээр query автоматаар мөрдөж, эвдрэхгүй (refactor-safe).
+        // Raptor-ийн бүх controller raw SQL бичихдээ энэ хэв маягийг баримталдаг -
+        // Model нь хүснэгтийн нэрийн цорын ганц эх сурвалж.
         $table = (new NewsModel($this->pdo))->getName();
         $codes_result = $this->query(
             "SELECT DISTINCT code FROM $table"
@@ -184,7 +188,6 @@ class NewsController extends FileController
                     throw new \InvalidArgumentException($this->text('invalid-request'), 400);
                 }
 
-                // HTML контент tag бүтэц шалгах
                 if (!empty($payload['content'])) {
                     $this->validateHtmlContent($payload['content']);
                 }
@@ -317,7 +320,6 @@ class NewsController extends FileController
                     throw new \InvalidArgumentException($this->text('invalid-request'), 400);
                 }
 
-                // HTML контент tag бүтэц шалгах
                 if (!empty($payload['content'])) {
                     $this->validateHtmlContent($payload['content']);
                 }

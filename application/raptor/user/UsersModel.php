@@ -22,20 +22,10 @@ use codesaur\DataObject\Constants;
  * 
  *  * **PDO Injection тухай тэмдэглэл**
  * --------------------------------------------------------------
- * Raptor Framework нь PDO instance-ийг дараах дарааллаар inject хийдэг:
- *
- *   public_html/index.php
- *     -> \Raptor\DatabaseConnection::connect()
- *     -> ServerRequest::withAttribute('pdo')
- *     -> Controller::$pdo
- *     -> Model::__construct(\PDO $pdo)
- *
- * Иймээс энэхүү `$pdo` нь *entry point дээр нэг л удаа үүсгэгдсэн
- * баталгаатай холболт* бөгөөд Model анги зөвхөн өгөгдөлтэй ажиллахад
- * анхаарна.
- *
- * Web ба Dashboard аппликейшнүүд нэг л PDO instance ашиглана
- * Нэг request дотор нэг л PDO instance ажиллана
+ * `$pdo` нь entry point дээр нэг л удаа үүсгэгдсэн баталгаатай холболт -
+ * Model анги зөвхөн өгөгдөлтэй ажиллахад анхаарна. PDO хаана үүсч хэрхэн
+ * дамждагийн бүрэн тайлбарыг эх сурвалж болох {@see \Raptor\Controller}
+ * класын PHPDoc-оос үзнэ үү.
  *
  * @package Raptor\User
  */

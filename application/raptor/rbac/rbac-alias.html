@@ -1,10 +1,10 @@
 <!--
-  rbac-alias.html
+  Rbac-alias.HTML
   ------------------------------------------------------------------
-  RBAC Role / Permission matrix UI.
+  RBAC Role / Permission matrix ui.
  
   Controller: RBACController::alias()
-  Route: GET /dashboard/rbac
+  Route: get /dashboard/rbac
  
   Variables:
     alias           - RBAC alias (e.g. system)
@@ -13,7 +13,7 @@
     permissions     - Permissions array
     role_permission - role_id -> permission_id mapping
  
-  JS: SweetAlert2 (inherited from dashboard)
+  js: SweetAlert2 (inherited from dashboard)
  -->
 
 <style>
@@ -158,7 +158,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const apiUrl = `{{ 'rbac-set-role-permission'|link({'alias':alias}) }}`;
     const requesting = document.querySelector('div.requesting');
 
-    // Update badge counts
+    /* Update badge counts */
     function updateCounts() {
         {% for role in roles %}
         {
@@ -172,7 +172,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     updateCounts();
 
-    // Toggle single permission
+    /* Toggle single permission */
     function togglePermission(checkbox) {
         if (requesting) requesting.style.display = 'block';
         const formData = new FormData();
@@ -201,12 +201,12 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Bind checkbox clicks
+    /* Bind checkbox clicks */
     document.querySelectorAll('input.perm-check').forEach(cb => {
         cb.addEventListener('change', function () { togglePermission(this); });
     });
 
-    // Select all / Deselect all buttons
+    /* Select all / Deselect all buttons */
     document.querySelectorAll('.select-all-btn').forEach(btn => {
         btn.addEventListener('click', async function () {
             const roleId = this.dataset.role;

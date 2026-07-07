@@ -50,7 +50,6 @@ class LanguageController extends \Raptor\Controller
     public function insert()
     {
         try {
-            // Хэрэглэгчийн эрх шалгах
             if (!$this->isUserCan('system_localization_insert')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
@@ -97,7 +96,6 @@ class LanguageController extends \Raptor\Controller
                     }
                 }
 
-                // Хэл үүсгэх
                 $record = $model->insert(
                     $payload + ['created_by' => $this->getUserId()]
                 );
@@ -259,7 +257,6 @@ class LanguageController extends \Raptor\Controller
                     throw new \InvalidArgumentException('You can\'t change default language!');
                 }
 
-                // Шинэчлэх
                 $updated = $model->updateById(
                     $id,
                     $payload + ['updated_by' => $this->getUserId()]

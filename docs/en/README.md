@@ -3,7 +3,7 @@
 [![PHP Version](https://img.shields.io/badge/php-%5E8.2.1-777BB4.svg?logo=php)](https://www.php.net/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](../../LICENSE)
 
-> **codesaur/raptor** - A multi-layered PHP CMS framework built on PSR standards.
+> **codesaur/raptor** - A multi-layered, multi-tenant PHP CMS framework built on PSR standards.
 
 ---
 
@@ -28,13 +28,11 @@
 
 `codesaur/raptor` is a PHP framework with a two-layer architecture: **Web** (public site) and **Dashboard** (admin panel), built on PSR-7/PSR-15 middleware standards.
 
-> **Note:** This package is the successor of `codesaur/indodaptor` (500+ installs), which has been removed from Packagist. A new package `codesaur/raptor` was created with a full code refactor, as the name "Indoraptor" is a trademark of Universal Pictures.
-
 ### Key Features
 
 - **PSR-7/PSR-15** middleware-based architecture
 - **JWT + Session** authentication
-- **RBAC** (Role-Based Access Control)
+- **Multi-tenant** organizations with **RBAC** (Role-Based Access Control)
 - **Multi-language** support (Localization)
 - CMS modules: News, Pages, Files, References, Settings
 - **Shop** module (Products, Orders, Reviews)
@@ -136,9 +134,6 @@ RAPTOR_DB_COLLATION=utf8mb4_unicode_ci
 RAPTOR_DB_PERSISTENT=false
 ```
 
-- On localhost (127.0.0.1), the database is auto-created if it doesn't exist
-- Set `RAPTOR_DB_PERSISTENT=true` for persistent PDO connections
-
 ### JWT (JSON Web Token)
 
 ```env
@@ -160,7 +155,7 @@ RAPTOR_WAF_BODY_ENCODING=true
 
 - `RAPTOR_WAF_BODY_ENCODING` - When `true` (default), `csrfFetch()` base64-encodes form field values so a mod_security-style WAF cannot flag HTML/JS-like rich-text in the POST body; `BodyEncodingMiddleware` decodes them server-side. Set `false` on hosts without a body-inspecting WAF. See the "Shared Hosting / WAF Compatibility" section in `CLAUDE.md` for the full mechanism.
 
-> **The session cookie lifetime** is set to **30 days** by Raptor in `SessionMiddleware` (`session_set_cookie_params(2592000)`) - a client-side cookie that, in practice, keeps an admin logged in even after closing the browser. The **server-side** session file cleanup (`session.gc_maxlifetime`), however, follows the host's php.ini rather than the framework; to store session files reliably and have them cleaned up on schedule, configure it per host - see [SESSION-LIFETIME.md](SESSION-LIFETIME.md).
+> **The session cookie lifetime** is set to **30 days** by Raptor in `SessionMiddleware` (`session_set_cookie_params(...)`) - a client-side cookie that, in practice, keeps an admin logged in even after closing the browser. The **server-side** session file cleanup (`session.gc_maxlifetime`), however, follows the host's php.ini rather than the framework; to store session files reliably and have them cleaned up on schedule, configure it per host - see [SESSION-LIFETIME.md](SESSION-LIFETIME.md).
 
 #### "Why does my PUT/DELETE request show up as POST in the browser?"
 
@@ -280,6 +275,8 @@ Default workflow included in the repository. Runs code quality checks on every p
 
 Unified deploy workflow with 3 jobs: **FTP**, **SSH**, and **Windows Server self-hosted runner**. Each job runs only when its required secrets/variables are configured. All configured jobs run in parallel.
 
+**A / B / C** below are jobs of this workflow and cover virtually every environment - shared hosting, VPS, cloud VM, dedicated, Windows Server. **D** is outside the workflow: a fallback used only when none of A/B/C can reach the server.
+
 **Execution flow:**
 
 ```
@@ -326,13 +323,32 @@ For Linux servers with SSH access (VPS, cloud VM, dedicated). Add the following 
 
 3. Ensure PHP and Composer are in the system PATH on the server.
 
+**D) cPanel Git Deploy (fallback - only when none of A/B/C can reach the server)**
+
+The three paths above are the standard ones. Being hosted on cPanel does NOT by
+itself mean you need this path - if the host offers FTP (A) or SSH (B) access,
+use those.
+
+A few rare environments, however, are unreachable by any GitHub Actions job:
+cPanel shared hosting with SSH/Terminal disabled and no externally reachable
+FTP. A real-world example of such an environment is the shared hosting operated
+by the National Data Center of Mongolia for government agency web portals. Only
+in that case, use the scaffold built on cPanel's own Git + cron:
+
+| File | Role |
+|------|------|
+| [`docs/conf.example/.cpanel.yml.example`](../conf.example/.cpanel.yml.example) | Copy to repo root as `.cpanel.yml` - cPanel Git deploy task list |
+| [`docs/conf.example/auto-deploy.sh.example`](../conf.example/auto-deploy.sh.example) | Copy to `deploy/auto-deploy.sh`, run via cron |
+
+Full guide: [`docs/mn/CPANEL.md`](../mn/CPANEL.md)
+
 **Note:** The deploy workflow requires CI (`ci.yml`) to exist. If CI workflow is removed, deploy will not trigger.
 
 #### Excluded from deployment
 
 - **`.env`** - Create and configure manually on the server
 - **`logs/`** - Created automatically by the application
-- **`protected/`** - Files and cache outside the web root; not reachable by a direct public request, served only via the authenticated `/dashboard/protected/file` endpoint
+- **`protected/`** - Protected files outside the web root, accessible to authenticated users (subject to the `authorizeRead()` permission hook); not reachable by a direct public request, served only via the `/dashboard/protected/file` endpoint (the framework file cache lives separately in the top-level `cache/` directory)
 - **`docs/`** - Documentation only
 - **`vendor/`** - Built during the workflow with `composer install/update --no-dev`
 
@@ -414,8 +430,10 @@ raptor/
 |   |   \-- exception/             # Error handling
 |   |-- dashboard/                 # Dashboard Application
 |   |   |-- Application.php
+|   |   |-- badge/                 # Sidebar badge system
 |   |   |-- home/                  # Dashboard Home, search, stats
 |   |   |-- manual/                # Help documentation viewer
+|   |   |-- protected/             # Protected file serving (authorizeRead hook)
 |   |   \-- shop/                  # Shop module (Products, Orders, Reviews)
 |   \-- web/                       # Web Application
 |       |-- Application.php
@@ -437,9 +455,12 @@ raptor/
 |   |-- conf.example/              # Server configuration examples
 |   |   |-- .env.example           # Environment variables
 |   |   |-- .htaccess.example      # Apache rewrite rules
-|   |   \-- .nginx.conf.example    # Nginx server config
+|   |   |-- .nginx.conf.example    # Nginx server config
+|   |   |-- .cpanel.yml.example    # cPanel Git deploy task list
+|   |   \-- auto-deploy.sh.example # cPanel cron deploy script
 |   |-- en/                        # English documentation
 |   \-- mn/                        # Mongolian documentation
+|       \-- CPANEL.md              # Fallback deploy guide for SSH-less cPanel hosts
 |-- tests/                         # PHPUnit tests (unit, integration)
 |-- database/
 |   \-- migrations/                # SQL migration files (git-ignored, per-user folder)
@@ -448,7 +469,8 @@ raptor/
 |       |-- ci.yml                 # CI code quality checks (push, PR)
 |       \-- deploy.yml             # Auto deploy (FTP / SSH / Windows Server)
 |-- logs/                          # Error log files
-|-- protected/                     # Protected files (uploads, cache)
+|-- cache/                         # Framework file cache (PSR-16)
+|-- protected/                     # Protected files (project uploads outside docroot)
 |-- composer.json
 |-- phpunit.xml                    # PHPUnit configuration
 \-- LICENSE
@@ -541,6 +563,8 @@ RAPTOR_DB_DRIVER=pgsql
 - Organization CRUD
 - User-organization relationship management
 - One user can belong to multiple organizations
+- Topbar organization switcher: users with more than one organization switch via a dropdown on the topbar brand area (search filter appears above 10 organizations)
+- `system_coder` can switch into ANY active organization - access is derived from the role, no membership rows are created
 
 ### 6.4 RBAC (Access Control)
 
@@ -562,7 +586,7 @@ $this->isUserCan('news_edit');
 
 ### 6.5 Content - Files
 
-**Classes:** `FilesController`, `FilesModel`, `ProtectedFilesController`
+**Classes:** `FilesController`, `FilesModel` (protected file serving moved to `Dashboard\Protected\ProtectedFilesController` - see the Protected files section in api.md)
 
 - File upload (native JS, FormData)
 - Image optimization (GD)
@@ -767,7 +791,7 @@ Sitemap: https://example.com/sitemap.xml
 - Advisory lock (`GET_LOCK` / `pg_try_advisory_lock`) prevents concurrent apply
 - Every upload/apply/delete is logged to `dashboard_log` with SHA-256, statement count, and warning count
 - Protected: only `system_coder` users can access the dashboard
-- `.htaccess` protection blocks direct browser access to SQL files
+- Parent `database/.htaccess` (deny from all) protection blocks direct browser access to SQL files
 
 ### 6.22 Messages (Contact Form)
 
@@ -800,10 +824,11 @@ Sitemap: https://example.com/sitemap.xml
 
 ### 6.24 Badge System (Sidebar Badges)
 
-**Classes:** `BadgeController`, `BadgeRouter`, `AdminBadgeSeenModel`
+**Classes:** `Dashboard\Badge\BadgeController`, `Dashboard\Badge\BadgeRouter`, `Dashboard\Badge\AdminBadgeSeenModel` (`application/dashboard/badge/`)
 
 - Colored badge pills on sidebar menu items showing unseen activity counts per admin
 - Reads from existing `*_log` tables - no separate event table
+- Multi-tenant: `orgScopedModules()` scopes listed modules' badges to the viewing admin's organization (`system_coder` bypasses)
 - Badge colors: green (create), blue (update), red (delete)
 - Up to 3 badges per module, shown left to right in green-blue-red order
 - Filters by admin permissions (PERMISSION_MAP) and excludes admin's own actions
@@ -816,7 +841,7 @@ Sitemap: https://example.com/sitemap.xml
 **Classes:** `HomeRouter`, `SearchController`, `WebLogStatsController`, `WebLogStats`
 
 - Dashboard home page with system overview
-- Global search across news, pages, products, orders, and users (RBAC-filtered)
+- Topbar quick icons (search | language | theme): search modal (Ctrl+K) across news, pages, products, orders, users, organizations, dev-requests, messages, comments, and reviews (RBAC-filtered, each source gated by its module's index permission or row-level filter); language dropdown (session-persisted); light/dark theme dropdown (instant, no reload)
 - Web visit statistics with chart data, top pages/news/products, IP addresses
 - System log statistics per `*_log` table (today/week/total counts)
 - `web_log_cache` table for performance optimization
@@ -834,8 +859,8 @@ Sitemap: https://example.com/sitemap.xml
 **Classes:** `AIHelper`
 
 - OpenAI API integration for moedit WYSIWYG editor
-- HTML mode: content enhancement using GPT-4o-mini (Bootstrap 5 components)
-- Vision mode: OCR/image text recognition using GPT-4o
+- HTML mode: content enhancement with Bootstrap 5 components - model via `RAPTOR_OPENAI_MODEL` (.env, default `gpt-5-mini`)
+- Vision mode: OCR/image text recognition - model via `RAPTOR_OPENAI_VISION_MODEL` (.env, default `gpt-5.1`)
 - Endpoint: `POST /dashboard/content/moedit/ai`
 - Requires `RAPTOR_OPENAI_API_KEY` in `.env`
 
@@ -846,7 +871,7 @@ Sitemap: https://example.com/sitemap.xml
 - Automatically populate database on fresh installs via Model `__initial()` methods
 - Permissions: 18+ system permissions with `system_` prefix
 - Roles: coder, admin, manager, editor, viewer with permission assignments
-- Menu: 3-section dashboard sidebar (Contents, Shop, System) with i18n titles
+- Menu: 4-section dashboard sidebar (Contents, Shop, System, Coder - the last visible to system_coder only) with i18n titles
 - Translations: 100+ system UI keywords in MN/EN
 - Reference templates: 11+ email templates (password reset, notifications, order confirmation) + ToS/PP
 - Sample data: demo news (6), pages (14+), products (4) - removable via dashboard "Reset" button

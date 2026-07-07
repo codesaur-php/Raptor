@@ -80,7 +80,7 @@
             </ul>
                     
             <div class="tab-content mt-2">
-                <!-- 1-р TAB - General Panel -->
+                <!-- 1-р tab - General Panel -->
                 <div class="tab-pane fade show active" id="generalPanel">
                     <h5>{{ 'enter-language-details'|text }}</h5>
 
@@ -110,7 +110,7 @@
                     </div>
                 </div>
 
-                <!-- 2-р TAB - Settings Panel -->
+                <!-- 2-р tab - Settings Panel -->
                 <div class="tab-pane fade" id="settingsPanel">
                     <h5>{{ 'select-text-settings'|text }}</h5>
 
@@ -130,7 +130,7 @@
                     </div>
                 </div>
 
-                <!-- 3-р TAB - Confirm Panel -->
+                <!-- 3-р tab - Confirm Panel -->
                 <div class="tab-pane fade" id="confirmPanel">
                     <h5>{{ 'please-confirm-info'|text }}</h5>
 
@@ -212,7 +212,7 @@
             const confirmFlag = document.querySelector('#confirmPanel p.lang_flag');
             const confirmCode = document.querySelector('#confirmPanel input[name="code"]');
             if (this.value.length === 2) {
-                // en тохиолдолд дэлгэц дээр us flag харуулна
+                /* en тохиолдолд дэлгэц дээр us flag харуулна */
                 const flagstr = this.value === 'en' ? 'us' : this.value;
                 const img = `<img src="https://flagcdn.com/40x30/${flagstr}.png" 
                                   srcset="https://flagcdn.com/80x60/${flagstr}.png 2x"

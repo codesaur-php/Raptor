@@ -71,7 +71,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 const list = data.list || [];
                 countEl.textContent = `${list.length} items`;
 
-                // Collect tables for filter
+                /* Collect tables for filter */
                 const tables = [...new Set(list.map(r => r.table_name))].sort();
                 const current = tableFilter.value;
                 tableFilter.innerHTML = '<option value="">All tables</option>';
@@ -112,7 +112,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     tbody.appendChild(tr);
                 });
 
-                // View buttons
+                /* View buttons */
                 document.querySelectorAll('.view-trash').forEach(btn => {
                     btn.addEventListener('click', function () {
                         fetch(`{{ 'trash-view'|pattern }}`.replace('{id}', this.dataset.id))
@@ -127,7 +127,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     });
                 });
 
-                // Restore buttons
+                /* Restore buttons */
                 document.querySelectorAll('.restore-trash').forEach(btn => {
                     btn.addEventListener('click', function () {
                         const id = this.dataset.id;
@@ -156,7 +156,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                     Swal.close();
                                     btn.closest('tr').remove();
 
-                                    // Хэрэв original ID ашиглагдаагүй бол warning тэмдэглэгээтэй харуулна
+                                    /* Хэрэв original ID ашиглагдаагүй бол warning тэмдэглэгээтэй харуулна */
                                     const type = res.used_original_id ? 'success' : 'warning';
                                     const title = res.used_original_id ? 'Restored' : 'Restored with new ID';
 
@@ -173,7 +173,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     });
                 });
 
-                // Delete buttons
+                /* Delete buttons */
                 document.querySelectorAll('.delete-trash').forEach(btn => {
                     btn.addEventListener('click', function () {
                         const id = this.dataset.id;
@@ -210,7 +210,7 @@ document.addEventListener('DOMContentLoaded', function () {
     tableFilter.addEventListener('change', () => loadTrash(tableFilter.value));
     document.getElementById('trash-refresh').addEventListener('click', () => loadTrash(tableFilter.value));
 
-    // Empty trash
+    /* Empty trash */
     document.getElementById('trash-empty').addEventListener('click', function () {
         Swal.fire({
             html: '<p class="text-danger"><strong>АНХААРУУЛГА!</strong> Trash дахь бүх бичлэгийг бүрэн устгах уу?</p>',

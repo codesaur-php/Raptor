@@ -1,13 +1,13 @@
 <!--
-    web-stats.html
+    Web-stats.HTML
     ------------------------------------------------------------------
-    Dashboard-ийн вэб статистик, системийн лог статистик UI.
-    home.html-ээс дуудагдана.
+    Dashboard-ийн вэб статистик, системийн лог статистик ui.
+    home.HTML-ээс дуудагдана.
 
     Controller: Dashboard\Home\HomeController
     Routes:
-      GET /dashboard/stats     -> stats()      (web_log)
-      GET /dashboard/log-stats -> logStats()   (system *_log)
+      get /dashboard/stats     -> stats()      (web_log)
+      get /dashboard/log-stats -> logStats()   (system *_log)
 -->
 <div id="statsLoading" class="text-center py-4">
     <span class="spinner-border spinner-border-sm me-1"></span> {{ 'loading-statistics'|text }}
@@ -86,12 +86,12 @@
             ordersNew:   mn ? 'Шинэ захиалга' : 'New orders'
         };
         var html =
-            // ===== WEB LOG STATISTICS (дээр) =====
+            /* ===== WEB LOG STATISTICS (дээр) ===== */
             '<div class="d-flex align-items-center mb-3">' +
                 '<h5 class="mb-0"><i class="bi bi-globe me-2"></i>' + t.webStats + '</h5>' +
                 (d.log_from ? '<span class="badge bg-body-secondary text-body border ms-3 fs-6 fw-normal px-3 py-2"><i class="bi bi-clock-history me-1"></i>' + d.log_from + ' -> ' + d.log_to + '</span>' : '') +
             '</div>' +
-            // Stat Cards
+            /* Stat Cards */
             '<div class="row g-3 mb-4">' +
                 statCard('bg-primary', 'bi-calendar-event', d.today, t.today) +
                 statCard('bg-success', 'bi-calendar-week', d.week, t.week7) +
@@ -100,21 +100,21 @@
                 statCard('bg-secondary', 'bi-bag-check', d.orders_total, t.ordersTotal) +
                 statCard('bg-danger', 'bi-bag-plus', d.orders_new, t.ordersNew) +
             '</div>' +
-            // Өнөөдрийн нэгдсэн top 10 (pages + news + products)
+            /* Өнөөдрийн нэгдсэн top 10 (pages + news + products) */
             '<div class="card border-0 shadow-sm mb-4">' +
                 '<div class="card-header border-0 pt-3">' +
                     '<h6 class="mb-0"><i class="bi bi-calendar-event me-2"></i>' + t.topToday + '</h6>' +
                 '</div>' +
                 '<div class="card-body p-0">' + buildTable(['#', t.content, t.visits], mergeToday(d.top_pages_today, d.top_news_today, d.top_products_today), 'title', 'bg-primary') + '</div>' +
             '</div>' +
-            // Area Chart
+            /* Area Chart */
             '<div class="card border-0 shadow-sm mb-4">' +
                 '<div class="card-header border-0 pt-3">' +
                     '<h6 class="mb-0"><i class="bi bi-graph-up me-2"></i>' + t.chart30 + '</h6>' +
                 '</div>' +
                 '<div class="card-body"><div id="areaChart"></div></div>' +
             '</div>' +
-            // Pages + News + Products (1 row, col-lg-4)
+            /* Pages + News + Products (1 row, col-lg-4) */
             '<div class="row g-3 mb-4">' +
                 '<div class="col-lg-4">' +
                     '<div class="card border-0 shadow-sm h-100">' +
@@ -162,7 +162,7 @@
                     '</div>' +
                 '</div>' +
             '</div>' +
-            // Donut + IPs + User Agents (1 row, col-lg-4)
+            /* Donut + IPs + User Agents (1 row, col-lg-4) */
             '<div class="row g-3 mb-4">' +
                 '<div class="col-lg-4">' +
                     '<div class="card border-0 shadow-sm h-100">' +
@@ -192,7 +192,7 @@
                 '</div>' +
             '</div>';
 
-        // ===== SYSTEM LOG STATISTICS (доор) =====
+        /* ===== SYSTEM LOG STATISTICS (доор) ===== */
         if (logData && logData.status === 'success' && logData.logs && logData.logs.length > 0) {
             html += '<hr class="my-4">' +
                 '<h5 class="mb-3"><i class="bi bi-list-stars me-2"></i>' + t.sysLog + '</h5>' +
@@ -225,7 +225,7 @@
 
         c.innerHTML = html;
 
-        // ApexCharts
+        /* ApexCharts */
         var script = document.createElement('script');
         script.src = 'https://cdn.jsdelivr.net/npm/apexcharts';
         script.onload = function() { initCharts(d); };

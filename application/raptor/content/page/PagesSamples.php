@@ -59,7 +59,6 @@ class PagesSamples
             'parent_id' => $mnAbout['id'],
             'title' => 'Байгууллага',
             'position' => 110,
-            'photo' => $assets . '/organization.jpg',
             'content' => '<p>Байгууллагын танилцуулга энд байрлана.</p>'
                 . '<p>Энэ хуудсыг хянах самбараас засварлах боломжтой.</p>'
         ]);
@@ -68,38 +67,8 @@ class PagesSamples
             'parent_id' => $mnAbout['id'],
             'title' => 'Баг',
             'position' => 120,
-            'content' => '<p>Манай багийн гишүүдийн танилцуулга.</p>'
-                . '<p><img src="' . $assets . '/team.jpg" alt="Баг" class="img-fluid rounded shadow-sm"></p>'
-        ]);
-
-        // Динозаврууд (nav -> dropdown menu жишээ)
-        $mnDino = $model->insert($seed + [
-            'code' => 'mn',
-            'title' => 'Динозаврууд',
-            'position' => 200
-        ]);
-        $model->insert($seed + [
-            'code' => 'mn',
-            'parent_id' => $mnDino['id'],
-            'title' => 'Велоцираптор',
-            'position' => 210,
-            'is_featured' => 1,
-            'source' => 'Википедиа',
-            'photo' => $assets . '/velociraptor.jpg',
-            'content' => '<p><strong>Velociraptor</strong> (/vɪˈlɒsɪræptər/) - Латинаар "хурдан баригч" гэсэн утгатай.</p>'
-                . '<p>Cretaceous галавын сүүл үе буюу ойролцоогоор 75-71 сая жилийн өмнө амьдарч байсан dromaeosaurid theropod үлэг гүрвэл юм. '
-                . '<em>V. mongoliensis</em> зүйлийн олдворуудыг <strong>Монгол</strong> улсаас олсон байдаг.</p>'
-        ]);
-        $model->insert($seed + [
-            'code' => 'mn',
-            'parent_id' => $mnDino['id'],
-            'title' => 'Тарбозавр',
-            'position' => 220,
-            'is_featured' => 1,
-            'photo' => $assets . '/tarbosaurus.jpg',
-            'content' => '<p><strong>Tarbosaurus</strong> - Монголоос олдсон хамгийн алдартай махан идэшт динозавр.</p>'
-                . '<p>Tyrannosaurus Rex-ийн хамгийн ойрын төрөл бөгөөд ойролцоогоор 70 сая жилийн өмнө Азид амьдарч байжээ. '
-                . 'Монгол палеонтологийн нэн чухал олдвор юм.</p>'
+            'content' => '<p>Багийн танилцуулга энд байрлана.</p>'
+                . '<p>Энэ хуудсыг хянах самбараас засварлах боломжтой.</p>'
         ]);
 
         // Мэдээлэл (link)
@@ -159,7 +128,6 @@ class PagesSamples
             'parent_id' => $enAbout['id'],
             'title' => 'Organization',
             'position' => 610,
-            'photo' => $assets . '/organization.jpg',
             'content' => '<p>Organization introduction goes here.</p>'
                 . '<p>You can edit this page from the admin dashboard.</p>'
         ]);
@@ -168,38 +136,8 @@ class PagesSamples
             'parent_id' => $enAbout['id'],
             'title' => 'Team',
             'position' => 620,
-            'content' => '<p>Meet our team members.</p>'
-                . '<p><img src="' . $assets . '/team.jpg" alt="Team" class="img-fluid rounded shadow-sm"></p>'
-        ]);
-
-        // Dinosaurs (nav -> dropdown menu example)
-        $enDino = $model->insert($seed + [
-            'code' => 'en',
-            'title' => 'Dinosaurs',
-            'position' => 700
-        ]);
-        $model->insert($seed + [
-            'code' => 'en',
-            'parent_id' => $enDino['id'],
-            'title' => 'Velociraptor',
-            'position' => 710,
-            'is_featured' => 1,
-            'source' => 'Wikipedia',
-            'photo' => $assets . '/velociraptor.jpg',
-            'content' => '<p><strong>Velociraptor</strong> (/vɪˈlɒsɪræptər/) - Latin for "swift seizer".</p>'
-                . '<p>A dromaeosaurid theropod dinosaur that lived approximately 75 to 71 million years ago during the Late Cretaceous period. '
-                . 'Fossils of <em>V. mongoliensis</em> were discovered in <strong>Mongolia</strong>.</p>'
-        ]);
-        $model->insert($seed + [
-            'code' => 'en',
-            'parent_id' => $enDino['id'],
-            'title' => 'Tarbosaurus',
-            'position' => 720,
-            'is_featured' => 1,
-            'photo' => $assets . '/tarbosaurus.jpg',
-            'content' => '<p><strong>Tarbosaurus</strong> - The most famous carnivorous dinosaur discovered in Mongolia.</p>'
-                . '<p>The closest relative of Tyrannosaurus Rex, it lived approximately 70 million years ago in Asia. '
-                . 'One of the most important finds in Mongolian paleontology.</p>'
+            'content' => '<p>Team introduction goes here.</p>'
+                . '<p>You can edit this page from the admin dashboard.</p>'
         ]);
 
         // News (link)

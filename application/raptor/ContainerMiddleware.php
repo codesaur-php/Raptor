@@ -101,7 +101,6 @@ class ContainerMiddleware implements MiddlewareInterface
             $this->registerServices($container, $request);
         }
 
-        // Container-г request attribute болгон дамжуулах
         return $handler->handle(
             $request->withAttribute('container', $container)
         );
@@ -187,16 +186,13 @@ class ContainerMiddleware implements MiddlewareInterface
         // File-based cache service (DB query хэмнэх)
         // Cache үүсгэх боломжгүй бол (permission, disk гэх мэт) null буцааж,
         // систем cache-гүйгээр хэвийн ажиллана
+        // Framework runtime cache нь document root-оос гадуурх дээд түвшний
+        // `cache/` хавтаст байрлана. CacheService::fromDefaultPath() нь хавтас
+        // + fallback логикийг агуулна (JWTAuthMiddleware-ийн rbac cache-тэй
+        // нэг эх сурвалж). Үүсгэж чадахгүй бол null буцааж систем cache-гүйгээр
+        // хэвийн ажиллана.
         $container->set('cache', function(ContainerInterface $c) {
-            try {
-                $cacheDir = \dirname($_SERVER['SCRIPT_FILENAME'], 2) . '/protected/cache';
-                return new CacheService($cacheDir, 43200);
-            } catch (\Throwable $e) {
-                if (CODESAUR_DEVELOPMENT) {
-                    \error_log('Cache service unavailable: ' . $e->getMessage());
-                }
-                return null;
-            }
+            return CacheService::fromDefaultPath();
         });
 
         // Mailer service бүртгэе (Dashboard-оос хэрэглэгчдэд мэдэгдэл шуудан илгээхэд ашиглана)

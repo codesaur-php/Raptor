@@ -1,6 +1,6 @@
 {% set user_can = user.can('system_content_settings') %}
 
-<!-- SETTINGS ХУУДАСНЫ ЕРӨНХИЙ ТОЛГОЙ БҮТЭЦ -->
+<!-- Settings хуудасны ерөнхий толгой бүтэц -->
 <div class="d-flex justify-content-between align-items-center mb-2">
     <h5 class="text-primary text-uppercase"><i class="bi bi-gear-fill"></i> {{ 'settings'|text }}</h5>
     <div>
@@ -13,14 +13,7 @@
     </div>
 </div>
 
-<!-- 
-    ТАБ МЕНЮ  
-    ----------------------------------------------------
-    Settings нь 3 үндсэн бүлэгтэй:
-        1) Meta   -> гарчиг, тайлбар, хаяг, холбоо барих
-        2) Logo   -> сайтын logo, faviconn, apple-touch-icon
-        3) Config -> JSON тохиргоо
--->
+<!-- Таб меню: Meta (гарчиг, тайлбар, холбоо барих), Logo (logo, favicon, apple-touch-icon), Config (JSON тохиргоо) -->
 <ul class="nav nav-tabs mt-1" role="tablist">    
     <!-- Meta таб - анхдагч идэвхтэй -->
     <li class="nav-item">
@@ -44,41 +37,15 @@
     </li>
 </ul>
 
-<!-- 
-    ТАБ КОНТЕНТ
-    ----------------------------------------------------
-    Доорх div нь tab-pane-үүдийг агуулсан үндсэн контейнер.
--->
+<!-- Таб контент - tab-pane-үүдийг агуулсан үндсэн контейнер -->
 <div class="settings-tabs tab-content mt-2">
-    <!-- 
-        META TAB
-        ----------------------------------------------------
-        - Олон хэл дээр title
-        - Олон хэл дээр description
-        - Олон хэл дээр urgent (яаралтай мэдэгдэл)
-        - email, phone
-        - contact / address (мөн олон хэл дээр)
-        - Copyright
-    -->
+    <!-- Meta таб: title, description, urgent, email, phone, contact, address, copyright (олон хэл дээр) -->
     <div class="tab-pane active show" id="tab-meta" role="tabpanel">
-        <!-- 
-            МЭТА МЭДЭЭЛЭЛ ОРУУЛАХ ФОРМ
-            ----------------------------------------------------
-            - POST request -> settings route
-            - multipart/form-data -> file upload хэрэгтэй байж магадгүй
-            - validation -> Bootstrap-ийн needs-validation
-        -->
+        <!-- Meta мэдээлэл оруулах форм - post settings route, multipart/form-data, needs-validation -->
         <form class="needs-validation pt-1" novalidate action="{{ 'settings'|link }}" method="POST" enctype="multipart/form-data">
-            <!-- 
-                TITLE (олон хэл дээр)
-                ----------------------------------------------------
-                - localization.language = { "mn": {...}, "en": {...}, ... }
-                - Тухайн хэл бүрийн title утгыг тусдаа form-control-оор авна.
-                - Label дээр тухайн хэлний төрийн далбаа харагдана.
-            -->
+            <!-- Title (олон хэл дээр) - хэл бүрийн утгыг тусдаа form-control-оор авна, label дээр далбаа харагдана -->
             {% for code,language in localization.language %}
                 <div class="form-floating mt-2">
-                    <!-- Нэрийн утга -->
                     <input class="form-control"
                            name="title[{{ code }}]"
                            value="{{ record['localized'][code]['title']|e }}"
@@ -98,11 +65,7 @@
             {% endfor %}
             <hr>
 
-            <!-- 
-                DESCRIPTION (олон хэл дээр)
-                ----------------------------------------------------
-                - Товч тайлбар, SEO description хэл тус бүрээр
-            -->
+            <!-- Description (олон хэл дээр) - товч тайлбар, SEO description хэл тус бүрээр -->
             {% for code,language in localization.language %}
                 <div class="form-floating mt-2">
                     <input class="form-control"
@@ -123,12 +86,7 @@
             {% endfor %}
             <hr>
 
-            <!-- 
-                URGENT (олон хэл дээр)
-                ----------------------------------------------------
-                - Хуудасны дээд хэсэгт харагддаг анхааруулга / мэдэгдэл
-                - Үүнд HTML бичих боломжтой
-            -->
+            <!-- Urgent (олон хэл дээр) - хуудасны дээд хэсэгт харагдах анхааруулга, HTML бичиж болно -->
             {% for code,language in localization.language %}
                 <div class="form-floating mt-2">                    
                     <textarea class="form-control"
@@ -147,14 +105,9 @@
             {% endfor %}
             <hr>
 
-            <!-- 
-                EMAIL & PHONE
-                ----------------------------------------------------
-                - Ерөнхий холбоо барих мэдээлэл
-                - Олон хэлнээс хамаарахгүй глобал утга
-            -->
+            <!-- Email, phone - глобал холбоо барих мэдээлэл (олон хэлнээс хамаарахгүй) -->
 
-            <!-- EMAIL -->
+            <!-- Email -->
             <div class="form-floating mt-2">
                 <input class="form-control"
                        name="email"
@@ -166,7 +119,7 @@
                 <label for="email">{{ 'email'|text }}</label>
             </div>
 
-            <!-- PHONE -->
+            <!-- Phone -->
             <div class="form-floating mt-2">
                 <input class="form-control"
                        name="phone"
@@ -178,13 +131,7 @@
             </div>
             <hr>
             
-            <!-- 
-                CONTACT (олон хэл дээр)
-                ----------------------------------------------------
-                - Вебсайтын "Холбоо барих" хэсэгт ашиглагдах контент.
-                - Хэл тус бүрээр тусдаа хадгалагдана.
-                - Үүнд HTML бичих боломжтой (жишээ: <b>Company</b><br>Phone: ... )
-            -->
+            <!-- Contact (олон хэл дээр) - "Холбоо барих" хэсгийн контент, хэл бүрээр тусдаа, HTML бичиж болно -->
             {% for code,language in localization.language %}
                 <div class="form-floating mt-2">
                     <textarea class="form-control"
@@ -205,13 +152,7 @@
             {% endfor %}            
             <hr>
 
-            <!-- 
-                ADDRESS (олон хэл дээр)
-                ----------------------------------------------------
-                - Байршлын хаяг, шуудангийн хаяг зэрэг дэлгэрэнгүй мэдээлэл.
-                - Хэл тус бүрээр localization-д хадгалагдана.
-                - Үүнд HTML бичих боломжтой
-            -->
+            <!-- Address (олон хэл дээр) - байршлын хаяг, localization-д хадгалагдана, HTML бичиж болно -->
             {% for code,language in localization.language %}
                 <div class="form-floating mt-2">
                     <textarea class="form-control"
@@ -232,14 +173,7 @@
             {% endfor %}
             <hr>
 
-            <!-- 
-                COPYRIGHT (олон хэл дээр)
-                ----------------------------------------------------
-                - Footer хэсэгт харагдах зохиогчийн эрхийн текст.
-                - Жишээ: "&copy; 2025 Company Name. All rights reserved." (HTML entity)
-                - Вэбсайтын олон хэлт орчинд тохируулах боломжтой.
-                - Үүнд HTML бичих боломжтой
-            -->
+            <!-- Copyright (олон хэл дээр) - footer-т харагдах зохиогчийн эрхийн текст, HTML бичиж болно -->
             {% for code,language in localization.language %}
                 <div class="form-floating mt-2">
                     <input class="form-control"
@@ -249,7 +183,7 @@
                            id="copyright_{{ code }}"
                            autocomplete="off">
 
-                    <!-- Label + Хэлний далбаа -->
+                    <!-- Label + хэлний далбаа -->
                     <label for="copyright_{{ code }}">
                         Copyright
                         {% set flag = code == 'en' ? 'us' : code %}
@@ -261,54 +195,30 @@
                 </div>
             {% endfor %}
 
-            <!-- 
-                SETTINGS ХАДГАЛАХ ТОВЧ
-                ----------------------------------------------------
-                - Зөвхөн тухайн хэрэглэгч system_content_settings эрхтэй бол харагдана.
-                - form.requestSubmit() - JS дотор submit хийх механизмыг ашиглана.
-            -->
+            <!-- Settings хадгалах товч - зөвхөн system_content_settings эрхтэй үед харагдана -->
             {% if user_can %}
                 <button class="submit-settings btn btn-primary text-uppercase mt-3 shadow-sm">
                     <i class="bi bi-save pe-1"></i> {{ 'save'|text }}
                 </button>
             {% endif %}
         </form>
-    </div> <!-- END OF META TAB -->
+    </div> <!-- End of meta tab -->
     
-    <!-- 
-        LOGO TAB
-        ----------------------------------------------------
-        Энэ хэсэгт:
-            - Олон хэл дээр сайтын LOGO зураг байрлуулах
-            - Favico (.ico)
-            - Apple Touch Icon (iOS home screen icon)
-        бүгдийг upload хийх боломжтой.
-    -->
+    <!-- Logo таб: Logo (олон хэл дээр), Favicon (.ico), Apple touch icon upload -->
     <div class="tab-pane" id="tab-logo" role="tabpanel">
-        <!-- 
-            FILE UPLOAD FORM 
-            ----------------------------------------------------
-            Файлууд upload хийх тул:
-            - method="POST"
-            - enctype="multipart/form-data" заавал байх ёстой
-        -->
+        <!-- File upload form - method="POST", enctype="multipart/form-data" заавал -->
         <form class="needs-validation"
               novalidate
               action="{{ 'settings-files'|link }}"
               method="POST"
               enctype="multipart/form-data">
             <div class="row mb-3 mt-2">
-                <!-- 
-                    ЗҮҮН ТАЛЫН БАГАНА - LOGO (олон хэлээр)
-                    ----------------------------------------------------
-                    localization.language дээр iterate хийж
-                    хэл тус бүрийн logo-г upload хийх боломжтой.
-                -->
+                <!-- Зүүн талын багана - Logo (олон хэлээр), хэл бүрийн logo upload -->
                 <div class="col">
                     {% for code,language in localization.language %}
                         {% if not loop.first %}<hr>{% endif %}
                         
-                        <!-- LOGO-н гарчиг + тухайн хэлний төрийн далбаа -->
+                        <!-- Logo-н гарчиг + хэлний далбаа -->
                         <label class="form-label">
                             {{ 'logo'|text }}
                             {% set flag = code == 'en' ? 'us' : code %}
@@ -318,15 +228,7 @@
                                 alt="{{ language['title']|e }}">
                         </label>
 
-                        <!-- 
-                            LOGO FILE INPUT ГРУПП
-                            ----------------------------------------------------
-                            - Зураг сонгоход file input нууцлагдсан
-                            - Текст input -> зөвхөн файл нэрийг харуулах зориулалттай
-                            - Choose -> browse file
-                            - Remove -> upload-ыг цэвэрлэх
-                            - Preview -> сонгосон зураг харагдах
-                        -->
+                        <!-- Logo file input групп - choose (browse), remove (цэвэрлэх), preview -->
                         <div class="input-group">
                             <!-- Зураг нэрийг харуулах текст input -->
                             <input class="form-control"
@@ -337,7 +239,7 @@
                                    placeholder="{{ 'select-an-image'|text|e }}">
                             <div class="input-group-append">
                                 <div class="btn-group">
-                                    <!-- ЖИНХЭНЭ FILE INPUT (нуусан) -->
+                                    <!-- Жинхэнэ file input (нуусан) -->
                                     <input type="file"
                                            name="logo[{{ code }}]"
                                            id="logo_{{ code }}"
@@ -346,13 +248,13 @@
                                            style="display:none;"
                                            onchange="onFileInput(this);">
                                     
-                                    <!-- ФАЙЛ СОНГОХ ТОВЧ -->
+                                    <!-- Файл сонгох товч -->
                                     <button class="btn btn-info" type="button"
                                             onclick="this.previousElementSibling.click();">
                                         {{ 'choose'|text }}
                                     </button>
 
-                                    <!-- ФАЙЛЫГ УСТГАХ / ЦЭВЭРЛЭХ ТОВЧ -->
+                                    <!-- Файлыг устгах / цэвэрлэх товч -->
                                     <button class="btn btn-danger" type="button"
                                             onclick="onFileClear(this);"
                                             style="{% if record['localized'][code]['logo'] is empty %}display:none;{% endif %}">
@@ -373,27 +275,17 @@
                                id="logo_{{ code }}_size"
                                value="{{ record['localized'][code]['logo_size'] ?? '' }}"
                                disabled>
-                        <!-- 
-                            LOGO PREVIEW ЗУРАГ
-                            ----------------------------------------------------
-                            - Хэрвээ record дээр зураг байгаа бол харагдана
-                            - Хоосон бол display:none
-                        -->
+                        <!-- Logo preview зураг - record дээр зураг байвал харагдана, хоосон бол display:none -->
                         <img class="img-thumbnail img-fluid"
                              id="logo_{{ code }}_preview"
                              src="{{ record['localized'][code]['logo']|e }}"
                              style="max-height:480px;{% if record['localized'][code]['logo'] is empty %}display:none;{% endif %}">
                     {% endfor %}
-                </div> <!-- end col-left -->                
+                </div> <!-- End col-left -->                
 
-                <!-- 
-                    БАРУУН ТАЛЫН БАГАНА
-                    ----------------------------------------------------
-                    * Favico upload
-                    * Apple Touch Icon upload
-                -->
+                <!-- Баруун талын багана - Favicon, Apple touch icon upload -->
                 <div class="col">
-                    <!-- FAVICON -->
+                    <!-- Favicon -->
                     <label class="form-label">Favicon</label>
 
                     <div class="input-group">
@@ -407,7 +299,7 @@
                         
                         <div class="input-group-append">
                             <div class="btn-group">
-                                <!-- ЖИНХЭНЭ FILE INPUT -->
+                                <!-- Жинхэнэ file input -->
                                 <input type="file"
                                        name="favicon"
                                        id="favicon"
@@ -438,19 +330,19 @@
                         </div>
                     </div>
                     
-                    <!-- Favico icon файлын хэмжээ -->
+                    <!-- Favicon файлын хэмжээ -->
                     <input class="form-control-plaintext small text-muted mt-1"
                            id="favicon_size"
                            value="{{ record['favicon_size'] ?? '' }}"
                            disabled>
-                    <!-- Preview of FAVICON -->
+                    <!-- Favicon preview -->
                     <img class="img-thumbnail img-fluid"
                          id="favicon_preview"
                          src="{{ record['favicon']|e }}"
                          style="max-height:256px;{% if record['favicon'] is empty %}display:none;{% endif %}">
                     <hr>
 
-                    <!-- APPLE TOUCH ICON -->
+                    <!-- Apple touch icon -->
                     <label class="form-label">
                         Apple touch image icon (min 180x180 pixels recommended)
                     </label>
@@ -465,7 +357,7 @@
                         
                         <div class="input-group-append">
                             <div class="btn-group">
-                                <!-- FILE INPUT -->
+                                <!-- File input -->
                                 <input type="file"
                                        name="apple_touch_icon"
                                        id="apple_touch_icon"
@@ -506,68 +398,39 @@
                          id="apple_touch_icon_preview"
                          src="{{ record['apple_touch_icon']|e }}"
                          style="max-height:480px;{% if record['apple_touch_icon'] is empty %}display:none;{% endif %}">
-                </div> <!-- end col-right -->
-            </div> <!-- end row -->
+                </div> <!-- End col-right -->
+            </div> <!-- End row -->
 
-            <!-- SAVE BUTTON (Permission required) -->
+            <!-- Save button (эрх шаардлагатай) -->
             {% if user_can %}
                 <button class="submit-settings btn btn-primary text-uppercase mt-3 shadow-sm">
                     <i class="bi bi-save pe-1"></i> {{ 'save'|text }}
                 </button>
             {% endif %}
         </form>
-    </div> <!-- END LOGO TAB -->
+    </div> <!-- End logo tab -->
     
-    <!--
-        CONFIG TAB
-        ----------------------------------------------------
-        Энэ tab нь JSON хэлбэртэй сайтын нэмэлт тохиргоог оруулах хэсэг.
-        Жишээ:
-            {
-                "google_analytics": "...",
-                "maintenance_mode": true,
-                "homepage_slider_speed": 4000
-            }
-        Хэрэглэгч JSON structure алдаагүй оруулах шаардлагатай.
-    -->
+    <!-- Config таб - JSON хэлбэрийн сайтын нэмэлт тохиргоо (structure алдаагүй байх ёстой) -->
     <div class="tab-pane" id="tab-config" role="tabpanel">
-        <!-- 
-            CONFIG FORM
-            ----------------------------------------------------
-            - action = settings -> үндсэн тохиргоо хадгалах endpoint
-            - enctype="multipart/form-data" зайлшгүй биш боловч бусад tab-тай unified байлгах зорилготой
-        -->
+        <!-- Config form - settings endpoint рүү хадгална, бусад таб-тай unified enctype -->
         <form class="needs-validation"
               novalidate
               action="{{ 'settings'|link }}"
               method="POST"
               enctype="multipart/form-data">
-            <!-- 
-                JSON valid байх ёстой гэдгийг сануулах жижиг тайлбар.
-            -->
+            <!-- JSON valid байх ёстойг сануулах тайлбар -->
             <label class="form-label text-muted small">
                 <i>must be valid JSON</i>
             </label>
 
-            <!-- 
-                Pretty Print товч
-                ----------------------------------------------------
-                Энэ товч нь JSON текстийг илүү сайхан (beautified) форматад оруулдаг.
-                prettyPrint() функц нь доорх JS хэсэгт бичигдсэн.
-            -->
+            <!-- Pretty print товч - JSON текстийг форматлана (prettyPrint() доорх JS-д) -->
             <a class="badge bg-info mb-2"
                href="javascript:;"
                onclick="prettyPrint();">
                 pretty print
             </a>
 
-            <!-- 
-                JSON EDITOR TEXTAREA
-                ----------------------------------------------------
-                - 25 мөр өндөртэй
-                - config талбарын утгыг энд харуулна
-                - JSON structure бүхий текст
-            -->
+            <!-- JSON editor textarea - config талбарын утгыг харуулна -->
             <textarea class="form-control"
                       name="config"
                       id="config_editor"
@@ -581,19 +444,10 @@
                 </button>
             {% endif %}
         </form>
-    </div> <!-- END CONFIG TAB -->
-</div> <!-- END settings-tabs -->
+    </div> <!-- End config tab -->
+</div> <!-- End settings-tabs -->
 
-<!-- 
-    LOGGER SECTION (Зөвхөн system_logger эрхтэй үед харагдана)
-    ------------------------------------------------------------
-    Энэ хэсэг нь Settings-тэй холбоотой системийн log-уудыг харуулдаг.
-    Жишээ нь:
-        * settings updated
-        * logo changed
-        * config modified
-    гэх мэт.
--->
+<!-- Logger section - Settings-тэй холбоотой системийн log (зөвхөн system_logger эрхтэй үед) -->
 {% if user.can('system_logger') %}
 <div class="mt-5">
     <hr>
@@ -603,23 +457,12 @@
         {{ 'log'|text }} <i class="bi bi-clock-history"></i>
     </label>
 
-    <!-- 
-        Ачаалж байгаа үед харагдах loader (spinner)
-        ----------------------------------------------------
-        - Logs API дуудсан хооронд харагдана
-        - Гүйцэтгэл дуусмагц нууж, log list-г харуулна
-    -->
+    <!-- Ачаалж байх үед харагдах loader (spinner) -->
     <div class="spinner-grow mt-3" role="status" style="display:none">
         <span class="visually-hidden">Loading logs...</span>
     </div>
 
-    <!-- 
-        LOG LIST CONTAINER
-        ----------------------------------------------------
-        Энэ UL элементэд settings-* холбоотой лог мэдээлэл append хийгдэнэ.
-        - max-height: 240px -> scrollbar-тай болно
-        - logger-protocol class -> лог төрөл тус бүр өөр өөр өнгөтэй харагдана
-    -->
+    <!-- Log list container - settings-* холбоотой лог мэдээлэл append хийгдэнэ -->
     <ul class="list-group logger-protocol"
         id="logger-content"
         data-retrieve="{{ 'logs-retrieve'|link }}"

@@ -2,7 +2,7 @@
 /public_html/public/*
 !/public_html/public/.htaccess
 
-# Protected хавтас (cache + protected files), зөвхөн .htaccess үлдэнэ
+# Protected protected файлууд - бүх файлыг ignore хийнэ, зөвхөн .htaccess үлдэнэ
 /protected/*
 !/protected/.htaccess
 
@@ -20,9 +20,12 @@ composer.lock
 # NetBeans private тохиргоо
 /nbproject/private/
 
-# Migration SQL файлууд - per-environment upload (file-based system).
-# Зөвхөн .gitkeep ба README.md git-д үлдэнэ; бусад файлууд server-ээс
-# upload хийгдэнэ.
+# Database файлууд - per-environment (file-based migration system).
+# Зөвхөн .htaccess, migrations/.gitkeep ба migrations/README.md git-д үлдэнэ;
+# migration SQL файлууд server-ээс upload хийгдэнэ.
+/database/*
+!/database/.htaccess
+!/database/migrations/
 /database/migrations/*
 !/database/migrations/.gitkeep
 !/database/migrations/README.md

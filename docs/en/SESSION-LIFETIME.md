@@ -2,7 +2,11 @@
 
 ## Background
 
-To keep an admin logged in for a long time, Raptor sets the session **cookie lifetime to 30 days** from `SessionMiddleware` (`session_set_cookie_params(2592000)`). This way an admin stays logged in even after closing and reopening the browser, and the JWT and CSRF token stored in the session are not lost early. This simple approach has run reliably for years on many Mongolian cPanel / VPS hosts with no extra configuration.
+To keep an admin logged in for a long time, Raptor sets the session **cookie lifetime to 30 days** from `SessionMiddleware` (`session_set_cookie_params(...)`). This way an admin stays logged in even after closing and reopening the browser, and the JWT and CSRF token stored in the session are not lost early. This simple approach has run reliably for years on many Mongolian cPanel / VPS hosts with no extra configuration.
+
+The same `session_set_cookie_params(...)` call (array form) also sets the cookie's security flags explicitly, rather than leaving them to php.ini: `httponly => true`, `samesite => 'Lax'`, and `secure` auto-detected from HTTPS (`HTTPS` / port 443 / `X-Forwarded-Proto`) so the cookie is Secure over HTTPS and still works over plain HTTP in local development.
+
+Because these flags live in the **same** call as the lifetime, "hand session control entirely to PHP by removing the `session_set_cookie_params(...)` call" (described below) now delegates the **security flags too**, not just the lifetime - fully consistent with that promise, just wider in scope. So if you remove the call, set the flags in php.ini to keep the hardening: `session.cookie_httponly=1`, `session.cookie_samesite=Lax`, and `session.cookie_secure=1` (on HTTPS). To change **only** the lifetime while keeping the flags, edit the `lifetime` value in the array instead of removing the whole call. Everything below concerns the **lifetime** only.
 
 This affects the **client-side cookie only**. Raptor does **not** manage session's **server-side** behaviour from code - file cleanup (`session.gc_maxlifetime`) and storage path (`session.save_path`) are left to the host's PHP configuration (php.ini). Forcing the server-side session lifetime from code is unreliable on many environments:
 
@@ -10,7 +14,7 @@ This affects the **client-side cookie only**. Raptor does **not** manage session
 - **Conflict in a shared `/tmp`.** When many sites share one session directory, another tenant's GC (with a shorter `gc_maxlifetime`) deletes your files too.
 - **System cron purge.** cPanel/LiteSpeed and macOS purge `/tmp` independently of PHP's settings.
 
-So the server-side session policy (lifetime, storage path, cleanup) belongs to the **developer**, tuned to the specific host. A developer can also hand session control **entirely** to PHP: **remove** the `session_set_cookie_params(2592000)` line from `SessionMiddleware` and configure the full session lifetime/path/cleanup in php.ini / .user.ini (see below).
+So the server-side session policy (lifetime, storage path, cleanup) belongs to the **developer**, tuned to the specific host. A developer can also hand session control **entirely** to PHP: **remove** the `session_set_cookie_params(...)` line from `SessionMiddleware` and configure the full session lifetime/path/cleanup - **and the cookie security flags** (`cookie_httponly` / `cookie_samesite` / `cookie_secure`, see the note above) - in php.ini / .user.ini (see below).
 
 ---
 
@@ -18,11 +22,11 @@ So the server-side session policy (lifetime, storage path, cleanup) belongs to t
 
 `SessionMiddleware`:
 
-- **Sets the session cookie lifetime to 30 days** - `session_set_cookie_params(2592000)`. This is the CLIENT-side cookie only, and is the practical default that runs out-of-the-box on many cPanel/VPS hosts (admins stay logged in across browser restarts).
+- **Sets the session cookie lifetime to 30 days** - `session_set_cookie_params(...)`. This is the CLIENT-side cookie only, and is the practical default that runs out-of-the-box on many cPanel/VPS hosts (admins stay logged in across browser restarts).
 - Does **not** touch `session.save_path`, `session.gc_maxlifetime`, or `session.gc_probability` from code - those (especially the server-side file cleanup) come from the host php.ini.
 - Runs `session_name('raptor')` + `session_start()`, and `session_write_close()` early on routes that do not write to the session (concurrency optimization).
 
-> **To rely entirely on PHP config:** to let the host php.ini govern session lifetime end-to-end, **remove** the `session_set_cookie_params(2592000)` line from `SessionMiddleware` and configure php.ini instead (see below).
+> **To rely entirely on PHP config:** to let the host php.ini govern session lifetime end-to-end, **remove** the `session_set_cookie_params(...)` line from `SessionMiddleware` and configure php.ini instead (see below).
 
 ---
 
@@ -167,7 +171,7 @@ find /Users/USERNAME/.php-sessions -name 'sess_*' -mtime +30 -delete
 With PHP's default values:
 
 - **`session.gc_maxlifetime`** (server side) - default is commonly **1440 seconds (24 minutes)**. Once a session file has not been touched for this long, GC/cron may delete it. In other words, an admin idle for **~24 minutes** may lose the session (host-dependent - some hosts set this higher).
-- **`session.cookie_lifetime`** (client side) - PHP's default is **0** (until the browser closes), but **Raptor sets it to 30 days from code** (`SessionMiddleware`). So by default the cookie persists 30 days; it is only **0** (browser-session) if you remove the `session_set_cookie_params(2592000)` line.
+- **`session.cookie_lifetime`** (client side) - PHP's default is **0** (until the browser closes), but **Raptor sets it to 30 days from code** (`SessionMiddleware`). So by default the cookie persists 30 days. If you remove the `session_set_cookie_params(...)` line, the cookie falls back to php.ini's `session.cookie_lifetime` - `0` unless you configure it. That is exactly why `cookie_lifetime` is one of the **three values** in the recipe above: going the php.ini route, it must be set (e.g. `2592000`) alongside `gc_maxlifetime`/`save_path`, otherwise the cookie dies on browser close.
 
 ### How it affects Raptor
 
@@ -199,9 +203,9 @@ Find the active php.ini: `php --ini`.
 
 ## Key principles (recap)
 
-1. **Raptor sets the session cookie lifetime to 30 days by default** - to keep a logged-in admin around, `SessionMiddleware` calls `session_set_cookie_params(2592000)`. This is a client-side cookie only, so an admin stays logged in even after closing and reopening the browser.
+1. **Raptor sets the session cookie lifetime to 30 days by default** - to keep a logged-in admin around, `SessionMiddleware` calls `session_set_cookie_params(...)`. This is a client-side cookie only, so an admin stays logged in even after closing and reopening the browser.
 2. Set it at the **php.ini / .user.ini level** - runtime `ini_set()` is unreliable because the system cron does not read it.
 3. Set **private `save_path` + `gc_maxlifetime` + `cookie_lifetime` together** - a long lifetime only truly works this way; `gc_maxlifetime` alone in a shared /tmp is unreliable.
 4. Set it for the **web SAPI** and restart the web server / FPM.
 5. For consistent login UX, set the session lifetime **close to `RAPTOR_JWT_LIFETIME`**.
-6. With no configuration the server-side session file follows PHP's default `gc_maxlifetime` (usually short) and may be cleaned up, so admins simply re-login - normal, safe behaviour. The client cookie still stays 30 days per #1; **but if the developer removes `session_set_cookie_params(2592000)` from `SessionMiddleware`**, the cookie also reverts to PHP's default `0` (until browser close).
+6. With no configuration the server-side session file follows PHP's default `gc_maxlifetime` (usually short) and may be cleaned up, so admins simply re-login - normal, safe behaviour. The client cookie still stays 30 days per #1; **but if the developer removes `session_set_cookie_params(...)` from `SessionMiddleware` without setting `session.cookie_lifetime` in php.ini**, the cookie reverts to PHP's default `0` (until browser close) - removing that line is only safe together with the three-value php.ini recipe above.

@@ -108,16 +108,16 @@ class UsersRouter extends Router
 
         /**
          * ----------------------------------------------------------
-         * SIGNUP APPROVAL / DEACTIVATION
+         * SIGNUP APPROVAL / REJECTION
          * ----------------------------------------------------------
          */
         // Signup хүсэлтийг батлах -> хэрэглэгч болгож insert хийх
         $this->POST('/users/signup/approve', [UsersController::class, 'signupApprove'])->name('user-signup-approve')->middleware([CsrfMiddleware::class]);
 
-        // Signup хүсэлтийг идэвхгүй болгох
-        $this->DELETE('/users/signup/deactivate', [UsersController::class, 'signupDeactivate'])->name('user-signup-deactivate')->middleware([CsrfMiddleware::class]);
+        // Signup хүсэлтийг татгалзах (status -> rejected)
+        $this->PUT('/users/signup/reject', [UsersController::class, 'signupReject'])->name('user-signup-reject')->middleware([CsrfMiddleware::class]);
 
-        // Идэвхгүй signup хүсэлтийг бүрэн устгах
+        // Татгалзсан signup хүсэлтийг бүрэн устгах (Trash руу)
         $this->DELETE('/users/signup/delete', [UsersController::class, 'signupDelete'])->name('user-signup-delete')->middleware([CsrfMiddleware::class]);
     }
 }

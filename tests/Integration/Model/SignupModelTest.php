@@ -36,6 +36,18 @@ class SignupModelTest extends IntegrationTestCase
         $this->assertNotEmpty($result['created_at']);
     }
 
+    public function testInsertDefaultsToPendingStatus(): void
+    {
+        $result = $this->model->insert([
+            'username' => 'sup_' . uniqid(),
+            'email'    => 'sup_' . uniqid() . '@example.com',
+            'password' => password_hash('test', PASSWORD_BCRYPT),
+        ]);
+
+        $this->assertSame(SignupModel::STATUS_PENDING, $result['status']);
+        $this->assertEmpty($result['verified_at']);
+    }
+
     public function testUpdateById(): void
     {
         $inserted = $this->model->insert([
@@ -45,10 +57,30 @@ class SignupModelTest extends IntegrationTestCase
         ]);
 
         $updated = $this->model->updateById((int) $inserted['id'], [
-            'is_active' => 0,
+            'status' => SignupModel::STATUS_REJECTED,
         ]);
 
         $this->assertIsArray($updated);
+        $this->assertSame(SignupModel::STATUS_REJECTED, $updated['status']);
         $this->assertNotEmpty($updated['updated_at']);
+    }
+
+    public function testUniqueUsernameAndEmail(): void
+    {
+        $username = 'sup_' . uniqid();
+        $email    = 'sup_' . uniqid() . '@example.com';
+        $this->model->insert([
+            'username' => $username,
+            'email'    => $email,
+            'password' => password_hash('test', PASSWORD_BCRYPT),
+        ]);
+
+        // Ижил username-тэй хоёр дахь хүсэлт UNIQUE constraint-д тулна
+        $this->expectException(\PDOException::class);
+        $this->model->insert([
+            'username' => $username,
+            'email'    => 'other_' . uniqid() . '@example.com',
+            'password' => password_hash('test', PASSWORD_BCRYPT),
+        ]);
     }
 }

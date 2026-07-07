@@ -266,7 +266,7 @@ Instructions:
 5. If content is plain text, format it for easy reading
 6. DO NOT use <div class="container">...</div> wrapper - the page already has a container`
       },
-      /* OCR modal */
+      /* ocr modal */
       ocrModal: {
         title: 'AI OCR',
         description: isMn ? 'Зураг дээрх текстийг уншиж HTML болгоод editor-д оруулна.' : 'Reads text from image and converts to HTML.',
@@ -408,7 +408,7 @@ Instructions:
     this._bind();
     this._syncToggleStates();
 
-    /* ENTER дарахад <div> биш <p> үүсгэх */
+    /* enter дарахад <div> биш <p> үүсгэх */
     document.execCommand('defaultParagraphSeparator', false, 'p');
 
     /* Shine товчийг ai_helper байхгүй бол нуух */
@@ -639,7 +639,7 @@ Instructions:
   /**
    * AI товчнуудын тохиргоо
    * - ai_helper тохируулаагүй бол товчнуудыг дарахад тайлбар dialog гарна
-   * - ai_helper тохируулсан бол хэвийн ажиллана (backend-ээс RAPTOR_OPENAI_API_KEY шалгана)
+   * - ai_helper тохируулсан бол хэвийн ажиллана (backend-ээс raptor_openai_api_key шалгана)
    * @private
    */
   _toggleShineButton() {
@@ -778,7 +778,7 @@ Instructions:
     this._boundHandlers = null;
   }
 
-  /* ---------------- core ---------------- */
+  /* core */
 
   /**
    * Toolbar action гүйцэтгэх
@@ -1154,7 +1154,7 @@ Instructions:
     this._emitChange();
   }
 
-  /* ---------------- internals ---------------- */
+  /* internals */
 
   /**
    * Textarea-аас editor wrapper бүтэц үүсгэх
@@ -1369,7 +1369,7 @@ Instructions:
    * @private
    */
   _bind() {
-    /* Document түвшний ESC handler - fullscreen mode-оос гарахад (readonly горимд ч ажиллана) */
+    /* Document түвшний esc handler - fullscreen mode-оос гарахад (readonly горимд ч ажиллана) */
     this._boundHandlers.documentKeydown = (e) => {
       if (e.key === 'Escape' && this.root.classList.contains('is-fullscreen')) {
         e.preventDefault();
@@ -1565,14 +1565,14 @@ Instructions:
 
     /* Keyboard shortcuts - Editor */
     this._boundHandlers.editorKeydown = (e) => {
-      /* ESC товч - fullscreen mode-оос гарах */
+      /* esc товч - fullscreen mode-оос гарах */
       if (e.key === 'Escape' && this.root.classList.contains('is-fullscreen')) {
         e.preventDefault();
         this.toggleFullscreen(false);
         return;
       }
 
-      /* Backspace товч - хоосон мөр устгах (санамсаргүй TAB дарсан бол) */
+      /* Backspace товч - хоосон мөр устгах (санамсаргүй tab дарсан бол) */
       if (e.key === 'Backspace' && !e.ctrlKey && !e.metaKey) {
         const selection = window.getSelection();
         if (selection.rangeCount > 0) {
@@ -1634,7 +1634,7 @@ Instructions:
         }
       }
 
-      /* TAB товч - хүснэгтийн сүүлийн cell-д байвал шинэ мөр нэмэх */
+      /* tab товч - хүснэгтийн сүүлийн cell-д байвал шинэ мөр нэмэх */
       if (e.key === 'Tab' && !e.ctrlKey && !e.metaKey) {
         const selection = window.getSelection();
         if (selection.rangeCount > 0) {
@@ -1653,7 +1653,7 @@ Instructions:
               const cellsInRow = row.querySelectorAll('td, th');
               const lastCell = cellsInRow[cellsInRow.length - 1];
 
-              /* Сүүлийн мөрийн сүүлийн cell дээр TAB дарвал шинэ мөр нэмэх */
+              /* Сүүлийн мөрийн сүүлийн cell дээр tab дарвал шинэ мөр нэмэх */
               if (row === lastRow && cell === lastCell && !e.shiftKey) {
                 e.preventDefault();
 
@@ -1730,7 +1730,7 @@ Instructions:
 
     /* Keyboard shortcuts - Source */
     this._boundHandlers.sourceKeydown = (e) => {
-      /* ESC товч - fullscreen mode-оос гарах */
+      /* esc товч - fullscreen mode-оос гарах */
       if (e.key === 'Escape' && this.root.classList.contains('is-fullscreen')) {
         e.preventDefault();
         this.toggleFullscreen(false);
@@ -1948,14 +1948,14 @@ Instructions:
    * Өнгийг hex format руу хөрвүүлэх
    * @private
    * @param {string} color - Өнгө (hex, rgb, named color)
-   * @returns {string|null} Hex өнгө (#RRGGBB)
+   * @returns {string|null} Hex өнгө (#rrggbb)
    */
   _colorToHex(color) {
     if (!color) return null;
 
     /* Аль хэдийн hex format байвал шууд буцаах */
     if (color.startsWith('#')) {
-      /* #RGB -> #RRGGBB */
+      /* #RGB -> #rrggbb */
       if (color.length === 4) {
         return '#' + color[1] + color[1] + color[2] + color[2] + color[3] + color[3];
       }
@@ -2348,7 +2348,7 @@ Instructions:
    * @private
    */
   _setupToolbarKeyboardNav() {
-    /* Toolbar-д ARIA role нэмэх */
+    /* Toolbar-д aria role нэмэх */
     this.toolbar.setAttribute('role', 'toolbar');
     this.toolbar.setAttribute('aria-label', this._isMn ? 'Текст форматлах хэрэгслүүд' : 'Text formatting tools');
 
@@ -2450,7 +2450,7 @@ Instructions:
     };
     this.editor.addEventListener('keydown', this._boundHandlers.editorToolbarShortcut);
 
-    /* Табindex эхлүүлэх */
+    /* Tabindex эхлүүлэх */
     initTabIndex();
 
     /* Group-үүдэд role нэмэх */
@@ -2607,9 +2607,7 @@ Instructions:
   }
 }
 
-/* ============================================
-   Global helpers
-   ============================================ */
+/* Global helpers */
 
 /**
  * moedit class-ийг global scope-д нэмэх

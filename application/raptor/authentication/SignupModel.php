@@ -7,7 +7,13 @@ use codesaur\DataObject\Column;
 use codesaur\DataObject\Constants;
 
 /**
- * SignupModel - Шинэ хэрэглэгч үүсгэх хүсэлтийн (pending signup requests) модель.
+ * Имэйл баталгаажуулах холбоос хэдэн цагийн туршид хүчинтэй байхыг заана.
+ * .env дээр RAPTOR_SIGNUP_VERIFY_HOURS утгаар тохируулж болно (default 48).
+ */
+\define('RAPTOR_SIGNUP_VERIFY_HOURS', (int) ($_ENV['RAPTOR_SIGNUP_VERIFY_HOURS'] ?? 48));
+
+/**
+ * SignupModel - Шинэ хэрэглэгч үүсгэх хүсэлтийн (signup requests) модель.
  *
  * Энэ хүснэгт нь хэрэглэгчийн бүртгэлийн мэдээллийг
  * шууд UsersModel рүү оруулахын өмнөх "үргэлжлүүлэн баталгаажуулах шаардлагатай"
@@ -16,19 +22,31 @@ use codesaur\DataObject\Constants;
  * Яагаад тусдаа хүснэгт хэрэгтэй вэ?
  * ---------------------------------------------------------------
  * - Шинэ хэрэглэгч шууд идэвхжих ёсгүй (security requirement)
- * - Admin баталгаажуулалт хийх боломжтой
- * - Давхардсан имэйл/нэртэй олон оролдлогыг хянах боломжтой
+ * - Имэйл баталгаажуулалт (double opt-in) + Admin баталгаажуулалт хийх боломжтой
+ * - username/email UNIQUE тул нэг хүн давтан хүсэлт өгч спамдэхээс сэргийлнэ
+ *   (татгалзсан хүсэлтийн мөр устгагдтал ижил нэр/хаягаар дахин хүсэлт өгөх боломжгүй)
  * - Бүртгэлийн урьдчилсан мэдээллийг audit trail хэлбэрээр хадгалдаг
+ *
+ * Хүсэлтийн амьдралын мөчлөг (status + verified_at):
+ * ---------------------------------------------------------------
+ *   1) Хүсэлт орж ирэхэд:  status='pending', verified_at=NULL, token=санамсаргүй hex
+ *   2) Имэйл баталгаажихад: verified_at=огноо (админы жагсаалтад зөвхөн
+ *      verified_at NOT NULL хүсэлтүүд харагдана)
+ *   3) Админ баталвал:      status='approved' (user_id-д шинэ хэрэглэгч холбогдоно)
+ *      Админ татгалзвал:    status='rejected' (мөр UNIQUE тул дахин хүсэлт өгөхийг
+ *      хаана; админ Trash руу бүрэн устгаснаар дахин хүсэлт өгөх боломж нээгдэнэ)
  *
  * Хүснэгтийн бүтэц:
  * ---------------------------------------------------------------
  * id            - bigint, primary key
  * user_id       - UsersModel.id рүү FK (approve хийсний дараа холбогдоно)
- * username      - хүсэлт гаргагчийн нэр
+ * username      - хүсэлт гаргагчийн нэр (UNIQUE)
  * password      - bcrypt хэш хэлбэрээр хадгалах
- * email         - имэйл хаяг
+ * email         - имэйл хаяг (UNIQUE)
  * code          - localization хэлний код (жишээ: "mn", "en")
- * is_active     - хүсэлт идэвхтэй эсэх
+ * status        - хүсэлтийн төлөв: pending | approved | rejected
+ * token         - имэйл баталгаажуулах санамсаргүй токен (64 hex тэмдэгт)
+ * verified_at   - имэйл баталгаажсан огноо (NULL = баталгаажаагүй)
  * created_at    - үүсгэсэн огноо
  * updated_at    - шинэчилсэн огноо
  * updated_by    - өөрчилсөн хэрэглэгчийн id (FK -> users.id)
@@ -36,7 +54,7 @@ use codesaur\DataObject\Constants;
  * ForeignKey холбоосууд:
  * ---------------------------------------------------------------
  * - signup.user_id       -> users.id
- *       ON DELETE CASCADE
+ *       ON DELETE SET NULL
  *       ON UPDATE CASCADE
  *
  * - signup.updated_by    -> users.id
@@ -49,6 +67,11 @@ use codesaur\DataObject\Constants;
  */
 class SignupModel extends Model
 {
+    /** Хүсэлтийн төлвүүд */
+    public const STATUS_PENDING = 'pending';
+    public const STATUS_APPROVED = 'approved';
+    public const STATUS_REJECTED = 'rejected';
+
     /**
      * Модель үүсэх үед баганууд болон хүснэгтийн нэр тохируулах.
      *
@@ -57,18 +80,20 @@ class SignupModel extends Model
     public function __construct(\PDO $pdo)
     {
         $this->setInstance($pdo);
-        
+
         $this->setColumns([
-           (new Column('id',         'bigint'))->primary(),
-            new Column('user_id',    'bigint'),
-            new Column('username',   'varchar', 128),
-           (new Column('password',   'varchar', 255))->default(''),
-            new Column('email',      'varchar', 128),
-            new Column('code',       'varchar', Constants::DEFAULT_CODE_LENGTH),
-           (new Column('is_active',  'tinyint'))->default(1),
-            new Column('created_at', 'datetime'),
-            new Column('updated_at', 'datetime'),
-            new Column('updated_by', 'bigint')
+           (new Column('id',          'bigint'))->primary(),
+            new Column('user_id',     'bigint'),
+           (new Column('username',    'varchar', 128))->unique(),
+           (new Column('password',    'varchar', 255))->default(''),
+           (new Column('email',       'varchar', 128))->unique(),
+            new Column('code',        'varchar', Constants::DEFAULT_CODE_LENGTH),
+           (new Column('status',      'varchar', 16))->default(self::STATUS_PENDING),
+           (new Column('token',       'varchar', 64))->default(''),
+            new Column('verified_at', 'datetime'),
+            new Column('created_at',  'datetime'),
+            new Column('updated_at',  'datetime'),
+            new Column('updated_by',  'bigint')
         ]);
 
         $this->setTable('signup');
@@ -108,8 +133,10 @@ class SignupModel extends Model
              ON DELETE SET NULL ON UPDATE CASCADE"
         );
 
-        // Хайлтын гүйцэтгэлийг сайжруулах индекс
+        // Хайлтын гүйцэтгэлийг сайжруулах индексүүд
         $this->exec("CREATE INDEX {$table}_idx_user_id ON $table (user_id)");
+        // Имэйл баталгаажуулах линк дээр дарахад токеноор хайдаг
+        $this->exec("CREATE INDEX {$table}_idx_token ON $table (token)");
     }
 
     /**

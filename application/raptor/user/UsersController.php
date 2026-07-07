@@ -14,6 +14,7 @@ use Raptor\Organization\OrganizationModel;
 use Raptor\Organization\OrganizationUserModel;
 use Raptor\RBAC\UserRole;
 use Raptor\RBAC\Roles;
+use Raptor\Trash\TrashModel;
 use Raptor\Log\Logger;
 
 /**
@@ -25,34 +26,14 @@ use Raptor\Log\Logger;
  * Raptor Dashboard-ийн үндсэн Controller юм.
  *
  * --------------------------------------------------------------
- * Архитектур - PDO автоматаар хэрхэн ирдэг вэ?
+ * PDO ашиглалт
  * --------------------------------------------------------------
- *  Raptor\Controller нь:
- *
- *      use \codesaur\DataObject\PDOTrait;
- *
- *  гэдэг trait-ийг ашигладаг. PDOTrait нь `$pdo` шинж чанарыг
- *  controller-ийн объект дээр үүсгэж өгдөг.
- *
- *  Entry point болох `public_html/index.php` нь хүсэлт бүрд:
- *
- *      $pdo     = \Raptor\DatabaseConnection::connect();
- *      $request = $request->withAttribute('pdo', $pdo);
- *
- *  гэж нэг л удаа PDO үүсгэж, PSR-7 ServerRequest дотор `pdo`
- *  attribute-ийг суулгаж Application руу дамжуулдаг.
- *
- *  Controller нь BaseController::__construct() дотор:
- *
- *      $this->pdo = $request->getAttribute('pdo');
- *
- *  хэлбэрээр автоматаар авч `$this->pdo` болгон тохируулдаг.
- *
- * Энэ механизмаар бүх Model-классуудыг:
- *      new UsersModel($this->pdo)
- *      new Roles($this->pdo)
- *      new OrganizationModel($this->pdo)
- *  гэх мэтээр шууд хэрэглэнэ.
+ *  `$this->pdo` автоматаар бэлэн байдаг тул Model-уудыг шууд
+ *  `new UsersModel($this->pdo)` гэж үүсгэхээс гадна PDOTrait-ийн
+ *  `$this->prepare()/query()/exec()` зэрэг method-уудыг controller
+ *  дээрээс шууд дуудаж болно. PDO хэрхэн ирдэг, баазтай ажиллах
+ *  хоёр адил хүчинтэй аргын бүрэн тайлбарыг эх сурвалж болох
+ *  {@see \Raptor\Controller} класын PHPDoc-оос үзнэ үү.
  *
  * --------------------------------------------------------------
  * Хамааралтай модулиуд
@@ -111,7 +92,7 @@ use Raptor\Log\Logger;
  *  * deactivate()          - хэрэглэгчийг идэвхгүй болгох
  *  * requestsModal()       - signup / forgot хүсэлтүүдийн жагсаалт харах
  *  * signupApprove()       - хэрэглэгч шинээр бүртгүүлэх хүсэлтийг зөвшөөрөх
- *  * signupDeactivate()    - хэрэглэгч шинээр бүртгүүлэх хүсэлтийг устгах
+ *  * signupReject()        - хэрэглэгч шинээр бүртгүүлэх хүсэлтийг татгалзах
  *  * setPassword($id)      - хэрэглэгчийн нууц үг тохируулах
  *  * setOrganization($id)  - хэрэглэгчийн байгууллага тохируулах
  *  * setRole($id)          - хэрэглэгчийн RBAC дүр тохируулах
@@ -177,8 +158,7 @@ class UsersController extends FileController
             }
             
             // Dashboard зориулалтын template-ээ ачаална
-            $dashboard = $this->dashboardTemplate(__DIR__ . '/user-index.html');            
-             // Гарчгийг локальчилж, template-руу дамжуулна
+            $dashboard = $this->dashboardTemplate(__DIR__ . '/user-index.html');
             $dashboard->set('title', $this->text('users'));
             $dashboard->render();
         } catch (\Throwable $err) {
@@ -234,7 +214,6 @@ class UsersController extends FileController
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
 
-            // users хүснэгтийн нэрийг UsersModel::getName() ашиглан динамикаар авна. Ирээдүйд refactor хийхэд бэлэн байна.
             $table = (new UsersModel($this->pdo))->getName();
             $users_infos = $this->query(
                 "SELECT id,photo,photo_size,last_name,first_name,username,phone,email,is_active FROM $table ORDER BY id"
@@ -387,7 +366,7 @@ class UsersController extends FileController
                 // Хэрэглэгчийн зураг upload хийх боломжийг нээх
                 // /users/{id} гэсэн хавтас руу байрлуулна -> {id} insert хийсэн шинэ бичлэгийн дугаар
                 $this->setFolder("/{$model->getName()}/{$record['id']}");
-                $this->allowImageOnly(); // зөвхөн зурган файл зөвшөөрнө
+                $this->allowImageOnly();
                 $photo = $this->moveUploaded('photo');
                 if ($photo) {
                     // Хэрэв зураг амжилттай upload болсон бол тухайн хэрэглэгчийн photo_* талбаруудыг шинэчилнэ
@@ -490,7 +469,6 @@ class UsersController extends FileController
                 throw new \Exception('No one but root can edit this account!', 403);
             }
             
-            // Model-оос тухайн хэрэглэгчийн мэдээллийг авах
             $model = new UsersModel($this->pdo);
             $record = $model->getRowWhere([
                 'id' => $id,
@@ -600,7 +578,6 @@ class UsersController extends FileController
                     \unlink($oldPhotoFile);
                 }
 
-                // Client-рүү амжилттай JSON хариу хэвлэх
                 $this->respondJSON([
                     'type' => 'primary',
                     'status' => 'success',
@@ -855,7 +832,6 @@ class UsersController extends FileController
                 throw new \Exception('No permission for an action [delete]!', 401);
             }
             
-            // Request body (JSON) -> payload авах
             $payload = $this->getParsedBody();
             
             // id (дугаар) заавал int байх ёстой
@@ -964,8 +940,14 @@ class UsersController extends FileController
 
             $model->deleteById($id);
 
+            // Устгасны дараа Trash-д хадгална - deleteById() амжилттай болсны дараа л
+            // хадгалснаар зөвхөн үнэхээр устгагдсан бичлэг trash-д орно.
+            // Log channel = 'users' (users_log) - restore хийхэд "restored" мөр
+            // тухайн хэрэглэгчийн Logger Protocol дээр гарч ирнэ.
+            (new TrashModel($this->pdo))->store('users', $model->getName(), $id, $user, $this->getUserId());
+
             if (!empty($user['photo'])) {
-                $photoPath = $this->getPublicPath() . $user['photo'];
+                $photoPath = $this->getStoredFilePhysicalPath($user['photo']);
                 if (\file_exists($photoPath)) {
                     \unlink($photoPath);
                 }
@@ -1030,10 +1012,10 @@ class UsersController extends FileController
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
 
-            // Modal template дуудах
             $template = $this->template(__DIR__ . "/$table-index-modal.html");
             
            // table параметрийн зөв эсэхийг шалгах
+            $condition = ['ORDER BY' => 'created_at Desc'];
             switch ($table) {
                 case 'forgot':
                     {
@@ -1059,15 +1041,17 @@ class UsersController extends FileController
 
                 case 'signup':
                     $model = new SignupModel($this->pdo);
+                    // Зөвхөн имэйлээ баталгаажуулсан хүсэлтүүд админд харагдана
+                    // (double opt-in - баталгаажаагүй хүсэлт спам байх магадлалтай)
+                    $condition['WHERE'] = 'verified_at IS NOT NULL';
                     break;
 
                 default:
                     throw new \InvalidArgumentException($this->text('invalid-request'), 400);
             }
-            
+
             // Хүснэгтээс хүсэлтүүдийг хамгийн сүүлд орсноор нь sort хийж авах
-            //  * is_active хамаарахгүй бүхий л бичлэгүүдийг унших
-            $rows = $model->getRows(['ORDER BY' => 'created_at Desc']);
+            $rows = $model->getRows($condition);
             
             // Dashboard рендерлэнэ
             $template->set('rows',$rows);            
@@ -1133,14 +1117,18 @@ class UsersController extends FileController
             }
             $id = \filter_var($parsedBody['id'], \FILTER_VALIDATE_INT);
             
-            // SignupModel - Тухайн signup хүсэлтийг авах
+            // SignupModel - Тухайн signup хүсэлтийг авах (зөвхөн pending төлөвтэй)
             $signupModel = new SignupModel($this->pdo);
             $signup = $signupModel->getRowWhere([
                 'id' => $id,
-                'is_active' => 1
+                'status' => SignupModel::STATUS_PENDING
             ]);
             if (empty($signup)) {
                 throw new \Exception($this->text('no-record-selected'));
+            }
+            // Имэйлээ баталгаажуулаагүй хүсэлтийг батлахыг хориглоно
+            if (empty($signup['verified_at'])) {
+                throw new \Exception('Cannot approve a signup request with unverified email!', 403);
             }
             
             // UsersModel-д яг ижил username / email давхардсан эсэхийг шалгах
@@ -1169,12 +1157,12 @@ class UsersController extends FileController
                 throw new \Exception('Failed to create user');
             }
             
-            // Signup хүсэлтийг хааж is_active=2 болгох
+            // Signup хүсэлтийг approved төлөвт шилжүүлж, үүссэн хэрэглэгчтэй холбох
             $signupModel->updateById(
                 $id,
                 [
                     'user_id' => $record['id'],
-                    'is_active' => 2,
+                    'status' => SignupModel::STATUS_APPROVED,
                     'updated_by' => $this->getUserId()
                 ]
             );
@@ -1216,7 +1204,6 @@ class UsersController extends FileController
 
             // Баталгаажуулалтын и-мэйл загвар авах (templates хүснэгтээс)
             $templateService = $this->getService('template_service');
-            // approve-new-user template-ийг дуудна
             $template = $templateService->getByKeyword('approve-new-user', $signup['code']);
             if (!empty($template) && !empty($template['content'])) {
                 // MemoryTemplate -> placeholder орлуулах
@@ -1259,31 +1246,34 @@ class UsersController extends FileController
     }
 
     /**
-     * signupDeactivate()
+     * signupReject()
      * -------------------
-     * Хэрэглэгчээр бүртгүүлэх (signup) хүсэлтийг идэвхгүй болгох (soft delete).
+     * Хэрэглэгчээр бүртгүүлэх (signup) хүсэлтийг татгалзах.
      *
      * Ашиглалт:
-     *  - Админ хэрэглэгч signup хүсэлтийг "устгах" үед дуудагдана.
-     *  - SignupModel дээрх is_active талбарыг өөрчилж, хүсэлтийг идэвхгүй төлөвт шилжүүлнэ.
+     *  - Админ хэрэглэгч signup хүсэлтийг татгалзах үед дуудагдана.
+     *  - SignupModel дээрх status талбарыг 'rejected' болгоно.
+     *  - Rejected мөр нь username/email UNIQUE тул ижил нэр/хаягаар дахин
+     *    хүсэлт өгөхийг хаана. Дахин хүсэлт өгөх боломж нээхийн тулд
+     *    админ мөрийг бүрэн устгана (signupDelete -> Trash).
      *
      * Алгоритм:
      *  1. 'system_user_delete' эрхтэй эсэхийг шалгана.
      *  2. Request body дундах id-г шалгаж, хүчинтэй integer эсэхийг баталгаажуулна.
-     *  3. SignupModel::deactivateById() ашиглан тухайн мөрийг идэвхгүй болгоно.
+     *  3. Зөвхөн pending төлөвтэй хүсэлтийг rejected болгоно.
      *  4. Амжилттай бол success, алдаа гарвал error JSON хэвлэнэ.
      *  5. finally хэсэгт энэ үйлдлийг users лог дээр протокол болгон үлдээнэ.
      *
      * @return void JSON рендерлэнэ
      */
-    public function signupDeactivate()
+    public function signupReject()
     {
         try {
             // Энэ үйлдлийг хийх эрх байгаа эсэхийг шалгах
             if (!$this->isUserCan('system_user_delete')) {
-                throw new \Exception('No permission for an action [delete]!', 401);
+                throw new \Exception('No permission for an action [reject]!', 401);
             }
-            
+
             // Request body -> payload авч, id-г шалгах
             $payload = $this->getParsedBody();
             if (!isset($payload['id'])
@@ -1294,16 +1284,26 @@ class UsersController extends FileController
             }
             // Хүчинтэй integer болгох
             $id = (int) $payload['id'];
-            
-            // SignupModel -> тухайн бичлэгийг deactivateById() ашиглан идэвхгүй болгох
-            (new SignupModel($this->pdo))->deactivateById(
+
+            // Зөвхөн pending төлөвтэй хүсэлтийг татгалзаж болно
+            $model = new SignupModel($this->pdo);
+            $signup = $model->getRowWhere([
+                'id' => $id,
+                'status' => SignupModel::STATUS_PENDING
+            ]);
+            if (empty($signup)) {
+                throw new \Exception($this->text('no-record-selected'), 404);
+            }
+
+            // Хүсэлтийг rejected төлөвт шилжүүлэх
+            $model->updateById(
                 $id,
                 [
-                    'updated_by' => $this->getUserId(),
-                    'updated_at' => \date('Y-m-d H:i:s')
+                    'status' => SignupModel::STATUS_REJECTED,
+                    'updated_by' => $this->getUserId()
                 ]
             );
-            
+
             // Амжилттай JSON success хариу рендерлэнэ
             $this->respondJSON([
                 'status'  => 'success',
@@ -1319,23 +1319,26 @@ class UsersController extends FileController
             ], $err->getCode());
         } finally {
             // Энэ үйл явцыг лог (users лог) дээр үлдээх
-            $context = ['action' => 'signup-deactivate'];
+            $context = ['action' => 'signup-reject'];
             if (isset($err) && $err instanceof \Throwable) {
                 // Алдаатай дууссан тохиолдолд
                 $level = LogLevel::ERROR;
-                $message = 'Хэрэглэгчээр бүртгүүлэх хүсэлтийг идэвхгүй болгох явцад алдаа гарч зогслоо';
+                $message = 'Хэрэглэгчээр бүртгүүлэх хүсэлтийг татгалзах явцад алдаа гарч зогслоо';
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } else {
-                // Амжилттай идэвхгүй болгосон
+                // Амжилттай татгалзсан
                 $level = LogLevel::ALERT;
-                $message = '[{server_request.body.name}] хэрэглэгчээр бүртгүүлэх хүсэлтийг идэвхгүй болгов';
+                $message = '[{server_request.body.name}] хэрэглэгчээр бүртгүүлэх хүсэлтийг татгалзав';
             }
             $this->log('users', $level, $message, $context);
         }
     }
 
     /**
-     * Идэвхгүй болсон signup хүсэлтийг бүрэн устгах (HARD DELETE).
+     * Татгалзсан signup хүсэлтийг бүрэн устгах (HARD DELETE).
+     *
+     * Устгагдсан мөр Trash руу хадгалагдана. UNIQUE username/email суларч
+     * тухайн нэр/хаягаар дахин шинэ хүсэлт өгөх боломж нээгдэнэ.
      *
      * Permission: system_user_delete
      *
@@ -1361,11 +1364,16 @@ class UsersController extends FileController
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'), 404);
             }
-            if ((int)($record['is_active'] ?? 1) !== 0) {
-                throw new \Exception('Only deactivated signup requests can be permanently deleted!', 403);
+            if (($record['status'] ?? '') != SignupModel::STATUS_REJECTED) {
+                throw new \Exception('Only rejected signup requests can be permanently deleted!', 403);
             }
 
             $model->deleteById($id);
+
+            // Устгасны дараа Trash-д хадгална - deleteById() амжилттай болсны дараа л
+            // хадгалснаар зөвхөн үнэхээр устгагдсан бичлэг trash-д орно.
+            // Log channel = 'users' (users_log) - signup үйлдлүүд users лог руу бичигддэг.
+            (new TrashModel($this->pdo))->store('users', $model->getName(), $id, $record, $this->getUserId());
 
             $this->respondJSON([
                 'status'  => 'success',
@@ -1457,7 +1465,6 @@ class UsersController extends FileController
                 if (empty($password) || $password != $password_retype) {
                     throw new \Exception($this->text('password-must-match'), 400);
                 }
-                // Солилт
                 $updated = $model->updateById(
                     $id,
                     [
@@ -1812,7 +1819,6 @@ class UsersController extends FileController
                 
                 // RBAC-уудын жагсаалтыг байгууллагын alias-аар бүлэглэж харуулна
                 $rbacs = ['common' => 'Common'];
-                // organization хүснэгтийн нэрийг OrganizationModel::getName() ашиглан динамикаар авна. Ирээдүйд refactor хийхэд бэлэн байна.
                 $org_table = (new OrganizationModel($this->pdo))->getName();
                 $organizations_result = $this->query(
                     "SELECT alias,name FROM $org_table WHERE alias!='common' AND is_active=1 ORDER BY id desc"
@@ -1827,7 +1833,6 @@ class UsersController extends FileController
                 $vars['rbacs'] = $rbacs;
 
                 // Тухайн RBAC alias бүр дээр харьяалагдах дүрүүдийг татах
-                // roles хүснэгтийн нэрийг Roles::getName() ашиглан динамикаар авна. Ирээдүйд refactor хийхэд бэлэн байна.
                 $roles_table = (new Roles($this->pdo))->getName();
                 $roles = \array_map(function() { return []; }, \array_flip(\array_keys($rbacs)));
                 $roles_result = $this->query("SELECT id,alias,name,description FROM $roles_table")->fetchAll();
@@ -1963,7 +1968,6 @@ class UsersController extends FileController
                     continue;
                 }
                 
-                // Дүр хасах
                 if ($userRoleModel->deleteById($row['id'])) {
                     $configured = true;
                     
@@ -1986,7 +1990,6 @@ class UsersController extends FileController
                     continue;
                 }
                 
-                // Role-г шинээр нэмэх
                 if (!empty($userRoleModel->insert(['user_id' => $id, 'role_id' => $role_id]))) {
                     $configured = true;
                     

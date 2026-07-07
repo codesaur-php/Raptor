@@ -12,7 +12,7 @@ use Raptor\Migration\MigrationRunner;
  * Жинхэнэ MySQL PDO + temp filesystem ашиглан per-user folder уруу
  * apply хийх, амжилтгүй apply, path traversal зэргийг шалгана.
  *
- * DDL nь MySQL дээр auto-commit хийдэг тул tearDown-д тест хүснэгтийг
+ * DDL нь MySQL дээр auto-commit хийдэг тул tearDown-д тест хүснэгтийг
  * гараар DROP хийнэ.
  */
 class MigrationRunnerIntegrationTest extends IntegrationTestCase

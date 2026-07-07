@@ -172,7 +172,6 @@ class ProductsController extends FileController
                     throw new \InvalidArgumentException($this->text('invalid-request'), 400);
                 }
 
-                // HTML контент tag бүтэц шалгах
                 if (!empty($parsedBody['content'])) {
                     $this->validateHtmlContent($parsedBody['content']);
                 }
@@ -296,7 +295,6 @@ class ProductsController extends FileController
                     throw new \InvalidArgumentException($this->text('invalid-request'), 400);
                 }
 
-                // HTML контент tag бүтэц шалгах
                 if (!empty($parsedBody['content'])) {
                     $this->validateHtmlContent($parsedBody['content']);
                 }

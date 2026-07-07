@@ -105,6 +105,8 @@ class RolePermission extends Model
      * RolePermissionSeed-ээр роль бүрт permission оноох seed хийнэ.
      *
      * @return void
+     *
+     * @see RolePermissionSeed::seed()
      */
     protected function __initial()
     {

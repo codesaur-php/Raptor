@@ -67,6 +67,8 @@ class MenuModel extends LocalizedModel
      *        System -> Users / Organizations / Logs
      *
      * @return void
+     *
+     * @see MenuSeed::seed()
      */
     protected function __initial()
     {
@@ -91,7 +93,7 @@ class MenuModel extends LocalizedModel
      *
      * @param array $record  Үндсэн хүснэгтийн өгөгдөл
      * @param array $content Олон хэлний контент
-     * @return array Амжилттай бол бичлэгийн массив
+     * @return array         Амжилттай бол бичлэгийн массив
      */
     public function insert(array $record, array $content): array
     {
@@ -105,7 +107,7 @@ class MenuModel extends LocalizedModel
      * @param int   $id      Бичлэгийн ID
      * @param array $record  Үндсэн хүснэгтийн өгөгдөл
      * @param array $content Олон хэлний контент
-     * @return array Амжилттай бол шинэчилсэн бичлэг
+     * @return array         Амжилттай бол шинэчилсэн бичлэг
      */
     public function updateById(int $id, array $record, array $content): array
     {

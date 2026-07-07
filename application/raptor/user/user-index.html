@@ -5,9 +5,7 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css">
 <script defer src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
 
-<!-- ============================================
-     Хэрэглэгчдийн жагсаалтын хуудасны header
-     ============================================ -->
+<!-- Хэрэглэгчдийн жагсаалтын хуудасны header -->
 <div class="d-flex justify-content-between align-items-center mb-2">
     <h5 class="text-primary text-uppercase"><i class="bi bi-people-fill"></i> {{ 'users'|text }}</h5>
     <div class="btn-group">
@@ -32,9 +30,7 @@
 </div>
 {% endif %}
 
-<!-- ============================================
-     motable.js ашиглан динамик хүснэгт бий болгоно
-     ============================================ -->
+<!-- motable.js ашиглан динамик хүснэгт бий болгоно -->
 <table class="table table-sm table-hover table-striped table-bordered" id="users"></table>
 
 <script type="text/javascript">
@@ -58,8 +54,10 @@ document.addEventListener('DOMContentLoaded', function () {
     /* Хүснэгтийг бусад JS хэсэг ашиглахын тулд window дээр хадгална */
     window.usersTbl = users;
         
-    /* Серверээс хэрэглэгчдийн жагсаалт татах (AJAX fetch) */
-    csrfFetch(
+    /* Серверээс хэрэглэгчдийн жагсаалт татах (AJAX fetch).
+     * Функц хэлбэрээр тодорхойлсон - deactivate амжилттай болсны дараа дахин
+     * дуудагдаж, идэвхгүй болсон мөрийг (badge + бүрэн устгах товч) шууд харуулна */
+    const loadUsers = () => csrfFetch(
         `{{ 'users-list'|link }}`
     ).then(res => {
         const contentType = res.headers.get('content-type') || '';
@@ -228,21 +226,22 @@ document.addEventListener('DOMContentLoaded', function () {
                         </a>`);
                 }
 
-                /* Устгах */
+                /* Идэвхтэй хэрэглэгчийг идэвхгүй болгох (soft delete) */
                 if (canDelete) {
-                    if (profile.is_active == 0) {
-                        buttons.push(`
-                            <button class="delete-user btn btn-sm btn-danger mt-1 shadow-sm"
-                                    type="button" value="${profile.id}">
-                                    <i class="bi bi-fire"></i>
-                            </button>`);
-                    } else {
-                        buttons.push(`
-                            <button class="deactivate-user btn btn-sm btn-danger mt-1 shadow-sm"
-                                    type="button" value="${profile.id}">
-                                    <i class="bi bi-trash"></i>
-                            </button>`);
-                    }
+                    buttons.push(`
+                        <button class="deactivate-user btn btn-sm btn-danger mt-1 shadow-sm"
+                                type="button" value="${profile.id}">
+                                <i class="bi bi-trash"></i>
+                        </button>`);
+                }
+            } else {
+                /* Идэвхгүй болсон хэрэглэгчийг бүрэн устгаж Trash руу хийх (hard delete) */
+                if (canDelete) {
+                    buttons.push(`
+                        <button class="delete-user btn btn-sm btn-danger mt-1 shadow-sm"
+                                type="button" value="${profile.id}">
+                                <i class="bi bi-fire"></i>
+                        </button>`);
                 }
             }
             const actions = `<div class="mb-1">${buttons.join(' ')}</div>`;
@@ -349,9 +348,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
                         Swal.close();
 
-                        /* UI-с шууд устгана */
-                        thisRow.remove();
-                        users.setReady();
+                        /* Жагсаалтыг дахин ачаална - мөр алга болохгүй, идэвхгүй
+                         * төлөвтэй (badge + бүрэн устгах товч) болж шинэчлэгдэнэ */
+                        loadUsers();
 
                         Notify('success', `{{ 'success'|text|e }}`, response.message ?? `User (${name}) deactivated`);
                     }).catch(error => {
@@ -365,10 +364,10 @@ document.addEventListener('DOMContentLoaded', function () {
         let questionHardDelete;
         if (document.documentElement.lang === 'mn') {
             questionHardDelete = name =>
-                `<p class="text-danger mb-3"><strong>АНХААРУУЛГА!</strong> Та (${name}) хэрэглэгчийг бүрэн устгахдаа итгэлтэй байна уу?</p><p class="text-muted">Энэ үйлдлийг буцаах боломжгүй. Шалтгаан бичнэ үү</p>`;
+                `<p class="text-danger mb-3"><strong>АНХААРУУЛГА!</strong> Та (${name}) хэрэглэгчийг бүрэн устгахдаа итгэлтэй байна уу?</p><p class="text-muted">Устгагдсан хэрэглэгч Хогийн сав (Trash) руу орох бөгөөд шаардлагатай бол дараа нь сэргээх боломжтой. Шалтгаан бичнэ үү</p>`;
         } else {
             questionHardDelete = name =>
-                `<p class="text-danger mb-3"><strong>WARNING!</strong> Are you sure to permanently delete this user (${name})?</p><p class="text-muted">This action cannot be undone. Please provide a reason</p>`;
+                `<p class="text-danger mb-3"><strong>WARNING!</strong> Are you sure to permanently delete this user (${name})?</p><p class="text-muted">The deleted user is moved to Trash and can be restored later if needed. Please provide a reason</p>`;
         }
 
         const hardDeletes = users.table.querySelectorAll('.delete-user');
@@ -426,5 +425,8 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         }));
     });
+
+    /* Эхний ачаалалт */
+    loadUsers();
 });
 </script>

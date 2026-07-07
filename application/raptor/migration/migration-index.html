@@ -30,7 +30,6 @@
     </div>
 </div>
 
-<!-- ==================== APPLY CONFIRM MODAL ==================== -->
 <div class="modal fade" id="applyConfirmModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
@@ -41,7 +40,7 @@
                 <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body" id="applyConfirmBody">
-                <!-- filled by JS -->
+                <!-- Filled by JS -->
             </div>
             <div class="modal-footer">
                 <button class="btn btn-outline-secondary" type="button" data-bs-dismiss="modal">Cancel</button>
@@ -53,7 +52,6 @@
     </div>
 </div>
 
-<!-- ==================== INFO PANEL ==================== -->
 <div class="card shadow-sm mt-3">
     <div class="card-header bg-body-tertiary">
         <i class="bi bi-info-circle me-2"></i>
@@ -116,7 +114,7 @@ CREATE INDEX idx_products_category ON products (category);</code></pre>
         var confirmBody = document.getElementById('applyConfirmBody');
         var btnConfirm  = document.getElementById('btnConfirmApply');
         var applyModalEl = document.getElementById('applyConfirmModal');
-        // Lazy: bootstrap JS is loaded with `defer`, so it isn't available during inline parse.
+        /* Lazy: bootstrap JS is loaded with `defer`, so it isn't available during inline parse. */
         var _applyModal = null;
         function applyModal() {
             if (_applyModal === null) {
@@ -148,7 +146,7 @@ CREATE INDEX idx_products_category ON products (category);</code></pre>
             });
             foldersWrap.querySelectorAll('button[data-action="apply"]').forEach(function(b) {
                 b.addEventListener('click', function() {
-                    // First attempt with no confirm; backend returns needs_confirm if warnings exist.
+                    /* First attempt with no confirm; backend returns needs_confirm if warnings exist. */
                     performApply(b.dataset.folder, b.dataset.file, '');
                 });
             });
@@ -381,7 +379,7 @@ CREATE INDEX idx_products_category ON products (category);</code></pre>
             });
         }
 
-        // First click on Apply: send without confirm; server will return needs_confirm if warnings exist.
+        /* First click on Apply: send without confirm; server will return needs_confirm if warnings exist. */
         btnConfirm.addEventListener('click', function() {
             var folder = btnConfirm.dataset.folder;
             var file = btnConfirm.dataset.file;

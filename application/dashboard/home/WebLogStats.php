@@ -62,7 +62,7 @@ class WebLogStats
         $stmt->execute();
         $todayCount = (int)$stmt->fetch()['cnt'];
 
-        // Stat cards - cache-ээс
+        // Stat cards - web_log_cache хүснэгтээс
         $data['today'] = $todayCount;
 
         $stmt = $this->prepare(
@@ -93,7 +93,7 @@ class WebLogStats
         $data['log_from'] = $stmt->fetch()['first_at'];
         $data['log_to'] = $today;
 
-        // 30 day chart - cache-ээс
+        // 30 day chart - web_log_cache хүснэгтээс
         $stmt = $this->prepare(
             "SELECT cache_date AS date, visit_count AS count FROM web_log_cache
              WHERE cache_date >= :month_ago AND cache_date < :today
@@ -110,7 +110,7 @@ class WebLogStats
         $chartData[] = ['date' => $today, 'count' => $todayCount];
         $data['chart_data'] = $chartData;
 
-        // Өмнөх өдрүүдийн cache-лэгдсэн JSON-г нэгтгэх (30 хоног)
+        // Өмнөх өдрүүдийн web_log_cache дэх JSON-г нэгтгэх (30 хоног)
         $stmt = $this->prepare(
             "SELECT cache_date, actions_data, pages_data, news_data, products_data, orders_data, ips_data, ua_data FROM web_log_cache
              WHERE cache_date >= :month_ago AND cache_date < :today
@@ -554,7 +554,7 @@ class WebLogStats
     }
 
     /**
-     * Cache-ийн JSON өгөгдлийг нэгтгэх.
+     * web_log_cache-ийн JSON өгөгдлийг нэгтгэх.
      */
     private function mergeJsonCounts(array &$merged, ?string $json): void
     {

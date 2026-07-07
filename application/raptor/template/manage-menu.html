@@ -62,7 +62,7 @@
     </thead>
     <tbody>
     {% for item in menu %}
-        <!-- data-record дээр тухайн мөрийн бүх мэдээллийг JSON хэлбэрээр хадгална (view/update modal-д ашиглана) -->
+        <!-- Data-record дээр тухайн мөрийн бүх мэдээллийг JSON хэлбэрээр хадгална (view/update modal-д ашиглана) -->
         <tr{% if item['parent_id'] == 0 %} class="parent"{% endif %} data-record="{{ item|json_encode|e }}">
             <th scope="row">
                 {% if item['icon'] is not empty %}
@@ -125,7 +125,7 @@
     </tbody>
 </table>
 
-<!-- MENU INSERT MODAL - Шинэ цэс үүсгэх форм -->
+<!-- Menu insert modal - Шинэ цэс үүсгэх форм -->
 <div class="modal fade" id="menu-insert-modal" role="dialog" tabindex="-1" aria-hidden="true">
     <div class="modal-lg modal-dialog modal-dialog-centered modal-dialog-scrollable" role="document">
         <div class="modal-content">
@@ -302,7 +302,7 @@
     </div>
 </div>
 
-<!-- MENU VIEW MODAL - Цэсний мэдээллийг зөвхөн унших горимоор харах -->
+<!-- Menu view modal - Цэсний мэдээллийг зөвхөн унших горимоор харах -->
 <div class="modal fade" id="menu-view-modal" role="dialog" tabindex="-1" aria-hidden="true">
     <div class="modal-lg modal-dialog modal-dialog-centered modal-dialog-scrollable" role="document">
         <div class="modal-content">
@@ -461,7 +461,7 @@
     </div>
 </div>
 
-<!-- MENU UPDATE MODAL - Цэсийг засварлах форм -->
+<!-- Menu update modal - Цэсийг засварлах форм -->
 <div class="modal fade" id="menu-update-modal" role="dialog" tabindex="-1" aria-hidden="true">
     <div class="modal-lg modal-dialog modal-dialog-centered modal-dialog-scrollable" role="document">
         <div class="modal-content">
@@ -477,7 +477,7 @@
                 ></button>
             </div>
             <div class="modal-body">
-                <!-- Update form: PUT method ашиглана -->
+                <!-- Update form: put method ашиглана -->
                 <form
                     class="needs-validation"
                     novalidate

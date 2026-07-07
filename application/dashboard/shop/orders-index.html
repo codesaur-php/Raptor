@@ -1,7 +1,6 @@
 <!-- SweetAlert2 - захиалга устгах баталгаажуулах цонхонд ашиглана -->
 <script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-<!-- ========== ТОЛГОЙ ХЭСЭГ ========== -->
 <div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 shadow">
     <h3 class="px-2 my-auto fs-5 text-primary text-uppercase">
         <i class="bi bi-cart3"></i> {{ 'orders'|text }}
@@ -26,7 +25,6 @@
     </div>
 </div>
 
-<!-- ========== ШҮҮЛТҮҮР ========== -->
 <style>
 .btn-filter {
     --bs-btn-color: var(--bs-emphasis-color);
@@ -62,7 +60,6 @@
     {% endfor %}
 </div>
 
-<!-- ========== ЗАХИАЛГЫН ХҮСНЭГТ ========== -->
 <table class="table table-sm table-hover table-striped table-bordered" id="orders">
     <thead>
         <tr class="text-uppercase">
@@ -77,7 +74,6 @@
     </thead>
 </table>
 
-<!-- ========== JAVASCRIPT ХЭСЭГ ========== -->
 <script type="text/javascript">
     /* URL-ээс параметрүүдийг унших */
     const urlParams = new URLSearchParams(window.location.search);
@@ -120,7 +116,7 @@
         }
     }
 
-    /* ========== ШҮҮЛТҮҮРИЙН DROPDOWN СОНГОЛТУУДАД EVENT LISTENER НЭМЭХ ========== */
+    /* Шүүлтүүрийн dropdown сонголтуудад event listener нэмэх */
     filterBtns.forEach(filter => {
         document.querySelectorAll(`.filter-values-${filter.dataset.name}`).forEach(btn => {
             btn.addEventListener('click', function (e) {
@@ -132,7 +128,7 @@
         });
     });
 
-    /* ========== ШҮҮЛТҮҮР ХЭРЭГЛЭХ ТОВЧНЫ EVENT ========== */
+    /* Шүүлтүүр хэрэглэх товчны event */
     filterAction.addEventListener('click', function (e) {
         e.preventDefault();
         if (filterAction.classList.contains('btn-secondary')) {
@@ -155,7 +151,7 @@
         return `<span class="badge bg-${colors[s] || 'dark'}">${s}</span>`;
     }
 
-    /* ========== DOM БЭЛЭН БОЛСНЫ ДАРАА АЖИЛЛАХ КОД ========== */
+    /* DOM бэлэн болсны дараа ажиллах код */
     document.addEventListener('DOMContentLoaded', function () {
         /* URL-д параметр байвал шүүлтүүрийн төлвийг сэргээх */
         if (urlParams?.size > 0) {
@@ -172,7 +168,7 @@
             onFilterChange();
         }
 
-        /* ========== ЗАХИАЛГЫН ХҮСНЭГТИЙГ ЭХЛҮҮЛЭХ ========== */
+        /* Захиалгын хүснэгтийг эхлүүлэх */
         const orders = new motable('table#orders', { freezeColumns: [2] });
 
         /* Серверээс захиалгын жагсаалтыг татах */
@@ -186,7 +182,7 @@
                 throw new Error(data.message ?? 'Invalid response!');
             }
 
-            /* ========== ХҮСНЭГТИЙН МӨРҮҮДИЙГ ҮҮСГЭХ ========== */
+            /* Хүснэгтийн мөрүүдийг үүсгэх */
             let rowsHTML = '';
             const viewPattern = `{{ 'order-view'|pattern }}`;
 
@@ -208,7 +204,7 @@
                     customer += `<br><small class="text-muted">${record.customer_email}</small>`;
                 }
 
-                /* ========== ҮЙЛДЛИЙН ТОВЧНУУДЫГ ҮҮСГЭХ ========== */
+                /* Үйлдлийн товчнуудыг үүсгэх */
                 const buttons = [];
                 buttons.push(`<a class="btn btn-sm btn-info mt-1 shadow-sm" href="${viewPattern.replace('{id}', id)}"><i class="bi bi-eye"></i></a>`);
 
@@ -227,7 +223,7 @@
         }).catch(err => {
             orders.error(err);
         }).finally(() => {
-            /* ========== ЗАХИАЛГА УСТГАХ ТОВЧНУУДЫН EVENT ========== */
+            /* Захиалга устгах товчнуудын event */
             const deletes = orders.table.querySelectorAll('.delete-order');
             deletes.forEach(btn => btn.addEventListener('click', function (e) {
                 e.preventDefault();
@@ -285,12 +281,12 @@
                 });
             }));
         });
-        // Order email мэдэгдэл toggle (ON = email тохируулах, OFF = email хоослох)
+        /* Order email мэдэгдэл toggle (ON = email тохируулах, OFF = email хоослох) */
         const orderEmailToggle = document.getElementById('orderEmailToggle');
         if (orderEmailToggle) {
             orderEmailToggle.addEventListener('change', function () {
                 if (orderEmailToggle.checked) {
-                    // ON -> email оруулах
+                    /* ON -> email оруулах */
                     orderEmailToggle.checked = false;
                     Swal.fire({
                         title: 'Email',
@@ -316,7 +312,7 @@
                         }).catch(err => Notify('danger', `{{ 'error'|text|e('js') }}`, err.message));
                     });
                 } else {
-                    // OFF -> email хоослох
+                    /* OFF -> email хоослох */
                     csrfFetch(`{{ 'settings-env'|link }}`, {
                         method: 'PATCH',
                         headers: { 'Content-Type': 'application/json' },

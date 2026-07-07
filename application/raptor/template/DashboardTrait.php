@@ -4,6 +4,8 @@ namespace Raptor\Template;
 
 use codesaur\Template\FileTemplate;
 
+use Raptor\Organization\OrganizationModel;
+use Raptor\Organization\OrganizationUserModel;
 use Raptor\User\UsersModel;
 
 /**
@@ -14,7 +16,12 @@ use Raptor\User\UsersModel;
  *
  * Үндсэн үүрэг:
  * ---------------------------------------------------------------
- *  - dashboardTemplate()  
+ *  - layout()
+ *      -> Layout template-ийн замыг тогтоох (developer нь
+ *         Application::overrideDashboardLayout()-оор өөрийн
+ *         файлаар сольсон байж болно)
+ *
+ *  - dashboardTemplate()
  *      -> Dashboard layout (dashboard.html) дотор контент оруулах
  *
  *  - dashboardProhibited()  
@@ -37,6 +44,25 @@ use Raptor\User\UsersModel;
 trait DashboardTrait
 {
     /**
+     * Layout template-ийн эцсийн замыг тогтооно.
+     *
+     * Application::overrideDashboardLayout()-оор бүртгэсэн custom файл
+     * байвал түүнийг, үгүй бол raptor/template/ доторх default-ийг буцаана.
+     * Map нь Application::handle() дээр 'dashboard_layouts' attribute
+     * болж ирдэг.
+     *
+     * @param string $filename Layout файлын нэр (жишээ: 'dashboard.html')
+     * @return string Template файлын бүрэн зам
+     *
+     * @see \Raptor\Application::overrideDashboardLayout() Map-ийг бүртгэдэг тал
+     */
+    private function layout(string $filename): string
+    {
+        return $this->getAttribute('dashboard_layouts', [])[$filename]
+            ?? __DIR__ . '/' . $filename;
+    }
+
+    /**
      * Dashboard Layout ашиглан контент рендерлэх гол метод.
      *
      * Энэхүү функц нь бүх Dashboard төрлийн хуудасны мастер layout юм.
@@ -46,6 +72,8 @@ trait DashboardTrait
      * Процесс:
      * ---------------------------------------------------------------
      * 1) `dashboard.html` мастер layout-ийг template() ашиглан ачаална.
+     *    (Developer нь Application::overrideDashboardLayout()-оор өөрийн
+     *    layout файл бүртгэсэн бол layout() түүнийг сонгоно.)
      *
      * 2) Хэрэглэгчийн зөвшөөрөлд (RBAC) тулгуурлан харагдах ёстой
      *    sidemenu-г getUserMenu() функцээр тооцож -> `sidemenu` хувьсагчид онооно.
@@ -70,8 +98,9 @@ trait DashboardTrait
      */
     public function dashboardTemplate(string $template, array $vars = []): FileTemplate
     {
-        $dashboard = $this->template(__DIR__ . '/dashboard.html');
+        $dashboard = $this->template($this->layout('dashboard.html'));
         $dashboard->set('sidemenu', $this->getUserMenu());
+        $dashboard->set('user_organizations', $this->getUserOrganizations());
         $dashboard->set('content', $this->template($template, $vars));
         foreach ($this->getAttribute('settings', []) as $key => $value) {
             $dashboard->set($key, $value);
@@ -95,7 +124,7 @@ trait DashboardTrait
         $this->headerResponseCode($code);
 
         return $this->dashboardTemplate(
-            __DIR__ . '/alert-no-permission.html',
+            $this->layout('alert-no-permission.html'),
             ['alert' => $alert ?? $this->text('system-no-permission')]
         );
     }
@@ -116,7 +145,7 @@ trait DashboardTrait
         $this->headerResponseCode($code);
 
         return new FileTemplate(
-            __DIR__ . '/modal-no-permission.html',
+            $this->layout('modal-no-permission.html'),
             [
                 'alert' => $alert ?? $this->text('system-no-permission'),
                 'close' => $this->text('close')
@@ -179,7 +208,7 @@ trait DashboardTrait
     /**
      * Хэрэглэгчийн sidemenu-г динамикаар үүсгэх.
      *
-     * Filter-лэгдэх нөхцөлүүд:
+     * Шүүлт хийх нөхцөлүүд:
      * ---------------------------------------------------------------
      *  - p.is_visible = 1 -> харагдах боломжтой
      *  - Organization alias тохирох эсэх:
@@ -227,7 +256,6 @@ trait DashboardTrait
                 $cache?->set($menuKey, $rows);
             }
             foreach ($rows as $row) {
-                // Localization title авах
                 $title = $row['localized']['title'] ?? null;
 
                 // Organization alias filter
@@ -276,5 +304,89 @@ trait DashboardTrait
         }
 
         return $sidemenu;
+    }
+
+    /**
+     * Нэвтэрсэн хэрэглэгчийн харьяалагддаг бүх идэвхтэй байгууллагын жагсаалт.
+     *
+     * Topbar дахь байгууллага сонгох dropdown-д ашиглагдана. Хэрэглэгч өмнө нь
+     * хасагдсан байж болох тул зөвхөн is_active=1 байгууллагуудыг буцаана.
+     * Одоо нэвтэрсэн байгууллага мөн заавал багтана.
+     *
+     * system_coder бол cross-tenant superuser тул бүх идэвхтэй байгууллагыг
+     * буцаана - JWTAuthMiddleware/LoginController нь coder-т гишүүнчлэл
+     * шаардахгүй болсонтой уялдаж, switcher-ээс аль ч байгууллага руу
+     * шилжих боломжийг олгоно.
+     *
+     * id=1 (системийн үндсэн байгууллага) жагсаалтад байвал үргэлж
+     * хамгийн эхэнд, бусад нь нэрийн эрэмбээр жагсана.
+     *
+     * Гаралт:
+     *   [
+     *      ['id' => 2, 'name' => '...', 'logo' => '...'],
+     *      ...
+     *   ]
+     *
+     * @return array
+     */
+    public function getUserOrganizations(): array
+    {
+        $orgs = [];
+
+        try {
+            $user_id = (int) ($this->getUser()?->profile['id'] ?? 0);
+            if ($user_id < 1) {
+                return [];
+            }
+
+            $orgTable = (new OrganizationModel($this->pdo))->getName();
+            if ($this->isUser('system_coder')) {
+                // system_coder -> бүх идэвхтэй байгууллага (гишүүнчлэлээс хамаарахгүй)
+                $stmt = $this->prepare(
+                    "SELECT id, name, logo
+                       FROM $orgTable
+                      WHERE is_active = 1
+                      ORDER BY name"
+                );
+            } else {
+                // Жирийн хэрэглэгч -> зөвхөн харьяалагддаг байгууллагууд
+                $ouTable = (new OrganizationUserModel($this->pdo))->getName();
+                $stmt = $this->prepare(
+                    "SELECT DISTINCT o.id, o.name, o.logo
+                       FROM $ouTable ou
+                       INNER JOIN $orgTable o ON ou.organization_id = o.id
+                      WHERE ou.user_id = :uid AND o.is_active = 1
+                      ORDER BY o.name"
+                );
+                $stmt->bindValue(':uid', $user_id, \PDO::PARAM_INT);
+            }
+            $stmt->execute();
+            $orgs = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+            // Одоо нэвтэрсэн идэвхтэй байгууллагыг заавал багтаах
+            $current = (int) ($this->getUser()?->organization['id'] ?? 0);
+            if ($current > 0
+                && !\in_array($current, \array_map('intval', \array_column($orgs, 'id')), true)
+            ) {
+                $orgs[] = [
+                    'id'   => $current,
+                    'name' => $this->getUser()?->organization['name'] ?? ('#' . $current),
+                    'logo' => $this->getUser()?->organization['logo'] ?? ''
+                ];
+            }
+
+            // id=1 (үндсэн байгууллага) жагсаалтад байвал үргэлж хамгийн эхэнд.
+            // usort нь stable тул бусад нь нэрийн эрэмбээ хадгална.
+            \usort(
+                $orgs,
+                fn($a, $b) => ((int) $b['id'] === 1) <=> ((int) $a['id'] === 1)
+            );
+        } catch (\Throwable $e) {
+            if (CODESAUR_DEVELOPMENT) {
+                \error_log($e->getMessage());
+            }
+        }
+
+        return $orgs;
     }
 }

@@ -79,6 +79,24 @@ class FileController extends \Raptor\Controller
     {
         return $this->getDocumentRoot() . $filePath;
     }
+
+    /**
+     * Хадгалагдсан нийтийн файлын URL-ээс (жишээ getFilePublicPath()-ийн буцаадаг
+     * {scriptPath}/public/users/1/photo.jpg) document root-д суурилсан физик замыг
+     * гаргаж авна - устгах/шалгахад ашиглана. scriptPath prefix-ийг хасаж,
+     * rawurlencode хийсэн нэрийг буцааж decode хийнэ.
+     *
+     * @param string $publicUrl getFilePublicPath()-ийн буцаасан нийтийн зам
+     * @return string Бүтэн физик файлын зам
+     */
+    protected function getStoredFilePhysicalPath(string $publicUrl): string
+    {
+        $scriptPath = $this->getScriptPath();
+        if ($scriptPath !== '' && \str_starts_with($publicUrl, $scriptPath)) {
+            $publicUrl = \substr($publicUrl, \strlen($scriptPath));
+        }
+        return $this->getDocumentPath(\rawurldecode($publicUrl));
+    }
     
     /**
      * Зөвшөөрөх файл өргөтгөлүүдийг зааж өгнө.
@@ -320,7 +338,6 @@ class FileController extends \Raptor\Controller
      */
     protected function optimizeImage(string $filePath): bool
     {
-        // GD сан суусан эсэхийг шалгах
         if (!\extension_loaded('gd')) {
             if (CODESAUR_DEVELOPMENT) {
                 \error_log('optimizeImage: GD extension суугаагүй байна');
@@ -328,7 +345,6 @@ class FileController extends \Raptor\Controller
             return false;
         }
 
-        // Файл байгаа эсэхийг шалгах
         if (!\file_exists($filePath) || !\is_readable($filePath)) {
             return false;
         }
@@ -346,14 +362,12 @@ class FileController extends \Raptor\Controller
         // Эх файлын хэмжээг хадгалах (дараа нь харьцуулахад ашиглана)
         $originalSize = \filesize($filePath);
 
-        // Resize хэрэгтэй эсэхийг шалгах
         $needsResize = $width > $maxWidth;
 
         // Шинэ хэмжээ тооцоолох (resize хэрэггүй бол хуучин хэмжээ)
         $newWidth = $needsResize ? $maxWidth : $width;
         $newHeight = $needsResize ? (int) ($height * ($maxWidth / $width)) : $height;
 
-        // Зураг үүсгэх
         $source = null;
         switch ($type) {
             case \IMAGETYPE_JPEG:
@@ -412,7 +426,6 @@ class FileController extends \Raptor\Controller
 
         // Зураг боловсруулах (resize эсвэл quality optimize)
         if ($needsResize) {
-            // Resize хийх
             $output = \imagecreatetruecolor($newWidth, $newHeight);
             if (!$output) {
                 \imagedestroy($source);

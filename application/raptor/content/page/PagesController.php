@@ -65,7 +65,6 @@ class PagesController extends FileController
         }
 
         $filters = [];
-        // pages хүснэгтийн нэрийг PagesModel::getName() ашиглан динамикаар авна. Ирээдүйд refactor хийхэд бэлэн байна.
         $table = (new PagesModel($this->pdo))->getName();
         $codes_result = $this->query(
             "SELECT DISTINCT code FROM $table"
@@ -131,7 +130,6 @@ class PagesController extends FileController
                 }
             }
             $whereClause = empty($conditions) ? '' : ' WHERE ' . \implode(' AND ', $conditions);
-            // pages хүснэгтийн нэрийг PagesModel::getName() ашиглан динамикаар авна. Ирээдүйд refactor хийхэд бэлэн байна.
             $table = (new PagesModel($this->pdo))->getName();
             $select_pages =
                 'SELECT id, photo, title, slug, code, type, category, position, link, published, published_at ' .
@@ -261,7 +259,6 @@ class PagesController extends FileController
                     throw new \InvalidArgumentException($this->text('invalid-request'), 400);
                 }
 
-                // HTML контент tag бүтэц шалгах
                 if (!empty($payload['content'])) {
                     $this->validateHtmlContent($payload['content']);
                 }
@@ -481,7 +478,6 @@ class PagesController extends FileController
                     throw new \InvalidArgumentException($this->text('invalid-request'), 400);
                 }
 
-                // HTML контент tag бүтэц шалгах
                 if (!empty($payload['content'])) {
                     $this->validateHtmlContent($payload['content']);
                 }

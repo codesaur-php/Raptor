@@ -1,5 +1,5 @@
 <!-- 
-    LOG VIEW MODAL (Дэлгэрэнгүй Log үзэх modal)
+    Log view modal (Дэлгэрэнгүй Log үзэх modal)
     ---------------------------------------------------------------
     Энэ modal нь тухайн логийн бүх мэдээллийг key -> value хэлбэрээр
     хүснэгтийн мөр болгон харуулдаг.
@@ -36,8 +36,8 @@
     <div class="modal-content">
         <!-- Modal Header -->
         <div class="modal-header text-bg-secondary">
-            <!-- log_caption нь "Лог" эсвэл Localization-аас ирдэг -->
-            <!-- table/id -> log-оос ямар id-г харуулж байгааг тодорхой харуулна -->
+            <!-- Log_caption нь "Лог" эсвэл Localization-аас ирдэг -->
+            <!-- Table/id -> log-оос ямар id-г харуулж байгааг тодорхой харуулна -->
             <h3 class="modal-title fs-6 text-uppercase">
                 {{ log_caption }} ({{ table }}/{{ id }})
             </h3>
@@ -46,7 +46,7 @@
         <!-- Modal Body -->
         <div class="modal-body">
             <!--
-                logdata - Logger::getLogById() функцээс ирсэн массив.
+                Logdata - Logger::getLogById() функцээс ирсэн массив.
                 Массивын key/value-уудыг автоматаар хэвлэнэ.
             -->
             {% for key, value in logdata %}

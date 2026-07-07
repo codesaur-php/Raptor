@@ -87,6 +87,31 @@ class User
     }
 
     /**
+     * Хэрэглэгч тодорхой alias-д хамаарах ямар нэг роль эзэмшдэг эсэхийг шалгана.
+     *
+     * Роль key нь "{alias}_{name}" форматтай (alias нь доогуур зураасгүй) тул
+     * "{alias}_" угтвартай роль байвал тухайн alias дээр эрхтэй гэж үзнэ.
+     *
+     * Жишээ:
+     *   hasRoleAlias('system') -> system_admin, system_viewer г.м аль нэг
+     *   роль байвал TRUE. Ямар ч system_* роль байхгүй бол FALSE.
+     *
+     * @param string $alias  Роль key-ийн "{alias}_" угтвар
+     * @return bool
+     */
+    public function hasRoleAlias(string $alias): bool
+    {
+        $prefix = "{$alias}_";
+        foreach (\array_keys($this->rbac) as $roleKey) {
+            if (\str_starts_with($roleKey, $prefix)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Хэрэглэгч тодорхой permission-тэй эсэхийг шалгана.
      *
      * @param string      $permission  Зөвшөөрлийн нэр (жишээ: 'user_update')

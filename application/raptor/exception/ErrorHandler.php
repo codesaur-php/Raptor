@@ -32,7 +32,7 @@ use codesaur\Http\Application\ExceptionHandlerInterface;
  * Хөгжүүлэлтийн горимд (CODESAUR_DEVELOPMENT):
  *   -> Stack trace дэлгэц дээр JSON форматтай харуулна.
  *
- * Тemplate-д дамжуулах хувьсагчууд:
+ * Template-д дамжуулах хувьсагчууд:
  *   - title     - Алдааны гарчиг (Exception 404 гэх мэт)
  *   - message   - Хэрэглэгчид үзэгдэх аюулгүй алдааны текст
  *   - return    - Буцах линк тэмдэглэгээ
@@ -85,7 +85,6 @@ class ErrorHandler implements ExceptionHandlerInterface
                 ? 'https://' : 'http://';
         $host .= $_SERVER['HTTP_HOST'] ?? 'localhost';
 
-        // Template хувьсагчууд
         $vars = [
             'title' => $title,
             'return' => 'Return to host',
@@ -96,11 +95,10 @@ class ErrorHandler implements ExceptionHandlerInterface
         if (CODESAUR_DEVELOPMENT) {
             $vars['message'] .=
                 '<br/><pre style="color:white;height:300px;overflow-y:auto;overflow-x:hidden;">'
-                . \json_encode($throwable->getTrace(), \JSON_PRETTY_PRINT)
+                . \json_encode($throwable->getTrace(), \JSON_PRETTY_PRINT | \JSON_HEX_TAG | \JSON_HEX_AMP | \JSON_HEX_APOS | \JSON_HEX_QUOT)
                 . '</pre>';
         }
 
-        // Error хуудсыг рендерлэх
         (new FileTemplate($errorTemplate, $vars))->render();
     }
 }

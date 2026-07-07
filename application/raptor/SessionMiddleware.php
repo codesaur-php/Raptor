@@ -41,18 +41,35 @@ class SessionMiddleware implements MiddlewareInterface
         \session_name('raptor');
 
         if (\session_status() != \PHP_SESSION_ACTIVE) {
-            // Session cookie-ийн амьдрах хугацааг 30 хоног (2592000 сек) болгоно.
-            // Энэ нь зөвхөн client талын cookie-д үйлчилнэ; server талын session
-            // файлын цэвэрлэгээ (session.gc_maxlifetime) нь host php.ini-аар
-            // удирдагдсаар байна. Энэ ганц мөр нь Раптор фреймворкийг олон жилийн турш
-            // Монголын олон cPanel хост / VPS серверүүд дээр нэмэлт тохиргоогүйгээр шууд
-            // ажиллуулж, админы нэвтрэлт browser хаагдсан ч хадгалагдах practical
-            // default-ыг хангаж ирсэн.
+            // Session cookie-ийн тохиргоо.
             //
-            // Developer session-ийн хугацааг бүхэлд нь PHP-ийн өөрийн тохиргоо
+            // lifetime = 30 хоног (2592000 сек): зөвхөн client талын cookie-д
+            // үйлчилнэ; server талын session файлын цэвэрлэгээ
+            // (session.gc_maxlifetime) нь host php.ini-аар удирдагдсаар байна.
+            // Энэ нь Раптор фреймворкийг олон серверийн орчинд нэмэлт тохиргоогүйгээр
+            // ажиллуулж, админы нэвтрэлт browser хаагдсан ч хадгалагдах practical
+            // default-ыг хангадаг.
+            //
+            // Аюулгүй байдлын flag-ууд (host php.ini-д найдалгүй ил тод тохируулна):
+            //   httponly = true  -> JS document.cookie-ээр уншигдахгүй (XSS-ээс session хамгаална)
+            //   secure   = HTTPS үед л true -> HTTP dev орчинд cookie ажиллана, HTTPS
+            //              prod дээр зөвхөн шифрлэгдсэн холболтоор дамжина (аль ч серверт зөв)
+            //   samesite = 'Lax' -> cross-site POST-оор cookie явахгүй (CSRF-ийг сааруулна)
+            //
+            // Developer session-ийн тохиргоог бүхэлд нь PHP-ийн өөрийн тохиргоо
             // (php.ini / .user.ini)-д даатгахыг хүсвэл доорх `session_set_cookie_params(...)`
-            // мөрийг устгаад php.ini-д тохируулна (docs/mn/SESSION-LIFETIME.md-г үзээрэй).
-            \session_set_cookie_params(2592000);
+            // дуудлагыг устгаад php.ini-д тохируулна (docs/mn/SESSION-LIFETIME.md-г үзээрэй).
+            $server = $request->getServerParams();
+            $isHttps = (!empty($server['HTTPS']) && $server['HTTPS'] !== 'off')
+                || (($server['SERVER_PORT'] ?? null) == 443)
+                || (($server['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
+            \session_set_cookie_params([
+                'lifetime' => 2592000,
+                'path'     => '/',
+                'httponly' => true,
+                'secure'   => $isHttps,
+                'samesite' => 'Lax',
+            ]);
 
             // Session идэвхгүй (эхлээгүй) байгаа тул эхлүүлнэ
             \session_start();

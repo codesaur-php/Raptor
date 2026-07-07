@@ -8,11 +8,15 @@ use codesaur\Http\Client\JSONClient;
  * AI туслах класс - OpenAI API ашиглан контент боловсруулах.
  *
  * moedit WYSIWYG editor-ийн AI функцуудыг (Shine, OCR) дэмжих backend endpoint-уудыг агуулна.
- * OpenAI GPT-4o болон GPT-4o-mini моделиудыг ашиглана.
+ * Ашиглах моделиудыг .env-ээс тохируулна - OpenAI шинэ модель гаргах эсвэл
+ * хуучныг зогсоох үед код хөндөлгүйгээр солино (default: DEFAULT_MODEL,
+ * DEFAULT_VISION_MODEL константууд).
  *
  * Тохиргоо (.env файлд):
  * -----------------------------------------------------------------------------
  *   RAPTOR_OPENAI_API_KEY=sk-proj-...    # OpenAI API түлхүүр (заавал)
+ *   RAPTOR_OPENAI_MODEL=gpt-5-mini       # HTML сайжруулалтын модель (сонголт)
+ *   RAPTOR_OPENAI_VISION_MODEL=gpt-5.1   # Vision/OCR модель (сонголт)
  *
  * @package    Raptor\Content
  * @author     Narankhuu
@@ -20,6 +24,30 @@ use codesaur\Http\Client\JSONClient;
  */
 class AIHelper extends \Raptor\Controller
 {
+    /**
+     * Моделиудын анхдагч утга - .env (RAPTOR_OPENAI_MODEL,
+     * RAPTOR_OPENAI_VISION_MODEL)-ээр дарж болно. OpenAI модель зогсоох
+     * бүрд код засахгүйн тулд нэрийг payload-д hardcode хийхгүй.
+     */
+    private const DEFAULT_MODEL = 'gpt-5-mini';
+    private const DEFAULT_VISION_MODEL = 'gpt-5.1';
+
+    /**
+     * Vision (OCR) mode-д нэг хүсэлтээр боловсруулах зургийн дээд тоо.
+     * Зураг бүр тусад нь vision моделийн дуудлага үүсгэдэг тул энэ нь
+     * нэг хүсэлтийн зардлыг хязгаарлана.
+     */
+    private const MAX_IMAGES_PER_REQUEST = 8;
+
+    /**
+     * Rate limit: нэг хэрэглэгч RATE_LIMIT_WINDOW секундэд хийж болох
+     * OpenAI дуудлагын дээд тоо. Vision mode-д зураг бүр нэг дуудлага
+     * гэж тооцно. Cache service байхгүй бол throttle skip хийнэ (гол
+     * хамгаалалт нь эрхийн шалгалт).
+     */
+    private const RATE_LIMIT_MAX = 30;
+    private const RATE_LIMIT_WINDOW = 60;
+
     /**
      * moedit AI endpoint - HTML контент сайжруулах эсвэл зургаас текст таних (OCR).
      *
@@ -61,16 +89,26 @@ class AIHelper extends \Raptor\Controller
      * @return void JSON хариу буцаана
      *
      * @throws \Exception Нэвтрээгүй бол (401)
+     * @throws \Exception Контент үүсгэх/засах эрхгүй бол (403)
+     * @throws \Exception Rate limit хэтэрсэн бол (429)
      * @throws \Exception API key тохируулаагүй бол (500)
      * @throws \InvalidArgumentException Контент эсвэл prompt хоосон бол (400)
-     * @throws \InvalidArgumentException Vision mode-д зураг байхгүй бол (400)
+     * @throws \InvalidArgumentException Vision mode-д зураг байхгүй / хэт олон бол (400)
      */
     public function moeditAI(): void
     {
         try {
-            // Хэрэглэгч нэвтэрсэн байх ёстой
             if (!$this->isUserAuthorized()) {
                 throw new \Exception('Unauthorized', 401);
+            }
+
+            // Зөвхөн контент үүсгэх/засах эрхтэй хэрэглэгч AI-г ашиглана.
+            // moedit editor нь news/pages (content) болон products модулиудад
+            // ашиглагддаг тул тэдгээрийн insert/update эрхээр gate хийнэ.
+            // Ингэснээр эрхгүй (viewer г.м.) хэрэглэгч OpenAI key-г урвуулан
+            // ашиглах, төсөв шатаах боломжийг хаана. (coder бүх шалгалтыг давна.)
+            if (!$this->canUseAI()) {
+                throw new \Exception('Forbidden', 403);
             }
 
             // API key шалгах ($_ENV эсвэл getenv)
@@ -114,12 +152,24 @@ class AIHelper extends \Raptor\Controller
                 // OCR mode: Base64 зургуудыг хүлээн авах
                 $base64Images = $body['images'] ?? [];
 
-                if (empty($base64Images)) {
+                if (!\is_array($base64Images) || empty($base64Images)) {
                     throw new \InvalidArgumentException(
                         'Зураг олдсонгүй. OCR ашиглахын тулд зураг оруулна уу.',
                         400
                     );
                 }
+
+                // Зургийн тоог хязгаарлах - зураг бүр тусдаа vision дуудлага
+                // үүсгэдэг тул хязгааргүй бол нэг хүсэлтээр төсөв шатааж болно.
+                if (\count($base64Images) > self::MAX_IMAGES_PER_REQUEST) {
+                    throw new \InvalidArgumentException(
+                        'Хэт олон зураг. Нэг удаад дээд тал нь ' . self::MAX_IMAGES_PER_REQUEST . ' зураг.',
+                        400
+                    );
+                }
+
+                // Rate limit: зураг бүр нэг дуудлага гэж тооцно
+                $this->enforceRateLimit(\count($base64Images));
 
                 // Frontend prompt + system instruction
                 $prompt = $systemInstruction . $customPrompt;
@@ -135,6 +185,9 @@ class AIHelper extends \Raptor\Controller
 
                 $response = \implode("\n\n", $results);
             } else {
+                // Rate limit: HTML mode нэг дуудлага
+                $this->enforceRateLimit(1);
+
                 // HTML mode: Frontend prompt + system instruction + контент
                 $prompt = $systemInstruction . $customPrompt . "\n\n---КОНТЕНТ ЭХЛЭЛ---\n{$html}\n---КОНТЕНТ ТӨГСГӨЛ---";
                 $response = $this->callOpenAI($apiKey, $prompt);
@@ -144,21 +197,77 @@ class AIHelper extends \Raptor\Controller
                 'html'   => $response
             ]);
         } catch (\Throwable $e) {
+            // Exception code нь заримдаа тоон бус string байж болно (OpenAI-ийн
+            // алдааны код, жишээ 'invalid_api_key') тул HTTP статуст int болгоно.
+            $code = (int) $e->getCode();
             $this->respondJSON([
                 'status'  => 'error',
                 'message' => $e->getMessage()
-            ], $e->getCode() ?: 500);
+            ], ($code >= 400 && $code <= 599) ? $code : 500);
         }
+    }
+
+    /**
+     * Хэрэглэгч AI endpoint-ийг ашиглах эрхтэй эсэх.
+     *
+     * moedit editor нь news/pages (content) болон products модулиудад
+     * ашиглагддаг тул тэдгээрийн insert/update эрхийн аль нэг байвал л
+     * зөвшөөрнө. Зөвхөн нэвтэрсэн (эрхгүй viewer) хангалтгүй - эс бөгөөс
+     * контентын ямар ч эрхгүй хэрэглэгч OpenAI key-г урвуулан ашиглана.
+     * (isUserCan нь coder-т үргэлж true буцаадаг тул coder давна.)
+     *
+     * @return bool
+     */
+    private function canUseAI(): bool
+    {
+        return $this->isUserCan('system_content_insert')
+            || $this->isUserCan('system_content_update')
+            || $this->isUserCan('system_product_insert')
+            || $this->isUserCan('system_product_update');
+    }
+
+    /**
+     * Хэрэглэгч бүрийн OpenAI дуудлагын давтамжийг хязгаарлана.
+     *
+     * RATE_LIMIT_WINDOW секундын fixed window дотор RATE_LIMIT_MAX
+     * дуудлага зөвшөөрнө. State-ийг cache-д хадгална (dashboard-д session
+     * эрт хаагддаг тул $_SESSION-д найдаж болохгүй). Cache байхгүй бол
+     * skip - throttle нь нэмэлт давхарга, гол хамгаалалт нь canUseAI().
+     *
+     * @param int $cost Энэ хүсэлтийн үүсгэх дуудлагын тоо (vision = зургийн тоо)
+     * @throws \Exception Хязгаар хэтэрсэн бол (429)
+     */
+    private function enforceRateLimit(int $cost): void
+    {
+        if (!$this->hasService('cache')) {
+            return;
+        }
+        $cache = $this->getService('cache');
+        $key = 'ai_ratelimit.' . $this->getUserId();
+        $now = \time();
+
+        $entry = $cache->get($key);
+        if (!\is_array($entry) || ($entry['reset'] ?? 0) <= $now) {
+            $entry = ['count' => 0, 'reset' => $now + self::RATE_LIMIT_WINDOW];
+        }
+
+        if ($entry['count'] + $cost > self::RATE_LIMIT_MAX) {
+            throw new \Exception('Хэт олон хүсэлт. Түр хүлээгээд дахин оролдоно уу.', 429);
+        }
+
+        $entry['count'] += $cost;
+        // TTL нь reset хүртэлх үлдсэн хугацаа (window-той тэнцэх дээд хэмжээтэй)
+        $cache->set($key, $entry, \max(1, $entry['reset'] - $now));
     }
 
     /**
      * OpenAI Chat Completions API дуудах (текст боловсруулалт).
      *
-     * GPT-4o-mini моделийг ашиглан HTML контентыг Bootstrap 5 компонентуудаар
+     * Хямд ангиллын моделиэр HTML контентыг Bootstrap 5 компонентуудаар
      * сайжруулах хүсэлт илгээнэ. Markdown code block хариуг автоматаар цэвэрлэнэ.
      *
      * API тохиргоо:
-     *   - Model: gpt-4o-mini (хурдан, хямд)
+     *   - Model: RAPTOR_OPENAI_MODEL (.env, default: DEFAULT_MODEL - хурдан, хямд)
      *   - Temperature: 0.3 (тогтвортой үр дүн)
      *   - Max tokens: 4096
      *   - HTTP/1.1 протокол (HTTP/2 алдаанаас зайлсхийх)
@@ -175,7 +284,7 @@ class AIHelper extends \Raptor\Controller
     private function callOpenAI(string $apiKey, string $prompt): string
     {
         $payload = [
-            'model'       => 'gpt-4o-mini',
+            'model'       => $_ENV['RAPTOR_OPENAI_MODEL'] ?? self::DEFAULT_MODEL,
             'messages'    => [
                 [
                     'role'    => 'system',
@@ -211,11 +320,11 @@ class AIHelper extends \Raptor\Controller
     /**
      * OpenAI Vision API дуудах (зураг таних / OCR).
      *
-     * GPT-4o моделийн vision чадварыг ашиглан зураг дээрх текстийг таниж
-     * HTML болгон хувиргана. Нэг удаад нэг зураг боловсруулна.
+     * Vision чадвартай моделиэр зураг дээрх текстийг таниж HTML болгон
+     * хувиргана. Нэг удаад нэг зураг боловсруулна.
      *
      * API тохиргоо:
-     *   - Model: gpt-4o (vision чадвартай)
+     *   - Model: RAPTOR_OPENAI_VISION_MODEL (.env, default: DEFAULT_VISION_MODEL)
      *   - Temperature: 0.3 (тогтвортой үр дүн)
      *   - Max tokens: 4096
      *   - Image detail: high (өндөр нарийвчлал)
@@ -238,7 +347,7 @@ class AIHelper extends \Raptor\Controller
     private function callOpenAIVision(string $apiKey, string $prompt, string $imageUrl): string
     {
         $payload = [
-            'model'       => 'gpt-4o',
+            'model'       => $_ENV['RAPTOR_OPENAI_VISION_MODEL'] ?? self::DEFAULT_VISION_MODEL,
             'messages'    => [
                 [
                     'role'    => 'system',

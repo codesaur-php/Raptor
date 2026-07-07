@@ -1,12 +1,10 @@
 /**
  * motable CSS
- * ------------------------------------------------------------------
+ * 
  * Bootstrap шаардлагагүй, бие даан ажиллах боломжтой.
  */
 
-/* ============================================
-   CSS Variables - Өнгөний тохиргоо
-   ============================================ */
+/* CSS Variables - Өнгөний тохиргоо */
 :root{
   --mo-bg:#fff;
   --mo-text:#212529;
@@ -50,9 +48,7 @@
   --mo-shadow:linear-gradient(to left,rgba(33,37,41,0.9),transparent);
 }
 
-/* ============================================
-   Loading animation
-   ============================================ */
+/* Loading animation */
 @keyframes l1{to{clip-path:inset(0 -34% 0 0)}}
 .threedots{
   display:inline-block;
@@ -63,9 +59,7 @@
   animation:l1 1s steps(4) infinite;
 }
 
-/* ============================================
-   Tools bar - Info + Search
-   ============================================ */
+/* Tools bar - Info + Search */
 .motools{
   display:flex;
   flex-wrap:wrap;
@@ -122,9 +116,7 @@
   cursor:pointer;
 }
 
-/* ============================================
-   Wrapper + Container
-   ============================================ */
+/* Wrapper + Container */
 .mocontainer{
   overflow-x:auto;
   -webkit-overflow-scrolling:touch;
@@ -171,9 +163,7 @@
   opacity:1;
 }
 
-/* ============================================
-   Table base styles - Bootstrap шаардлагагүй
-   ============================================ */
+/* Table base styles - Bootstrap шаардлагагүй */
 .motable{
   width:100%;
   border-collapse:collapse;
@@ -256,9 +246,7 @@
   border-width:.275rem .275rem 0;
 }
 
-/* ============================================
-   Freeze column - sticky left (Google Sheets style)
-   ============================================ */
+/* Freeze column - sticky left (Google Sheets style) */
 .motable .freeze-col{
   position:sticky;
   left:0;
@@ -294,9 +282,7 @@
   }
 }
 
-/* ============================================
-   Mobile / small screen optimization
-   ============================================ */
+/* Mobile / small screen optimization */
 @media (max-width:768px){
   .motools{
     flex-direction:column;
@@ -320,9 +306,7 @@
   }
 }
 
-/* ============================================
-   Empty state
-   ============================================ */
+/* Empty state */
 .motable tbody:empty::after{
   content:'No data available';
   display:block;

@@ -11,8 +11,8 @@ use Psr\SimpleCache\CacheInterface;
  *
  * Cache strategy (2 mode):
  *
- *  1) Cache enabled (CacheInterface inject хийгдсэн):
- *     - Хэлний БҮХ template-уудыг нэг "reference.templates.{code}" entry болгож хадгална
+ *  1) Cache enabled (CacheInterface inject хийгдсэн үед):
+ *     - Хэлний бүх template-уудыг нэг "reference.templates.{code}" entry болгож хадгална
  *     - getByKeyword/getByKeywords нь cached map-аас array lookup хийнэ
  *     - DB query: бүх келвордыг 1 удаа цуглуулах нэг query (anh load)
  *
@@ -31,7 +31,7 @@ class TemplateService
     /** @var \PDO Database connection instance */
     protected \PDO $pdo;
 
-    /** @var CacheInterface|null Optional PSR-16 cache (null bol DB-ees shууд унш) */
+    /** @var CacheInterface|null Optional PSR-16 cache (null бол DB-ээс шууд уншина) */
     protected ?CacheInterface $cache;
 
     /**

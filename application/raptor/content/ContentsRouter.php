@@ -65,10 +65,7 @@ class ContentsRouter extends Router
         // Файлыг устгах
         $this->DELETE('/files/{table}/delete', [FilesController::class, 'delete'])->name('files-delete')->middleware([CsrfMiddleware::class]);
 
-        // Protected файл унших (зөвхөн нэвтэрсэн хэрэглэгчдэд, PUBLIC web дээр харагдахгүй гэсэн үг)
-        $this->GET('/protected/file', [ProtectedFilesController::class, 'read'])->name('protected-file-read');
-        
-        
+
         /* ------------------------------
          * NEWS - Мэдээлэл
          * ------------------------------ */

@@ -6,7 +6,7 @@
   'notification': { 'mn': 'Сонордуулга' },
   'email': { 'mn': 'Цахим захиа' }
 } %}
-<!-- UPDATE FORM CARD - лавлах мэдээлэл засах үндсэн wrapper -->
+<!-- Update form card - лавлах мэдээлэл засах үндсэн wrapper -->
 <div class="card shadow border-primary">
     <div class="card-header">
         <div class="d-flex justify-content-between flex-wrap flex-md-nowrap">
@@ -29,7 +29,7 @@
         </div>
     </div>
 
-    <!--  CARD BODY - үндсэн форм -->
+    <!--  Card body - үндсэн форм -->
     <div class="card-body">
         <!-- Update form -->
         <form class="needs-validation"
@@ -98,7 +98,7 @@
                 {% endfor %}
             </ul>
 
-            <!-- TAB CONTENT -->
+            <!-- Tab content -->
             <div class="tab-content">
                 {% for code in localization.language|keys %}
                 <div class="tab-pane{% if loop.first %} active show{% endif %}"
@@ -151,7 +151,7 @@
     </div>
 </div>
 
-<!-- LOGGER SECTION (зөвхөн system_logger эрхтэй)  -->
+<!-- Logger section (зөвхөн system_logger эрхтэй)  -->
 {% if user.can('system_logger') %}
 <div class="mt-5">
     <hr>

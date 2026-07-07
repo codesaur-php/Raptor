@@ -1,22 +1,21 @@
 <!--
-  devrequest-create.html
+  Devrequest-create.HTML
   ------------------------------------------------------------------
   Шинэ хөгжүүлэлтийн хүсэлт бүртгэх форм (Dashboard).
  
   Controller: Dashboard\DevRequest\DevRequestController::create()
-  Route: GET /dashboard/dev-requests/create
+  Route: get /dashboard/dev-requests/create
  
   Variables:
-    max_file_size             - PHP upload_max_filesize (байтаар)
+    max_file_size             - php upload_max_filesize (байтаар)
     dev_users                 - Хуваарилах боломжтой хэрэглэгчдийн жагсаалт
     'dev-requests-store'|link - Хүсэлт хадгалах API endpoint
     'dev-requests'|link       - Жагсаалт руу буцах маршрут
  
-  JS: SweetAlert2
+  js: SweetAlert2
  -->
 <script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
 
-<!-- ========== ТОЛГОЙ ХЭСЭГ ========== -->
 <div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-3 shadow">
     <h3 class="px-2 my-auto fs-5 text-info text-uppercase">
         <i class="bi bi-plus-circle"></i> {{ 'new-request'|text }}
@@ -28,7 +27,6 @@
     </div>
 </div>
 
-<!-- ========== ФОРМ ========== -->
 <form id="devrequest-form" enctype="multipart/form-data">
     <div class="mb-3">
         <label for="title" class="form-label fw-bolder">{{ 'title'|text }} <span class="text-danger">*</span></label>
@@ -75,7 +73,6 @@
     </div>
 </form>
 
-<!-- ========== JAVASCRIPT ========== -->
 <script type="text/javascript">
 document.addEventListener('DOMContentLoaded', function () {
     const form = document.getElementById('devrequest-form');

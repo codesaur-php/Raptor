@@ -27,22 +27,23 @@
        </style>
     </head>
     <body class="text-center">
-         <!-- ============================================================
-             LOGIN FORM MAIN WRAPPER
-             ============================================================ -->
+         <!-- login form main wrapper -->
         <main class="form-signin">
-            <!-- ------------------------
-                 Лого (хэрвээ дамжуулсан бол)
-                 ------------------------ -->
+            <!-- Лого (хэрвээ дамжуулсан бол) -->
             {% if logo is not empty %}
             <div class="text-center mb-4" id="logo">
                 <img class="img-fluid" src="{{ logo }}">
             </div>
             {% endif %}
-            
-            <!-- ============================================================
-                 НЭВТРЭХ FORM (#login)
-                 ============================================================ -->
+
+            <!-- Server-side мессеж (жишээ: signup имэйл баталгаажуулалтын үр дүн) -->
+            {% if flash_alert is not empty %}
+            <div class="alert alert-{{ flash_alert['type'] }} shadow-sm" role="alert">
+                {{ flash_alert['message'] }}
+            </div>
+            {% endif %}
+
+            <!-- нэвтрэх form (#login) -->
             <form id="login" action="{{ 'entry'|link }}" method="POST">
                 <div style="position:absolute;left:-9999px" aria-hidden="true">
                     <input type="text" name="website" id="hp_field" tabindex="-1" autocomplete="off">
@@ -94,9 +95,7 @@
                 {% endif %}
             </form>
             
-            <!-- ============================================================
-                 FORGOT PASSWORD FORM (#forgot)
-                 ============================================================ -->
+            <!-- forgot password form (#forgot) -->
             <form class="d-none" id="forgot" action="{{ 'login-forgot'|link }}" method="POST">
                 <h3 class="text-center mb-4">{{ 'password-reset'|text }}</h3>
                 <span>{{ 'enter-email-below'|text }}</span>
@@ -111,9 +110,7 @@
                 </div>
             </form>
 
-            <!-- ============================================================
-                 SIGNUP FORM (#register)
-                 ============================================================ -->
+            <!-- signup form (#register) -->
             <form class="d-none" id="register" action="{{ 'signup'|link }}" method="POST">
                 <h3 class="text-center mb-4">{{ 'signup'|text }}</h3>
                 <span>{{ 'enter-personal-details'|text }}</span>
@@ -137,7 +134,7 @@
                 
                 <hr>
                 
-                <!-- TOS + Privacy Policy -->
+                <!-- Tos + Privacy Policy -->
                 <div class="text-center mb-2">
                 {{ 'signup-agree-prefix'|text }}
                 <a data-bs-toggle="modal" data-bs-target="#tos" href="javascript:;">{{ 'terms-and-conditions'|text }}</a>
@@ -155,9 +152,7 @@
             </form>
         </main>
         
-        <!-- ============================================================
-             FRONT-END LOGIC - LOGIN / FORGOT / SIGNUP
-             ============================================================ -->
+        <!-- front-end logic - login / forgot / signup -->
         <script type="text/javascript">
             /* Spam хамгаалалтын утгууд */
             const _spam_ts = '{{ spam_ts }}';
@@ -231,9 +226,9 @@
                 
                 async function parseJSON(res)
                 {
-                    // Алдааны хариу (4xx/5xx) дээр ч JSON body-г уншиж, server-ийн
-                    // тодорхой мессежийг (жишээ: "Invalid username or password")
-                    // гаргана. Body нь JSON биш үед л ерөнхий мессеж рүү буцна.
+                    /* Алдааны хариу (4xx/5xx) дээр ч JSON body-г уншиж, server-ийн */
+                    /* тодорхой мессежийг (жишээ: "Invalid username or password") */
+                    /* гаргана. Body нь JSON биш үед л ерөнхий мессеж рүү буцна. */
                     const isJSON = res.headers.get('content-type')?.includes('application/json');
                     const body = isJSON ? await res.json() : null;
                     if (!res.ok || !isJSON) {
@@ -442,9 +437,7 @@
             });
         </script>
         
-        <!-- ============================================================
-             TOS - Terms of Service Modal
-             ============================================================ -->
+        <!-- tos - Terms of Service Modal -->
         <div class="modal fade" id="tos" role="dialog" tabindex="-1" aria-hidden="true">
             <div class="modal-xl modal-dialog modal-dialog-scrollable" role="document">
                 <div class="modal-content">
@@ -462,9 +455,7 @@
             </div>
         </div>
                     
-        <!-- ============================================================
-             PP - Privacy Policy Modal
-             ============================================================ -->
+        <!-- pp - Privacy Policy Modal -->
         <div class="modal fade" id="pp" role="dialog" tabindex="-1" aria-hidden="true">
             <div class="modal-xl modal-dialog modal-dialog-scrollable" role="document">
                 <div class="modal-content">

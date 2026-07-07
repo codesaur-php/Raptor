@@ -1,7 +1,6 @@
 <!-- SweetAlert2 сан - устгах үед баталгаажуулах цонх гаргахад ашиглана -->
 <script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-<!-- ========== ТОЛГОЙ ХЭСЭГ ========== -->
 <div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 shadow">
     <h3 class="px-2 my-auto fs-5 text-primary text-uppercase">
         <i class="bi bi-box-seam"></i> {{ 'products'|text }}
@@ -16,7 +15,6 @@
     </div>
 </div>
 
-<!-- ========== ШҮҮЛТҮҮР + ШИНЭ ТОВЧ ========== -->
 <style>
 .btn-filter {
     --bs-btn-color: var(--bs-emphasis-color);
@@ -57,7 +55,6 @@
     {% endfor %}
 </div>
 
-<!-- ========== БҮТЭЭГДЭХҮҮНИЙ ХҮСНЭГТ ========== -->
 <!-- Бүтээгдэхүүний жагсаалтыг харуулах хүснэгт - JavaScript-ээр өгөгдөл дүүргэнэ -->
 <table class="table table-sm table-hover table-striped table-bordered" id="products">
     <thead>
@@ -75,7 +72,6 @@
     </thead>
 </table>
 
-<!-- ========== JAVASCRIPT ХЭСЭГ ========== -->
 <script type="text/javascript">
     /* URL-ээс параметрүүдийг унших */
     const urlParams = new URLSearchParams(window.location.search);
@@ -123,7 +119,7 @@
         }
     }
 
-    /* ========== ШҮҮЛТҮҮРИЙН DROPDOWN СОНГОЛТУУДАД EVENT LISTENER НЭМЭХ ========== */
+    /* Шүүлтүүрийн dropdown сонголтуудад event listener нэмэх */
     filterBtns.forEach(filter => {
         document.querySelectorAll(`.filter-values-${filter.dataset.name}`).forEach(btn => {
             btn.addEventListener('click', function (e) {
@@ -135,7 +131,7 @@
         });
     });
 
-    /* ========== ШҮҮЛТҮҮР ХЭРЭГЛЭХ ТОВЧНЫ EVENT ========== */
+    /* Шүүлтүүр хэрэглэх товчны event */
     filterAction.addEventListener('click', function (e) {
         e.preventDefault();
         /* Фильтргүй үед анхааруулга */
@@ -154,7 +150,7 @@
         window.location.href = window.location.pathname + '?' + params.join('&');
     });
 
-    /* ========== DOM БЭЛЭН БОЛСНЫ ДАРАА АЖИЛЛАХ КОД ========== */
+    /* DOM бэлэн болсны дараа ажиллах код */
     document.addEventListener('DOMContentLoaded', function () {
         /* URL-д параметр байвал шүүлтүүрийн төлвийг сэргээх */
         if (urlParams?.size > 0) {
@@ -171,7 +167,7 @@
             onFilterChange();
         }
 
-        /* ========== БҮТЭЭГДЭХҮҮНИЙ ХҮСНЭГТИЙГ ЭХЛҮҮЛЭХ ========== */
+        /* Бүтээгдэхүүний хүснэгтийг эхлүүлэх */
         const products = new motable('table#products', { freezeColumns: [3] });
 
         /* Серверээс бүтээгдэхүүний жагсаалтыг татах */
@@ -187,7 +183,7 @@
                 throw new Error(data.message ?? 'Invalid response!');
             }
 
-            /* ========== ХҮСНЭГТИЙН МӨРҮҮДИЙГ ҮҮСГЭХ ========== */
+            /* Хүснэгтийн мөрүүдийг үүсгэх */
             let rowsHTML = '';
             const viewPattern = `{{ 'product-view'|pattern }}`;
             const updatePattern = `{{ 'product-update'|pattern }}`;
@@ -231,7 +227,7 @@
                     published += `<br/><small>${stars} <span class="text-muted">(${record.review_count})</span></small>`;
                 }
 
-                /* ========== ҮЙЛДЛИЙН ТОВЧНУУДЫГ ҮҮСГЭХ ========== */
+                /* Үйлдлийн товчнуудыг үүсгэх */
                 const buttons = [`<a class="btn btn-sm btn-info mt-1 shadow-sm" href="${viewPattern.replace('{id}', record.id)}"><i class="bi bi-eye"></i></a>`];  /* Харах товч */
 
                 /* Засах эрхтэй бол засах товч нэмэх */
@@ -248,7 +244,7 @@
                 rowsHTML += `<tr><th scope="row"><span class="text-secondary">${id} /</span> ${record['created_date']}</th><td>${flag} <span class="text-secondary fw-lighter">${record.code}</span> </td><td>${image}</td><td>${record.title}</td><td>${record.price || ''}</td><td>${data.files_counts[id]?.attach || ''}</td><td>${type_category}</td><td>${published}</td><td>${actions}</td></tr>`;
             });
 
-            // Жишиг дата байвал reset товч харуулах
+            /* Жишиг дата байвал reset товч харуулах */
             if (data.is_sample && canDelete) {
                 const resetDiv = document.createElement('div');
                 resetDiv.className = 'alert alert-warning d-flex align-items-center mt-3';
@@ -303,13 +299,13 @@
             /* Алдаа гарвал хүснэгтэд харуулах */
             products.error(err);
         }).finally(() => {
-            /* ========== AJAX MODAL ТОВЧНУУДАД EVENT НЭМЭХ ========== */
+            /* AJAX modal товчнуудад event нэмэх */
             const modals = products.table.querySelectorAll('.ajax-modal');
             modals.forEach(a => a.addEventListener('click', function () {
                 ajaxModal(a);
             }));
 
-            /* ========== БҮТЭЭГДЭХҮҮН УСТГАХ ТОВЧНУУДЫН EVENT ========== */
+            /* Бүтээгдэхүүн устгах товчнуудын event */
             const deletes = products.table.querySelectorAll('.delete-product');
             deletes.forEach(btn => btn.addEventListener('click', function (e) {
                 e.preventDefault();
@@ -338,7 +334,7 @@
                     question = `<i class="bi bi-question-circle text-danger mb-4" style="font-size:3rem"></i><p>${question}</p>`;
                 }
 
-                /* ========== SWEETALERT БАТАЛГААЖУУЛАХ ЦОНХ ========== */
+                /* Sweetalert баталгаажуулах цонх */
                 Swal.fire({
                     imageUrl: src,
                     imageHeight: 64,

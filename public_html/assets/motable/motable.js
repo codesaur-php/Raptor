@@ -1,6 +1,6 @@
 /**
  * motable
- * ------------------------------------------------------------------
+ * 
  * Энэ script нь ямар ч HTML <table>-ийг дэвшилтэт боломжтой болгож өгнө:
  *  Sticky header (толгой мөр гацдаг)
  *  Horizontal scroll илүү зөөлөн болгох
@@ -9,12 +9,12 @@
  *  Client-side sort (үсгийн болон тоон эрэмбэлэлт)
  *  Responsive scroll indicator + fade effect
  *  Монгол / Англи хэлний label-тэй
- *  lightweight ба external dependencyгүй.
+ *  lightweight ба external dependency-гүй.
  */
 
 /**
  * motable(<table>, options) - үндсэн Constructor функц
- * -------------------------
+ * 
  * - Хүснэгтийг динамикаар сайжруулж UI-г бүтээнэ
  * - Tools bar (info + search)
  * - Sticky header
@@ -95,7 +95,7 @@ function motable(
     this.options = options;
     this.wrapper = wrapper;
     
-    /* THEAD автоматаар үүсгэх хэсэг */
+    /* thead автоматаар үүсгэх хэсэг */
     if (!table.tHead && this.options.columns?.length) {
         const thead = document.createElement('thead');
         const tr = document.createElement('tr');

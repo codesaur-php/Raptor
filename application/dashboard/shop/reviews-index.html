@@ -41,7 +41,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const productViewPattern = `{{ 'product-view'|pattern }}`;
 
     {% if user.can('system_product_delete') %}
-    // Үнэлгээ устгах - мөрүүд динамикаар үүсдэг тул document дээр delegation ашиглана
+    /* Үнэлгээ устгах - мөрүүд динамикаар үүсдэг тул document дээр delegation ашиглана */
     document.addEventListener('click', function (e) {
         const btn = e.target.closest('.delete-review');
         if (!btn) return;
@@ -115,12 +115,12 @@ document.addEventListener('DOMContentLoaded', function () {
     }).catch(err => {
         table.setBody(`<tr><td colspan="6" class="text-center text-danger">${err.message}</td></tr>`);
     });
-    // Review email мэдэгдэл toggle (ON = email тохируулах, OFF = email хоослох)
+    /* Review email мэдэгдэл toggle (ON = email тохируулах, OFF = email хоослох) */
     const reviewEmailToggle = document.getElementById('reviewEmailToggle');
     if (reviewEmailToggle) {
         reviewEmailToggle.addEventListener('change', function () {
             if (reviewEmailToggle.checked) {
-                // ON -> email оруулах
+                /* ON -> email оруулах */
                 reviewEmailToggle.checked = false;
                 Swal.fire({
                     title: 'Email',
@@ -146,7 +146,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     }).catch(err => Notify('danger', `{{ 'error'|text|e('js') }}`, err.message));
                 });
             } else {
-                // OFF -> email хоослох
+                /* OFF -> email хоослох */
                 csrfFetch(`{{ 'settings-env'|link }}`, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },

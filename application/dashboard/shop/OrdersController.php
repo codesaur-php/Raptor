@@ -115,7 +115,7 @@ class OrdersController extends \Raptor\Controller
                 'list' => $orders
             ]);
         } catch (\Throwable $err) {
-            $this->respondJSON(['message' => $err->getMessage()], $err->getCode());
+            $this->respondJSON(['message' => $err->getMessage()], $err->getCode() ?: 500);
         }
     }
 
@@ -227,7 +227,7 @@ class OrdersController extends \Raptor\Controller
                 'message' => $this->text('record-update-success')
             ]);
         } catch (\Throwable $err) {
-            $this->respondJSON(['message' => $err->getMessage()], $err->getCode());
+            $this->respondJSON(['message' => $err->getMessage()], $err->getCode() ?: 500);
         } finally {
             $context = ['action' => 'update-status', 'record_id' => $id];
             if (isset($err) && $err instanceof \Throwable) {

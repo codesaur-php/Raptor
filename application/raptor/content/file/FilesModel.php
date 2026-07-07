@@ -75,15 +75,9 @@ use codesaur\DataObject\Column;
  * --------------------------------------------------------------
  * PDO injection
  * --------------------------------------------------------------
- *  PDO нь `public_html/index.php` entry point дээр нэг л удаа
- *  үүсэгдэж ServerRequest-ийн attribute хэлбэрээр Application
- *  руу дамждаг. Raptor\Controller нь PDOTrait ашигладаг тул:
- *      $this->pdo = $request->getAttribute('pdo')
- *  гэж controller дотор шууд гарч ирнэ.
- *
- *  FilesModel constructor нь энэ PDO-г:
- *      $this->setInstance($pdo)
- *  гэж авна.
+ *  FilesModel constructor нь PDO-г `$this->setInstance($pdo)` гэж авна.
+ *  PDO хаана үүсч controller хүртэл хэрхэн дамждагийн бүрэн тайлбарыг
+ *  эх сурвалж болох {@see \Raptor\Controller} класын PHPDoc-оос үзнэ үү.
  *
  * @package Raptor\Content
  */

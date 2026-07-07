@@ -4,7 +4,7 @@ namespace Tests\Unit\Template;
 
 use Tests\Support\RaptorTestCase;
 
-use Raptor\Template\BadgeController;
+use Dashboard\Badge\BadgeController;
 
 /**
  * BadgeController unit test.

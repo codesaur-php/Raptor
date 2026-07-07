@@ -49,6 +49,34 @@ class CacheService implements CacheInterface
     }
 
     /**
+     * Framework-ийн default runtime cache-ийг үүсгэх factory.
+     *
+     * Cache нь document root-оос гадуурх дээд түвшний `cache/` хавтаст
+     * (logs/-тэй ижил түвшин) байрлана. Үүсгэх боломжгүй бол (permission,
+     * disk г.м.) null буцаана - систем cache-гүйгээр хэвийн ажиллана.
+     *
+     * ContainerMiddleware-ийн 'cache' service болон JWTAuthMiddleware-ийн
+     * rbac cache хоёул энэ factory-г ашиглана: нэг хавтас, нэг fallback
+     * логик. (JWTAuthMiddleware нь ContainerMiddleware-ээс өмнө ажилладаг
+     * тул container-аас cache авч чаддаггүй - шууд энэ factory-г дуудна.)
+     *
+     * @param int $ttl Default TTL секундээр (default 12 цаг = 43200)
+     * @return self|null Үүсгэж чадвал instance, үгүй бол null
+     */
+    public static function fromDefaultPath(int $ttl = 43200): ?self
+    {
+        try {
+            $cacheDir = \dirname($_SERVER['SCRIPT_FILENAME'] ?? '', 2) . '/cache';
+            return new self($cacheDir, $ttl);
+        } catch (\Throwable $e) {
+            if (\defined('CODESAUR_DEVELOPMENT') && CODESAUR_DEVELOPMENT) {
+                \error_log('Cache service unavailable: ' . $e->getMessage());
+            }
+            return null;
+        }
+    }
+
+    /**
      * Cache-ээс утга авах.
      *
      * Файл байхгүй, unserialize амжилтгүй, эсвэл хугацаа дууссан бол

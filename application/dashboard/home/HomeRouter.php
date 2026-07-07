@@ -18,7 +18,15 @@ class HomeRouter extends Router
      */
     public function __construct()
     {
-        $this->GET('/', [HomeController::class, 'index'])->name('home');
+        // '/' (dashboard root) нь нэргүй хэвээр - public вэб дэх '{{ index }}/dashboard'
+        // CTA/footer линк болон шууд хандалт 404 болохоос сэргийлнэ.
+        $this->GET('/', [HomeController::class, 'index']);
+
+        // '/home' нь нэрлэгдсэн home route - 'home'|link үүнийг заана.
+        // dashboard.html дээрх sidebar-ийн active-detection нь href.startsWith(link)-ээр
+        // ажилладаг тул home link '/' байвал бүх дэд хуудсанд агуулагдаж байнга active болно.
+        // Тусдаа '/home' зам ашигласнаар зөвхөн home хуудсанд орсон үед л active болно.
+        $this->GET('/home', [HomeController::class, 'index'])->name('home');
         
         $this->GET('/search', [SearchController::class, 'search'])->name('dashboard-search');
 

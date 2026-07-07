@@ -32,7 +32,7 @@ trait SpamProtectionTrait
      * Spam HMAC token-д ашиглах нууц түлхүүрийг авах.
      *
      * .env-д RAPTOR_JWT_SECRET заавал тохируулсан байх ёстой - hardcoded default
-     * БАЙХГҮЙ. Default тавьбал public source-д ил нууц болж, token-ийг хэн ч
+     * байхгүй. Default тавьбал public source-д ил нууц болж, token-ийг хэн ч
      * хуурамчаар үүсгэж чадна (spam хамгаалалт чимээгүй идэвхгүй болно).
      *
      * @throws \RuntimeException secret тохируулаагүй бол (fail-loud)

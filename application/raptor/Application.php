@@ -3,6 +3,7 @@
 namespace Raptor;
 
 use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 
 /**
  * Class Application
@@ -51,7 +52,9 @@ use Psr\Http\Message\ResponseInterface;
  *   - MigrationRouter      -> Database migration upload / apply
  *   - TrashRouter          -> Хогийн сав (сэргээх / бүрэн устгах)
  *   - TemplateRouter       -> Dashboard UI-ийн template харгалзах маршрут
- *   - BadgeRouter          -> Sidebar badge систем (unseen activity counts)
+ *
+ * (Sidebar badge систем нь Dashboard\Badge\BadgeRouter болон
+ *  Dashboard\Application руу шилжсэн.)
  *
  * Энэхүү Application нь Dashboard талын бүх маршрут + middleware-г
  * нэг дор авч, Raptor-ийн бүрэн backend pipeline-г босгодог.
@@ -60,6 +63,20 @@ use Psr\Http\Message\ResponseInterface;
  */
 abstract class Application extends \codesaur\Http\Application\Application
 {
+    /**
+     * Dashboard layout override map.
+     *
+     * DashboardTrait-ийн дотооддоо ашигладаг layout template-үүдийг developer
+     * өөрийн файлаар солих боломж: 'dashboard.html' (мастер layout),
+     * 'alert-no-permission.html', 'modal-no-permission.html'.
+     * Түлхүүр нь файлын нэр, утга нь custom файлын бүрэн зам.
+     *
+     * Login гэх мэт өөрийн route-тэй хуудсыг энд биш - router override-оор
+     * ($this->override(...)) солино. Энэ map нь зөвхөн route-гүй,
+     * trait-ийн гүнд дуудагддаг layout файлуудад зориулагдсан.
+     */
+    private array $layouts = [];
+
     /**
      * Application constructor.
      *
@@ -122,6 +139,57 @@ abstract class Application extends \codesaur\Http\Application\Application
         $this->use(new Migration\MigrationRouter());
         $this->use(new Trash\TrashRouter());
         $this->use(new Template\TemplateRouter());
-        $this->use(new Template\BadgeRouter());
+    }
+
+    /**
+     * Dashboard layout template-ийг developer-ийн өөрийн файлаар солих.
+     *
+     * Router-ийн override()-той ижил философи: override нь bootstrap
+     * (Application constructor) уншихад ил харагдана. Рендер хийхдээ
+     * application/raptor/template/ доторх файлын оронд энд бүртгэсэн файлыг
+     * уншина - raptor-ийн файл диск дээрээ хэвээр үлдэнэ (бичигдэхгүй,
+     * хуулагдахгүй), өөрийн design-ээ app дотроосоо бүрэн оруулж ирнэ.
+     *
+     * Custom dashboard.html бичихдээ core хувилбарыг хуулж аваад засах нь
+     * зөв эхлэл - {{ content }}, sidemenu loop, csrf-token болон
+     * waf-body-encoding meta, dashboard.js/css зэрэг contract-ууд
+     * автоматаар хадгалагдана.
+     *
+     * Жишээ (application/oil/Application.php):
+     *   $this->overrideDashboardLayout('dashboard.html', __DIR__ . '/my-dashboard.html');
+     *
+     * @param string $filename   Layout файлын нэр: 'dashboard.html' |
+     *                           'alert-no-permission.html' | 'modal-no-permission.html'
+     * @param string $customFile Солих файлын бүрэн зам (байхгүй бол exception)
+     * @return static Fluent chain-д зориулж $this буцаана
+     *
+     * @throws \InvalidArgumentException Custom файл олдохгүй үед (fail-fast:
+     *         буруу зам deploy хийгдвэл анхны request дээр л шууд илэрнэ)
+     *
+     * @see \Raptor\Template\DashboardTrait::layout() Энэ map-ийг уншиж layout сонгодог тал
+     */
+    public function overrideDashboardLayout(string $filename, string $customFile): static
+    {
+        if (!\is_file($customFile)) {
+            throw new \InvalidArgumentException(
+                __METHOD__ . ": template file not found - $customFile"
+            );
+        }
+        $this->layouts[$filename] = $customFile;
+        return $this;
+    }
+
+    /**
+     * Dashboard layout override map-ийг request attribute болгон хавсаргана.
+     *
+     * Middleware биш - pdo-г index.php дээр attribute-аар өгдөгтэй ижил
+     * зарчмаар handle()-ийн үүдэнд нэг удаа inject хийнэ.
+     * {@see \Raptor\Template\DashboardTrait::layout()} үүнийг уншина.
+     */
+    public function handle(ServerRequestInterface $request): ResponseInterface
+    {
+        return parent::handle(
+            $request->withAttribute('dashboard_layouts', $this->layouts)
+        );
     }
 }

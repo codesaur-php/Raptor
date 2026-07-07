@@ -1,10 +1,8 @@
 /**
- * ================================================================
  * Raptor Dashboard - JavaScript Utilities
- * ================================================================
  *
  * Энэ файл нь Dashboard UI-ийн нийтлэг функцуудыг нэгтгэсэн сан юм.
- *  Доорх функцууд нь: *
+ *  Доорх функцууд нь:
  *  AJAX Modal Loader
  *  Sidebar link activation
  *  Sidebar badge system (initSidebarBadges)
@@ -15,20 +13,17 @@
  *
  * Raptor Dashboard бүхэн энэ файлыг залгаж ашиглана.
  *
- * Хөгжүүлэгч энэхүү файлыг өөрийн Dashboard-д дахин өргөтгөж 
+ * Хөгжүүлэгч энэхүү файлыг өөрийн Dashboard-д дахин өргөтгөж
  * өөрийн функцүүдийг ч нэмэх боломжтой.
  *
- * ---------------------------------------------------------------
  * Анхаарах зүйлс:
- * ---------------------------------------------------------------
  *  * Bootstrap modal механизм ашигладаг
- *  * <a data-bs-toggle="modal" data-bs-target="#static-modal"> 
+ *  * <a data-bs-toggle="modal" data-bs-target="#static-modal">
  *      гэсэн линкүүд дээр AJAX ачаалалт ажиллана
- *  * Inline болон external <script> tag-уудыг response дотороос 
+ *  * Inline болон external <script> tag-уудыг response дотороос
  *      автоматаар execution хийнэ
  *  * Notify() нь системийн бүх popup notification-ийг орлодог
  *  * Button-ууд дээр .spinNstop() ашиглахад илүү амар
- * ================================================================
  */
 
 /**
@@ -41,7 +36,7 @@ function getCsrfToken() {
 
 /**
  * wafBodyEncodingEnabled()
- * - <meta name="waf-body-encoding"> флагийг уншина (RAPTOR_WAF_BODY_ENCODING).
+ * - <meta name="waf-body-encoding"> флагийг уншина (raptor_waf_body_encoding).
  *   "1" бол body-г base64-аар кодолж WAF-ийн body-inspection-ийг тойрно. */
 function wafBodyEncodingEnabled() {
     const meta = document.querySelector('meta[name="waf-body-encoding"]');
@@ -50,8 +45,8 @@ function wafBodyEncodingEnabled() {
 
 /**
  * b64EncodeUnicode(str)
- * - UTF-8 (Монгол кирилл г.м.)-д аюулгүй base64 encode. btoa() нь Unicode-г
- *   шууд боловсруулдаггүй тул эхлээд UTF-8 байт болгоно. Том агуулгыг
+ * - utf-8 (Монгол кирилл г.м.)-д аюулгүй base64 encode. btoa() нь Unicode-г
+ *   шууд боловсруулдаггүй тул эхлээд utf-8 байт болгоно. Том агуулгыг
  *   chunk-аар боловсруулна (call stack overflow-оос сэргийлж). */
 function b64EncodeUnicode(str) {
     const bytes = new TextEncoder().encode(str);
@@ -66,7 +61,7 @@ function b64EncodeUnicode(str) {
 /**
  * csrfFetch(url, options)
  * - fetch() wrapper, CSRF token header автоматаар нэмнэ
- * - PUT/PATCH/DELETE-г POST болгож, жинхэнэ method-ийг X-HTTP-Method-Override
+ * - PUT/PATCH/DELETE-г post болгож, жинхэнэ method-ийг X-HTTP-Method-Override
  *   header-аар дамжуулна. Зарим shared hosting (cPanel/LiteSpeed/mod_security)
  *   эдгээр verb-ийг server түвшинд 403-аар блоклодог; server тал дахь
  *   MethodOverrideMiddleware override header-аас method-ийг сэргээнэ.
@@ -80,7 +75,7 @@ function csrfFetch(url, options = {}) {
         options.headers = {};
     }
 
-    // Verb tunneling: PUT/PATCH/DELETE -> POST + override header
+    // Verb tunneling: put/patch/delete -> post + override header
     let overrideMethod = null;
     const method = (options.method || 'GET').toUpperCase();
     if (method === 'PUT' || method === 'PATCH' || method === 'DELETE') {
@@ -125,7 +120,7 @@ function csrfFetch(url, options = {}) {
     return fetch(url, options);
 }
 
-/* DARK MODE ИДЭВХЖҮҮЛЭХ */
+/* dark mode идэвхжүүлэх */
 if (localStorage.getItem('data-bs-theme') === 'dark') {
     document.body.setAttribute('data-bs-theme', 'dark');
 }
@@ -135,7 +130,7 @@ if (localStorage.getItem('data-bs-theme') === 'dark') {
  * - Modal-ийн агуулгыг AJAX-аар ачаалж харуулна
  *
  * @description
- *  data-bs-target="#static-modal" гэсэн modal руу HTML response 
+ *  data-bs-target="#static-modal" гэсэн modal руу HTML response
  *  ачаалж, скриптуудыг сэргээж ажиллуулдаг ухаалаг loader.
  *
  * @param {HTMLElement} link - modal нээж буй <a> эсвэл <button>
@@ -166,18 +161,27 @@ function ajaxModal(link)
             const responseDoc = parser.parseFromString(this.responseText, 'text/html');
             responseDoc.querySelectorAll('script').forEach(function (script) {
                 if (script.src) {
-                    /* External JS дахин залгах */
-                    const newScript = document.createElement('script');
-                    newScript.src = script.src;
-                    document.body.appendChild(newScript);
+                    /* External JS - өмнө нь залгагдаагүй бол шинээр залгана
+                     * (modal дахин нээгдэх бүрт давхар ачаалахаас сэргийлнэ) */
+                    const loaded = Array.from(document.scripts).some(s => s.src === script.src);
+                    if (!loaded) {
+                        const newScript = document.createElement('script');
+                        newScript.src = script.src;
+                        document.body.appendChild(newScript);
+                    }
                 } else if (script.innerHTML.trim() !== '') {
+                    /* Inline JS-ийг IIFE-ээр орооод тусдаа scope-д ажиллуулна -
+                     * modal-ыг дахин нээхэд top-level const/let давхар зарлагдаж
+                     * "Identifier has already been declared" SyntaxError үүсэхээс
+                     * сэргийлнэ. Ажилласны дараа script node-ийг DOM-оос цэвэрлэнэ. */
                     const newInlineScript = document.createElement('script');
-                    newInlineScript.textContent = script.innerHTML;
+                    newInlineScript.textContent = '(function () {\n' + script.innerHTML + '\n})();';
                     document.body.appendChild(newInlineScript);
+                    newInlineScript.remove();
                 }
             });
 
-            /* RESPONSE ERROR HANDLER */
+            /* response error handler */
             if (this.status !== 200) {
                 const isModal = responseDoc.querySelector('div.modal-dialog');
                 if (!isModal) {
@@ -206,7 +210,6 @@ function ajaxModal(link)
 /**
  * activateLink(href)
  * - Sidebar-ийн идэвхтэй линк тодруулах
- * 
  * @param {string} href - Document link */
 function activateLink(href)
 {
@@ -279,7 +282,7 @@ function Notify(type, title, content, _velocity = 5, delay = 2500)
 
 /**
  * Button Spinner - spinNstop(), growNstop()
- * 
+ *
  * @description
  *  Button дээр loader spinner тавиад, disable болгох.
  *  Ajax дуусаад буцааж сэргээхэд ашиглана.
@@ -379,76 +382,53 @@ function initScrollToTop(options = {}) {
 }
 
 /**
- * Topbar Search - Live хайлт
+ * initGlobalSearch(config)
+ * - Ctrl+K (Mac дээр Cmd+K) глобал хайлтын modal.
+ *   Topbar-ийн хайх товч (#global-search-trigger) эсвэл Ctrl+K -> modal нээгдэнэ.
+ *
+ * config:
+ *   searchUrl - хайлтын GET endpoint (жишээ: /dashboard/search)
+ *   patterns  - {source: '/dashboard/news/view/{id}', ...} route pattern map
+ *               (dashboard.html-ээс |pattern filter-ээр дамжина, hardcode-гүй)
+ *
+ * Route бүртгэгдээгүй app: |link / |pattern filter нь олдоогүй route-д '#'
+ * буцаадаг. searchUrl === '#' бол хайлтын route устгагдсан гэсэн үг тул
+ * icon-ийг нуугаад юу ч хийхгүй буцна (хоосон хайлт, илүүдэл self-fetch
+ * гарахгүй). Pattern нь '#' source-ийн үр дүн жагсаалтаас нуугдана - модуль
+ * нь app-д байхгүй тул хоосон линк рүү хөтлөхгүй.
  */
-function initTopbarSearch(searchUrl, viewPatterns) {
-    const input = document.getElementById('topbar-search-q');
-    const resultsDiv = document.getElementById('topbar-search-results');
-    if (!input || !resultsDiv || !searchUrl) return;
+function initGlobalSearch(config) {
+    const modalEl = document.getElementById('global-search');
+    const trigger = document.getElementById('global-search-trigger');
+    const input = document.getElementById('global-search-input');
+    const resultsDiv = document.getElementById('global-search-results');
+    if (!modalEl || !input || !resultsDiv || !config) return;
+
+    if (!config.searchUrl || config.searchUrl === '#') {
+        if (trigger) trigger.remove();
+        return;
+    }
+
+    const modal = new bootstrap.Modal(modalEl);
+
+    /* modal: true -> tuhain modul' zuvhun modal fragment-eer view hiideg tul
+       ur dun deer darahad shuud shiljihgui, static-modal dotor achaalna. */
+    const SOURCE_META = {
+        news:            { icon: 'bi-newspaper',     badge: 'bg-info',      label: 'News' },
+        pages:           { icon: 'bi-file-earmark',   badge: 'bg-success',   label: 'Pages' },
+        products:        { icon: 'bi-box-seam',       badge: 'bg-warning',   label: 'Products' },
+        orders:          { icon: 'bi-cart-check',     badge: 'bg-secondary', label: 'Orders' },
+        users:           { icon: 'bi-person',         badge: 'bg-primary',   label: 'Users' },
+        organizations:   { icon: 'bi-building',       badge: 'bg-dark',      label: 'Organizations', modal: true },
+        'dev-requests':  { icon: 'bi-code-square',    badge: 'bg-danger',    label: 'Dev' },
+        messages:        { icon: 'bi-envelope',       badge: 'bg-info',      label: 'Messages', modal: true },
+        comments:        { icon: 'bi-chat-left-text', badge: 'bg-success',   label: 'Comments' },
+        reviews:         { icon: 'bi-star',           badge: 'bg-warning',   label: 'Reviews' }
+    };
 
     let timer = null;
     let xhr = null;
-
-    /* URL-ийг hardcode хийхгүй - viewPatterns map нь dashboard.html-ээс
-       route pattern filter-ээр дамжина (жишээ news: '/dashboard/news/view/{id}').
-       Энд зөвхөн icon/badge/label-ийг тодорхойлно. */
-    const SOURCE_META = {
-        news:     { icon: 'bi-newspaper',      badge: 'bg-info',      label: 'News' },
-        pages:    { icon: 'bi-file-earmark',    badge: 'bg-success',   label: 'Pages' },
-        products: { icon: 'bi-box-seam',        badge: 'bg-warning',   label: 'Products' },
-        orders:   { icon: 'bi-cart-check',      badge: 'bg-secondary', label: 'Orders' },
-        users:    { icon: 'bi-person',          badge: 'bg-primary',   label: 'Users' }
-    };
-
-    function doSearch(q) {
-        if (xhr) xhr.abort();
-        if (q.length < 2) {
-            resultsDiv.classList.remove('show');
-            return;
-        }
-
-        resultsDiv.innerHTML = '<div class="search-loading"><span class="spinner-border spinner-border-sm"></span></div>';
-        resultsDiv.classList.add('show');
-
-        xhr = new XMLHttpRequest();
-        xhr.open('GET', searchUrl + '?q=' + encodeURIComponent(q), true);
-        xhr.onreadystatechange = function () {
-            if (this.readyState !== XMLHttpRequest.DONE) return;
-            try {
-                const data = JSON.parse(this.responseText);
-                if (!data.results || data.results.length === 0) {
-                    resultsDiv.innerHTML = '<div class="search-empty"><i class="bi bi-search"></i> No results</div>';
-                    resultsDiv.classList.add('show');
-                    return;
-                }
-
-                let html = '';
-                data.results.forEach(function (item) {
-                    const meta = SOURCE_META[item.source] || { icon: 'bi-file', badge: 'bg-dark', label: item.source };
-                    const pattern = (viewPatterns && viewPatterns[item.source]) || '';
-                    let href = pattern ? pattern.replace('{id}', item.id) : '#';
-
-                    let subtitle = '';
-                    if (item.source === 'users' && item.email) subtitle = item.email;
-                    else if (item.source === 'orders' && item.customer_name) subtitle = item.customer_name;
-                    else if (item.code) subtitle = item.code.toUpperCase();
-
-                    html += '<a class="search-item" href="' + href + '">' +
-                        '<span class="search-icon"><i class="bi ' + meta.icon + '"></i></span>' +
-                        '<span class="search-title">' + escapeHtml(item.title || '') +
-                            (subtitle ? ' <small class="text-muted">(' + escapeHtml(subtitle) + ')</small>' : '') +
-                        '</span>' +
-                        '<span class="badge ' + meta.badge + ' search-badge">' + meta.label + '</span>' +
-                        '</a>';
-                });
-                resultsDiv.innerHTML = html;
-                resultsDiv.classList.add('show');
-            } catch (e) {
-                resultsDiv.classList.remove('show');
-            }
-        };
-        xhr.send();
-    }
+    let active = -1; /* keyboard navigatsiin idevhtei muriin index */
 
     function escapeHtml(str) {
         const div = document.createElement('div');
@@ -456,32 +436,154 @@ function initTopbarSearch(searchUrl, viewPatterns) {
         return div.innerHTML;
     }
 
+    /* Render */
+
+    function render(q, searchHtml) {
+        let html = searchHtml;
+        if (!html) {
+            html = q.length < 2
+                ? ''
+                : '<div class="search-empty"><i class="bi bi-search"></i> No results</div>';
+        }
+        resultsDiv.innerHTML = html;
+        active = -1;
+
+        /* Modal source-ууд: хайлтын modal-ыг бүрэн хаагаад (scroll-lock
+           цэвэрлээд) дараа нь static-modal-ыг нээж view fragment-ийг ачаална.
+           Хоёр modal-ыг зэрэг нээвэл/хаавал background scroll-lock алдагддаг
+           тул hidden.bs.modal (once)-оор дараалуулна. */
+        resultsDiv.querySelectorAll('a[data-bs-target="#static-modal"]').forEach(function (a) {
+            a.addEventListener('click', function (e) {
+                e.preventDefault();
+                modalEl.addEventListener('hidden.bs.modal', function () {
+                    const staticEl = document.getElementById('static-modal');
+                    if (staticEl) {
+                        bootstrap.Modal.getOrCreateInstance(staticEl).show();
+                        ajaxModal(a);
+                    }
+                }, { once: true });
+                modal.hide();
+            });
+        });
+    }
+
+    function searchResultsHtml(results) {
+        let html = '';
+        results.forEach(function (item) {
+            const meta = SOURCE_META[item.source] || { icon: 'bi-file', badge: 'bg-dark', label: item.source };
+            const pattern = (config.patterns && config.patterns[item.source]) || '';
+            /* Route бүртгэгдээгүй модуль (|pattern -> '#') эсвэл pattern
+               заагдаагүй source: хоосон линк рүү хөтөлдөг үр дүнг харуулахгүй */
+            if (!pattern || pattern === '#') return;
+            const href = pattern.replace('{id}', item.id);
+
+            let subtitle = '';
+            if (item.email) subtitle = item.email;
+            else if (item.customer_name) subtitle = item.customer_name;
+            else if (item.status) subtitle = item.status;
+            else if (item.code) subtitle = item.code.toUpperCase();
+
+            /* modal source -> static-modal дотор ачаална (шууд шилжихгүй).
+               data-bs-toggle="modal"-ыг зориудаар тавихгүй: хайлтын modal
+               нээлттэй байхад Bootstrap-ийн data-api static-modal-ыг зэрэг
+               нээвэл scroll-lock мөргөлдөнө. Үүний оронд click handler хайлтын
+               modal-ыг хаагаад дараа нь static-modal-ыг гараар нээнэ. data-bs-target нь
+               ajaxModal-д аль modal руу ачаалахыг заана. */
+            const modalAttrs = meta.modal
+                ? ' data-bs-target="#static-modal"'
+                : '';
+
+            html += '<a class="global-search-item" href="' + href + '"' + modalAttrs + '>' +
+                '<span class="search-icon"><i class="bi ' + meta.icon + '"></i></span>' +
+                '<span class="search-title">' + escapeHtml(item.title || '') +
+                    (subtitle ? ' <small class="text-muted">(' + escapeHtml(subtitle) + ')</small>' : '') +
+                '</span>' +
+                '<span class="badge ' + meta.badge + ' search-badge ms-auto">' + meta.label + '</span>' +
+                '</a>';
+        });
+        return html;
+    }
+
+    function doSearch(q) {
+        if (xhr) xhr.abort();
+        if (q.length < 2 || !config.searchUrl) {
+            render(q, '');
+            return;
+        }
+
+        render(q, '<div class="search-loading"><span class="spinner-border spinner-border-sm"></span></div>');
+
+        xhr = new XMLHttpRequest();
+        xhr.open('GET', config.searchUrl + '?q=' + encodeURIComponent(q), true);
+        xhr.onreadystatechange = function () {
+            if (this.readyState !== XMLHttpRequest.DONE) return;
+            try {
+                const data = JSON.parse(this.responseText);
+                render(q, searchResultsHtml(data.results || []));
+            } catch (e) {
+                render(q, '');
+            }
+        };
+        xhr.send();
+    }
+
+    /* Keyboard navigation */
+
+    function moveActive(step) {
+        const items = resultsDiv.querySelectorAll('.global-search-item');
+        if (!items.length) return;
+        if (active >= 0) items[active].classList.remove('active');
+        active = (active + step + items.length) % items.length;
+        items[active].classList.add('active');
+        items[active].scrollIntoView({ block: 'nearest' });
+    }
+
+    input.addEventListener('keydown', function (e) {
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            moveActive(1);
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            moveActive(-1);
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            const items = resultsDiv.querySelectorAll('.global-search-item');
+            const target = items[active >= 0 ? active : 0];
+            if (target) target.click();
+        }
+    });
+
     input.addEventListener('input', function () {
         clearTimeout(timer);
         timer = setTimeout(function () {
             doSearch(input.value.trim());
-        }, 300);
+        }, 250);
     });
 
-    // Close dropdown when clicking outside
-    document.addEventListener('mousedown', function (e) {
-        if (!e.target.closest('.topbar-search')) {
-            resultsDiv.classList.remove('show');
-            if (!input.value) {
-                input.closest('.topbar-search')?.classList.remove('open');
-            }
+    /* Open / close */
+
+    trigger?.addEventListener('click', function () {
+        modal.show();
+    });
+
+    document.addEventListener('keydown', function (e) {
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+            e.preventDefault();
+            modal.show();
         }
     });
 
-    // Close on Escape
-    input.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape') {
-            resultsDiv.classList.remove('show');
-            input.value = '';
-            input.closest('.topbar-search')?.classList.remove('open');
-            input.blur();
-        }
+    modalEl.addEventListener('shown.bs.modal', function () {
+        input.focus();
     });
+
+    modalEl.addEventListener('hidden.bs.modal', function () {
+        input.value = '';
+        render('', '');
+    });
+
+    /* Ehnii tuluv - buh commands haragdana */
+    render('', '');
 }
 
 /**
@@ -490,10 +592,10 @@ function initTopbarSearch(searchUrl, viewPatterns) {
  *   Серверээс badge өгөгдлийг fetch-ээр авч, sidebar цэсийн холбоос бүрд
  *   таарах module-ийн badge-уудыг өнгөт pill хэлбэрээр нэмнэ.
  *
- * @param {string} badgesUrl  GET хүсэлтийн URL (жишээ: /dashboard/badges).
+ * @param {string} badgesUrl  get хүсэлтийн URL (жишээ: /dashboard/badges).
  *                            seenUrl-ийг badgesUrl + '/seen' гэж автоматаар гаргана.
  *
- * COLOR_MAP - badge өнгийг Bootstrap class руу хөрвүүлэх:
+ * color_map - badge өнгийг Bootstrap class руу хөрвүүлэх:
  *   green -> bg-success, blue -> bg-primary, red -> bg-danger.
  *   Тодорхойгүй өнгө -> bg-secondary (fallback).
  *
@@ -503,18 +605,22 @@ function initTopbarSearch(searchUrl, viewPatterns) {
  *
  * Click handler:
  *   Хэрэглэгч badge-тэй холбоос дээр дарахад эхний badge-ийг DOM-оос
- *   устгаж, seenUrl руу POST хүсэлт илгээн серверт "харсан" гэдгийг мэдэгдэнэ.
+ *   устгаж, seenUrl руу post хүсэлт илгээн серверт "харсан" гэдгийг мэдэгдэнэ.
  *
  * Алдааны удирдлага:
- *   fetch болон seen POST хүсэлтийн алдааг чимээгүй (silent) алгасна --
+ *   fetch болон seen post хүсэлтийн алдааг чимээгүй (silent) алгасна --
  *   badge ачаалагдахгүй байсан ч хэрэглэгчийн ажиллагаанд нөлөөлөхгүй.
+ *
+ * Route бүртгэгдээгүй app: |link filter нь олдоогүй route-д '#' буцаадаг.
+ * badgesUrl === '#' бол badge route устгагдсан гэсэн үг тул юу ч хийхгүй
+ * буцна (эс бөгөөс fetch('#') нь одоогийн хуудсыг өөрийг нь дахин татна).
  */
 function initSidebarBadges(badgesUrl) {
-    if (!badgesUrl) return;
+    if (!badgesUrl || badgesUrl === '#') return;
 
     const seenUrl = badgesUrl + '/seen';
     const COLOR_MAP = { green: 'bg-success', blue: 'bg-primary', red: 'bg-danger', info: 'bg-info' };
-    
+
     fetch(badgesUrl)
         .then(r => r.json())
         .then(data => {
@@ -583,11 +689,141 @@ document.addEventListener('DOMContentLoaded', function () {
             e.preventDefault();
             ajaxModal(link);
         }));
-        
+
     initScrollToTop();
     initLoggerProtocol();
     initInvalidTabFocus();
+    initOrgSwitcher();
+    initTopbarQuick();
+    initLogoutConfirm();
 });
+
+/**
+ * initLogoutConfirm()
+ * - Topbar-ийн logout товчны баталгаажуулалт.
+ *
+ * Logout нь GET линк тул санамсаргүй click-ээс хамгаалж заавал асууна.
+ * Эхлээд Bootstrap modal (#logout-confirm-modal) харуулахыг оролдоно -
+ * dashboard-тай адил загвар, dark mode нийцэлтэй. Bootstrap CDN-ээс
+ * ачаалагдаагүй (offline, CDN унасан) тохиолдолд native confirm()
+ * fallback ашиглана - browser-ийн өөрийн dialog тул хэзээ ч ажиллана.
+ * Аль ч замаар баталгаажвал data-logout-url руу шилжинэ.
+ */
+function initLogoutConfirm() {
+    const btn = document.getElementById('topbar-logout');
+    if (!btn) return;
+
+    btn.addEventListener('click', function () {
+        try {
+            const modalEl = document.getElementById('logout-confirm-modal');
+            if (modalEl && window.bootstrap && bootstrap.Modal) {
+                bootstrap.Modal.getOrCreateInstance(modalEl).show();
+                return;
+            }
+        } catch (err) {
+            /* Bootstrap ачаалагдсан ч modal алдаа өгвөл confirm-руу унана */
+        }
+        if (window.confirm(btn.dataset.confirm || btn.title)) {
+            window.location.href = btn.dataset.logoutUrl;
+        }
+    });
+}
+
+/**
+ * initTopbarQuick()
+ * - Topbar-ийн language / theme dropdown-уудын үйлдэл.
+ *
+ * Language: data-language-url attribute-тай dropdown item click хийхэд
+ *   тэр GET endpoint-ийг fetch хийнэ (session-д хэлний сонголт хадгалагдана),
+ *   дараа нь хуудсыг reload хийнэ.
+ *
+ * Theme: data-theme="light|dark" товч click хийхэд localStorage +
+ *   <body data-bs-theme> attribute-ийг шууд солино (reload шаардахгүй).
+ *   Идэвхтэй сонголт нь dropdown дээр active класстай харагдана.
+ */
+function initTopbarQuick() {
+    /* Language switch */
+    document.querySelectorAll('[data-language-url]').forEach(function (item) {
+        item.addEventListener('click', function (e) {
+            e.preventDefault();
+            if (item.classList.contains('active')) return;
+            fetch(item.dataset.languageUrl).finally(function () {
+                window.location.reload();
+            });
+        });
+    });
+
+    /* Theme switch */
+    const themeButtons = document.querySelectorAll('[data-theme]');
+    if (!themeButtons.length) return;
+
+    function markTheme(value) {
+        themeButtons.forEach(function (btn) {
+            btn.classList.toggle('active', btn.dataset.theme === value);
+        });
+    }
+
+    markTheme(localStorage.getItem('data-bs-theme') === 'dark' ? 'dark' : 'light');
+
+    themeButtons.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            const value = btn.dataset.theme;
+            localStorage.setItem('data-bs-theme', value);
+            if (value === 'dark') {
+                document.body.setAttribute('data-bs-theme', 'dark');
+            } else {
+                document.body.removeAttribute('data-bs-theme');
+            }
+            markTheme(value);
+        });
+    });
+}
+
+/**
+ * initOrgSwitcher()
+ * - Topbar дахь байгууллага сонгох dropdown-ийн хайлтын шүүлтүүр.
+ *
+ * Олон байгууллагатай (жишээ system_coder -> 450) үед жагсаалт хэт уртсахаар
+ * тул хайлтын input-аар нэрээ шүүж, олдсон тоог шинэчилнэ. Жагсаалт нь
+ * CSS-ээр scroll-той (.topbar-org-list) тул viewport-д багтана. */
+function initOrgSwitcher() {
+    const menu = document.getElementById('topbar-org-switcher');
+    if (!menu) return;
+
+    const input = menu.querySelector('.topbar-org-search');
+    const items = Array.from(menu.querySelectorAll('.topbar-org-item'));
+    const shown = menu.querySelector('.topbar-org-shown');
+    const empty = menu.querySelector('.topbar-org-empty');
+    if (!input) return;
+
+    input.addEventListener('input', function () {
+        const q = input.value.trim().toLowerCase();
+        let count = 0;
+        items.forEach(function (item) {
+            const name = (item.dataset.orgName || '').toLowerCase();
+            const match = q === '' || name.includes(q);
+            /* Item deer Bootstrap d-flex (display:flex !important) baigaa tul
+             * energiin inline none-iig important-oor tavihgui bol darahgui. */
+            if (match) {
+                item.style.removeProperty('display');
+            } else {
+                item.style.setProperty('display', 'none', 'important');
+            }
+            if (match) count++;
+        });
+        if (shown) shown.textContent = count;
+        if (empty) empty.style.display = count === 0 ? '' : 'none';
+    });
+
+    /* Dropdown neegdeh burt search-iig цэвэрлэж, идэвхтэй мөр рүү scroll хийнэ. */
+    menu.closest('.dropdown')?.addEventListener('shown.bs.dropdown', function () {
+        input.value = '';
+        input.dispatchEvent(new Event('input'));
+        input.focus();
+        const active = menu.querySelector('.topbar-org-item.active');
+        if (active) active.scrollIntoView({ block: 'nearest' });
+    });
+}
 
 /**
  * initInvalidTabFocus()

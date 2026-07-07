@@ -56,31 +56,12 @@ class NewsModel extends Model
      *
      * **PDO Injection тухай тэмдэглэл**
      * --------------------------------------------------------------
-     * Raptor Framework нь PDO instance-ийг дараах дарааллаар inject хийдэг:
+     * `$pdo` нь entry point дээр нэг л удаа үүсгэгдсэн баталгаатай холболт -
+     * Model анги зөвхөн өгөгдөлтэй ажиллахад анхаарна. PDO хаана үүсч хэрхэн
+     * дамждагийн бүрэн тайлбарыг эх сурвалж болох {@see \Raptor\Controller}
+     * класын PHPDoc-оос үзнэ үү.
      *
-     *   1) public_html/index.php (entry point)
-     *      -> \Raptor\DatabaseConnection::connect() дуудаж PDO үүсгэнэ
-     *      -> $request = $request->withAttribute('pdo', $pdo) хэлбэрээр хадгална
-     *
-     *   2) Controller constructor
-     *      -> ServerRequest-аас PDO-г авч $this->pdo хувьсагчид онооно
-     *      -> $this->pdo = $request->getAttribute('pdo')
-     *
-     *   3) Model constructor (энэ функц)
-     *      -> Controller-ийн байгуулагчаар дамжуулан PDO instance ирнэ
-     *      -> new NewsModel($this->pdo) хэлбэрээр дуудагдана
-     *
-     * Иймээс энэхүү `$pdo` нь *entry point дээр үүсгэгдсэн баталгаатай
-     * холболт* бөгөөд Model анги зөвхөн өгөгдөлтэй ажиллахад анхаарна.
-     *
-     * Web ба Dashboard аппликейшнүүд нэг л PDO instance ашиглана
-     * Нэг request дотор нэг л PDO instance ажиллана
-     * Driver сонголт .env-ийн RAPTOR_DB_DRIVER хувьсагчаар удирдагдана
-     *
-     * @param \PDO $pdo Database connection instance.
-     *                  `public_html/index.php` entry point дээр үүсэгдэж
-     *                  ServerRequestInterface-ийн `pdo` attribute-аар Application
-     *                  руу дамждаг бөгөөд Controller-ийн байгуулагчаар цааш ирнэ.
+     * @param \PDO $pdo Database connection instance
      */
     public function __construct(\PDO $pdo)
     {

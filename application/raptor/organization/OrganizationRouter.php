@@ -108,16 +108,5 @@ class OrganizationRouter extends Router
          * --------------------------------------------------------------
          */
         $this->DELETE('/organizations/delete', [OrganizationController::class, 'delete'])->name('organization-delete')->middleware([CsrfMiddleware::class]);
-
-        /**
-         * --------------------------------------------------------------
-         * Хэрэглэгчийн бүртгэлтэй байгууллага жагсаалт
-         * --------------------------------------------------------------
-         * URL:      /dashboard/organization/user/list
-         * Method:   GET
-         * Action:   OrganizationUserController::index()
-         * Name:     organization-user
-         */
-        $this->GET('/organization/user/list', [OrganizationUserController::class, 'index'])->name('organization-user');
     }
 }

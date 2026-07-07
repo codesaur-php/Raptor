@@ -38,8 +38,10 @@ document.addEventListener('DOMContentLoaded', function () {
      *  - байгууллагын дугаар баганыг наалттай болгох */
     const organizations = new motable('table#organizations', {freezeColumns: [0]});
 
-    /* Байгууллагын жагсаалтыг серверээс авах (GET /dashboard/organizations/list ) */
-    csrfFetch(`{{ 'organizations-list'|link }}`)
+    /* Байгууллагын жагсаалтыг серверээс авах (GET /dashboard/organizations/list ).
+     * Функц хэлбэрээр тодорхойлсон - deactivate амжилттай болсны дараа дахин
+     * дуудагдаж, идэвхгүй болсон мөрийг (badge + бүрэн устгах товч) шууд харуулна */
+    const loadOrganizations = () => csrfFetch(`{{ 'organizations-list'|link }}`)
         .then(res => {
             const contentType = res.headers.get('content-type') || '';
             if (contentType.includes('application/json')) return res.json();
@@ -56,6 +58,10 @@ document.addEventListener('DOMContentLoaded', function () {
             const rbacLink   = `{{ user.can('system_rbac') ? 'rbac-alias'|link : '' }}`;
             const canUpdate  = `{{ user.can('system_organization_update') ? 'true' : '' }}`;
             const canDelete  = `{{ user.can('system_organization_delete') ? 'true' : '' }}`;
+
+            /* Монгол/Англи хэл дээр идэвхгүй болгосон label */
+            const deactivated_title =
+                document.documentElement.lang === 'mn' ? 'идэвхгүй' : 'deactivated';
 
             /* Серверээс ирсэн жагсаалтыг HTML болгох */
             let rowsHTML = '';
@@ -87,37 +93,41 @@ document.addEventListener('DOMContentLoaded', function () {
                     : `<a href="${rbacLink}?alias=${org.alias}&title=${encodeURIComponent(org.name)}">${org.alias}</a>`;
 
                 /* Action товчнууд */
-                let buttons = [
-                    /* Дэлгэрэнгүй харах modal */
-                    `<a class="org-modal btn btn-sm btn-info mt-1 shadow-sm"
-                        data-bs-target="#static-modal"
-                        data-bs-toggle="modal"
-                        href="${viewPattern.replace('{id}', org.id)}">
-                        <i class="bi bi-eye"></i>
-                    </a>`
-                ];
+                let buttons = [];
 
-                /* Засах эрхтэй бол */
-                if (canUpdate) {
-                    buttons.push(`
-                        <a class="org-modal btn btn-sm btn-primary mt-1 shadow-sm"
-                           data-bs-target="#static-modal"
-                           data-bs-toggle="modal"
-                           href="${updatePattern.replace('{id}', org.id)}">
-                            <i class="bi bi-pencil-square"></i>
-                        </a>`);
-                }
-
-                /* Устгах эрхтэй бол */
-                if (canDelete) {
-                    if (org.is_active == 0) {
+                if (org.is_active == 0) {
+                    /* Идэвхгүй болсон байгууллага - зөвхөн бүрэн устгаж Trash руу
+                     * оруулах товч. View/Update modal нь is_active=1 шаарддаг тул
+                     * идэвхгүй мөр дээр эдгээрийг харуулахгүй. */
+                    if (canDelete) {
                         buttons.push(`
                             <button class="delete-organization btn btn-sm btn-danger mt-1 shadow-sm"
                                     type="button"
                                     value="${org.id}">
                                 <i class="bi bi-fire"></i>
                             </button>`);
-                    } else {
+                    }
+                } else {
+                    /* Идэвхтэй байгууллага - дэлгэрэнгүй / засах / идэвхгүй болгох */
+                    buttons.push(`
+                        <a class="org-modal btn btn-sm btn-info mt-1 shadow-sm"
+                            data-bs-target="#static-modal"
+                            data-bs-toggle="modal"
+                            href="${viewPattern.replace('{id}', org.id)}">
+                            <i class="bi bi-eye"></i>
+                        </a>`);
+
+                    if (canUpdate) {
+                        buttons.push(`
+                            <a class="org-modal btn btn-sm btn-primary mt-1 shadow-sm"
+                               data-bs-target="#static-modal"
+                               data-bs-toggle="modal"
+                               href="${updatePattern.replace('{id}', org.id)}">
+                                <i class="bi bi-pencil-square"></i>
+                            </a>`);
+                    }
+
+                    if (canDelete) {
                         buttons.push(`
                             <button class="deactivate-organization btn btn-sm btn-danger mt-1 shadow-sm"
                                     type="button"
@@ -129,12 +139,18 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 const actions = `<div class="mb-1">${buttons.join(' ')}</div>`;
 
+                /* Байгууллагын нэр + идэвхгүй бол badge */
+                let nameInfo = org.name;
+                if (org.is_active == 0) {
+                    nameInfo += `<span class="badge bg-danger ms-2">${deactivated_title}</span>`;
+                }
+
                 /* Хүснэгтийн мөрийг нэмэх */
                 rowsHTML += `
                     <tr>
                         <th scope="row">${org.id}</th>
                         <td>${logo}</td>
-                        <td>${org.name}</td>
+                        <td>${nameInfo}</td>
                         <td>${aliasLink}</td>
                         <td>${actions}</td>
                     </tr>`;
@@ -241,9 +257,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
                                 Swal.close();
                                 
-                                /* Мөрийг хүснэгтээс устгах */
-                                thisRow.remove();
-                                organizations.setReady();
+                                /* Жагсаалтыг дахин ачаална - мөр алга болохгүй, идэвхгүй
+                                 * төлөвтэй (badge + бүрэн устгах товч) болж шинэчлэгдэнэ */
+                                loadOrganizations();
 
                                 Notify(
                                     'success',
@@ -266,13 +282,13 @@ document.addEventListener('DOMContentLoaded', function () {
                     <p class="text-danger mb-3">
                         <strong>АНХААРУУЛГА!</strong> Та (${name}) байгууллагыг бүрэн устгахдаа итгэлтэй байна уу?
                     </p>
-                    <p class="text-muted">Энэ үйлдлийг буцаах боломжгүй. Шалтгаан бичнэ үү</p>`;
+                    <p class="text-muted">Устгасан байгууллага Хогийн сав (Trash) руу орох бөгөөд шаардлагатай бол дараа нь сэргээх боломжтой. Шалтгаан бичнэ үү</p>`;
             } else {
                 questionHardDelete = name => `
                     <p class="text-danger mb-3">
                         <strong>WARNING!</strong> Are you sure to permanently delete this organization (${name})?
                     </p>
-                    <p class="text-muted">This action cannot be undone. Please provide a reason</p>`;
+                    <p class="text-muted">The deleted organization is moved to Trash and can be restored later if needed. Please provide a reason</p>`;
             }
 
             const hardDeletes = organizations.table.querySelectorAll('.delete-organization');
@@ -285,9 +301,10 @@ document.addEventListener('DOMContentLoaded', function () {
                         return Notify('warning', `{{ 'error'|text|e }}`, 'Cannot select row!');
                     }
 
-                    const name = thisRow.children[2]?.innerHTML;
-                    const cleanName = name.replace(/<\/?[^>]+(>|$)/g, '');
-                    const askHtml = questionHardDelete(cleanName);
+                    /* Badge зэрэг HTML tag-уудыг цэвэрлэж зөвхөн нэрийг үлдээнэ */
+                    const rawName = thisRow.children[2]?.innerHTML;
+                    const name = rawName.replace(/<\/?[^>]+(>|$)/g, '').trim();
+                    const askHtml = questionHardDelete(name);
 
                     const photo = thisRow.children[1]?.querySelector('img');
                     const src = photo ? photo.src : '';
@@ -334,5 +351,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 })
             );
         });
+
+    /* Эхний ачаалалт */
+    loadOrganizations();
 });
 </script>

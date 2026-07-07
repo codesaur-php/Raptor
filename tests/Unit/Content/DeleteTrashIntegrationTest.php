@@ -100,7 +100,7 @@ class DeleteTrashIntegrationTest extends TestCase
     }
 
     /**
-     * Бүх delete controller-ууд deactivateById АШИГЛАХГҮЙ байх ёстой
+     * Бүх delete controller-ууд deactivateById ашиглахгүй байх ёстой
      * (Users, Organization-аас бусад).
      */
     public static function noDeactivateProvider(): array
@@ -136,7 +136,7 @@ class DeleteTrashIntegrationTest extends TestCase
     }
 
     /**
-     * Users/Organization-д deactivateById БАЙХ ёстой.
+     * Users/Organization-д deactivateById байх ёстой.
      */
     public function testUsersControllerKeepsDeactivate(): void
     {

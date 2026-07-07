@@ -1,6 +1,6 @@
 <?php
 
-namespace Raptor\Template;
+namespace Dashboard\Badge;
 
 use codesaur\DataObject\Constants;
 
@@ -19,17 +19,22 @@ use codesaur\DataObject\Constants;
  *   шууд JSON_EXTRACT ашиглан action тоолно.
  * Admin бүрт тусдаа хяналт - admin_badge_seen хүснэгтэд admin бүрт
  *   module бүрийн checked_at цагийг хадгална. Admin өөрийн сүүлд
- *   үзсэн цагаас хойшхи, ЗӨВХӨН бусад admin-ий хийсэн action-уудыг
+ *   үзсэн цагаас хойшхи, зөвхөн бусад admin-ий хийсэн action-уудыг
  *   badge-ээр харна (өөрийнхөө action-г тоолохгүй).
  * RBAC-д нийцсэн - admin бүрт зөвхөн тухайн хэрэглэгчийн эрхэд
  *   нийцэх module-уудын badge-г буцаана.
+ * Multi-tenant org scoping - orgScopedModules()-д бүртгэгдсэн module-ийн
+ *   badge-г зөвхөн үйлдэл хийсэн admin-ий байгууллага харж буй admin-ий
+ *   одоогийн байгууллагатай таарах үед тоолно. Анхдагч жагсаалт хоосон
+ *   (Raptor-тай хамт ирдэг контент модулиуд бүгд global), tenant-scoped
+ *   module-тэй app жагсаалтдаа нэмнэ - {@see self::orgScopedModules()} док-оос үзнэ үү.
  * Файл тооны badge - Log-д бичигддэггүй зүйлсийг (manual, migrations)
  *   файлын тоогоор хянана. Сүүлд үзсэн үеийн файлын тооноос одоогийн
  *   файлын тоо их байвал шинэ badge харуулна.
  * Өнгөний код - green = шинэ бичлэг/create, blue = засвар/update,
  *   red = устгах/deactivate, info = сэтгэгдэл/үнэлгээ (comment/review).
  *
- * @package Raptor\Template
+ * @package Dashboard\Badge
  */
 class BadgeController extends \Raptor\Controller
 {
@@ -37,11 +42,11 @@ class BadgeController extends \Raptor\Controller
      * Module бүрт хандахад шаардлагатай эрхийн зураглал.
      *
      * Түлхүүр нь mount-naive ('/news', '/manage/menu') - mount prefix
-     * ('/dashboard') БАЙХГҮЙ. Runtime-д getMountPath()-аар угсарна.
+     * ('/dashboard') байхгүй. Runtime-д getMountPath()-аар угсарна.
      *
      * Гурван төрлийн утга авна:
-     *   null               - аливаа нэвтэрсэн admin хандах боломжтой (isUserAuthorized)
-     *   'role:system_coder' - тухайн role-той эсэхийг isUser() ашиглан шалгана
+     *   null                   - аливаа нэвтэрсэн admin хандах боломжтой (isUserAuthorized)
+     *   'role:system_coder'    - тухайн role-той эсэхийг isUser() ашиглан шалгана
      *   'system_content_index' - RBAC permission-г isUserCan() ашиглан шалгана
      *
      * @var array<string, string|null>
@@ -71,7 +76,7 @@ class BadgeController extends \Raptor\Controller
      * Бүтэц: [log_table_prefix][action_name] => [module_path, color]
      *   log_table_prefix - log хүснэгтийн нэр (_log suffix-гүй), жишээ: 'news' -> news_log
      *   action_name - log context доторх 'action' талбарын утга
-     *   module_path - mount-naive module зам ('/news') - mount prefix БАЙХГҮЙ,
+     *   module_path - mount-naive module зам ('/news') - mount prefix байхгүй,
      *                 runtime-д getMountPath()-аар бүтэн '/dashboard/news' болно
      *   color - badge-ийн өнгө: green (create/insert), blue (update), red (delete)
      *
@@ -140,7 +145,7 @@ class BadgeController extends \Raptor\Controller
             'set-role'           => ['/users', 'blue'],
             'deactivate'         => ['/users', 'red'],
             'delete'             => ['/users', 'red'],
-            'signup-deactivate'  => ['/users', 'red'],
+            'signup-reject'      => ['/users', 'red'],
             'signup-delete'      => ['/users', 'red'],
             'strip-organization' => ['/users', 'red'],
             'strip-role'         => ['/users', 'red'],
@@ -182,7 +187,13 @@ class BadgeController extends \Raptor\Controller
      * 4) Module бүрт холбогдох log хүснэгтүүдэд SQL query хийнэ:
      *    - checked_at-аас хойшхи бичлэгийг тоолно (бичлэг байхгүй бол 30 хоног)
      *    - JSON_EXTRACT ашиглан context доторх action талбараар шүүнэ
-     *    - Тухайн admin-ий өөрийнх нь хийсэн action-г хасна (auth_user.id != adminId)
+     *    - Тухайн admin-ий өөрийнхөн хийсэн action-г хасна (auth_user.id != adminId).
+     *      Гагцхүү trash module-д хасахгүй - trash нь admin-ий өөрийн устгасан
+     *      бичлэгийг сануулах учиртай тул өөрийн үйлдэл ч тоологдоно
+     *    - orgScopedModules()-д орсон module бол context.auth_user.organization_id-г
+     *      харж буй admin-ий одоогийн байгууллагын id-тай тулгаж шүүнэ.
+     *      organization_id NULL бичлэг (хуучин лог, веб-frontend) бүх admin-д
+     *      тоологдоно; system_coder-т энэ шүүлт огт хэрэглэгдэхгүй (cross-tenant)
      *    - Зөвхөн info, alert, warning түвшинг тоолно
      * 5) Өнгө тус бүрээр нэгтгэж module-д badge массив нэмнэ
      * 6) File-count badge: manual болон migrations хавтсын файлын тоог
@@ -205,6 +216,14 @@ class BadgeController extends \Raptor\Controller
             $adminId = $this->getUserId();
             $seenModel = new AdminBadgeSeenModel($this->pdo);
             $seenTable = $seenModel->getName();
+
+            // Multi-tenant: org-scoped module-ийн badge-ийг зөвхөн харж буй
+            // админы одоогийн байгууллагад тоолно (orgScopedModules() override).
+            // system_coder бол cross-tenant superuser тул түүнд org-scoping
+            // хэрэглэхгүй - бүх байгууллагын идэвхжлийг харна.
+            $orgScopedSet = \array_flip($this->orgScopedModules());
+            $currentOrgId = (int) ($this->getUser()?->organization['id'] ?? 0);
+            $isCoder = $this->isUser('system_coder');
 
             // Admin-ий checked_at мэдээллийг авах
             $seenRows = $this->query(
@@ -240,6 +259,13 @@ class BadgeController extends \Raptor\Controller
                 // Бүтэн module key - checkedMap, JSON badge, menu href тулгалтад
                 $module = $mount . $naiveModule;
 
+                // Энэ module байгууллагаар хязгаарлагдах эсэх. currentOrgId > 0
+                // үед л шүүнэ (org тодорхойгүй үед бүгдийг харуулж fail-open).
+                // system_coder-т хэзээ ч хэрэглэхгүй (cross-tenant).
+                $applyOrgFilter = !$isCoder
+                    && $currentOrgId > 0
+                    && isset($orgScopedSet[$naiveModule]);
+
                 // Бичлэг байхгүй бол сүүлийн 30 хоногоос тоолно
                 $checkedAt = $checkedMap[$module]['checked_at']
                     ?? \date('Y-m-d H:i:s', \strtotime('-30 days'));
@@ -254,7 +280,6 @@ class BadgeController extends \Raptor\Controller
                 foreach ($byTable as $logTable => $actionList) {
                     $tableName = "{$logTable}_log";
 
-                    // Хүснэгт байгаа эсэхийг шалгах
                     try {
                         $this->query("SELECT 1 FROM $tableName LIMIT 0");
                     } catch (\Throwable) {
@@ -265,7 +290,7 @@ class BadgeController extends \Raptor\Controller
                     $colorByAction = \array_column($actionList, 'color', 'action');
                     $placeholders = \implode(',', \array_fill(0, \count($actionNames), '?'));
 
-                    // Trash бол admin-ийн ӨӨРИЙНХ нь хогийн сав учраас өөрийн үйлдлийг
+                    // Trash бол admin-ийн өөрийнхөн хогийн сав учраас өөрийн үйлдлийг
                     // ч тоолно. Бусад module-уудад өөрийн үйлдлийг хасдаг (бусад
                     // admin-ий үйл ажиллагаа харуулах үүднээс).
                     $excludeSelf = $logTable !== 'trash';
@@ -282,6 +307,13 @@ class BadgeController extends \Raptor\Controller
                                 "AND ((context::jsonb)->'auth_user'->>'id' IS NULL " .
                                 "     OR ((context::jsonb)->'auth_user'->>'id')::int != ?) ";
                         }
+                        if ($applyOrgFilter) {
+                            // organization_id NULL (хуучин/веб бичлэг) бол бүх админд;
+                            // байвал зөвхөн харж буй админы байгууллагад тоолно.
+                            $sql .=
+                                "AND ((context::jsonb)->'auth_user'->>'organization_id' IS NULL " .
+                                "     OR ((context::jsonb)->'auth_user'->>'organization_id')::int = ?) ";
+                        }
                         $sql .= "GROUP BY act";
                     } else {
                         $sql =
@@ -295,6 +327,13 @@ class BadgeController extends \Raptor\Controller
                                 "AND (JSON_EXTRACT(context, '$.auth_user.id') IS NULL " .
                                 "     OR JSON_EXTRACT(context, '$.auth_user.id') != ?) ";
                         }
+                        if ($applyOrgFilter) {
+                            // organization_id NULL (хуучин/веб бичлэг) бол бүх админд;
+                            // байвал зөвхөн харж буй админы байгууллагад тоолно.
+                            $sql .=
+                                "AND (JSON_EXTRACT(context, '$.auth_user.organization_id') IS NULL " .
+                                "     OR JSON_EXTRACT(context, '$.auth_user.organization_id') = ?) ";
+                        }
                         $sql .= "GROUP BY act";
                     }
 
@@ -305,7 +344,10 @@ class BadgeController extends \Raptor\Controller
                         $stmt->bindValue($i++, $act);
                     }
                     if ($excludeSelf) {
-                        $stmt->bindValue($i, $adminId, \PDO::PARAM_INT);
+                        $stmt->bindValue($i++, $adminId, \PDO::PARAM_INT);
+                    }
+                    if ($applyOrgFilter) {
+                        $stmt->bindValue($i, $currentOrgId, \PDO::PARAM_INT);
                     }
 
                     if ($stmt->execute()) {
@@ -360,7 +402,7 @@ class BadgeController extends \Raptor\Controller
      * PERMISSION_MAP-д бүртгэгдээгүй module нь null-тэй адил ажиллана.
      *
      * @param string $module Mount-naive module key (жишээ: '/news') -
-     *        PERMISSION_MAP-ийн түлхүүртэй ижил, mount prefix БАЙХГҮЙ
+     *        PERMISSION_MAP-ийн түлхүүртэй ижил, mount prefix байхгүй
      * @return bool Admin энэ module-ийн badge-г харах эрхтэй эсэх
      */
     private function hasModuleAccess(string $module): bool
@@ -373,6 +415,45 @@ class BadgeController extends \Raptor\Controller
             return $this->isUser(\substr($permission, 5));
         }
         return $this->isUserCan($permission);
+    }
+
+    /**
+     * Байгууллагаар (tenant) хязгаарлагдах module-уудын жагсаалт.
+     *
+     * Энд буй module-ийн badge-ийг зөвхөн тухайн үйлдлийг хийсэн байгууллага
+     * харж буй админы одоогийн байгууллагатай таарах үед тоолно. Ингэснээр
+     * A байгууллагын үйл ажиллагаа B байгууллагаар нэвтэрсэн админд badge
+     * болж харагдахгүй.
+     *
+     * Түлхүүр нь mount-naive module path (жишээ '/request'), яг BADGE_MAP-тай
+     * адил. Log-ийн `context.auth_user.organization_id`-аар шүүнэ (хуучин, эсвэл
+     * веб-frontend-ийн organization_id-гүй бичлэг бүх админд тоологдоно -
+     * backward-compatible).
+     *
+     * Raptor нийтийн хэрэглээний module-ууд (news, pages, products, orders,
+     * messages г.м.) нь GLOBAL контент (organization_id баганагүй) тул энэ
+     * жагсаалт анхдагч байдлаараа хоосон.
+     *
+     * Идэвхжүүлэх хамгийн энгийн зам нь доорх return-д tenant-scoped
+     * module-уудаа шууд нэмэх:
+     *
+     *     return ['/request'];
+     *
+     * Энэ файлаа өөрчлөхгүй үлдээхийг хүсвэл subclass хийж бас болно -
+     * тэр үед Application-даа /badges (GET) болон /badges/seen (POST)
+     * маршрутуудыг override хийж subclass-руугаа чиглүүлнэ (шууд засварласан
+     * бол router-т өөрчлөлт хэрэггүй).
+     *
+     * Анхаарах: global контенттой core module-г (жишээ '/news') энд нэмбэл
+     * badge нь нуугдавч өөрчлөлт нь жагсаалтад бүх admin-д харагдсаар байна -
+     * дата өөрөө байгууллагаар тусгаарлагдаагүй тул. Зөвхөн үнэхээр
+     * tenant-scoped дататай module-уудыг бүртгэх нь зүйтэй.
+     *
+     * @return string[] Mount-naive module path-ууд
+     */
+    protected function orgScopedModules(): array
+    {
+        return [];
     }
 
     /**
@@ -430,6 +511,14 @@ class BadgeController extends \Raptor\Controller
      * тоог last_seen_count-д хадгална. Ингэснээр дараагийн list() дуудалт
      * дээр зөвхөн шинээр нэмэгдсэн файлуудын тоог badge-ээр харуулна.
      * Log-д суурилсан module-уудад last_seen_count = 0 байна.
+     *
+     * Анхаарах: checked_at нь admin + module хосын түвшинд хадгалагдана -
+     * байгууллага ялгахгүй. Олон байгууллагад харьяалагдах admin аль нэг
+     * байгууллагаар нэвтэрсэн үедээ seen дарвал тэр цаг нь org-scoped
+     * module-уудын бүх байгууллагын тоололд нийтлэг үйлчилнэ.
+     *
+     * Маршрут нь CsrfMiddleware-ээр хамгаалагдсан тул client талаас
+     * csrfFetch() ашиглан дуудагдана (dashboard.js-ийн initSidebarBadges).
      *
      * POST /dashboard/badges/seen
      * Body: { module: "/dashboard/news" }

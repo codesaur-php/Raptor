@@ -75,6 +75,20 @@ use codesaur\DataObject\Column;
 class Permissions extends Model
 {
     /**
+     * Reserved permission key-үүд - permission болгон үүсгэхийг хориглоно.
+     *
+     * Эдгээр "{alias}_{name}" key нь RBAC role нэртэй давхцдаг. Жишээ нь
+     * `system_coder` нь sidebar цэс болон бусад газар isUserCan('system_coder')
+     * хэлбэрээр шүүгддэг ба зөвхөн coder ROLE-ийг илэрхийлэх ёстой (coder бол
+     * бүх эрхийг давдаг тул тухайн шалгалт үнэн буцаадаг). Хэрэв `system_coder`
+     * нэртэй бодит permission үүсээд дурын роль-д оноогдвол тэр роль-той
+     * хэрэглэгч coder-only цэс/үйлдлийг харах/гүйцэтгэх эрсдэлтэй болно.
+     *
+     * @var string[]
+     */
+    public const RESERVED = ['system_coder'];
+
+    /**
      * Permission модель үүсгэх - хүснэгт ба багануудыг тодорхойлох.
      *
      * @param \PDO $pdo  PDO instance
@@ -101,6 +115,8 @@ class Permissions extends Model
      * PermissionsSeed-ээр анхны permission-уудыг seed хийнэ.
      *
      * @return void
+     *
+     * @see PermissionsSeed::seed()
      */
     protected function __initial()
     {
@@ -132,41 +148,27 @@ class Permissions extends Model
     /**
      * insert() - Permission бүртгэх үед created_at автоматаар тохируулах.
      *
-     * Хамгаалалт: `system` alias дээр `coder` нэртэй permission үүсгэхийг хориглоно.
-     * `system_coder` нь RBAC role бөгөөд permission биш. Хэрэв ийм permission
-     * үүсвэл sidebar-ийн `system_coder` permission filter буруу ажиллах эрсдэлтэй.
-     *
      * @param array $record
      * @return array
-     * @throws \RuntimeException system_coder permission үүсгэх оролдлого хийвэл
+     * @throws \RuntimeException reserved permission, буруу alias, эсвэл давхардсан бол
      */
     public function insert(array $record): array
     {
-        if (($record['alias'] ?? '') === 'system' && ($record['name'] ?? '') === 'coder') {
-            throw new \RuntimeException(
-                'Cannot create "system_coder" permission: it is a reserved RBAC role name, not a permission.'
-            );
-        }
         $this->assertValidIdentity($record);
         $record['created_at'] ??= \date('Y-m-d H:i:s');
         return parent::insert($record);
     }
 
     /**
-     * updateById() - Permission шинэчлэх үед system_coder хамгаалалт.
+     * updateById() - Permission шинэчлэх.
      *
      * @param int   $id
      * @param array $record
      * @return array
-     * @throws \RuntimeException system_coder permission болгох оролдлого хийвэл
+     * @throws \RuntimeException reserved permission, буруу alias, эсвэл давхардсан бол
      */
     public function updateById(int $id, array $record): array
     {
-        if (($record['alias'] ?? '') === 'system' && ($record['name'] ?? '') === 'coder') {
-            throw new \RuntimeException(
-                'Cannot rename permission to "system_coder": it is a reserved RBAC role name, not a permission.'
-            );
-        }
         $this->assertValidIdentity($record, $id);
         return parent::updateById($id, $record);
     }
@@ -174,20 +176,23 @@ class Permissions extends Model
     /**
      * Permission identity (alias, name)-ийн бүрэн бүтэн байдлыг шалгах.
      *
-     * Хоёр зүйл баталгаажуулна:
-     *  1) alias нь underscore агуулахгүй. Permission key нь тусгаарлагчгүй
+     * Гурван зүйл баталгаажуулна:
+     *  1) "{alias}_{name}" key нь reserved биш (RESERVED константыг үз). Reserved
+     *     key нь RBAC role нэртэй давхцдаг тул permission болгон үүсгэвэл эрхийн
+     *     шалгалт буруу ажиллах эрсдэлтэй.
+     *  2) alias нь underscore агуулахгүй. Permission key нь тусгаарлагчгүй
      *     "{alias}_{name}" хэлбэрээр угсардаг тул alias дотор "_" байвал
      *     (system_request, update) ба (system, request_update) гэсэн өөр өөр
      *     хоёр мөр ижил key руу мөргөлдөх эрсдэлтэй. alias нь sidebar menu-тэй
      *     уялдсан цэвэр grouping утга (system, common ...) тул "_" хэрэггүй.
-     *  2) (alias, name) хос давхардаагүй. UNIQUE(alias, name) constraint руу
+     *  3) (alias, name) хос давхардаагүй. UNIQUE(alias, name) constraint руу
      *     хүрэхээс өмнө ойлгомжтой алдаа буцааж, raw SQL exception-ийг
      *     хэрэглэгчид харуулахгүй.
      *
      * @param array    $record
      * @param int|null $excludeId  updateById үед өөрийн мөрийг алгасах ID
      * @return void
-     * @throws \RuntimeException alias буруу эсвэл (alias, name) давхардсан бол
+     * @throws \RuntimeException reserved permission, alias буруу, эсвэл (alias, name) давхардсан бол
      */
     private function assertValidIdentity(array $record, ?int $excludeId = null): void
     {
@@ -195,6 +200,11 @@ class Permissions extends Model
         $name  = $record['name'] ?? '';
         if ($alias === '' || $name === '') {
             return;
+        }
+        if (\in_array("{$alias}_{$name}", self::RESERVED, true)) {
+            throw new \RuntimeException(
+                "\"{$alias}_{$name}\" is a reserved permission (it is an RBAC role name) and cannot be created."
+            );
         }
         if (\str_contains($alias, '_')) {
             throw new \RuntimeException('Permission alias cannot contain an underscore.');
