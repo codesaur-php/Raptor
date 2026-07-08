@@ -48,7 +48,7 @@ class DevRequestModel extends Model
     protected function __initial()
     {
         $table = $this->getName();
-        $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
+        $users = (new \Dashboard\User\UsersModel($this->pdo))->getName();
         $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_created_by FOREIGN KEY (created_by) REFERENCES $users(id) ON DELETE SET NULL ON UPDATE CASCADE");
         $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_updated_by FOREIGN KEY (updated_by) REFERENCES $users(id) ON DELETE SET NULL ON UPDATE CASCADE");
         $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_assigned_to FOREIGN KEY (assigned_to) REFERENCES $users(id) ON DELETE SET NULL ON UPDATE CASCADE");

@@ -28,7 +28,7 @@ class SpamProtectionExtendedTest extends TestCase
         ];
 
         $this->trait = new class {
-            use \Raptor\SpamProtectionTrait {
+            use \Dashboard\SpamProtectionTrait {
                 getTurnstileSiteKey as public;
                 checkLinkSpam as public;
                 validateSpamProtection as public;
@@ -445,7 +445,7 @@ class SpamProtectionExtendedTest extends TestCase
     public function testVerifyTurnstileUsesCloudflareApi(): void
     {
         $source = \file_get_contents(
-            \dirname(__DIR__, 3) . '/application/raptor/SpamProtectionTrait.php'
+            \dirname(__DIR__, 3) . '/application/dashboard/SpamProtectionTrait.php'
         );
         $this->assertStringContainsString(
             'challenges.cloudflare.com/turnstile/v0/siteverify',
@@ -460,7 +460,7 @@ class SpamProtectionExtendedTest extends TestCase
     public function testValidateUsesTimingSafeComparison(): void
     {
         $source = \file_get_contents(
-            \dirname(__DIR__, 3) . '/application/raptor/SpamProtectionTrait.php'
+            \dirname(__DIR__, 3) . '/application/dashboard/SpamProtectionTrait.php'
         );
         $this->assertStringContainsString(
             'hash_equals',

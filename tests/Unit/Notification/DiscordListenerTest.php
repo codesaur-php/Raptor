@@ -4,12 +4,12 @@ namespace Tests\Unit\Notification;
 
 use PHPUnit\Framework\TestCase;
 
-use Raptor\Notification\DiscordListener;
-use Raptor\Notification\DiscordNotifier;
-use Raptor\Notification\ContentEvent;
-use Raptor\Notification\UserEvent;
-use Raptor\Notification\OrderEvent;
-use Raptor\Notification\DevRequestEvent;
+use Dashboard\Notification\DiscordListener;
+use Dashboard\Notification\DiscordNotifier;
+use Dashboard\Notification\ContentEvent;
+use Dashboard\Notification\UserEvent;
+use Dashboard\Notification\OrderEvent;
+use Dashboard\Notification\DevRequestEvent;
 
 class DiscordListenerTest extends TestCase
 {

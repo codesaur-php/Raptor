@@ -4,13 +4,13 @@ namespace Tests\Unit\Notification;
 
 use PHPUnit\Framework\TestCase;
 
-use Raptor\Notification\EventDispatcher;
-use Raptor\Notification\ListenerProvider;
-use Raptor\Notification\Event;
-use Raptor\Notification\ContentEvent;
-use Raptor\Notification\UserEvent;
-use Raptor\Notification\OrderEvent;
-use Raptor\Notification\DevRequestEvent;
+use Dashboard\Notification\EventDispatcher;
+use Dashboard\Notification\ListenerProvider;
+use Dashboard\Notification\Event;
+use Dashboard\Notification\ContentEvent;
+use Dashboard\Notification\UserEvent;
+use Dashboard\Notification\OrderEvent;
+use Dashboard\Notification\DevRequestEvent;
 
 class EventDispatcherTest extends TestCase
 {

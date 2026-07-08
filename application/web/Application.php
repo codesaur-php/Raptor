@@ -27,9 +27,9 @@ use Psr\Http\Message\ResponseInterface;
  *    - Template ашиглан error page рендерлэх
  *    - Хэрвээ template файл байхгүй бол кодын default ExceptionHandler ажиллана
  *
- *    PDO холболт нь public_html/index.php дотор үүсгэгдэж request-д
+ *    PDO холболт нь application-ий entry point дээр үүсгэгдэж request-д
  *    attribute болгон inject хийгдсэн байна. Web ба Dashboard аль аль
- *    нь нэг л холболтыг (`\Raptor\DatabaseConnection`) ашиглана.
+ *    нь нэг л холболтыг (`\Dashboard\DatabaseConnection`) ашиглана.
  *
  * 2) **MethodOverrideMiddleware**
  *    - PUT/PATCH/DELETE verb-ийг X-HTTP-Method-Override header-аас сэргээх (WAF)
@@ -72,10 +72,8 @@ use Psr\Http\Message\ResponseInterface;
  * ---------------------------------------------------------
  * Хөгжүүлэгчид зориулсан тэмдэглэл
  * ---------------------------------------------------------
- * Application нь Middleware-үүдийг **өргөтгөх боломжтой**  
- * Router-уудыг хүссэнээрээ бүлэглэн зохион байгуулж болно  
- * Custom exception handler бичээд Application->use() ашиглан  
- *   override хийж бүртгэж болно  
+ * Application нь Middleware-үүдийг **өргөтгөх боломжтой**
+ * Router-уудыг хүссэнээрээ бүлэглэн зохион байгуулж болно
  *
  * @package Web
  */
@@ -99,23 +97,23 @@ class Application extends \codesaur\Http\Application\Application
         // тулгуурладаг давхаргаас өмнө ажиллана. Header-gated тул web-ийн ердийн
         // form-д нөлөөлөхгүй; ирээдүйд web талд csrfFetch-төстэй wrapper нэмбэл
         // автоматаар хамаарна.
-        $this->use(new \Raptor\MethodOverrideMiddleware());
-        $this->use(new \Raptor\BodyEncodingMiddleware());
+        $this->use(new \Dashboard\MethodOverrideMiddleware());
+        $this->use(new \Dashboard\BodyEncodingMiddleware());
 
         // Container middleware
-        $this->use(new \Raptor\ContainerMiddleware());
+        $this->use(new \Dashboard\ContainerMiddleware());
 
         // Session middleware
-        $this->use(new \Raptor\SessionMiddleware(
+        $this->use(new \Dashboard\SessionMiddleware(
             fn(string $path, string $method): bool =>
                 \str_starts_with($path, '/session/')
         ));
 
         // Localization middleware (mn/en ...)
-        $this->use(new \Raptor\Localization\LocalizationMiddleware('WEB_LANGUAGE_CODE'));
+        $this->use(new \Dashboard\Localization\LocalizationMiddleware('WEB_LANGUAGE_CODE'));
 
         // System settings middleware (branding, favicon, footer...)
-        $this->use(new \Raptor\Content\SettingsMiddleware());
+        $this->use(new \Dashboard\Content\SettingsMiddleware());
 
         // Вебийн үндсэн маршрут
         $this->use(new WebRouter());

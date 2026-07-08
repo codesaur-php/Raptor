@@ -9,7 +9,7 @@ namespace Dashboard\Home;
  *
  * @package Dashboard\Home
  */
-class WebLogStatsController extends \Raptor\Controller
+class WebLogStatsController extends \Dashboard\Controller
 {
     /**
      * Вэб сайтын зочлолын статистик мэдээллийг JSON-оор буцаах.

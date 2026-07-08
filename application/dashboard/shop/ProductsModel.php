@@ -71,7 +71,7 @@ class ProductsModel extends Model
     protected function __initial()
     {
         $table = $this->getName();
-        $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
+        $users = (new \Dashboard\User\UsersModel($this->pdo))->getName();
         $constraints = [
             'published_by' => "{$table}_fk_published_by",
             'created_by'   => "{$table}_fk_created_by",

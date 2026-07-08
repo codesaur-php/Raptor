@@ -214,7 +214,7 @@ class PatchRoutesTest extends TestCase
         $token = \bin2hex(\random_bytes(32));
         $_SESSION['CSRF_TOKEN'] = $token;
 
-        $middleware = new \Raptor\CsrfMiddleware();
+        $middleware = new \Dashboard\CsrfMiddleware();
 
         $uri = $this->createMock(\Psr\Http\Message\UriInterface::class);
         $uri->method('getPath')->willReturn('/dashboard/orders/1/status');
@@ -266,14 +266,9 @@ class PatchRoutesTest extends TestCase
     public function testContentsRouterUsesPatchForPartialUpdates(): void
     {
         $source = \file_get_contents(
-            \dirname(__DIR__, 3) . '/application/raptor/content/ContentsRouter.php'
+            \dirname(__DIR__, 3) . '/application/dashboard/content/ContentsRouter.php'
         );
 
-        $this->assertStringContainsString(
-            "->PATCH('/files/{table}/{uint:id}'",
-            $source,
-            'ContentsRouter should use PATCH for files update'
-        );
         $this->assertStringContainsString(
             "->PATCH('/settings/env'",
             $source,
@@ -286,10 +281,23 @@ class PatchRoutesTest extends TestCase
         );
     }
 
+    public function testFileRouterUsesPatchForFilesUpdate(): void
+    {
+        $source = \file_get_contents(
+            \dirname(__DIR__, 3) . '/application/dashboard/file/FileRouter.php'
+        );
+
+        $this->assertStringContainsString(
+            "->PATCH('/files/{table}/{uint:id}'",
+            $source,
+            'FileRouter should use PATCH for files update'
+        );
+    }
+
     public function testContentsRouterStillUsesPutForFullUpdates(): void
     {
         $source = \file_get_contents(
-            \dirname(__DIR__, 3) . '/application/raptor/content/ContentsRouter.php'
+            \dirname(__DIR__, 3) . '/application/dashboard/content/ContentsRouter.php'
         );
 
         // GET_PUT route-ууд PUT хэвээр байх ёстой
@@ -331,11 +339,11 @@ class PatchRoutesTest extends TestCase
                 'Reviews index env settings',
             ],
             'messages-index' => [
-                'application/raptor/content/messages/messages-index.html',
+                'application/dashboard/content/messages/messages-index.html',
                 'Messages index replied + env settings',
             ],
             'comments-index' => [
-                'application/raptor/content/news/comments-index.html',
+                'application/dashboard/content/news/comments-index.html',
                 'Comments index env settings',
             ],
         ];
@@ -344,7 +352,7 @@ class PatchRoutesTest extends TestCase
     public function testFilesUpdateModalUsesPatch(): void
     {
         $source = \file_get_contents(
-            \dirname(__DIR__, 3) . '/application/raptor/content/file/files-update-modal.html'
+            \dirname(__DIR__, 3) . '/application/dashboard/file/files-update-modal.html'
         );
 
         $this->assertStringContainsString(

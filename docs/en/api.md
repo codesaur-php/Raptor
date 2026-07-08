@@ -6,13 +6,13 @@
 
 ## Table of Contents
 
-1. [Raptor\Controller](#raptorcontroller)
-2. [Raptor\Application](#raptorapplication)
+1. [Dashboard\Controller](#dashboardcontroller)
+2. [Dashboard\Application](#dashboardapplication)
 3. [Authentication](#authentication)
 4. [User](#user)
 5. [Organization](#organization)
 6. [RBAC](#rbac)
-7. [Content - Files](#content--files)
+7. [Files](#files)
 8. [Content - News](#content--news)
 9. [Content - Comments](#content--comments)
 10. [Content - Messages](#content--messages)
@@ -45,9 +45,9 @@
 
 ---
 
-## Raptor\Controller
+## Dashboard\Controller
 
-**File:** `application/raptor/Controller.php`
+**File:** `application/dashboard/Controller.php`
 **Extends:** `codesaur\Http\Application\Controller`
 **Uses:** `codesaur\DataObject\PDOTrait`
 
@@ -190,15 +190,15 @@ public function process($request, $handler): ResponseInterface
 
 ---
 
-## Raptor\Application
+## Dashboard\Application
 
-**File:** `application/raptor/Application.php`
+**File:** `application/dashboard/Application.php`
 **Extends:** `codesaur\Http\Application\Application`
 
-Base for the Dashboard Application. Registers the middleware pipeline and routers.
+The Dashboard Application. Registers the middleware pipeline and all routers.
 
 The PDO connection is opened once in `public_html/index.php` via
-`\Raptor\DatabaseConnection::connect()` and reaches the Application as the
+`\Dashboard\DatabaseConnection::connect()` and reaches the Application as the
 request's `pdo` attribute.
 
 ### Constructor Pipeline
@@ -211,22 +211,9 @@ request's `pdo` attribute.
 6. `ContainerMiddleware` - DI Container
 7. `LocalizationMiddleware` - Multi-language
 8. `SettingsMiddleware` - System settings
-9. `LoginRouter`, `UsersRouter`, `OrganizationRouter`, `RBACRouter`, `LocalizationRouter`, `ContentsRouter`, `LogsRouter`, `MigrationRouter`, `TemplateRouter`
+9. `LoginRouter`, `UsersRouter`, `OrganizationRouter`, `RBACRouter`, `LocalizationRouter`, `ContentsRouter`, `LogsRouter`, `MigrationRouter`, `TrashRouter`, `TemplateRouter`, `HomeRouter`, `ShopRouter` (products + orders + reviews), `ManualRouter`, `Development\DevelopmentRouter` (dev requests live in `application/dashboard/development/`), `File\FileRouter`, `Badge\BadgeRouter` (the sidebar badge system lives in `application/dashboard/badge/`)
 
 `CsrfMiddleware` is NOT in the app-wide pipeline - it is attached per-route to each mutating route in the router.
-
-`Dashboard\Application` adds: `HomeRouter`, `ShopRouter` (products + orders + reviews), `ManualRouter`, `Development\DevelopmentRouter` (dev requests live in `application/dashboard/development/`), `Protected\ProtectedRouter`, `Badge\BadgeRouter` (the sidebar badge system lives in `application/dashboard/badge/`).
-
-#### `overrideDashboardLayout(string $filename, string $customFile): static`
-
-Replaces one of the three layout templates `DashboardTrait` renders internally (`dashboard.html`, `alert-no-permission.html`, `modal-no-permission.html`) with the developer's own file - no need to touch `application/raptor/`. Call it in the app's constructor after `parent::__construct()`; throws `InvalidArgumentException` if the custom file does not exist (fail-fast). The map is injected as the `dashboard_layouts` request attribute in `handle()` and resolved by `DashboardTrait::layout()`. Pages with their own route (login etc.) are out of scope - override their route instead.
-
-```php
-// application/{myapp}/Application.php
-parent::__construct($response);
-// Use a folder name distinct from raptor's own `template/` to avoid confusion.
-$this->overrideDashboardLayout('dashboard.html', __DIR__ . '/myspecial/dashboard.html');
-```
 
 ---
 
@@ -234,7 +221,7 @@ $this->overrideDashboardLayout('dashboard.html', __DIR__ . '/myspecial/dashboard
 
 ### JWTAuthMiddleware
 
-**File:** `application/raptor/authentication/JWTAuthMiddleware.php`
+**File:** `application/dashboard/authentication/JWTAuthMiddleware.php`
 **Implements:** `MiddlewareInterface`
 
 #### `generate(array $data): string`
@@ -254,7 +241,7 @@ Decodes and validates JWT. Throws `RuntimeException` if expired. Requires `user_
 
 ### SessionMiddleware
 
-**File:** `application/raptor/SessionMiddleware.php`
+**File:** `application/dashboard/SessionMiddleware.php`
 **Implements:** `MiddlewareInterface`
 
 Shared middleware for both Dashboard and Web apps.
@@ -270,7 +257,7 @@ If closure is null, all routes are read-only (session_write_close on every reque
 
 ### LoginRouter
 
-**File:** `application/raptor/authentication/LoginRouter.php`
+**File:** `application/dashboard/authentication/LoginRouter.php`
 
 | Route | Method | Name | Description |
 |-------|--------|------|-------------|
@@ -285,7 +272,7 @@ If closure is null, all routes are read-only (session_write_close on every reque
 
 ### User (Value Object)
 
-**File:** `application/raptor/authentication/User.php`
+**File:** `application/dashboard/authentication/User.php`
 
 | Property | Type | Description |
 |----------|------|-------------|
@@ -305,7 +292,7 @@ If closure is null, all routes are read-only (session_write_close on every reque
 
 ### UsersModel
 
-**File:** `application/raptor/user/UsersModel.php`
+**File:** `application/dashboard/user/UsersModel.php`
 **Extends:** `codesaur\DataObject\Model`
 
 **Table:** `users`
@@ -330,14 +317,14 @@ If closure is null, all routes are read-only (session_write_close on every reque
 
 ### OrganizationModel
 
-**File:** `application/raptor/organization/OrganizationModel.php`
+**File:** `application/dashboard/organization/OrganizationModel.php`
 **Extends:** `codesaur\DataObject\Model`
 
 **Table:** `organizations`
 
 ### OrganizationUserModel
 
-**File:** `application/raptor/organization/OrganizationUserModel.php`
+**File:** `application/dashboard/organization/OrganizationUserModel.php`
 **Extends:** `codesaur\DataObject\Model`
 
 **Table:** `organizations_users`
@@ -350,43 +337,43 @@ User-organization relationship table.
 
 ### RBAC
 
-**File:** `application/raptor/rbac/RBAC.php`
+**File:** `application/dashboard/rbac/RBAC.php`
 
 Loads all roles and permissions for a user and returns them via `jsonSerialize()`.
 
 ### Roles
 
-**File:** `application/raptor/rbac/Roles.php`
+**File:** `application/dashboard/rbac/Roles.php`
 **Extends:** `codesaur\DataObject\Model`
 
 **Table:** `rbac_roles`
 
 ### Permissions
 
-**File:** `application/raptor/rbac/Permissions.php`
+**File:** `application/dashboard/rbac/Permissions.php`
 **Extends:** `codesaur\DataObject\Model`
 
 **Table:** `rbac_permissions`
 
 ### RolePermissions
 
-**File:** `application/raptor/rbac/RolePermissions.php`
+**File:** `application/dashboard/rbac/RolePermissions.php`
 
 Role-Permission relationships.
 
 ### UserRole
 
-**File:** `application/raptor/rbac/UserRole.php`
+**File:** `application/dashboard/rbac/UserRole.php`
 
 User-Role relationships.
 
 ---
 
-## Content - Files
+## Files
 
 ### FilesModel
 
-**File:** `application/raptor/content/file/FilesModel.php`
+**File:** `application/dashboard/file/FilesModel.php`
 **Extends:** `codesaur\DataObject\Model`
 
 Stores file metadata. Table name is dynamic (`setTable()`).
@@ -409,7 +396,7 @@ Stores file metadata. Table name is dynamic (`setTable()`).
 
 ### FilesController
 
-**File:** `application/raptor/content/file/FilesController.php`
+**File:** `application/dashboard/file/FilesController.php`
 
 | Method | Description |
 |--------|-------------|
@@ -421,7 +408,7 @@ Stores file metadata. Table name is dynamic (`setTable()`).
 | `update(string $table, int $id)` | Update file metadata |
 | `delete(string $table)` | Hard delete file (stores in Trash) |
 
-### ContentsRouter - File Routes
+### FileRouter - File Routes
 
 | Route | Method | Name |
 |-------|--------|------|
@@ -433,13 +420,13 @@ Stores file metadata. Table name is dynamic (`setTable()`).
 | `/dashboard/files/{table}/{uint:id}` | PATCH | `files-update` |
 | `/dashboard/files/{table}/delete` | DELETE | `files-delete` |
 
-**Protected files** (separate `Dashboard\Protected\ProtectedRouter`, registered in `Dashboard\Application`):
+**Protected files** (same `FileRouter`):
 
 | Route | Method | Name |
 |-------|--------|------|
 | `/dashboard/protected/file` | GET | `protected-file-read` |
 
-`Dashboard\Protected\ProtectedFilesController` (`application/dashboard/protected/`) serves files from the document-root-external `/protected` folder. It is a reference implementation to customize (no shipped module uses protected storage). Authorization is the `authorizeRead(string $relativePath): bool` hook - default is permissive (any authenticated user; `system_coder` always). Tighten it with your module's index/view permission or tenant-ownership rule to restrict access to sensitive files - edit the method in place, or subclass and override it.
+`Dashboard\File\ProtectedFilesController` (`application/dashboard/file/`) serves files from the document-root-external `/protected` folder. It is a reference implementation to customize (no shipped module uses protected storage). Authorization is the `authorizeRead(string $relativePath): bool` hook - default is permissive (any authenticated user; `system_coder` always). Tighten it with your module's index/view permission or tenant-ownership rule to restrict access to sensitive files - edit the method in place.
 
 ---
 
@@ -447,7 +434,7 @@ Stores file metadata. Table name is dynamic (`setTable()`).
 
 ### NewsModel
 
-**File:** `application/raptor/content/news/NewsModel.php`
+**File:** `application/dashboard/content/news/NewsModel.php`
 **Extends:** `codesaur\DataObject\Model`
 
 **Table:** `news`
@@ -507,7 +494,7 @@ Extracts a plain-text excerpt from HTML content.
 
 ### CommentsModel
 
-**File:** `application/raptor/content/news/CommentsModel.php`
+**File:** `application/dashboard/content/news/CommentsModel.php`
 **Extends:** `codesaur\DataObject\Model`
 
 **Table:** `news_comments`
@@ -527,8 +514,8 @@ Extracts a plain-text excerpt from HTML content.
 
 ### CommentsController (Dashboard)
 
-**File:** `application/raptor/content/news/CommentsController.php`
-**Extends:** `Raptor\Controller`
+**File:** `application/dashboard/content/news/CommentsController.php`
+**Extends:** `Dashboard\Controller`
 
 | Method | Description |
 |--------|-------------|
@@ -553,7 +540,7 @@ Extracts a plain-text excerpt from HTML content.
 
 ### MessagesModel
 
-**File:** `application/raptor/content/messages/MessagesModel.php`
+**File:** `application/dashboard/content/messages/MessagesModel.php`
 **Extends:** `codesaur\DataObject\Model`
 
 **Table:** `messages`
@@ -574,8 +561,8 @@ Extracts a plain-text excerpt from HTML content.
 
 ### MessagesController (Dashboard)
 
-**File:** `application/raptor/content/messages/MessagesController.php`
-**Extends:** `Raptor\Controller`
+**File:** `application/dashboard/content/messages/MessagesController.php`
+**Extends:** `Dashboard\Controller`
 
 | Method | Description |
 |--------|-------------|
@@ -601,7 +588,7 @@ Extracts a plain-text excerpt from HTML content.
 
 ### PagesModel
 
-**File:** `application/raptor/content/page/PagesModel.php`
+**File:** `application/dashboard/content/page/PagesModel.php`
 **Extends:** `codesaur\DataObject\Model`
 
 **Table:** `pages`
@@ -670,7 +657,7 @@ Extracts a plain-text excerpt from HTML content.
 
 ### ReferencesModel
 
-**File:** `application/raptor/content/reference/ReferencesModel.php`
+**File:** `application/dashboard/content/reference/ReferencesModel.php`
 **Extends:** `codesaur\DataObject\LocalizedModel`
 
 Reference table with dynamic table name.
@@ -691,7 +678,7 @@ Reference table with dynamic table name.
 
 ### SettingsModel
 
-**File:** `application/raptor/content/settings/SettingsModel.php`
+**File:** `application/dashboard/content/settings/SettingsModel.php`
 **Extends:** `codesaur\DataObject\LocalizedModel`
 
 **Table:** `raptor_settings`
@@ -725,7 +712,7 @@ Gets the active (`is_active=1`) settings record. Returns `[]` if empty.
 
 ### SettingsMiddleware
 
-**File:** `application/raptor/content/settings/SettingsMiddleware.php`
+**File:** `application/dashboard/content/settings/SettingsMiddleware.php`
 **Implements:** `MiddlewareInterface`
 
 Reads settings from DB and injects into request attributes as `settings`.
@@ -771,14 +758,14 @@ Used by messages-index, orders-index, comments-index, reviews-index templates fo
 
 ### LanguageModel
 
-**File:** `application/raptor/localization/language/LanguageModel.php`
+**File:** `application/dashboard/localization/language/LanguageModel.php`
 **Extends:** `codesaur\DataObject\Model`
 
 Language registration table.
 
 ### TextModel
 
-**File:** `application/raptor/localization/text/TextModel.php`
+**File:** `application/dashboard/localization/text/TextModel.php`
 **Extends:** `codesaur\DataObject\Model`
 
 Translation texts (key -> value).
@@ -788,7 +775,7 @@ Returns all translations structured as language code -> key -> value.
 
 ### LocalizationMiddleware
 
-**File:** `application/raptor/localization/LocalizationMiddleware.php`
+**File:** `application/dashboard/localization/LocalizationMiddleware.php`
 **Implements:** `MiddlewareInterface`
 
 Shared middleware for both Dashboard and Web apps. Constructor accepts session key:
@@ -812,7 +799,7 @@ Injects `localization` array into request attributes:
 
 ### Logger
 
-**File:** `application/raptor/log/Logger.php`
+**File:** `application/dashboard/log/Logger.php`
 **Extends:** `\Psr\Log\AbstractLogger`
 
 PSR-3 standard logging system. Stores logs in database.
@@ -838,7 +825,7 @@ Writes a log entry.
 
 ### Mailer
 
-**File:** `application/raptor/mail/Mailer.php`
+**File:** `application/dashboard/mail/Mailer.php`
 
 Sends email. `send()` selects transport via `RAPTOR_MAIL_TRANSPORT` env var: `brevo` (default), `smtp`, `mail`.
 
@@ -848,11 +835,11 @@ Sends email. `send()` selects transport via `RAPTOR_MAIL_TRANSPORT` env var: `br
 
 ### DatabaseConnection
 
-**File:** `application/raptor/DatabaseConnection.php`
+**File:** `application/dashboard/DatabaseConnection.php`
 
 Single helper that owns every PDO handshake. The HTTP entry point
 (`public_html/index.php`) and tests all call
-`\Raptor\DatabaseConnection::connect()` and receive an identical PDO.
+`\Dashboard\DatabaseConnection::connect()` and receive an identical PDO.
 
 - `driver(): string` - reads `RAPTOR_DB_DRIVER` from `.env` (`mysql` |
   `pgsql`). Throws an `Exception` for any other value.
@@ -862,11 +849,11 @@ Single helper that owns every PDO handshake. The HTTP entry point
 
 The PDO instance created in `public_html/index.php` is passed to the
 Application as `$request->withAttribute('pdo', $pdo)`. Controllers pick it
-up automatically inside `Raptor\Controller::__construct()` as `$this->pdo`.
+up automatically inside `Dashboard\Controller::__construct()` as `$this->pdo`.
 
 ### ContainerMiddleware
 
-**File:** `application/raptor/ContainerMiddleware.php`
+**File:** `application/dashboard/ContainerMiddleware.php`
 
 Injects a PSR-11 DI Container into the request. It registers the `cache`,
 `mailer`, `template_service`, `discord`, and `events` service factories.
@@ -877,7 +864,7 @@ by the entry point).
 
 ## SpamProtectionTrait
 
-**File:** `application/raptor/SpamProtectionTrait.php`
+**File:** `application/dashboard/SpamProtectionTrait.php`
 
 Provides spam protection methods using Cloudflare Turnstile and link-based heuristics.
 
@@ -897,16 +884,16 @@ Checks if text contains suspicious link patterns. Returns `true` if spam is dete
 - `Web\Service\ContactController` - Contact form submission
 - `Web\Content\NewsController` - News comment submission
 - `Web\Shop\ShopController` - Order submission
-- `Raptor\Authentication\LoginController` - Signup and forgot password
+- `Dashboard\Authentication\LoginController` - Signup and forgot password
 
 ---
 
 ## CsrfMiddleware
 
-**File:** `application/raptor/CsrfMiddleware.php`
+**File:** `application/dashboard/CsrfMiddleware.php`
 **Implements:** `Psr\Http\Server\MiddlewareInterface`
 
-CSRF token validation for dashboard mutating requests. **Per-route** middleware - attached to each mutating route in the router via `->middleware([CsrfMiddleware::class])` (with `use Raptor\CsrfMiddleware;`).
+CSRF token validation for dashboard mutating requests. **Per-route** middleware - attached to each mutating route in the router via `->middleware([CsrfMiddleware::class])` (with `use Dashboard\CsrfMiddleware;`).
 
 ### How It Works
 
@@ -932,7 +919,7 @@ CSRF token validation for dashboard mutating requests. **Per-route** middleware 
 
 ## HtmlValidationTrait
 
-**File:** `application/raptor/content/HtmlValidationTrait.php`
+**File:** `application/dashboard/content/HtmlValidationTrait.php`
 
 Server-side HTML content validation. Used by Pages, News, Products controllers on insert/update.
 
@@ -941,22 +928,19 @@ Checks for unclosed HTML comments (`<!-- -->`), parses with DOMDocument, compare
 
 ### Used By
 
-- `Raptor\Content\NewsController` - News insert/update
-- `Raptor\Content\PagesController` - Page insert/update
+- `Dashboard\Content\NewsController` - News insert/update
+- `Dashboard\Content\PagesController` - Page insert/update
 - `Dashboard\Shop\ProductsController` - Product insert/update
 
 ---
 
 ## DashboardTrait
 
-**File:** `application/raptor/template/DashboardTrait.php`
+**File:** `application/dashboard/template/DashboardTrait.php`
 
 Provides dashboard UI rendering, permission alerts, sidebar menu generation, and user detail retrieval.
 
 Controllers using this trait MUST NOT define methods with the same names as the trait's public API (`dashboardTemplate`, `dashboardProhibited`, `modalProhibited`, `getUserMenu`, `getUserOrganizations`) - a class method silently overrides the trait method and breaks the trait's internal calls.
-
-#### `layout(string $filename): string` (private)
-Resolves the final path of a layout template: returns the developer's custom file when one was registered via `Application::overrideDashboardLayout()` (delivered as the `dashboard_layouts` request attribute), otherwise the core default in `raptor/template/`.
 
 #### `dashboardTemplate(string $template, array $vars = []): FileTemplate`
 Renders content within the `dashboard.html` layout with sidebar menu, the topbar organization switcher list (`user_organizations`) and system settings. Loads menu from cache (`menu.{code}` key).
@@ -980,8 +964,8 @@ Returns `[user_id => "username - First Last (email)"]` map for audit/log display
 
 ## FileController
 
-**File:** `application/raptor/content/file/FileController.php`
-**Extends:** `Raptor\Controller`
+**File:** `application/dashboard/file/FileController.php`
+**Extends:** `Dashboard\Controller`
 
 Base class for file upload, validation, storage, and image optimization. Extended by controllers that handle file uploads (FilesController, SettingsController, UsersController, etc.).
 
@@ -1006,8 +990,8 @@ Base class for file upload, validation, storage, and image optimization. Extende
 
 ## AIHelper
 
-**File:** `application/raptor/content/AIHelper.php`
-**Extends:** `Raptor\Controller`
+**File:** `application/dashboard/content/AIHelper.php`
+**Extends:** `Dashboard\Controller`
 
 OpenAI API integration for moedit WYSIWYG editor. Provides HTML content enhancement (Shine) and image text recognition (OCR/Vision).
 
@@ -1029,7 +1013,7 @@ Requires `RAPTOR_OPENAI_API_KEY` in `.env`. Auth required (any logged-in user).
 ### BadgeController
 
 **File:** `application/dashboard/badge/BadgeController.php`
-**Extends:** `Raptor\Controller`
+**Extends:** `Dashboard\Controller`
 
 Dashboard sidebar badge system showing unseen activity counts per module. Reads from existing `*_log` tables.
 
@@ -1066,7 +1050,7 @@ Tracks when each admin last viewed each module. Columns: `admin_id`, `module`, `
 
 ## MenuModel
 
-**File:** `application/raptor/template/MenuModel.php`
+**File:** `application/dashboard/template/MenuModel.php`
 **Extends:** `codesaur\DataObject\LocalizedModel`
 
 Dashboard sidebar menu items with multilingual titles and parent/child hierarchy.
@@ -1112,7 +1096,7 @@ The named `home` route lives at `/dashboard/home`; `/dashboard` (root) stays reg
 ### SearchController
 
 **File:** `application/dashboard/home/SearchController.php`
-**Extends:** `Raptor\Controller`
+**Extends:** `Dashboard\Controller`
 
 #### `search(): void`
 Dashboard global search - powers the topbar search modal (Ctrl+K). Searches across news, pages, products, orders, users, organizations, dev-requests, messages, comments and reviews using LIKE queries. Each source block is gated with the SAME permission (or row-level filter) its module's index page requires (news/pages/messages/comments -> `system_content_index`, products/orders/reviews -> `system_product_index`, users -> `system_user_index`, organizations -> `system_organization_index`, dev-requests -> own/assigned rows unless `system_development`). Returns JSON.
@@ -1120,7 +1104,7 @@ Dashboard global search - powers the topbar search modal (Ctrl+K). Searches acro
 ### WebLogStatsController
 
 **File:** `application/dashboard/home/WebLogStatsController.php`
-**Extends:** `Raptor\Controller`
+**Extends:** `Dashboard\Controller`
 
 #### `stats(): void`
 Returns web visit statistics JSON (today/week/month totals, chart data, top pages/news/products, IP addresses, user agents).
@@ -1150,7 +1134,7 @@ Standalone utility that calculates web visit statistics. Maintains a `web_log_ca
 ### ManualController
 
 **File:** `application/dashboard/manual/ManualController.php`
-**Extends:** `Raptor\Controller`
+**Extends:** `Dashboard\Controller`
 
 #### `index(): void`
 Lists all manual HTML files from `application/dashboard/manual/` directory, grouped by module with language variants.
@@ -1273,7 +1257,7 @@ ExceptionHandler -> Container -> Session -> Localization -> Settings -> WebRoute
 ### TemplateController
 
 **File:** `application/web/template/TemplateController.php`
-**Extends:** `Raptor\Controller`
+**Extends:** `Dashboard\Controller`
 
 | Method | Description |
 |--------|-------------|
@@ -1297,7 +1281,7 @@ OpenAI API proxy for the moedit editor's AI button.
 
 ## ContentsRouter - All Routes
 
-**File:** `application/raptor/content/ContentsRouter.php`
+**File:** `application/dashboard/content/ContentsRouter.php`
 
 Central router that registers all content module routes: Files, News, Pages, References, Settings, Moedit AI.
 
@@ -1413,7 +1397,7 @@ Unified dashboard router for the shop module: products, reviews, and orders.
 
 ### DiscordListener
 
-**File:** `application/raptor/notification/DiscordListener.php`
+**File:** `application/dashboard/notification/DiscordListener.php`
 
 PSR-14 event listener that sends Discord webhook notifications. Replaces the previous `DiscordNotifier` direct-call pattern. Registered via `ListenerProvider`.
 
@@ -1470,7 +1454,7 @@ File-based, forward-only SQL migration system. State is derived entirely from th
 
 ### MigrationRunner
 
-**File:** `application/raptor/migration/MigrationRunner.php`
+**File:** `application/dashboard/migration/MigrationRunner.php`
 
 | Method | Description |
 |--------|-------------|
@@ -1484,8 +1468,8 @@ File-based, forward-only SQL migration system. State is derived entirely from th
 
 ### MigrationController
 
-**File:** `application/raptor/migration/MigrationController.php`
-**Extends:** `Raptor\Controller`
+**File:** `application/dashboard/migration/MigrationController.php`
+**Extends:** `Dashboard\Controller`
 
 Restricted to users with the `system_coder` role. All POST routes are protected by the CSRF middleware.
 
@@ -1500,7 +1484,7 @@ Restricted to users with the `system_coder` role. All POST routes are protected 
 
 ### MigrationRouter
 
-**File:** `application/raptor/migration/MigrationRouter.php`
+**File:** `application/dashboard/migration/MigrationRouter.php`
 
 | Route | Method | Name |
 |-------|--------|------|
@@ -1513,7 +1497,7 @@ Restricted to users with the `system_coder` role. All POST routes are protected 
 
 ### MigrationSecurityScanner
 
-**File:** `application/raptor/migration/MigrationSecurityScanner.php`
+**File:** `application/dashboard/migration/MigrationSecurityScanner.php`
 
 Static SQL scanner - checks uploaded SQL for writes against sensitive tables before apply.
 
@@ -1529,8 +1513,8 @@ Sensitive tables (`SENSITIVE_TABLES` const): `users`, `rbac_roles`, `rbac_permis
 
 ### CacheService
 
-**File:** `application/raptor/CacheService.php`
-**Namespace:** `Raptor`
+**File:** `application/dashboard/CacheService.php`
+**Namespace:** `Dashboard`
 
 Custom file-based DB cache (PSR-16 SimpleCache). No external dependency beyond `psr/simple-cache`. Stored in the top-level `cache/` directory (outside the document root, sibling of `logs/`). Registered as `cache` container service via `ContainerMiddleware`. TTL: 12 hours (safety net). Fail-safe: returns `null` if unavailable.
 
@@ -1596,13 +1580,13 @@ Seed and Initial classes populate the database on fresh installs. They run autom
 
 ### PermissionsSeed
 
-**File:** `application/raptor/rbac/PermissionsSeed.php`
+**File:** `application/dashboard/rbac/PermissionsSeed.php`
 
 Seeds 18+ system permissions with `system_` prefix: `logger`, `rbac`, `user_*` (5), `organization_*` (4), `content_*` (6), `product_*` (5), `localization_*` (4), `templates_index`, `development`.
 
 ### RolePermissionSeed
 
-**File:** `application/raptor/rbac/RolePermissionSeed.php`
+**File:** `application/dashboard/rbac/RolePermissionSeed.php`
 
 Creates default roles and assigns permissions:
 
@@ -1616,7 +1600,7 @@ Creates default roles and assigns permissions:
 
 ### MenuSeed
 
-**File:** `application/raptor/template/MenuSeed.php`
+**File:** `application/dashboard/template/MenuSeed.php`
 
 Creates dashboard sidebar menu structure with 3 sections (MN/EN):
 - **Contents** - Messages, Pages, News, Files, Localization, References, Settings
@@ -1627,13 +1611,13 @@ Each item has `permission` guard and `position` for ordering.
 
 ### TextInitial
 
-**File:** `application/raptor/localization/text/TextInitial.php`
+**File:** `application/dashboard/localization/text/TextInitial.php`
 
 Seeds 100+ system localization keywords in MN/EN pairs (e.g. `accept`, `cancel`, `delete`, `dashboard`, `error`, `success`). Keywords are alphabetically ordered with type `sys-defined`.
 
 ### ReferenceInitial
 
-**File:** `application/raptor/content/reference/ReferenceInitial.php`
+**File:** `application/dashboard/content/reference/ReferenceInitial.php`
 
 Seeds `reference_templates` table with email templates and legal content:
 - Email templates: `forgotten-password-reset`, `request-new-user`, `approve-new-user`, `dev-request-new`, `dev-request-response`, `contact-message-notify`, `order-status-update`, `order-confirmation`, `order-notify`, `comment-notify`, `review-notify`
@@ -1645,8 +1629,8 @@ Sample data only exists for built-in modules. Runs on fresh install, removable v
 
 | Class | File | Data |
 |-------|------|------|
-| `NewsSamples` | `raptor/content/news/NewsSamples.php` | 6 news articles (3 MN + 3 EN) with 3 types |
-| `PagesSamples` | `raptor/content/page/PagesSamples.php` | 14+ hierarchical pages (MN + EN) with parent/child structure |
+| `NewsSamples` | `dashboard/content/news/NewsSamples.php` | 6 news articles (3 MN + 3 EN) with 3 types |
+| `PagesSamples` | `dashboard/content/page/PagesSamples.php` | 14+ hierarchical pages (MN + EN) with parent/child structure |
 | `ProductsSamples` | `dashboard/shop/ProductsSamples.php` | 4 products (2 MN + 2 EN) |
 
 ---
@@ -1655,7 +1639,7 @@ Sample data only exists for built-in modules. Runs on fresh install, removable v
 
 ### TrashModel
 
-**File:** `application/raptor/trash/TrashModel.php`
+**File:** `application/dashboard/trash/TrashModel.php`
 **Extends:** `codesaur\DataObject\Model`
 
 **Table:** `trash`
@@ -1685,8 +1669,8 @@ Permanently removes a trash record.
 
 ### TrashController
 
-**File:** `application/raptor/trash/TrashController.php`
-**Extends:** `Raptor\Controller`
+**File:** `application/dashboard/trash/TrashController.php`
+**Extends:** `Dashboard\Controller`
 
 | Method | Description |
 |--------|-------------|
@@ -1725,7 +1709,7 @@ Permanently removes a trash record.
 
 ### TrashRouter
 
-**File:** `application/raptor/trash/TrashRouter.php`
+**File:** `application/dashboard/trash/TrashRouter.php`
 
 | Route | Method | Name |
 |-------|--------|------|
@@ -1763,7 +1747,7 @@ Controllers that changed from `deactivate()` to `delete()`:
 
 ### EventDispatcher
 
-**File:** `application/raptor/notification/EventDispatcher.php`
+**File:** `application/dashboard/notification/EventDispatcher.php`
 **Implements:** `Psr\EventDispatcher\EventDispatcherInterface`
 
 PSR-14 compliant event dispatcher. Iterates through listeners from `ListenerProvider` and calls each one with the event object.
@@ -1776,7 +1760,7 @@ Dispatches an event to all registered listeners.
 
 ### ListenerProvider
 
-**File:** `application/raptor/notification/ListenerProvider.php`
+**File:** `application/dashboard/notification/ListenerProvider.php`
 **Implements:** `Psr\EventDispatcher\ListenerProviderInterface`
 
 Registers and provides listeners for event types.
@@ -1789,7 +1773,7 @@ Returns all listeners registered for the given event's class.
 
 ### ContentEvent
 
-**File:** `application/raptor/notification/ContentEvent.php`
+**File:** `application/dashboard/notification/ContentEvent.php`
 
 Event dispatched for content management actions.
 
@@ -1804,7 +1788,7 @@ Event dispatched for content management actions.
 
 ### UserEvent
 
-**File:** `application/raptor/notification/UserEvent.php`
+**File:** `application/dashboard/notification/UserEvent.php`
 
 Event dispatched for user-related actions.
 
@@ -1816,7 +1800,7 @@ Event dispatched for user-related actions.
 
 ### OrderEvent
 
-**File:** `application/raptor/notification/OrderEvent.php`
+**File:** `application/dashboard/notification/OrderEvent.php`
 
 Event dispatched for order-related actions.
 
@@ -1834,7 +1818,7 @@ Event dispatched for order-related actions.
 
 ### DevRequestEvent
 
-**File:** `application/raptor/notification/DevRequestEvent.php`
+**File:** `application/dashboard/notification/DevRequestEvent.php`
 
 Event dispatched for development request actions.
 

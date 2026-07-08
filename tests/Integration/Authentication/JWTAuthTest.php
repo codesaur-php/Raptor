@@ -4,7 +4,7 @@ namespace Tests\Integration\Authentication;
 
 use Tests\Support\IntegrationTestCase;
 
-use Raptor\Authentication\JWTAuthMiddleware;
+use Dashboard\Authentication\JWTAuthMiddleware;
 
 class JWTAuthTest extends IntegrationTestCase
 {

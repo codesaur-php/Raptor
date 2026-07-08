@@ -4,7 +4,7 @@ namespace Tests\Unit\Content;
 
 use Tests\Support\RaptorTestCase;
 
-use Dashboard\Protected\ProtectedFilesController;
+use Dashboard\File\ProtectedFilesController;
 
 /**
  * ProtectedFilesController::authorizeRead() - эрхийн hook тест.
@@ -17,7 +17,7 @@ use Dashboard\Protected\ProtectedFilesController;
  */
 class ProtectedFilesAuthTest extends RaptorTestCase
 {
-    private function makeController(\Raptor\Authentication\User $user): ProtectedFilesController
+    private function makeController(\Dashboard\Authentication\User $user): ProtectedFilesController
     {
         $request = $this->createMockRequest([
             'pdo'  => $this->createMock(\PDO::class),
@@ -75,7 +75,7 @@ class ProtectedFilesAuthTest extends RaptorTestCase
     public function testReadCallsAuthorizeBeforeServing(): void
     {
         $source = \file_get_contents(
-            \dirname(__DIR__, 3) . '/application/dashboard/protected/ProtectedFilesController.php'
+            \dirname(__DIR__, 3) . '/application/dashboard/file/ProtectedFilesController.php'
         );
 
         $this->assertStringContainsString(

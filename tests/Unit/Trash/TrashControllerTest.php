@@ -16,10 +16,10 @@ class TrashControllerTest extends TestCase
     public static function setUpBeforeClass(): void
     {
         self::$controllerSource = \file_get_contents(
-            \dirname(__DIR__, 3) . '/application/raptor/trash/TrashController.php'
+            \dirname(__DIR__, 3) . '/application/dashboard/trash/TrashController.php'
         );
         self::$routerSource = \file_get_contents(
-            \dirname(__DIR__, 3) . '/application/raptor/trash/TrashRouter.php'
+            \dirname(__DIR__, 3) . '/application/dashboard/trash/TrashRouter.php'
         );
     }
 

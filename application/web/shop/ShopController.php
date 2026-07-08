@@ -6,8 +6,7 @@ use Psr\Log\LogLevel;
 
 use codesaur\Template\MemoryTemplate;
 
-use Raptor\Content\FilesModel;
-
+use Dashboard\File\FilesModel;
 use Dashboard\Shop\ProductsModel;
 use Dashboard\Shop\ProductOrdersModel;
 use Dashboard\Shop\ReviewsModel;
@@ -40,7 +39,7 @@ use Web\Template\TemplateController;
  */
 class ShopController extends TemplateController
 {
-    use \Raptor\SpamProtectionTrait;
+    use \Dashboard\SpamProtectionTrait;
     /**
      * Бүтээгдэхүүний жагсаалтыг харуулах.
      *
@@ -110,7 +109,7 @@ class ShopController extends TemplateController
     {
         $model = new ProductsModel($this->pdo);
         $table = $model->getName();
-        $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
+        $users = (new \Dashboard\User\UsersModel($this->pdo))->getName();
         $stmt = $this->prepare(
             "SELECT p.*, " .
             "CONCAT(c.first_name, ' ', c.last_name) as creator_name, " .
@@ -280,7 +279,7 @@ class ShopController extends TemplateController
                 $code
             );
 
-            $this->dispatch(new \Raptor\Notification\OrderEvent(
+            $this->dispatch(new \Dashboard\Notification\OrderEvent(
                 'insert', (int)$record['id'],
                 $payload['customer_name'],
                 $payload['customer_email'],
@@ -382,7 +381,7 @@ class ShopController extends TemplateController
                 'comment' => $comment
             ]);
 
-            $this->dispatch(new \Raptor\Notification\ContentEvent(
+            $this->dispatch(new \Dashboard\Notification\ContentEvent(
                 'insert', 'review', $product['title'], $id,
                 $name,
                 ['rating' => $rating, 'comment' => $comment]
@@ -501,7 +500,7 @@ class ShopController extends TemplateController
 
             // Web app нь /dashboard-д mount хийгдээгүй тул generateRouteLink() энд
             // ажиллахгүй - email-д cross-app absolute URL hardcode хийнэ. '/dashboard'-г
-            // index.php дахь Dashboard app-ийн mount path-тай тааруулж байх ёстой.
+            // Dashboard app-ийн mount path-тай тааруулж байх ёстой.
             $appUrl = \rtrim((string)$this->getRequest()->getUri()->withPath($this->getScriptPath()), '/');
             $ordersLink = $appUrl . '/dashboard/orders';
 
@@ -564,7 +563,7 @@ class ShopController extends TemplateController
 
             // Web app нь /dashboard-д mount хийгдээгүй тул generateRouteLink() энд
             // ажиллахгүй - email-д cross-app absolute URL hardcode хийнэ. '/dashboard'-г
-            // index.php дахь Dashboard app-ийн mount path-тай тааруулж байх ёстой.
+            // Dashboard app-ийн mount path-тай тааруулж байх ёстой.
             $appUrl = \rtrim((string)$this->getRequest()->getUri()->withPath($this->getScriptPath()), '/');
             $reviewsLink = $appUrl . '/dashboard/products/reviews';
 

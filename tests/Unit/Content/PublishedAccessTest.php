@@ -21,10 +21,10 @@ class PublishedAccessTest extends RaptorTestCase
     public static function setUpBeforeClass(): void
     {
         self::$newsSource = \file_get_contents(
-            \dirname(__DIR__, 3) . '/application/raptor/content/news/NewsController.php'
+            \dirname(__DIR__, 3) . '/application/dashboard/content/news/NewsController.php'
         );
         self::$pagesSource = \file_get_contents(
-            \dirname(__DIR__, 3) . '/application/raptor/content/page/PagesController.php'
+            \dirname(__DIR__, 3) . '/application/dashboard/content/page/PagesController.php'
         );
     }
 

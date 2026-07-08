@@ -4,7 +4,7 @@ namespace Tests\Unit\Trash;
 
 use PHPUnit\Framework\TestCase;
 
-use Raptor\Trash\TrashModel;
+use Dashboard\Trash\TrashModel;
 
 /**
  * TrashModel-ийн source code шинжлэлийн тест.
@@ -17,7 +17,7 @@ class TrashModelTest extends TestCase
     public static function setUpBeforeClass(): void
     {
         self::$source = \file_get_contents(
-            \dirname(__DIR__, 3) . '/application/raptor/trash/TrashModel.php'
+            \dirname(__DIR__, 3) . '/application/dashboard/trash/TrashModel.php'
         );
     }
 

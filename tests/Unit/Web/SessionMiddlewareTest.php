@@ -9,7 +9,7 @@ use Psr\Http\Message\UriInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Psr\Http\Message\ResponseInterface;
 
-use Raptor\SessionMiddleware;
+use Dashboard\SessionMiddleware;
 
 /**
  * SessionMiddleware - session write-lock логикийг тестлэх.
@@ -195,7 +195,7 @@ class SessionMiddlewareTest extends TestCase
     private static function source(): string
     {
         return \file_get_contents(
-            \dirname(__DIR__, 3) . '/application/raptor/SessionMiddleware.php'
+            \dirname(__DIR__, 3) . '/application/dashboard/SessionMiddleware.php'
         );
     }
 

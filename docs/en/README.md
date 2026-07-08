@@ -26,7 +26,7 @@
 
 ## 1. Introduction
 
-`codesaur/raptor` is a PHP framework with a two-layer architecture: **Web** (public site) and **Dashboard** (admin panel), built on PSR-7/PSR-15 middleware standards.
+`codesaur/raptor` is a PHP framework built on PSR-7/PSR-15 middleware standards. It ships with two apps by default - **Web** (public site) and **Dashboard** (admin panel) - and a developer can add as many app layers as the project needs.
 
 ### Key Features
 
@@ -396,19 +396,20 @@ one folder, rather than splitting them across separate layer directories (there 
 no top-level `Models/`, `Controllers/`, or `Views/`). Adding or removing a feature
 is as simple as copying or deleting one folder.
 
-`application/` holds the three app layers: `raptor/` (core framework modules,
-used by both dashboard and web), `dashboard/` (admin panel application) and
-`web/` (public website application). See the "Directory Structure" section of
-the root `README.md` for the app-level layout. Each module's folder location
-and classes are documented in its own subsection of section 6.
+`application/` holds two apps: `dashboard/` (admin panel application, which also
+hosts the shared platform modules - base Controller, middlewares, models - used
+by web) and `web/` (public website application). See the "Directory Structure"
+section of the root `README.md` for the app-level layout. Each module's folder
+location and classes are documented in its own subsection of section 6.
 
 > **Everything outside `vendor/` is yours.** After `composer create-project`,
 > `application/`, `public_html/`, `database/`, `tests/`, `docs/` and the config
 > files all become part of your project - freely modify, delete, or rewrite them to
-> fit your needs, including the `raptor/` core itself. The default codebase is a baseline covering a developer's common
-> needs, so adapt the code directly to your own detailed requirements. Only the
-> `vendor/*` packages are Composer-managed dependencies (updated via
-> `composer update`); leave those untouched.
+> fit your needs. There is no separate "framework core" layer: `application/` holds
+> two apps, `dashboard/` and `web/`, and both are plain project code.
+> The default codebase is a baseline covering a developer's common needs,
+> so adapt the code directly to your own detailed requirements. Only the `vendor/*`
+> packages are Composer-managed dependencies (updated via `composer update`); leave those untouched.
 
 ---
 
@@ -417,7 +418,7 @@ and classes are documented in its own subsection of section 6.
 Middleware are PSR-15 standard layers that process request/response. Registration order matters!
 
 The PDO connection is opened once in `public_html/index.php` via
-`\Raptor\DatabaseConnection::connect()` and reaches the Application as the
+`\Dashboard\DatabaseConnection::connect()` and reaches the Application as the
 request's `pdo` attribute.
 
 ### Dashboard Middleware
@@ -448,7 +449,7 @@ request's `pdo` attribute.
 ### Database Driver Selection
 
 The driver is chosen via the `RAPTOR_DB_DRIVER` variable in `.env`
-(`mysql` or `pgsql`). `\Raptor\DatabaseConnection::connect()` reads it
+(`mysql` or `pgsql`). `\Dashboard\DatabaseConnection::connect()` reads it
 and returns the corresponding PDO instance:
 
 ```dotenv
@@ -510,15 +511,15 @@ $this->isUser('system_admin');
 $this->isUserCan('news_edit');
 ```
 
-### 6.5 Content - Files
+### 6.5 Files
 
-**Classes:** `FilesController`, `FilesModel` (protected file serving moved to `Dashboard\Protected\ProtectedFilesController` - see the Protected files section in api.md)
+**Classes:** `FileRouter`, `FileController`, `FilesController`, `FilesModel`, `ProtectedFilesController`
 
 - File upload (native JS, FormData)
 - Image optimization (GD)
 - Files organized by module/table
 - MIME type detection
-- Private files (authenticated users only)
+- Protected files (authenticated users only, authorizeRead() hook)
 
 ### 6.6 Content - News
 
@@ -699,7 +700,7 @@ Sitemap: https://example.com/sitemap.xml
 
 **Classes:** `CsrfMiddleware`
 
-- **Per-route middleware** (NOT app-wide). Attached to each mutating route in the router via `->middleware([CsrfMiddleware::class])` (with `use Raptor\CsrfMiddleware;`)
+- **Per-route middleware** (NOT app-wide). Attached to each mutating route in the router via `->middleware([CsrfMiddleware::class])` (with `use Dashboard\CsrfMiddleware;`)
 - The middleware ONLY validates: it compares `$_SESSION['CSRF_TOKEN']` against the `X-CSRF-TOKEN` header and returns 403 on mismatch
 - GET/HEAD/OPTIONS requests pass through without validation (protects the GET side of `GET_POST`/`GET_PUT` compound routes)
 - Token is generated at login and stored in `$_SESSION['CSRF_TOKEN']`. As a fallback for old sessions, `Controller::template()` generates it when an authorized user has none and the session is writable
@@ -756,7 +757,7 @@ Sitemap: https://example.com/sitemap.xml
 
 - Colored badge pills on sidebar menu items showing unseen activity counts per admin
 - Reads from existing `*_log` tables - no separate event table
-- Multi-tenant: `orgScopedModules()` scopes listed modules' badges to the viewing admin's organization (`system_coder` bypasses)
+- Multi-tenant: `orgScopedModules()` scopes listed modules' badges to the viewing admin's organization, filtering by the record's org (`record_organization_id` in log context) with the actor's org as fallback; `system_coder` and admins viewing from the system organization (`isSystemWideViewer()`) see all organizations
 - Badge colors: green (create), blue (update), red (delete)
 - Up to 3 badges per module, shown left to right in green-blue-red order
 - Filters by admin permissions (PERMISSION_MAP) and excludes admin's own actions
@@ -943,9 +944,9 @@ Routes that are never referenced by name do not need `->name()`, reducing unnece
 
 ## 9. Controller
 
-### Base Controller (Raptor\Controller)
+### Base Controller (Dashboard\Controller)
 
-All controllers extend `Raptor\Controller`. Available methods:
+All controllers extend `Dashboard\Controller`. Available methods:
 
 | Method | Description |
 |--------|-------------|
@@ -972,7 +973,7 @@ All controllers extend `Raptor\Controller`. Available methods:
 ```php
 namespace Dashboard\Products;
 
-class ProductsController extends \Raptor\Controller
+class ProductsController extends \Dashboard\Controller
 {
     public function index()
     {
@@ -1224,19 +1225,12 @@ Then regenerate the autoloader:
 composer dump-autoload
 ```
 
-3. Register the Router in your Application:
+3. Register the Router inside `Dashboard\Application`'s constructor, next to the
+   other `$this->use(...)` router registrations:
 
 ```php
-// application/dashboard/Application.php
-class Application extends \Raptor\Application
-{
-    public function __construct()
-    {
-        parent::__construct();
-        $this->use(new Home\HomeRouter());
-        $this->use(new MyModule\MyModuleRouter());  // New router
-    }
-}
+// application/dashboard/Application.php  (inside __construct)
+$this->use(new MyModule\MyModuleRouter());  // New router
 ```
 
 ### Adding a Public Web Page
@@ -1268,7 +1262,7 @@ RAPTOR_DB_DRIVER=mysql
 RAPTOR_DB_DRIVER=pgsql
 ```
 
-`\Raptor\DatabaseConnection::connect()` reads this value and returns the matching PDO.
+`\Dashboard\DatabaseConnection::connect()` reads this value and returns the matching PDO.
 
 ---
 

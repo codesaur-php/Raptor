@@ -4,10 +4,10 @@ namespace Tests\Unit\Notification;
 
 use PHPUnit\Framework\TestCase;
 
-use Raptor\Notification\ListenerProvider;
-use Raptor\Notification\Event;
-use Raptor\Notification\ContentEvent;
-use Raptor\Notification\UserEvent;
+use Dashboard\Notification\ListenerProvider;
+use Dashboard\Notification\Event;
+use Dashboard\Notification\ContentEvent;
+use Dashboard\Notification\UserEvent;
 
 class ListenerProviderTest extends TestCase
 {

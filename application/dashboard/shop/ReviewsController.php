@@ -11,9 +11,9 @@ use Psr\Log\LogLevel;
  *
  * @package Dashboard\Shop
  */
-class ReviewsController extends \Raptor\Controller
+class ReviewsController extends \Dashboard\Controller
 {
-    use \Raptor\Template\DashboardTrait;
+    use \Dashboard\Template\DashboardTrait;
 
     /**
      * Үнэлгээнүүдийн жагсаалт.
@@ -91,7 +91,7 @@ class ReviewsController extends \Raptor\Controller
             }
 
             $model->deleteById($id);
-            (new \Raptor\Trash\TrashModel($this->pdo))->store(
+            (new \Dashboard\Trash\TrashModel($this->pdo))->store(
                 'products', $model->getName(), $id, $record, $this->getUserId()
             );
 
@@ -103,7 +103,7 @@ class ReviewsController extends \Raptor\Controller
 
             $this->log('products', LogLevel::WARNING, '{record_id} бүтээгдэхүүний #{id} ({name}) үнэлгээг устгалаа', ['action' => 'review-delete', 'record_id' => $record['product_id'], 'id' => $id, 'name' => $record['name']]);
 
-            $this->dispatch(new \Raptor\Notification\ContentEvent(
+            $this->dispatch(new \Dashboard\Notification\ContentEvent(
                 'delete', 'review', "#{$id} by {$record['name']}", (int)($record['product_id'] ?? 0)
             ));
         } catch (\Throwable $err) {

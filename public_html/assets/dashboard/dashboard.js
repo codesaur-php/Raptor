@@ -3,13 +3,20 @@
  *
  * Энэ файл нь Dashboard UI-ийн нийтлэг функцуудыг нэгтгэсэн сан юм.
  *  Доорх функцууд нь:
- *  AJAX Modal Loader
- *  Sidebar link activation
- *  Sidebar badge system (initSidebarBadges)
+ *  CSRF + WAF-compatible fetch wrapper (getCsrfToken / wafBodyEncodingEnabled /
+ *      b64EncodeUnicode / csrfFetch)
+ *  AJAX Modal Loader (ajaxModal)
+ *  Sidebar link activation (activateLink)
  *  Top Notification (Notify)
  *  Button Spinner (spinNstop / growNstop)
- *  Scroll-To-Top Button
- *  Dark mode auto-apply
+ *  Scroll-To-Top Button (initScrollToTop)
+ *  Global search modal, Ctrl+K (initGlobalSearch)
+ *  Sidebar badge system (initSidebarBadges)
+ *  Logout confirmation (initLogoutConfirm)
+ *  Topbar language/theme dropdowns, dark mode (initTopbarQuick)
+ *  Topbar organization switcher (initOrgSwitcher)
+ *  Invalid tab focus (initInvalidTabFocus)
+ *  Logger Protocol loader (initLoggerProtocol)
  *
  * Raptor Dashboard бүхэн энэ файлыг залгаж ашиглана.
  *

@@ -4,7 +4,7 @@ namespace Tests\Integration\Model;
 
 use Tests\Support\IntegrationTestCase;
 
-use Raptor\Authentication\SignupModel;
+use Dashboard\Authentication\SignupModel;
 
 class SignupModelTest extends IntegrationTestCase
 {

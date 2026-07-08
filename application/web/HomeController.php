@@ -4,8 +4,8 @@ namespace Web;
 
 use Psr\Log\LogLevel;
 
-use Raptor\Content\NewsModel;
-use Raptor\Content\ReadNewsTrait;
+use Dashboard\Content\NewsModel;
+use Dashboard\Content\ReadNewsTrait;
 
 /**
  * Class HomeController

@@ -2,7 +2,7 @@
 
 namespace Dashboard\Manual;
 
-use Raptor\Template\DashboardTrait;
+use Dashboard\Template\DashboardTrait;
 
 /**
  * Class ManualController
@@ -12,7 +12,7 @@ use Raptor\Template\DashboardTrait;
  *
  * @package Dashboard\Manual
  */
-class ManualController extends \Raptor\Controller
+class ManualController extends \Dashboard\Controller
 {
     use DashboardTrait;
 

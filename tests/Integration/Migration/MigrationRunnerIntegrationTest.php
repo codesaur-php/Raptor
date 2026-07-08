@@ -4,7 +4,7 @@ namespace Tests\Integration\Migration;
 
 use Tests\Support\IntegrationTestCase;
 
-use Raptor\Migration\MigrationRunner;
+use Dashboard\Migration\MigrationRunner;
 
 /**
  * MigrationRunner integration tests.

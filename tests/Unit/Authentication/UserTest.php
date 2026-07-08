@@ -4,7 +4,7 @@ namespace Tests\Unit\Authentication;
 
 use Tests\Support\RaptorTestCase;
 
-use Raptor\Authentication\User;
+use Dashboard\Authentication\User;
 
 class UserTest extends RaptorTestCase
 {

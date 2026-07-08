@@ -5,7 +5,7 @@ namespace Tests\Unit\Exception;
 use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\Attributes\DataProvider;
 
-use Raptor\Exception\ErrorHandler;
+use Dashboard\Exception\ErrorHandler;
 
 /**
  * ErrorHandler - алдааны response формат, статус код тохируулалтыг тестлэх.

@@ -4,8 +4,8 @@ namespace Web\Content;
 
 use Psr\Log\LogLevel;
 
-use Raptor\Content\PagesModel;
-use Raptor\Content\FilesModel;
+use Dashboard\Content\PagesModel;
+use Dashboard\File\FilesModel;
 
 use Web\Template\TemplateController;
 
@@ -38,7 +38,7 @@ class PageController extends TemplateController
     {
         $model = new PagesModel($this->pdo);
         $table = $model->getName();
-        $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
+        $users = (new \Dashboard\User\UsersModel($this->pdo))->getName();
         $stmt = $this->prepare(
             "SELECT p.*, " .
             "CONCAT(c.first_name, ' ', c.last_name) as creator_name, " .

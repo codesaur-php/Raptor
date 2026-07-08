@@ -8,8 +8,7 @@ Raptor is a PHP framework following the MVC pattern with a modular (package-by-f
 
 ```
 application/
-  raptor/          # Core framework modules (shared by dashboard + web)
-  dashboard/       # Admin panel application
+  dashboard/       # Admin panel application (also hosts the shared platform modules used by web)
   web/             # Public website application
 public_html/       # Document root (index.php entry point, assets/)
 database/
@@ -18,28 +17,29 @@ database/
 tests/             # PHPUnit tests
 ```
 
+There is no separate "framework core" layer - `dashboard/` and `web/` are the only two app folders. Shared infrastructure (base `Controller`, middlewares, models, DatabaseConnection) lives in `application/dashboard/` and is imported by `web/` from there.
+
 ### Entry Point
 
-`public_html/index.php` bootstraps the app, loads `.env`, opens the PDO connection via `\Raptor\DatabaseConnection::connect()` (driver selected by `RAPTOR_DB_DRIVER`: `mysql` | `pgsql`), and passes it to the Application as the `pdo` request attribute. Web and Dashboard share the same connection. Then routes to `Web\Application` or `Dashboard\Application` based on URL path. Controllers pick up `$this->pdo` automatically inside `Raptor\Controller::__construct()`.
+`public_html/index.php` bootstraps the app, loads `.env`, opens the PDO connection via `\Dashboard\DatabaseConnection::connect()` (driver selected by `RAPTOR_DB_DRIVER`: `mysql` | `pgsql`), and passes it to the Application as the `pdo` request attribute. Web and Dashboard share the same connection. Then routes to `Web\Application` or `Dashboard\Application` based on URL path. Controllers pick up `$this->pdo` automatically inside `Dashboard\Controller::__construct()`.
 
 ### Namespaces
 
-- `Raptor\` - Core framework
+- `Dashboard\` - Admin dashboard + shared platform code (base Controller, middlewares, models - also consumed by `Web\`)
 - `Web\` - Public website (controllers, templates, feature modules all under this namespace)
-- `Dashboard\` - Admin dashboard
 - `Tests\` - Test classes
 
 ## General Rule
 
 If something is not covered in this guide, read existing code in `application/` and follow the same patterns. Match the conventions of the nearest similar module.
 
-Everything outside `vendor/` is developer-owned project code, not a locked library. After `composer create-project`, the whole tree (`application/`, `public_html/`, `database/`, `tests/`, `docs/`, config files) can be freely modified, replaced, or removed - including the `raptor/` core itself. The default codebase is only a baseline covering a developer's common needs - adapt the code directly to project-specific requirements. Only the `vendor/*` packages are Composer-managed dependencies (updated via `composer update`); leave those untouched.
+Everything outside `vendor/` is developer-owned project code, not a locked library. After `composer create-project`, the whole tree (`application/`, `public_html/`, `database/`, `tests/`, `docs/`, config files) can be freely modified, replaced, or removed. The default codebase is only a baseline covering a developer's common needs - adapt the code directly to project-specific requirements; direct editing is the primary customization path (no subclass/override layer is expected). Only the `vendor/*` packages are Composer-managed dependencies (updated via `composer update`); leave those untouched.
 
 ## Adding a New Module
 
 ### 1. Create Controller
 
-Extend `Raptor\Controller` (dashboard) or `Web\Template\TemplateController` (web). Dashboard modules go in `application/dashboard/{module}/`, core/shared modules in `application/raptor/{module}/`.
+Extend `Dashboard\Controller` (dashboard) or `Web\Template\TemplateController` (web). Dashboard modules go in `application/dashboard/{module}/`.
 
 ```php
 $this->pdo                          // PDO database connection
@@ -60,7 +60,7 @@ $this->dispatch($event)             // Dispatch PSR-14 event (notifications, etc
 **Notification dispatch** - use PSR-14 events instead of calling services directly. Admin name and dashboard URL are auto-injected by `DiscordNotifier` (set in `ContainerMiddleware`), so controllers only pass content-specific data:
 
 ```php
-$this->dispatch(new \Raptor\Notification\ContentEvent(
+$this->dispatch(new \Dashboard\Notification\ContentEvent(
     'delete', 'my-module', $title, $id
 ));
 ```
@@ -75,18 +75,9 @@ $this->dispatch(new \Raptor\Notification\ContentEvent(
 
 **Rule:** When you need the standard layout (navbar/sidebar, footer, settings), use `dashboardTemplate()` or `webTemplate()`. These call `template()` internally to build layout + content. When you need full control over the output without any layout, use `template()` directly.
 
-**DashboardTrait method collision rule:** a controller that uses `Raptor\Template\DashboardTrait` MUST NOT define a method with the same name as any of the trait's public API (`dashboardTemplate`, `dashboardProhibited`, `modalProhibited`, `getUserMenu`, `getUserOrganizations`). In PHP a class method silently overrides the trait method, so the trait's internal calls (e.g. `dashboardTemplate()` calling `getUserOrganizations()` for the topbar org switcher) would dispatch to the controller's unrelated version and break the layout. If a controller needs a similar helper, pick a distinct name (e.g. `getMemberOrganizations()`).
+**DashboardTrait method collision rule:** a controller that uses `Dashboard\Template\DashboardTrait` MUST NOT define a method with the same name as any of the trait's public API (`dashboardTemplate`, `dashboardProhibited`, `modalProhibited`, `getUserMenu`, `getUserOrganizations`). In PHP a class method silently overrides the trait method, so the trait's internal calls (e.g. `dashboardTemplate()` calling `getUserOrganizations()` for the topbar org switcher) would dispatch to the controller's unrelated version and break the layout. If a controller needs a similar helper, pick a distinct name (e.g. `getMemberOrganizations()`).
 
-**Custom dashboard layout (`overrideDashboardLayout`):** the three layout templates DashboardTrait renders internally (`dashboard.html`, `alert-no-permission.html`, `modal-no-permission.html`) can be replaced from the developer's own Application - an alternative to editing the raptor templates in place (both are valid; the override keeps the baseline files intact). Register in the Application constructor (same explicit-override philosophy as router `override()`):
-
-```php
-// application/{myapp}/Application.php
-parent::__construct($response);
-// Use a folder name distinct from raptor's own `template/` to avoid confusion.
-$this->overrideDashboardLayout('dashboard.html', __DIR__ . '/myspecial/dashboard.html');
-```
-
-The map travels as the `dashboard_layouts` request attribute (injected in `Raptor\Application::handle()`) and is resolved by `DashboardTrait::layout()`. Registration fail-fasts with `InvalidArgumentException` if the custom file does not exist. When writing a custom `dashboard.html`, start from a copy of the core file - it must keep `{{ content }}`, the `csrf-token` and `waf-body-encoding` meta tags, and the `dashboard.js`/`dashboard.css` includes, otherwise CSRF, WAF encoding, badges and the org switcher break. The sidemenu loop is optional - the developer can build their own navigation any way they like (keep the loop only if you want the ready-made RBAC-filtered menu). Pages that have their own route (login etc.) are NOT part of this map - override their route instead.
+**Customizing the dashboard layout:** the three layout templates DashboardTrait renders internally live in `application/dashboard/template/` (`dashboard.html`, `alert-no-permission.html`, `modal-no-permission.html`). When redesigning `dashboard.html`, it must keep `{{ content }}`, the `csrf-token` and `waf-body-encoding` meta tags, and the `dashboard.js`/`dashboard.css` includes, otherwise CSRF, WAF encoding, badges and the org switcher break. The sidemenu loop is optional - the developer can build their own navigation any way they like (keep the loop only if you want the ready-made RBAC-filtered menu).
 
 ```php
 // AJAX modal - standalone, no layout
@@ -125,7 +116,7 @@ Register routes in a Router class extending `codesaur\Router\Router`.
 
 - Give a route `->name()` only when referenced from templates (`{{ 'name'|link }}`) or PHP (`generateRouteLink()`). Routes called dynamically from JS do not need a name.
 - Register the router in the app's `Application.php`.
-- **CSRF**: every mutating dashboard route (POST/PUT/PATCH/DELETE and `GET_POST`/`GET_PUT` compounds) MUST chain `->middleware([CsrfMiddleware::class])` (with `use Raptor\CsrfMiddleware;`) - CSRF is per-route, not app-wide. Only login routes are exempt. See "CsrfMiddleware" below.
+- **CSRF**: every mutating dashboard route (POST/PUT/PATCH/DELETE and `GET_POST`/`GET_PUT` compounds) MUST chain `->middleware([CsrfMiddleware::class])` (with `use Dashboard\CsrfMiddleware;`) - CSRF is per-route, not app-wide. Only login routes are exempt. See "CsrfMiddleware" below.
 - **Dashboard home route**: the named `'home'` route lives at `/home`, and `/` (dashboard root) stays registered WITHOUT a name - both point to `HomeController::index` (see `HomeRouter`). Do not merge them: sidebar active-detection uses prefix matching (`href.startsWith(link)`), so naming `/` as home would keep the home link active on every page; removing `/` would 404 the public web's `{{ index }}/dashboard` CTA/footer links. The bare dashboard root (where login lands) does not prefix-match the `/home` link, so `dashboard.html`'s inline script adds `active` to the home link when `window.location.pathname` equals `{{ index }}/dashboard`.
 
 ### 5. Create Templates
@@ -237,7 +228,7 @@ Place tests in `tests/Unit/` or `tests/Integration/`. Extend `Tests\Support\Rapt
 ## RBAC and Authentication
 
 - `isUserAuthorized()` - only checks login status, no permissions. Use when middleware does not cover the route.
-- `isUserCan('permission')` - check permission in `raptor/` and `dashboard/` controllers. Also needed in `web/` if the site has membership features.
+- `isUserCan('permission')` - check permission in `dashboard/` controllers. Also needed in `web/` if the site has membership features.
 - `getUserId()` - returns user ID. Do NOT use `!$this->getUserId()` for auth checks - id=0 can bypass. Only use when you need the actual ID value.
 - Controllers with `published` field (News, Pages, Products) allow users without `_update`/`_delete` permission to edit/delete their own unpublished records.
 - Models WITHOUT `published` field are immediately live - no owner access bypass.
@@ -297,7 +288,7 @@ public function process($request, $handler): ResponseInterface
 
 ### SessionMiddleware
 
-`Raptor\SessionMiddleware` is shared by both apps. Constructor accepts a `needsWrite` closure. All other routes call `session_write_close()` early for concurrency.
+`Dashboard\SessionMiddleware` is shared by both apps. Constructor accepts a `needsWrite` closure. All other routes call `session_write_close()` early for concurrency.
 
 - **Dashboard**: checks for `/login` path or empty CSRF token (to allow first-time token generation)
 - **Web**: checks for `/session/` prefix - all routes that write to `$_SESSION` use `/session/` prefix (e.g., `/session/language/{code}`, `/session/contact-send`, `/session/order`)
@@ -314,7 +305,7 @@ new SessionMiddleware(fn($path, $method) =>
 
 ### CsrfMiddleware
 
-`Raptor\CsrfMiddleware` protects dashboard mutating requests against CSRF attacks. It is a **per-route** middleware (NOT app-wide) - import it (`use Raptor\CsrfMiddleware;`) and attach it to each mutating route in the router:
+`Dashboard\CsrfMiddleware` protects dashboard mutating requests against CSRF attacks. It is a **per-route** middleware (NOT app-wide) - import it (`use Dashboard\CsrfMiddleware;`) and attach it to each mutating route in the router:
 
 ```php
 $this->POST('/news/insert', [NewsController::class, 'insert'])
@@ -328,13 +319,13 @@ $this->POST('/news/insert', [NewsController::class, 'insert'])
 - Token is delivered to the frontend via `<meta name="csrf-token">` in `dashboard.html` (`Controller::template()` reads it from session).
 - Client JS sends the token via `X-CSRF-TOKEN` header using `csrfFetch()` wrapper.
 
-**For new dashboard modules**: every mutating route (POST/PUT/PATCH/DELETE and `GET_POST`/`GET_PUT` compounds) MUST add `->middleware([CsrfMiddleware::class])` (with `use Raptor\CsrfMiddleware;` in the router) - it is NOT automatic. Login routes are the only exempt mutating routes (do not attach it there; the token is created during login). On the client, use `csrfFetch()` instead of `fetch()` for all mutating requests; GET requests can use either. `csrfFetch()` is defined in `dashboard.js` and auto-adds the CSRF header.
+**For new dashboard modules**: every mutating route (POST/PUT/PATCH/DELETE and `GET_POST`/`GET_PUT` compounds) MUST add `->middleware([CsrfMiddleware::class])` (with `use Dashboard\CsrfMiddleware;` in the router) - it is NOT automatic. Login routes are the only exempt mutating routes (do not attach it there; the token is created during login). On the client, use `csrfFetch()` instead of `fetch()` for all mutating requests; GET requests can use either. `csrfFetch()` is defined in `dashboard.js` and auto-adds the CSRF header.
 
 **For standalone pages** (not using `dashboard.html` layout, e.g. login): use plain `fetch()` since `dashboard.js` is not loaded and login routes carry no CsrfMiddleware anyway.
 
 ### Shared Hosting / WAF Compatibility
 
-Many shared hosts (cPanel/LiteSpeed with mod_security) interfere with normal dashboard saves in two ways. The framework works around both automatically - no per-module code needed. These are registered as app-wide middleware in both `Raptor\Application` and `Web\Application`, and wired into `csrfFetch()` on the client. (Raptor sets a 30-day session cookie by default in `SessionMiddleware`; the server-side `gc_maxlifetime`/`save_path` use PHP/host config, and that one line can be removed to rely entirely on php.ini - see `docs/en/SESSION-LIFETIME.md`.)
+Many shared hosts (cPanel/LiteSpeed with mod_security) interfere with normal dashboard saves in two ways. The framework works around both automatically - no per-module code needed. These are registered as app-wide middleware in both `Dashboard\Application` and `Web\Application`, and wired into `csrfFetch()` on the client. (Raptor sets a 30-day session cookie by default in `SessionMiddleware`; the server-side `gc_maxlifetime`/`save_path` use PHP/host config, and that one line can be removed to rely entirely on php.ini - see `docs/en/SESSION-LIFETIME.md`.)
 
 1. **Blocked verbs -> 403 on PUT/PATCH/DELETE.** WAFs often reject these verbs before PHP runs. `MethodOverrideMiddleware` reads `X-HTTP-Method-Override` and restores the real verb before routing; `csrfFetch()` sends mutating requests as POST + that header. POST-only, never overrides to GET, so CSRF still applies. Always on (zero downside).
 
@@ -342,7 +333,7 @@ Many shared hosts (cPanel/LiteSpeed with mod_security) interfere with normal das
 
 When adding new modules: keep using `method="PUT"` forms + `csrfFetch()`; tunneling and encoding are transparent. A dashboard save 403 on this kind of host is a WAF symptom, NOT a CSRF bug. Web (public) forms only get the server-side middleware - they have no `csrfFetch`, so add an equivalent client wrapper if a public form needs HTML body encoding.
 
-**Defaults are fail-safe (always ON):** every layer defaults to encoding enabled - env unset (`Controller` `?? true`), template var unset (`?? '1'`), and meta tag missing (`csrfFetch` treats absent meta as enabled). So a misconfiguration can never silently re-introduce the WAF 403; worst case is harmless extra payload on a non-WAF host. The one consequence: the `<meta name="waf-body-encoding">` tag is the ONLY channel carrying the env value to the client. **If you build a custom dashboard layout (not the shipped `dashboard.html`), you MUST include this meta tag** - otherwise `RAPTOR_WAF_BODY_ENCODING=false` is silently ignored on the client (encoding stays on). The server side stays correct regardless (it is gated by the `X-Body-Encoding` header, not by env), so nothing breaks - the toggle just won't take effect.
+**Defaults are fail-safe (always ON):** every layer defaults to encoding enabled - env unset (`Controller` `?? true`), template var unset (`?? '1'`), and meta tag missing (`csrfFetch` treats absent meta as enabled). So a misconfiguration can never silently re-introduce the WAF 403; worst case is harmless extra payload on a non-WAF host. The one consequence: the `<meta name="waf-body-encoding">` tag is the ONLY channel carrying the env value to the client. **If you redesign or replace `dashboard.html`, you MUST keep this meta tag** - otherwise `RAPTOR_WAF_BODY_ENCODING=false` is silently ignored on the client (encoding stays on). The server side stays correct regardless (it is gated by the `X-Body-Encoding` header, not by env), so nothing breaks - the toggle just won't take effect.
 
 **Sending a request the "plain" way (no method override, no body encoding):** there are two levels.
 
@@ -351,7 +342,7 @@ When adding new modules: keep using `method="PUT"` forms + `csrfFetch()`; tunnel
 
 ### LocalizationMiddleware
 
-`Raptor\Localization\LocalizationMiddleware` is shared. Constructor accepts session key. Controllers read `$this->getAttribute('localization')['session_key']` to write language to session without hardcoding.
+`Dashboard\Localization\LocalizationMiddleware` is shared. Constructor accepts session key. Controllers read `$this->getAttribute('localization')['session_key']` to write language to session without hardcoding.
 
 ## Database
 
@@ -490,9 +481,9 @@ if ($data === null) {
 
 ### ProtectedFilesController
 
-`Dashboard\Protected\ProtectedFilesController` (`application/dashboard/protected/`) serves files from the document-root-external `/protected` folder through the `GET /dashboard/protected/file?name=...` route (`ProtectedRouter`, registered in `Dashboard\Application`). It lives in `application/dashboard/` because no shipped module uses protected storage - every shipped module stores files in `/public` via `FileController::setFolder()`. Protected storage is a per-project decision, so this is a reference implementation to customize.
+`Dashboard\File\ProtectedFilesController` (`application/dashboard/file/`) serves files from the document-root-external `/protected` folder through the `GET /dashboard/protected/file?name=...` route (`FileRouter`, registered in `Dashboard\Application`). No shipped module uses protected storage - every shipped module stores files in `/public` via `FileController::setFolder()`. Protected storage is a per-project decision, so this is a reference implementation to customize.
 
-Authorization is an overridable hook: `read()` calls `protected function authorizeRead(string $relativePath): bool` before serving. The default is permissive - any authenticated user may read (`system_coder` always). To restrict, either edit `authorizeRead()` in place or subclass `ProtectedFilesController`, override `authorizeRead()` and `$this->override(...)` the route to your controller - both ways apply your module's index/view permission or tenant-ownership rule (the method carries a commented org-id example). Because the default is permissive, a project that stores sensitive per-tenant files under `/protected` MUST tighten `authorizeRead()` - otherwise any logged-in user of any tenant can read every protected file.
+Authorization is a hook: `read()` calls `protected function authorizeRead(string $relativePath): bool` before serving. The default is permissive - any authenticated user may read (`system_coder` always). To restrict, edit `authorizeRead()` in place with your module's index/view permission or tenant-ownership rule (the method carries a commented org-id example). Because the default is permissive, a project that stores sensitive per-tenant files under `/protected` MUST tighten `authorizeRead()` - otherwise any logged-in user of any tenant can read every protected file.
 
 `read()` also blocks directory traversal (realpath containment) and a denylist of executable/sensitive extensions and filenames (php, .env, .htaccess, etc.). (The framework cache lives in the top-level `cache/` directory, not under `/protected`, so the controller has no cache-specific logic.)
 
@@ -502,7 +493,7 @@ Authorization is an overridable hook: `read()` calls `protected function authori
 
 The current codebase uses these libraries, but none are required by the framework:
 
-- Bootstrap 5.3.6 (CDN), Bootstrap Icons 1.13.1
+- Bootstrap 5.3.8 (CDN), Bootstrap Icons 1.13.1
 - `motable.js` - Data table, `moedit.js` - Rich text editor
 - `dashboard.js` - AJAX modals, notifications, search modal (Ctrl+K), topbar language/theme dropdowns, sidebar badges, CSRF fetch wrapper, log protocol loader, dark mode
 - SweetAlert2 - Confirmation dialogs
@@ -535,7 +526,15 @@ Colored badge pills on sidebar menu items showing unseen activity counts per adm
 
 ### Multi-tenant org scoping
 
-`BadgeController::orgScopedModules()` (default `[]`) returns mount-naive module paths whose badges must be scoped to the viewing admin's current organization. For those modules the count query adds `context.auth_user.organization_id == currentOrgId` (log entries with a NULL org - old/web-frontend - still count for all, backward-compatible; `system_coder` bypasses scoping entirely as a cross-tenant superuser). The shipped content modules (news/pages/products/orders/messages) are global (no `organization_id` column) so the default list is empty; a multi-tenant app lists its tenant-scoped modules in `orgScopedModules()` (e.g. `['/request']`) - edit the method body directly, or override it in a subclass. The actor's org is recorded in every log entry by `Controller::log()` (`auth_user.organization_id`).
+`BadgeController::orgScopedModules()` (default `[]`) returns mount-naive module paths whose badges must be scoped to the viewing admin's current organization. For those modules the count query filters by `COALESCE(context.record_organization_id, context.auth_user.organization_id) == currentOrgId`:
+
+- `record_organization_id` - the RECORD's owning organization. A tenant-scoped module's controller should add it to the log context on insert/update/delete (same convention as `record_id`), so the badge reaches the record's organization even when the action was performed by an admin logged into a different organization.
+- `auth_user.organization_id` - the actor's org, recorded automatically by `Controller::log()`. Fallback when `record_organization_id` is absent.
+- Both NULL (old logs, web frontend) - counts for all admins, backward-compatible.
+
+**System-wide viewers bypass scoping entirely**: `system_coder` (role) and any admin whose CURRENT organization is the system primary organization (`id=1`, `BadgeController::isSystemWideViewer()` - edit that method for a different rule). This composes with the org switcher: the same user sees everything while switched into the system organization, and only their org's activity while switched into a common organization.
+
+The shipped content modules (news/pages/products/orders/messages) are global (no `organization_id` column) so the default list is empty; a multi-tenant app lists its tenant-scoped modules in `orgScopedModules()` (e.g. `['/request']`) - edit the method body directly.
 
 ### Badge Colors
 
@@ -639,7 +638,7 @@ Common context patterns:
 
 All standard deploy paths live in `.github/workflows/deploy.yml` (runs after CI succeeds; target auto-selected by configured secrets/variables): **A) FTP**, **B) SSH**, **C) Windows self-hosted runner**. Setup instructions are in that file's header comments.
 
-**Runtime-folder invariant:** `cache/`, `logs/`, `protected/`, `public_html/public/` and `database/migrations/` deploy as folders with their guard files and get created on the server, but their runtime contents (cache, logs, uploads, migration SQL) are never uploaded, overwritten or deleted by a deploy. Each job enforces this with a different mechanism (FTP: the action's state-file never deletes server-generated files; rsync: include-before-exclude `--exclude=/folder/*` rules inside `switches` - the action has NO `exclude` input, filters passed there are silently ignored; robocopy: `/XD` with source+destination full path pairs plus separate non-`/MIR` guard-file copies), so the three filter lists intentionally differ - do NOT "harmonize" them. Never exclude a folder by bare name or `**/name/**` glob: name-based patterns match at any depth and would also drop `application/dashboard/protected/` (a module) from the transfer.
+**Runtime-folder invariant:** `cache/`, `logs/`, `protected/`, `public_html/public/` and `database/migrations/` deploy as folders with their guard files and get created on the server, but their runtime contents (cache, logs, uploads, migration SQL) are never uploaded, overwritten or deleted by a deploy. Each job enforces this with a different mechanism (FTP: the action's state-file never deletes server-generated files; rsync: include-before-exclude `--exclude=/folder/*` rules inside `switches` - the action has NO `exclude` input, filters passed there are silently ignored; robocopy: `/XD` with source+destination full path pairs plus separate non-`/MIR` guard-file copies), so the three filter lists intentionally differ - do NOT "harmonize" them. Never exclude a folder by bare name or `**/name/**` glob: name-based patterns match at any depth and can drop application code from the transfer (before the file-module merge, a bare `protected` exclude silently dropped the then-existing `application/dashboard/protected/` module - the class of bug to avoid).
 
 As a fallback (**deploy path D** in the READMEs) for the rare environments none of those jobs can reach - cPanel shared hosting with SSH/Terminal disabled and no reachable FTP (real-world example: the National Data Center of Mongolia shared hosting for government agency portals); being on cPanel alone does NOT imply this path, use A/B when the host offers FTP/SSH - a cPanel Git scaffold ships in `docs/conf.example/`: `.cpanel.yml.example` (copy to repo root as `.cpanel.yml`) and `auto-deploy.sh.example` (copy to `deploy/auto-deploy.sh`, run via cron). The scaffold handles `vendor/`-less repos by running `composer install` when `composer.lock` changes and `composer dump-autoload -o` when only `composer.json` changes (new PSR-4 module maps). Read `docs/mn/CPANEL.md` BEFORE touching that scaffold's behavior - it documents the PascalCase-vs-lowercase module folder naming rule, the CLI-SAPI php lookup gotcha, and the two-phase sequencing rule for changing the deploy script itself (a deploy that updates `auto-deploy.sh` still runs the OLD logic that cycle - land script changes one deploy BEFORE the changes that depend on them).
 
@@ -647,7 +646,7 @@ As a fallback (**deploy path D** in the READMEs) for the rare environments none 
 
 ### Use Statement Order
 
-Group by namespace, separated by blank lines: external packages -> codesaur -> Raptor -> Dashboard -> Web
+Group by namespace, separated by blank lines: external packages -> codesaur -> Dashboard -> Web
 
 ### Documentation Style
 
@@ -655,17 +654,18 @@ Write in Mongolian Cyrillic or English. Applies to `*.md`, PHPDoc, HTMLDoc, JSDo
 
 - No Unicode special characters - ASCII only (`->` not arrow, `-` not bullet, `--` not em-dash, `"` `'` not curly quotes, `>=` not `≥`, `>` not `»`, `(c)` or `&copy;` not `©`)
 - When changing code, update related docs in the same commit
+- **Critical warning comments are bilingual**: a comment guarding a critical invariant (hidden coupling between distant files, ordering rules, "change X only together with Y", security rules) is written in Mongolian AND repeated in English right below it (separated by an empty comment line, e.g. `Critical (English): ...` / `Coupling (English): ...`). Ordinary explanatory comments stay single-language. Examples: `TemplateService::loadAllForCode()` cache-key coupling, `SettingsMiddleware` handle()-in-try rule, `BadgeController::PERMISSION_MAP` mount-naive rule.
 
 **Allowed Unicode exceptions** (do not "fix" these):
 - `🦖` dinosaur emoji - Raptor brand identity. Allowed in `README.md` (title).
 - Emoji in `application/dashboard/manual/*-manual-*.html` - allowed for admin clarity in user-facing manual pages.
-- Emoji in `application/raptor/notification/DiscordNotifier.php` - allowed because Discord notifications use emoji as their primary visual language for admin clarity.
+- Emoji in `application/dashboard/notification/DiscordNotifier.php` - allowed because Discord notifications use emoji as their primary visual language for admin clarity.
 - Superscript/subscript characters (`²`, `₂` etc.) in `application/dashboard/manual/moedit-manual-*.html` - chemistry/math notation examples in moedit manual.
 - Non-ASCII characters in test DATA (string literals exercising UTF-8 handling, e.g. `BodyEncodingMiddlewareTest`) - functional payload, not documentation.
 
 ### error_log Usage
 
-`\error_log()` directly only for real errors (exceptions, migration failures, error handlers). Normal/debug logging: wrap with `if (CODESAUR_DEVELOPMENT)`.
+`\error_log()` directly only for real errors (exceptions, migration failures, error handlers). Normal/debug logging: wrap with `if (CODESAUR_DEVELOPMENT)`. Exception handlers skip logging 404s in production (`if ($code != 404 || CODESAUR_DEVELOPMENT)`) - 404s are mostly bot scans and belong in the web server's access log, not `logs/code.log`.
 
 ### Username is Immutable
 

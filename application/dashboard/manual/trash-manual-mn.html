@@ -57,7 +57,7 @@
             </thead>
             <tbody>
                 <tr><td>#</td><td>Trash дахь бичлэгийн ID</td></tr>
-                <tr><td>Table</td><td>Эх хүснэгтийн нэр (жнь: <code>news</code>, <code>products</code>, <code>files</code>)</td></tr>
+                <tr><td>Table</td><td>Эх хүснэгтийн нэр (жш: <code>news</code>, <code>products</code>, <code>files</code>)</td></tr>
                 <tr><td>Original ID</td><td>Үндсэн хүснэгт дэх анхны ID дугаар</td></tr>
                 <tr><td>Deleted by</td><td>Устгасан админы нэр</td></tr>
                 <tr><td>Deleted at</td><td>Устгасан огноо/цаг</td></tr>
@@ -118,7 +118,7 @@
             <tbody>
                 <tr><td><code>id</code></td><td>bigint, primary</td><td>Trash бичлэгийн ID</td></tr>
                 <tr><td><code>table_name</code></td><td>varchar(128)</td><td>Эх хүснэгтийн нэр</td></tr>
-                <tr><td><code>log_table</code></td><td>varchar(64)</td><td>"Restored" мөр бичих log channel-ийн нэр (жнь: <code>products</code>, <code>news</code>, <code>content</code>)</td></tr>
+                <tr><td><code>log_table</code></td><td>varchar(64)</td><td>"Restored" мөр бичих log channel-ийн нэр (жш: <code>products</code>, <code>news</code>, <code>content</code>)</td></tr>
                 <tr><td><code>original_id</code></td><td>bigint</td><td>Эх хүснэгтэд байсан ID</td></tr>
                 <tr><td><code>record_data</code></td><td>mediumtext (JSON)</td><td>Бичлэгийн бүх өгөгдөл</td></tr>
                 <tr><td><code>deleted_by</code></td><td>bigint</td><td>Устгасан хэрэглэгчийн ID</td></tr>

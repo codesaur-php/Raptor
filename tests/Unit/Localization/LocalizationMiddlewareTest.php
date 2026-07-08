@@ -8,7 +8,7 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\UriInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 
-use Raptor\Localization\LocalizationMiddleware;
+use Dashboard\Localization\LocalizationMiddleware;
 
 /**
  * LocalizationMiddleware - хэл тодорхойлох, session key, fallback логикийг тестлэх.

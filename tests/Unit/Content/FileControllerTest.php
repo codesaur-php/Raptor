@@ -21,13 +21,13 @@ class FileControllerTest extends TestCase
     public static function setUpBeforeClass(): void
     {
         self::$source = \file_get_contents(
-            \dirname(__DIR__, 3) . '/application/raptor/content/file/FileController.php'
+            \dirname(__DIR__, 3) . '/application/dashboard/file/FileController.php'
         );
     }
 
     protected function setUp(): void
     {
-        // FileController extends Raptor\Controller which needs HTTP context.
+        // FileController extends Dashboard\Controller which needs HTTP context.
         // We use ReflectionMethod to test protected/private methods directly
         // via a minimal anonymous subclass approach where possible,
         // or source-code analysis for methods that need full controller context.
@@ -40,7 +40,7 @@ class FileControllerTest extends TestCase
     private function callConvertPHPSizeToBytes(string $size): int
     {
         // Create a mock that only uses the method we need
-        $class = new \ReflectionClass(\Raptor\Content\FileController::class);
+        $class = new \ReflectionClass(\Dashboard\File\FileController::class);
         $method = $class->getMethod('convertPHPSizeToBytes');
 
         // We need an instance - create via ReflectionClass without constructor
@@ -96,7 +96,7 @@ class FileControllerTest extends TestCase
 
     private function callFormatSizeUnits(?int $bytes): string
     {
-        $class = new \ReflectionClass(\Raptor\Content\FileController::class);
+        $class = new \ReflectionClass(\Dashboard\File\FileController::class);
         $method = $class->getMethod('formatSizeUnits');
         $instance = $class->newInstanceWithoutConstructor();
         return $method->invoke($instance, $bytes);

@@ -7,7 +7,7 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 
-use Raptor\MethodOverrideMiddleware;
+use Dashboard\MethodOverrideMiddleware;
 
 /**
  * MethodOverrideMiddleware unit test.

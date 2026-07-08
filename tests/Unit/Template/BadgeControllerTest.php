@@ -245,4 +245,36 @@ class BadgeControllerTest extends RaptorTestCase
             BadgeController::PERMISSION_MAP['/migrations']
         );
     }
+
+    // ---------------------------------------------------------
+    // isSystemWideViewer() - org-scoping bypass rule
+    // ---------------------------------------------------------
+
+    private function invokeIsSystemWideViewer(array $requestAttributes): bool
+    {
+        $controller = new BadgeController($this->createMockRequest(
+            ['pdo' => new \PDO('sqlite::memory:')] + $requestAttributes
+        ));
+        $method = new \ReflectionMethod(BadgeController::class, 'isSystemWideViewer');
+        return $method->invoke($controller);
+    }
+
+    public function testSystemOrgViewerIsSystemWide(): void
+    {
+        $this->assertTrue($this->invokeIsSystemWideViewer([
+            'user' => $this->createUser([], [], ['id' => 1])
+        ]));
+    }
+
+    public function testCommonOrgViewerIsNotSystemWide(): void
+    {
+        $this->assertFalse($this->invokeIsSystemWideViewer([
+            'user' => $this->createUser([], [], ['id' => 5, 'alias' => 'common'])
+        ]));
+    }
+
+    public function testUnauthenticatedViewerIsNotSystemWide(): void
+    {
+        $this->assertFalse($this->invokeIsSystemWideViewer([]));
+    }
 }

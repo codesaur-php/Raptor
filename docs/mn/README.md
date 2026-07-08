@@ -26,7 +26,7 @@
 
 ## 1. Танилцуулга
 
-`codesaur/raptor` нь **Web** (нийтийн вебсайт) болон **Dashboard** (админ панель) гэсэн хоёр давхаргат бүтэцтэй, PSR-7/PSR-15 middleware суурьтай PHP фреймворк юм.
+`codesaur/raptor` нь PSR-7/PSR-15 middleware суурьтай PHP фреймворк юм. Анхдагч байдлаараа **Web** (нийтийн вебсайт) болон **Dashboard** (админ панель) гэсэн хоёр апп-тай ирэх бөгөөд developer хэрэгцээндээ тааруулан хэдэн ч апп давхарга нэмж болно.
 
 ### Гол боломжууд
 
@@ -245,7 +245,7 @@ RAPTOR_CONTENT_IMG_QUALITY=90
 > **Анхаар: web серверийн document root нь заавал `public_html/` байх ёстой, project root биш.**
 > Зөвхөн `public_html/`-ийг web-ээр үйлчлүүлэхээр зориулсан; бусад бүх зүйл
 > (`application/`, `protected/`, `database/`, `vendor/`, `.env`, `logs/`, ...)
-> түүний нэг шатнаас дээр байрладаг бөгөөд URL-аар хүршгүй байх ёстой. Docroot-ийг
+> түүний нэг шатнаас дээр байрладаг бөгөөд URL-аар хүрэшгүй байх ёстой. Docroot-ийг
 > project root руу чиглүүлбэл эх код, `.env` нууц утгууд, upload хийсэн файл,
 > session өгөгдөл бүгд ил гарна. Энэ ганц дүрэм нь server-аас үл хамаарах үндсэн
 > хамгаалалт (Apache, Nginx адил) - `.htaccess` / nginx `deny` дүрмүүд нь зөвхөн
@@ -396,17 +396,19 @@ Raptor нь MVC pattern-г баримталдаг ч **модульчилсан 
 `Controllers/`, `Views/`) салгадаггүй. Модуль нэмэх, устгах нь нэг хавтсыг хуулах,
 устгахтай адил энгийн.
 
-`application/` доторх гурван давхарга: `raptor/` (суурь framework-ийн модулиуд -
-dashboard + web хоёулаа хэрэглэнэ), `dashboard/` (удирдлагын самбарын application),
-`web/` (нийтийн вэбийн application). Апп түвшний директорийн бүдүүвчийг үндсэн
-`README.md`-ийн "Directory Structure" хэсгээс харна уу. Модуль бүрийн хавтасны
-байршил, ангиудыг 6-р бүлгийн тухайн модулийн хэсэгт баримтжуулсан.
+`application/` дотор хоёр апп бий: `dashboard/` (удирдлагын самбарын application -
+web-ийн хэрэглэдэг хуваалцсан суурь модулиуд болох Controller, middleware,
+model-ууд ч энд байрлана), `web/` (нийтийн вэбийн application). Апп түвшний
+директорийн бүдүүвчийг үндсэн `README.md`-ийн "Directory Structure" хэсгээс харна
+уу. Модуль бүрийн хавтасны байршил, ангиудыг 6-р бүлгийн тухайн модулийн хэсэгт
+баримтжуулсан.
 
 > **`vendor/`-оос бусад бүх директор хөгжүүлэгчийн мэдэлд.** `composer create-project`-оор
 > татсаны дараа `application/`, `public_html/`, `database/`, `tests/`, `docs/`,
 > тохиргооны файлууд бүгд таны төслийн хэсэг болж, хэрэгцээ шаардлагадаа тааруулан
-> бүрэн өөрчлөх, устгах, шинээр бичих боломжтой - `application/raptor/` core хүртэл
-> үүнд хамаарна. Үндсэн (default) codebase нь
+> бүрэн өөрчлөх, устгах, шинээр бичих боломжтой. Тусдаа "framework core" гэсэн
+> давхарга байхгүй - `application/` дотор `dashboard/`, `web/` гэсэн хоёр апп
+> байх бөгөөд хоёулаа таны төслийн энгийн код. Үндсэн (default) codebase нь
 > хөгжүүлэгчийн нийтлэг хэрэгцээг хангасан суурь тул өөрийн нарийвчилсан хэрэгцээ
 > шаардлагаа кодод шууд шингээгээрэй. Зөвхөн `vendor/*` packages нь Composer-ээр удирдагдах
 > dependency тул гар хүрэхгүй (`composer update`-ээр шинэчилнэ).
@@ -418,7 +420,7 @@ dashboard + web хоёулаа хэрэглэнэ), `dashboard/` (удирдла
 Middleware бол PSR-15 стандартын дагуу request/response-г боловсруулах давхаргууд юм. Бүртгэгдсэн дараалал чухал!
 
 PDO холболт нь `public_html/index.php` entry point дотор
-`\Raptor\DatabaseConnection::connect()`-ээр нэг л удаа үүсэн request-ийн
+`\Dashboard\DatabaseConnection::connect()`-ээр нэг л удаа үүсэн request-ийн
 `pdo` attribute хэлбэрээр Application руу дамждаг.
 
 ### Dashboard Middleware
@@ -449,7 +451,7 @@ PDO холболт нь `public_html/index.php` entry point дотор
 ### Database driver сонголт
 
 Driver сонголт `.env` доторх `RAPTOR_DB_DRIVER` хувьсагчаар хийгдэнэ
-(`mysql` эсвэл `pgsql`). `\Raptor\DatabaseConnection::connect()` түүнийг
+(`mysql` эсвэл `pgsql`). `\Dashboard\DatabaseConnection::connect()` түүнийг
 уншиж тохирох PDO instance үүсгэж буцаана:
 
 ```dotenv
@@ -511,15 +513,15 @@ $this->isUser('system_admin');
 $this->isUserCan('news_edit');
 ```
 
-### 6.5 Content - Files (Файл)
+### 6.5 Files (Файл)
 
-**Классууд:** `FilesController`, `FilesModel` (protected файл үйлчлэл нь `Dashboard\Protected\ProtectedFilesController` руу шилжсэн - api.md-ийн Protected files хэсгийг үз)
+**Классууд:** `FileRouter`, `FileController`, `FilesController`, `FilesModel`, `ProtectedFilesController`
 
 - Файл upload (native JS, FormData)
 - Зураг optimize хийх (GD)
 - Файлыг модуль/хүснэгтээр ангилах
 - MIME type тодорхойлох
-- Private файл (зөвхөн нэвтэрсэн хэрэглэгчдэд)
+- Protected файл (зөвхөн нэвтэрсэн хэрэглэгчдэд, authorizeRead() hook)
 
 ### 6.6 Content - News (Мэдээ)
 
@@ -700,7 +702,7 @@ Sitemap: https://example.com/sitemap.xml
 
 **Классууд:** `CsrfMiddleware`
 
-- **Per-route middleware** (app-wide биш). Router дээр mutating route бүрд `->middleware([CsrfMiddleware::class])`-аар наагдана (`use Raptor\CsrfMiddleware;`)
+- **Per-route middleware** (app-wide биш). Router дээр mutating route бүрд `->middleware([CsrfMiddleware::class])`-аар наагдана (`use Dashboard\CsrfMiddleware;`)
 - Middleware нь зөвхөн **шалгана**: `$_SESSION['CSRF_TOKEN']`-г `X-CSRF-TOKEN` header-тэй тулгаж, зөрвөл 403 буцаана
 - GET/HEAD/OPTIONS хүсэлтүүд шалгалтгүйгээр дамжина (`GET_POST`/`GET_PUT` compound route-ийн GET талыг хамгаална)
 - Token нь login үед үүсэж `$_SESSION['CSRF_TOKEN']` дотор хадгалагдана. Хуучин session-д fallback болгож `Controller::template()` (нэвтэрсэн хэрэглэгчид token байхгүй + session writable бол) үүсгэнэ
@@ -758,7 +760,7 @@ Sitemap: https://example.com/sitemap.xml
 
 - Sidebar цэсний зүйлс дээр модуль тус бүрийн уншаагүй үйлдлийн тоог өнгөт badge-ээр харуулна
 - `*_log` хүснэгтүүдээс уншина - тусдаа event хүснэгт шаардахгүй
-- Multi-tenant: `orgScopedModules()` жагсаасан модулийн badge-ийг харж буй админы байгууллагаар хязгаарлана (`system_coder` тойрно)
+- Multi-tenant: `orgScopedModules()` жагсаасан модулийн badge-ийг харж буй админы байгууллагаар хязгаарлана - бичлэгийн байгууллагаар (log context-ийн `record_organization_id`) шүүж, байхгүй бол үйлдэгчийн байгууллага руу fallback хийнэ; `system_coder` болон системийн байгууллагаар нэвтэрсэн админ (`isSystemWideViewer()`) бүх байгууллагыг харна
 - Badge өнгө: ногоон (create), цэнхэр (update), улаан (delete)
 - Модуль бүрт 3 хүртэл badge, зүүнээс баруун тийш ногоон-цэнхэр-улаан дарааллаар
 - Админы эрхээр шүүж (PERMISSION_MAP), өөрийн үйлдлийг хасна
@@ -945,9 +947,9 @@ $this->use(new MyRouter());
 
 ## 9. Controller
 
-### Суурь Controller (Raptor\Controller)
+### Суурь Controller (Dashboard\Controller)
 
-Бүх Controller-ууд `Raptor\Controller` ангиас удамшина. Доорх боломжуудыг нийтлэг авна:
+Бүх Controller-ууд `Dashboard\Controller` ангиас удамшина. Доорх боломжуудыг нийтлэг авна:
 
 | Метод | Тайлбар |
 |-------|---------|
@@ -974,7 +976,7 @@ $this->use(new MyRouter());
 ```php
 namespace Dashboard\Products;
 
-class ProductsController extends \Raptor\Controller
+class ProductsController extends \Dashboard\Controller
 {
     public function index()
     {
@@ -1226,19 +1228,12 @@ class MyModuleRouter extends \codesaur\Router\Router
 composer dump-autoload
 ```
 
-3. Application дотор Router бүртгэх:
+3. `Dashboard\Application`-ийн constructor дотор бусад `$this->use(...)` router
+   бүртгэлүүдийн хажууд Router-аа бүртгэнэ:
 
 ```php
-// application/dashboard/Application.php
-class Application extends \Raptor\Application
-{
-    public function __construct()
-    {
-        parent::__construct();
-        $this->use(new Home\HomeRouter());
-        $this->use(new MyModule\MyModuleRouter());  // Шинэ router
-    }
-}
+// application/dashboard/Application.php  (__construct дотор)
+$this->use(new MyModule\MyModuleRouter());  // Шинэ router
 ```
 
 ### Web хуудас нэмэх
@@ -1270,7 +1265,7 @@ RAPTOR_DB_DRIVER=mysql
 RAPTOR_DB_DRIVER=pgsql
 ```
 
-`\Raptor\DatabaseConnection::connect()` энэ утгыг уншиж тохирох PDO үүсгэнэ.
+`\Dashboard\DatabaseConnection::connect()` энэ утгыг уншиж тохирох PDO үүсгэнэ.
 
 ---
 

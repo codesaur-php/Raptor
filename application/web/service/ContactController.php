@@ -6,8 +6,8 @@ use Psr\Log\LogLevel;
 
 use codesaur\Template\MemoryTemplate;
 
-use Raptor\Content\PagesModel;
-use Raptor\Content\MessagesModel;
+use Dashboard\Content\PagesModel;
+use Dashboard\Content\MessagesModel;
 
 use Web\Template\TemplateController;
 
@@ -25,7 +25,7 @@ use Web\Template\TemplateController;
  */
 class ContactController extends TemplateController
 {
-    use \Raptor\SpamProtectionTrait;
+    use \Dashboard\SpamProtectionTrait;
     /**
      * Холбоо барих хуудсыг харуулах.
      *
@@ -151,7 +151,7 @@ class ContactController extends TemplateController
                 ]
             );
             
-            $this->dispatch(new \Raptor\Notification\ContentEvent(
+            $this->dispatch(new \Dashboard\Notification\ContentEvent(
                 'new', 'message', $name, null, $name,
                 ['phone' => $phone, 'email' => $email, 'message' => $message]
             ));
@@ -197,7 +197,7 @@ class ContactController extends TemplateController
 
             // Web app нь /dashboard-д mount хийгдээгүй тул generateRouteLink() энд
             // ажиллахгүй - email-д cross-app absolute URL hardcode хийнэ. '/dashboard'-г
-            // index.php дахь Dashboard app-ийн mount path-тай тааруулж байх ёстой.
+            // Dashboard app-ийн mount path-тай тааруулж байх ёстой.
             $appUrl = \rtrim((string)$this->getRequest()->getUri()->withPath($this->getScriptPath()), '/');
             $messagesLink = $appUrl . '/dashboard/messages';
 

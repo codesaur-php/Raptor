@@ -50,36 +50,33 @@
             "Dashboard\\Home\\": "application/dashboard/home",
             "Dashboard\\Shop\\": "application/dashboard/shop",
             "Dashboard\\Manual\\": "application/dashboard/manual",
-            "Dashboard\\Protected\\": "application/dashboard/protected",
+            "Dashboard\\File\\": "application/dashboard/file",
             "Dashboard\\Badge\\": "application/dashboard/badge",
             "Dashboard\\Development\\": "application/dashboard/development",
-            
-            "Raptor\\": "application/raptor/",
-            "Raptor\\Exception\\": "application/raptor/exception/",
-            "Raptor\\Template\\": "application/raptor/template/",
-            "Raptor\\Authentication\\": "application/raptor/authentication/",
-            "Raptor\\User\\": "application/raptor/user/",
-            "Raptor\\Organization\\": "application/raptor/organization/",
-            "Raptor\\RBAC\\": "application/raptor/rbac/",
-            "Raptor\\Localization\\": [
-                "application/raptor/localization/",
-                "application/raptor/localization/language",
-                "application/raptor/localization/text"
+            "Dashboard\\Exception\\": "application/dashboard/exception/",
+            "Dashboard\\Template\\": "application/dashboard/template/",
+            "Dashboard\\Authentication\\": "application/dashboard/authentication/",
+            "Dashboard\\User\\": "application/dashboard/user/",
+            "Dashboard\\Organization\\": "application/dashboard/organization/",
+            "Dashboard\\RBAC\\": "application/dashboard/rbac/",
+            "Dashboard\\Localization\\": [
+                "application/dashboard/localization/",
+                "application/dashboard/localization/language",
+                "application/dashboard/localization/text"
             ],
-            "Raptor\\Content\\": [
-                "application/raptor/content/",
-                "application/raptor/content/settings",
-                "application/raptor/content/reference",
-                "application/raptor/content/file",
-                "application/raptor/content/news",
-                "application/raptor/content/page",
-                "application/raptor/content/messages"
+            "Dashboard\\Content\\": [
+                "application/dashboard/content/",
+                "application/dashboard/content/settings",
+                "application/dashboard/content/reference",
+                "application/dashboard/content/news",
+                "application/dashboard/content/page",
+                "application/dashboard/content/messages"
             ],
-            "Raptor\\Notification\\": "application/raptor/notification/",
-            "Raptor\\Mail\\": "application/raptor/mail/",
-            "Raptor\\Log\\": "application/raptor/log/",
-            "Raptor\\Migration\\": "application/raptor/migration/",
-            "Raptor\\Trash\\": "application/raptor/trash/"
+            "Dashboard\\Notification\\": "application/dashboard/notification/",
+            "Dashboard\\Mail\\": "application/dashboard/mail/",
+            "Dashboard\\Log\\": "application/dashboard/log/",
+            "Dashboard\\Migration\\": "application/dashboard/migration/",
+            "Dashboard\\Trash\\": "application/dashboard/trash/"
         }
     },
     "scripts": {

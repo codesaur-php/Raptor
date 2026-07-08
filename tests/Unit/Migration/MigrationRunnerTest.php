@@ -4,7 +4,7 @@ namespace Tests\Unit\Migration;
 
 use Tests\Support\RaptorTestCase;
 
-use Raptor\Migration\MigrationRunner;
+use Dashboard\Migration\MigrationRunner;
 
 /**
  * Pure-logic unit tests for `MigrationRunner` methods that do not need a DB

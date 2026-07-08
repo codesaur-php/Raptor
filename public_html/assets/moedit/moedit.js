@@ -338,7 +338,7 @@ Instructions:
       /* Header image callback - зураг сонгогдох/устгагдах үед дуудагдана */
       onHeaderImageChange: null, /* function(file, preview) - file: File object эсвэл null */
       /* Preview options */
-      titleSelector: null, /* Title input-ийн CSS selector, жнь: '#news_title' */
+      titleSelector: null, /* Title input-ийн CSS selector, жш: '#news_title' */
       /* Attachment options */
       attachFiles: true, /* false бол Attach File товч disabled болно */
       attachments: [], /* Анхны файлууд [{id, path, name, size, type, mime_content_type, description, date}] */

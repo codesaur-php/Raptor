@@ -11,9 +11,9 @@ use Psr\Log\LogLevel;
  *
  * @package Dashboard\Home
  */
-class HomeController extends \Raptor\Controller
+class HomeController extends \Dashboard\Controller
 {
-    use \Raptor\Template\DashboardTrait;
+    use \Dashboard\Template\DashboardTrait;
 
     /**
      * Dashboard-ийн нүүр хуудсыг харуулах.

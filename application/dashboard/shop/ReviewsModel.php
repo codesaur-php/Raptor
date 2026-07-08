@@ -52,7 +52,7 @@ class ReviewsModel extends Model
     {        
         $table = $this->getName();
         $products = (new ProductsModel($this->pdo))->getName();
-        $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
+        $users = (new \Dashboard\User\UsersModel($this->pdo))->getName();
         $this->exec(
             "ALTER TABLE $table ADD CONSTRAINT {$table}_fk_product_id
              FOREIGN KEY (product_id) REFERENCES $products(id)

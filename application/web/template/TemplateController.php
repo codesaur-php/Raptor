@@ -4,7 +4,7 @@ namespace Web\Template;
 
 use codesaur\Template\FileTemplate;
 
-use Raptor\Content\PagesModel;
+use Dashboard\Content\PagesModel;
 
 /**
  * Class TemplateController
@@ -27,7 +27,7 @@ use Raptor\Content\PagesModel;
  *
  * @package Web\Template
  */
-class TemplateController extends \Raptor\Controller
+class TemplateController extends \Dashboard\Controller
 {
     /**
      * Web layout (index.html) + контент template нэгтгэж бэлэн FileTemplate буцаана.

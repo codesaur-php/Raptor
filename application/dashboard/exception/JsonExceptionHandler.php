@@ -1,0 +1,100 @@
+<?php
+
+namespace Dashboard\Exception;
+
+use codesaur\Http\Application\ExceptionHandlerInterface;
+
+/**
+ * Class JsonExceptionHandler
+ * ---------------------------------------------------------
+ * Raptor Framework - JSON хэлбэрээр алдаа буцаах тусгай
+ * Exception Handler.
+ *
+ * Энэ класс нь REST API, AJAX request, mobile client зэрэг
+ * JSON-response шаардсан орчинд тохиромжтой. Систем дотор
+ * үүссэн бүх төрлийн Exception/Error-ийг JSON бүтэцтэйгээр
+ * клиент рүү буцаана.
+ *
+ * > Үндсэн боломжууд:
+ * -----------------------------------------
+ * Алдааны HTTP статус кодыг автоматаар таньж тохируулах  
+ * JSON Content-Type header илгээх  
+ * JSON бүтэцтэй стандарт error формат гаргах  
+ * Хөгжүүлэлтийн горимд (CODESAUR_DEVELOPMENT) ->  
+ *     Stack trace бүрэн харуулна  
+ *
+ * > JSON бүтэц:
+ * -----------------------------------------
+ * {
+ *    "error": {
+ *        "code": <int>,
+ *        "title": "<Throwable class name + code>",
+ *        "message": "<error message>",
+ *        "trace": [...]   // зөвхөн DEVELOPMENT горимд
+ *    }
+ * }
+ *
+ * > Идэвхжүүлэх
+ * ---------------------------------------------------------
+ * Энэ JSON handler-г Application-д дараах байдлаар идэвхжүүлнэ:
+ *
+ *      $app->use(new JsonExceptionHandler());
+ *
+ * > HTTP статус кодын тохиргоо:
+ * -----------------------------------------
+ * Throwable код нь 0 биш бөгөөд стандарт HTTP мужид (100-599)
+ * багтах бол тохирох HTTP статус кодыг автоматаар тохируулна:
+ *
+ *   - 400 Bad Request
+ *   - 401 Unauthorized
+ *   - 404 Not Found
+ *   - 500 Internal Server Error
+ *   гэх мэт
+ *
+ * @package Dashboard\Exception
+ */
+class JsonExceptionHandler implements ExceptionHandlerInterface
+{
+    /**
+     * Throwable-г JSON хэлбэрээр хариу болгон буцаах.
+     *
+     * @param \Throwable $throwable Үүссэн алдаа эсвэл exception
+     * @return void
+     */
+    public function exception(\Throwable $throwable): void
+    {
+        $code = $throwable->getCode();
+        $message = $throwable->getMessage();
+        $title = \get_class($throwable);
+        
+        if ($code != 0) {
+            // Стандарт HTTP статус кодын мужид (RFC 9110: 100-599) багтаж байвал онооно
+            if (\is_numeric($code) && $code >= 100 && $code <= 599 && !\headers_sent()) {
+                \http_response_code((int) $code);
+            }
+            $title .= " $code";
+        }
+        
+        // Log файл руу бичих. 404 (олдоогүй хуудас, unknown route) нь ихэвчлэн
+        // bot скан тул production дээр бичихгүй - зөвхөн хөгжүүлэлтэд бичнэ.
+        // Bot зочлолтын бүртгэл хэрэгтэй бол вэб серверийн access log-оос
+        // (Apache/nginx access.log, hosting panel-ийн Raw Access Logs) харна
+        // - тэнд бүх 404 хүсэлт IP, User-Agent мэдээллийн хамт хадгалагддаг.
+        if ($code != 404 || CODESAUR_DEVELOPMENT) {
+            \error_log($title . ': ' . $message);
+        }
+        
+        if (!\headers_sent()) {
+            \header('Content-Type: application/json');
+        }
+        
+        $error = ['code' => $code, 'title' => $title, 'message' => $message];
+        
+        if (CODESAUR_DEVELOPMENT) {
+            $error['trace'] = $throwable->getTrace();
+        }
+        
+        echo \json_encode(['error' => $error])
+            ?: '{"error":{"code":' . $code . ',"title":"' . \addslashes($title) . '","message":"' . \addslashes($message) . '"}}';
+    }
+}

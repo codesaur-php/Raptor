@@ -4,7 +4,7 @@ namespace Tests\Unit\Web;
 
 use PHPUnit\Framework\TestCase;
 
-use Raptor\Exception\ErrorHandler;
+use Dashboard\Exception\ErrorHandler;
 
 use Web\Template\ExceptionHandler;
 

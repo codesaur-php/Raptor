@@ -4,10 +4,10 @@ namespace Tests\Integration\RBAC;
 
 use Tests\Support\IntegrationTestCase;
 
-use Raptor\RBAC\Roles;
-use Raptor\RBAC\Permissions;
-use Raptor\RBAC\RolePermission;
-use Raptor\RBAC\UserRole;
+use Dashboard\RBAC\Roles;
+use Dashboard\RBAC\Permissions;
+use Dashboard\RBAC\RolePermission;
+use Dashboard\RBAC\UserRole;
 
 class RolesPermissionsTest extends IntegrationTestCase
 {

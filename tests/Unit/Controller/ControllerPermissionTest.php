@@ -4,7 +4,7 @@ namespace Tests\Unit\Controller;
 
 use Tests\Support\RaptorTestCase;
 
-use Raptor\Authentication\User;
+use Dashboard\Authentication\User;
 
 /**
  * Controller permission, auth, getUserId тестүүд.
@@ -30,7 +30,7 @@ class ControllerPermissionTest extends RaptorTestCase
 
         $request = $this->createMockRequest($attributes);
 
-        return new class($request) extends \Raptor\Controller {};
+        return new class($request) extends \Dashboard\Controller {};
     }
 
     // ---------------------------------------------------------

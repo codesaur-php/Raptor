@@ -40,7 +40,7 @@ $_SERVER['SCRIPT_NAME']     = $_SERVER['SCRIPT_NAME'] ?? '/index.php';
 $_SERVER['SCRIPT_FILENAME'] = $_SERVER['SCRIPT_FILENAME'] ?? "$root/public_html/index.php";
 
 // Test database-г байхгүй бол үүсгэх (зөвхөн MySQL driver-т, developer-д амар).
-// Production бол `\Raptor\DatabaseConnection::connect()` шууд connect хийдэг -
+// Production бол `\Dashboard\DatabaseConnection::connect()` шууд connect хийдэг -
 // энд тест орчинд CREATE DATABASE-ийг тусад нь ажиллуулна.
 if ((($_ENV['RAPTOR_DB_DRIVER'] ?? 'mysql') === 'mysql')) {
     $host      = $_ENV['RAPTOR_DB_HOST']      ?? 'localhost';

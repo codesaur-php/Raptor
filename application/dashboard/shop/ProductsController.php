@@ -6,8 +6,8 @@ use Psr\Log\LogLevel;
 
 use codesaur\DataObject\Constants;
 
-use Raptor\Content\FileController;
-use Raptor\Content\FilesModel;
+use Dashboard\File\FileController;
+use Dashboard\File\FilesModel;
 
 /**
  * Class ProductsController
@@ -28,8 +28,8 @@ use Raptor\Content\FilesModel;
  */
 class ProductsController extends FileController
 {
-    use \Raptor\Template\DashboardTrait;
-    use \Raptor\Content\HtmlValidationTrait;
+    use \Dashboard\Template\DashboardTrait;
+    use \Dashboard\Content\HtmlValidationTrait;
 
     /**
      * Бүтээгдэхүүний жагсаалтын dashboard хуудсыг харуулах.
@@ -212,7 +212,7 @@ class ProductsController extends FileController
                 ]);
 
                 $action = !empty($payload['published']) ? 'publish' : 'insert';
-                $this->dispatch(new \Raptor\Notification\ContentEvent(
+                $this->dispatch(new \Dashboard\Notification\ContentEvent(
                     $action, 'product', $payload['title'] ?? '', $id
                 ));
             } else {
@@ -366,7 +366,7 @@ class ProductsController extends FileController
                 $wasPublished = !empty($record['published']);
                 $nowPublished = !empty($payload['published']);
                 $action = (!$wasPublished && $nowPublished) ? 'publish' : 'update';
-                $this->dispatch(new \Raptor\Notification\ContentEvent(
+                $this->dispatch(new \Dashboard\Notification\ContentEvent(
                     $action, 'product', $payload['title'] ?? $record['title'] ?? '', $id,
                     updates: $updates
                 ));
@@ -618,7 +618,7 @@ class ProductsController extends FileController
             $fileRecord = $filesModel->getById((int)$fileId);
             $filesModel->deleteById((int)$fileId);
             if ($fileRecord) {
-                (new \Raptor\Trash\TrashModel($this->pdo))->store(
+                (new \Dashboard\Trash\TrashModel($this->pdo))->store(
                     'products', $filesModel->getName(), (int)$fileId, $fileRecord, $userId
                 );
             }
@@ -663,7 +663,7 @@ class ProductsController extends FileController
             }
             $model->deleteById($id);
             if (!empty($record)) {
-                (new \Raptor\Trash\TrashModel($this->pdo))->store(
+                (new \Dashboard\Trash\TrashModel($this->pdo))->store(
                     'products', $model->getName(), $id, $record, $this->getUserId()
                 );
             }
@@ -673,7 +673,7 @@ class ProductsController extends FileController
                 'message' => $this->text('record-successfully-deleted')
             ]);
 
-            $this->dispatch(new \Raptor\Notification\ContentEvent(
+            $this->dispatch(new \Dashboard\Notification\ContentEvent(
                 'delete', 'product', $payload['title'] ?? "#{$id}", $id
             ));
         } catch (\Throwable $err) {

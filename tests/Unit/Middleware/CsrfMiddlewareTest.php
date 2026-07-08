@@ -8,7 +8,7 @@ use Psr\Http\Message\UriInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 
-use Raptor\CsrfMiddleware;
+use Dashboard\CsrfMiddleware;
 
 /**
  * CsrfMiddleware unit test.

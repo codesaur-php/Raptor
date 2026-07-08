@@ -4,7 +4,7 @@ namespace Tests\Integration\Model;
 
 use Tests\Support\IntegrationTestCase;
 
-use Raptor\User\UsersModel;
+use Dashboard\User\UsersModel;
 
 class UsersModelTest extends IntegrationTestCase
 {

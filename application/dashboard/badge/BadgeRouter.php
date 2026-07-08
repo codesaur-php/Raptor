@@ -4,7 +4,7 @@ namespace Dashboard\Badge;
 
 use codesaur\Router\Router;
 
-use Raptor\CsrfMiddleware;
+use Dashboard\CsrfMiddleware;
 
 /**
  * Class BadgeRouter
@@ -17,14 +17,12 @@ use Raptor\CsrfMiddleware;
  * POST хүсэлтээр seen болгоно.
  *
  * Маршрутын path-ууд mount-naive ('/badges') - Dashboard\Application-д
- * бүртгэгдэж public_html/index.php-ийн ->mount('/dashboard') тохиргоогоор
+ * бүртгэгдэж entry point-ийн ->mount('/dashboard') тохиргоогоор
  * бүтэн '/dashboard/badges' хаяг болно.
  *
- * Org-scoped badge хэрэгтэй бол ихэнхдээ энэ router-т өөрчлөлт хэрэггүй:
+ * Org-scoped badge хэрэгтэй бол энэ router-т өөрчлөлт хэрэггүй:
  * BadgeController::orgScopedModules()-ийн body-г шууд засварлахад л
- * хангалттай. Зөвхөн subclass controller хийсэн үед энэ 2 маршрутыг
- * Application-даа override()-оор subclass-руу чиглүүлнэ
- * ({@see BadgeController::orgScopedModules()} док-ийг үзнэ үү).
+ * хангалттай ({@see BadgeController::orgScopedModules()} док-ийг үзнэ үү).
  *
  * @package Dashboard\Badge
  */

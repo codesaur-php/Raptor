@@ -10,8 +10,6 @@ use codesaur\DataObject\Constants;
  * Вэб сайтын зочлолын статистик мэдээллийг тооцоолох,
  * web_log_cache хүснэгтийг удирдах зэрэг бүх stats логикийг агуулна.
  *
- * HomeController-оос салгаж авсан бүрэн бие даасан анги.
- *
  * @package Dashboard\Home
  */
 class WebLogStats

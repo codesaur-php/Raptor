@@ -4,7 +4,7 @@ namespace Tests\Unit\Log;
 
 use Tests\Support\RaptorTestCase;
 
-use Raptor\Log\Logger;
+use Dashboard\Log\Logger;
 
 /**
  * Logger unit test.

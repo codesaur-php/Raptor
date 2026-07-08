@@ -4,7 +4,7 @@ namespace Tests\Integration\Model;
 
 use Tests\Support\IntegrationTestCase;
 
-use Raptor\Organization\OrganizationModel;
+use Dashboard\Organization\OrganizationModel;
 
 class OrganizationModelTest extends IntegrationTestCase
 {

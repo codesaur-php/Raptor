@@ -7,7 +7,7 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 
-use Raptor\Content\SettingsMiddleware;
+use Dashboard\Content\SettingsMiddleware;
 
 /**
  * SettingsMiddleware - settings ачаалах, хэлний код шалгах, fallback логикийг тестлэх.

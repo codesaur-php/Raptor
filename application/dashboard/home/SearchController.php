@@ -2,13 +2,12 @@
 
 namespace Dashboard\Home;
 
-use Raptor\Content\CommentsModel;
-use Raptor\Content\MessagesModel;
-use Raptor\Content\NewsModel;
-use Raptor\Content\PagesModel;
-use Raptor\Organization\OrganizationModel;
-use Raptor\User\UsersModel;
-
+use Dashboard\Content\CommentsModel;
+use Dashboard\Content\MessagesModel;
+use Dashboard\Content\NewsModel;
+use Dashboard\Content\PagesModel;
+use Dashboard\Organization\OrganizationModel;
+use Dashboard\User\UsersModel;
 use Dashboard\Development\DevRequestModel;
 use Dashboard\Shop\ProductsModel;
 use Dashboard\Shop\ProductOrdersModel;
@@ -28,7 +27,7 @@ use Dashboard\Shop\ReviewsModel;
  *
  * @package Dashboard\Home
  */
-class SearchController extends \Raptor\Controller
+class SearchController extends \Dashboard\Controller
 {
     /**
      * Dashboard-ийн topbar хайлтын modal (Ctrl+K) search.

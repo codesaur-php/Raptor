@@ -18,7 +18,7 @@ class ProtectedFilesBlockedTest extends TestCase
     public static function setUpBeforeClass(): void
     {
         self::$source = file_get_contents(
-            dirname(__DIR__, 3) . '/application/dashboard/protected/ProtectedFilesController.php'
+            dirname(__DIR__, 3) . '/application/dashboard/file/ProtectedFilesController.php'
         );
     }
 

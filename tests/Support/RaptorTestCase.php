@@ -5,7 +5,7 @@ namespace Tests\Support;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ServerRequestInterface;
 
-use Raptor\Authentication\User;
+use Dashboard\Authentication\User;
 
 /**
  * Unit test-ийн суурь класс.

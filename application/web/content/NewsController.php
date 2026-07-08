@@ -7,10 +7,10 @@ use Psr\Log\LogLevel;
 use codesaur\DataObject\Constants;
 use codesaur\Template\MemoryTemplate;
 
-use Raptor\Content\NewsModel;
-use Raptor\Content\FilesModel;
-use Raptor\Content\CommentsModel;
-use Raptor\Content\ReadNewsTrait;
+use Dashboard\Content\NewsModel;
+use Dashboard\File\FilesModel;
+use Dashboard\Content\CommentsModel;
+use Dashboard\Content\ReadNewsTrait;
 
 use Web\Template\TemplateController;
 
@@ -30,7 +30,7 @@ use Web\Template\TemplateController;
  */
 class NewsController extends TemplateController
 {
-    use \Raptor\SpamProtectionTrait;
+    use \Dashboard\SpamProtectionTrait;
     use ReadNewsTrait;
     /**
      * Slug-аар мэдээг харуулах.
@@ -46,7 +46,7 @@ class NewsController extends TemplateController
     {
         $model = new NewsModel($this->pdo);
         $table = $model->getName();
-        $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
+        $users = (new \Dashboard\User\UsersModel($this->pdo))->getName();
         $stmt = $this->prepare(
             "SELECT n.*, " .
             "CONCAT(c.first_name, ' ', c.last_name) as creator_name, " .
@@ -341,7 +341,7 @@ class NewsController extends TemplateController
                 ]
             ]);
 
-            $this->dispatch(new \Raptor\Notification\ContentEvent(
+            $this->dispatch(new \Dashboard\Notification\ContentEvent(
                 'insert', 'comment', $comment, $id,
                 $name, ['news_title' => $news['title'] ?? '']
             ));
@@ -382,7 +382,7 @@ class NewsController extends TemplateController
 
             // Web app нь /dashboard-д mount хийгдээгүй тул generateRouteLink() энд
             // ажиллахгүй - email-д cross-app absolute URL hardcode хийнэ. '/dashboard'-г
-            // index.php дахь Dashboard app-ийн mount path-тай тааруулж байх ёстой.
+            // Dashboard app-ийн mount path-тай тааруулж байх ёстой.
             $appUrl = \rtrim((string)$this->getRequest()->getUri()->withPath($this->getScriptPath()), '/');
             $commentsLink = $appUrl . '/dashboard/news/comments';
 

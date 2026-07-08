@@ -7,7 +7,7 @@
 #
 #    Энэ файл public_html/ дотор байрлана. Web серверийн document root нь
 #    заавал public_html/ байх ёстой (project root биш) - бусад зүйл (.env,
-#    application/, protected/, vendor/) түүнээс дээр, URL-аар хүршгүй байна.
+#    application/, protected/, vendor/) түүнээс дээр, URL-аар хүрэшгүй байна.
 # ======================================================================
 
 <IfModule mod_rewrite.c>

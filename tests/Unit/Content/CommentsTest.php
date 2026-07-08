@@ -18,7 +18,7 @@ class CommentsTest extends RaptorTestCase
     public static function setUpBeforeClass(): void
     {
         self::$dashboardController = \file_get_contents(
-            \dirname(__DIR__, 3) . '/application/raptor/content/news/CommentsController.php'
+            \dirname(__DIR__, 3) . '/application/dashboard/content/news/CommentsController.php'
         );
         self::$webController = \file_get_contents(
             \dirname(__DIR__, 3) . '/application/web/content/NewsController.php'
@@ -322,7 +322,7 @@ class CommentsTest extends RaptorTestCase
     public function testCommentsModelTableName(): void
     {
         $source = \file_get_contents(
-            \dirname(__DIR__, 3) . '/application/raptor/content/news/CommentsModel.php'
+            \dirname(__DIR__, 3) . '/application/dashboard/content/news/CommentsModel.php'
         );
         $this->assertStringContainsString("setTable('news_comments')", $source,
             'CommentsModel must use news_comments table');
@@ -334,7 +334,7 @@ class CommentsTest extends RaptorTestCase
     public function testCommentsModelHasRequiredColumns(): void
     {
         $source = \file_get_contents(
-            \dirname(__DIR__, 3) . '/application/raptor/content/news/CommentsModel.php'
+            \dirname(__DIR__, 3) . '/application/dashboard/content/news/CommentsModel.php'
         );
         $required = ['id', 'news_id', 'parent_id', 'created_by', 'name', 'email', 'comment', 'created_at'];
         foreach ($required as $col) {
@@ -349,7 +349,7 @@ class CommentsTest extends RaptorTestCase
     public function testCommentsModelHasForeignKeys(): void
     {
         $source = \file_get_contents(
-            \dirname(__DIR__, 3) . '/application/raptor/content/news/CommentsModel.php'
+            \dirname(__DIR__, 3) . '/application/dashboard/content/news/CommentsModel.php'
         );
         $this->assertStringContainsString('fk_news_id', $source, 'Must have FK to news table');
         $this->assertStringContainsString('fk_parent_id', $source, 'Must have self-referencing FK for replies');
@@ -362,7 +362,7 @@ class CommentsTest extends RaptorTestCase
     public function testCommentsModelHasIndexes(): void
     {
         $source = \file_get_contents(
-            \dirname(__DIR__, 3) . '/application/raptor/content/news/CommentsModel.php'
+            \dirname(__DIR__, 3) . '/application/dashboard/content/news/CommentsModel.php'
         );
         $this->assertStringContainsString('idx_news_id', $source,
             'Must have index on news_id');

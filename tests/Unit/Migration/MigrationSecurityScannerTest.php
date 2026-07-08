@@ -4,7 +4,7 @@ namespace Tests\Unit\Migration;
 
 use Tests\Support\RaptorTestCase;
 
-use Raptor\Migration\MigrationSecurityScanner;
+use Dashboard\Migration\MigrationSecurityScanner;
 
 /**
  * Unit tests for the static SQL security scanner.

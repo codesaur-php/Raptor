@@ -20,19 +20,19 @@ class DeleteTrashIntegrationTest extends TestCase
     public static function deleteControllersProvider(): array
     {
         return [
-            ['raptor/localization/text/TextController.php', 'content'],
-            ['raptor/content/news/NewsController.php', 'news'],
-            ['raptor/content/page/PagesController.php', 'pages'],
-            ['raptor/content/reference/ReferencesController.php', 'content'],
-            ['raptor/content/file/FilesController.php', 'files'],
-            ['raptor/template/TemplateController.php', 'dashboard'],
+            ['dashboard/localization/text/TextController.php', 'content'],
+            ['dashboard/content/news/NewsController.php', 'news'],
+            ['dashboard/content/page/PagesController.php', 'pages'],
+            ['dashboard/content/reference/ReferencesController.php', 'content'],
+            ['dashboard/file/FilesController.php', 'files'],
+            ['dashboard/template/TemplateController.php', 'dashboard'],
             ['dashboard/shop/OrdersController.php', 'products_orders'],
             ['dashboard/shop/ProductsController.php', 'products'],
-            ['raptor/content/news/CommentsController.php', 'news'],
+            ['dashboard/content/news/CommentsController.php', 'news'],
             ['dashboard/shop/ReviewsController.php', 'products'],
             ['dashboard/development/DevRequestController.php', 'dev_requests'],
-            ['raptor/content/messages/MessagesController.php', 'messages'],
-            ['raptor/localization/language/LanguageController.php', 'content'],
+            ['dashboard/content/messages/MessagesController.php', 'messages'],
+            ['dashboard/localization/language/LanguageController.php', 'content'],
         ];
     }
 
@@ -79,8 +79,8 @@ class DeleteTrashIntegrationTest extends TestCase
     public static function attachmentControllersProvider(): array
     {
         return [
-            ['raptor/content/news/NewsController.php', 'news'],
-            ['raptor/content/page/PagesController.php', 'pages'],
+            ['dashboard/content/news/NewsController.php', 'news'],
+            ['dashboard/content/page/PagesController.php', 'pages'],
             ['dashboard/shop/ProductsController.php', 'products'],
         ];
     }
@@ -106,18 +106,18 @@ class DeleteTrashIntegrationTest extends TestCase
     public static function noDeactivateProvider(): array
     {
         return [
-            ['raptor/localization/text/TextController.php'],
-            ['raptor/content/news/NewsController.php'],
-            ['raptor/content/page/PagesController.php'],
-            ['raptor/content/reference/ReferencesController.php'],
-            ['raptor/content/file/FilesController.php'],
-            ['raptor/template/TemplateController.php'],
+            ['dashboard/localization/text/TextController.php'],
+            ['dashboard/content/news/NewsController.php'],
+            ['dashboard/content/page/PagesController.php'],
+            ['dashboard/content/reference/ReferencesController.php'],
+            ['dashboard/file/FilesController.php'],
+            ['dashboard/template/TemplateController.php'],
             ['dashboard/shop/OrdersController.php'],
             ['dashboard/shop/ProductsController.php'],
-            ['raptor/content/news/CommentsController.php'],
+            ['dashboard/content/news/CommentsController.php'],
             ['dashboard/shop/ReviewsController.php'],
             ['dashboard/development/DevRequestController.php'],
-            ['raptor/content/messages/MessagesController.php'],
+            ['dashboard/content/messages/MessagesController.php'],
         ];
     }
 
@@ -141,7 +141,7 @@ class DeleteTrashIntegrationTest extends TestCase
     public function testUsersControllerKeepsDeactivate(): void
     {
         $source = \file_get_contents(
-            \dirname(__DIR__, 3) . '/application/raptor/user/UsersController.php'
+            \dirname(__DIR__, 3) . '/application/dashboard/user/UsersController.php'
         );
         $this->assertStringContainsString('deactivateById', $source);
     }
@@ -149,7 +149,7 @@ class DeleteTrashIntegrationTest extends TestCase
     public function testOrganizationControllerKeepsDeactivate(): void
     {
         $source = \file_get_contents(
-            \dirname(__DIR__, 3) . '/application/raptor/organization/OrganizationController.php'
+            \dirname(__DIR__, 3) . '/application/dashboard/organization/OrganizationController.php'
         );
         $this->assertStringContainsString('deactivateById', $source);
     }

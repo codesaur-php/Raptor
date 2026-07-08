@@ -4,8 +4,8 @@ namespace Web\Service;
 
 use Psr\Log\LogLevel;
 
-use Raptor\Content\NewsModel;
-use Raptor\Content\PagesModel;
+use Dashboard\Content\NewsModel;
+use Dashboard\Content\PagesModel;
 
 use Dashboard\Shop\ProductsModel;
 

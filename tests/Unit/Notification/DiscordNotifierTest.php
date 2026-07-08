@@ -4,7 +4,7 @@ namespace Tests\Unit\Notification;
 
 use PHPUnit\Framework\TestCase;
 
-use Raptor\Notification\DiscordNotifier;
+use Dashboard\Notification\DiscordNotifier;
 
 /**
  * DiscordNotifier-ийн unit тест.
@@ -67,7 +67,7 @@ class DiscordNotifierTest extends TestCase
     public static function setUpBeforeClass(): void
     {
         self::$source = \file_get_contents(
-            \dirname(__DIR__, 3) . '/application/raptor/notification/DiscordNotifier.php'
+            \dirname(__DIR__, 3) . '/application/dashboard/notification/DiscordNotifier.php'
         );
     }
 

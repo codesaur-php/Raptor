@@ -5,7 +5,7 @@ namespace Tests\Unit\Content;
 use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\Attributes\DataProvider;
 
-use Raptor\CacheService;
+use Dashboard\CacheService;
 
 /**
  * CacheService болон cache-тэй холбоотой хамгаалалт тестлэх.
@@ -333,7 +333,7 @@ class CacheTest extends TestCase
     public function testContainerRegistersCache(): void
     {
         $source = file_get_contents(
-            dirname(__DIR__, 3) . '/application/raptor/ContainerMiddleware.php'
+            dirname(__DIR__, 3) . '/application/dashboard/ContainerMiddleware.php'
         );
 
         $this->assertStringContainsString(
@@ -354,7 +354,7 @@ class CacheTest extends TestCase
         // Fail-safe (алдаа гарвал null буцаах) нь CacheService::fromDefaultPath()-д
         // амьдардаг; ContainerMiddleware-ийн 'cache' service үүнд delegate хийнэ.
         $container = file_get_contents(
-            dirname(__DIR__, 3) . '/application/raptor/ContainerMiddleware.php'
+            dirname(__DIR__, 3) . '/application/dashboard/ContainerMiddleware.php'
         );
         $this->assertStringContainsString(
             'CacheService::fromDefaultPath()',
@@ -363,7 +363,7 @@ class CacheTest extends TestCase
         );
 
         $cacheService = file_get_contents(
-            dirname(__DIR__, 3) . '/application/raptor/CacheService.php'
+            dirname(__DIR__, 3) . '/application/dashboard/CacheService.php'
         );
         $this->assertMatchesRegularExpression(
             '/function fromDefaultPath.*?return null/s',
@@ -379,7 +379,7 @@ class CacheTest extends TestCase
         // (Өмнө нь getAttribute('container')?->get('cache') үргэлж null болж
         // rbac cache огт ажилладаггүй байсан.)
         $source = file_get_contents(
-            dirname(__DIR__, 3) . '/application/raptor/authentication/JWTAuthMiddleware.php'
+            dirname(__DIR__, 3) . '/application/dashboard/authentication/JWTAuthMiddleware.php'
         );
         $this->assertStringContainsString(
             'CacheService::fromDefaultPath()',
@@ -400,7 +400,7 @@ class CacheTest extends TestCase
     public function testInvalidateCacheFailSafe(): void
     {
         $source = file_get_contents(
-            dirname(__DIR__, 3) . '/application/raptor/Controller.php'
+            dirname(__DIR__, 3) . '/application/dashboard/Controller.php'
         );
 
         $this->assertStringContainsString(
@@ -431,7 +431,7 @@ class CacheTest extends TestCase
     public function testLocalizationMiddlewareUsesCache(): void
     {
         $source = file_get_contents(
-            dirname(__DIR__, 3) . '/application/raptor/localization/LocalizationMiddleware.php'
+            dirname(__DIR__, 3) . '/application/dashboard/localization/LocalizationMiddleware.php'
         );
 
         $this->assertStringContainsString("'languages'", $source, 'Should cache languages');
@@ -441,7 +441,7 @@ class CacheTest extends TestCase
     public function testSettingsMiddlewareUsesCache(): void
     {
         $source = file_get_contents(
-            dirname(__DIR__, 3) . '/application/raptor/content/settings/SettingsMiddleware.php'
+            dirname(__DIR__, 3) . '/application/dashboard/content/settings/SettingsMiddleware.php'
         );
 
         $this->assertStringContainsString("\"settings.\$code\"", $source, 'Should cache settings by language code');
@@ -479,13 +479,13 @@ class CacheTest extends TestCase
     public static function invalidationProvider(): array
     {
         return [
-            'LanguageController' => ['application/raptor/localization/language/LanguageController.php', "'languages'"],
-            'TextController' => ['application/raptor/localization/text/TextController.php', "'texts.{code}'"],
-            'SettingsController' => ['application/raptor/content/settings/SettingsController.php', "'settings.{code}'"],
-            'TemplateController' => ['application/raptor/template/TemplateController.php', "'menu.{code}'"],
-            'PagesController' => ['application/raptor/content/page/PagesController.php', "'pages_nav.{code}'"],
-            'NewsController' => ['application/raptor/content/news/NewsController.php', "'recent_news.{code}'"],
-            'ReferencesController' => ['application/raptor/content/reference/ReferencesController.php', 'reference.$table.{code}'],
+            'LanguageController' => ['application/dashboard/localization/language/LanguageController.php', "'languages'"],
+            'TextController' => ['application/dashboard/localization/text/TextController.php', "'texts.{code}'"],
+            'SettingsController' => ['application/dashboard/content/settings/SettingsController.php', "'settings.{code}'"],
+            'TemplateController' => ['application/dashboard/template/TemplateController.php', "'menu.{code}'"],
+            'PagesController' => ['application/dashboard/content/page/PagesController.php', "'pages_nav.{code}'"],
+            'NewsController' => ['application/dashboard/content/news/NewsController.php', "'recent_news.{code}'"],
+            'ReferencesController' => ['application/dashboard/content/reference/ReferencesController.php', 'reference.$table.{code}'],
         ];
     }
 }

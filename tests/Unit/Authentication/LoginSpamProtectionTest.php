@@ -4,7 +4,7 @@ namespace Tests\Unit\Authentication;
 
 use Tests\Support\RaptorTestCase;
 
-use Raptor\Authentication\LoginController;
+use Dashboard\Authentication\LoginController;
 use PHPUnit\Framework\Attributes\DataProvider;
 
 /**

@@ -19,8 +19,8 @@ class ControllerTextTest extends RaptorTestCase
             'localization' => $localization,
         ]);
 
-        // Raptor\Controller нь abstract тул anonymous class-аар өргөтгөх
-        return new class($request) extends \Raptor\Controller {};
+        // Dashboard\Controller нь abstract тул anonymous class-аар өргөтгөх
+        return new class($request) extends \Dashboard\Controller {};
     }
 
     public function testTextReturnsTranslation(): void

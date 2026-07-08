@@ -76,7 +76,7 @@ class ProductOrdersModel extends Model
     protected function __initial()
     {
         $table = $this->getName();
-        $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
+        $users = (new \Dashboard\User\UsersModel($this->pdo))->getName();
         $products = (new ProductsModel($this->pdo))->getName();
         $constraints = [
             'created_by' => "{$table}_fk_created_by",

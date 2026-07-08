@@ -6,8 +6,8 @@ use Psr\Log\LogLevel;
 
 use Web\Template\TemplateController;
 
-use Raptor\Content\NewsModel;
-use Raptor\Content\PagesModel;
+use Dashboard\Content\NewsModel;
+use Dashboard\Content\PagesModel;
 
 use Dashboard\Shop\ProductsModel;
 

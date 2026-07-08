@@ -18,7 +18,7 @@ Clean architecture object-oriented web development framework
 
 `codesaur/raptor` нь PSR стандартууд (PSR-3, PSR-4, PSR-7, PSR-11, PSR-12, PSR-14, PSR-15, PSR-16) дээр суурилсан, **олон давхаргат архитектуртай**, **олон байгууллагын (multi-tenant)**, **бүрэн CMS боломжтой** PHP веб фреймворк юм.
 
-Фреймворк нь **Web** (нийтийн вебсайт) болон **Dashboard** (админ панель) гэсэн хоёр давхаргад хуваагдан ажилладаг бөгөөд codesaur экосистемийн бусад packages-тэй хамтран ажиллана.
+Фреймворк нь анхдагч байдлаараа **Web** (нийтийн вебсайт) болон **Dashboard** (админ панель) гэсэн хоёр апп-тай ирдэг бөгөөд developer хэрэгцээндээ тааруулан хэдэн ч апп давхарга нэмж болно. codesaur экосистемийн бусад packages-тэй хамтран ажиллана.
 
 ### Гол боломжууд
 
@@ -56,7 +56,7 @@ Clean architecture object-oriented web development framework
 
 `codesaur/raptor` is a **multi-layered**, **multi-tenant**, **full-featured CMS** PHP web framework built on PSR standards (PSR-3, PSR-4, PSR-7, PSR-11, PSR-12, PSR-14, PSR-15, PSR-16).
 
-The framework operates in two layers - **Web** (public website) and **Dashboard** (admin panel) - and works together with other packages in the codesaur ecosystem.
+The framework ships with two apps by default - **Web** (public website) and **Dashboard** (admin panel) - and a developer can add as many app layers as the project needs. It works together with other packages in the codesaur ecosystem.
 
 ### Key Features
 
@@ -118,7 +118,7 @@ cp docs/conf.example/.env.example .env
 Server configuration examples / Серверийн тохиргооны жишээ: [`docs/conf.example/`](docs/conf.example/)
 
 > **Document root MUST be `public_html/`** (never the project root) - everything else (`.env`, `application/`, `protected/`, `vendor/`, ...) lives above it and must stay unreachable by URL. This is the primary, server-agnostic protection on both Apache and Nginx.
-> **Document root заавал `public_html/` байх ёстой** (project root биш) - бусад бүх зүйл (`.env`, `application/`, `protected/`, `vendor/`, ...) түүнээс дээр байрладаг тул URL-аар хүршгүй байх ёстой. Энэ нь Apache, Nginx хоёуланд server-аас үл хамаарах үндсэн хамгаалалт.
+> **Document root заавал `public_html/` байх ёстой** (project root биш) - бусад бүх зүйл (`.env`, `application/`, `protected/`, `vendor/`, ...) түүнээс дээр байрладаг тул URL-аар хүрэшгүй байх ёстой. Энэ нь Apache, Nginx хоёуланд server-аас үл хамаарах үндсэн хамгаалалт.
 
 Гол тохиргоонууд / Key configuration:
 
@@ -141,7 +141,7 @@ RAPTOR_WAF_BODY_ENCODING=true
 ```
 
 > **Create the empty database yourself** - Raptor never creates the database itself, but all tables and initial seed data ARE auto-created on first run, so never create tables by hand.
-> **Хоосон өгөгдлийн санг өөрөө үүсгэнэ** - Raptor санг автоматаар үүсгэдэггүй, харин доторх бүх хүснэгт болон анхны seed өгөгдлийг анх ажиллахдаа автоматаар үүсгэдэг тул хүснэгтүүдийг гараар үүсгэх шаардлагагүй.
+> **Хоосон өгөгдлийн санг developer өөрөө үүсгэнэ** - Raptor санг автоматаар үүсгэдэггүй, харин доторх бүх хүснэгт болон анхны seed өгөгдлийг анх ажиллахдаа автоматаар үүсгэдэг тул хүснэгтүүдийг гараар үүсгэх шаардлагагүй.
 
 ### Quick Architecture
 
@@ -165,8 +165,7 @@ public_html/index.php
 ```
 raptor/
 |-- application/             # PHP application code (package-by-feature modules)
-|   |-- raptor/              # Core framework modules (shared by dashboard + web)
-|   |-- dashboard/           # Admin panel application
+|   |-- dashboard/           # Admin panel application (also hosts the shared platform modules used by web)
 |   \-- web/                 # Public website application
 |-- public_html/             # Document root (index.php entry point, assets/)
 |-- database/
@@ -190,8 +189,9 @@ templates. Module locations and classes are documented per module in
 > **`vendor/`-оос бусад бүх директор хөгжүүлэгчийн мэдэлд.** `composer create-project`-оор
 > татсаны дараа `application/`, `public_html/`, `database/`, `tests/`, `docs/`,
 > тохиргооны файлууд бүгд таны төслийн хэсэг болж, хэрэгцээ шаардлагадаа тааруулан
-> бүрэн өөрчлөх, устгах, шинээр бичих боломжтой - `application/raptor/` core хүртэл
-> үүнд хамаарна. Үндсэн (default) codebase нь
+> бүрэн өөрчлөх, устгах, шинээр бичих боломжтой. Тусдаа "framework core" гэсэн
+> давхарга байхгүй - `application/` дотор `dashboard/`, `web/` гэсэн хоёр апп
+> байх бөгөөд хоёулаа таны төслийн энгийн код. Үндсэн (default) codebase нь
 > хөгжүүлэгчийн нийтлэг хэрэгцээг хангасан суурь тул өөрийн нарийвчилсан хэрэгцээ
 > шаардлагаа кодод шууд шингээгээрэй. Зөвхөн `vendor/*` packages нь Composer-ээр удирдагдах
 > dependency тул гар хүрэхгүй (`composer update`-ээр шинэчилнэ).
@@ -199,7 +199,9 @@ templates. Module locations and classes are documented per module in
 > **Everything outside `vendor/` is yours.** After `composer create-project`,
 > `application/`, `public_html/`, `database/`, `tests/`, `docs/` and the config
 > files all become part of your project - freely modify, delete, or rewrite them to
-> fit your needs, including the `raptor/` core itself. The default codebase is a baseline covering a developer's common needs,
+> fit your needs. There is no separate "framework core" layer: `application/` holds
+> two apps, `dashboard/` and `web/`, and both are plain project code.
+> The default codebase is a baseline covering a developer's common needs,
 > so adapt the code directly to your own detailed requirements. Only the `vendor/*` packages
 > are Composer-managed dependencies (updated via `composer update`); leave those untouched.
 

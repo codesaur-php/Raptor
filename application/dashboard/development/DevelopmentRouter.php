@@ -4,7 +4,7 @@ namespace Dashboard\Development;
 
 use codesaur\Router\Router;
 
-use Raptor\CsrfMiddleware;
+use Dashboard\CsrfMiddleware;
 
 /**
  * Class DevelopmentRouter

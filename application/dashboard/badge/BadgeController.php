@@ -36,13 +36,18 @@ use codesaur\DataObject\Constants;
  *
  * @package Dashboard\Badge
  */
-class BadgeController extends \Raptor\Controller
+class BadgeController extends \Dashboard\Controller
 {
     /**
      * Module бүрт хандахад шаардлагатай эрхийн зураглал.
      *
      * Түлхүүр нь mount-naive ('/news', '/manage/menu') - mount prefix
      * ('/dashboard') байхгүй. Runtime-д getMountPath()-аар угсарна.
+     *
+     * Critical (English): keys are mount-naive - never hardcode the
+     * '/dashboard' prefix in this map or in BADGE_MAP; the mount path is
+     * attached once at runtime via getMountPath(), so hardcoding it would
+     * break the badge system whenever the mount point changes.
      *
      * Гурван төрлийн утга авна:
      *   null                   - аливаа нэвтэрсэн admin хандах боломжтой (isUserAuthorized)
@@ -190,10 +195,13 @@ class BadgeController extends \Raptor\Controller
      *    - Тухайн admin-ий өөрийнхөн хийсэн action-г хасна (auth_user.id != adminId).
      *      Гагцхүү trash module-д хасахгүй - trash нь admin-ий өөрийн устгасан
      *      бичлэгийг сануулах учиртай тул өөрийн үйлдэл ч тоологдоно
-     *    - orgScopedModules()-д орсон module бол context.auth_user.organization_id-г
-     *      харж буй admin-ий одоогийн байгууллагын id-тай тулгаж шүүнэ.
-     *      organization_id NULL бичлэг (хуучин лог, веб-frontend) бүх admin-д
-     *      тоологдоно; system_coder-т энэ шүүлт огт хэрэглэгдэхгүй (cross-tenant)
+     *    - orgScopedModules()-д орсон module бол байгууллагаар шүүнэ: бичлэгийн
+     *      байгууллага (context.record_organization_id) байвал түүгээр, үгүй бол
+     *      үйлдэл хийгчийн байгууллагаар (context.auth_user.organization_id)
+     *      харж буй admin-ий одоогийн байгууллагын id-тай тулгана. Хоёулаа NULL
+     *      бичлэг (хуучин лог, веб-frontend) бүх admin-д тоологдоно.
+     *      system_coder болон системийн үндсэн байгууллагаар нэвтэрсэн admin-д
+     *      (isSystemWideViewer) энэ шүүлт огт хэрэглэгдэхгүй (system-wide)
      *    - Зөвхөн info, alert, warning түвшинг тоолно
      * 5) Өнгө тус бүрээр нэгтгэж module-д badge массив нэмнэ
      * 6) File-count badge: manual болон migrations хавтсын файлын тоог
@@ -218,12 +226,13 @@ class BadgeController extends \Raptor\Controller
             $seenTable = $seenModel->getName();
 
             // Multi-tenant: org-scoped module-ийн badge-ийг зөвхөн харж буй
-            // админы одоогийн байгууллагад тоолно (orgScopedModules() override).
-            // system_coder бол cross-tenant superuser тул түүнд org-scoping
-            // хэрэглэхгүй - бүх байгууллагын идэвхжлийг харна.
+            // админы одоогийн байгууллагад тоолно (orgScopedModules()).
+            // system_coder болон системийн үндсэн байгууллагаар нэвтэрсэн
+            // админд org-scoping хэрэглэхгүй - бүх байгууллагын идэвхжлийг
+            // харна (isSystemWideViewer).
             $orgScopedSet = \array_flip($this->orgScopedModules());
             $currentOrgId = (int) ($this->getUser()?->organization['id'] ?? 0);
-            $isCoder = $this->isUser('system_coder');
+            $isSystemWide = $this->isUser('system_coder') || $this->isSystemWideViewer();
 
             // Admin-ий checked_at мэдээллийг авах
             $seenRows = $this->query(
@@ -261,8 +270,9 @@ class BadgeController extends \Raptor\Controller
 
                 // Энэ module байгууллагаар хязгаарлагдах эсэх. currentOrgId > 0
                 // үед л шүүнэ (org тодорхойгүй үед бүгдийг харуулж fail-open).
-                // system_coder-т хэзээ ч хэрэглэхгүй (cross-tenant).
-                $applyOrgFilter = !$isCoder
+                // System-wide үзэгчид (coder, системийн үндсэн байгууллага)
+                // хэзээ ч хэрэглэхгүй.
+                $applyOrgFilter = !$isSystemWide
                     && $currentOrgId > 0
                     && isset($orgScopedSet[$naiveModule]);
 
@@ -308,11 +318,14 @@ class BadgeController extends \Raptor\Controller
                                 "     OR ((context::jsonb)->'auth_user'->>'id')::int != ?) ";
                         }
                         if ($applyOrgFilter) {
-                            // organization_id NULL (хуучин/веб бичлэг) бол бүх админд;
-                            // байвал зөвхөн харж буй админы байгууллагад тоолно.
+                            // Бичлэгийн байгууллага (record_organization_id) байвал
+                            // түүгээр, үгүй бол үйлдэгчийн байгууллагаар шүүнэ.
+                            // Хоёулаа NULL (хуучин/веб бичлэг) бол бүх админд тоологдоно.
                             $sql .=
-                                "AND ((context::jsonb)->'auth_user'->>'organization_id' IS NULL " .
-                                "     OR ((context::jsonb)->'auth_user'->>'organization_id')::int = ?) ";
+                                "AND (COALESCE((context::jsonb)->>'record_organization_id', " .
+                                "              (context::jsonb)->'auth_user'->>'organization_id') IS NULL " .
+                                "     OR COALESCE((context::jsonb)->>'record_organization_id', " .
+                                "                 (context::jsonb)->'auth_user'->>'organization_id')::int = ?) ";
                         }
                         $sql .= "GROUP BY act";
                     } else {
@@ -328,11 +341,25 @@ class BadgeController extends \Raptor\Controller
                                 "     OR JSON_EXTRACT(context, '$.auth_user.id') != ?) ";
                         }
                         if ($applyOrgFilter) {
-                            // organization_id NULL (хуучин/веб бичлэг) бол бүх админд;
-                            // байвал зөвхөн харж буй админы байгууллагад тоолно.
+                            // Бичлэгийн байгууллага (record_organization_id) байвал
+                            // түүгээр, үгүй бол үйлдэгчийн байгууллагаар шүүнэ.
+                            // Хоёулаа NULL (хуучин/веб бичлэг) бол бүх админд тоологдоно.
+                            //
+                            // Critical (English/MySQL gotcha): a context key logged as an
+                            // explicit JSON null (e.g. 'record_organization_id' => null from a
+                            // nullable column) makes JSON_EXTRACT return the JSON *null literal*,
+                            // NOT SQL NULL - and JSON_UNQUOTE turns it into the string 'null',
+                            // still not SQL NULL. Without NULLIF(..., 'null') the COALESCE would
+                            // latch onto that literal, so IS NULL is false and '= ?' never
+                            // matches, silently hiding the entry from every org-scoped admin
+                            // (and diverging from the PostgreSQL ->> branch, which yields SQL
+                            // NULL). NULLIF collapses both the JSON-null literal and a missing
+                            // key back to SQL NULL, matching the PostgreSQL branch exactly.
+                            $recOrg = "NULLIF(JSON_UNQUOTE(JSON_EXTRACT(context, '$.record_organization_id')), 'null')";
+                            $actOrg = "NULLIF(JSON_UNQUOTE(JSON_EXTRACT(context, '$.auth_user.organization_id')), 'null')";
                             $sql .=
-                                "AND (JSON_EXTRACT(context, '$.auth_user.organization_id') IS NULL " .
-                                "     OR JSON_EXTRACT(context, '$.auth_user.organization_id') = ?) ";
+                                "AND (COALESCE($recOrg, $actOrg) IS NULL " .
+                                "     OR COALESCE($recOrg, $actOrg) = ?) ";
                         }
                         $sql .= "GROUP BY act";
                     }
@@ -420,40 +447,73 @@ class BadgeController extends \Raptor\Controller
     /**
      * Байгууллагаар (tenant) хязгаарлагдах module-уудын жагсаалт.
      *
-     * Энд буй module-ийн badge-ийг зөвхөн тухайн үйлдлийг хийсэн байгууллага
-     * харж буй админы одоогийн байгууллагатай таарах үед тоолно. Ингэснээр
-     * A байгууллагын үйл ажиллагаа B байгууллагаар нэвтэрсэн админд badge
-     * болж харагдахгүй.
+     * Энд буй module-ийн badge-ийг зөвхөн тухайн бичлэгийн (эсвэл үйлдлийн)
+     * байгууллага харж буй админы одоогийн байгууллагатай таарах үед тоолно.
+     * Ингэснээр A байгууллагын үйл ажиллагаа B байгууллагаар нэвтэрсэн
+     * админд badge болж харагдахгүй. System-wide үзэгчид (system_coder,
+     * системийн үндсэн байгууллагаар нэвтэрсэн админ - isSystemWideViewer)
+     * шүүлтгүйгээр бүх байгууллагын идэвхжлийг харна.
      *
      * Түлхүүр нь mount-naive module path (жишээ '/request'), яг BADGE_MAP-тай
-     * адил. Log-ийн `context.auth_user.organization_id`-аар шүүнэ (хуучин, эсвэл
-     * веб-frontend-ийн organization_id-гүй бичлэг бүх админд тоологдоно -
-     * backward-compatible).
+     * адил. Шүүлтийн эх сурвалж нь log context-ийн 2 түлхүүр:
+     *
+     *   - `record_organization_id` - бичлэгийн эзэмшигч байгууллага. Модулийн
+     *     controller нь insert/update/delete log хийхдээ ('record_id'-тай ижил
+     *     конвенцоор) бичлэгийнхээ organization_id-г энэ түлхүүрээр нэмж өгвөл
+     *     badge яг бичлэгийн байгууллагад очно - өөр байгууллагаар нэвтэрсэн
+     *     admin (жишээ нь системийн байгууллагын admin) уг бичлэгийг засварласан
+     *     ч эзэмшигч байгууллагын хэрэглэгчид мэдэгдэнэ.
+     *   - `auth_user.organization_id` - үйлдэл хийгчийн байгууллага (Controller::log()
+     *     автоматаар бичдэг). record_organization_id байхгүй үеийн fallback.
+     *
+     * Хоёулаа NULL бичлэг (хуучин лог, веб-frontend) бүх админд тоологдоно -
+     * backward-compatible.
      *
      * Raptor нийтийн хэрэглээний module-ууд (news, pages, products, orders,
      * messages г.м.) нь GLOBAL контент (organization_id баганагүй) тул энэ
      * жагсаалт анхдагч байдлаараа хоосон.
      *
-     * Идэвхжүүлэх хамгийн энгийн зам нь доорх return-д tenant-scoped
-     * module-уудаа шууд нэмэх:
+     * Идэвхжүүлэхдээ доорх return-д tenant-scoped module-уудаа нэмнэ:
      *
      *     return ['/request'];
      *
-     * Энэ файлаа өөрчлөхгүй үлдээхийг хүсвэл subclass хийж бас болно -
-     * тэр үед Application-даа /badges (GET) болон /badges/seen (POST)
-     * маршрутуудыг override хийж subclass-руугаа чиглүүлнэ (шууд засварласан
-     * бол router-т өөрчлөлт хэрэггүй).
-     *
-     * Анхаарах: global контенттой core module-г (жишээ '/news') энд нэмбэл
+     * Анхаарах: global контенттой module-г (жишээ '/news') энд нэмбэл
      * badge нь нуугдавч өөрчлөлт нь жагсаалтад бүх admin-д харагдсаар байна -
      * дата өөрөө байгууллагаар тусгаарлагдаагүй тул. Зөвхөн үнэхээр
      * tenant-scoped дататай module-уудыг бүртгэх нь зүйтэй.
+     *
+     * Careful (English): adding a module with global (non-tenant) data here
+     * (e.g. '/news') only hides its badge - the changes remain visible to all
+     * admins in the module's own list, because the data itself is not
+     * organization-scoped. Register only genuinely tenant-scoped modules.
      *
      * @return string[] Mount-naive module path-ууд
      */
     protected function orgScopedModules(): array
     {
         return [];
+    }
+
+    /**
+     * Харж буй админ org-scoping-гүйгээр (system-wide) badge харах эсэх.
+     *
+     * Default: системийн үндсэн байгууллагаар (id=1) нэвтэрсэн админ бүх
+     * байгууллагын идэвхжлийг харна; бусад байгууллагаар нэвтэрсэн админ
+     * orgScopedModules() дахь module-ууд дээр зөвхөн өөрийн байгууллагын
+     * бичлэгүүдийн idэвхжлийг харна. Org switcher-тэй уялдана: нэг хэрэглэгч
+     * системийн байгууллага руу шилжвэл system-wide, common байгууллага руу
+     * шилжвэл тухайн байгууллагын хүрээнд харна.
+     *
+     * system_coder role энэ шалгалтаас гадна үргэлж system-wide (list() дотор
+     * тусдаа шалгагдана). Өөр дүрэм хэрэгтэй бол (жишээ нь байгууллагын
+     * alias == 'system' бүх байгууллага, эсвэл тусгай permission) энэ
+     * method-ийн body-г засварлана.
+     *
+     * @return bool
+     */
+    protected function isSystemWideViewer(): bool
+    {
+        return (int) ($this->getUser()?->organization['id'] ?? 0) === 1;
     }
 
     /**

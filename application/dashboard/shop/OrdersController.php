@@ -26,9 +26,9 @@ use codesaur\Template\MemoryTemplate;
  *
  * @package Dashboard\Shop
  */
-class OrdersController extends \Raptor\Controller
+class OrdersController extends \Dashboard\Controller
 {
-    use \Raptor\Template\DashboardTrait;
+    use \Dashboard\Template\DashboardTrait;
 
     /**
      * Захиалгын жагсаалтын dashboard хуудсыг харуулах.
@@ -216,7 +216,7 @@ class OrdersController extends \Raptor\Controller
 
             $this->sendStatusNotification($record, $payload['status']);
 
-            $this->dispatch(new \Raptor\Notification\OrderEvent(
+            $this->dispatch(new \Dashboard\Notification\OrderEvent(
                 'status_changed', $id, $record['customer_name'] ?? '', '', '', '', 0,
                 $record['status'] ?? '', $payload['status']
             ));
@@ -270,7 +270,7 @@ class OrdersController extends \Raptor\Controller
                 throw new \Exception($this->text('no-record-selected'), 404);
             }
             $model->deleteById($id);
-            (new \Raptor\Trash\TrashModel($this->pdo))->store(
+            (new \Dashboard\Trash\TrashModel($this->pdo))->store(
                 'products_orders', $model->getName(), $id, $record, $this->getUserId()
             );
             $this->respondJSON([

@@ -37,7 +37,14 @@ class ExceptionHandler implements ExceptionHandlerInterface
             }
         }
 
-        \error_log("$title: $message");
+        // Log файл руу бичих. 404 (олдоогүй хуудас, unknown route) нь ихэвчлэн
+        // bot скан тул production дээр бичихгүй - зөвхөн хөгжүүлэлтэд бичнэ.
+        // Bot зочлолтын бүртгэл хэрэгтэй бол вэб серверийн access log-оос
+        // (Apache/nginx access.log, hosting panel-ийн Raw Access Logs) харна -
+        // тэнд бүх 404 хүсэлт IP, User-Agent мэдээллийн хамт хадгалагддаг.
+        if ($code != 404 || CODESAUR_DEVELOPMENT) {
+            \error_log("$title: $message");
+        }
 
         $vars = [
             'title' => $title,

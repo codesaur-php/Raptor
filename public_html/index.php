@@ -182,7 +182,7 @@ $request = (new ServerRequest())->initFromGlobal();
  * гараар бүү үүсгэ.
  */
 try {
-    $pdo = \Raptor\DatabaseConnection::connect();
+    $pdo = \Dashboard\DatabaseConnection::connect();
     $request = $request->withAttribute('pdo', $pdo);
 } catch (\Throwable $e) {
     \error_log("DB холболтын алдаа: {$e->getMessage()}");

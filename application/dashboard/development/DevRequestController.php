@@ -6,8 +6,8 @@ use Psr\Log\LogLevel;
 
 use codesaur\Template\MemoryTemplate;
 
-use Raptor\Content\FileController;
-use Raptor\Content\FilesModel;
+use Dashboard\File\FileController;
+use Dashboard\File\FilesModel;
 
 /**
  * Class DevRequestController
@@ -29,7 +29,7 @@ use Raptor\Content\FilesModel;
  */
 class DevRequestController extends FileController
 {
-    use \Raptor\Template\DashboardTrait;
+    use \Dashboard\Template\DashboardTrait;
 
     /**
      * Хөгжүүлэлтийн хүсэлтүүдийн жагсаалтын хуудсыг харуулах.
@@ -93,7 +93,7 @@ class DevRequestController extends FileController
 
             $model = new DevRequestModel($this->pdo);
             $table = $model->getName();
-            $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
+            $users = (new \Dashboard\User\UsersModel($this->pdo))->getName();
             $reqFilesModel = new FilesModel($this->pdo);
             $reqFilesModel->setTable('dev_requests');
             $reqFilesTable = $reqFilesModel->getName();
@@ -145,7 +145,7 @@ class DevRequestController extends FileController
             }
 
             $devRecipientIds = \array_column($this->getDevRecipients(), 'id');
-            $usersModel = new \Raptor\User\UsersModel($this->pdo);
+            $usersModel = new \Dashboard\User\UsersModel($this->pdo);
             $usersTable = $usersModel->getName();
             $allStmt = $this->prepare(
                 "SELECT id, email, first_name, last_name FROM $usersTable WHERE is_active = 1 ORDER BY first_name ASC"
@@ -238,10 +238,10 @@ class DevRequestController extends FileController
 
             $assignedName = '';
             if ($assignedTo) {
-                $assignedUser = (new \Raptor\User\UsersModel($this->pdo))->getById($assignedTo);
+                $assignedUser = (new \Dashboard\User\UsersModel($this->pdo))->getById($assignedTo);
                 $assignedName = $assignedUser ? \trim(($assignedUser['first_name'] ?? '') . ' ' . ($assignedUser['last_name'] ?? '')) : '';
             }
-            $this->dispatch(new \Raptor\Notification\DevRequestEvent(
+            $this->dispatch(new \Dashboard\Notification\DevRequestEvent(
                 'new', $id, $payload['title'], $assignedName
             ));
 
@@ -287,7 +287,7 @@ class DevRequestController extends FileController
 
             $model = new DevRequestModel($this->pdo);
             $table = $model->getName();
-            $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
+            $users = (new \Dashboard\User\UsersModel($this->pdo))->getName();
 
             $sql =
                 "SELECT t.*, CONCAT(u.first_name, ' ', u.last_name) as created_user, " .
@@ -461,7 +461,7 @@ class DevRequestController extends FileController
             // Email мэдэгдэл илгээх
             $this->notifyResponse($record, $userId, $payload['response']);
 
-            $this->dispatch(new \Raptor\Notification\DevRequestEvent(
+            $this->dispatch(new \Dashboard\Notification\DevRequestEvent(
                 'updated', $id, $record['title'], '', $newStatus
             ));
 
@@ -527,7 +527,7 @@ class DevRequestController extends FileController
             }
 
             $model->deleteById($id);
-            (new \Raptor\Trash\TrashModel($this->pdo))->store(
+            (new \Dashboard\Trash\TrashModel($this->pdo))->store(
                 'dev_requests', $model->getName(), $id, $record, $this->getUserId()
             );
 
@@ -591,7 +591,7 @@ class DevRequestController extends FileController
                 return;
             }
 
-            $usersModel = new \Raptor\User\UsersModel($this->pdo);
+            $usersModel = new \Dashboard\User\UsersModel($this->pdo);
             $recipient = $usersModel->getById($assignedTo);
             if (empty($recipient) || empty($recipient['email'])) {
                 return;
@@ -627,7 +627,7 @@ class DevRequestController extends FileController
      *
      * Хариулт бичсэн хүнээс нөгөө талд email илгээнэ:
      *   - Хүсэлт үүсгэсэн хүн хариулбал -> сүүлийн response бичсэн хүнд
-     *   - Бусад хүн хариулбал -> хүсэлт үүсгэсэн хүнд
+     *   - Бусад хүн хариулбал           -> хүсэлт үүсгэсэн хүнд
      *
      * Email template: dev-request-response (Reference Templates-аас)
      *
@@ -678,7 +678,7 @@ class DevRequestController extends FileController
                 return;
             }
 
-            $usersModel = new \Raptor\User\UsersModel($this->pdo);
+            $usersModel = new \Dashboard\User\UsersModel($this->pdo);
             $recipient = $usersModel->getById($notifyUserId);
             if (empty($recipient) || empty($recipient['email'])) {
                 return;
@@ -717,10 +717,10 @@ class DevRequestController extends FileController
      */
     private function getDevRecipients(): array
     {
-        $users = (new \Raptor\User\UsersModel($this->pdo))->getName();
-        $rolePerms = (new \Raptor\RBAC\RolePermission($this->pdo))->getName();
-        $roles = (new \Raptor\RBAC\Roles($this->pdo))->getName();
-        $permissions = (new \Raptor\RBAC\Permissions($this->pdo))->getName();
+        $users = (new \Dashboard\User\UsersModel($this->pdo))->getName();
+        $rolePerms = (new \Dashboard\RBAC\RolePermission($this->pdo))->getName();
+        $roles = (new \Dashboard\RBAC\Roles($this->pdo))->getName();
+        $permissions = (new \Dashboard\RBAC\Permissions($this->pdo))->getName();
         $userRoles = 'rbac_user_role';
 
         $sql =

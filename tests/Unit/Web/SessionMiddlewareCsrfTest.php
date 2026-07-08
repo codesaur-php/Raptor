@@ -8,7 +8,7 @@ use Psr\Http\Message\UriInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Psr\Http\Message\ResponseInterface;
 
-use Raptor\SessionMiddleware;
+use Dashboard\SessionMiddleware;
 
 /**
  * SessionMiddleware - CSRF-тэй холбоотой session write логикийг тестлэх.

@@ -26,7 +26,23 @@ main() {
         echo "[$(ts)] busy - өмнөх ажил дуусаагүй, алгаслаа" >> "$LOG"; return 0
     fi
     cd "$REPO" || { echo "[$(ts)] ERROR: repo олдсонгүй: $REPO" >> "$LOG"; return 1; }
-    git fetch origin "$BRANCH" --quiet 2>>"$LOG"
+
+    # Fetch-ийн алдааг OFFLINE тэмдэг файлаар төлөвжүүлж логлоно. GitHub-д
+    # холбогдож чадахгүй үед cron бүр fatal мөр нэмээд лог замбараагүй
+    # томрохын оронд тасралт эхлэхэд 1 мөр, сэргэхэд 1 мөр л бичнэ
+    # (завсрын давтан алдаанууд чимээгүй алгасна).
+    local OFFLINE="${LOCK%.lock}.offline" FETCH_ERR
+    if ! FETCH_ERR=$(git fetch origin "$BRANCH" --quiet 2>&1); then
+        if [ ! -f "$OFFLINE" ]; then
+            echo "[$(ts)] ERROR: git fetch амжилтгүй, сэргэтэл дахин мэдэгдэхгүй: ${FETCH_ERR%%$'\n'*}" >> "$LOG"
+            : > "$OFFLINE"
+        fi
+        return 1
+    fi
+    if [ -f "$OFFLINE" ]; then
+        echo "[$(ts)] git fetch сэргэв - GitHub холболт хэвийн боллоо" >> "$LOG"
+        rm -f "$OFFLINE"
+    fi
 
     local LOCAL REMOTE
     LOCAL=$(git rev-parse HEAD); REMOTE=$(git rev-parse "origin/$BRANCH")

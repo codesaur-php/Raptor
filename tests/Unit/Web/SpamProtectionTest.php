@@ -21,7 +21,7 @@ class SpamProtectionTest extends TestCase
         ];
 
         $this->trait = new class {
-            use \Raptor\SpamProtectionTrait {
+            use \Dashboard\SpamProtectionTrait {
                 getTurnstileSiteKey as public;
                 checkLinkSpam as public;
                 validateSpamProtection as public;

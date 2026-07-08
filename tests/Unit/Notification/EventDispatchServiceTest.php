@@ -15,7 +15,7 @@ class EventDispatchServiceTest extends TestCase
     public static function setUpBeforeClass(): void
     {
         self::$containerSource = \file_get_contents(
-            \dirname(__DIR__, 3) . '/application/raptor/ContainerMiddleware.php'
+            \dirname(__DIR__, 3) . '/application/dashboard/ContainerMiddleware.php'
         );
     }
 
@@ -97,7 +97,7 @@ class EventDispatchServiceTest extends TestCase
     public function testControllerHasDispatchMethod(): void
     {
         $source = \file_get_contents(
-            \dirname(__DIR__, 3) . '/application/raptor/Controller.php'
+            \dirname(__DIR__, 3) . '/application/dashboard/Controller.php'
         );
         $this->assertStringContainsString(
             'function dispatch(object $event)',
@@ -109,7 +109,7 @@ class EventDispatchServiceTest extends TestCase
     public function testDiscordNotifierHasUserProperty(): void
     {
         $source = \file_get_contents(
-            \dirname(__DIR__, 3) . '/application/raptor/notification/DiscordNotifier.php'
+            \dirname(__DIR__, 3) . '/application/dashboard/notification/DiscordNotifier.php'
         );
         $this->assertStringContainsString(
             'public readonly string $user',
@@ -121,7 +121,7 @@ class EventDispatchServiceTest extends TestCase
     public function testDiscordNotifierHasHostnameProperty(): void
     {
         $source = \file_get_contents(
-            \dirname(__DIR__, 3) . '/application/raptor/notification/DiscordNotifier.php'
+            \dirname(__DIR__, 3) . '/application/dashboard/notification/DiscordNotifier.php'
         );
         $this->assertStringContainsString(
             'public readonly string $host',
@@ -136,7 +136,7 @@ class EventDispatchServiceTest extends TestCase
     public function testControllerDispatchCatchesExceptions(): void
     {
         $source = \file_get_contents(
-            \dirname(__DIR__, 3) . '/application/raptor/Controller.php'
+            \dirname(__DIR__, 3) . '/application/dashboard/Controller.php'
         );
         \preg_match('/function\s+dispatch\s*\(object\s+\$event\).*?\{(.+?)\n    \}/s', $source, $m);
         $this->assertNotEmpty($m, 'dispatch() method not found');

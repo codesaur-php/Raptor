@@ -21,7 +21,7 @@ class FilesAccessControlTest extends RaptorTestCase
     public static function setUpBeforeClass(): void
     {
         self::$source = \file_get_contents(
-            \dirname(__DIR__, 3) . '/application/raptor/content/file/FilesController.php'
+            \dirname(__DIR__, 3) . '/application/dashboard/file/FilesController.php'
         );
     }
 

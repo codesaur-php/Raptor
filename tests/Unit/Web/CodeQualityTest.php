@@ -64,7 +64,7 @@ class CodeQualityTest extends TestCase
 
     public function testRaptorErrorHandlerUsesHtmlspecialchars(): void
     {
-        $source = file_get_contents(self::$appDir . '/raptor/exception/ErrorHandler.php');
+        $source = file_get_contents(self::$appDir . '/dashboard/exception/ErrorHandler.php');
 
         $this->assertStringContainsString('htmlspecialchars', $source);
         $this->assertStringNotContainsString('"<h3', $source,
@@ -111,7 +111,7 @@ class CodeQualityTest extends TestCase
 
     public function testRaptorControllerRedirectSanitized(): void
     {
-        $source = file_get_contents(self::$appDir . '/raptor/Controller.php');
+        $source = file_get_contents(self::$appDir . '/dashboard/Controller.php');
 
         $this->assertStringContainsString('filter_var', $source,
             'Raptor Controller redirectTo should use filter_var');
@@ -120,7 +120,7 @@ class CodeQualityTest extends TestCase
 
     public function testLoginControllerRedirectsSanitized(): void
     {
-        $source = file_get_contents(self::$appDir . '/raptor/authentication/LoginController.php');
+        $source = file_get_contents(self::$appDir . '/dashboard/authentication/LoginController.php');
 
         $this->assertStringContainsString('FILTER_SANITIZE_URL', $source,
             'LoginController redirects should use FILTER_SANITIZE_URL');
