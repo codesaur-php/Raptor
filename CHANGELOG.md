@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 
 ---
 
-## [5.1.0] - 2026-07-22
+## [5.1.0] - 2026-07-23
 [5.1.0]: https://github.com/codesaur-php/Raptor/compare/v5.0.0...v5.1.0
 
 ### Changed
