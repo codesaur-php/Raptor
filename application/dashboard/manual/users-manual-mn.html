@@ -69,14 +69,21 @@
                 <tr><td>Email</td><td>И-мэйл хаяг</td></tr>
                 <tr><td>Хэл</td><td>Хэрэглэгчийн сонгосон хэл (тугаар)</td></tr>
                 <tr><td>Огноо</td><td>Хүсэлт үүссэн огноо</td></tr>
-                <tr><td>Төлөв</td><td><span class="badge bg-warning">waiting</span> / <span class="badge bg-info">approved</span> / <span class="badge bg-danger">deactivated</span></td></tr>
-                <tr><td>Үйлдэл</td><td>Зөвхөн waiting төлөвт харагдана</td></tr>
+                <tr><td>Төлөв</td><td><span class="badge bg-secondary">unverified</span> / <span class="badge bg-warning">pending</span> / <span class="badge bg-info">approved</span> / <span class="badge bg-danger">rejected</span></td></tr>
+                <tr><td>Үйлдэл</td><td>unverified/pending төлөвт татгалзах, pending төлөвт зөвшөөрөх, rejected төлөвт бүрэн устгах товч харагдана</td></tr>
             </tbody>
         </table>
+        <h5 class="mt-3">Төлвүүдийн тайлбар</h5>
+        <ul>
+            <li><span class="badge bg-secondary">unverified</span> - Хүсэлт гаргагч имэйлээ хараахан баталгаажуулаагүй. Зөвшөөрөх боломжгүй (спам байж магадгүй), харин татгалзаж болно</li>
+            <li><span class="badge bg-warning">pending</span> - Имэйлээ баталгаажуулсан, админы шийдвэр хүлээж буй хүсэлт</li>
+            <li><span class="badge bg-info">approved</span> - Зөвшөөрөгдөж хэрэглэгч болсон</li>
+            <li><span class="badge bg-danger">rejected</span> - Татгалзсан. Мөрийг бүрэн устгатал ижил нэр/хаягаар дахин хүсэлт өгөх боломжгүй</li>
+        </ul>
         <h5 class="mt-3">Үйлдлүүд</h5>
         <ul>
-            <li><strong>Зөвшөөрөх</strong> - Хүсэлтийг баталж хэрэглэгчийг системд бүртгэнэ. Баталгаажуулсны дараа хэрэглэгчид и-мэйл илгээгдэнэ</li>
-            <li><strong>Устгах</strong> - Хүсэлтийг идэвхгүй болгоно</li>
+            <li><strong>Зөвшөөрөх</strong> - Хүсэлтийг баталж хэрэглэгчийг системд бүртгэнэ. Баталгаажуулсны дараа хэрэглэгчид и-мэйл илгээгдэнэ. Зөвхөн имэйлээ баталгаажуулсан (pending) хүсэлтэд боломжтой</li>
+            <li><strong>Устгах</strong> - Хүсэлтийг татгалзана (rejected). Татгалзсан хүсэлтийг бүрэн устгавал Хогийн сав (Trash) руу орно</li>
         </ul>
         <div class="alert alert-info mb-0">
             <i class="bi bi-info-circle"></i>

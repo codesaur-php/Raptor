@@ -51,6 +51,10 @@ class ForgotModel extends Model
             new Column('email', 'varchar', 128),
             new Column('remote_addr', 'varchar', 46),  // IPv4/IPv6
             new Column('code', 'varchar', Constants::DEFAULT_CODE_LENGTH),
+            // Токены төлөв: 1 = идэвхтэй (ready/expired), 0 = ашиглагдсан (used).
+            // Ашиглагдсан токеныг устгахгүй deactivateById()-ээр идэвхгүй болгодог
+            // тул forgot-index-modal жагсаалтад "used" төлөвт харагдана.
+           (new Column('is_active', 'tinyint'))->default(1),
             new Column('created_at', 'datetime'),
             new Column('updated_at', 'datetime')
         ]);

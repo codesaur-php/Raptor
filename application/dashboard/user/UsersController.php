@@ -1041,9 +1041,11 @@ class UsersController extends FileController
 
                 case 'signup':
                     $model = new SignupModel($this->pdo);
-                    // Зөвхөн имэйлээ баталгаажуулсан хүсэлтүүд админд харагдана
-                    // (double opt-in - баталгаажаагүй хүсэлт спам байх магадлалтай)
-                    $condition['WHERE'] = 'verified_at IS NOT NULL';
+                    // Бүх хүсэлт (имэйлээ баталгаажуулаагүйг нь оролцуулаад)
+                    // админд харагдана - баталгаажаагүй нь template дээр
+                    // "unverified" төлөвт ялгарч, зөвшөөрөх товчгүй байна.
+                    // Сервер тал давхар хамгаална: signupApprove() нь
+                    // verified_at хоосон хүсэлтийг 403-аар татгалзана.
                     break;
 
                 default:

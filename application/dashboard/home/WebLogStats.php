@@ -323,6 +323,13 @@ class WebLogStats
 
     /**
      * web_log_cache хүснэгт байгаа эсэхийг шалгаж, байхгүй бол үүсгэх.
+     *
+     * MySQL дээр *_data баганууд MEDIUMTEXT (16MB) байх ёстой: нэг өдрийн
+     * нэгтгэсэн JSON (news_data г.м.) бодит traffic дээр 400KB+ хүрч TEXT-ийн
+     * 64KB хязгаараас халин 'Data too long' (1406) алдаа өгч статистикийн
+     * кэш зогсдог байв. Хуучин суулгацад TEXT-ээр үүссэн хүснэгтийг
+     * migration-аар дээшлүүлнэ (CHANGELOG-ийн 5.1.0 хэсгээс ALTER SQL-г
+     * харна уу). PostgreSQL-ийн TEXT нь хязгааргүй тул өөрчлөлт шаардлагагүй.
      */
     private function ensureCacheTable(): void
     {
@@ -342,18 +349,23 @@ class WebLogStats
                 )"
             )->execute();
         } else {
+            // Charset/collation-г env-ээс авна (DatabaseConnection-тай ижил
+            // fallback) - заахгүй бол тухайн DB-ийн default collation-г авч
+            // бусад хүснэгтээс зөрөх эрсдэлтэй
+            $charset   = $_ENV['RAPTOR_DB_CHARSET']   ?? 'utf8mb4';
+            $collation = $_ENV['RAPTOR_DB_COLLATION'] ?? 'utf8mb4_unicode_ci';
             $this->prepare(
                 "CREATE TABLE IF NOT EXISTS web_log_cache (
                     cache_date DATE PRIMARY KEY,
                     visit_count INT NOT NULL DEFAULT 0,
-                    actions_data TEXT DEFAULT NULL,
-                    pages_data TEXT DEFAULT NULL,
-                    news_data TEXT DEFAULT NULL,
-                    products_data TEXT DEFAULT NULL,
-                    orders_data TEXT DEFAULT NULL,
-                    ips_data TEXT DEFAULT NULL,
-                    ua_data TEXT DEFAULT NULL
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
+                    actions_data MEDIUMTEXT DEFAULT NULL,
+                    pages_data MEDIUMTEXT DEFAULT NULL,
+                    news_data MEDIUMTEXT DEFAULT NULL,
+                    products_data MEDIUMTEXT DEFAULT NULL,
+                    orders_data MEDIUMTEXT DEFAULT NULL,
+                    ips_data MEDIUMTEXT DEFAULT NULL,
+                    ua_data MEDIUMTEXT DEFAULT NULL
+                ) ENGINE=InnoDB DEFAULT CHARSET=$charset COLLATE=$collation"
             )->execute();
         }
     }

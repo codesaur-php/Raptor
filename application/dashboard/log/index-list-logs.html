@@ -119,7 +119,7 @@ document.addEventListener('DOMContentLoaded', function () {
      * logState[tableName] = { offset, loading, done, initialized } */
     const logState = {}; /* Хүснэгт тус бүрийн OFFSET, ачаалж байгаа эсэх, дууссан эсэх, эхэлсэн эсэх */
 
-    /* Бүх log-sentinel элементүүдийг уншиж, table бүрийн анхны төлөвийг үүсгэх */
+    /* Бүх log-sentinel элементүүдийг уншиж, table бүрийн анхны төлөв үүсгэх */
     document.querySelectorAll('.log-sentinel').forEach(s => {
         const table = s.dataset.table;
         logState[table] = {
@@ -254,7 +254,7 @@ document.addEventListener('DOMContentLoaded', function () {
             /* Лог татах явцад алдаа гарвал зөвхөн консол дээр харуулна (UI-г унагахгүй) */
             console.error('fetchLogsForTable алдаа:', err);
         } finally {
-            /* Эцэст нь тухайн хүснэгтийн loading төлөвийг буцааж, spinner-ийг нуух */
+            /* Эцэст нь тухайн хүснэгтийн loading төлөв буцааж, spinner-ийг нуух */
             state.loading = false;
             spinner.style.display = 'none';
             state.initialized = true; /* Анхны request хийсэн гэж тэмдэглэх */

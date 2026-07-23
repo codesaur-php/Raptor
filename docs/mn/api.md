@@ -1729,6 +1729,7 @@ Trash бичлэгийг бүрмөсөн устгана.
 |----------|---------------|-------|
 | **Бүрмөсөн устгах + Хогийн сав** | News, Pages, Products, Orders, Reviews, Comments, Messages, Files, References, Settings, DevRequests, DevResponses, Menus, Texts, Languages | `deleteById()` дараа `TrashModel::store()` |
 | **Soft delete** (is_active=0) | Users, Organizations | `deactivateById()` |
+| **Токен идэвхгүй болгох** (is_active=0) | Forgot (нууц үг сэргээх токен - амжилттай ашиглагдмагц идэвхгүй болно, админы жагсаалтад "used" төлөвт үлдэнэ) | `deactivateById()` |
 
 `deactivate()` -> `delete()` болж өөрчлөгдсөн Controller-ууд:
 - `NewsController` (маршрут: `/dashboard/news/delete`)

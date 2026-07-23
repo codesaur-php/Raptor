@@ -113,7 +113,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 throw new Error(data.message || `{{ 'error-occurred'|text|e('js') }}`);
             }
         }).catch(err => {
-            Notify('error', `{{ 'error'|text|e }}`, err.message);
+            Notify('danger', `{{ 'error'|text|e }}`, err.message);
         }).finally(() => {
             submitBtn.disabled = false;
             submitBtn.innerHTML = `<i class="bi bi-send"></i> {{ 'send'|text|e('js') }}`;

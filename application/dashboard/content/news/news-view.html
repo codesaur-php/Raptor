@@ -210,7 +210,7 @@
                     if (res.status === 'success') {
                         location.reload();
                     } else {
-                        Notify('error', res.title, res.message);
+                        Notify('danger', res.title, res.message);
                     }
                 }).finally(() => {
                     commentBtn.disabled = false;
@@ -255,7 +255,7 @@
                     if (res.status === 'success') {
                         location.reload();
                     } else {
-                        Notify('error', res.title, res.message);
+                        Notify('danger', res.title, res.message);
                     }
                 }).finally(() => {
                     btn.disabled = false;

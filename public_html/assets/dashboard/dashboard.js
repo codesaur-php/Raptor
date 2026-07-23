@@ -234,6 +234,14 @@ function activateLink(href)
  * Notify(type, title, content)
  * - Дэлгэцийн төвөөс гарч ирээд автоматаар алга болох notification
  *
+ * Анхаар: type нь зөвхөн success/danger/warning/primary - өөр ямар ч
+ * утга ('error' гэх мэт) цэнхэр info өнгөөр харагдана, тиймээс алдааны
+ * мэдэгдэлд заавал 'danger' хэрэглэ.
+ *
+ * Critical (English): type accepts ONLY success/danger/warning/primary;
+ * any other value ('error', ...) silently falls back to the cyan info
+ * style - use 'danger' for error toasts.
+ *
  * @param {string} type - success, danger, warning, primary
  * @param {string} title - гарчиг
  * @param {string} content - доторх текст

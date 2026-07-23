@@ -575,8 +575,10 @@ class LoginController extends \Dashboard\Controller
 
             $payload['code'] = $code;
 
-            // Spam хамгаалалтын талбаруудыг цэвэрлэх (honeypot + HMAC)
-            unset($payload['website'], $payload['_ts'], $payload['_token']);
+            // Spam хамгаалалтын талбаруудыг цэвэрлэх (honeypot + HMAC + Turnstile)
+            // signup хүснэгтэд эдгээр багана байхгүй тул SignupModel->insert()
+            // руу орохоос өмнө заавал устгана
+            unset($payload['website'], $payload['_ts'], $payload['_token'], $payload['cf-turnstile-response']);
 
             // 2) Email template татах (request-new-user)
             $templateService = $this->getService('template_service');
@@ -732,7 +734,8 @@ class LoginController extends \Dashboard\Controller
      *     - Дууссан бол мөрийг устгана (UNIQUE суллаж дахин хүсэлт
      *       өгөх боломж нээнэ) -> warning мессеж
      *  5) verified_at-д огноо тавьж баталгаажуулна -> success мессеж
-     *     Үүний дараа л хүсэлт админы жагсаалтад харагдана
+     *     Үүний дараа л хүсэлтийг админ зөвшөөрөх боломжтой болно
+     *     (жагсаалтад "unverified" биш "pending" төлөвт харагдана)
      *
      * Бүх тохиолдолд login хуудсыг flash alert-тэй рендерлэнэ.
      *
@@ -1043,7 +1046,8 @@ class LoginController extends \Dashboard\Controller
      *         -> error.message логжино
      *
      * Аюулгүй байдлын онцлог:
-     *   - Token ашигласны дараа deleteById() ашиглан устгадаг
+     *   - Token ашигласны дараа deactivateById() ашиглан идэвхгүй болгодог
+     *     (is_active=0 -> админы жагсаалтад "used" төлөвт харагдана)
      *   - Token зөв IP-ээр ирсэн эсэхийг check хийх боломжтой (remote_addr)
      *   - Token хугацаагаар хамгаалагдсан
      *   - Token хэл (locale) таарахгүй бол UI-г автоматаар зөв хэл рүү шилжүүлдэг
@@ -1054,10 +1058,11 @@ class LoginController extends \Dashboard\Controller
     public function forgotPassword(string $forgot_password)
     {
         try {
-            // 1) Forgot token шалгах
+            // 1) Forgot token шалгах (is_active=1: ашиглагдсан токен хүчингүй)
             $model = new ForgotModel($this->pdo);
             $forgot = $model->getRowWhere([
-                'forgot_password' => $forgot_password
+                'forgot_password' => $forgot_password,
+                'is_active'       => 1
             ]);
             if (empty($forgot)) {
                 throw new \Exception(
@@ -1221,11 +1226,12 @@ class LoginController extends \Dashboard\Controller
                 );
             }
 
-            // 2) ForgotModel -> токеныг шалгах
+            // 2) ForgotModel -> токеныг шалгах (is_active=1: ашиглагдсан токен хүчингүй)
             $model = new ForgotModel($this->pdo);
             $forgot = $model->getRowWhere([
                 'user_id'         => $user_id,
                 'forgot_password' => $forgot_password,
+                'is_active'       => 1,
                 'remote_addr'     => $this->getRequest()->getServerParams()['REMOTE_ADDR'] ?? ''
             ]);
             if (empty($forgot) || $forgot['user_id'] != $user_id) {
@@ -1277,8 +1283,9 @@ class LoginController extends \Dashboard\Controller
                 );
             }
 
-            // Token-г устгах
-            $model->deleteById($forgot['id']);
+            // Token-г идэвхгүй болгох (нэг удаагийн хэрэглээ) - устгахгүй тул
+            // forgot-index-modal жагсаалтад "used" төлөвт харагдана
+            $model->deactivateById($forgot['id'], ['updated_at' => \date('Y-m-d H:i:s')]);
 
             // UI-д харуулах success хувьсагч
             $vars = [
@@ -1468,9 +1475,12 @@ class LoginController extends \Dashboard\Controller
      */
     private function checkForgotCooldown(ForgotModel $forgot, string $email): void
     {
+        // is_active=1: ашиглагдсан (deactivate хийгдсэн) токен cooldown-д
+        // тооцогдохгүй - нууц үгээ амжилттай сольсны дараа шинэ хүсэлт
+        // илгээхэд саад болохгүй
         $stmt = $forgot->prepare(
             "SELECT created_at FROM {$forgot->getName()} " .
-            'WHERE email=:email ORDER BY id DESC LIMIT 1'
+            'WHERE email=:email AND is_active=1 ORDER BY id DESC LIMIT 1'
         );
         $stmt->bindValue(':email', $email);
         $stmt->execute();

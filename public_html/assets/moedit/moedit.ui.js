@@ -199,7 +199,7 @@ moedit.prototype._youtubePosterBlob = function(videoId) {
 
 /**
  * Blob-ийг толгой зураг болгож upload хийгээд moedit-ийн header image
- * төлвийг шинэчилнэ (_selectHeaderImage-ийн амжилтын урсгалтай ижил).
+ * төлөв шинэчилнэ (_selectHeaderImage-ийн амжилтын урсгалтай ижил).
  * @param {Blob} blob
  * @param {string} name - Файлын нэр
  * @returns {Promise<Object>} upload-ийн буцаасан data
@@ -2273,7 +2273,7 @@ moedit.prototype._shine = async function() {
         previewEl.style.display = 'block';
         shineBtn.style.display = 'none';
         confirmBtn.style.display = 'inline-block';
-        /* Амжилттай үед busy төлвийг цуцлах */
+        /* Амжилттай үед busy төлөв цуцлах */
         isBusy = false;
         cancelBtn.disabled = false;
 

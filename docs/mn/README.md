@@ -472,6 +472,7 @@ RAPTOR_DB_DRIVER=pgsql
 
 - JWT + Session хосолсон authentication
 - Login / Logout / Forgot password / Signup
+- Нууц үг сэргээх токен нэг удаагийн хэрэглээтэй: амжилттай сольсны дараа `deactivateById()`-ээр идэвхгүй болдог (устгагдахгүй) - админы хүсэлтүүдийн жагсаалтад used / expired / ready гэсэн 3 төлөвт харагдана
 - Байгууллага сонгох (олон байгууллагатай хэрэглэгч)
 - JWT нь `$_SESSION['RAPTOR_JWT']` дотор хадгалагдана
 - `User` объект нь profile, organization, RBAC permissions агуулна
@@ -1080,7 +1081,7 @@ class CategoriesModel extends LocalizedModel
 | `insert($record)` | Бичлэг нэмэх |
 | `updateById($id, $record)` | ID-р шинэчлэх |
 | `deleteById($id)` | ID-р бүрмөсөн устгах (контент модулиудад) |
-| `deactivateById($id, $record)` | ID-р идэвхгүй болгох (зөвхөн Users/Organizations-д) |
+| `deactivateById($id, $record)` | ID-р идэвхгүй болгох (Users/Organizations-ийн soft delete, мөн Forgot токеныг ашиглагдсаны дараа идэвхгүй болгоход) |
 | `getRowWhere($with_values)` | WHERE key=value хэлбэрийн нөхцөлөөр нэг мөр авах |
 | `getRow($condition)` | SELECT нөхцөлөөр нэг мөр авах |
 | `getRows($condition)` | SELECT нөхцөлөөр олон мөр авах |

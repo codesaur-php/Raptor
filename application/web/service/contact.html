@@ -224,6 +224,11 @@ document.addEventListener('DOMContentLoaded', function () {
         }).finally(() => {
             submitBtn.disabled = false;
             submitBtn.innerHTML = `<i class="bi bi-send me-2"></i>{{ 'send'|text }}`;
+            /* Turnstile token нэг удаагийн хэрэглээтэй тул widget-ийг сэргээнэ
+               (form.reset() нь Turnstile-ийг сэргээдэггүй). */
+            if (window.turnstile) {
+                window.turnstile.reset();
+            }
         });
     });
 });

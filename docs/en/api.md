@@ -1728,6 +1728,7 @@ Content modules now use **hard delete** with Trash backup instead of soft delete
 |----------|-----------|--------|
 | **Hard delete + Trash** | News, Pages, Products, Orders, Reviews, Comments, Messages, Files, References, Settings, DevRequests, DevResponses, Menus, Texts, Languages | `deleteById()` after `TrashModel::store()` |
 | **Soft delete** (is_active=0) | Users, Organizations | `deactivateById()` |
+| **Token consumption** (is_active=0) | Forgot (password reset tokens - deactivated on successful use, kept as "used" in the admin requests modal) | `deactivateById()` |
 
 Controllers that changed from `deactivate()` to `delete()`:
 - `NewsController` (route: `/dashboard/news/delete`)

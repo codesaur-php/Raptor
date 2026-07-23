@@ -180,8 +180,22 @@ function motable(
         }
     });
 
-    /* Body-г эхлүүлэх */
-    this.setBody();
+    /* Body-г эхлүүлэх.
+       tbody байхгүй хүснэгт нь AJAX-аар дараа ачаалагдана гэж үзэж "loading"
+       төлөв хэвээр үлдээнэ - эс бөгөөс өгөгдөл ирэхээс өмнө "мэдээлэл
+       байхгүй" гэж төөрөгдүүлнэ. Бодит төлөв нь setBody()/setReady()/error()
+       дуудагдахад харагдана. Server талд рендэрлэгдсэн хүснэгт (хоосон ч гэсэн)
+       markup-даа tbody-тэй тул төлөв нь урьдын адил шууд тооцогдоно.
+
+       Coupling (English): a table WITHOUT a tbody element at construction time
+       is treated as "will be AJAX-loaded later" and keeps the loading label
+       until setBody()/setReady()/error() is called; a table WITH a tbody (even
+       an empty server-rendered one) computes its state immediately. Templates
+       must follow this convention: AJAX-loaded tables omit <tbody> from markup,
+       server-rendered tables always write the <tbody> tag. */
+    if (table.querySelector('tbody')) {
+        this.setBody();
+    }
 }
 
 /* setBody(html) - tbody-г шинэчлэх */

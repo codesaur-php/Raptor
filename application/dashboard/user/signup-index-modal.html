@@ -48,25 +48,33 @@
                             <!-- Огноо -->
                             <td>{{ row['created_at'] }}</td>
 
-                            <!-- Хүсэлтийн төлөв (status: pending | approved | rejected) -->
+                            <!-- Хүсэлтийн төлөв: unverified | pending | approved | rejected.
+                                 unverified = имэйлээ хараахан баталгаажуулаагүй pending хүсэлт
+                                 (double opt-in - зөвшөөрөх боломжгүй, спам байж магадгүй) -->
                             <td>
                                 {% if row['status'] == 'approved' %}
                                     <span class="badge bg-info">approved</span>
                                 {% elseif row['status'] == 'rejected' %}
                                     <span class="badge bg-danger">rejected</span>
+                                {% elseif row['verified_at'] is empty %}
+                                    <span class="badge bg-secondary">unverified</span>
                                 {% else %}
                                     <span class="badge bg-warning">pending</span>
                                 {% endif %}
                             </td>
 
-                            <!-- Үйлдэлүүд - pending: батлах/татгалзах, rejected: бүрэн устгах -->
+                            <!-- Үйлдэлүүд - pending: батлах/татгалзах, rejected: бүрэн устгах.
+                                 Зөвшөөрөх товч зөвхөн имэйлээ баталгаажуулсан хүсэлтэд харагдана -
+                                 signupApprove() сервер тал баталгаажаагүйг 403-аар татгалзана -->
                             <td>
                                 {% if row['status'] == 'pending' %}
+                                    {% if row['verified_at'] is not empty %}
                                     {% if user.can('system_user_insert') %}
                                         <button class="approve-user-request btn btn-sm btn-success mb-1 shadow-sm"
                                                 value="{{ row['id'] }}" type="button">
                                             <i class="bi bi-person-check"></i> {{ 'accept'|text }}
                                         </button>
+                                    {% endif %}
                                     {% endif %}
                                     {% if user.can('system_user_delete') %}
                                         <button class="reject-user-request btn btn-sm btn-danger mb-1 shadow-sm"

@@ -470,6 +470,7 @@ RAPTOR_DB_DRIVER=pgsql
 
 - JWT + Session combined authentication
 - Login / Logout / Forgot password / Signup
+- Password reset tokens are single-use: consumed via `deactivateById()` on successful reset (not deleted) - the admin requests modal shows them with used / expired / ready states
 - Organization selection (multi-org users)
 - JWT stored in `$_SESSION['RAPTOR_JWT']`
 - `User` object contains profile, organization, RBAC permissions
@@ -1077,7 +1078,7 @@ class CategoriesModel extends LocalizedModel
 | `insert($record)` | Insert a record |
 | `updateById($id, $record)` | Update by ID |
 | `deleteById($id)` | Hard delete by ID (used for content modules) |
-| `deactivateById($id, $record)` | Soft delete by ID (used only for Users/Organizations) |
+| `deactivateById($id, $record)` | Soft delete by ID (Users/Organizations soft delete, also consumes used Forgot tokens) |
 | `getRowWhere($with_values)` | Get single row by WHERE key=value conditions |
 | `getRow($condition)` | Get single row with SELECT condition |
 | `getRows($condition)` | Get multiple rows with SELECT condition |

@@ -1792,10 +1792,10 @@ Instructions:
     /* ForeColor picker-ийн утгыг cursor байрлалаас хамааран шинэчлэх */
     this._syncForeColorState();
 
-    /* Justify buttons-ийн төлвийг cursor байрлалаас хамааран шинэчлэх */
+    /* Justify buttons-ийн төлөв cursor байрлалаас хамааран шинэчлэх */
     this._syncJustifyState();
 
-    /* List buttons-ийн төлвийг cursor байрлалаас хамааран шинэчлэх */
+    /* List buttons-ийн төлөв cursor байрлалаас хамааран шинэчлэх */
     this._syncListState();
   }
 
@@ -1991,7 +1991,7 @@ Instructions:
   }
 
   /**
-   * Justify buttons-ийн төлвийг cursor байрлаж буй element-ээс хамааран шинэчлэх
+   * Justify buttons-ийн төлөв cursor байрлаж буй element-ээс хамааран шинэчлэх
    * @private
    */
   _syncJustifyState() {
@@ -2081,7 +2081,7 @@ Instructions:
   }
 
   /**
-   * List buttons-ийн (ul, ol) төлвийг cursor байрлаж буй element-ээс хамааран шинэчлэх
+   * List buttons-ийн (ul, ol) төлөв cursor байрлаж буй element-ээс хамааран шинэчлэх
    * @private
    */
   _syncListState() {

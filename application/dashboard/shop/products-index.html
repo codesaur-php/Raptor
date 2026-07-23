@@ -80,7 +80,7 @@
     const filterAction = document.getElementById('filter_action');
     const filterBtns = document.querySelectorAll('button.content-filters');
 
-    /* filter_action товчны төлөвийг шинэчлэх
+    /* filter_action товчны төлөв шинэчлэх
        3 горим: idle (btn-secondary), changed (btn-success), applied (btn-info) */
     function onFilterChange()
     {
@@ -152,7 +152,7 @@
 
     /* DOM бэлэн болсны дараа ажиллах код */
     document.addEventListener('DOMContentLoaded', function () {
-        /* URL-д параметр байвал шүүлтүүрийн төлвийг сэргээх */
+        /* URL-д параметр байвал шүүлтүүрийн төлөв сэргээх */
         if (urlParams?.size > 0) {
             filterBtns.forEach(filter => {
                 const value = urlParams.get(filter.dataset.name);
@@ -216,7 +216,7 @@
                 let type_category = `<span class="badge bg-primary">${record.type}</span>`;
                 type_category += ` <span class="badge bg-danger">${record.category}</span>`;
 
-                /* Нийтлэгдсэн төлөвийг харуулах */
+                /* Нийтлэгдсэн төлөв харуулах */
                 let published = record.published == 1 ? `<i class="bi bi-emoji-heart-eyes-fill text-success"></i> ${published_text}<br/><small>${record['published_at']}</small>` : '<i class="bi bi-eye-slash"></i>';
                 if (record.review == 1 && record.review_count > 0) {
                     let stars = '';

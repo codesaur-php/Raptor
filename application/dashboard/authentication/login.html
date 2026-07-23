@@ -412,7 +412,10 @@
                                 username, email, password, password_re,
                                 website: document.getElementById('hp_field').value,
                                 _ts: _spam_ts,
-                                _token: _spam_token
+                                _token: _spam_token,
+                                /* Turnstile widget нь form дотор нуугдмал input үүсгэдэг ч
+                                   payload-г гараар угсарч байгаа тул утгыг нь өөрсдөө дамжуулна */
+                                'cf-turnstile-response': formSignUp.elements['cf-turnstile-response']?.value ?? ''
                             })
                         }
                     ).then(parseJSON).then(response => {
@@ -432,6 +435,11 @@
                         showMessage(formSignUp, 'danger', error.message);
                     }).finally(() => {
                         spinNstop(this);
+                        /* Turnstile token нэг удаагийн хэрэглээтэй тул widget-ийг сэргээнэ
+                           (form.reset() нь Turnstile-ийг сэргээдэггүй). */
+                        if (window.turnstile) {
+                            window.turnstile.reset();
+                        }
                     });
                 });
             });

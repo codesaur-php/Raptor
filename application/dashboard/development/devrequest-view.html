@@ -236,7 +236,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 throw new Error(data.message || 'Error');
             }
         }).catch(err => {
-            Notify('error', `{{ 'error'|text|e }}`, err.message);
+            Notify('danger', `{{ 'error'|text|e }}`, err.message);
         }).finally(() => {
             respondBtn.disabled = false;
             respondBtn.innerHTML = '<i class="bi bi-send"></i> {{ 'send'|text|e }}';

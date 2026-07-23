@@ -254,10 +254,15 @@ class SeoController extends TemplateController
         );
         $product_items = $stmt->execute([':code' => $code]) ? $stmt->fetchAll() : [];
 
-        // Нэгтгэж published_at-аар эрэмбэлэх
+        // Нэгтгэж published_at-аар эрэмбэлэх. published_at нь NULL байж болно
+        // (хуучин өгөгдөл) - strtotime(null) нь PHP 8.1+ дээр deprecation
+        // сануулга өгч code.log бохирдуулдаг тул null хамгаалалт хийнэ.
+        // published_at-гүй мөрүүд 0 гэж тооцогдон жагсаалтын сүүлд орно.
         $items = \array_merge($news_items, $product_items);
         \usort($items, function ($a, $b) {
-            return \strtotime($b['published_at']) - \strtotime($a['published_at']);
+            $a_time = empty($a['published_at']) ? 0 : (\strtotime($a['published_at']) ?: 0);
+            $b_time = empty($b['published_at']) ? 0 : (\strtotime($b['published_at']) ?: 0);
+            return $b_time - $a_time;
         });
 
         // XML output
@@ -278,7 +283,10 @@ class SeoController extends TemplateController
         foreach ($items as $item) {
             $prefix = ($item['feed_type'] ?? 'news') === 'product' ? '/product/' : '/news/';
             $link = $baseUrl . $prefix . $item['slug'];
-            $pubDate = \gmdate('D, d M Y H:i:s', \strtotime($item['published_at'])) . ' GMT';
+            // published_at NULL бол одоогийн цагаар fallback хийнэ - strtotime(null)
+            // deprecation өгөхөөс гадна false -> 0 болж 1970 оны огноо гарна
+            $pub_time = empty($item['published_at']) ? \time() : (\strtotime($item['published_at']) ?: \time());
+            $pubDate = \gmdate('D, d M Y H:i:s', $pub_time) . ' GMT';
             $desc = $item['description'] ?? '';
 
             echo "  <item>\n";

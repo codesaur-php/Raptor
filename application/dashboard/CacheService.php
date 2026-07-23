@@ -42,7 +42,7 @@ class CacheService implements CacheInterface
         $this->ttl = $defaultTtl;
 
         // Race condition: өөр process нэгэн зэрэг үүсгэж байж болзошгүй тул
-        // warning суурийг дарж эцсийн төлвийг шалгана.
+        // warning суурийг дарж эцсийн төлөв шалгана.
         if (!\is_dir($this->dir) && !@\mkdir($this->dir, 0755, true) && !\is_dir($this->dir)) {
             throw new \RuntimeException("CacheService: cannot create cache directory [$this->dir]");
         }

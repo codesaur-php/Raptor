@@ -435,6 +435,7 @@ For touching the sensitive table list, see `MigrationSecurityScanner::SENSITIVE_
 ### Delete Strategy
 
 - **Users, Organizations, Signup** use soft delete (`deactivateById`, `is_active=0`) with optional hard delete for deactivated records
+- **Forgot (password reset tokens)** are consumed with `deactivateById` (`is_active=0`) on successful reset - never deleted, so the admin requests modal can show the `used` state alongside `expired`/`ready`. Token lookups in `LoginController` (`forgotPassword()`, `setPassword()`) and the resend cooldown must always filter `is_active=1` - a used token is invalid
 - **All other models** use hard delete (`deleteById`) directly. Deleted data is preserved in the `trash` table via `TrashModel::store()` before deletion
 
 ## Cache
@@ -507,9 +508,11 @@ When making significant changes to JS or CSS files, bump `?v=` in Templates (e.g
 ### UI Conventions
 
 - Header: simple `d-flex` with title and manual `?` button, no shadow/rounded wrappers
+- motable tables: AJAX-loaded tables omit `<tbody>` from markup - motable keeps its "loading" label until `setBody()`/`setReady()`/`error()` is called. Server-rendered tables always write the `<tbody>` tag (even when the row loop produces nothing) so the row count / empty state shows immediately
 - Filter row: "New" button left, filter button `ms-auto` right
 - Tabs: use `<button>` with `data-bs-target`, not `<a href="#id">`
 - Delete: SweetAlert2, not Bootstrap modals
+- Toast notifications: `Notify(type, title, content)` in `dashboard.js`. `type` accepts ONLY `success`/`danger`/`warning`/`primary` - any other value (`'error'`, ...) silently falls back to the cyan info style, so error toasts must use `'danger'`. This applies to server responses too: a `'type' => ...` value in `respondJSON()` that the client feeds into `Notify(response.type ?? ..., ...)` must also be one of those four
 - Language dropdown: hide with `localization.language|length > 1` when only one language
 
 ## Dashboard Sidebar Badge System

@@ -443,8 +443,10 @@ class RBACController extends \Dashboard\Controller
 
             throw new \Exception($this->text('invalid-values'), 400);
         } catch (\Throwable $err) {
+            // type нь клиент талд Notify()-д шууд дамждаг тул зөвхөн
+            // success/danger/warning/primary утга байх ёстой
             $this->respondJSON([
-                'type'    => 'error',
+                'type'    => 'danger',
                 'title'   => $this->text('error'),
                 'message' => $err->getMessage()
             ], $err->getCode());

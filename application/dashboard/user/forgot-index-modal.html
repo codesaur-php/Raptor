@@ -47,7 +47,8 @@
                         <!-- Status -> used / expired / ready -->
                         <td>
                             {% if row['is_active'] == 0 %}
-                                <!-- Хэрэглэгдсэн -->
+                                <!-- Хэрэглэгдсэн: reset flow токеныг устгахгүй,
+                                     deactivateById()-ээр is_active=0 болгодог -->
                                 <span class="badge bg-secondary">used</span>
 
                             {% elseif isExpired(row['created_at']) %}

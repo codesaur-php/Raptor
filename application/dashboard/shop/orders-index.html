@@ -82,7 +82,7 @@
     const filterAction = document.getElementById('filter_action');
     const filterBtns = document.querySelectorAll('button.content-filters');
 
-    /* filter_action товчны төлөвийг шинэчлэх */
+    /* filter_action товчны төлөв шинэчлэх */
     function onFilterChange()
     {
         filterBtns.forEach(f => {
@@ -153,7 +153,7 @@
 
     /* DOM бэлэн болсны дараа ажиллах код */
     document.addEventListener('DOMContentLoaded', function () {
-        /* URL-д параметр байвал шүүлтүүрийн төлвийг сэргээх */
+        /* URL-д параметр байвал шүүлтүүрийн төлөв сэргээх */
         if (urlParams?.size > 0) {
             filterBtns.forEach(filter => {
                 const value = urlParams.get(filter.dataset.name);
