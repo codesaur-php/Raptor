@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 
 ---
 
+## [5.1.1] - 2026-08-05
+[5.1.1]: https://github.com/codesaur-php/Raptor/compare/v5.1.0...v5.1.1
+
+### Fixed
+
+- **Password reset tokens were generated with `uniqid()` - predictable and guessable within the reset window.** `LoginController::forgot()` built the `forgot_password` token as `\uniqid('forgot')` - 13 hex characters derived solely from the server clock (Unix seconds + microseconds), which PHP explicitly documents as not suitable for security purposes. The reset link endpoint has no per-guess throttle (the cooldown only limits requesting new tokens), so an attacker who can roughly time a victim's reset request could enumerate the small microsecond search space within the token's validity window (`RAPTOR_PASSWORD_RESET_MINUTES`, default 10 minutes) and reset the victim's password. The token is now `\bin2hex(\random_bytes(32))` - the same cryptographically secure 64-hex-character format already used for the CSRF token and the signup email-verification token. No schema change needed (`forgot_password` is `varchar(255)`), and outstanding old-format tokens simply keep working until they expire.
+
+---
+
 ## [5.1.0] - 2026-07-23
 [5.1.0]: https://github.com/codesaur-php/Raptor/compare/v5.0.0...v5.1.0
 

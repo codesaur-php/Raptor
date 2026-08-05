@@ -854,7 +854,7 @@ class LoginController extends \Dashboard\Controller
      *
      * 4) ForgotModel -> хүсэлт DB-д insert хийх
      *    Талбарууд:
-     *       - forgot_password   (uniqid)
+     *       - forgot_password   (bin2hex(random_bytes(32)) - 64 hex тэмдэгт)
      *       - user_id, email, username
      *       - first_name, last_name
      *       - remote_addr
@@ -930,7 +930,7 @@ class LoginController extends \Dashboard\Controller
             $forgot = new ForgotModel($this->pdo);
             $this->checkForgotCooldown($forgot, $user['email']);
             $request = $forgot->insert([
-                'forgot_password' => \uniqid('forgot'),
+                'forgot_password' => \bin2hex(\random_bytes(32)),
                 'email'           => $user['email'],
                 'code'            => $code,
                 'user_id'         => $user['id'],
