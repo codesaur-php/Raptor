@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 
 ---
 
+## [5.2.0] - 2026-08-10
+[5.2.0]: https://github.com/codesaur-php/Raptor/compare/v5.1.1...v5.2.0
+
+### Added
+
+- **Dashboard sidebar shows the project version and its last-updated date to signed-in admins.** Collaborators who cannot reach the live server can verify a deploy landed by checking the version in the sidebar - previously there was no way to tell from the UI. The version's single source of truth is the new `extra.version` value in `composer.json` (set to `5.2.0`), bumped manually by the developer; `composer.json` reaches the server on every deploy path, so no extra deploy machinery is involved. It lives under `extra` rather than the root `version` field on purpose: a root `version` on a Packagist-published package must match every release git tag (Packagist silently skips mismatching tags) and fails `composer validate --strict`, while `extra` carries no such constraints. `DashboardTrait::dashboardTemplate()` reads the value into `raptor_version` - along with `raptor_name` (the basename of `composer.json`'s `name`, vendor prefix stripped, so every downstream project shows its own name) and `extra.modified` into `raptor_modified` (an explicit "last modified" date maintained beside the version and bumped together with it) - and the sidebar bottom shows a single dimmed right-aligned `{name} {version} | {date}` line (`.sidebar-version` in `dashboard.html`, styled in `dashboard.css?v=5`; the sidebar menu now stretches to full viewport height on desktop so the line sticks to the actual bottom). The block renders nothing when `extra.version` is absent, and the display can be turned off by commenting out the `$dashboard->set(...)` lines. CLAUDE.md documents the bump rule for AI coding sessions: the framework repo bumps per release (kept equal to the release tag), while a downstream project repo patch-bumps `extra.version` in the same commit as any change - without being asked - so non-technical admins can verify from the sidebar that a delegated change reached the live server. Following the version-disclosure best practice (WordPress/Grafana/GitLab), the version renders only inside the authenticated dashboard layout - nothing is exposed on the login page or the public web.
+
+### Changed
+
+- **`.env` is now auto-created on `composer install` / `composer update`, not only on `composer create-project`.** The `.env` bootstrap moved from `post-root-package-install` into a shared `setup-env` Composer script wired to `post-root-package-install`, `post-install-cmd` and `post-update-cmd`, so a `git clone` + `composer install` yields a working `.env` with a fresh secret just like `create-project` does. The script copies `docs/conf.example/.env.example` to `.env` only when `.env` is missing, and skips the copy entirely when the example file itself is absent (downstream projects do not always ship it). `RAPTOR_JWT_SECRET` is generated only when the value is missing, empty, or still the `.env.example` placeholder - an existing real secret is never rotated, since rotating it on every `composer update` would invalidate all issued JWTs and log every user out. The generator also no longer echoes the secret value to the console (it previously printed the full secret, which would leak into CI/deploy logs) - it prints a plain notice instead.
+
+---
+
 ## [5.1.1] - 2026-08-05
 [5.1.1]: https://github.com/codesaur-php/Raptor/compare/v5.1.0...v5.1.1
 

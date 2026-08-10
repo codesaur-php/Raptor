@@ -85,9 +85,9 @@ Raptor works together with these codesaur packages:
 composer create-project codesaur/raptor my-project
 ```
 
-The Composer `post-root-package-install` script will:
-1. Auto-copy `.env.example` to `.env` (if not already present)
-2. Auto-generate the `RAPTOR_JWT_SECRET` key
+The Composer `setup-env` script (runs on `create-project`, `composer install` and `composer update`) will:
+1. Auto-copy `.env.example` to `.env` (if `.env` is not already present)
+2. Auto-generate the `RAPTOR_JWT_SECRET` key (only when it is missing, empty, or still the placeholder - a real existing secret is never overwritten)
 
 > If `.env` was not created, copy it manually with `cp docs/conf.example/.env.example .env` and set `RAPTOR_JWT_SECRET` yourself.
 
@@ -97,8 +97,9 @@ The Composer `post-root-package-install` script will:
 git clone https://github.com/codesaur-php/Raptor.git my-project
 cd my-project
 composer install
-cp docs/conf.example/.env.example .env
 ```
+
+`composer install` runs the same `setup-env` script and creates `.env` automatically.
 
 ---
 

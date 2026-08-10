@@ -1,5 +1,9 @@
 {
     "name": "codesaur/raptor",
+    "extra": {
+        "version": "5.2.0",
+        "modified": "2026-08-10 17:30"
+    },
     "type": "project",
     "description": "Цэвэр архитектуртай объект хандалттай веб хөгжүүлэлтийн фреймворк",
     "keywords": [
@@ -83,10 +87,13 @@
         "test": "phpunit",
         "test:unit": "phpunit --testsuite Unit",
         "test:integration": "phpunit --testsuite Integration",
-        "post-root-package-install": [
-            "@php -r \"file_exists('.env') || copy('docs/conf.example/.env.example', '.env');\"",
-            "@php -r \"$envFile='.env';$secret=bin2hex(random_bytes(64));if(file_exists($envFile)){ $content=file_get_contents($envFile);if(preg_match('/^RAPTOR_JWT_SECRET=.*/m',$content)){ $content=preg_replace('/^RAPTOR_JWT_SECRET=.*/m','RAPTOR_JWT_SECRET='.$secret,$content);} else { if(substr($content,-1)!==PHP_EOL)$content.=PHP_EOL;$content.='RAPTOR_JWT_SECRET='.$secret.PHP_EOL;} file_put_contents($envFile,$content);} else { file_put_contents($envFile,'RAPTOR_JWT_SECRET='.$secret.PHP_EOL);} echo 'RAPTOR_JWT_SECRET generated: '.$secret.PHP_EOL;\""
-        ]
+        "setup-env": [
+            "@php -r \"file_exists('.env') || !file_exists('docs/conf.example/.env.example') || copy('docs/conf.example/.env.example', '.env');\"",
+            "@php -r \"$f='.env';if(file_exists($f)){$c=file_get_contents($f);$v=preg_match('/^RAPTOR_JWT_SECRET=(.*)$/m',$c,$m)?trim($m[1]):null;if($v===null||$v===''||$v==='will-be-auto-generated-during-composer-post-install'){$s=bin2hex(random_bytes(64));if($v===null){if($c!==''&&substr($c,-1)!==PHP_EOL)$c.=PHP_EOL;$c.='RAPTOR_JWT_SECRET='.$s.PHP_EOL;}else{$c=preg_replace('/^RAPTOR_JWT_SECRET=.*$/m','RAPTOR_JWT_SECRET='.$s,$c);}file_put_contents($f,$c);echo 'RAPTOR_JWT_SECRET auto-generated in .env'.PHP_EOL;}}\""
+        ],
+        "post-root-package-install": "@setup-env",
+        "post-install-cmd": "@setup-env",
+        "post-update-cmd": "@setup-env"
     },
     "license": "MIT"
 }

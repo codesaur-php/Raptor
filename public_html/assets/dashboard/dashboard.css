@@ -393,6 +393,10 @@ body {
 @media (min-width: 768px) {
     .sidebar-menu {
         padding-top: .5rem;
+        /* fixed sidebar-ын бүтэн өндрийг эзэлнэ (50px нь .sidebar-ын
+            padding-top буюу topbar) - ингэснээр .sidebar-version-ий
+            mt-auto өндөр дэлгэцэнд блокийг жинхэнэ доод тал руу түлхнэ */
+        min-height: calc(100vh - 50px);
     }
 }
 
@@ -454,6 +458,18 @@ body {
 
 .sidebar-menu .badge:first-of-type {
     margin-left: auto;
+}
+
+/* Хувилбар (sidebar-ын доод хэсэг).
+    mt-auto нь flex-column sidebar-т блокийг доош нь түлхэнэ.
+    Category title (h6, #6c757d)-ээс ялгаруулж баруун талд шахан
+    мэдэгдэх төдий бүдэг харуулна - меню биш, зөвхөн лавлагаа. */
+.sidebar-version {
+    color: #6c757d;
+    opacity: .35;
+    font-size: .72rem;
+    line-height: 1.6;
+    text-align: right;
 }
 
 /* Divider */

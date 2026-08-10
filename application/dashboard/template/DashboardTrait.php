@@ -75,6 +75,20 @@ trait DashboardTrait
         $dashboard = $this->template(__DIR__ . '/dashboard.html');
         $dashboard->set('sidemenu', $this->getUserMenu());
         $dashboard->set('user_organizations', $this->getUserOrganizations());
+        
+        // Хувилбар харуулах:
+        // composer.json-ийн "name" болон "extra" доторх "version", "modified" утгуудаас sidebar-т харуулна
+        // (extra.version байхгүй бол dashboard.html-ийн блок юу ч харуулахгүй).
+        // Root "version" талбар биш "extra" дотор зориудаар хадгалдаг учир нь
+        // - root version нь Packagist дээр git tag-тай заавал таарах шаардлага үүсгэдэг бол extra нь чөлөөтэй.
+        // Нэрийн vendor хэсгийг хасч зөвхөн package нэрийг авдаг тул downstream төсөл бүр өөрийн нэрийг харуулна.
+        // Хоёр утгыг код өөрчлөх бүрт хамт шинэчилнэ (CLAUDE.md-ийн "Version bump rule").
+        // Харуулахгүй гэж хүсвэл доорх мөрүүдийг comment болгоход л хангалттай.
+        $composer = \json_decode((string) \file_get_contents(\dirname(__DIR__, 3) . '/composer.json'), true);
+        $dashboard->set('raptor_name', \basename($composer['name'] ?? '') ?: null);
+        $dashboard->set('raptor_version', $composer['extra']['version'] ?? null);
+        $dashboard->set('raptor_modified', $composer['extra']['modified'] ?? null);
+        
         $dashboard->set('content', $this->template($template, $vars));
         foreach ($this->getAttribute('settings', []) as $key => $value) {
             $dashboard->set($key, $value);

@@ -85,9 +85,9 @@ Raptor нь дараах codesaur packages-тэй хамтран ажиллан�
 composer create-project codesaur/raptor my-project
 ```
 
-Composer-ийн `post-root-package-install` скрипт нь:
-1. `.env.example` файлыг `.env` руу автоматаар хуулна (байхгүй бол)
-2. `RAPTOR_JWT_SECRET` нууц түлхүүрийг автоматаар үүсгэнэ
+Composer-ийн `setup-env` скрипт (`create-project`, `composer install`, `composer update` бүрт ажиллана):
+1. `.env.example` файлыг `.env` руу автоматаар хуулна (`.env` байхгүй бол)
+2. `RAPTOR_JWT_SECRET` нууц түлхүүрийг автоматаар үүсгэнэ (зөвхөн байхгүй, хоосон, эсвэл placeholder хэвээр байвал - бодит secret-ийг хэзээ ч дарж солихгүй)
 
 > Хэрэв `.env` файл үүсээгүй бол `cp docs/conf.example/.env.example .env` командаар гараар хуулж, `RAPTOR_JWT_SECRET` утгыг өөрөө тохируулна.
 
@@ -97,8 +97,9 @@ Composer-ийн `post-root-package-install` скрипт нь:
 git clone https://github.com/codesaur-php/Raptor.git my-project
 cd my-project
 composer install
-cp docs/conf.example/.env.example .env
 ```
+
+`composer install` дээрх `setup-env` скриптийг ажиллуулж `.env`-ийг автоматаар үүсгэнэ.
 
 ---
 
