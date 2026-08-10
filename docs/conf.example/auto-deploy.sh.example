@@ -60,6 +60,7 @@ main() {
 
     {                                                  # 2) Deploy (.cpanel.yml-тэй адил)
         /bin/rm -rf "$DEPLOYPATH/application" && /bin/cp -a application "$DEPLOYPATH/application"
+        /bin/rm -rf "$DEPLOYPATH/bin" && /bin/cp -a bin "$DEPLOYPATH/bin"
         /bin/cp -af public_html/. "$DEPLOYPATH/public_html/"
         /bin/cp -f composer.json "$DEPLOYPATH/composer.json"
         /bin/cp -f composer.lock "$DEPLOYPATH/composer.lock"
