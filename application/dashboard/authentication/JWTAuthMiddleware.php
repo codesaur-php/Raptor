@@ -346,8 +346,18 @@ class JWTAuthMiddleware implements MiddlewareInterface
             // and return 401/403 - there is no login-redirect safety net here.
             $segment = \explode('/', $path)[2] ?? '';
             if ($segment !== 'login' && $segment !== 'protected') {
-                $loginUri = (string) $request->getUri()->withPath("$scriptPath/dashboard/login");
-                return $this->redirectResponse($request, $loginUri, 302);
+                // Login хуудасны URL-д зөвхөн ?redirect=... query үлдээнэ -
+                // хэрэглэгчийн орох гэсэн хуудсыг нэвтэрсний дараа нээхэд
+                // LoginController ашиглана (open redirect-ээс тэнд шүүнэ).
+                $loginUri = $request->getUri()
+                    ->withPath("$scriptPath/dashboard/login")
+                    ->withQuery('')
+                    ->withFragment('');
+                $target = $this->loginRedirectTarget($request, $path);
+                if ($target !== null) {
+                    $loginUri = $loginUri->withQuery('redirect=' . \rawurlencode($target));
+                }
+                return $this->redirectResponse($request, (string) $loginUri, 302);
             }
 
             // Login хуудас дээр байвал доорх ганц handle() рүү anonymous request-ээр fall-through
@@ -358,5 +368,40 @@ class JWTAuthMiddleware implements MiddlewareInterface
         //   - login дээр auth алдсан бол original (anonymous) request
         // Downstream controller-ийн exception энд баригдахгүй, гадна талын ErrorHandler руу дамжина.
         return $handler->handle($request);
+    }
+
+    /**
+     * Нэвтрээгүй хэрэглэгчийг login руу илгээхдээ буцаж очих замыг тодорхойлно.
+     *
+     * Зөвхөн хөтчийн шууд хуудас нээлт (GET/HEAD + Accept: text/html) дээр
+     * утга буцаана - fetch()-ээр дуудагдсан JSON/fragment зам (жишээ нь
+     * /dashboard/news/list) session дууссан үед login руу унавал түүнийг
+     * буцах зам болгож болохгүй, нэвтэрсний дараа хэрэглэгч хоосон JSON
+     * хуудас руу очно. Dashboard root болон home-д мөн null - тэдгээр нь
+     * нэвтэрсний дараах default хуудас тул URL бохирдуулах хэрэггүй.
+     *
+     * @param ServerRequestInterface $request        Одоогийн хүсэлт
+     * @param string                 $mountRelative  Script path хассан зам (/dashboard/news)
+     * @return string|null Script path-тай бүтэн зам + query, эсвэл null
+     */
+    private function loginRedirectTarget(ServerRequestInterface $request, string $mountRelative): ?string
+    {
+        if (!\in_array($request->getMethod(), ['GET', 'HEAD'], true)
+            || !\str_contains($request->getHeaderLine('Accept'), 'text/html')
+        ) {
+            return null;
+        }
+
+        $trimmed = \rtrim($mountRelative, '/');
+        if ($trimmed === '' || $trimmed === '/dashboard' || $trimmed === '/dashboard/home') {
+            return null;
+        }
+
+        $uri = $request->getUri();
+        $target = $uri->getPath();
+        if ($uri->getQuery() !== '') {
+            $target .= '?' . $uri->getQuery();
+        }
+        return $target;
     }
 }

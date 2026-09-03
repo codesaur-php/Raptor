@@ -237,7 +237,7 @@ Decodes and validates JWT. Throws `RuntimeException` if expired. Requires `user_
 4. Loads RBAC permissions (cached as `rbac.{userId}`) - BEFORE the organization check, so the coder role is known
 5. Verifies organization access: regular users need an `organizations_users` membership row; `system_coder` is a cross-tenant superuser and only needs the target organization to be active (access is derived from the role - no membership row is required or created)
 6. Creates `User` object and adds to request attributes
-7. On failure, redirects to `/dashboard/login`
+7. On failure, redirects to `/dashboard/login`. For browser page loads (GET/HEAD with `Accept: text/html`, excluding the dashboard root/home) the original path + query is passed as `?redirect=...`, which `LoginController` sanitizes (same-origin path under the dashboard mount only) and `login.html` navigates to after a successful sign-in
 
 ### SessionMiddleware
 

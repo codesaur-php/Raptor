@@ -54,10 +54,15 @@ class LoginController extends \Dashboard\Controller
      *           хэрэглэгчийн нууц үг тааруулах UI-г харуулна.
      *
      *  2) Хэрэв хэрэглэгч аль хэдийн нэвтэрсэн бол:
-     *         -> 'home' route руу redirect хийнэ.
+     *         -> "redirect" параметрт заасан dashboard хуудас руу, байхгүй
+     *           бол 'home' route руу redirect хийнэ.
      *
      *  3) Эс бөгөөс:
      *         -> Login template-г (login.html) ачаалж рендерлэнэ.
+     *           "redirect" параметр (JWTAuthMiddleware нэвтрээгүй хэрэглэгчийг
+     *           login руу илгээхдээ анх орох гэсэн замыг нь өгдөг) шүүгдээд
+     *           template-ийн redirect_url болж, амжилттай нэвтэрсний дараа
+     *           JS тэр хуудас руу шилжүүлнэ.
      *
      * Template-т дамжуулах өгөгдөл:
      *   - settings middleware-ээр inject хийгдсэн бүх системийн тохиргоо
@@ -88,10 +93,74 @@ class LoginController extends \Dashboard\Controller
 
         // 2) Хэрэглэгч аль хэдийн нэвтэрсэн бол
         if ($this->isUserAuthorized()) {
+            $target = $this->getLoginRedirectTarget();
+            if ($target !== null) {
+                \header("Location: $target", true, 302);
+                exit;
+            }
             return $this->redirectTo('home');
         }
 
         $this->renderLogin();
+    }
+
+    /**
+     * ?redirect=... параметрээс нэвтэрсний дараа очих замыг шүүж авна.
+     *
+     * @return string|null Аюулгүй dashboard доторх зам, эсвэл null
+     */
+    private function getLoginRedirectTarget(): ?string
+    {
+        return self::sanitizeRedirectTarget(
+            $this->getQueryParams()['redirect'] ?? null,
+            $this->getScriptPath() . $this->getMountPath()
+        );
+    }
+
+    /**
+     * Нэвтэрсний дараа очих замыг open redirect-ээс хамгаалж шүүнэ.
+     *
+     * Зөвхөн дараах нөхцөлийг бүгдийг хангасан утгыг хүлээн авна:
+     *   - Хоосон биш string, '/'-ээр эхэлсэн харьцангуй зам
+     *     ('//evil.com', '/\evil.com' гэх мэт protocol-relative хэлбэр биш)
+     *   - Control тэмдэгт (CR/LF - header injection) болон backslash агуулаагүй
+     *   - Dashboard-ын mount зам ($dashboardBase, жишээ нь '/dashboard') доор
+     *     байрлана - гадны сайт, public web зам руу хэзээ ч шилжүүлэхгүй
+     *   - Login хуудас өөрөө биш (redirect давталт үүсгэхгүй)
+     *
+     * Security (English): the redirect target must be a same-origin path under
+     * the dashboard mount. Anything else (absolute URL, protocol-relative
+     * '//host', backslash tricks, CR/LF, a login page) returns null and the
+     * caller falls back to the 'home' route.
+     *
+     * @param mixed  $target        Query параметрийн түүхий утга
+     * @param string $dashboardBase Script path + mount path (жишээ нь '/dashboard')
+     * @return string|null
+     */
+    public static function sanitizeRedirectTarget(mixed $target, string $dashboardBase): ?string
+    {
+        if (!\is_string($target) || $target === '' || $target[0] !== '/') {
+            return null;
+        }
+        if (\str_starts_with($target, '//')
+            || \preg_match('/[\x00-\x1F\x7F\\\\]/', $target) === 1
+        ) {
+            return null;
+        }
+
+        $base = \rtrim($dashboardBase, '/');
+        if ($base !== ''
+            && $target !== $base
+            && !\str_starts_with($target, "$base/")
+            && !\str_starts_with($target, "$base?")
+        ) {
+            return null;
+        }
+        if (\str_starts_with($target, "$base/login")) {
+            return null;
+        }
+
+        return $target;
     }
 
     /**
@@ -119,6 +188,10 @@ class LoginController extends \Dashboard\Controller
         $login->set('spam_ts', $ts);
         $login->set('spam_token', $this->generateSpamToken('login-form', $ts));
         $login->set('turnstile_site_key', $this->getTurnstileSiteKey());
+
+        // Нэвтэрсний дараа очих зам (?redirect=...) - шүүгдээгүй бол хоосон,
+        // login.html-ийн JS тэр үед 'home' route руу шилжүүлнэ.
+        $login->set('redirect_url', $this->getLoginRedirectTarget() ?? '');
 
         // SettingsMiddleware -> request attributes -> 'settings'
         foreach ($this->getAttribute('settings', []) as $key => $value) {

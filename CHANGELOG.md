@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 
 ---
 
+## [5.2.1] - 2026-09-03
+[5.2.1]: https://github.com/codesaur-php/Raptor/compare/v5.2.0...v5.2.1
+
+### Added
+
+- **Signing in returns the admin to the page they originally requested.** Opening a dashboard URL while signed out (a bookmarked `/dashboard/news`, a link from a Discord notification, an expired session) redirected to `/dashboard/login`, and after signing in the admin always landed on the home page and had to navigate back by hand. `JWTAuthMiddleware` now sends the original path and query string along as `/dashboard/login?redirect=/dashboard/news/view/12?tab=comments`, `LoginController` reads it into the login form's `data-redirect` attribute (`renderLogin()`), and `login.html` navigates there after a successful sign-in - falling back to the `home` route when absent. An already-authenticated visit to `/dashboard/login?redirect=...` (`LoginController::index()`) also honors the target instead of always going home. The value is sanitized by `LoginController::sanitizeRedirectTarget()` (open-redirect guard, covered by `tests/Unit/Authentication/LoginRedirectTargetTest.php`): it must be a same-origin relative path under the dashboard mount (script path + `/dashboard`), so absolute URLs, protocol-relative `//host` forms, backslashes, CR/LF (header injection) and paths outside the dashboard are dropped, and login pages themselves are refused to avoid a redirect loop. The middleware only records a target for browser page loads (GET/HEAD with `Accept: text/html`) - a `fetch()`-ed JSON or fragment route that hits an expired session must not become the post-login landing page - and skips the dashboard root / home since they are the default destination anyway. The login URL no longer carries over the original request's unrelated query string (previously `/dashboard/news?page=2` redirected to `/dashboard/login?page=2`); it now carries only `redirect`.
+
+### Fixed
+
+- **CI workflow failed on the PHP syntax check and merge-marker steps because they scanned a `public` folder that does not exist.** `.github/workflows/ci.yml` still referenced the document root by its former `public` name; both steps now scan `application` and `public_html`, so `find` no longer exits non-zero and the conflict-marker grep covers the actual entry point and assets.
+
+---
+
 ## [5.2.0] - 2026-08-10
 [5.2.0]: https://github.com/codesaur-php/Raptor/compare/v5.1.1...v5.2.0
 

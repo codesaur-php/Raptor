@@ -237,7 +237,7 @@ JWT decode + validate хийх. Хугацаа дууссан бол `RuntimeExc
 4. RBAC эрхүүдийг ачаална (`rbac.{userId}` cache) - байгууллагын шалгалтаас өмнө, coder эсэхийг мэдэхийн тулд
 5. Байгууллагын хандалтыг шалгана: энгийн хэрэглэгчид `organizations_users` гишүүнчлэлийн мөр заавал; `system_coder` бол cross-tenant superuser тул зөвхөн байгууллага идэвхтэй байхад хангалттай (хандах эрх рольоос гарна - гишүүнчлэлийн мөр шаардахгүй, үүсгэхгүй)
 6. `User` объект үүсгэж request attribute-д нэмнэ
-7. Алдаа гарвал `/dashboard/login` руу redirect хийнэ
+7. Алдаа гарвал `/dashboard/login` руу redirect хийнэ. Хөтчийн хуудас нээлт (GET/HEAD + `Accept: text/html`, dashboard root/home-оос бусад) дээр анхны зам + query-г `?redirect=...` параметрээр дамжуулна - `LoginController` үүнийг шүүж (зөвхөн dashboard mount доорх same-origin зам), амжилттай нэвтэрсний дараа `login.html` тэр хуудас руу шилжүүлнэ
 
 ### SessionMiddleware
 

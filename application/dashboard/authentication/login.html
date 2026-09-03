@@ -44,7 +44,8 @@
             {% endif %}
 
             <!-- нэвтрэх form (#login) -->
-            <form id="login" action="{{ 'entry'|link }}" method="POST">
+            <!-- data-redirect: нэвтэрсний дараа очих dashboard зам (LoginController шүүсэн, хоосон бол home) -->
+            <form id="login" action="{{ 'entry'|link }}" method="POST" data-redirect="{{ redirect_url|e }}">
                 <div style="position:absolute;left:-9999px" aria-hidden="true">
                     <input type="text" name="website" id="hp_field" tabindex="-1" autocomplete="off">
                 </div>
@@ -329,7 +330,7 @@
                             throw new Error(response.message ?? `{{ 'something-went-wrong'|text|e }}`);
                         }
                         showMessage(formLogin, 'success', response.message);
-                        window.location.href = `{{ 'home'|link }}`;
+                        window.location.href = formLogin.dataset.redirect || `{{ 'home'|link }}`;
                     }).catch(error => {
                         showMessage(formLogin, 'danger', error.message);
                         spinNstop(this);
