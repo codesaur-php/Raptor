@@ -62,8 +62,11 @@ document.addEventListener('DOMContentLoaded', function () {
             if (!byLang[code]) byLang[code] = [];
         });
 
+        /* Default хэл эхэнд, бүх хэлний ('*') бүлэг хамгийн сүүлд */
         const defaultLang = '{{ localization.language|keys|first }}';
         const langCodes = Object.keys(byLang).sort((a, b) => {
+            if (a === '*') return 1;
+            if (b === '*') return -1;
             if (a === defaultLang) return -1;
             if (b === defaultLang) return 1;
             return 0;
@@ -73,16 +76,24 @@ document.addEventListener('DOMContentLoaded', function () {
             const langPages = byLang[code];
             langPages.sort((a, b) => (a.position || 0) - (b.position || 0) || a.id - b.id);
 
-            /* Хэлний flag, нэр */
+            /* Хэлний flag, нэр ('*' = бүх хэл -> глобус дүрс) */
             const flagCode = code === 'en' ? 'us' : code;
-            const langTitle = languages[code]?.title ?? code.toUpperCase();
+            const langTitle = code === '*'
+                ? `{{ 'all-languages'|text|e('js') }}`
+                : (languages[code]?.title ?? code.toUpperCase());
+            const langIcon = code === '*'
+                ? '<i class="bi bi-globe2 me-2 fs-5"></i>'
+                : `<img src="https://flagcdn.com/24x18/${flagCode}.png"
+                        srcset="https://flagcdn.com/48x36/${flagCode}.png 2x"
+                        width="24" height="18" alt="${code}" class="me-2">`;
 
-            /* Tree бүтэц бэлдэх */
+            /* Tree бүтэц бэлдэх. Эцэг нь өөр бүлэгт (бүх хэлний '*' эцэгтэй
+               тухайн хэлний хүүхэд) байвал энэ card-д root болгож харуулна */
             const childrenMap = {};
             const roots = [];
             langPages.forEach(page => {
                 const parentId = infos[page.id]?.parent_id || 0;
-                if (!parentId || !infos[parentId]) {
+                if (!parentId || !infos[parentId] || infos[parentId].code !== code) {
                     roots.push(page);
                 } else {
                     if (!childrenMap[parentId]) childrenMap[parentId] = [];
@@ -92,9 +103,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             html += `<div class="card mt-3">
                 <div class="card-header d-flex align-items-center bg-body-secondary">
-                    <img src="https://flagcdn.com/24x18/${flagCode}.png"
-                         srcset="https://flagcdn.com/48x36/${flagCode}.png 2x"
-                         width="24" height="18" alt="${code}" class="me-2">
+                    ${langIcon}
                     <h5 class="mb-0 fw-bold">${langTitle}</h5>
                     <span class="badge bg-primary ms-2">${roots.length} root / ${langPages.length} total</span>
                     <div class="ms-auto d-flex gap-1">

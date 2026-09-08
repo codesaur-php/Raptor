@@ -27,7 +27,8 @@ use codesaur\DataObject\Constants;
  *  - title (varchar 255) - Мэдээний гарчиг
  *  - content (mediumtext) - Мэдээний бүтэн агуулга
  *  - photo (varchar 255) - Мэдээний зургын URL path
- *  - code (varchar 2) - Хэлний код (mn, en, гэх мэт)
+ *  - code (varchar 2) - Хэлний код (mn, en, гэх мэт). '*' бол бүх хэл дээр харагдах
+ *    хэлнээс хамааралгүй мэдээ (web талын жагсаалтууд code IN (:code, '*') гэж шүүнэ)
  *  - type (varchar 32, default: 'article') - Мэдээний төрөл
  *  - category (varchar 32, default: 'general') - Мэдээний ангилал
  *  - is_featured (tinyint, default: 0) - Онцлох мэдээ эсэх
@@ -169,6 +170,8 @@ class NewsModel extends Model
      * Нүүр хуудас болон бусад web хэсгүүдэд ашиглагдана.
      * read_count зэрэг dynamic өгөгдөл оруулаагүй тул cache хийхэд тохиромжтой.
      *
+     * Тухайн хэлний мэдээнээс гадна бүх хэлний ('*') мэдээг хамт буцаана.
+     *
      * @param string $code Хэлний код (mn, en...)
      * @param int $limit Хамгийн ихдээ авах тоо (анхдагч: 20)
      * @return array Мэдээнүүдийн жагсаалт
@@ -180,7 +183,7 @@ class NewsModel extends Model
             'SELECT id, slug, title, description, photo, code, type, category, ' .
             'is_featured, comment, published_at, created_at, source ' .
             "FROM $table " .
-            'WHERE published=1 AND code=:code ' .
+            "WHERE published=1 AND code IN (:code, '*') " .
             'ORDER BY published_at DESC ' .
             "LIMIT $limit"
         );

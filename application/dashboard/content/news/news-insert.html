@@ -68,6 +68,11 @@
                                  style="vertical-align:middle;margin-right:.35rem">{{ language['title']|e }}
                         </li>
                     {% endfor %}
+                    <!-- Бүх хэл дээр харагдах (хэлнээс хамааралгүй) мэдээ: code = '*' -->
+                    <li><hr class="dropdown-divider"></li>
+                    <li class="dropdown-item" value="*">
+                        <i class="bi bi-globe2" style="margin-right:.35rem"></i>{{ 'all-languages'|text }}
+                    </li>
                 </ul>
             </div>
         </div>
@@ -173,7 +178,7 @@
         }
     });
 
-    /* Хэл сонгох event listener */
+    /* Хэл сонгох event listener ('*' = бүх хэл, туг биш глобус дүрс) */
     const langInput = document.querySelector('input[name="code"]');
     const langFlag = document.getElementById('lang_flag');
     document.getElementById('lang_list').addEventListener('click', function (e) {
@@ -181,8 +186,12 @@
         if (li) {
             const code = li.getAttribute('value');
             langInput.value = code;
-            const flag = code === 'en' ? 'us' : code;
-            langFlag.innerHTML = `<img src="https://flagcdn.com/20x15/${flag}.png" srcset="https://flagcdn.com/40x30/${flag}.png 2x" width="20" height="15" alt="${code}">`;
+            if (code === '*') {
+                langFlag.innerHTML = '<i class="bi bi-globe2"></i>';
+            } else {
+                const flag = code === 'en' ? 'us' : code;
+                langFlag.innerHTML = `<img src="https://flagcdn.com/20x15/${flag}.png" srcset="https://flagcdn.com/40x30/${flag}.png 2x" width="20" height="15" alt="${code}">`;
+            }
         }
     });
 

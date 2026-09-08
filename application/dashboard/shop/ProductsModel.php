@@ -11,6 +11,9 @@ use codesaur\DataObject\Constants;
  *
  * Бүтээгдэхүүний (`products`) хүснэгттэй ажиллах өгөгдлийн загвар (Model) класс.
  *
+ * code талбар нь хэлний код (mn, en...) эсвэл '*' - бүх хэл дээр харагдах
+ * хэлнээс хамааралгүй бүтээгдэхүүн. Web талын query-үүд code IN (:code, '*') гэж шүүнэ.
+ *
  * @package Dashboard\Shop
  */
 class ProductsModel extends Model

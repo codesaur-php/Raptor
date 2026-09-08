@@ -191,14 +191,17 @@
 
             /* Нийтлэгдсэн гэсэн текстийг хэлнээс хамааруулан тохируулах */
             const published_text = `{{ 'published'|text|e('js') }}`;
+            const all_languages_text = `{{ 'all-languages'|text|e('js') }}`;
 
             /* Мэдээ бүрийг давтаж хүснэгтийн мөр үүсгэх */
             data.list.forEach(record => {
                 const id = record.id;
 
-                /* Хэлний туг үүсгэх (en -> us туг руу хөрвүүлэх) */
+                /* Хэлний туг үүсгэх (en -> us туг руу хөрвүүлэх, '*' = бүх хэл -> глобус) */
                 let flag = '';
-                if (record.code) {
+                if (record.code === '*') {
+                    flag = `<i class="bi bi-globe2" title="${all_languages_text}"></i>`;
+                } else if (record.code) {
                     const codeFlag = record.code === 'en' ? 'us' : record.code;
                     flag = `<img src="https://flagcdn.com/20x15/${codeFlag}.png" srcset="https://flagcdn.com/40x30/${codeFlag}.png 2x" width="16" height="12">`;
                 }

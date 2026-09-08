@@ -48,6 +48,7 @@ class TextInitial
         $model->insert(['keyword' => 'add-record', 'type' => 'sys-defined'], ['mn' => ['text' => 'Бичлэг нэмэх'], 'en' => ['text' => 'Add Record']]);
         $model->insert(['keyword' => 'additional-info', 'type' => 'sys-defined'], ['mn' => ['text' => 'Нэмэлт мэдээлэл'], 'en' => ['text' => 'Additional Information']]);
         $model->insert(['keyword' => 'all', 'type' => 'sys-defined'], ['mn' => ['text' => 'Бүх'], 'en' => ['text' => 'All']]);
+        $model->insert(['keyword' => 'all-languages', 'type' => 'sys-defined'], ['mn' => ['text' => 'Бүх хэл'], 'en' => ['text' => 'All languages']]);
 
         $model->insert(['keyword' => 'address', 'type' => 'sys-defined'], ['mn' => ['text' => 'Хаяг'], 'en' => ['text' => 'Address']]);
         $model->insert(['keyword' => 'archive', 'type' => 'sys-defined'], ['mn' => ['text' => 'Архив'], 'en' => ['text' => 'Archive']]);
@@ -66,6 +67,7 @@ class TextInitial
         $model->insert(['keyword' => 'cannot-set-descendant-as-parent', 'type' => 'sys-defined'], ['mn' => ['text' => 'Өөрийн дэд хуудсыг эцэг хуудсаар сонгох боломжгүй'], 'en' => ['text' => 'Cannot set a descendant page as parent']]);
         $model->insert(['keyword' => 'category', 'type' => 'sys-defined'], ['mn' => ['text' => 'Ангилал'], 'en' => ['text' => 'Category']]);
         $model->insert(['keyword' => 'change', 'type' => 'sys-defined'], ['mn' => ['text' => 'Өөрчлөх'], 'en' => ['text' => 'Change']]);
+        $model->insert(['keyword' => 'change-child-pages-language-first', 'type' => 'sys-defined'], ['mn' => ['text' => 'Дэд хуудсуудын хэл шинэ хэлтэй нийцэхгүй байна - эхлээд дэд хуудсуудын хэлийг солино уу'], 'en' => ['text' => 'Child pages do not match the new language - change the child pages first']]);
         $model->insert(['keyword' => 'choose', 'type' => 'sys-defined'], ['mn' => ['text' => 'Сонгох'], 'en' => ['text' => 'Choose']]);
         $model->insert(['keyword' => 'clear-sample-data', 'type' => 'sys-defined'], ['mn' => ['text' => 'Жишиг дата цэвэрлэх'], 'en' => ['text' => 'Clear sample data']]);
         $model->insert(['keyword' => 'close', 'type' => 'sys-defined'], ['mn' => ['text' => 'Хаах'], 'en' => ['text' => 'Close']]);

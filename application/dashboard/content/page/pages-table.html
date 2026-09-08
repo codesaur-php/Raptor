@@ -168,12 +168,16 @@
             const canUpdate = {{ user.can('system_content_update') ? 'true' : 'false' }};
             const canDelete = {{ user.can('system_content_delete') ? 'true' : 'false' }};
             const published_text = `{{ 'published'|text|e('js') }}`;
+            const all_languages_text = `{{ 'all-languages'|text|e('js') }}`;
 
             data.list.forEach(page => {
                 const id = page.id;
 
+                /* Хэлний туг ('*' = бүх хэл -> глобус) */
                 let flag = '';
-                if (page.code) {
+                if (page.code === '*') {
+                    flag = `<i class="bi bi-globe2" title="${all_languages_text}"></i>`;
+                } else if (page.code) {
                     const codeFlag = page.code === 'en' ? 'us' : page.code;
                     flag = `<img src="https://flagcdn.com/20x15/${codeFlag}.png" srcset="https://flagcdn.com/40x30/${codeFlag}.png 2x" width="16" height="12">`;
                 }

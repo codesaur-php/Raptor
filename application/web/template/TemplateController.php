@@ -47,7 +47,7 @@ class TemplateController extends \Dashboard\Controller
      *
      * SEO meta автомат map:
      *   $vars['title']       -> index-д `record_title` болно
-     *   $vars['code']        -> index-д `record_code` болно
+     *   $vars['code']        -> index-д `record_code` болно ('*' бол алгасна)
      *   $vars['description'] -> index-д `record_description` болно
      *   $vars['photo']       -> index-д `record_photo` болно
      *
@@ -68,10 +68,12 @@ class TemplateController extends \Dashboard\Controller
         $content->addFilter('basename', fn(string $path): string => \rawurldecode(\basename($path)));
         $index->set('content', $content);
 
-        // SEO meta: $vars дотроос index layout руу автоматаар map хийх
+        // SEO meta: $vars дотроос index layout руу автоматаар map хийх.
+        // Бүх хэлний ('*') бичлэгийн code-ийг дамжуулахгүй - <html lang="*">
+        // хүчингүй тул layout одоогийн хэлний code-оо хэрэглэнэ.
         $metaKeys = ['title' => 'record_title', 'code' => 'record_code', 'description' => 'record_description', 'photo' => 'record_photo'];
         foreach ($metaKeys as $key => $indexKey) {
-            if (isset($vars[$key]) && $vars[$key] !== '') {
+            if (isset($vars[$key]) && $vars[$key] !== '' && $vars[$key] !== '*') {
                 $index->set($indexKey, $vars[$key]);
             }
         }

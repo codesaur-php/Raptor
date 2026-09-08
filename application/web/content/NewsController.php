@@ -136,7 +136,8 @@ class NewsController extends TemplateController
      * Мэдээний төрлөөр жагсаалт харуулах.
      *
      * Тухайн төрлийн нийтлэгдсэн бүх мэдээг огноогоор буурахаар
-     * эрэмбэлж харуулна.
+     * эрэмбэлж харуулна. Одоогийн хэлний мэдээнээс гадна бүх хэлний ('*')
+     * мэдээ хамт орно.
      *
      * @param string $type Мэдээний төрөл
      * @return void
@@ -150,7 +151,7 @@ class NewsController extends TemplateController
         // Ангилалуудын жагсаалт (sidebar-д ашиглана)
         $typeStmt = $this->prepare(
             "SELECT DISTINCT type FROM $news_table
-             WHERE published=1 AND code=:code AND type != ''
+             WHERE published=1 AND code IN (:code, '*') AND type != ''
              ORDER BY type ASC"
         );
         $typeStmt->bindValue(':code', $code);
@@ -161,7 +162,7 @@ class NewsController extends TemplateController
             $stmt = $this->prepare(
                 "SELECT id, slug, title, description, photo, type, read_count, published_at
                  FROM $news_table
-                 WHERE published=1 AND code=:code
+                 WHERE published=1 AND code IN (:code, '*')
                  ORDER BY published_at DESC"
             );
             $stmt->bindValue(':code', $code);
@@ -169,7 +170,7 @@ class NewsController extends TemplateController
             $stmt = $this->prepare(
                 "SELECT id, slug, title, description, photo, type, read_count, published_at
                  FROM $news_table
-                 WHERE published=1 AND type=:type AND code=:code
+                 WHERE published=1 AND type=:type AND code IN (:code, '*')
                  ORDER BY published_at DESC"
             );
             $stmt->bindValue(':type', $type);
@@ -219,7 +220,7 @@ class NewsController extends TemplateController
         // Жилүүдийн жагсаалт
         $stmt = $this->prepare(
             "SELECT DISTINCT $yearExpr AS y FROM $news_table
-             WHERE published=1 AND code=:code
+             WHERE published=1 AND code IN (:code, '*')
              ORDER BY y DESC"
         );
         $years = $stmt->execute([':code' => $code]) ? $stmt->fetchAll(\PDO::FETCH_COLUMN) : [];
@@ -234,7 +235,7 @@ class NewsController extends TemplateController
             $stmt = $this->prepare(
                 "SELECT id, title, slug, published_at, $monthExpr AS m
                  FROM $news_table
-                 WHERE published=1 AND code=:code
+                 WHERE published=1 AND code IN (:code, '*')
                    AND $yearExpr = :year
                  ORDER BY published_at DESC"
             );

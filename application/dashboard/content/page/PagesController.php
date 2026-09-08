@@ -75,7 +75,9 @@ class PagesController extends FileController
         $languages = $this->getLanguages();
         $filters['code']['title'] = $this->text('language');
         foreach ($codes_result as $row) {
-            $filters['code']['values'][$row['code']] = "{$languages[$row['code']]['title']} [{$row['code']}]";
+            $filters['code']['values'][$row['code']] = $row['code'] === '*'
+                ? $this->text('all-languages')
+                : ($languages[$row['code']]['title'] ?? $row['code']) . " [{$row['code']}]";
         }
         $types_result = $this->query(
             "SELECT DISTINCT type FROM $table"
@@ -290,11 +292,11 @@ class PagesController extends FileController
                     $files = [];
                 }
 
-                // Parent хэлний шалгалт
+                // Parent хэлний шалгалт: эцэг нь адил хэлтэй, эсвэл бүх хэлний ('*') байх ёстой
                 $parentId = (int)($payload['parent_id'] ?? 0);
                 if ($parentId > 0 && !empty($payload['code'])) {
                     $parentRow = $model->getById($parentId);
-                    if (empty($parentRow) || $parentRow['code'] !== $payload['code']) {
+                    if (empty($parentRow) || !$this->isParentCodeCompatible($parentRow['code'], $payload['code'])) {
                         throw new \InvalidArgumentException(
                             $this->text('invalid-request'),
                             400
@@ -340,7 +342,7 @@ class PagesController extends FileController
                     [
                         'table' => $table,
                         'all_infos' => $allInfos,
-                        'infos' => $codeParam !== '' ? \array_filter($allInfos, fn($i) => $i['code'] === $codeParam) : $allInfos,
+                        'infos' => $codeParam !== '' ? \array_filter($allInfos, fn($i) => $this->isParentCodeCompatible($i['code'], $codeParam)) : $allInfos,
                         'max_file_size' => $this->getMaximumFileUploadSize()
                     ]
                 );
@@ -441,7 +443,8 @@ class PagesController extends FileController
      *
      * - GET: Засварлах форм харуулна (дэд хуудас агуулсан бол has_children анхааруулга)
      * - PUT: Бичлэгийг шинэчлэнэ
-     *   - type, code зэрэг бүх талбарыг өөрчлөх боломжтой
+     *   - type, code зэрэг бүх талбарыг өөрчлөх боломжтой (code солиход
+     *     эцэг болон шууд дэд хуудсуудын хэлтэй нийцэх ёстой)
      *   - Гол зураг (photo) шинэчлэх/устгах боломжтой
      *   - Хавсаргасан файлууд нэмэх/засах/устгах боломжтой
      *   - published төлөв өөрчлөхөд system_content_publish эрх шаардлагатай
@@ -503,10 +506,12 @@ class PagesController extends FileController
                 }
 
                 // Parent circular reference + хэлний шалгалт
+                // (эцэг нь адил хэлтэй, эсвэл бүх хэлний ('*') байх ёстой)
                 $parentId = (int)($payload['parent_id'] ?? 0);
                 if ($parentId > 0) {
                     $parentRow = $model->getById($parentId);
-                    if (empty($parentRow) || $parentRow['code'] !== $record['code']) {
+                    $childCode = $payload['code'] ?? $record['code'];
+                    if (empty($parentRow) || !$this->isParentCodeCompatible($parentRow['code'], $childCode)) {
                         throw new \InvalidArgumentException(
                             $this->text('invalid-request'),
                             400
@@ -518,6 +523,26 @@ class PagesController extends FileController
                             $this->text('cannot-set-descendant-as-parent'),
                             400
                         );
+                    }
+                }
+
+                // Доош чиглэсэн хэлний шалгалт: хэл өөрчлөгдөж байвал шууд дэд
+                // хуудас бүр шинэ хэлтэй нийцэх ёстой (адил хэл, эсвэл шинэ хэл '*').
+                // Эс бөгөөс дэд хуудас өөрийн хэлний навигациас чимээгүй алга болно.
+                // Зөвхөн шууд хүүхдүүдийг шалгахад хангалттай - ач хүүхдүүд нь
+                // өөрийн эцэгтэйгээ аль хэдийн нийцсэн байдаг.
+                $newCode = $payload['code'] ?? $record['code'];
+                if ($newCode !== $record['code']) {
+                    $childCodes = $this->query(
+                        "SELECT DISTINCT code FROM $table WHERE parent_id=$id"
+                    )->fetchAll(\PDO::FETCH_COLUMN);
+                    foreach ($childCodes as $childCode) {
+                        if (!$this->isParentCodeCompatible($newCode, $childCode)) {
+                            throw new \InvalidArgumentException(
+                                $this->text('change-child-pages-language-first'),
+                                400
+                            );
+                        }
                     }
                 }
 
@@ -592,7 +617,7 @@ class PagesController extends FileController
                 $excludeIds[] = $id;
                 $excludeList = \implode(',', $excludeIds);
                 $codeQuoted = $this->quote($record['code']);
-                $infos = $this->getInfos($table, "id NOT IN ($excludeList) AND code=$codeQuoted");
+                $infos = $this->getInfos($table, "id NOT IN ($excludeList) AND code IN ($codeQuoted, '*')");
                 $files = $filesModel->getRows(['WHERE' => "record_id=$id"]);
                 $childCount = $this->query(
                     "SELECT COUNT(*) as cnt FROM $table WHERE parent_id=$id"
@@ -703,6 +728,22 @@ class PagesController extends FileController
             }
             $this->log('pages', $level, $message, $context);
         }
+    }
+
+    /**
+     * Эцэг хуудасны хэл нь хүүхэд хуудасны хэлтэй нийцэх эсэх.
+     *
+     * Эцэг нь хүүхэдтэй адил хэлтэй, эсвэл бүх хэлний ('*') хуудас байх ёстой.
+     * Бүх хэлний хүүхэд зөвхөн бүх хэлний эцэгтэй байж болно - өөр хэлний
+     * эцэг тухайн хэлний навигацид байхгүй тул хүүхэд нь эцэггүй үлдэнэ.
+     *
+     * @param string $parentCode Эцэг хуудасны code
+     * @param string $childCode  Хүүхэд хуудасны code
+     * @return bool Нийцэж байвал true
+     */
+    private function isParentCodeCompatible(string $parentCode, string $childCode): bool
+    {
+        return $parentCode === '*' || $parentCode === $childCode;
     }
 
     /**

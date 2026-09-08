@@ -29,10 +29,14 @@
             <div class="col-4">
                 <label class="form-label text-muted">{{ 'language'|text }}</label>
                 <div>
+                    {% if record['code'] == '*' %}
+                    <i class="bi bi-globe2"></i> {{ 'all-languages'|text }}
+                    {% else %}
                     {% set flag = record['code'] == 'en' ? 'us' : record['code'] %}
                     {% set title = (localization.language[record['code']]['title'] ?? record['code'])|e %}
                     <img src="https://flagcdn.com/20x15/{{ flag }}.png" srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x" width="16" height="12" alt="{{ title }}">
                     {{ title }}
+                    {% endif %}
                 </div>
             </div>
             <div class="col-4">

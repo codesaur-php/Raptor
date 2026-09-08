@@ -32,6 +32,7 @@ class SearchController extends TemplateController
      *  - Products: title, slug, description, content, link
      *
      * Content талбараас img tag алгасаж strip_tags хийсэн текстээр шүүнэ.
+     * Одоогийн хэлний бичлэгүүдээс гадна бүх хэлний ('*') бичлэгүүдээс хайна.
      *
      * @return void
      */
@@ -48,7 +49,7 @@ class SearchController extends TemplateController
             $stmt = $this->prepare(
                 "SELECT id, title, slug, description, content, source, link, 'page' AS type
                  FROM $pages_table
-                 WHERE published=1 AND code=:code
+                 WHERE published=1 AND code IN (:code, '*')
                    AND (title LIKE :q1 OR slug LIKE :q2 OR description LIKE :q3
                         OR content LIKE :q4 OR source LIKE :q5 OR link LIKE :q6)
                  ORDER BY published_at DESC
@@ -70,7 +71,7 @@ class SearchController extends TemplateController
             $stmt = $this->prepare(
                 "SELECT id, title, slug, description, content, source, 'news' AS type
                  FROM $news_table
-                 WHERE published=1 AND code=:code
+                 WHERE published=1 AND code IN (:code, '*')
                    AND (title LIKE :q1 OR slug LIKE :q2 OR description LIKE :q3
                         OR content LIKE :q4 OR source LIKE :q5)
                  ORDER BY published_at DESC
@@ -92,7 +93,7 @@ class SearchController extends TemplateController
             $stmt = $this->prepare(
                 "SELECT id, title, slug, description, content, link, 'product' AS type
                  FROM $products_table
-                 WHERE published=1 AND code=:code
+                 WHERE published=1 AND code IN (:code, '*')
                    AND (title LIKE :q1 OR slug LIKE :q2 OR description LIKE :q3
                         OR content LIKE :q4 OR link LIKE :q5)
                  ORDER BY published_at DESC

@@ -438,6 +438,16 @@ For touching the sensitive table list, see `MigrationSecurityScanner::SENSITIVE_
 - **Forgot (password reset tokens)** are consumed with `deactivateById` (`is_active=0`) on successful reset - never deleted, so the admin requests modal can show the `used` state alongside `expired`/`ready`. Token lookups in `LoginController` (`forgotPassword()`, `setPassword()`) and the resend cooldown must always filter `is_active=1` - a used token is invalid
 - **All other models** use hard delete (`deleteById`) directly. Deleted data is preserved in the `trash` table via `TrashModel::store()` before deletion
 
+### Language-neutral Records (`code = '*'`)
+
+News, Pages and Products are flat single-language rows (one record per `code`), not `LocalizedModel`. A record whose `code` is the sentinel `'*'` is language-neutral and shows on every language of the public site (Joomla `language='*'` / TYPO3 "All languages" convention). Rules:
+
+- Every web-side query that filters by language MUST use `code IN (:code, '*')`, never a bare `code=:code` - a forgotten spot silently hides `*` records from that list (guarded by `tests/Unit/Web/LanguageNeutralRecordsTest.php`; add new files there when a new module filters by `code`).
+- A `*` record must not become `<html lang="*">`: `Web\Template\TemplateController::webTemplate()` skips mapping `code='*'` to `record_code`, so the layout falls back to the current site language.
+- Pages tree: a parent must share the child's `code` or be `*` (`PagesController::isParentCodeCompatible()`, mirrored by `filterParentsByCode()` in `page-insert.html`). A `*` child under a single-language parent would be orphaned in the other languages' navigation. The rule is enforced in both directions: insert/update check the chosen parent (upward), and update also checks direct children when `code` changes (downward, `change-child-pages-language-first` error) - a language change that would orphan children is rejected instead of silently hiding them.
+- Dashboard UI: the language dropdown offers "All languages" (`all-languages` text keyword) as the last item; wherever a flag is rendered from `code`, branch on `'*'` and show `<i class="bi bi-globe2">` instead of a flagcdn image (which has no `*` flag). Index filter builders must not index `$languages[$row['code']]` without a `'*'` branch.
+- The sentinel is stored literally in the `code` column (`varchar(2)`, fits) - no schema change, no migration.
+
 ## Cache
 
 Custom file-based cache (PSR-16 SimpleCache). Гадаад dependency-гүй, зөвхөн `psr/simple-cache` interface ашиглана. Stored in `cache/` (a dedicated top-level directory outside the document root, sibling of `logs/`; kept in git via its own `.gitignore`, contents ignored). Registered as `cache` container service via `ContainerMiddleware`. TTL: 12 hours (safety net - primary invalidation is explicit).

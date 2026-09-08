@@ -14,6 +14,11 @@ use codesaur\DataObject\Constants;
  * Хуудас нь мод бүтэцтэй (parent_id), олон хэлтэй бус (single-table),
  * SEO-friendly slug-тай контент юм. type талбарын анхдагч утга нь 'menu'.
  *
+ * code талбар нь хэлний код (mn, en...) эсвэл '*' - бүх хэл дээр харагдах
+ * хэлнээс хамааралгүй хуудас. Web талын query-үүд code IN (:code, '*') гэж шүүнэ.
+ * Хүүхэд хуудасны code нь эцгийнхтэй адил, эсвэл эцэг нь '*' байх ёстой
+ * (PagesController шалгана) - эс бөгөөс өөр хэлний навигацид эцэггүй үлдэнэ.
+ *
  * Бүх нийтлэгдсэн хуудас навигацид харагдана.
  *  - Ерөнхий мэдээлэл (category=general)
  *  - Нийтлэл (published/draft)
@@ -195,7 +200,8 @@ class PagesModel extends Model
      * Хуудсуудыг parent_id-р мод бүтэцтэй навигаци болгон буцаана.
      *
      * Зөвхөн type нь *-menu (menu, mega-menu г.м.) хуудсуудаас навигацийн бүтэц буцаана.
-     * parent -> child -> submenu хэлбэрээр бүтэцлэнэ.
+     * parent -> child -> submenu хэлбэрээр бүтэцлэнэ. Бүх хэлний ('*') хуудсууд
+     * хэл бүрийн навигацид орно.
      *
      * @param string $code Хэлний код (mn, en...)
      * @return array Олон түвшний submenu бүтэцтэй навигацийн массив
@@ -206,7 +212,7 @@ class PagesModel extends Model
         $stmt = $this->pdo->prepare(
             'SELECT id, parent_id, title, slug, type, link ' .
             "FROM $table " .
-            "WHERE code=:code AND published=1 AND (type='menu' OR type LIKE '%-menu') " .
+            "WHERE code IN (:code, '*') AND published=1 AND (type='menu' OR type LIKE '%-menu') " .
             'ORDER BY position, id'
         );
         $stmt->bindParam(':code', $code, \PDO::PARAM_STR);
@@ -248,6 +254,7 @@ class PagesModel extends Model
      *
      * is_featured=1, нийтлэгдсэн, идэвхтэй хуудсуудаас
      * өөртөө ямар нэгэн child агуулаагүй (leaf) хуудсуудыг буцаана.
+     * Бүх хэлний ('*') хуудсууд хамт орно.
      *
      * @param string $code Хэлний код (mn, en...)
      * @return array id => row бүтэцтэй массив
@@ -260,7 +267,7 @@ class PagesModel extends Model
             'p.type, p.category, p.position, p.link, p.published_at, p.created_at ' .
             "FROM $table p " .
             "LEFT JOIN $table c ON c.parent_id = p.id " .
-            'WHERE p.code = :code AND p.published = 1 AND p.is_featured = 1 ' .
+            "WHERE p.code IN (:code, '*') AND p.published = 1 AND p.is_featured = 1 " .
             'AND c.id IS NULL ' .
             'ORDER BY p.position, p.id'
         );

@@ -62,7 +62,9 @@ class PageController extends TemplateController
         $record['word_count'] = \preg_match_all('/[\p{L}\p{N}]+/u', $plainText);
         $record['read_time'] = \max(1, (int) \ceil($record['word_count'] / 200));
 
-        // Siblings (ижил parent_id-тэй хуудсууд) + parent title
+        // Siblings (ижил parent_id-тэй хуудсууд) + parent title.
+        // Хуудасны хэл дээрх (бүх хэлний '*' хуудас бол одоогийн хэл дээрх)
+        // болон бүх хэлний ('*') sibling-үүд орно.
         $parentId = (int) ($record['parent_id'] ?? 0);
         if ($parentId > 0) {
             $parentStmt = $this->prepare("SELECT title FROM $table WHERE id = :id LIMIT 1");
@@ -73,11 +75,11 @@ class PageController extends TemplateController
 
             $sibStmt = $this->prepare(
                 "SELECT id, slug, title FROM $table " .
-                "WHERE parent_id = :pid AND published = 1 AND code = :code " .
+                "WHERE parent_id = :pid AND published = 1 AND code IN (:code, '*') " .
                 "ORDER BY position ASC"
             );
             $sibStmt->bindValue(':pid', $parentId, \PDO::PARAM_INT);
-            $sibStmt->bindValue(':code', $record['code']);
+            $sibStmt->bindValue(':code', $record['code'] === '*' ? $this->getLanguageCode() : $record['code']);
             $record['siblings'] = $sibStmt->execute() ? $sibStmt->fetchAll() : [];
         }
 

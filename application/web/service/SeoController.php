@@ -29,7 +29,8 @@ class SeoController extends TemplateController
      * HTML Sitemap хуудсыг харуулах.
      *
      * Хуудсуудыг parent-child бүтэцтэйгээр, мэдээнүүдийг төрлөөр нь
-     * бүлэглэж, бүтээгдэхүүнүүдийг жагсааж харуулна.
+     * бүлэглэж, бүтээгдэхүүнүүдийг жагсааж харуулна. Одоогийн хэлний
+     * бичлэгүүдээс гадна бүх хэлний ('*') бичлэгүүд орно.
      *
      * @return void
      */
@@ -41,7 +42,7 @@ class SeoController extends TemplateController
         $pages_table = (new PagesModel($this->pdo))->getName();
         $stmt = $this->prepare(
             "SELECT id, slug, title, parent_id, position FROM $pages_table
-             WHERE published=1 AND code=:code
+             WHERE published=1 AND code IN (:code, '*')
              ORDER BY position, id"
         );
         $all_pages = $stmt->execute([':code' => $code]) ? $stmt->fetchAll() : [];
@@ -68,7 +69,7 @@ class SeoController extends TemplateController
         $news_table = (new NewsModel($this->pdo))->getName();
         $stmt = $this->prepare(
             "SELECT DISTINCT type FROM $news_table
-             WHERE published=1 AND code=:code"
+             WHERE published=1 AND code IN (:code, '*')"
         );
         $news_types = $stmt->execute([':code' => $code]) ? $stmt->fetchAll(\PDO::FETCH_COLUMN) : [];
 
@@ -77,7 +78,7 @@ class SeoController extends TemplateController
             // Нийт тоог авах
             $countStmt = $this->prepare(
                 "SELECT COUNT(*) FROM $news_table
-                 WHERE published=1 AND code=:code AND type=:type"
+                 WHERE published=1 AND code IN (:code, '*') AND type=:type"
             );
             $countStmt->bindValue(':code', $code);
             $countStmt->bindValue(':type', $type);
@@ -86,7 +87,7 @@ class SeoController extends TemplateController
 
             $stmt = $this->prepare(
                 "SELECT title, slug, published_at FROM $news_table
-                 WHERE published=1 AND code=:code AND type=:type
+                 WHERE published=1 AND code IN (:code, '*') AND type=:type
                  ORDER BY published_at DESC
                  LIMIT 50"
             );
@@ -102,7 +103,7 @@ class SeoController extends TemplateController
         $products_table = (new ProductsModel($this->pdo))->getName();
         $stmt = $this->prepare(
             "SELECT title, slug, published_at FROM $products_table
-             WHERE published=1 AND code=:code
+             WHERE published=1 AND code IN (:code, '*')
              ORDER BY published_at DESC"
         );
         $products = $stmt->execute([':code' => $code]) ? $stmt->fetchAll() : [];
@@ -217,7 +218,8 @@ class SeoController extends TemplateController
      * RSS Feed үүсгэх.
      *
      * Сүүлийн 20 мэдээ болон 20 бүтээгдэхүүнийг RSS 2.0 стандартаар
-     * буцаана. Atom namespace ашиглана.
+     * буцаана. Atom namespace ашиглана. Одоогийн хэлний бичлэгүүдээс
+     * гадна бүх хэлний ('*') бичлэгүүд орно.
      *
      * @return void
      */
@@ -237,7 +239,7 @@ class SeoController extends TemplateController
         $stmt = $this->prepare(
             "SELECT title, slug, description, photo, published_at, 'news' as feed_type
              FROM $news_table
-             WHERE published=1 AND code=:code
+             WHERE published=1 AND code IN (:code, '*')
              ORDER BY published_at DESC
              LIMIT 20"
         );
@@ -248,7 +250,7 @@ class SeoController extends TemplateController
         $stmt = $this->prepare(
             "SELECT title, slug, description, photo, published_at, 'product' as feed_type
              FROM $products_table
-             WHERE published=1 AND code=:code
+             WHERE published=1 AND code IN (:code, '*')
              ORDER BY published_at DESC
              LIMIT 20"
         );
