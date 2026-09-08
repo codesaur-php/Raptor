@@ -778,9 +778,11 @@ Returns all translations structured as language code -> key -> value.
 **File:** `application/dashboard/localization/LocalizationMiddleware.php`
 **Implements:** `MiddlewareInterface`
 
-Shared middleware for both Dashboard and Web apps. Constructor accepts session key:
-- Dashboard: `new LocalizationMiddleware()` - defaults to `RAPTOR_LANGUAGE_CODE`
-- Web: `new LocalizationMiddleware('WEB_LANGUAGE_CODE')`
+Shared middleware for both Dashboard and Web apps. Constructor accepts a nullable session key:
+- Dashboard: `new LocalizationMiddleware()` - defaults to `RAPTOR_LANGUAGE_CODE`, the language is stored in the session
+- Web: `new LocalizationMiddleware(null)` - no session; the language comes from the URL prefix
+
+Resolution order: the `language_prefix` request attribute (set by `public_html/index.php` from a `/xx/` URL prefix; an inactive code throws a 404) -> the session value (only when a session key was given) -> the default language (first active language). On the public web the default language has no prefix (`/news/x`), every other language is prefixed (`/en/news/x`); the prefix is the Web application's mount path, so `|link` / `generateRouteLink()` prepend it automatically.
 
 Injects `localization` array into request attributes:
 
@@ -1181,7 +1183,7 @@ ExceptionHandler -> Container -> Session -> Localization -> Settings -> WebRoute
 | `/rss` | GET | `rss` | RSS feed |
 | `/session/contact-send` | POST | `contact-send` | Send contact message |
 | `/session/order` | POST | - | Submit order (session) |
-| `/session/language/{code}` | GET | - | Switch language (session) |
+| `/session/language/{code}` | GET | - | Redirect to that language's home (`/` or `/{code}/`); the layout's language dropdown links to the current page's per-language URL instead |
 | `/session/news/{uint:id}/comment` | POST | `news-comment` | Submit news comment |
 
 ### HomeController

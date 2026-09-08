@@ -778,9 +778,11 @@ Messages, orders, comments, reviews жагсаалтын хуудасны дээ
 **Файл:** `application/dashboard/localization/LocalizationMiddleware.php`
 **Implements:** `MiddlewareInterface`
 
-Dashboard болон Web app хоёуланд ашиглагдана. Constructor-аар session key авна:
-- Dashboard: `new LocalizationMiddleware()` - default `RAPTOR_LANGUAGE_CODE`
-- Web: `new LocalizationMiddleware('WEB_LANGUAGE_CODE')`
+Dashboard болон Web app хоёуланд ашиглагдана. Constructor-аар nullable session key авна:
+- Dashboard: `new LocalizationMiddleware()` - default `RAPTOR_LANGUAGE_CODE`, хэл session-д хадгалагдана
+- Web: `new LocalizationMiddleware(null)` - session ашиглахгүй, хэл URL prefix-ээс ирнэ
+
+Сонгох дараалал: `language_prefix` request attribute (`public_html/index.php` `/xx/` URL prefix-ээс тавьдаг; идэвхгүй код бол 404) -> session утга (session key өгсөн үед л) -> default хэл (эхний идэвхтэй хэл). Вэбд default хэл prefix-гүй (`/news/x`), бусад хэл prefix-тэй (`/en/news/x`); prefix нь Web application-ий mount path тул `|link` / `generateRouteLink()` автоматаар нэмнэ.
 
 Request attribute-д `localization` массив inject хийнэ:
 
@@ -1182,7 +1184,7 @@ ExceptionHandler -> Container -> Session -> Localization -> Settings -> WebRoute
 | `/rss` | GET | `rss` | RSS feed |
 | `/session/contact-send` | POST | `contact-send` | Холбоо барих мессеж илгээх |
 | `/session/order` | POST | - | Захиалга илгээх (session) |
-| `/session/language/{code}` | GET | - | Хэл солих (session) |
+| `/session/language/{code}` | GET | - | Тухайн хэлний нүүр рүү redirect (`/` эсвэл `/{code}/`); layout-ын хэлний dropdown нь одоо байгаа хуудасны хэл бүрийн URL руу заана |
 | `/session/news/{uint:id}/comment` | POST | `news-comment` | Мэдээнд сэтгэгдэл бичих |
 
 ### HomeController

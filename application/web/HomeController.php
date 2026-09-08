@@ -88,24 +88,29 @@ class HomeController extends Template\TemplateController
     }
 
     /**
-     * Вэб сайтын хэлийг солих.
+     * Вэб сайтын хэлийг солих - тухайн хэлний нүүр хуудас руу redirect хийнэ.
      *
-     * Хэрэглэгчийн сонгосон хэлний кодыг session-д хадгалж,
-     * нүүр хуудас руу redirect хийнэ.
+     * Вэбийн хэл URL prefix-ээр тодорхойлогддог тул session-д юу ч хадгалахгүй:
+     * default хэл бол prefix-гүй root (/), бусад хэл prefix-тэй (/en/). Идэвхгүй
+     * код ирвэл default хэлний нүүр рүү явна. Хуучин /session/language/{code}
+     * холбоосууд ажилласаар байхын тулд route path хэвээр (SessionMiddleware-ийн
+     * /session/ дүрэмд орох нь хор нөлөөгүй). Layout-ын хэлний dropdown энэ
+     * route-ийг ашиглахаа больсон - TemplateController::webTemplate()-ийн
+     * language_urls-аар одоо байгаа хуудсаа өөр хэлээр нээдэг.
      *
      * @param string $code Хэлний код (жишээ: 'mn', 'en')
      * @return void
      */
     public function language(string $code)
     {
-        $from = $this->getLanguageCode();
         $language = $this->getLanguages();
-        if (isset($language[$code]) && $code !== $from) {
-            $this->setLanguageCode($code);
+        $default = (string) \key($language);
+        if (!isset($language[$code])) {
+            $code = $default;
         }
 
-        $script_path = $this->getScriptPath();
-        $home = (string)$this->getRequest()->getUri()->withPath($script_path);
+        $path = $this->getScriptPath() . ($code === $default ? '' : "/$code") . '/';
+        $home = (string)$this->getRequest()->getUri()->withPath($path)->withQuery('');
         $home = \filter_var($home, \FILTER_SANITIZE_URL);
         \header('Location: ' . $home, true, 302);
         exit;

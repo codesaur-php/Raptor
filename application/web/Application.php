@@ -48,7 +48,8 @@ use Psr\Http\Message\ResponseInterface;
  *    - Хэрэглэгчийн authentication / session-based data хадгалах
  *
  * 6) **LocalizationMiddleware**
- *    - Системийн хэл (mn/en/...) тодорхойлох
+ *    - Системийн хэл (mn/en/...) тодорхойлох - URL prefix-ээс (/en/...),
+ *      prefix-гүй бол default хэл; session ашиглахгүй
  *    - Template-д localization объект дамжуулах
  *
  * 7) **SettingsMiddleware**
@@ -103,14 +104,18 @@ class Application extends \codesaur\Http\Application\Application
         // Container middleware
         $this->use(new \Dashboard\ContainerMiddleware());
 
-        // Session middleware
+        // Session middleware. Path нь хэлний prefix-тэй (/en/session/...) ирж
+        // болно - SessionMiddleware mount path-ийг мэдэхгүй тул prefix-ийг энд
+        // зүсэж шалгана (index.php-ийн prefix regex-тэй ижил хэлбэр).
         $this->use(new \Dashboard\SessionMiddleware(
             fn(string $path, string $method): bool =>
-                \str_starts_with($path, '/session/')
+                \str_starts_with(\preg_replace('#^/[a-z]{2}(?=/|$)#', '', $path), '/session/')
         ));
 
-        // Localization middleware (mn/en ...)
-        $this->use(new \Dashboard\Localization\LocalizationMiddleware('WEB_LANGUAGE_CODE'));
+        // Localization middleware. Вэбийн хэл зөвхөн URL prefix-ээс (index.php
+        // 'language_prefix' attribute) эсвэл default - session ашиглахгүй (null),
+        // ингэснээр нэг URL үргэлж нэг хэлтэй, хайлтын систем бүх хэлийг индексжүүлнэ.
+        $this->use(new \Dashboard\Localization\LocalizationMiddleware(null));
 
         // System settings middleware (branding, favicon, footer...)
         $this->use(new \Dashboard\Content\SettingsMiddleware());

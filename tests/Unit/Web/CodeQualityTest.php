@@ -145,18 +145,22 @@ class CodeQualityTest extends TestCase
     }
 
     // =============================================
-    // SeoController - ашиглагдаагүй $languages устгагдсан эсэх
+    // SeoController - sitemap.xml хэл бүрийн URL prefix-тэй эсэх
     // =============================================
 
-    public function testSeoControllerNoUnusedLanguagesInSitemapXml(): void
+    public function testSeoControllerSitemapXmlEmitsPerLanguageUrls(): void
     {
         $source = file_get_contents(self::$appDir . '/web/service/SeoController.php');
+        preg_match('/function\s+sitemapXml\(.*?(?=function\s+rss\()/s', $source, $m);
+        $method = $m[0] ?? '';
 
-        // sitemapXml method дотор $languages = $this->getLanguages() байх ёсгүй
-        $this->assertDoesNotMatchRegularExpression(
-            '/function\s+sitemapXml.*?\$languages\s*=\s*\$this->getLanguages\(\)/s',
-            $source,
-            'Unused $languages variable should be removed from sitemapXml()'
-        );
+        $this->assertNotSame('', $method, 'sitemapXml() should exist');
+        // Бичлэгийн code-оос хамаарч хэлний prefix сонгодог байх ёстой
+        $this->assertStringContainsString('$prefixesFor', $method,
+            'sitemapXml() must build URLs with the language prefix of each record');
+        $this->assertMatchesRegularExpression('/SELECT slug, code, updated_at/', $method,
+            'sitemapXml() must select the code column to choose the language prefix');
+        $this->assertStringNotContainsString("\$baseUrl . '/page/'", $method,
+            'page URLs must carry the language prefix');
     }
 }

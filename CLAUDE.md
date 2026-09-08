@@ -291,7 +291,7 @@ public function process($request, $handler): ResponseInterface
 `Dashboard\SessionMiddleware` is shared by both apps. Constructor accepts a `needsWrite` closure. All other routes call `session_write_close()` early for concurrency.
 
 - **Dashboard**: checks for `/login` path or empty CSRF token (to allow first-time token generation)
-- **Web**: checks for `/session/` prefix - all routes that write to `$_SESSION` use `/session/` prefix (e.g., `/session/language/{code}`, `/session/contact-send`, `/session/order`)
+- **Web**: checks for `/session/` prefix - all routes that write to `$_SESSION` use `/session/` prefix (e.g., `/session/contact-send`, `/session/order`). The closure strips a leading language prefix (`/en/session/...`) before the check, because SessionMiddleware runs before the mount path is known
 
 When adding a new Web route that writes to `$_SESSION`, register it with `/session/` prefix in `WebRouter.php`. No need to modify `Application.php`.
 
@@ -342,7 +342,19 @@ When adding new modules: keep using `method="PUT"` forms + `csrfFetch()`; tunnel
 
 ### LocalizationMiddleware
 
-`Dashboard\Localization\LocalizationMiddleware` is shared. Constructor accepts session key. Controllers read `$this->getAttribute('localization')['session_key']` to write language to session without hardcoding.
+`Dashboard\Localization\LocalizationMiddleware` is shared. Constructor accepts a nullable session key. Controllers read `$this->getAttribute('localization')['session_key']` to write language to session without hardcoding (`setLanguageCode()` is a no-op when the key is null).
+
+Resolution order: `language_prefix` request attribute -> session (only with a session key) -> default language (first active language). Dashboard uses the session (`RAPTOR_LANGUAGE_CODE`); Web passes `null` and takes the language from the URL only.
+
+### Web Language URL Prefix
+
+The public web language is part of the URL so every language is crawlable: the default language has no prefix (`/news/x`), every other active language is prefixed with its code (`/en/news/x`). `public_html/index.php` matches `^/([a-z]{2})(?=/|$)`, mounts `Web\Application` on `/{code}` and sets the `language_prefix` attribute; LocalizationMiddleware validates it (inactive code -> 404). Because the prefix is the mount path, routers stay prefix-naive and `|link` / `generateRouteLink()` prepend it automatically - do not hardcode `/en` anywhere. Consequences:
+
+- Never register a web route whose first segment is exactly two lowercase letters - it would be taken as a language prefix.
+- `TemplateController::webTemplate()` computes `language_urls` (current page per language, used by the layout's language dropdown), `hreflang_urls` (only for pages that exist in every language: lists, home, `code='*'` records; empty for a single-language record so no missing translation is announced) and `canonical_url` (self URL; for `code='*'` records the default-language URL). `index.html` emits `<link rel="canonical">` and the `hreflang` set - keep them when redesigning the layout.
+- `SeoController::sitemapXml()` lists each record under its own language prefix (`*` records under every language) and the home page per language; `rss()` links carry the current prefix.
+- `/session/language/{code}` only redirects to that language's home (kept for old links); it writes nothing to the session.
+- Page `link` fields that hold a local path (`/about`) are not prefixed - use a page slug or an absolute URL instead.
 
 ## Database
 

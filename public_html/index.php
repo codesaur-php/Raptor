@@ -220,7 +220,21 @@ if (($length = \strlen(\dirname($request->getServerParams()['SCRIPT_NAME']))) > 
  *
  * Routing логик:
  *   - /dashboard/... -> Dashboard\Application (Admin panel)
- *   - Бусад бүх зам -> Web\Application (Public website)
+ *   - /{xx}/...      -> Web\Application, '/{xx}' дээр mount хийгдэнэ (xx = хэлний код)
+ *   - Бусад бүх зам -> Web\Application (Public website, default хэл)
+ *
+ * Вэбийн хэл URL-аас тодорхойлогдоно: default хэл prefix-гүй (/news/x),
+ * бусад хэл хоёр үсэгт prefix-тэй (/en/news/x). Prefix-ийг Web app-ийн mount
+ * path болгосноор match() нь замаас автоматаар зүсэж, generate()/link нь
+ * бүх холбоост автоматаар нэмнэ - route-ууд prefix-naive хэвээр. Prefix
+ * идэвхтэй хэл мөн эсэхийг LocalizationMiddleware шалгана (биш бол 404),
+ * энд зөвхөн хэлбэрийг нь таньж 'language_prefix' attribute-аар дамжуулна.
+ *
+ * Critical: вэбийн root түвшний хоёр жижиг үсэгт route (/xx) бүртгэж болохгүй -
+ * хэлний prefix гэж танигдана.
+ *
+ * Critical (English): never register a web route whose first path segment is
+ * exactly two lowercase letters (/xx) - it is treated as a language prefix.
  *
  * NonBodyResponse - Application-ийн constructor-д дамжуулж буй хариуны
  * fallback prototype:
@@ -247,6 +261,10 @@ if ((\explode('/', $path)[1] ?? '') == 'dashboard') {
     $application = (new \Dashboard\Application(new NonBodyResponse()))->mount('/dashboard');
 } else {
     $application = new \Web\Application(new NonBodyResponse());
+    if (\preg_match('#^/([a-z]{2})(?=/|$)#', $path, $prefix)) {
+        $application->mount('/' . $prefix[1]);
+        $request = $request->withAttribute('language_prefix', $prefix[1]);
+    }
 }
 
 // ---------------------------------------------------------------------------

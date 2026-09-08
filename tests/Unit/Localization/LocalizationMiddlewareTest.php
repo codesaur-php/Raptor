@@ -239,6 +239,73 @@ class LocalizationMiddlewareTest extends TestCase
         unset($_SESSION['RAPTOR_LANGUAGE_CODE']);
     }
 
+    // =============================================
+    // URL prefix (language_prefix attribute) - вэбийн хэл тодорхойлолт
+    // =============================================
+
+    private function runWithAttributes(LocalizationMiddleware $middleware, array $attributes): array
+    {
+        if (!defined('CODESAUR_DEVELOPMENT')) {
+            define('CODESAUR_DEVELOPMENT', false);
+        }
+
+        $request = $this->createMockRequest($attributes + ['pdo' => null]);
+
+        $capturedRequest = null;
+        $handler = $this->createMock(RequestHandlerInterface::class);
+        $response = $this->createMock(ResponseInterface::class);
+        $handler->method('handle')
+            ->willReturnCallback(function (ServerRequestInterface $req) use (&$capturedRequest, $response) {
+                $capturedRequest = $req;
+                return $response;
+            });
+
+        $middleware->process($request, $handler);
+
+        return $capturedRequest->getAttribute('localization');
+    }
+
+    public function testActivePrefixSelectsLanguage(): void
+    {
+        // Fallback жагсаалтад зөвхөн 'en' байгаа тул /en/ prefix идэвхтэй хэл
+        $localization = $this->runWithAttributes(new LocalizationMiddleware(null), ['language_prefix' => 'en']);
+
+        $this->assertSame('en', $localization['code']);
+    }
+
+    public function testUnknownPrefixThrows404(): void
+    {
+        $this->expectException(\Error::class);
+        $this->expectExceptionCode(404);
+
+        $this->runWithAttributes(new LocalizationMiddleware(null), ['language_prefix' => 'de']);
+    }
+
+    public function testPrefixWinsOverSession(): void
+    {
+        // Session 'fr' (жагсаалтад байхгүй), prefix 'en' - prefix давуу эрхтэй, session огт харагдахгүй
+        $_SESSION['RAPTOR_LANGUAGE_CODE'] = 'fr';
+
+        $localization = $this->runWithAttributes(new LocalizationMiddleware(), ['language_prefix' => 'en']);
+
+        $this->assertSame('en', $localization['code']);
+
+        unset($_SESSION['RAPTOR_LANGUAGE_CODE']);
+    }
+
+    public function testNullSessionKeyIgnoresSessionAndReportsNull(): void
+    {
+        $_SESSION['RAPTOR_LANGUAGE_CODE'] = 'en';
+
+        $localization = $this->runWithAttributes(new LocalizationMiddleware(null), []);
+
+        // Session ашиглахгүй тул default хэл, session_key нь null
+        $this->assertSame('en', $localization['code']);
+        $this->assertNull($localization['session_key']);
+
+        unset($_SESSION['RAPTOR_LANGUAGE_CODE']);
+    }
+
     public function testLocalizationAttributeStructure(): void
     {
         if (!defined('CODESAUR_DEVELOPMENT')) {

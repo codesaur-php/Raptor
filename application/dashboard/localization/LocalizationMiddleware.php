@@ -15,28 +15,35 @@ use Psr\Http\Server\RequestHandlerInterface;
  *
  * Ажиллагааны дараалал:
  *  1) LanguageModel-ээс идэвхтэй хэлүүдийг ачаална
- *  2) Session-д хадгалсан хэлийг шалгаж, олдохгүй бол default хэлийг сонгоно
+ *  2) Хэлийг дараах давуу эрхээр сонгоно:
+ *     a) 'language_prefix' request attribute (index.php URL-ийн /xx/ prefix-ээс
+ *        тавьдаг) - идэвхтэй хэл бол сонгоно, биш бол 404 шиднэ
+ *     b) Session-д хадгалсан хэл (session key өгсөн үед л)
+ *     c) Default хэл (LanguageModel::retrieve()-ийн эхний хэл)
  *  3) TextModel-ээс тухайн хэл дээрх орчуулгуудыг ачаална
  *  4) Request attribute 'localization' болгон дамжуулна:
  *     [
  *         'language'    => [...],
  *         'code'        => 'mn',
  *         'text'        => ['keyword' => 'translated text', ...],
- *         'session_key' => 'RAPTOR_LANGUAGE_CODE'
+ *         'session_key' => 'RAPTOR_LANGUAGE_CODE'   // эсвэл null
  *     ]
  *
- * Session key нь app бүрт тусдаа байх боломжтой:
- *  - Dashboard: new LocalizationMiddleware('RAPTOR_LANGUAGE_CODE')
- *  - Web:       new LocalizationMiddleware('WEB_LANGUAGE_CODE')
+ * Session key нь app бүрт тусдаа:
+ *  - Dashboard: new LocalizationMiddleware('RAPTOR_LANGUAGE_CODE') - хэл session-д
+ *  - Web:       new LocalizationMiddleware(null) - хэл зөвхөн URL prefix-ээс,
+ *               session огт ашиглахгүй (нэг URL = нэг хэл, хайлтын систем
+ *               индексжүүлэх боломжтой)
  */
 class LocalizationMiddleware implements MiddlewareInterface
 {
-    private string $sessionKey;
+    private ?string $sessionKey;
 
     /**
-     * @param string $sessionKey Session-д хэлний кодыг хадгалах key
+     * @param string|null $sessionKey Session-д хэлний кодыг хадгалах key.
+     *                                null бол session ашиглахгүй (URL prefix эсвэл default)
      */
-    public function __construct(string $sessionKey = 'RAPTOR_LANGUAGE_CODE')
+    public function __construct(?string $sessionKey = 'RAPTOR_LANGUAGE_CODE')
     {
         $this->sessionKey = $sessionKey;
     }
@@ -99,7 +106,15 @@ class LocalizationMiddleware implements MiddlewareInterface
     {
         $language = $this->retrieveLanguage($request);
 
-        if (isset($_SESSION[$this->sessionKey])
+        $prefix = $request->getAttribute('language_prefix');
+        if ($prefix !== null) {
+            // URL prefix нь идэвхтэй хэл биш (/de/... гэх мэт) - хуудас байхгүй
+            if (!isset($language[$prefix])) {
+                throw new \Error("Unknown language prefix [$prefix]", 404);
+            }
+            $code = $prefix;
+        } elseif ($this->sessionKey !== null
+            && isset($_SESSION[$this->sessionKey])
             && isset($language[$_SESSION[$this->sessionKey]])
         ) {
             $code = $_SESSION[$this->sessionKey];
