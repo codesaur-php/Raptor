@@ -210,7 +210,7 @@
                     {% endif %}
                 {% endfor %}
             </div>
-            <div class="small">{{ r.comment|e|nl2br }}</div>
+            <div class="small">{{ r.comment|e|nl2br|raw }}</div>
         </div>
         {% endfor %}
     </div>

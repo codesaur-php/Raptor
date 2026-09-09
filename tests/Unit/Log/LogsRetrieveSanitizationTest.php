@@ -5,6 +5,8 @@ namespace Tests\Unit\Log;
 use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\Attributes\DataProvider;
 
+use Dashboard\Log\Logger;
+
 /**
  * LogsController::retrieve() - SQL injection хамгаалалтын тест.
  *
@@ -13,9 +15,40 @@ use PHPUnit\Framework\Attributes\DataProvider;
  *
  * Энэ тест нь retrieve() дотор хийгдэж буй sanitization логикийг
  * шууд давтан шалгаж байна (controller-г бүтнээр дуудахгүй).
+ * ORDER BY нь regex-ээр "column direction" болж задарсны дараа
+ * Logger::orderBy() whitelist-ээр (зарлагдсан багана + ASC/DESC) дамждаг.
  */
 class LogsRetrieveSanitizationTest extends TestCase
 {
+    /** retrieve() дотор ORDER BY-г задалдаг regex */
+    private const ORDER_BY_PATTERN = '/^([a-zA-Z_]+)\s+(ASC|DESC)$/i';
+
+    /**
+     * retrieve()-ийн ORDER BY sanitization логикийг яг давтана.
+     *
+     * @return string Logger::orderBy() үр дүн (анхдагч: id DESC)
+     */
+    private function sanitizeOrderBy(Logger $logger, mixed $clientOrderBy): string
+    {
+        $orderBy = $logger->orderBy('id', 'DESC');
+        if (!empty($clientOrderBy)
+            && \is_string($clientOrderBy)
+            && \preg_match(self::ORDER_BY_PATTERN, $clientOrderBy, $m)
+            && $logger->hasColumn($m[1])
+        ) {
+            $orderBy = $logger->orderBy($m[1], $m[2]);
+        }
+        return $orderBy;
+    }
+
+    private function makeLogger(): Logger
+    {
+        $pdo = new \PDO('sqlite::memory:');
+        $pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+        $logger = new Logger($pdo);
+        $logger->setTable('sanitization_test');
+        return $logger;
+    }
     // =========================================================================
     // CONTEXT field name sanitization
     // =========================================================================
@@ -131,21 +164,21 @@ class LogsRetrieveSanitizationTest extends TestCase
      * Зөв ORDER BY утга зөвшөөрөгдөнө.
      */
     #[DataProvider('validOrderByProvider')]
-    public function testValidOrderByIsAccepted(string $orderBy): void
+    public function testValidOrderByIsAccepted(string $orderBy, string $expected): void
     {
-        $this->assertMatchesRegularExpression(
-            '/^[a-zA-Z_]+\s+(ASC|DESC|asc|desc)$/i',
-            $orderBy
-        );
+        $this->assertMatchesRegularExpression(self::ORDER_BY_PATTERN, $orderBy);
+
+        // Logger::orderBy() нь баганыг хашилтад хийж чиглэлийг том үсгээр буцаана (SQLite: "id")
+        $this->assertEquals($expected, $this->sanitizeOrderBy($this->makeLogger(), $orderBy));
     }
 
     public static function validOrderByProvider(): array
     {
         return [
-            'id_desc'         => ['id Desc'],
-            'id_asc'          => ['id ASC'],
-            'created_at_desc' => ['created_at DESC'],
-            'level_asc'       => ['level asc'],
+            'id_desc'         => ['id Desc', '"id" DESC'],
+            'id_asc'          => ['id ASC', '"id" ASC'],
+            'created_at_desc' => ['created_at DESC', '"created_at" DESC'],
+            'level_asc'       => ['level asc', '"level" ASC'],
         ];
     }
 
@@ -156,10 +189,49 @@ class LogsRetrieveSanitizationTest extends TestCase
     public function testMaliciousOrderByIsRejected(string $orderBy): void
     {
         $this->assertDoesNotMatchRegularExpression(
-            '/^[a-zA-Z_]+\s+(ASC|DESC|asc|desc)$/i',
+            self::ORDER_BY_PATTERN,
             $orderBy,
             "Dangerous ORDER BY [$orderBy] must be rejected"
         );
+
+        // Regex-ээр хаагдсан утга анхдагч эрэмбэд буцна
+        $this->assertEquals('"id" DESC', $this->sanitizeOrderBy($this->makeLogger(), $orderBy));
+    }
+
+    /**
+     * Regex-ийг давсан ч log хүснэгтэд зарлагдаагүй багана анхдагч эрэмбэд буцна.
+     * Regex зөвхөн хэлбэрийг шалгадаг, whitelist нь Logger::hasColumn()/orderBy().
+     */
+    #[DataProvider('undeclaredColumnProvider')]
+    public function testUndeclaredColumnFallsBackToDefault(string $orderBy): void
+    {
+        $this->assertMatchesRegularExpression(self::ORDER_BY_PATTERN, $orderBy);
+        $this->assertEquals('"id" DESC', $this->sanitizeOrderBy($this->makeLogger(), $orderBy));
+    }
+
+    public static function undeclaredColumnProvider(): array
+    {
+        return [
+            'password_column' => ['password DESC'],
+            'users_column'    => ['username ASC'],
+            'case_mismatch'   => ['ID DESC'],
+        ];
+    }
+
+    /**
+     * Logger::orderBy() нь зарлагдаагүй багана, буруу чиглэлд exception шиднэ -
+     * hasColumn() урьдчилсан шалгалт алгасагдсан ч SQL-д хүрэхгүй.
+     */
+    public function testLoggerOrderByRejectsUndeclaredColumn(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->makeLogger()->orderBy('password', 'DESC');
+    }
+
+    public function testLoggerOrderByRejectsInvalidDirection(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->makeLogger()->orderBy('id', 'DESC; DROP TABLE dashboard_log');
     }
 
     public static function maliciousOrderByProvider(): array
@@ -246,12 +318,9 @@ class LogsRetrieveSanitizationTest extends TestCase
         ];
 
         // retrieve() дотор яг ийм логик ажилладаг
-        $safeCondition = [];
-        if (!empty($clientCondition['ORDER BY'])
-            && \preg_match('/^[a-zA-Z_]+\s+(ASC|DESC|asc|desc)$/i', $clientCondition['ORDER BY'])
-        ) {
-            $safeCondition['ORDER BY'] = $clientCondition['ORDER BY'];
-        }
+        $safeCondition = [
+            'ORDER BY' => $this->sanitizeOrderBy($this->makeLogger(), $clientCondition['ORDER BY'])
+        ];
         if (!empty($clientCondition['LIMIT'])
             && \filter_var($clientCondition['LIMIT'], \FILTER_VALIDATE_INT)
         ) {

@@ -2,6 +2,7 @@
 
 namespace Web\Template;
 
+use codesaur\Template\Markup;
 use codesaur\Template\FileTemplate;
 use codesaur\Http\Application\ExceptionHandler as Base;
 use codesaur\Http\Application\ExceptionHandlerInterface;
@@ -46,19 +47,23 @@ class ExceptionHandler implements ExceptionHandlerInterface
             \error_log("$title: $message");
         }
 
-        $vars = [
-            'title' => $title,
-            'code'  => $code,
-            'message' => '<p class="lead mb-4">'
-                . \htmlspecialchars($message, \ENT_QUOTES | \ENT_SUBSTITUTE, 'UTF-8') . '</p>'
-        ];
+        // message нь энд бүрэн escape хийгдсэн HTML тул template-ийн autoescape-аас
+        // Markup-аар чөлөөлнө. Хэрэглэгчийн орц ($message) htmlspecialchars-аар л орно.
+        $html = '<p class="lead mb-4">'
+            . \htmlspecialchars($message, \ENT_QUOTES | \ENT_SUBSTITUTE, 'UTF-8') . '</p>';
 
         if (CODESAUR_DEVELOPMENT) {
-            $vars['message'] .=
+            $html .=
                 '<pre class="bg-dark text-light rounded p-3 small">'
                 . \json_encode($throwable->getTrace(), \JSON_PRETTY_PRINT | \JSON_HEX_TAG | \JSON_HEX_AMP | \JSON_HEX_APOS | \JSON_HEX_QUOT) . '</pre>';
         }
-        
+
+        $vars = [
+            'title' => $title,
+            'code'  => $code,
+            'message' => new Markup($html)
+        ];
+
         (new FileTemplate($errorTemplate, $vars))->render();
     }
 }

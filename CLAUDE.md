@@ -138,6 +138,13 @@ Supported and works as in Twig: `if/elseif/else/endif`, `for/else/endfor`, `set`
 
 Object method calls work: `{{ user.can('perm') }}`, `{% if auth.is('role') %}` - the engine dispatches to public PHP methods on `is_object($val)`.
 
+**Autoescape (`codesaur/template` >= 5.0):** `{{ }}` HTML-escapes every string by default, exactly like Twig. Rules that follow from it:
+- A print that must output real HTML ends with `|raw`: CMS content fields (`{{ record['content']|raw }}`), the web menu titles, and every `|nl2br` / `|json_encode` result (`{{ c.comment|e|nl2br|raw }}`, `const data = {{ rows|json_encode|raw }};`). `|json_encode|e` is correct inside an HTML attribute (`data-record="..."`), `|json_encode|e('js')` inside a JS string. `tests/Unit/Template/AutoescapeTest.php` scans all templates and fails when a `|nl2br` / `|json_encode` print has none of these.
+- Existing `|e` / `|e('js')` usages stay: they mark the value safe, so nothing is double-escaped. New templates do not need `|e` on plain prints any more, but `|e('js')` is still required for values placed inside a `<script>` string literal (it escapes quotes and newlines for JS; plain autoescape only handles HTML entities).
+- Safe (never escaped): `Markup` objects, template objects (`{{ content }}` in the layouts - `DashboardTrait`/`webTemplate()` pass the inner page as a `FileTemplate`, keep passing the object, never `->output()`), macro results, numbers/bool/null.
+- PHP side: never call `htmlspecialchars()` on a value before `->set()` - the template does it, and doing both double-escapes (the same test scans the PHP sources for `->set('x', htmlspecialchars(`). When PHP has to build HTML itself (error handlers, `nl2br` of a multi-line message for an e-mail body), wrap the finished string in `new \codesaur\Template\Markup(...)` so the template prints it verbatim.
+- Non-HTML templates call `setAutoEscape(false)`: the e-mail subject templates in the web/dashboard controllers do this (a subject is plain text - `&` must not become `&amp;`). E-mail bodies stay escaped (they are HTML).
+
 Steps 6-11 below must all be completed for a dashboard module to be fully integrated.
 
 ### 6. Add Translations
@@ -361,6 +368,8 @@ The public web language is part of the URL so every language is crawlable: the d
 ### Parameterized Queries
 
 Use `prepare()` + `bindValue()` for user input. Router-validated values (e.g. `{uint:id}`) are safe to use directly in SQL since the router rejects non-matching requests with 404.
+
+User input can never be parameterized in an identifier position (`ORDER BY`, `GROUP BY`, a column list). Use the model's own column whitelist from `codesaur/dataobject` >= 10.2 instead of a regex: `$model->orderBy($sort, $dir)` returns a driver-quoted `` `col` DESC `` / `"col" DESC` fragment and throws `InvalidArgumentException` for an undeclared column or a direction other than ASC/DESC; `$model->assertColumn($name)` does the same for a bare column name (`GROUP BY`, selection). `LogsController::retrieve()` is the reference: it splits the client's `"column ASC|DESC"` with a regex, checks `hasColumn()` and then calls `orderBy()`, falling back to `id DESC`. `LocalizedModel::orderBy()` returns the column with the JOIN alias (`p."slug"`, `c."title"`) used by its `getRows()`/`getRowsByCode()`.
 
 ### MySQL / PostgreSQL Compatibility
 

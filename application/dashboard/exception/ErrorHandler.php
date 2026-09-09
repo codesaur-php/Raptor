@@ -2,6 +2,7 @@
 
 namespace Dashboard\Exception;
 
+use codesaur\Template\Markup;
 use codesaur\Template\FileTemplate;
 use codesaur\Http\Application\ExceptionHandler as Base;
 use codesaur\Http\Application\ExceptionHandlerInterface;
@@ -86,19 +87,24 @@ class ErrorHandler implements ExceptionHandlerInterface
                 ? 'https://' : 'http://';
         $host .= $_SERVER['HTTP_HOST'] ?? 'localhost';
 
-        $vars = [
-            'title' => $title,
-            'return' => 'Return to host',
-            'message' => '<h3 style="text-align:center;color:white">' . \htmlspecialchars($message, \ENT_QUOTES | \ENT_SUBSTITUTE, 'UTF-8') . '</h3>'
-        ];
+        // message нь энд бүрэн escape хийгдсэн HTML тул template-ийн autoescape-аас
+        // Markup-аар чөлөөлнө. Хэрэглэгчийн орц ($message) htmlspecialchars-аар л орно.
+        $html = '<h3 style="text-align:center;color:white">'
+            . \htmlspecialchars($message, \ENT_QUOTES | \ENT_SUBSTITUTE, 'UTF-8') . '</h3>';
 
         // Хөгжүүлэлтийн горимд stack trace харуулах
         if (CODESAUR_DEVELOPMENT) {
-            $vars['message'] .=
+            $html .=
                 '<br/><pre style="color:white;height:300px;overflow-y:auto;overflow-x:hidden;">'
                 . \json_encode($throwable->getTrace(), \JSON_PRETTY_PRINT | \JSON_HEX_TAG | \JSON_HEX_AMP | \JSON_HEX_APOS | \JSON_HEX_QUOT)
                 . '</pre>';
         }
+
+        $vars = [
+            'title' => $title,
+            'return' => 'Return to host',
+            'message' => new Markup($html)
+        ];
 
         (new FileTemplate($errorTemplate, $vars))->render();
     }

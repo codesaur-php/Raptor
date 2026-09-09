@@ -335,12 +335,15 @@ class OrdersController extends \Dashboard\Controller
             ];
             $statusText = $statusLabels[$newStatus] ?? $newStatus;
 
+            // Subject нь энгийн текст тул autoescape унтраана
             $subjectTemplate = new MemoryTemplate();
+            $subjectTemplate->setAutoEscape(false);
             $subjectTemplate->source($template['title']);
             $subjectTemplate->set('order_id', $order['id']);
             $subjectTemplate->set('status', $statusText);
             $subject = $subjectTemplate->output();
 
+            // Body нь HTML - утга бүрийг autoescape өөрөө escape хийнэ
             $bodyTemplate = new MemoryTemplate();
             $bodyTemplate->source($template['content']);
             $bodyTemplate->set('order_id', $order['id']);

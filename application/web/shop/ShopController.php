@@ -4,6 +4,7 @@ namespace Web\Shop;
 
 use Psr\Log\LogLevel;
 
+use codesaur\Template\Markup;
 use codesaur\Template\MemoryTemplate;
 
 use Dashboard\File\FilesModel;
@@ -448,11 +449,14 @@ class ShopController extends TemplateController
                 return;
             }
 
+            // Subject нь энгийн текст тул autoescape унтраана
             $subjectTemplate = new MemoryTemplate();
+            $subjectTemplate->setAutoEscape(false);
             $subjectTemplate->source($template['title']);
             $subjectTemplate->set('order_id', $orderId);
             $subject = $subjectTemplate->output();
 
+            // Body нь HTML - утга бүрийг autoescape өөрөө escape хийнэ
             $bodyTemplate = new MemoryTemplate();
             $bodyTemplate->source($template['content']);
             $bodyTemplate->set('order_id', $orderId);
@@ -504,19 +508,22 @@ class ShopController extends TemplateController
             $appUrl = \rtrim((string)$this->getRequest()->getUri()->withPath($this->getScriptPath()), '/');
             $ordersLink = $appUrl . '/dashboard/orders';
 
+            // Subject нь энгийн текст тул autoescape унтраана
             $subjectTemplate = new MemoryTemplate();
+            $subjectTemplate->setAutoEscape(false);
             $subjectTemplate->source($template['title']);
             $subjectTemplate->set('order_id', $orderId);
             $subjectTemplate->set('customer_name', $customerName);
             $subject = $subjectTemplate->output();
 
+            // Body нь HTML - утга бүрийг autoescape өөрөө escape хийнэ
             $bodyTemplate = new MemoryTemplate();
             $bodyTemplate->source($template['content']);
             $bodyTemplate->set('order_id', $orderId);
-            $bodyTemplate->set('customer_name', \htmlspecialchars($customerName));
-            $bodyTemplate->set('customer_email', \htmlspecialchars($customerEmail));
-            $bodyTemplate->set('customer_phone', \htmlspecialchars($phone));
-            $bodyTemplate->set('product_title', \htmlspecialchars($productTitle));
+            $bodyTemplate->set('customer_name', $customerName);
+            $bodyTemplate->set('customer_email', $customerEmail);
+            $bodyTemplate->set('customer_phone', $phone);
+            $bodyTemplate->set('product_title', $productTitle);
             $bodyTemplate->set('quantity', $quantity);
             $bodyTemplate->set('orders_link', $ordersLink);
             $body = $bodyTemplate->output();
@@ -567,18 +574,22 @@ class ShopController extends TemplateController
             $appUrl = \rtrim((string)$this->getRequest()->getUri()->withPath($this->getScriptPath()), '/');
             $reviewsLink = $appUrl . '/dashboard/products/reviews';
 
+            // Subject нь энгийн текст тул autoescape унтраана
             $subjectTemplate = new MemoryTemplate();
+            $subjectTemplate->setAutoEscape(false);
             $subjectTemplate->source($template['title']);
             $subjectTemplate->set('product_title', $productTitle);
             $subject = $subjectTemplate->output();
 
+            // Body нь HTML - утга бүрийг autoescape өөрөө escape хийнэ.
+            // Мөр таслалтай comment-ийг nl2br хийж Markup-аар safe гэж тэмдэглэнэ.
             $bodyTemplate = new MemoryTemplate();
             $bodyTemplate->source($template['content']);
-            $bodyTemplate->set('name', \htmlspecialchars($name));
-            $bodyTemplate->set('email', \htmlspecialchars($email));
+            $bodyTemplate->set('name', $name);
+            $bodyTemplate->set('email', $email);
             $bodyTemplate->set('rating', $rating);
-            $bodyTemplate->set('comment', \nl2br(\htmlspecialchars($comment)));
-            $bodyTemplate->set('product_title', \htmlspecialchars($productTitle));
+            $bodyTemplate->set('comment', new Markup(\nl2br(\htmlspecialchars($comment, \ENT_QUOTES | \ENT_SUBSTITUTE, 'UTF-8'))));
+            $bodyTemplate->set('product_title', $productTitle);
             $bodyTemplate->set('reviews_link', $reviewsLink);
             $body = $bodyTemplate->output();
 

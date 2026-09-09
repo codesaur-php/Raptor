@@ -4,6 +4,7 @@ namespace Dashboard\Development;
 
 use Psr\Log\LogLevel;
 
+use codesaur\Template\Markup;
 use codesaur\Template\MemoryTemplate;
 
 use Dashboard\File\FileController;
@@ -601,13 +602,16 @@ class DevRequestController extends FileController
             $authorName = ($user->profile['first_name'] ?? '') . ' ' . ($user->profile['last_name'] ?? '');
             $link = $this->generateRouteLink('dev-requests-view', ['id' => $requestId], true);
 
+            // Body нь HTML - утга бүрийг autoescape өөрөө escape хийнэ
             $memtemplate = new MemoryTemplate();
             $memtemplate->set('request_id', $requestId);
             $memtemplate->set('author', $authorName);
-            $memtemplate->set('title', \htmlspecialchars($title));
+            $memtemplate->set('title', $title);
             $memtemplate->set('link', $link);
 
+            // Subject нь энгийн текст тул autoescape унтраана
             $subjectTemplate = new MemoryTemplate();
+            $subjectTemplate->setAutoEscape(false);
             $subjectTemplate->set('request_id', $requestId);
             $subjectTemplate->set('title', $title);
             $subjectTemplate->source($template['title']);
@@ -688,14 +692,18 @@ class DevRequestController extends FileController
             $authorName = ($user->profile['first_name'] ?? '') . ' ' . ($user->profile['last_name'] ?? '');
             $link = $this->generateRouteLink('dev-requests-view', ['id' => $requestId], true);
 
+            // Body нь HTML - утга бүрийг autoescape өөрөө escape хийнэ.
+            // Мөр таслалтай response-ийг nl2br хийж Markup-аар safe гэж тэмдэглэнэ.
             $memtemplate = new MemoryTemplate();
             $memtemplate->set('request_id', $requestId);
             $memtemplate->set('author', $authorName);
-            $memtemplate->set('title', \htmlspecialchars($request['title']));
-            $memtemplate->set('response', \nl2br(\htmlspecialchars($responseText)));
+            $memtemplate->set('title', $request['title']);
+            $memtemplate->set('response', new Markup(\nl2br(\htmlspecialchars($responseText, \ENT_QUOTES | \ENT_SUBSTITUTE, 'UTF-8'))));
             $memtemplate->set('link', $link);
 
+            // Subject нь энгийн текст тул autoescape унтраана
             $subjectTemplate = new MemoryTemplate();
+            $subjectTemplate->setAutoEscape(false);
             $subjectTemplate->set('request_id', $requestId);
             $subjectTemplate->set('title', $request['title']);
             $subjectTemplate->source($template['title']);

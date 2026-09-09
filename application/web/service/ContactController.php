@@ -4,6 +4,7 @@ namespace Web\Service;
 
 use Psr\Log\LogLevel;
 
+use codesaur\Template\Markup;
 use codesaur\Template\MemoryTemplate;
 
 use Dashboard\Content\PagesModel;
@@ -201,17 +202,21 @@ class ContactController extends TemplateController
             $appUrl = \rtrim((string)$this->getRequest()->getUri()->withPath($this->getScriptPath()), '/');
             $messagesLink = $appUrl . '/dashboard/messages';
 
+            // Subject нь энгийн текст тул autoescape унтраана (& -> &amp; болохгүй)
             $subjectTemplate = new MemoryTemplate();
+            $subjectTemplate->setAutoEscape(false);
             $subjectTemplate->source($template['title']);
             $subjectTemplate->set('name', $name);
             $subject = $subjectTemplate->output();
 
+            // Body нь HTML - {{ }} утга бүрийг autoescape өөрөө escape хийнэ.
+            // Мөр таслалтай message-ийг nl2br хийж Markup-аар safe гэж тэмдэглэнэ.
             $bodyTemplate = new MemoryTemplate();
             $bodyTemplate->source($template['content']);
-            $bodyTemplate->set('name', \htmlspecialchars($name));
-            $bodyTemplate->set('phone', \htmlspecialchars($phone));
-            $bodyTemplate->set('email', \htmlspecialchars($email));
-            $bodyTemplate->set('message', \nl2br(\htmlspecialchars($message)));
+            $bodyTemplate->set('name', $name);
+            $bodyTemplate->set('phone', $phone);
+            $bodyTemplate->set('email', $email);
+            $bodyTemplate->set('message', new Markup(\nl2br(\htmlspecialchars($message, \ENT_QUOTES | \ENT_SUBSTITUTE, 'UTF-8'))));
             $bodyTemplate->set('messages_link', $messagesLink);
             $body = $bodyTemplate->output();
 

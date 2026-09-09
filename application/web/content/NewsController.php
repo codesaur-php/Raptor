@@ -5,6 +5,7 @@ namespace Web\Content;
 use Psr\Log\LogLevel;
 
 use codesaur\DataObject\Constants;
+use codesaur\Template\Markup;
 use codesaur\Template\MemoryTemplate;
 
 use Dashboard\Content\NewsModel;
@@ -387,17 +388,21 @@ class NewsController extends TemplateController
             $appUrl = \rtrim((string)$this->getRequest()->getUri()->withPath($this->getScriptPath()), '/');
             $commentsLink = $appUrl . '/dashboard/news/comments';
 
+            // Subject нь энгийн текст тул autoescape унтраана (& -> &amp; болохгүй)
             $subjectTemplate = new MemoryTemplate();
+            $subjectTemplate->setAutoEscape(false);
             $subjectTemplate->source($template['title']);
             $subjectTemplate->set('news_title', $newsTitle);
             $subject = $subjectTemplate->output();
 
+            // Body нь HTML - {{ }} утга бүрийг autoescape өөрөө escape хийнэ.
+            // Мөр таслалтай comment-ийг nl2br хийж Markup-аар safe гэж тэмдэглэнэ.
             $bodyTemplate = new MemoryTemplate();
             $bodyTemplate->source($template['content']);
-            $bodyTemplate->set('name', \htmlspecialchars($name));
-            $bodyTemplate->set('email', \htmlspecialchars($email));
-            $bodyTemplate->set('comment', \nl2br(\htmlspecialchars($comment)));
-            $bodyTemplate->set('news_title', \htmlspecialchars($newsTitle));
+            $bodyTemplate->set('name', $name);
+            $bodyTemplate->set('email', $email);
+            $bodyTemplate->set('comment', new Markup(\nl2br(\htmlspecialchars($comment, \ENT_QUOTES | \ENT_SUBSTITUTE, 'UTF-8'))));
+            $bodyTemplate->set('news_title', $newsTitle);
             $bodyTemplate->set('comments_link', $commentsLink);
             $body = $bodyTemplate->output();
 

@@ -253,14 +253,25 @@ class LogsController extends \Dashboard\Controller
                 throw new \InvalidArgumentException($this->text('invalid-request'));
             }
 
+            $logger = new Logger($this->pdo);
+            $logger->setTable($table);
+
             // Filter болон Query нөхцөл
             $condition = $this->getParsedBody();
             $context = $condition['CONTEXT'] ?? null;
 
-            // Client-ээс ирсэн ORDER BY, LIMIT, OFFSET-ийг sanitize хийх
-            $safeCondition = [];
-            if (!empty($condition['ORDER BY']) && \preg_match('/^[a-zA-Z_]+\s+(ASC|DESC|asc|desc)$/i', $condition['ORDER BY'])) {
-                $safeCondition['ORDER BY'] = $condition['ORDER BY'];
+            // Client-ээс ирсэн ORDER BY, LIMIT, OFFSET-ийг sanitize хийх.
+            // ORDER BY: "column ASC|DESC" хэлбэрийг задалж Logger::orderBy() whitelist-ээр
+            // дамжуулна - багана нь log хүснэгтэд зарлагдсан байх ёстой, чиглэл зөвхөн
+            // ASC/DESC, identifier нь driver-т тохирсон хашилттай гарна. Зарлагдаагүй
+            // багана эсвэл буруу хэлбэр бол анхдагч "id DESC" (шинэ лог эхэнд).
+            $safeCondition = ['ORDER BY' => $logger->orderBy(Constants::COL_ID, 'DESC')];
+            if (!empty($condition['ORDER BY'])
+                && \is_string($condition['ORDER BY'])
+                && \preg_match('/^([a-zA-Z_]+)\s+(ASC|DESC)$/i', $condition['ORDER BY'], $orderMatch)
+                && $logger->hasColumn($orderMatch[1])
+            ) {
+                $safeCondition['ORDER BY'] = $logger->orderBy($orderMatch[1], $orderMatch[2]);
             }
             // LIMIT-ийг хязгаарлах: client ямар ч утга илгээсэн дээд тал нь 200.
             $clientLimit = (int) ($condition['LIMIT'] ?? 0);
@@ -322,8 +333,6 @@ class LogsController extends \Dashboard\Controller
                     : $condition['WHERE'] . ' AND ' . $clause;
             }
 
-            $logger = new Logger($this->pdo);
-            $logger->setTable($table);
             $this->respondJSON($logger->getLogs($condition));
         } catch (\Throwable $err) {
             $this->respondJSON(['error' => $err->getMessage()], $err->getCode() ?: 500);

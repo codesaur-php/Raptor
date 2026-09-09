@@ -306,7 +306,7 @@
                             {% endif %}
                         {% endfor %}
                     </div>
-                    <div>{{ r.comment|e|nl2br }}</div>
+                    <div>{{ r.comment|e|nl2br|raw }}</div>
                 </div>
             </div>
             {% endfor %}
