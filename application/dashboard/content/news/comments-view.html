@@ -82,7 +82,7 @@
                         </button>
                     {% endif %}
                     {% if user.can('system_content_delete') %}
-                        <button class="btn btn-sm btn-outline-danger ms-1 delete-comment" data-id="{{ c.id }}" {{ c.parent_id ? '' : 'data-root="1"' }}>
+                        <button class="btn btn-sm btn-outline-danger ms-1 delete-comment" data-id="{{ c.id }}" {{ (c.parent_id ? '' : 'data-root="1"')|raw }}>
                             <i class="bi bi-trash"></i>
                         </button>
                     {% endif %}

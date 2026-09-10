@@ -135,6 +135,86 @@ class AutoescapeTest extends TestCase
     }
 
     /**
+     * CMS-ийн `content` талбар (news/pages/products/reference) нь moedit-ээр
+     * бичсэн HTML тул filter-гүй {{ content }} гэж хэвлэвэл escape болж
+     * хэрэглэгчид HTML эх код текстээр харагдана. Тиймээс content print бүр
+     * зориудаар сонгосон filter-тэй байх ёстой: |raw (HTML-ээр харуулах)
+     * эсвэл |e (textarea дотор засварлахад).
+     *
+     * Хасагдах газрууд: layout-ууд ({{ content }} нь FileTemplate объект тул
+     * autoescape-д хамаарахгүй), login.html-ийн сунгах hook, log modal-ийн
+     * macro параметр (log өгөгдөл escape хийгдэх ёстой).
+     */
+    public function testCmsContentPrintsHaveExplicitFilter(): void
+    {
+        $bareContentAllowed = [
+            'web/template/index.html',
+            'dashboard/template/dashboard.html',
+            'dashboard/authentication/login.html',
+            'dashboard/log/retrieve-log-modal.html',
+        ];
+
+        $violations = [];
+        $it = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator(self::$appDir));
+        foreach ($it as $file) {
+            if ($file->getExtension() !== 'html') {
+                continue;
+            }
+            $rel = \str_replace('\\', '/', \substr($file->getPathname(), \strlen(self::$appDir) + 1));
+            $src = \file_get_contents($file->getPathname());
+            $pattern = '/\{\{\s*(content|[\w.]+(?:\[[\'"]\w+[\'"]\])*(?:\[[\'"]content[\'"]\]|\.content))\s*\}\}/';
+            if (!\preg_match_all($pattern, $src, $m, \PREG_SET_ORDER)) {
+                continue;
+            }
+            foreach ($m as $match) {
+                if ($match[1] === 'content' && \in_array($rel, $bareContentAllowed)) {
+                    continue;
+                }
+                $violations[] = "$rel: {$match[0]}";
+            }
+        }
+
+        $this->assertSame([], $violations, "CMS content prints must end with |raw (render HTML) or |e (textarea):\n" . \implode("\n", $violations));
+    }
+
+    /**
+     * Autoescape нь илэрхийллийн үр дүнг escape хийдэг - template дотор
+     * бичсэн string literal ч хамаарна. Тиймээс ternary/concat-аар HTML
+     * эсвэл attribute үүсгэдэг print ({{ x ? '<i class="..."></i>' : '' }},
+     * {{ p ? 'target="_blank"' : 'download' }}) filter-гүй бол
+     * &lt;i&gt; / target=&quot;_blank&quot; болж эвдэрнэ. Ийм print бүр
+     * (…)|raw (HTML-ээр гаргах) эсвэл |e (код жишээ болгон харуулах,
+     * file/*-tag-modal.html) гэж зориудаар тэмдэглэгдсэн байх ёстой.
+     */
+    public function testLiteralHtmlInExpressionsHasExplicitFilter(): void
+    {
+        $violations = [];
+        $it = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator(self::$appDir));
+        foreach ($it as $file) {
+            if ($file->getExtension() !== 'html') {
+                continue;
+            }
+            $src = \file_get_contents($file->getPathname());
+            if (!\preg_match_all('/\{\{(.+?)\}\}/s', $src, $m, \PREG_SET_ORDER)) {
+                continue;
+            }
+            foreach ($m as $match) {
+                $expr = \trim($match[1]);
+                if (!\preg_match('/[\'"][^\'"]*(<[a-z\/]|\w+=")[^\'"]*[\'"]/', $expr)) {
+                    continue;
+                }
+                if (\preg_match('/\|(raw|e)\s*$/', $expr)) {
+                    continue;
+                }
+                $rel = \str_replace('\\', '/', \substr($file->getPathname(), \strlen(self::$appDir) + 1));
+                $violations[] = "$rel: {$match[0]}";
+            }
+        }
+
+        $this->assertSame([], $violations, "Prints building HTML from string literals must end with |raw or |e:\n" . \implode("\n", $violations));
+    }
+
+    /**
      * PHP тал: MemoryTemplate-д set() хийхийн өмнө htmlspecialchars() дуудах
      * шаардлагагүй болсон - давхар escape үүсгэнэ. nl2br-тэй хослол л
      * зөвшөөрөгдөнө (Markup-аар ороосон байх ёстой).

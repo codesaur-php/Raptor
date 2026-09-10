@@ -28,7 +28,7 @@
                          alt="{{ title|e }}">
                 {% endif %}
 
-                {{ content }}
+                {{ content|raw }}
 
                 {% if files is defined and files is not empty %}
                 <div class="mt-4">

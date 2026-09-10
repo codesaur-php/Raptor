@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 
 ---
 
+## [5.4.1] - 2026-09-10
+[5.4.1]: https://github.com/codesaur-php/Raptor/compare/v5.4.0...v5.4.1
+
+### Fixed
+
+- **Public news, page and product bodies and the login page's Terms of Service / Privacy Policy modals rendered their HTML as visible source text.** The 5.4.0 autoescape audit missed five prints: `{{ content }}` in the web `news.html`, `page.html` and `product.html` (the record's `content` column, a plain string once `webTemplate()` passes `$record` as template variables - unlike the layouts' `{{ content }}`, which receives a template object and is never escaped) and `{{ tos['content'] }}` / `{{ pp['content'] }}` in `login.html` (the `tos` / `pp` reference records, HTML written in moedit). All five now end with `|raw`. `tests/Unit/Template/AutoescapeTest.php` gained a third static scan: every print of a `content` expression (`content`, `x['content']`, `x.content`) must carry an explicit filter - `|raw` to render the HTML or `|e` inside a textarea - with the bare `{{ content }}` allowed only in the two layouts, the login page's extension hook and the log modal's macro parameter.
+- **String literals inside a print expression are escaped too, which broke the HTML built by ternaries.** Autoescape applies to the print's result, not only to variables, so `{{ previewable ? 'target="_blank"' : 'download' }}` rendered `target=&quot;_blank&quot;` (an attribute whose value carries literal quotes, so previewable attachments no longer opened in a new tab on the news, page and product view pages of the dashboard and on the public product page), `{{ c.parent_id ? '' : 'data-root="1"' }}` on the dashboard comment lists produced `data-root=&quot;1&quot;`, and the default-language marker `{{ language['is_default'] ? ' <i class="bi bi-check-all ..."></i>' : '' }}` on the localization index showed the `<i>` tag as text. The seven prints now wrap the ternary and end with `|raw`. The same rule caught the `copyright` setting, whose seeded default is the entity `&copy; {year} Raptor`: the public footer and the login page footer print it with `|raw`, so the entity (or any markup an admin puts in the setting) renders instead of showing `&copy;` literally. `UsersController::index()` no longer embeds `<br/>` in the message it hands to `dashboardProhibited()` - the alert is a plain-text print. A fourth static scan in `AutoescapeTest` fails on any print whose expression contains a string literal with a tag or an `attr="` fragment and does not end with `|raw` or `|e` (the file module's tag modals keep `|e` on purpose: they show the markup as a copyable code sample).
+
+---
+
 ## [5.4.0] - 2026-09-09
 [5.4.0]: https://github.com/codesaur-php/Raptor/compare/v5.3.0...v5.4.0
 

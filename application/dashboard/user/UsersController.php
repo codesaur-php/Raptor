@@ -164,7 +164,7 @@ class UsersController extends FileController
         } catch (\Throwable $err) {
             // Ямар нэгэн алдаа гарвал алдааны dashboard-г үзүүлнэ
             $this->dashboardProhibited(
-                "Хэрэглэгчдийн жагсаалтыг нээх үед алдаа гарлаа.<br/><br/>{$err->getMessage()}",
+                "Хэрэглэгчдийн жагсаалтыг нээх үед алдаа гарлаа. {$err->getMessage()}",
                 $err->getCode()
             )->render();
         } finally {

@@ -73,7 +73,7 @@
                                  alt="{{ language['title']|e }}">
 
                             <!-- Default хэл бол чек тэмдэг гаргана -->
-                            {{ language['is_default'] ? ' <i class="bi bi-check-all text-primary ps-2"></i>' : '' }}
+                            {{ (language['is_default'] ? ' <i class="bi bi-check-all text-primary ps-2"></i>' : '')|raw }}
                         </td>
 
                         <!-- Хэлний locale - жишээ нь en_US, mn_MN -->
