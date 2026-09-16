@@ -1164,7 +1164,6 @@ ExceptionHandler -> Container -> Session -> Localization -> Settings -> WebRoute
 | Маршрут | Метод | Нэр | Тайлбар |
 |---------|-------|-----|---------|
 | `/` | GET | `home` | Нүүр хуудас |
-| `/home` | GET | - | Нүүр alias |
 | `/language/{code}` | GET | `language` | Хэл солих |
 | `/page/{uint:id}` | GET | `page-by-id` | ID-р хуудас (slug руу redirect) |
 | `/page/{slug}` | GET | `page` | Хуудас үзэх |

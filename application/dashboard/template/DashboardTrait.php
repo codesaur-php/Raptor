@@ -88,7 +88,11 @@ trait DashboardTrait
         $dashboard->set('raptor_name', \basename($composer['name'] ?? '') ?: null);
         $dashboard->set('raptor_version', $composer['extra']['version'] ?? null);
         $dashboard->set('raptor_modified', $composer['extra']['modified'] ?? null);
-        
+
+        // Public веб байгаа эсэх - sidebar-ийн "Веблүү очих" статик линк үүгээр
+        // харагдана. application/web-ийн Web\Application class олдох үед true.
+        $dashboard->set('has_web', \class_exists(\Web\Application::class));
+
         $dashboard->set('content', $this->template($template, $vars));
         foreach ($this->getAttribute('settings', []) as $key => $value) {
             $dashboard->set($key, $value);
@@ -211,7 +215,7 @@ trait DashboardTrait
      *      parent_menu_id => [
      *          'title' => '...',
      *          'submenu' => [
-     *              ['title' => '...', 'link' => '...', ...],
+     *              ['title' => '...', 'href' => '...', ...],
      *              ...
      *          ]
      *      ],

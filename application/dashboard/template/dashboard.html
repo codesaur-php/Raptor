@@ -15,7 +15,7 @@
         <script defer src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
         <link href="{{ index }}/assets/dashboard/dashboard.css?v=5" rel="stylesheet">
-        <script defer src="{{ index }}/assets/dashboard/dashboard.js?v=6"></script>
+        <script defer src="{{ index }}/assets/dashboard/dashboard.js?v=7"></script>
         <link href="{{ index }}/assets/motable/motable.css" rel="stylesheet">
         <script defer src="{{ index }}/assets/motable/motable.js?v=1"></script>
     </head>
@@ -192,7 +192,10 @@
                         </div>
                         <!-- Sidebar body -->
                         <div class="sidebar-menu offcanvas-body bg-dark d-md-flex flex-column p-0 overflow-y-auto">
-                            <!-- Home / Dashboard link (үргэлж хамгийн дээр, permission/alias шүүлтгүй) -->
+                            <!-- Home / Dashboard link + public веб рүү очих линк (үргэлж хамгийн дээр,
+                                 permission/alias шүүлтгүй). Веб линк has_web (DashboardTrait::dashboardTemplate -
+                                 application/web-ийн Web\Application class олдох үед true) үед л харагдана;
+                                 target="_blank" тул activateLink-ийн prefix тааруулалтад орохгүй -->
                             <ul class="nav flex-column mt-2">
                                 <li class="nav-item">
                                     <a class="nav-link" href="{{ 'home'|link }}">
@@ -200,6 +203,14 @@
                                         {{ 'dashboard'|text }}
                                     </a>
                                 </li>
+                                {% if has_web %}
+                                <li class="nav-item">
+                                    <a class="nav-link" href="{{ index }}/" target="_blank">
+                                        <i class="bi bi-rocket-takeoff"></i>
+                                        {{ 'visit-website'|text }}
+                                    </a>
+                                </li>
+                                {% endif %}
                             </ul>
                             <!-- Dynamic sidebar menu loops -->
                             {% for menu in sidemenu %}

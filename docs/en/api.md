@@ -1163,7 +1163,6 @@ ExceptionHandler -> Container -> Session -> Localization -> Settings -> WebRoute
 | Route | Method | Name | Description |
 |-------|--------|------|-------------|
 | `/` | GET | `home` | Home page |
-| `/home` | GET | - | Home alias |
 | `/language/{code}` | GET | `language` | Switch language |
 | `/page/{uint:id}` | GET | `page-by-id` | Page by ID (redirect to slug) |
 | `/page/{slug}` | GET | `page` | View page |

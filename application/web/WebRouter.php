@@ -27,7 +27,6 @@ class WebRouter extends Router
     {
         // Нүүр хуудас
         $this->GET('/', [HomeController::class, 'index'])->name('home');
-        $this->GET('/home', [HomeController::class, 'index']);
 
         // Динамик Page (ID-аар болон slug-аар)
         $this->GET('/page/{uint:id}', [Content\PageController::class, 'pageById']);

@@ -215,6 +215,39 @@ class AutoescapeTest extends TestCase
     }
 
     /**
+     * Settings-ийн urgent, contact, address, copyright талбарууд "HTML бичиж
+     * болно" гэсэн нөхцөлтэй (settings.html, settings manual) - admin нь
+     * <p>, <br>, <a> бичиж хадгалдаг. SettingsMiddleware-ийн утгуудыг
+     * dashboardTemplate() / webTemplate() ижил нэртэй bare хувьсагчаар
+     * template-д өгдөг тул {{ address }} гэж filter-гүй хэвлэвэл HTML эх код
+     * текстээр харагдана. Ийм bare print бүр |raw-аар төгсөх ёстой (settings
+     * form-ийн textarea нь record['localized'][code][...] замаар хэвлэдэг тул
+     * энд хамаарахгүй).
+     */
+    public function testHtmlSettingsPrintsAreRaw(): void
+    {
+        $violations = [];
+        $it = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator(self::$appDir));
+        foreach ($it as $file) {
+            if ($file->getExtension() !== 'html') {
+                continue;
+            }
+            $src = \file_get_contents($file->getPathname());
+            if (!\preg_match_all('/\{\{\s*(urgent|contact|address|copyright)\b[^}]*\}\}/', $src, $m, \PREG_SET_ORDER)) {
+                continue;
+            }
+            foreach ($m as $match) {
+                if (!\preg_match('/\|raw\s*\}\}$/', $match[0])) {
+                    $rel = \str_replace('\\', '/', \substr($file->getPathname(), \strlen(self::$appDir) + 1));
+                    $violations[] = "$rel: {$match[0]}";
+                }
+            }
+        }
+
+        $this->assertSame([], $violations, "HTML-capable settings fields (urgent, contact, address, copyright) must be printed with |raw:\n" . \implode("\n", $violations));
+    }
+
+    /**
      * PHP тал: MemoryTemplate-д set() хийхийн өмнө htmlspecialchars() дуудах
      * шаардлагагүй болсон - давхар escape үүсгэнэ. nl2br-тэй хослол л
      * зөвшөөрөгдөнө (Markup-аар ороосон байх ёстой).

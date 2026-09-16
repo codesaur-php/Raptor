@@ -340,6 +340,7 @@ class TextInitial
 
         $model->insert(['keyword' => 'view-record', 'type' => 'sys-defined'], ['mn' => ['text' => 'Бичлэг харах'], 'en' => ['text' => 'View record']]);
         $model->insert(['keyword' => 'visible-on-site', 'type' => 'sys-defined'], ['mn' => ['text' => 'Сайт дээр харагдах'], 'en' => ['text' => 'Visible on site']]);
+        $model->insert(['keyword' => 'visit-website', 'type' => 'sys-defined'], ['mn' => ['text' => 'Веблүү очих'], 'en' => ['text' => 'Visit Website']]);
         $model->insert(['keyword' => 'warning', 'type' => 'sys-defined'], ['mn' => ['text' => 'Сануулга'], 'en' => ['text' => 'Warning']]);
         $model->insert(['keyword' => 'words', 'type' => 'sys-defined'], ['mn' => ['text' => 'үг'], 'en' => ['text' => 'words']]);
         $model->insert(['keyword' => 'working-hours', 'type' => 'sys-defined'], ['mn' => ['text' => 'Ажлын цаг'], 'en' => ['text' => 'Working Hours']]);

@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 
 ---
 
+## [5.4.2] - 2026-09-16
+[5.4.2]: https://github.com/codesaur-php/Raptor/compare/v5.4.1...v5.4.2
+
+### Fixed
+
+- **The sidebar's "Visit Website" link led to a 404.** `MenuSeed` stored the public-site link as `{path}/home" target="__blank` - an attribute injection that relied on the template printing `href` verbatim so the link opened in a new tab. With autoescape (5.4.0) the embedded quote is escaped and the browser requested `/home%22%20target=%22__blank`. The link is no longer a menu record: `dashboard.html` now carries it as a static sidebar entry right under the Dashboard link (`{{ index }}/` with `target="_blank"`, labelled by the new `visit-website` text keyword), `MenuSeed` no longer inserts it, and the `href` column stays a plain URL - a menu record cannot carry a `target`. The entry renders only when `has_web` is true - `DashboardTrait::dashboardTemplate()` sets it from `class_exists(\Web\Application::class)`, so a dashboard-only project that removed `application/web` shows no link to a site it does not have. `activateLink()` in `dashboard.js` now skips sidebar links with `target="_blank"` - a link that opens in a new tab can never be the current page, and without the exclusion the site root would be a prefix of every dashboard URL and the entry would show as active everywhere (`dashboard.js?v=7`). Already-deployed databases still hold the seeded row and lack the keyword; apply this migration (`raptor_menu` is on the sensitive list, so the dashboard asks for `CONFIRM`; the row's `raptor_menu_content` titles are removed by the `ON DELETE CASCADE` foreign key, and the caches are cleared automatically after a successful apply - if the statements are run outside the dashboard, empty `cache/`): `DELETE FROM raptor_menu WHERE href LIKE '%" target="__blank'; INSERT INTO localization_text (keyword, type, created_at) VALUES ('visit-website', 'sys-defined', NOW()); INSERT INTO localization_text_content (parent_id, code, text) SELECT id, 'mn', 'Веблүү очих' FROM localization_text WHERE keyword = 'visit-website'; INSERT INTO localization_text_content (parent_id, code, text) SELECT id, 'en', 'Visit Website' FROM localization_text WHERE keyword = 'visit-website';`
+- **The public footer and contact page showed the HTML of the `address` and `urgent` settings as source text.** Both fields are edited in a plain textarea that the settings form and manual document as "supports HTML" (an admin writes `<p>`, `<br>`, `<a>` to lay out a multi-line address or a banner with a link), so they are trusted admin content like `copyright`, which 5.4.1 already prints with `|raw`. The footer address, the contact page address and the urgent banner in `index.html` now end with `|raw`. `tests/Unit/Template/AutoescapeTest.php` gained a fifth static scan: a bare print of any of the HTML-capable settings fields (`urgent`, `contact`, `address`, `copyright`) must end with `|raw`.
+
+### Removed
+
+- The public web `/home` alias route (`WebRouter`): it existed only for the dashboard sidebar link, which now points to `/`. The home page keeps its named `home` route at `/`.
+
+---
+
 ## [5.4.1] - 2026-09-10
 [5.4.1]: https://github.com/codesaur-php/Raptor/compare/v5.4.0...v5.4.1
 

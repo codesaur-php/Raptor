@@ -216,13 +216,16 @@ function ajaxModal(link)
 
 /**
  * activateLink(href)
- * - Sidebar-ийн идэвхтэй линк тодруулах
+ * - Sidebar-ийн идэвхтэй линк тодруулах (prefix тааруулалт).
+ *   target="_blank" линк шинэ tab-д нээгддэг тул одоогийн хуудас байж
+ *   чадахгүй - тааруулалтаас хасна (жишээ нь public веб рүү очих index/ линк
+ *   dashboard-ийн бүх хуудсанд идэвхтэй харагдахгүй)
  * @param {string} href - Document link */
 function activateLink(href)
 {
     if (!href) return;
 
-    document.querySelectorAll('.sidebar-menu a.nav-link').forEach(function (a) {
+    document.querySelectorAll('.sidebar-menu a.nav-link:not([target="_blank"])').forEach(function (a) {
         const aLink = a.getAttribute('href');
         if (aLink && href.startsWith(aLink)) {
             a.classList.add('active');

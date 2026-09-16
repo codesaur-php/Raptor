@@ -45,17 +45,6 @@ class MenuSeed
             ['mn' => ['title' => 'Агуулгууд'], 'en' => ['title' => 'Contents']]
         );
         if (isset($contents['id'])) {
-            // Public веб сайт руу очих линк
-            $model->insert(
-                [
-                    'parent_id' => $contents['id'],
-                    'position' => '110',
-                    'alias' => 'system',
-                    'icon' => 'bi bi-rocket-takeoff',
-                    'href' => "$path/home\" target=\"__blank"
-                ],
-                ['mn' => ['title' => 'Веблүү очих'], 'en' => ['title' => 'Visit Website']]
-            );
             $model->insert(
                 [
                     'parent_id' => $contents['id'],
