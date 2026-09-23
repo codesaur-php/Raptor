@@ -57,7 +57,7 @@ class AIHelper extends \Dashboard\Controller
      *
      * Хүсэлт (HTML mode):
      * -----------------------------------------------------------------------------
-     *   POST /dashboard/moedit/ai
+     *   POST /dashboard/content/moedit/ai
      *   Content-Type: application/json
      *   Body: {
      *     "mode": "html",
@@ -67,7 +67,7 @@ class AIHelper extends \Dashboard\Controller
      *
      * Хүсэлт (Vision/OCR mode):
      * -----------------------------------------------------------------------------
-     *   POST /dashboard/moedit/ai
+     *   POST /dashboard/content/moedit/ai
      *   Content-Type: application/json
      *   Body: {
      *     "mode": "vision",

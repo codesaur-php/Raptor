@@ -89,7 +89,7 @@ Request-аас PDO instance-г авч `$this->pdo`-д оноох.
 Орчуулгын текст авах. Олдохгүй бол `$default` эсвэл `{key}`.
 
 #### `template(string $template, array $vars = []): FileTemplate`
-Template үүсгэх. Автоматаар `user`, `index`, `localization`, `request` хувьсагчид нэмэгдэнэ. `text` болон `link` filter-ууд бүртгэгдэнэ.
+FileTemplate үүсгэх. Автоматаар `user`, `index`, `localization`, `csrf_token`, `waf_body_encoding` хувьсагчид нэмэгдэнэ. `text`, `link`, `pattern` filter-ууд бүртгэгдэнэ (`pattern` нь route pattern-ийг `{placeholder}`-той нь хэвээр буцаана - client талын JS рендерт зориулсан).
 
 #### `respondJSON(array $response, int|string $code = 0): void`
 JSON хариулт хэвлэх. `Content-Type: application/json` header тохируулна. `$code` нь хүчинтэй HTTP статус (100-599) бол `headerResponseCode()`-оор онооно; эс бөгөөс хариу `200` хэвээр үлдэнэ.
@@ -112,6 +112,9 @@ DI Container авах.
 #### `getService(string $id): mixed`
 Container-аас service авах.
 
+#### `hasService(string $id): bool`
+Container-д тухайн service бүртгэлтэй эсэхийг буцаана (container байхгүй бол `false`).
+
 #### `invalidateCache(string ...$keys): void`
 Заасан cache key-үүдийг устгана. `{code}` placeholder ашиглавал бүх хэлээр давтана. Cache байхгүй бол алгасна.
 
@@ -129,6 +132,12 @@ Script path буцаах (subdirectory дэмжлэг).
 
 #### `getDocumentRoot(): string`
 Document root зам буцаах.
+
+#### `getMountPath(): string`
+Ажиллаж буй Application-ий mount path буцаана (жш: `/dashboard`, root дээр mount хийсэн бол `''`).
+
+#### `setLanguageCode(string $code): void`
+`LocalizationMiddleware`-ийн өгсөн session key-д (`localization['session_key']`) хэлний код бичнэ; key нь `null` бол (Web) юу ч хийхгүй.
 
 ---
 
@@ -237,7 +246,7 @@ JWT decode + validate хийх. Хугацаа дууссан бол `RuntimeExc
 4. RBAC эрхүүдийг ачаална (`rbac.{userId}` cache) - байгууллагын шалгалтаас өмнө, coder эсэхийг мэдэхийн тулд
 5. Байгууллагын хандалтыг шалгана: энгийн хэрэглэгчид `organizations_users` гишүүнчлэлийн мөр заавал; `system_coder` бол cross-tenant superuser тул зөвхөн байгууллага идэвхтэй байхад хангалттай (хандах эрх рольоос гарна - гишүүнчлэлийн мөр шаардахгүй, үүсгэхгүй)
 6. `User` объект үүсгэж request attribute-д нэмнэ
-7. Алдаа гарвал `/dashboard/login` руу redirect хийнэ. Хөтчийн хуудас нээлт (GET/HEAD + `Accept: text/html`, dashboard root/home-оос бусад) дээр анхны зам + query-г `?redirect=...` параметрээр дамжуулна - `LoginController` үүнийг шүүж (зөвхөн dashboard mount доорх same-origin зам), амжилттай нэвтэрсний дараа `login.html` тэр хуудас руу шилжүүлнэ
+7. Алдаа гарвал `/dashboard/login` руу redirect хийнэ - харин замын хоёр дахь сегмент нь `login` эсвэл `protected` (`/dashboard/login/*`, `/dashboard/protected/*`) бол redirect хийхгүй: хүсэлт `user` attribute-гүйгээр (anonymous) controller-т хүрэх тул тэдгээр controller өөрсдөө `isUserAuthorized()` шалгалт хийнэ. Хөтчийн хуудас нээлт (GET/HEAD + `Accept: text/html`, dashboard root/home-оос бусад) дээр анхны зам + query-г `?redirect=...` параметрээр дамжуулна - `LoginController` үүнийг шүүж (зөвхөн dashboard mount доорх same-origin зам), амжилттай нэвтэрсний дараа `login.html` тэр хуудас руу шилжүүлнэ
 
 ### SessionMiddleware
 
@@ -250,8 +259,8 @@ Session эхлүүлж, read-only route дээр write-lock-ийг эрт сул
 Raptor нь session cookie-ийн хугацааг кодоос 30 хоног болгодог (`session_set_cookie_params(...)`); server талын `gc_maxlifetime` / `save_path` нь PHP / host тохиргоогоор ажиллана. Host бүрд тааруулах (эсвэл тэр мөрийг устгаад php.ini-д даатгах) талаар [SESSION-LIFETIME.md](SESSION-LIFETIME.md)-аас үз.
 
 Constructor-аар `needsWrite` closure авна:
-- Dashboard: `fn($path, $method) => str_contains($path, '/login')`
-- Web: `fn($path, $method) => str_starts_with($path, '/language/') || ...`
+- Dashboard: `fn($path, $method) => str_contains($path, '/login') || empty($_SESSION['CSRF_TOKEN'])` (хоёр дахь нөхцөл нь CSRF token байхгүй үед үүсгэж чадахаар session-ийг бичих боломжтой үлдээнэ)
+- Web: `fn($path, $method) => str_starts_with(preg_replace('#^/[a-z]{2}(?=/|$)#', '', $path), '/session/')` (эхэнд байгаа хэлний prefix-ийг хасаад `/session/` route prefix-тэй тулгана)
 
 Closure null бол бүх route дээр session_write_close() дуудна.
 
@@ -278,13 +287,14 @@ Closure null бол бүх route дээр session_write_close() дуудна.
 |----------|------|---------|
 | `$profile` | `array` | Хэрэглэгчийн profile |
 | `$organization` | `array` | Байгууллагын мэдээлэл |
-| `$permissions` | `array` | RBAC эрхүүд |
+
+RBAC матриц (`RBAC::jsonSerialize()`-ийн үр дүн, `{alias}_{role} => [permission => true]` бүтэцтэй) нь private readonly `$rbac` property-д хадгалагдах бөгөөд зөвхөн `is()` / `hasRoleAlias()` / `can()`-аар хандана.
 
 | Метод | Тайлбар |
 |-------|---------|
 | `is(string $role): bool` | Role шалгах |
 | `hasRoleAlias(string $alias): bool` | Тухайн alias-д хамаарах ямар ч роль эзэмшдэг эсэхийг шалгах (роль key нь `{alias}_{name}`) - multi-tenant visibility-г alias-аар хянахад ашиглана |
-| `can(string $permission): bool` | Permission шалгах |
+| `can(string $permission, ?string $role = null): bool` | Permission шалгах; `$role` өгсөн бол зөвхөн тэр рольд байгаа эсэхийг шалгана. `system_coder` үргэлж `true` |
 
 ---
 
@@ -300,16 +310,21 @@ Closure null бол бүх route дээр session_write_close() дуудна.
 | Багана | Төрөл | Тайлбар |
 |--------|-------|---------|
 | `id` | bigint (PK) | Auto-increment |
-| `username` | varchar(50) | Нэвтрэх нэр |
-| `email` | varchar(100) | И-мэйл хаяг |
-| `password` | varchar(255) | Bcrypt hash |
-| `phone` | varchar(50) | Утас |
-| `first_name` | varchar(50) | Нэр |
-| `last_name` | varchar(50) | Овог |
-| `photo` | varchar(255) | Avatar зураг |
-| `is_active` | tinyint | Идэвхтэй эсэх |
+| `username` | varchar(128), unique | Нэвтрэх нэр |
+| `password` | varchar(255), default `''` | Bcrypt hash |
+| `first_name` | varchar(128) | Нэр |
+| `last_name` | varchar(128) | Овог |
+| `phone` | varchar(128) | Утас |
+| `email` | varchar(128), unique | И-мэйл хаяг |
+| `photo` | varchar(255) | Avatar-ын нийтийн URL |
+| `photo_file` | varchar(255) | Avatar-ын бодит файлын зам |
+| `photo_size` | int | Avatar-ын хэмжээ (bytes) |
+| `code` | varchar(2) | Сонгосон хэлний код |
+| `is_active` | tinyint, default 1 | Идэвхтэй эсэх |
 | `created_at` | datetime | Үүсгэсэн огноо |
+| `created_by` | bigint | Үүсгэсэн хэрэглэгч |
 | `updated_at` | datetime | Шинэчилсэн огноо |
+| `updated_by` | bigint | Шинэчилсэн хэрэглэгч |
 
 ---
 
@@ -341,6 +356,12 @@ Closure null бол бүх route дээр session_write_close() дуудна.
 
 Хэрэглэгчийн бүх role болон permission-г ачаалж `jsonSerialize()` хэлбэрээр буцаадаг.
 
+### Role
+
+**Файл:** `application/dashboard/rbac/Role.php`
+
+Ажиллагааны үеийн value object (Model биш). `fetchPermissions(\PDO $pdo, int $role_id)` нь рольд хамаарах permission-үүдийг `{alias}_{name} => true` хэлбэрээр ачаална; `hasPermission(string $permissionName): bool` нь O(1) хайлт. `RBAC` нь `{alias}_{name}` роль key бүрт нэг `Role` хадгална.
+
 ### Roles
 
 **Файл:** `application/dashboard/rbac/Roles.php`
@@ -355,15 +376,21 @@ Closure null бол бүх route дээр session_write_close() дуудна.
 
 **Хүснэгт:** `rbac_permissions`
 
-### RolePermissions
+### RolePermission
 
-**Файл:** `application/dashboard/rbac/RolePermissions.php`
+**Файл:** `application/dashboard/rbac/RolePermission.php`
+**Extends:** `codesaur\DataObject\Model`
 
-Role-Permission хамаарал.
+**Хүснэгт:** `rbac_role_permission`
+
+Role-Permission хамаарал (`role_id`, `permission_id`, `alias`).
 
 ### UserRole
 
 **Файл:** `application/dashboard/rbac/UserRole.php`
+**Extends:** `codesaur\DataObject\Model`
+
+**Хүснэгт:** `rbac_user_role`
 
 User-Role хамаарал.
 
@@ -376,19 +403,19 @@ User-Role хамаарал.
 **Файл:** `application/dashboard/file/FilesModel.php`
 **Extends:** `codesaur\DataObject\Model`
 
-Файлуудын мэдээлэл хадгалах. Хүснэгтийн нэр динамик (`setTable()`).
+Файлуудын мэдээлэл хадгалах. `setTable($name)` нь `{name}_files` хүснэгтэд харгалзана (жш: `setTable('news')` -> `news_files`).
 
 | Багана | Төрөл | Тайлбар |
 |--------|-------|---------|
 | `id` | bigint (PK) | Auto-increment |
-| `record_id` | bigint | Хамаарах бичлэгийн ID |
-| `file` | varchar(255) | Анхны файлын нэр |
-| `path` | varchar(255) | Хадгалагдсан зам |
-| `size` | bigint | Файлын хэмжээ (bytes) |
-| `type` | varchar(50) | Файлын төрөл (image, video, document...) |
-| `mime_content_type` | varchar(100) | MIME type |
-| `keyword` | varchar(255) | Түлхүүр үг |
-| `description` | text | Тайлбар |
+| `record_id` | bigint | Эцэг хүснэгт дэх холбогдох бичлэгийн ID (0 = холбогдоогүй) |
+| `file` | varchar(255) | Сервер дэх файлын бүтэн (absolute) зам |
+| `path` | varchar(255), default `''` | Файлын нийтийн URL |
+| `size` | int | Файлын хэмжээ (bytes) |
+| `type` | varchar(24) | Файлын төрөл (image, audio, video, application...) |
+| `mime_content_type` | varchar(127) | MIME type |
+| `keyword` | varchar(32) | Түлхүүр үг |
+| `description` | varchar(255) | Тайлбар |
 | `created_at` | datetime | Үүсгэсэн огноо |
 | `created_by` | bigint | Үүсгэсэн хэрэглэгч |
 | `updated_at` | datetime | Шинэчилсэн огноо |
@@ -403,10 +430,10 @@ User-Role хамаарал.
 | `index()` | Файлын менежмент хуудас |
 | `list(string $table)` | JSON файлын жагсаалт |
 | `upload()` | Файл upload хийх (хадгалахгүй, зөвхөн зөөх) |
-| `post(string $table)` | Upload + DB-д бүртгэх |
+| `post(string $table, int $record_id = 0)` | Upload + `{table}_files`-д бүртгэх; route-оор дуудахад зөвхөн `files` хүснэгтийг зөвшөөрнө (`record_id` 0 хэвээр) |
 | `modal(string $table)` | Файл сонгох modal |
 | `update(string $table, int $id)` | Файлын мэдээлэл шинэчлэх |
-| `delete(string $table)` | Бүрмөсөн устгах (Хогийн савд нөөцлөнө) |
+| `delete(string $table)` | DB бичлэгийг устгаж (зөвхөн `files` хүснэгт) Хогийн савд нөөцлөнө; бодит файл диск дээр үлдэнэ. `system_content_delete` эрх, эсвэл холбогдоогүй файлын эзэн байх шаардлагатай |
 
 ### FileRouter - Files маршрутууд
 
@@ -448,7 +475,7 @@ User-Role хамаарал.
 | `content` | mediumtext | HTML контент |
 | `source` | varchar(255) | Эх сурвалж |
 | `photo` | varchar(255) | Нүүр зураг |
-| `code` | varchar(2) | Хэлний код |
+| `code` | varchar(2) | Хэлний код, эсвэл бүх хэл дээр харагдах хэлнээс үл хамаарах бичлэгт `*` |
 | `type` | varchar(32, default: 'article') | Мэдээний төрөл |
 | `category` | varchar(32, default: 'general') | Ангилал |
 | `is_featured` | tinyint (default: 0) | Онцлох мэдээ |
@@ -465,7 +492,7 @@ User-Role хамаарал.
 > **Тэмдэглэл:** `is_active` багана news хүснэгтээс хасагдсан. Устгалтыг бүрмөсөн устгах + Хогийн сав аргаар хийнэ.
 
 #### `getRecentPublished(string $code, int $limit = 20): array`
-Сүүлийн нийтлэгдсэн мэдээнүүдийг буцаана. id, slug, title, description, photo, code, type, category, is_featured, comment, published_at, created_at, source талбаруудыг авна. `read_count` (dynamic) оруулаагүй тул cache-д тохиромжтой. HomeController-д `recent_news.{code}` cache key-ээр ашиглагдана.
+Тухайн хэлний болон хэлнээс үл хамаарах (`code='*'`) сүүлийн нийтлэгдсэн мэдээнүүдийг буцаана (`code IN (:code, '*')`). id, slug, title, description, photo, code, type, category, is_featured, comment, published_at, created_at, source талбаруудыг авна. `read_count` (dynamic) оруулаагүй тул cache-д тохиромжтой. HomeController-д `recent_news.{code}` cache key-ээр ашиглагдана.
 
 #### `generateSlug(string $title): string`
 SEO-friendly slug үүсгэх. Монгол кирилл транслитераци дэмждэг. Давхардвал дугаар залгана.
@@ -484,7 +511,7 @@ HTML контентоос товч хураангуй гаргах.
 | `/dashboard/news/list` | GET | `news-list` |
 | `/dashboard/news/insert` | GET+POST | `news-insert` |
 | `/dashboard/news/{uint:id}` | GET+PUT | `news-update` |
-| `/dashboard/news/view/{uint:id}` | GET | - |
+| `/dashboard/news/view/{uint:id}` | GET | `news-view` |
 | `/dashboard/news/delete` | DELETE | `news-delete` |
 | `/dashboard/news/reset` | DELETE | `news-sample-reset` |
 
@@ -505,8 +532,8 @@ HTML контентоос товч хураангуй гаргах.
 | `news_id` | bigint | Мэдээний холбоос (FK -> news) |
 | `parent_id` | bigint | Эцэг сэтгэгдэл, 1 түвшний хариулт (FK -> news_comments, self) |
 | `created_by` | bigint | Зохиогч хэрэглэгч (FK -> users, зочин бол null) |
-| `name` | varchar(128) | Сэтгэгдэл бичигчийн нэр |
-| `email` | varchar(128) | Сэтгэгдэл бичигчийн и-мэйл |
+| `name` | varchar(255) | Сэтгэгдэл бичигчийн нэр |
+| `email` | varchar(255) | Сэтгэгдэл бичигчийн и-мэйл |
 | `comment` | text | Сэтгэгдлийн текст |
 | `created_at` | datetime | Үүсгэсэн огноо |
 
@@ -520,9 +547,11 @@ HTML контентоос товч хураангуй гаргах.
 | Метод | Тайлбар |
 |-------|---------|
 | `index()` | Сэтгэгдлийн удирдлагын хуудас |
-| `list()` | JSON сэтгэгдлийн жагсаалт |
-| `view(int $id)` | Сэтгэгдлийн дэлгэрэнгүй |
-| `delete()` | Бүрмөсөн устгах (Хогийн савд нөөцлөнө) |
+| `list()` | JSON сэтгэгдлийн жагсаалт (бүх сэтгэгдэл, мэдээний гарчигтай JOIN) |
+| `view(int $id)` | Мэдээний харах хуудасны (`news-view`) `#comments` anchor руу redirect; `$id` нь мэдээний ID |
+| `comment(int $id)` | Админ `$id` мэдээнд үндсэн сэтгэгдэл бичих (`system_content_index` шаардана) |
+| `reply(int $id)` | Админ `$id` үндсэн сэтгэгдэлд хариулах (зөвхөн 1 түвшин, `system_content_update` шаардана) |
+| `delete()` | Сэтгэгдэл болон хариултуудыг нь бүрмөсөн устгах (Хогийн савд нөөцлөнө) |
 
 ### ContentsRouter - Comments маршрутууд
 
@@ -531,8 +560,9 @@ HTML контентоос товч хураангуй гаргах.
 | `/dashboard/news/comments` | GET | `comments` |
 | `/dashboard/news/comments/list` | GET | `comments-list` |
 | `/dashboard/news/comments/{uint:id}` | GET | `comments-view` |
+| `/dashboard/news/{uint:id}/comment` | POST | `news-comment` |
+| `/dashboard/news/comment/{uint:id}/reply` | POST | `news-comment-reply` |
 | `/dashboard/news/comments/delete` | DELETE | `comments-delete` |
-| `/dashboard/news/comment/{uint:id}/reply` | GET | - |
 
 ---
 
@@ -548,12 +578,12 @@ HTML контентоос товч хураангуй гаргах.
 | Багана | Төрөл | Тайлбар |
 |--------|-------|---------|
 | `id` | bigint (PK) | Auto-increment |
-| `name` | varchar(128) | Илгээгчийн нэр |
+| `name` | varchar(255) | Илгээгчийн нэр |
 | `phone` | varchar(50) | Илгээгчийн утас |
-| `email` | varchar(128) | Илгээгчийн и-мэйл |
+| `email` | varchar(255) | Илгээгчийн и-мэйл |
 | `message` | text | Мессежийн текст |
 | `code` | varchar(2) | Хэлний код |
-| `is_read` | tinyint | Уншсан эсэх (0=шинэ, 1=уншсан, 2=хариулсан) |
+| `is_read` | tinyint (default: 0) | Уншсан эсэх (0=шинэ, 1=уншсан, 2=хариулсан) |
 | `replied_note` | text | Админы хариултын тэмдэглэл |
 | `created_at` | datetime | Үүсгэсэн огноо |
 
@@ -603,7 +633,7 @@ HTML контентоос товч хураангуй гаргах.
 | `content` | mediumtext | HTML контент |
 | `source` | varchar(255) | Эх сурвалж |
 | `photo` | varchar(255) | Нүүр зураг |
-| `code` | varchar(2) | Хэлний код |
+| `code` | varchar(2) | Хэлний код, эсвэл бүх хэл дээр харагдах хэлнээс үл хамаарах бичлэгт `*` |
 | `type` | varchar(32, default: 'menu') | Хуудасны төрөл |
 | `category` | varchar(32, default: 'general') | Ангилал |
 | `position` | smallint (default: 100) | Эрэмбэ |
@@ -627,13 +657,10 @@ SEO-friendly slug үүсгэх. Монгол кирилл транслитера
 Slug-аар хуудас хайх.
 
 #### `getNavigation(string $code): array`
-Нийтлэгдсэн `*-menu` төрлийн хуудсуудаас мод бүтэцтэй навигаци буцаана. position, id-р эрэмбэлнэ.
-
-#### `buildTree(array $pages, int $parentId = 0): array`
-Хуудсуудын жагсаалтаас parent -> children -> submenu рекурсив мод бүтэц үүсгэх.
+Тухайн хэлний болон `code='*'` нийтлэгдсэн хуудсуудаас `type` нь `menu` эсвэл `-menu`-ээр төгссөн хуудсуудын мод бүтэцтэй навигаци буцаана. position, id-р эрэмбэлнэ. Модыг (parent -> children -> `submenu`) private туслах `buildTree(array $pages, int $parentId = 0)` үүсгэнэ.
 
 #### `getFeaturedLeafPages(string $code): array`
-Онцлох хуудсуудаас child-гүй (leaf) хуудсуудыг буцаана.
+Тухайн хэлний болон `code='*'` онцлох (`is_featured=1`, нийтлэгдсэн) хуудсуудаас child-гүй (leaf) хуудсуудыг буцаана.
 
 #### `getExcerpt(string $content, int $length = 200): string`
 HTML контентоос товч хураангуй гаргах.
@@ -647,7 +674,7 @@ HTML контентоос товч хураангуй гаргах.
 | `/dashboard/pages/list` | GET | `pages-list` |
 | `/dashboard/pages/insert` | GET+POST | `page-insert` |
 | `/dashboard/pages/{uint:id}` | GET+PUT | `page-update` |
-| `/dashboard/pages/view/{uint:id}` | GET | - |
+| `/dashboard/pages/view/{uint:id}` | GET | `page-view` |
 | `/dashboard/pages/delete` | DELETE | `page-delete` |
 | `/dashboard/pages/reset` | DELETE | `pages-sample-reset` |
 
@@ -655,12 +682,12 @@ HTML контентоос товч хураангуй гаргах.
 
 ## Content - References
 
-### ReferencesModel
+### ReferenceModel
 
-**Файл:** `application/dashboard/content/reference/ReferencesModel.php`
+**Файл:** `application/dashboard/content/reference/ReferenceModel.php`
 **Extends:** `codesaur\DataObject\LocalizedModel`
 
-Динамик хүснэгтийн нэртэй лавлагааны хүснэгт.
+Динамик хүснэгтийн нэртэй лавлагааны хүснэгт: `setTable('questions')` -> `reference_questions` (+ `reference_questions_content`). Үндсэн баганууд: `id`, `keyword` (varchar 128, unique), `category` (varchar 32), `created_at`/`created_by`, `updated_at`/`updated_by`; контент баганууд: `title` (varchar 255), `content` (mediumtext).
 
 ### ContentsRouter - References маршрутууд
 
@@ -693,7 +720,10 @@ HTML контентоос товч хураангуй гаргах.
 | `favicon` | varchar(255) | Favicon зам |
 | `apple_touch_icon` | varchar(255) | Apple icon зам |
 | `config` | text | JSON тохиргоо |
-| `is_active` | tinyint | Идэвхтэй эсэх |
+| `created_at` | datetime | Үүсгэсэн огноо |
+| `created_by` | bigint | Үүсгэсэн хэрэглэгч (FK -> users) |
+| `updated_at` | datetime | Шинэчилсэн огноо |
+| `updated_by` | bigint | Шинэчилсэн хэрэглэгч (FK -> users) |
 
 #### Контент баганууд (хэл тус бүр)
 
@@ -708,7 +738,7 @@ HTML контентоос товч хураангуй гаргах.
 | `copyright` | varchar(255) | Copyright |
 
 #### `retrieve(): array`
-Идэвхтэй (`is_active=1`) тохиргоог авах. Хоосон бол `[]`.
+`getRows()`-ийн сүүлийн тохиргооны бичлэгийг (`localized` контенттой нь) буцаана. Хоосон бол `[]`.
 
 ### SettingsMiddleware
 
@@ -736,21 +766,19 @@ Settings-г DB-с уншиж `settings` нэрийн request attribute-д inject
 
 | Хувьсагч | Төрөл | Анхдагч | Тайлбар |
 |----------|--------|---------|---------|
-| `RAPTOR_CONTACT_EMAIL_NOTIFY` | bool | true | Холбоо барих мессежийн имэйл мэдэгдэл toggle |
-| `RAPTOR_CONTACT_EMAIL_TO` | email | - | Мессежийн мэдэгдэл хүлээн авах имэйл |
-| `RAPTOR_ORDER_EMAIL_NOTIFY` | bool | true | Захиалгын имэйл мэдэгдэл toggle |
-| `RAPTOR_ORDER_EMAIL_TO` | email | - | Захиалгын мэдэгдэл хүлээн авах имэйл |
-| `RAPTOR_COMMENT_EMAIL_NOTIFY` | bool | false | Сэтгэгдлийн имэйл мэдэгдэл toggle |
-| `RAPTOR_COMMENT_EMAIL_TO` | email | - | Сэтгэгдлийн мэдэгдэл хүлээн авах имэйл |
-| `RAPTOR_REVIEW_EMAIL_NOTIFY` | bool | false | Үнэлгээний имэйл мэдэгдэл toggle |
-| `RAPTOR_REVIEW_EMAIL_TO` | email | - | Үнэлгээний мэдэгдэл хүлээн авах имэйл |
+| `RAPTOR_CONTACT_EMAIL_TO` | email | - | Мессежийн мэдэгдэл хүлээн авах имэйл (хоосон = мэдэгдэл унтраалттай) |
+| `RAPTOR_ORDER_EMAIL_TO` | email | - | Захиалгын мэдэгдэл хүлээн авах имэйл (хоосон = мэдэгдэл унтраалттай) |
+| `RAPTOR_COMMENT_EMAIL_TO` | email | - | Сэтгэгдлийн мэдэгдэл хүлээн авах имэйл (хоосон = мэдэгдэл унтраалттай) |
+| `RAPTOR_REVIEW_EMAIL_TO` | email | - | Үнэлгээний мэдэгдэл хүлээн авах имэйл (хоосон = мэдэгдэл унтраалттай) |
+
+Өөр ямар ч `name` 403-оор татгалзагдана.
 
 **Төрлийн ажиллагаа:**
-- `bool` - Одоогийн утгыг эсрэгээр солино (`value` талбар хэрэггүй). Хариуд `value: true|false`
+- `bool` - Одоогийн утгыг эсрэгээр солино (`value` талбар хэрэггүй). Хариуд `value: true|false`. Хэрэгжсэн ч framework-ийн template-үүд ашигладаггүй
 - `email` - `filter_var()` ашиглан имэйл формат шалгана. Хоосон утга нь хаягийг арилгана
 - `string` - Шалгалтгүй, шууд хадгална
 
-Messages, orders, comments, reviews жагсаалтын хуудасны дээд хэсэгт `system_coder` эрхтэй хэрэглэгчдэд харагддаг тохиргоо.
+Messages, orders, comments, reviews жагсаалтын хуудасны дээд хэсэгт `system_coder` эрхтэй хэрэглэгчдэд харагддаг тохиргоо. Тэдгээр template-ийн асаах/унтраах товч `type: 'email'` + хоосон `value` илгээдэг; controller-ууд мэдэгдлийн төлөв идэвхтэй эсэхийг `RAPTOR_*_EMAIL_TO` утга хоосон эсэхээс гаргана.
 
 ---
 
@@ -766,12 +794,12 @@ Messages, orders, comments, reviews жагсаалтын хуудасны дээ
 ### TextModel
 
 **Файл:** `application/dashboard/localization/text/TextModel.php`
-**Extends:** `codesaur\DataObject\Model`
+**Extends:** `codesaur\DataObject\LocalizedModel`
 
-Орчуулгын текстүүд (key -> value).
+Орчуулгын текстүүд (`localization_text` / `localization_text_content` хүснэгтүүд; контент багана `text` varchar(255)).
 
-#### `retrieve(array $languageCodes): array`
-Бүх орчуулгыг хэлний код -> key -> value бүтцээр буцаана.
+#### `retrieve(?string $code = null): array`
+`$code` өгвөл тухайн хэлний хавтгай `keyword -> text` map буцаана (`LocalizationMiddleware` ашиглана, `texts.{code}` cache). `null` бол бүх орчуулгыг `keyword -> хэлний код -> text` бүтцээр буцаана.
 
 ### LocalizationMiddleware
 
@@ -806,8 +834,8 @@ Request attribute-д `localization` массив inject хийнэ:
 
 PSR-3 стандартын лог систем. Өгөгдлийн санд хадгална.
 
-#### `setTable(string $table): void`
-Лог хүснэгтийн нэр тохируулах.
+#### `setTable(string $name)`
+Лог сувгийг тохируулна; бодит хүснэгт нь `{$name}_log` (`setTable('dashboard')` -> `dashboard_log`) бөгөөд анх ашиглахад индексүүдтэйгээ хамт үүснэ.
 
 #### `log(mixed $level, string|\Stringable $message, array $context = []): void`
 Лог бичих.
@@ -869,25 +897,28 @@ attribute-аас (entry point дээр суулгасан) уншиж ашигл
 
 **Файл:** `application/dashboard/SpamProtectionTrait.php`
 
-Cloudflare Turnstile болон линк-д суурилсан эвристик ашиглан спам хамгаалалтын методууд хангана.
+Нийтийн формуудын нэгдсэн спам хамгаалалт: honeypot талбар, HMAC token + timestamp, session-д суурилсан rate limit, Cloudflare Turnstile (зөвхөн `RAPTOR_TURNSTILE_SECRET_KEY` тохируулсан үед идэвхтэй) болон линкний тооны шүүлтүүр.
 
 ### Methods
 
 #### `getTurnstileSiteKey(): string`
 ENV тохиргооноос Turnstile site key буцаана. Тохируулаагүй бол хоосон string.
 
-#### `validateSpamProtection(): bool`
-Request-аас Cloudflare Turnstile токен шалгана. Баталгаажуулалт амжилттай эсвэл Turnstile тохируулаагүй бол `true` буцаана.
+#### `generateSpamToken(string $formName, int $ts): string`
+`"$formName-$ts"`-ийн `RAPTOR_JWT_SECRET`-ээр түлхүүрлэсэн HMAC-SHA256; формд `_ts`-ийн хажууд `_token` нэрээр оруулна. Secret заавал байх ёстой - `RAPTOR_JWT_SECRET` байхгүй бол `getSpamSecret()` `RuntimeException` шидэнэ (зориуд default secret-гүй).
 
-#### `checkLinkSpam(string $text): bool`
-Текстэд сэжигтэй линк загвар байгаа эсэх шалгана. Спам илэрвэл `true` буцаана.
+#### `validateSpamProtection(array $parsed, string $formName, string $sessionKey, int $rateLimit = 10, int $minTime = 2): void`
+POST body-г шалгана: honeypot `website` талбар хоосон байх, `_token` нь `generateSpamToken($formName, $_ts)`-тэй таарах, `_ts`-ээс хойш дор хаяж `$minTime` секунд, дээд тал нь 3600 секунд өнгөрсөн байх, `$_SESSION[$sessionKey]` нь `$rateLimit` секундээс хуучин байх, дараа нь Turnstile тохируулсан бол token-ийг нь шалгана. Алдаа гарвал 400/403/429 кодтой `\Exception` шидэнэ.
+
+#### `checkLinkSpam(string $text, int $maxLinks = 2): void`
+Текстэд `$maxLinks`-ээс олон URL (`http(s)://` эсвэл `www.`) байвал `\Exception('Too many links', 400)` шидэнэ.
 
 ### Хэрэглэдэг газрууд
 
 - `Web\Service\ContactController` - Холбоо барих форм илгээх
 - `Web\Content\NewsController` - Мэдээний сэтгэгдэл илгээх
-- `Web\Shop\ShopController` - Захиалга илгээх
-- `Dashboard\Authentication\LoginController` - Бүртгүүлэх, нууц үг сэргээх
+- `Web\Shop\ShopController` - Захиалга болон үнэлгээ илгээх
+- `Dashboard\Authentication\LoginController` - нэвтрэх, бүртгүүлэх, нууц үг сэргээх формууд (өөрийн `spamCheck()` нь `generateSpamToken()` / `getTurnstileSiteKey()`-г дахин ашиглана; Turnstile зөвхөн бүртгүүлэхэд шалгагдана)
 
 ---
 
@@ -946,7 +977,7 @@ Dashboard UI рендерлэлт, эрхийн мэдэгдэл, sidebar цэс
 Энэ trait-ийг ашигладаг controller нь trait-ийн public API-тай (`dashboardTemplate`, `dashboardProhibited`, `modalProhibited`, `getUserMenu`, `getUserOrganizations`) ижил нэртэй метод тодорхойлж болохгүй - class метод trait методыг чимээгүй дарж, trait-ийн дотоод дуудлагуудыг эвдэнэ.
 
 #### `dashboardTemplate(string $template, array $vars = []): FileTemplate`
-`dashboard.html` layout дотор контент рендерлэнэ. Sidebar цэс, topbar-ийн байгууллага солих жагсаалт (`user_organizations`), тохиргоо ачаална. Цэсийг cache-с уншина (`menu.{code}` key).
+`dashboard.html` layout дотор контент рендерлэнэ. Sidebar цэс, topbar-ийн байгууллага солих жагсаалт (`user_organizations`), тохиргоо ачаална. Цэсийг cache-с уншина (`menu.{code}` key). Мөн `raptor_name`, `raptor_version`, `raptor_modified` (`composer.json`-ийн `name` / `extra.version` / `extra.modified`-оос уншиж sidebar-ийн хувилбарын мөрөнд харуулна; байхгүй бол null) болон `has_web` (`Web\Application` байвал `true` - "Веблүү очих" sidebar холбоосыг асаана) хувьсагчдыг тохируулна.
 
 #### `dashboardProhibited(?string $alert = null, int|string $code = 0): FileTemplate`
 Эрхийн хориглолын мэдэгдэл dashboard layout дотор харуулна.
@@ -955,13 +986,13 @@ Dashboard UI рендерлэлт, эрхийн мэдэгдэл, sidebar цэс
 Эрхийн хориглолын modal (standalone, layout-гүй).
 
 #### `getUserMenu(): array`
-Хэрэглэгчийн эрх, байгууллагын alias, харагдах байдал, идэвхжилтээр шүүсэн sidebar цэс үүсгэнэ.
+Харагдах байдал (`is_visible=1`), байгууллагын alias, хэрэглэгчийн эрхээр шүүсэн sidebar цэс үүсгэнэ; дэд цэс нь хоосон үлдсэн эцэг цэсийг хасна.
 
 #### `getUserOrganizations(): array`
 Topbar-ийн байгууллага солих dropdown-д зориулж идэвхтэй байгууллагуудын жагсаалтыг `[['id' => ..., 'name' => ..., 'logo' => ...], ...]` хэлбэрээр буцаана. `system_coder`-т бүх идэвхтэй байгууллага (cross-tenant роль), бусдад зөвхөн гишүүнчлэлийнх; одоо нэвтэрсэн байгууллага үргэлж багтана. id=1 (системийн үндсэн байгууллага) жагсаалтад байвал үргэлж хамгийн эхэнд, бусад нь нэрийн эрэмбээр. Жагсаалт 1-ээс олон бол dropdown харагдаж, 10-аас олон бол хайлтын шүүлтүүртэй болно.
 
-#### `retrieveUsersDetail(?int ...$ids): array`
-`[user_id => "username - First Last (email)"]` map буцаана. ID өгөөгүй бол бүх хэрэглэгчид.
+#### `retrieveUsersDetail(?int ...$ids)`
+Protected туслах метод. `[user_id => "username - First Last (email)"]` map буцаана (алдаа гарвал хоосон массив). ID өгөөгүй бол бүх хэрэглэгчид.
 
 ---
 
@@ -981,10 +1012,12 @@ Topbar-ийн байгууллага солих dropdown-д зориулж ид�
 | `allowExtensions(array $exts)` | Зөвшөөрөх файлын extension-ууд |
 | `allowImageOnly()` | Зөвхөн зурагны extension зөвшөөрөх |
 | `allowCommonTypes()` | Түгээмэл вэб файлын төрлүүд зөвшөөрөх (зураг, баримт, медиа, архив) |
+| `allowAnything()` | Extension-ий whitelist-ийг цэвэрлэнэ (бүх extension зөвшөөрнө) |
 | `setSizeLimit(int $size)` | Дээд хэмжээ bytes-ээр |
 | `setOverwrite(bool $overwrite)` | Давхцах нэрийн файлыг дарж бичих эсэх |
-| `moveUploaded($uploadedFile, bool $optimize)` | Үндсэн upload: шалгаж, хадгалж, файлын мэдээлэл буцаана |
-| `optimizeImage(string $filePath)` | JPEG/PNG/GIF/WebP вэб-д зориулж хэмжээ/чанар optimize хийнэ |
+| `moveUploaded(string\|UploadedFileInterface $uploadedFile, bool $optimize = false, int $mode = 0755): array\|false` | Үндсэн upload (string бол `getUploadedFiles()` дахь key): шалгаж, хадгалж `[path, file, size, type, mime_content_type]` буцаана; амжилтгүй бол `false` (`getLastUploadError()`-оос шалтгааныг нь харна) |
+| `getLastUploadError(): int` | Сүүлийн амжилтгүй `moveUploaded()`-ийн `UPLOAD_ERR_*` код |
+| `optimizeImage(string $filePath): bool` | JPEG/PNG/GIF/WebP-г хэмжээ/чанараар optimize хийнэ (дээд өргөн `RAPTOR_CONTENT_IMG_MAX_WIDTH`, default 1920; чанар `RAPTOR_CONTENT_IMG_QUALITY`, default 90), EXIF эргүүлэлт хэрэглэнэ; зөвхөн эргүүлсэн эсвэл 10%-иас илүү жижигэрсэн үед файлыг солино |
 | `getMaximumFileUploadSize()` | `MIN(post_max_size, upload_max_filesize)` bytes-ээр |
 | `formatSizeUnits(?int $bytes)` | Хүний уншихад хялбар формат (жш: `10.5mb`) |
 | `unlinkByName(string $fileName)` | Upload хавтаснаас файл устгах |
@@ -1007,7 +1040,7 @@ POST `/dashboard/content/moedit/ai` - Хоёр горимтой:
 
 Хариу: `{status: 'success', html: '...'}` эсвэл `{status: 'error', message: '...'}`.
 
-`.env`-д `RAPTOR_OPENAI_API_KEY` шаардлагатай. Нэвтэрсэн хэрэглэгч шаардлагатай.
+`.env`-д `RAPTOR_OPENAI_API_KEY` шаардлагатай. Дуудагч нэвтэрсэн байхаас гадна `system_content_insert`, `system_content_update`, `system_product_insert`, `system_product_update` эрхийн аль нэгийг эзэмшсэн байх ёстой (үгүй бол 403). Хэрэглэгч бүрд 60 секундэд 30 OpenAI дуудлагын хязгаартай - `ai_ratelimit.{userId}` cache key-ээр (vision: зураг бүр нэг дуудлага; хэтэрвэл 429; cache service байхгүй бол алгасна). Vision горим нэг хүсэлтэд дээд тал нь 8 зураг авна (үгүй бол 400). Route нэр `moedit-ai`, CSRF хамгаалалттай.
 
 ---
 
@@ -1021,7 +1054,7 @@ POST `/dashboard/content/moedit/ai` - Хоёр горимтой:
 Dashboard sidebar-д модуль тус бүрийн уншаагүй үйлдлийн тоог badge-ээр харуулах систем. `*_log` хүснэгтүүдээс уншина.
 
 #### `list(): void`
-GET `/dashboard/badges` - Модуль бүрийн badge тоог JSON-оор буцаана. Өнгө: ногоон=create, цэнхэр=update, улаан=delete. Админы эрхээр шүүнэ. Өөрийн үйлдлийг тоолохгүй. Шинэ хэрэглэгчид 30 хоногийн lookback.
+GET `/dashboard/badges` - Модуль бүрийн badge тоог JSON-оор буцаана. Өнгө: ногоон=create, цэнхэр=update, улаан=delete, info=шинэ сэтгэгдэл/үнэлгээ. Админы эрхээр (`PERMISSION_MAP`) шүүнэ. Өөрийн үйлдлийг тоолохгүй - `/trash`-аас бусад (өөрийн устгасныг тэнд харуулах зорилготой). `orgScopedModules()`-д (default хоосон) жагсаасан модулиудыг харж буй админы одоогийн байгууллагаар нэмж шүүнэ - `system_coder` эсвэл `isSystemWideViewer()` (одоогийн байгууллага `id=1`) бол шүүхгүй. `/manual`, `/migrations` нь лог биш файлын тоогоор badge авна. Шинэ хэрэглэгчид 30 хоногийн lookback.
 
 #### `seen(): void`
 POST `/dashboard/badges/seen` - Модулийг уншсан гэж тэмдэглэнэ. `checked_at` timestamp шинэчилнэ.
@@ -1056,19 +1089,26 @@ POST `/dashboard/badges/seen` - Модулийг уншсан гэж тэмдэ�
 **Файл:** `application/dashboard/template/MenuModel.php`
 **Extends:** `codesaur\DataObject\LocalizedModel`
 
-Dashboard sidebar цэсний олон хэлтэй, parent/child бүтэцтэй model.
+**Хүснэгт:** `raptor_menu` (+ localized `title`-д `raptor_menu_content`)
+
+Dashboard sidebar цэсний олон хэлтэй, parent/child бүтэцтэй model. `__initial()` нь хэрэглэгчийн хоёр FK, `parent_id` дээрх индексийг нэмж, `MenuSeed::seed()`-ээр default цэсийг үүсгэнэ.
 
 ### Баганууд
 
 | Багана | Төрөл | Тайлбар |
 |--------|-------|---------|
-| `parent_id` | bigint | Эцэг цэсний ID (0 = root) |
+| `id` | bigint (PK) | Auto-increment |
+| `parent_id` | bigint (default: 0) | Эцэг цэсний ID (0 = root) |
 | `icon` | varchar(64) | Bootstrap Icons класс |
 | `href` | varchar(255) | Цэсний холбоос URL |
 | `alias` | varchar(64) | Байгууллагын alias шүүлтүүр |
 | `permission` | varchar(128) | Цэсийг харахад шаардагдах эрх |
-| `position` | smallint | Дэс дараалал |
-| `is_visible` | tinyint | Харагдах эсэх |
+| `position` | smallint (default: 100) | Дэс дараалал |
+| `is_visible` | tinyint (default: 1) | Харагдах эсэх |
+| `created_at` | datetime | Үүсгэсэн огноо |
+| `created_by` | bigint | Үүсгэсэн хэрэглэгч (FK -> users) |
+| `updated_at` | datetime | Шинэчилсэн огноо |
+| `updated_by` | bigint | Шинэчилсэн хэрэглэгч (FK -> users) |
 | `title` (localized) | varchar(128) | Хэл тус бүрийн цэсний нэр |
 
 ### Методууд
@@ -1090,9 +1130,9 @@ Dashboard sidebar цэсний олон хэлтэй, parent/child бүтэцт�
 |---------|-------|-----|
 | `/dashboard/home` | GET | `home` |
 | `/dashboard` | GET | - |
-| `/dashboard/search` | GET | - |
-| `/dashboard/stats` | GET | - |
-| `/dashboard/log-stats` | GET | - |
+| `/dashboard/search` | GET | `dashboard-search` |
+| `/dashboard/stats` | GET | `dashboard-stats` |
+| `/dashboard/log-stats` | GET | `dashboard-log-stats` |
 
 Нэрлэгдсэн `home` route нь `/dashboard/home` дээр; `/dashboard` (root) нь нэргүй alias хэлбэрээр мөн `HomeController::index` рүү заасан хэвээр. Sidebar-ийн active-илрүүлэлт prefix-д суурилдаг тул root дээрх home link бүх хуудсанд active болно; харин public вэб layout `{{ index }}/dashboard` руу шууд линк хийдэг тул root өөрөө үлдэх ёстой.
 
@@ -1132,7 +1172,7 @@ Dashboard ерөнхий хайлт - topbar хайлтын modal (Ctrl+K)-ий�
 | Маршрут | Метод | Нэр |
 |---------|-------|-----|
 | `/dashboard/manual` | GET | `manual` |
-| `/dashboard/manual/{file}` | GET | - |
+| `/dashboard/manual/{file}` | GET | `manual-view` |
 
 ### ManualController
 
@@ -1155,7 +1195,7 @@ Dashboard ерөнхий хайлт - topbar хайлтын modal (Ctrl+K)-ий�
 **Extends:** `codesaur\Http\Application\Application`
 
 Public вэб сайтын Application. Middleware pipeline:
-ExceptionHandler -> Container -> Session -> Localization -> Settings -> WebRouter
+ExceptionHandler -> MethodOverride -> BodyEncoding -> Container -> Session -> Localization (зөвхөн URL prefix, session key-гүй) -> Settings -> WebRouter
 
 ### WebRouter
 
@@ -1164,27 +1204,29 @@ ExceptionHandler -> Container -> Session -> Localization -> Settings -> WebRoute
 | Маршрут | Метод | Нэр | Тайлбар |
 |---------|-------|-----|---------|
 | `/` | GET | `home` | Нүүр хуудас |
-| `/language/{code}` | GET | `language` | Хэл солих |
-| `/page/{uint:id}` | GET | `page-by-id` | ID-р хуудас (slug руу redirect) |
+| `/page/{uint:id}` | GET | - | ID-р хуудас (slug руу redirect) |
 | `/page/{slug}` | GET | `page` | Хуудас үзэх |
 | `/contact` | GET | `contact` | Холбоо барих |
-| `/news/{uint:id}` | GET | `news-by-id` | ID-р мэдээ (slug руу redirect) |
+| `/news/{uint:id}` | GET | - | ID-р мэдээ (slug руу redirect) |
 | `/news/{slug}` | GET | `news` | Мэдээ үзэх |
 | `/news/type/{type}` | GET | `news-type` | Төрлөөр мэдээ |
 | `/archive` | GET | `archive` | Мэдээний архив |
-| `/products` | GET | `products` | Бүтээгдэхүүний жагсаалт |
-| `/product/{uint:id}` | GET | `product-by-id` | ID-р бүтээгдэхүүн (slug руу redirect) |
+| `/products` | GET | - | Бүтээгдэхүүний жагсаалт |
+| `/product/{uint:id}` | GET | - | ID-р бүтээгдэхүүн (slug руу redirect) |
 | `/product/{slug}` | GET | `product` | Бүтээгдэхүүн үзэх |
 | `/order` | GET | `order` | Захиалгын форм |
-| `/order` | POST | `order-submit` | Захиалга илгээх |
-| `/search` | GET | `search` | Хайлт |
+| `/search` | GET | `search` | Хайлт (`SearchController`) |
 | `/sitemap` | GET | `sitemap` | Sitemap хуудас |
 | `/sitemap.xml` | GET | - | XML sitemap |
 | `/rss` | GET | `rss` | RSS feed |
+| `/favicon.ico` | GET | - | Favicon redirect / 204 |
+| `/session/language/{code}` | GET | `language` | Тухайн хэлний нүүр рүү redirect (`/` эсвэл `/{code}/`); layout-ын хэлний dropdown нь одоо байгаа хуудасны хэл бүрийн URL руу заана |
 | `/session/contact-send` | POST | `contact-send` | Холбоо барих мессеж илгээх |
-| `/session/order` | POST | - | Захиалга илгээх (session) |
-| `/session/language/{code}` | GET | - | Тухайн хэлний нүүр рүү redirect (`/` эсвэл `/{code}/`); layout-ын хэлний dropdown нь одоо байгаа хуудасны хэл бүрийн URL руу заана |
+| `/session/order` | POST | `order-submit` | Захиалга илгээх |
 | `/session/news/{uint:id}/comment` | POST | `news-comment` | Мэдээнд сэтгэгдэл бичих |
+| `/session/product/{uint:id}/review` | POST | `product-review` | Бүтээгдэхүүний үнэлгээ илгээх |
+
+Нэргүй маршрутуудыг template болон PHP-ээс дуудахгүй (`|link` тэдгээрт `#` буцаана).
 
 ### HomeController
 
@@ -1195,7 +1237,7 @@ ExceptionHandler -> Container -> Session -> Localization -> Settings -> WebRoute
 |-------|---------|
 | `index()` | Нүүр хуудас (сүүлийн 20 нийтлэгдсэн мэдээ, хэлээр cache хийгдсэн) |
 | `favicon()` | Favicon redirect эсвэл 204 No Content cache header-тэй |
-| `language(string $code)` | Session хэл тохируулж нүүр хуудас руу redirect |
+| `language(string $code)` | Тухайн хэлний нүүр рүү 302 redirect (default хэлд `/`, бусад хэлд `/{code}/`); идэвхгүй код бол default хэл рүү. Session-д юу ч бичихгүй - вэбийн хэл зөвхөн URL prefix-ээс ирнэ |
 
 ### PageController
 
@@ -1244,6 +1286,15 @@ ExceptionHandler -> Container -> Session -> Localization -> Settings -> WebRoute
 | `orderSubmit()` | Захиалга боловсруулах (спам шалгах, validate, DB, и-мэйл, Discord) |
 | `reviewSubmit(int $id)` | Бүтээгдэхүүний үнэлгээ бичих (AJAX, спам хамгаалалт, и-мэйл + Discord мэдэгдэл) |
 
+### SearchController
+
+**Файл:** `application/web/service/SearchController.php`
+**Extends:** `TemplateController`
+
+| Метод | Тайлбар |
+|-------|---------|
+| `search()` | `?q=`-ээр хуудас, мэдээ, бүтээгдэхүүнээс хайлт (доод тал нь 2 тэмдэгт, title/slug/description/content/source/link дээр LIKE, эх сурвалж бүрээс 20 мөр, одоогийн хэл + `*` бичлэгүүд) |
+
 ### SeoController
 
 **Файл:** `application/web/service/SeoController.php`
@@ -1251,7 +1302,6 @@ ExceptionHandler -> Container -> Session -> Localization -> Settings -> WebRoute
 
 | Метод | Тайлбар |
 |-------|---------|
-| `search()` | Хуудас, мэдээ, бүтээгдэхүүнээс хайлт (доод тал нь 2 тэмдэгт) |
 | `sitemap()` | Хүнд ээлтэй sitemap хуудасны модтой |
 | `sitemapXml()` | Хайлтын системүүдэд XML sitemap |
 | `rss()` | RSS 2.0 feed (сүүлийн 20 мэдээ + 20 бүтээгдэхүүн) |
@@ -1263,7 +1313,7 @@ ExceptionHandler -> Container -> Session -> Localization -> Settings -> WebRoute
 
 | Метод | Тайлбар |
 |-------|---------|
-| `webTemplate(string $template, array $vars): FileTemplate` | Web layout + content нэгтгэх. $vars доторх title, code, description, photo key-г index layout-ийн SEO meta-д автоматаар map хийнэ. Тохиргоо, навигаци, онцлох хуудсуудыг ачаална (cache). |
+| `webTemplate(string $template, array $vars = []): FileTemplate` | Web layout + content нэгтгэх. $vars доторх title, code, description, photo key-г index layout-ийн SEO meta-д автоматаар map хийнэ (`code='*'`-ийг map хийхгүй, layout одоогийн хэл рүү буцна). `base_url`, `current_url`, `language_urls` (одоогийн хуудас хэл бүрээр), `hreflang_urls` (зөвхөн бүх хэл дээр байдаг хуудсанд), `canonical_url` тохируулна. Тохиргоо, навигаци, онцлох хуудсуудыг ачаална (cache). |
 
 ### ExceptionHandler
 
@@ -1285,7 +1335,7 @@ moedit editor-ийн AI товчинд зориулсан OpenAI API proxy.
 
 **Файл:** `application/dashboard/content/ContentsRouter.php`
 
-Контент модулийн бүх маршрутыг нэг дор бүртгэнэ. Files, News, Pages, References, Settings, Moedit AI.
+Контент модулийн бүх маршрутыг нэг дор бүртгэнэ: News, Comments, Pages, References, Settings, Messages, Moedit AI. Файлын маршрутууд `Dashboard\File\FileRouter`-т (`application/dashboard/file/FileRouter.php`) байна.
 
 ---
 
@@ -1301,26 +1351,26 @@ moedit editor-ийн AI товчинд зориулсан OpenAI API proxy.
 | Багана | Төрөл | Тайлбар |
 |--------|-------|---------|
 | `id` | bigint (PK) | Auto-increment |
-| `slug` | varchar(255) | SEO-friendly URL slug |
+| `slug` | varchar(255), unique | SEO-friendly URL slug |
 | `title` | varchar(255) | Бүтээгдэхүүний нэр |
-| `description` | text | Товч тайлбар |
-| `content` | longtext | HTML контент |
-| `price` | decimal(10,2) | Үнэ |
-| `sale_price` | decimal(10,2) | Хямдралын үнэ |
-| `sku` | varchar(50) | SKU код |
-| `barcode` | varchar(50) | Баркод |
-| `sizes` | varchar(255) | Хэмжээнүүд |
-| `colors` | varchar(255) | Өнгөнүүд |
-| `stock` | int | Нөөцийн тоо |
+| `description` | varchar(255) | Товч тайлбар |
+| `content` | mediumtext | HTML контент |
+| `price` | decimal(12,2), default 0 | Үнэ |
+| `sale_price` | decimal(12,2) | Хямдралын үнэ |
+| `sku` | varchar(64) | SKU код |
+| `barcode` | varchar(64) | Баркод |
+| `sizes` | text | Хэмжээнүүд |
+| `colors` | text | Өнгөнүүд |
+| `stock` | int, default 0 | Нөөцийн тоо |
 | `link` | varchar(255) | Гадаад холбоос |
 | `photo` | varchar(255) | Нүүр зураг |
-| `code` | varchar(6) | Хэлний код |
-| `type` | varchar(50) | Бүтээгдэхүүний төрөл |
-| `category` | varchar(50) | Ангилал |
-| `is_featured` | tinyint | Онцлох бүтээгдэхүүн |
-| `comment` | tinyint | Сэтгэгдэл идэвхтэй |
-| `read_count` | int | Үзэлтийн тоо |
-| `published` | tinyint | Нийтлэгдсэн эсэх |
+| `code` | varchar(2) | Хэлний код, эсвэл бүх хэл дээр харагдах хэлнээс үл хамаарах бичлэгт `*` |
+| `type` | varchar(32), default 'product' | Бүтээгдэхүүний төрөл |
+| `category` | varchar(32), default 'general' | Ангилал |
+| `is_featured` | tinyint, default 0 | Онцлох бүтээгдэхүүн |
+| `review` | tinyint, default 1 | Үнэлгээ идэвхтэй |
+| `read_count` | bigint, default 0 | Үзэлтийн тоо |
+| `published` | tinyint, default 0 | Нийтлэгдсэн эсэх |
 | `published_at` | datetime | Нийтлэгдсэн огноо |
 | `published_by` | bigint | Нийтлэсэн хэрэглэгч |
 | `created_at` | datetime | Үүсгэсэн огноо |
@@ -1331,7 +1381,7 @@ moedit editor-ийн AI товчинд зориулсан OpenAI API proxy.
 #### `generateSlug(string $title): string`
 SEO-friendly slug үүсгэх. Монгол кирилл транслитераци дэмждэг.
 
-#### `getExcerpt(string $content, int $length = 150): string`
+#### `getExcerpt(string $content, int $length = 200): string`
 HTML контентоос товч хураангуй гаргах.
 
 ### ProductOrdersModel
@@ -1372,7 +1422,7 @@ HTML контентоос товч хураангуй гаргах.
 | `/dashboard/products/list` | GET | `products-list` |
 | `/dashboard/products/insert` | GET, POST | `product-insert` |
 | `/dashboard/products/{uint:id}` | GET, PUT | `product-update` |
-| `/dashboard/products/view/{uint:id}` | GET | - |
+| `/dashboard/products/view/{uint:id}` | GET | `product-view` |
 | `/dashboard/products/delete` | DELETE | `product-delete` |
 | `/dashboard/products/reset` | DELETE | `products-sample-reset` |
 
@@ -1389,7 +1439,7 @@ HTML контентоос товч хураангуй гаргах.
 |---------|-------|-----|
 | `/dashboard/orders` | GET | `orders` |
 | `/dashboard/orders/list` | GET | `orders-list` |
-| `/dashboard/orders/view/{uint:id}` | GET | - |
+| `/dashboard/orders/view/{uint:id}` | GET | `order-view` |
 | `/dashboard/orders/{uint:id}/status` | PATCH | `order-status` |
 | `/dashboard/orders/delete` | DELETE | `order-delete` |
 
@@ -1403,22 +1453,24 @@ HTML контентоос товч хураангуй гаргах.
 
 PSR-14 event listener - Discord webhook мэдэгдэл илгээнэ. Өмнөх `DiscordNotifier` шууд дуудлагын загварыг орлосон. `ListenerProvider`-ээр бүртгэгддэг.
 
-#### `__construct(string $webhookUrl)`
-`RAPTOR_DISCORD_WEBHOOK_URL` орчны хувьсагчаас Discord webhook URL авна.
+#### `__construct(DiscordNotifier $notifier)`
+Container-ийн `discord` сервисийг хүлээн авна; webhook URL-ийг `DiscordNotifier` өөрөө `RAPTOR_DISCORD_WEBHOOK_URL` орчны хувьсагчаас уншиж, хоосон бол илгээхгүй.
 
 #### `onContentEvent(ContentEvent $event): void`
-Контентийн үйлдлүүдийг боловсруулна (нэмэх, засах, устгах, нийтлэх) - Мэдээ, Хуудас, Бүтээгдэхүүн гэх мэт.
+Контентийн үйлдлүүдийг боловсруулна (нэмэх, засах, устгах, нийтлэх) - Мэдээ, Хуудас, Бүтээгдэхүүн гэх мэт. Тусгай чиглүүлэлт: `module='message'` + `action='new'` -> `newContactMessage()`, `module='comment'` + `action='insert'` -> `newComment()`, `module='review'` + `action='insert'` -> `newReview()`, `module='settings'` -> `settingsUpdated()` (event-ийн `title` нь хэсгийг агуулна: `texts`/`files`/`options`); бусад бүх тохиолдол -> `contentAction()`.
 
 #### `onUserEvent(UserEvent $event): void`
-Хэрэглэгчтэй холбоотой event-үүдийг боловсруулна (бүртгүүлэх, зөвшөөрөх).
+Хэрэглэгчтэй холбоотой event-үүдийг боловсруулна (`'signup_request'` -> `userSignupRequest()`, `'approved'` -> `userApproved()`); өөр action-ийг үл тоомсорлоно.
 
 #### `onOrderEvent(OrderEvent $event): void`
-Захиалгын event-үүдийг боловсруулна (шинэ захиалга, статус өөрчлөлт, үнэлгээ).
+Захиалгын event-үүдийг боловсруулна (`'new'` -> `newOrder()`, `'status_changed'` -> `orderStatusChanged()`); өөр action-ийг үл тоомсорлоно. Бүтээгдэхүүний үнэлгээ `ContentEvent` (`module='review'`)-ээр дамжина.
 
 #### `onDevRequestEvent(DevRequestEvent $event): void`
-Хөгжүүлэлтийн хүсэлтийн event-үүдийг боловсруулна (шинэ хүсэлт, шинэ хариулт).
+Хөгжүүлэлтийн хүсэлтийн event-үүдийг боловсруулна (`'new'` -> `newDevRequest()`, `'updated'` -> `devRequestUpdated()`); өөр action-ийг үл тоомсорлоно.
 
 #### Өнгөний тогтмолууд
+
+`DiscordNotifier` дээр `COLOR_*` нэрээр тодорхойлогдсон (`COLOR_SUCCESS`, `COLOR_INFO`, ...).
 
 | Тогтмол | Утга | Хэрэглээ |
 |---------|------|----------|
@@ -1481,7 +1533,7 @@ File-based, forward-only SQL migration систем. State нь disk дээрх 
 | `status()` | JSON: folder бүрийн pending/ran жагсаалт |
 | `view()` | AJAX modal: SQL агуулга + summary + SHA-256 + security warnings |
 | `upload()` | POST: `.sql` файл хүлээж аваад `{userId}-{username}/` руу хадгална. Max = `min(10 MB, php.ini post_max_size, upload_max_filesize)` |
-| `apply()` | POST: pending файлыг ажиллуулна. Sensitive table-д хандвал `confirm: 'CONFIRM'` шаардана |
+| `apply()` | POST `{folder, file, confirm?}`: pending файлыг ажиллуулна. Scanner-ийн ямар ч warning байвал `confirm: 'CONFIRM'` шаардана (үгүй бол 409 `needs_confirm`). Амжилттай бол файл `ran/` руу зөөгдөж, cache бүхэлдээ цэвэрлэгдэнэ (`cache->clear()`) - migration нь эрх, цэс, орчуулга, тохиргоог өөрчилсөн байж болно |
 | `delete()` | POST: pending файлыг устгана |
 
 ### MigrationRouter
@@ -1507,7 +1559,7 @@ Static SQL scanner - apply хийхээс өмнө sensitive хүснэгтэд 
 |-------|---------|
 | `scan(string $sql): array` | Warning жагсаалт буцаана. Хоосон бол safe |
 
-Sensitive хүснэгтүүд (`SENSITIVE_TABLES` const): `users`, `rbac_roles`, `rbac_permissions`, `rbac_user_role`, `rbac_role_permission`, `organizations`, `organizations_users`, `localization_language`, `raptor_menu`. Нэмж `GRANT/REVOKE`, `CREATE/DROP/ALTER USER` pattern-уудыг бас тэмдэглэнэ. SQL comment, string literal-аас үүдсэн false-positive-ийг мэдэрч таслана.
+Sensitive хүснэгтүүд (`SENSITIVE_TABLES` const): `users`, `rbac_roles`, `rbac_permissions`, `rbac_user_role`, `rbac_role_permission`, `organizations`, `organizations_users`, `localization_language`, `raptor_menu`. Нэмж DCL (`GRANT`/`REVOKE`, `CREATE`/`DROP`/`ALTER USER`) болон дурын `CREATE [TEMPORARY] TABLE`-ийг (хүснэгт Model классаас үүсэх ёстой) тэмдэглэнэ. Warning бүр `['level' => 'warning', 'reason' => '...']` бүтэцтэй. SQL comment, string literal-аас үүдсэн false-positive-ийг мэдэрч таслана.
 
 ---
 
@@ -1518,15 +1570,18 @@ Sensitive хүснэгтүүд (`SENSITIVE_TABLES` const): `users`, `rbac_roles`
 **Файл:** `application/dashboard/CacheService.php`
 **Namespace:** `Dashboard`
 
-Custom file-based DB cache (PSR-16 SimpleCache). Гадаад dependency-гүй, зөвхөн `psr/simple-cache` interface ашиглана. Document root-оос гадуурх, дээд түвшний `cache/` хавтаст (`logs/`-тэй ижил түвшинд) хадгалагдана. `ContainerMiddleware`-д `cache` service бүртгэгдсэн. TTL: 12 цаг (нөөц хамгаалалт). Cache байхгүй бол систем DB-ээс шууд уншина.
+Custom file-based DB cache (PSR-16 SimpleCache). Гадаад dependency-гүй, зөвхөн `psr/simple-cache` interface ашиглана. Document root-оос гадуурх, дээд түвшний `cache/` хавтаст (`logs/`-тэй ижил түвшинд) хадгалагдана. `ContainerMiddleware`-д `cache` service бүртгэгдсэн. TTL: 12 цаг (нөөц хамгаалалт). Cache хавтас ашиглах боломжгүй бол `fromDefaultPath()` factory `null` буцааж, систем DB-ээс шууд уншина.
 
 | Method | Тайлбар |
 |--------|---------|
-| `__construct(string $cacheDir, int $defaultTtl = 3600)` | Cache directory болон TTL тохируулна |
-| `get(string $key, mixed $default = null): mixed` | Cache-ээс утга авна, байхгүй бол default |
-| `set(string $key, mixed $value, ?int $ttl = null): bool` | Утга хадгална |
+| `__construct(string $cacheDir, int $defaultTtl = 3600)` | Cache directory + default TTL (0 = хугацаа дуусахгүй). Хавтас үүсгэж чадахгүй бол `RuntimeException` шидэнэ |
+| `static fromDefaultPath(int $ttl = 43200): ?self` | Framework-ийн runtime cache-ийг дээд түвшний `cache/` хавтаст (`dirname(SCRIPT_FILENAME, 2) . '/cache'`, `logs/`-тэй зэрэгцээ) үүсгэх factory. Хавтас ашиглах боломжгүй бол `null` буцаана. `ContainerMiddleware` (`cache` service) болон container үүсэхээс өмнө ажилладаг `JWTAuthMiddleware` шууд ашиглана |
+| `get(string $key, mixed $default = null): mixed` | Cache-ээс утга авна, байхгүй бол default; хугацаа дууссан бичлэгийг уншихдаа устгана |
+| `set(string $key, mixed $value, \DateInterval\|int\|null $ttl = null): bool` | Утга хадгална (`LOCK_EX`); `null` = default TTL |
+| `has(string $key): bool` | Key байгаа бөгөөд хугацаа нь дуусаагүй эсэх |
 | `delete(string $key): bool` | Cache устгана |
-| `clear(): bool` | Бүх cache цэвэрлэнэ |
+| `clear(): bool` | Бүх cache файлыг устгана |
+| `getMultiple()` / `setMultiple()` / `deleteMultiple()` | PSR-16 bulk хувилбарууд |
 
 ### Cache-лэгдсэн өгөгдөл
 
@@ -1536,11 +1591,11 @@ Custom file-based DB cache (PSR-16 SimpleCache). Гадаад dependency-гүй,
 | `texts.{code}` | LocalizationMiddleware | TextController, LanguageController |
 | `settings.{code}` | SettingsMiddleware | SettingsController |
 | `menu.{code}` | DashboardTrait | TemplateController (цэс CRUD) |
-| `rbac.{userId}` | JWTAuthMiddleware | RBACController (`clear()`) |
+| `rbac.{userId}` | JWTAuthMiddleware (`CacheService::fromDefaultPath()`-аар - ContainerMiddleware-ээс өмнө ажилладаг) | RBACController (`clear()`) |
 | `pages_nav.{code}` | Web TemplateController | PagesController |
 | `featured_pages.{code}` | Web TemplateController | PagesController |
 | `recent_news.{code}` | HomeController | NewsController |
-| `reference.{code}` | (бэлтгэсэн) | ReferencesController |
+| `reference.{table}.{code}` (одоогоор `reference.templates.{code}`) | TemplateService (`template_service` container service) | ReferencesController |
 
 ### Middleware-д ашиглах
 
@@ -1584,7 +1639,7 @@ Seed болон Initial классууд шинэ суулгалт хийхэд 
 
 **Файл:** `application/dashboard/rbac/PermissionsSeed.php`
 
-`system_` угтвартай 18+ системийн эрх: `logger`, `rbac`, `user_*` (5), `organization_*` (4), `content_*` (6), `product_*` (5), `localization_*` (4), `templates_index`, `development`.
+`system` alias-тай 26 эрх (runtime key `system_{name}`), тус бүр `module` бүлэглэлийн утгатай: `logger`, `rbac`, `user_index/insert/update/delete/organization_set`, `organization_index/insert/update/delete`, `content_settings/index/insert/update/publish/delete`, `product_index/insert/update/publish/delete`, `localization_index/insert/update/delete`, `development`. `Permissions::__initial()`-аас дуудагдана.
 
 ### RolePermissionSeed
 
@@ -1594,22 +1649,23 @@ Seed болон Initial классууд шинэ суулгалт хийхэд 
 
 | Role | Хамрах хүрээ |
 |------|-------------|
-| `coder` | Super admin - бүх шалгалтыг алгасна |
-| `admin` | Бүх эрхтэй (development-с бусад) |
-| `manager` | Хэрэглэгч, байгууллага, контент, бүтээгдэхүүн, хэл, хөгжүүлэлт |
-| `editor` | Контент, бүтээгдэхүүн (index/insert/update/publish) |
-| `viewer` | Контент, бүтээгдэхүүн (зөвхөн index) |
+| `coder` | Super admin - бүх шалгалтыг алгасна (`Roles::__initial()`-д үүсдэг, энэ seed-ээр биш) |
+| `admin` | `system`-ийн бүх эрх, `development`-ийг оролцуулаад |
+| `manager` | `logger`; хэрэглэгч (index/insert/update/organization_set); байгууллага (index/update); бүх `content_*`; бүх `product_*`; хэл (index/insert/update); `development` |
+| `editor` | Контент, бүтээгдэхүүн (index/insert/update/publish), `localization_index` |
+| `viewer` | `content_index`, `product_index`, `localization_index` |
 
 ### MenuSeed
 
 **Файл:** `application/dashboard/template/MenuSeed.php`
 
-Dashboard sidebar цэсний бүтэц 3 хэсэгтэй (MN/EN):
-- **Contents** - Мессеж, Хуудас, Мэдээ, Файл, Хэл, Лавлагаа, Тохиргоо
-- **Shop** - Бүтээгдэхүүн, Захиалга
-- **System** - Хэрэглэгч, Байгууллага, Протокол, Хөгжүүлэлт, Гарын авлага, Migration, Цэс удирдлага
+Dashboard sidebar цэсний бүтэц 4 хэсэгтэй (MN/EN):
+- **Contents** (position 100) - Мессеж, Хуудас, Мэдээ, Файл, Хэл, Лавлагаа, Тохиргоо
+- **Shop** (200) - Бүтээгдэхүүн, Захиалга
+- **System** (900) - Хэрэглэгч, Байгууллага, Хандалтын протокол, Хөгжүүлэлтийн хүсэлт (дурын хэрэглэгч), Гарын авлага (дурын хэрэглэгч)
+- **Coder** (990, `permission='system_coder'`, зөвхөн coder рольд харагдана) - Database Migration, Хогийн сав, Цэс удирдлага
 
-Цэс бүр `permission` хамгаалалт, `position` дэс дараалалтай.
+Цэс бүр `position` дэс дараалалтай; хандалт хязгаартай бол `permission` хамгаалалттай (системийн байгууллагад л зориулсан бол мөн `alias='system'`).
 
 ### TextInitial
 
@@ -1674,6 +1730,8 @@ Trash бичлэгийг бүрмөсөн устгана.
 **Файл:** `application/dashboard/trash/TrashController.php`
 **Extends:** `Dashboard\Controller`
 
+Зөвхөн `system_coder` дүртэй хэрэглэгчид (бүх үйлдэл). Mutating маршрутууд `CsrfMiddleware`-тэй.
+
 | Метод | Тайлбар |
 |-------|---------|
 | `index()` | Хогийн савны удирдлагын хуудас |
@@ -1700,13 +1758,18 @@ Trash бичлэгийг бүрмөсөн устгана.
 | `FilesController` | `files` |
 | `MessagesController` | `messages` |
 | `DevRequestController` | `dev_requests` |
+| `UsersController` (идэвхгүй болгосон хэрэглэгч + бүртгүүлэх хүсэлт) | `users` |
+| `OrganizationController` (идэвхгүй болгосон байгууллага) | `organizations` |
 
 #### Restore алгоритм
 
 1. **UNIQUE pre-flight** - schema-аас (MySQL: `information_schema.STATISTICS`, PostgreSQL: `pg_index`) UNIQUE баганаудыг олж тус бүрд live хүснэгтэд давхцал байгаа эсэхийг шалгана. Давхцалтай бол алдаа буцаах (slug, keyword, code, sku гэх мэт талбарыг тодруулж).
-2. **Original ID-аар оролдох** - FK холбоосыг (`comments.news_id` гэх мэт) хадгалахын тулд эхлээд анхны ID-аар insert хийнэ.
-3. **Auto-increment fallback** - `SQLSTATE 23000` (PRIMARY KEY conflict - UNIQUE-ийг pre-flight-аар үнэлсэн тул зөвхөн ID conflict ирнэ) гарвал ID-г хасч, DB-д шинэ ID олгуулна. Хүүхэд бичлэгүүдийн (comments гэх мэт) FK-г гар аргаар шинэчлэх шаардлагатай гэдгийг хариунд анхааруулга бичнэ.
+2. **Original ID-аар insert** - анхны ID сул эсэхийг шалгана (`SELECT id ... WHERE id=:id`); сул бол FK холбоосыг (`comments.news_id` гэх мэт) хадгалахын тулд тэр ID-аар insert хийнэ.
+3. **Auto-increment fallback** - анхны ID аль хэдийн эзлэгдсэн бол `id`-гүйгээр insert хийж, DB-д шинэ ID олгуулна. Хүүхэд бичлэгүүдийн (comments гэх мэт) FK-г гар аргаар шинэчлэх шаардлагатай гэдгийг хариунд анхааруулга бичнэ. (Exception барьж дахин оролдох арга ашигладаггүй: PostgreSQL transaction-ийг тасалдаг.)
 4. **LocalizedModel content** - snapshot-д `localized` массив байвал `{primary}_content` хүснэгтэд шинэ `parent_id`-аар тус хэлийн мөр бүрийг insert хийнэ.
+
+2-4-р алхам болон trash мөрийг устгах үйлдэл нэг transaction дотор явагдана; аль нэг нь бүтэлгүйтвэл бүгдийг rollback хийнэ.
+
 5. **Хоёр давхар аудит лог** - `trash_log`-д (`action='trash-restore'`, `restored_by`, `restored_at`, `original_id`, `new_id`, `used_original_id`) ба `log_table` баганаас уншсан channel-д (`action='restore'`, `record_id=<new_id>`) бичнэ. Энэ нь сэргээгдсэн бичлэгийн харах/засах хуудсан дээр Logger Protocol-аар "restored" мөр харагдахын тулд.
 
 ### TrashRouter
@@ -1728,11 +1791,11 @@ Trash бичлэгийг бүрмөсөн устгана.
 
 | Стратеги | Хэрэглэх газар | Метод |
 |----------|---------------|-------|
-| **Бүрмөсөн устгах + Хогийн сав** | News, Pages, Products, Orders, Reviews, Comments, Messages, Files, References, Settings, DevRequests, DevResponses, Menus, Texts, Languages | `deleteById()` дараа `TrashModel::store()` |
-| **Soft delete** (is_active=0) | Users, Organizations | `deactivateById()` |
+| **Бүрмөсөн устгах + Хогийн сав** | News, Pages, Products (+ хавсралт), Orders, Reviews, Comments, Messages, Files, References, DevRequests, Menus, Texts, Languages | Эхлээд `deleteById()`, дараа нь `TrashModel::store()` |
+| **Soft delete, дараа нь сонголтоор бүрмөсөн устгах + Хогийн сав** | Users, Organizations | `deactivateById()` (`is_active=0`); идэвхгүй болгосон бичлэгийг дараа нь бүрмөсөн устгаж болно (`/users/delete`, `/organizations/delete`) - `deleteById()` + `TrashModel::store()`. Бүртгүүлэх хүсэлт: `/users/signup/delete` мөн Хогийн савд нөөцлөн устгана |
 | **Токен идэвхгүй болгох** (is_active=0) | Forgot (нууц үг сэргээх токен - амжилттай ашиглагдмагц идэвхгүй болно, админы жагсаалтад "used" төлөвт үлдэнэ) | `deactivateById()` |
 
-`deactivate()` -> `delete()` болж өөрчлөгдсөн Controller-ууд:
+Хогийн савд нөөцөлдөг устгах маршрутууд:
 - `NewsController` (маршрут: `/dashboard/news/delete`)
 - `PagesController` (маршрут: `/dashboard/pages/delete`)
 - `ProductsController` (маршрут: `/dashboard/products/delete`)
@@ -1743,6 +1806,11 @@ Trash бичлэгийг бүрмөсөн устгана.
 - `FilesController` (маршрут: `/dashboard/files/{table}/delete`)
 - `ReferencesController` (маршрут: `/dashboard/references/delete`)
 - `DevRequestController` (маршрут: `/dashboard/dev-requests/delete`)
+- `LanguageController` (маршрут: `/dashboard/language/delete`)
+- `TextController` (маршрут: `/dashboard/text/delete`)
+- `TemplateController` (маршрут: `/dashboard/manage/menu/delete`)
+- `UsersController` (маршрут: `/dashboard/users/delete`, `/dashboard/users/signup/delete`)
+- `OrganizationController` (маршрут: `/dashboard/organizations/delete`)
 
 ---
 
@@ -1753,13 +1821,13 @@ Trash бичлэгийг бүрмөсөн устгана.
 **Файл:** `application/dashboard/notification/EventDispatcher.php`
 **Implements:** `Psr\EventDispatcher\EventDispatcherInterface`
 
-PSR-14 стандартын event dispatcher. `ListenerProvider`-аас listener-үүдийг авч event объектоор дуудна.
+PSR-14 стандартын event dispatcher. Listener provider-аас listener-үүдийг авч event объектоор дуудна.
 
-#### `__construct(ListenerProvider $provider)`
-`ListenerProvider` instance авна.
+#### `__construct(ListenerProviderInterface $listenerProvider)`
+PSR-14 дурын listener provider авна (framework `ListenerProvider` дамжуулна).
 
 #### `dispatch(object $event): object`
-Event-г бүртгэгдсэн бүх listener-үүдэд дамжуулна.
+Listener бүрийг дарааллаар дуудаж, event `isPropagationStopped()` гэж мэдэгдвэл эрт зогсоно; event-ийг буцаана.
 
 ### ListenerProvider
 
@@ -1768,25 +1836,31 @@ Event-г бүртгэгдсэн бүх listener-үүдэд дамжуулна.
 
 Event төрөл бүрд listener бүртгэж хангана.
 
-#### `addListener(string $eventClass, callable $listener): void`
-Тодорхой event класст listener бүртгэнэ.
+#### `listen(string $eventClass, callable $listener): void`
+Event класст listener бүртгэнэ.
 
 #### `getListenersForEvent(object $event): iterable`
-Өгөгдсөн event-ийн классад бүртгэгдсэн бүх listener-үүдийг буцаана.
+Event-ийн яг тэр класст бүртгэгдсэн listener-үүдийг, дараа нь эцэг класс бүрд бүртгэгдсэнийг yield хийнэ (тиймээс `Event::class` дээрх listener бүх event-ийг хүлээн авна).
+
+### Event
+
+**Файл:** `application/dashboard/notification/Event.php`
+
+Бүх event-ийн суурь класс. `StoppableEventInterface`-ийг хэрэгжүүлнэ (`isPropagationStopped()`, `stopPropagation()`), `public readonly string $user` агуулна - үйлдэл хийгчийн нэр, өгөөгүй бол `''` (`DiscordListener` тэгвэл `DiscordNotifier`-ийн хадгалсан админы нэр рүү fallback хийнэ).
 
 ### ContentEvent
 
 **Файл:** `application/dashboard/notification/ContentEvent.php`
 
-Контентийн үйлдлүүдэд дамжуулагддаг event.
+Контентийн үйлдлүүдэд дамжуулагддаг event. Constructor: `(string $action, string $module, string $title, ?int $id = null, string $user = '', array $updates = [])`.
 
 | Property | Төрөл | Тайлбар |
 |----------|-------|---------|
-| `$action` | string | Хийсэн үйлдэл (`'insert'`, `'update'`, `'delete'`, `'publish'`) |
-| `$module` | string | Модуль / контентийн төрөл (`'news'`, `'page'`, `'product'` гэх мэт) |
+| `$action` | string | Хийсэн үйлдэл (`'insert'`, `'update'`, `'delete'`, `'publish'`, мөн нийтийн холбоо барих мессежид `'message'` модультай `'new'`) |
+| `$module` | string | Модуль / контентийн төрөл (`'news'`, `'page'`, `'product'`, `'review'`, `'comment'`, `'message'`, `'settings'`, `'reference'`, `'language'`, `'text'`) |
 | `$title` | string | Контентийн гарчиг |
 | `$id` | ?int | Контент бичлэгийн ID |
-| `$user` | string | Үйлдэл хийсэн хэрэглэгч |
+| `$user` | string | Үйлдэл хийсэн хэрэглэгч (`Event`-ээс удамшсан) |
 | `$updates` | array | Өөрчлөгдсөн талбарууд (update үйлдэлд) |
 
 ### UserEvent
@@ -1797,7 +1871,7 @@ Event төрөл бүрд listener бүртгэж хангана.
 
 | Property | Төрөл | Тайлбар |
 |----------|-------|---------|
-| `$action` | string | Үйлдэл (`'signup_request'`, `'approved'`) |
+| `$action` | string | Үйлдэл (`'signup_request'`, `'approved'`) - `DiscordListener::onUserEvent()` зөвхөн эдгээрийг боловсруулна |
 | `$username` | string | Хэрэглэгчийн нэр |
 | `$email` | string | И-мэйл хаяг |
 
@@ -1809,7 +1883,7 @@ Event төрөл бүрд listener бүртгэж хангана.
 
 | Property | Төрөл | Тайлбар |
 |----------|-------|---------|
-| `$action` | string | Үйлдэл (`'new'`, `'status_changed'`, `'review'`) |
+| `$action` | string | Үйлдэл (`'new'`, `'status_changed'`) - `DiscordListener::onOrderEvent()` зөвхөн эдгээрийг боловсруулна |
 | `$orderId` | int | Захиалгын ID |
 | `$customer` | string | Захиалагчийн нэр |
 | `$email` | string | Захиалагчийн и-мэйл |
@@ -1827,7 +1901,7 @@ Event төрөл бүрд listener бүртгэж хангана.
 
 | Property | Төрөл | Тайлбар |
 |----------|-------|---------|
-| `$action` | string | Үйлдэл (`'new_request'`, `'new_response'`) |
+| `$action` | string | Үйлдэл (`'new'`, `'updated'`) - `DiscordListener::onDevRequestEvent()` зөвхөн эдгээрийг боловсруулна |
 | `$requestId` | int | Хүсэлтийн ID |
 | `$title` | string | Хүсэлтийн гарчиг |
 | `$assignedTo` | string | Хариуцсан хөгжүүлэгч |

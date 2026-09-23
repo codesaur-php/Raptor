@@ -148,13 +148,15 @@ RAPTOR_WAF_BODY_ENCODING=true
 ```
 public_html/index.php
  |-- /dashboard/* -> Dashboard\Application (Admin Panel)
- |    |-- Middleware stack (MethodOverride, BodyEncoding, Session, JWT, Container, Localization, Settings; CSRF per-route)
+ |    |-- Middleware stack (ErrorHandler, MethodOverride, BodyEncoding, Session, JWT, Container, Localization, Settings; CSRF per-route)
  |    |-- Routers (one per feature module, registered in Application.php)
  |    \-- Controllers -> Templates
  |
+ |-- /{xx}/* -> Web\Application mounted on /{xx} (two-letter language code; the default language has no prefix)
+ |
  \-- /* -> Web\Application (Public Website)
-      |-- Middleware stack (Session, Localization, Settings)
-      |-- WebRouter (/, /page/{id}, /news/{id}, /contact, /language/{code})
+      |-- Middleware stack (ExceptionHandler, MethodOverride, BodyEncoding, Container, Session, Localization, Settings)
+      |-- WebRouter (/, /page/{slug}, /news/{slug}, /contact, /products, /search, /session/language/{code}, ...)
       \-- TemplateController -> Templates
 ```
 
@@ -168,8 +170,9 @@ raptor/
 |   |-- dashboard/           # Admin panel application (also hosts the shared platform modules used by web)
 |   \-- web/                 # Public website application
 |-- public_html/             # Document root (index.php entry point, assets/)
+|-- bin/                     # Composer helper scripts (setup-env.php: .env copy + JWT secret)
 |-- database/
-|   \-- migrations/          # SQL migration files
+|   \-- migrations/          # SQL migration files (per-user folders, git-ignored)
 |-- tests/                   # PHPUnit tests (unit, integration)
 |-- docs/                    # Documentation (en/, mn/, conf.example/)
 |-- .github/

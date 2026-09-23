@@ -17,6 +17,10 @@ database/migrations/
 `-- ...
 ```
 
+`{username}` is sanitized for cross-OS safety: only `A-Z a-z 0-9 . _ -` are
+kept (anything else becomes `_`), at most 50 characters; a username with no
+allowed characters becomes `user`.
+
 State derivation:
 - File at `{user_folder}/*.sql` -> **pending**
 - File at `{user_folder}/ran/*.sql` -> **applied**
@@ -25,9 +29,12 @@ State derivation:
 
 1. A `system_coder` user uploads a `.sql` file via `/dashboard/migrations`.
 2. The file lands at `database/migrations/{userId}-{username}/{filename}.sql`.
-3. The coder clicks Apply. The framework scans the SQL for writes against
-   sensitive tables (`users`, `rbac_*`, `organizations*`, `localization_language`,
-   `raptor_menu`) and requires a typed `CONFIRM` if warnings are present.
+3. The coder clicks Apply. The framework scans the SQL and warns on writes
+   against sensitive tables (`users`, `rbac_*`, `organizations*`,
+   `localization_language`, `raptor_menu`), on DCL (`GRANT`/`REVOKE`,
+   `CREATE`/`DROP`/`ALTER USER`) and on any `CREATE TABLE` (tables belong in
+   Model classes). If there is at least one warning, a typed `CONFIRM` is
+   required.
 4. On success, the file moves to `{userId}-{username}/ran/` and the framework
    clears the application cache - a migration may have changed cached data
    (`rbac_*` permissions, `raptor_menu`, `localization_*` translations, settings),
@@ -39,9 +46,13 @@ State derivation:
 
 ```sql
 -- Optional first-line description (becomes the summary in the UI)
-ALTER TABLE products ADD COLUMN IF NOT EXISTS category VARCHAR(100) DEFAULT NULL;
-CREATE INDEX IF NOT EXISTS idx_products_category ON products (category);
+ALTER TABLE products ADD COLUMN category VARCHAR(100) DEFAULT NULL;
+CREATE INDEX idx_products_category ON products (category);
 ```
+
+(`ADD COLUMN IF NOT EXISTS` / `CREATE INDEX IF NOT EXISTS` are accepted by
+PostgreSQL and MariaDB but rejected by MySQL - use them only when the target
+database supports them.)
 
 Statements run in order; the first failure stops the rest and leaves the
 file pending. Fix the SQL (or delete the pending file via the UI), then

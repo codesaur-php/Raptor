@@ -1201,7 +1201,7 @@ class UsersController extends FileController
             ]);
 
             $this->dispatch(new \Dashboard\Notification\UserEvent(
-                'approve', $signup['username'], $signup['email']
+                'approved', $signup['username'], $signup['email']
             ));
 
             // Баталгаажуулалтын и-мэйл загвар авах (templates хүснэгтээс)

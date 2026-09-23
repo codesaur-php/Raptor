@@ -57,6 +57,17 @@ class DiscordListenerTest extends TestCase
         $this->listener->onContentEvent($event);
     }
 
+    public function testOnContentEventSettingsRoutesToSettingsUpdated(): void
+    {
+        $this->notifier->expects($this->once())
+            ->method('settingsUpdated')
+            ->with('texts', ['title', 'copyright'], 'TestAdmin');
+        $this->notifier->expects($this->never())->method('contentAction');
+
+        $event = new ContentEvent('update', 'settings', 'texts', null, '', ['title', 'copyright']);
+        $this->listener->onContentEvent($event);
+    }
+
     // --- UserEvent ---
 
     public function testOnUserEventSignupRequest(): void

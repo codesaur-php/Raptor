@@ -134,7 +134,7 @@ Then create a pull request on GitHub.
 - **Models** - `PascalCase` with `Model` suffix (e.g., `PagesModel`)
 - **Routers** - `PascalCase` with `Router` suffix (e.g., `ContentsRouter`)
 - **Middleware** - `PascalCase` with `Middleware` suffix (e.g., `JWTAuthMiddleware`)
-- **Templates** - `kebab-case` Template files (e.g., `index-files.html`)
+- **Templates** - `kebab-case` Template files (e.g., `files-update-modal.html`, `news-insert.html`)
 
 ---
 
@@ -211,6 +211,7 @@ If your change affects usage or public API:
 ### Required Updates
 
 - **README.md** - Update examples, usage instructions, or feature list
+- **docs/en/README.md, docs/mn/README.md** - Full documentation (configuration, architecture, module sections)
 - **docs/en/api.md** - Update API documentation for new methods or changed behavior
 - **docs/mn/api.md** - Mongolian API documentation (if applicable)
 - **CHANGELOG.md** - Add entry for notable changes

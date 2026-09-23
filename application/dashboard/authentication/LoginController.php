@@ -757,7 +757,7 @@ class LoginController extends \Dashboard\Controller
             }
 
             $this->dispatch(new \Dashboard\Notification\UserEvent(
-                'signup', $profile['username'], $profile['email']
+                'signup_request', $profile['username'], $profile['email']
             ));
         } catch (\Throwable $e) {
             $this->respondJSON(

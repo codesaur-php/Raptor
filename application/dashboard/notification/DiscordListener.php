@@ -49,6 +49,16 @@ class DiscordListener
             return;
         }
 
+        if ($event->module === 'settings') {
+            // SettingsController нь title-д тохиргооны хэсгийг (texts/files/options) дамжуулна
+            $this->notifier->settingsUpdated(
+                $event->title,
+                $event->updates,
+                $event->user ?: $this->notifier->user
+            );
+            return;
+        }
+
         $this->notifier->contentAction(
             $event->module,
             $event->action,

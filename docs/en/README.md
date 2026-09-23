@@ -62,10 +62,12 @@ Raptor works together with these codesaur packages:
 
 | Package | Purpose |
 |---------|---------|
-| `codesaur/http-application` | PSR-15 Application, Router, Middleware base |
+| `codesaur/http-application` | PSR-15 Application, Middleware base |
+| `codesaur/http-message` | PSR-7 ServerRequest / Response implementations |
+| `codesaur/router` | Router base class (pulled in by http-application) |
 | `codesaur/dataobject` | PDO-based ORM (Model, LocalizedModel) |
-| `codesaur/template` | Template engine wrapper |
-| `codesaur/http-client` | HTTP client (OpenAI API calls) |
+| `codesaur/template` | Template engine (Twig-style syntax, autoescape) |
+| `codesaur/http-client` | HTTP client (OpenAI, Brevo mail API, Discord webhook, Turnstile verification) |
 | `codesaur/container` | PSR-11 Dependency Injection Container |
 
 ---
@@ -126,6 +128,7 @@ CODESAUR_APP_ENV=development
 ### Database
 
 ```env
+RAPTOR_DB_DRIVER=mysql
 RAPTOR_DB_HOST=localhost
 RAPTOR_DB_NAME=raptor
 RAPTOR_DB_USERNAME=root
@@ -135,6 +138,7 @@ RAPTOR_DB_COLLATION=utf8mb4_unicode_ci
 RAPTOR_DB_PERSISTENT=false
 ```
 
+- `RAPTOR_DB_DRIVER` - `mysql` (default) or `pgsql`; see "Database Driver Selection" in section 5
 - In a new environment you MUST create the empty database yourself - Raptor only connects to an existing database, it never creates one (e.g. on MySQL: `CREATE DATABASE raptor CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`)
 - All tables inside it and the initial seed data (permissions, roles, translations, menu, sample content) are created automatically by Raptor's Model classes on first run
 - Never create the tables by hand - the code will not work against a mismatched schema
@@ -145,12 +149,20 @@ RAPTOR_DB_PERSISTENT=false
 RAPTOR_JWT_ALGORITHM=HS256
 RAPTOR_JWT_LIFETIME=2592000
 RAPTOR_JWT_SECRET=auto-generated
-#RAPTOR_JWT_LEEWAY=10
 ```
 
 - `RAPTOR_JWT_SECRET` - Auto-generated 128-character (64-byte hex) key by Composer script
 - `RAPTOR_JWT_LIFETIME` - Token validity in seconds (2592000 = 30 days)
-- `RAPTOR_JWT_LEEWAY` - Clock skew tolerance in seconds
+
+### Security
+
+```env
+RAPTOR_PASSWORD_RESET_MINUTES=10
+RAPTOR_SIGNUP_VERIFY_HOURS=72
+```
+
+- `RAPTOR_PASSWORD_RESET_MINUTES` - validity of a password-reset link and the per-email resend cooldown, in minutes
+- `RAPTOR_SIGNUP_VERIFY_HOURS` - validity of the signup e-mail verification link, in hours
 
 ### WAF Compatibility (mod_security)
 
@@ -187,9 +199,10 @@ Note: method override (the verb -> POST rewrite) has no off switch - it is alway
 ### Email
 
 ```env
-RAPTOR_MAIL_FROM=noreply@codesaur.domain
+RAPTOR_MAIL_FROM=noreply@codesaur.net
 #RAPTOR_MAIL_FROM_NAME="Raptor Notification"
 #RAPTOR_MAIL_REPLY_TO=
+#RAPTOR_MAIL_REPLY_TO_NAME=
 
 # Transport: brevo (default), smtp, mail
 #RAPTOR_MAIL_TRANSPORT=brevo
@@ -201,17 +214,27 @@ RAPTOR_MAIL_FROM=noreply@codesaur.domain
 #RAPTOR_SMTP_USERNAME=
 #RAPTOR_SMTP_PASSWORD=
 #RAPTOR_SMTP_SECURE=ssl
+
+# Admin e-mail notifications (an address = on, empty = off)
+RAPTOR_CONTACT_EMAIL_TO=
+RAPTOR_ORDER_EMAIL_TO=
+RAPTOR_COMMENT_EMAIL_TO=
+RAPTOR_REVIEW_EMAIL_TO=
 ```
 
 - `send()` selects transport based on `RAPTOR_MAIL_TRANSPORT` env var (brevo/smtp/mail)
+- `RAPTOR_*_EMAIL_TO` - recipient of the admin notification for contact messages, orders, comments and reviews; an empty value turns that notification off. `system_coder` can edit them from the module index pages (`SettingsController::updateEnv()`)
 
 ### OpenAI
 
 ```env
 #RAPTOR_OPENAI_API_KEY=sk-your-api-key-here
+#RAPTOR_OPENAI_MODEL=gpt-5-mini
+#RAPTOR_OPENAI_VISION_MODEL=gpt-5.1
 ```
 
-- Used by the moedit editor's AI button
+- Used by the moedit editor's AI button (`AIHelper`)
+- `RAPTOR_OPENAI_MODEL` / `RAPTOR_OPENAI_VISION_MODEL` - optional model overrides for the HTML and vision modes (defaults `gpt-5-mini` / `gpt-5.1`)
 
 ### Image Optimization
 
@@ -268,17 +291,17 @@ The framework includes 2 GitHub Actions workflows:
 
 #### CI (`.github/workflows/ci.yml`)
 
-Default workflow included in the repository. Runs code quality checks on every push and pull request:
+Default workflow included in the repository. Runs code quality checks on every push and pull request to `main`:
 
 - `composer validate --strict` - validate composer.json
-- PHP syntax check - all `.php` files
+- PHP syntax check - every `.php` file under `application/` and `public_html/`
 - Merge conflict markers - detect `<<<<<<<`, `=======`, `>>>>>>>`
 - Debug statements - `var_dump`, `dd`, `print_r` warnings
 - `composer dump-autoload --strict-psr` - autoload verification
 
 #### Deploy (`.github/workflows/deploy.yml`)
 
-Unified deploy workflow with 3 jobs: **FTP**, **SSH**, and **Windows Server self-hosted runner**. Each job runs only when its required secrets/variables are configured. All configured jobs run in parallel.
+Unified deploy workflow with 3 deploy jobs - **FTP**, **SSH**, and **Windows Server self-hosted runner** - plus a small `check-targets` pre-check job that detects which secrets/variables are set. Each deploy job runs only when its required secrets/variables are configured. All configured jobs run in parallel.
 
 **A / B / C** below are jobs of this workflow and cover virtually every environment - shared hosting, VPS, cloud VM, dedicated, Windows Server. **D** is outside the workflow: a fallback used only when none of A/B/C can reach the server.
 
@@ -289,7 +312,7 @@ Push to main -> CI workflow runs -> Success -> Deploy workflow starts
                                  -> Failure -> Deploy is skipped
 ```
 
-The deploy workflow uses a `workflow_run` trigger to wait for the CI workflow result. Deploy starts only when CI succeeds (`conclusion == 'success'`). If CI fails, deploy is `skipped` - broken code never reaches the server. If no deploy secrets/variables are configured (e.g. developer clone), all jobs are silently skipped.
+The deploy workflow uses a `workflow_run` trigger to wait for the CI workflow result. Deploy starts only when CI succeeds (`conclusion == 'success'`). If CI fails, deploy is `skipped` - broken code never reaches the server. If no deploy secrets/variables are configured (e.g. developer clone), the three deploy jobs are silently skipped (only `check-targets` runs).
 
 **A) FTP Deploy**
 
@@ -354,6 +377,7 @@ Full guide: [`docs/mn/CPANEL.md`](../mn/CPANEL.md)
 - **`.env`** - Create and configure manually on the server
 - **Runtime folder contents** - `cache/`, `logs/`, `protected/`, `public_html/public/` and `database/migrations/` deploy as folders with their guard files (`.htaccess` etc.) and are created on the server, but their runtime contents (cache entries, logs, uploaded files, migration SQL) are never uploaded, overwritten or deleted by a deploy. Each deploy path enforces this with its own mechanism, so the three filter lists in `deploy.yml` intentionally differ - see the comments there before "harmonizing" them.
 - **`docs/`, `tests/`** - Development only
+- **`.github/`, `nbproject/`, `phpunit.xml`, `.git*`, `error_log`** - Repository, IDE and test-runner files
 - **`vendor/`** - Built during the workflow with `composer install/update --no-dev`
 
 ---
@@ -367,11 +391,13 @@ public_html/index.php (Entry point)
 |
 |-- /dashboard/* -> Dashboard\Application (Admin Panel)
 |    |-- Middleware: ErrorHandler -> MethodOverride -> BodyEncoding -> Session -> JWT -> Container -> Localization -> Settings (CSRF is per-route)
-|    |-- Routers: Login, Users, Organization, RBAC, Localization, Contents, Messages, Comments, Logs, Template, Shop, Development, Migration
+|    |-- Routers: Login, Users, Organization, RBAC, Localization, Contents (news, pages, references, settings, messages, comments), Logs, Migration, Trash, Template, Home, Shop, Manual, Development, File, Badge
 |    \-- Controllers -> Templates -> HTML Response
 |
-\-- /* -> Web\Application (Public Website)
-     |-- Middleware: ExceptionHandler -> Container -> Session -> Localization -> Settings
+|-- /{xx}/* -> Web\Application mounted on /{xx} (xx = two-letter code of a non-default active language; sets the 'language_prefix' attribute)
+|
+\-- /* -> Web\Application (Public Website, default language - no prefix)
+     |-- Middleware: ExceptionHandler -> MethodOverride -> BodyEncoding -> Container -> Session -> Localization -> Settings
      |-- Router: WebRouter (/, /page, /news, /contact, /products, /order, /search, /sitemap, /rss, /session/language, /session/contact-send, /session/order, /session/news/{id}/comment, /session/product/{id}/review, ...)
      \-- Controllers -> Templates -> HTML Response
 ```
@@ -442,10 +468,12 @@ request's `pdo` attribute.
 | # | Middleware | Purpose |
 |---|-----------|---------|
 | 1 | `ExceptionHandler` | Renders error pages using templates |
-| 2 | `ContainerMiddleware` | DI Container |
-| 3 | `SessionMiddleware` | Session (stores language preference) |
-| 4 | `LocalizationMiddleware` | Multi-language |
-| 5 | `SettingsMiddleware` | Settings (logo, title, footer) |
+| 2 | `MethodOverrideMiddleware` | Restores PUT/PATCH/DELETE from `X-HTTP-Method-Override` (shared with the dashboard) |
+| 3 | `BodyEncodingMiddleware` | base64-decodes form fields sent with `X-Body-Encoding` (header-gated, no effect on plain web forms) |
+| 4 | `ContainerMiddleware` | DI Container |
+| 5 | `SessionMiddleware` | Session for the `/session/*` routes (contact form, order, comment, review spam state) |
+| 6 | `LocalizationMiddleware` | Language from the URL prefix only (`/en/...`), default language when there is no prefix - no session key |
+| 7 | `SettingsMiddleware` | Settings (logo, title, footer) |
 
 ### Database Driver Selection
 
@@ -497,7 +525,7 @@ RAPTOR_DB_DRIVER=pgsql
 
 ### 6.4 RBAC (Access Control)
 
-**Classes:** `RBACRouter`, `RBACController`, `RBAC`, `Roles`, `Permissions`, `RolePermissions`, `UserRole`
+**Classes:** `RBACRouter`, `RBACController`, `RBAC`, `Role`, `Roles`, `Permissions`, `RolePermission`, `UserRole`
 
 - Create and manage roles
 - Create and manage permissions
@@ -542,7 +570,7 @@ $this->isUserCan('news_edit');
 - Page CRUD (hard delete with Trash backup) with simplified single-form interface (no type wizard)
 - Parent-child structure (multi-level navigation menu)
 - `position` field for ordering
-- `type` field: `content` (default), `nav` (parent/navigation page created via "Parent page" switch)
+- `type` field: free text with dropdown suggestions, default `menu`; pages whose type is `menu` or ends with `-menu` appear in the public navigation. Parent/child is set through the parent dropdown (`parent_id`), not through `type`
 - Parent pages (pages with children) automatically hide content fields (description, content, link, featured) in edit form
 - `is_featured` field: featured pages in footer (auto-reset to 0 when page becomes a parent)
 - `link` field: URL or local path with frontend + backend validation (`isValidLink()`)
@@ -553,7 +581,7 @@ $this->isUserCan('news_edit');
 
 ### 6.8 Content - References
 
-**Classes:** `ReferencesController`, `ReferencesModel`
+**Classes:** `ReferencesController`, `ReferenceModel`, `TemplateService` (e-mail template loader, cached)
 
 - Reference tables (key-value style)
 - Multi-language (LocalizedModel)
@@ -576,7 +604,7 @@ $this->isUserCan('news_edit');
 
 - Add / edit / remove languages
 - Translation text management (key -> value)
-- Session-based language selection
+- Language resolution: URL prefix (`language_prefix`, public web) -> session (`RAPTOR_LANGUAGE_CODE`, dashboard only) -> default language
 - Use in Templates: `{{ 'key'|text }}`
 
 ### 6.11 Logging
@@ -588,7 +616,7 @@ $this->isUserCan('news_edit');
 - Log levels: emergency, alert, critical, error, warning, notice, info, debug
 - Auto-captures server request metadata
 - Auto-captures authenticated user info
-- Error log viewer tab (system_coder users) - view PHP error.log directly in the Access Logs page
+- Error log viewer tab (system_coder users) - view the PHP error log file configured in `error_log` (`logs/code.log` by default) directly in the Access Logs page
 
 ### 6.12 Mail
 
@@ -599,12 +627,11 @@ $this->isUserCan('news_edit');
 
 ### 6.13 Template (Dashboard UI)
 
-**Classes:** `TemplateRouter`, `TemplateController`, `DashboardTrait`, `MenuModel`, `FileController`
+**Classes:** `TemplateRouter`, `TemplateController`, `DashboardTrait`, `MenuModel`
 
 - Dashboard layout rendering via `DashboardTrait::dashboardTemplate()`
 - Sidebar menu with i18n, permissions, parent/child hierarchy (`MenuModel`)
-- Menu management CRUD (insert, update, deactivate)
-- File upload, validation, image optimization via `FileController` base class
+- Menu management CRUD (insert, update, hard delete with Trash backup)
 - SweetAlert2, motable, moedit JS components
 - Responsive Bootstrap 5 design
 
@@ -647,7 +674,8 @@ $this->isUserCan('news_edit');
 - `DiscordListener` sends Discord webhook notifications for all event types
 - Controllers dispatch events via `$this->dispatch(new ContentEvent(...))` helper
 - `DiscordNotifier` stores admin name and dashboard URL (injected via `ContainerMiddleware`)
-- Notification types: user signup, user approval, new order, order status change, content actions (insert, update, delete, publish)
+- Notification types: user signup request, user approval, new order, order status change, new dev request / dev request response, new contact message, new news comment, new product review, settings update, content actions (insert, update, delete, publish)
+- The listener branches on the event's `action` string and silently ignores unknown values - a dispatcher must use exactly the actions listed in `docs/en/api.md` for each event class (`tests/Unit/Notification/EventDispatchServiceTest.php` scans for mismatches)
 - Color-coded Discord embed messages
 - Configured via `RAPTOR_DISCORD_WEBHOOK_URL` env variable
 - Gracefully skips if webhook URL is not set or listener is unavailable
@@ -663,9 +691,9 @@ $this->isUserCan('news_edit');
 
 ### 6.18 Site Service (Web)
 
-**Classes:** `SeoController`
+**Classes:** `SearchController`, `SeoController`
 
-- Full-text search across pages, news, and products
+- Full-text search across pages, news, and products (`SearchController`, `/search?q=`)
 - Human-readable sitemap with hierarchical page tree
 - XML sitemap (`/sitemap.xml`) for search engines
 - RSS 2.0 feed (`/rss`) with latest news and products
@@ -693,7 +721,7 @@ Sitemap: https://example.com/sitemap.xml
 - HMAC token validation with timestamp
 - Rate limiting per action (login 2s, signup 5s, forgot 10s)
 - Form expiration (1 hour max)
-- Minimum fill speed check (1 second)
+- Minimum fill time check (1 s for login/signup/forgot, 2-3 s for the public forms)
 - Cloudflare Turnstile CAPTCHA support (enabled when `RAPTOR_TURNSTILE_SECRET_KEY` is set in `.env`)
 - Link spam filter (blocks text with excessive URLs)
 - Applied to login, signup, forgot password, contact, comment, review, and order forms
@@ -760,8 +788,8 @@ Sitemap: https://example.com/sitemap.xml
 - Colored badge pills on sidebar menu items showing unseen activity counts per admin
 - Reads from existing `*_log` tables - no separate event table
 - Multi-tenant: `orgScopedModules()` scopes listed modules' badges to the viewing admin's organization, filtering by the record's org (`record_organization_id` in log context) with the actor's org as fallback; `system_coder` and admins viewing from the system organization (`isSystemWideViewer()`) see all organizations
-- Badge colors: green (create), blue (update), red (delete)
-- Up to 3 badges per module, shown left to right in green-blue-red order
+- Badge colors: green (create), info/cyan (new comment or review), blue (update), red (delete)
+- Up to 4 badges per module, shown left to right in green-info-blue-red order
 - Filters by admin permissions (PERMISSION_MAP) and excludes admin's own actions
 - First-time users get 30-day lookback
 - File-count badges for manual and migrations (non-log based)
@@ -769,7 +797,7 @@ Sitemap: https://example.com/sitemap.xml
 
 ### 6.25 Dashboard Home
 
-**Classes:** `HomeRouter`, `SearchController`, `WebLogStatsController`, `WebLogStats`
+**Classes:** `HomeRouter`, `HomeController`, `SearchController`, `WebLogStatsController`, `WebLogStats`
 
 - Dashboard home page with system overview
 - Topbar quick icons (search | language | theme): search modal (Ctrl+K) across news, pages, products, orders, users, organizations, dev-requests, messages, comments, and reviews (RBAC-filtered, each source gated by its module's index permission or row-level filter); language dropdown (session-persisted); light/dark theme dropdown (instant, no reload)
@@ -811,10 +839,9 @@ Sitemap: https://example.com/sitemap.xml
 
 **Classes:** `TrashRouter`, `TrashController`, `TrashModel`
 
-- Stores deleted content records as JSON snapshots before hard deletion
-- Replaces the old soft delete (`is_active=0`) pattern for content modules
-- 15 models lost the `is_active` column; `deactivateById()` replaced with `deleteById()` for: News, Pages, Products, Orders, Reviews, Comments, Messages, Files, References, Settings, DevRequests, DevResponses, Menus, Texts, Languages
-- Users and Organizations still use soft delete (`is_active` column retained)
+- Stores JSON snapshots of content records right after their hard deletion (`deleteById()` first, then `TrashModel::store()`)
+- Content models have no `is_active` column; deletion goes through `deleteById()` + Trash for: News, Pages, Products, Orders, Reviews, Comments, Messages, Files, References, DevRequests, Menus, Texts, Languages
+- Users, Organizations and Forgot (password-reset tokens) keep the `is_active` column (soft delete / token consumption); a deactivated user or organization can then be hard-deleted into Trash
 - Dashboard interface for viewing, inspecting, and managing deleted records
 - **Restore**: returns a record to its source table. Tries the original ID first to preserve FK references, falls back to auto-increment on PRIMARY KEY conflict; aborts with an admin-friendly message on UNIQUE collisions (slug, keyword, code, sku, etc.); LocalizedModel `_content` rows are restored alongside the primary row
 - **Dual restore audit logging**: each restore writes to both `trash_log` (full audit) and the channel named by the trash record's `log_table` column, so the entry shows up in Logger Protocol on the record's view/update page. Controllers pass the log channel name directly to `TrashModel::store()` (e.g. `ReviewsController` -> `'products'`, `ReferencesController` -> `'content'`)
@@ -836,7 +863,8 @@ When calling `template()` from a controller, these variables are automatically a
 | `user` | Authenticated `User` object (may be null) |
 | `index` | Script path (subdirectory support) |
 | `localization` | Language and translation data |
-| `request` | Current URL path |
+| `csrf_token` | CSRF token for the `csrf-token` meta tag |
+| `waf_body_encoding` | `'1'` / `'0'` flag for the `waf-body-encoding` meta tag |
 
 ### Custom Filters (registered by Controller)
 
@@ -844,7 +872,12 @@ When calling `template()` from a controller, these variables are automatically a
 |--------|-------|-------------|
 | `text` | `{{ 'key'\|text }}` | Get translation text |
 | `link` | `{{ 'route'\|link({'id': 5}) }}` | Generate URL from route name |
-| `basename` | `{{ path\|basename }}` | Extract filename (Web templates) |
+| `pattern` | `{{ 'page-view'\|pattern }}` | Route pattern with its placeholders kept (`/dashboard/pages/view/{id}`) for client-side JS |
+| `basename` | `{{ path\|basename }}` | Extract filename (content templates rendered via `webTemplate()`) |
+
+### Autoescape
+
+Every `{{ }}` string is HTML-escaped by default (`codesaur/template` ^5). Print real HTML with `|raw` (`{{ record['content']|raw }}`, `{{ text|nl2br|raw }}`, `{{ rows|json_encode|raw }}` inside scripts); use `|e('js')` for values placed in JS string literals. `Markup` objects and nested template objects (the layouts' `{{ content }}`) are never escaped; call `setAutoEscape(false)` only for non-HTML output such as e-mail subjects.
 
 ### Twig features NOT supported
 
@@ -859,7 +892,7 @@ Use these alternatives in `codesaur/template`:
 | `{% verbatim %}`, `{% include %}`, `{% extends %}` | not available |
 | `\|date(format='Y-m-d')` | `\|date('Y-m-d')` (positional only) |
 
-> Since `codesaur/template` 4.1.0, `in` / `not in` membership, `ends with`, `matches` (regex), and `is even` / `is odd` ARE supported - e.g. `{% if type in ['image', 'video'] %}`.
+> `in` / `not in` membership, `ends with`, `matches` (regex), and `is even` / `is odd` ARE supported - e.g. `{% if type in ['image', 'video'] %}`.
 
 ### Example
 
@@ -868,7 +901,7 @@ Use these alternatives in `codesaur/template`:
 <h1>{{ 'welcome'|text }}</h1>
 
 <!-- Route link -->
-<a href="{{ 'page'|link({'id': page.id}) }}">{{ page.title }}</a>
+<a href="{{ 'page'|link({'slug': page.slug}) }}">{{ page.title }}</a>
 
 <!-- User check (object method calls supported) -->
 {% if user is not null and user.can('system_content_index') %}
@@ -885,7 +918,7 @@ Use these alternatives in `codesaur/template`:
 
 ## 8. Routing
 
-Raptor uses the Router class from the `codesaur/http-application` package.
+Raptor uses the `Router` class from the `codesaur/router` package (pulled in by `codesaur/http-application`).
 
 ### Defining Routes
 
@@ -922,9 +955,11 @@ class MyRouter extends \codesaur\Router\Router
 
 | Pattern | Description | Example |
 |---------|-------------|---------|
-| `{name}` | String parameter | `/page/{slug}` |
+| `{slug}` | String parameter (ASCII, URL-safe) | `/page/{slug}` |
+| `{int:id}` | Signed integer | `/offset/{int:id}` |
 | `{uint:id}` | Unsigned integer | `/page/{uint:id}` |
-| `{code}` | String (language code) | `/language/{code}` |
+| `{float:price}` | Float | `/price/{float:price}` |
+| `{utf8:name}` | UTF-8 string (Cyrillic etc.) | `/tag/{utf8:name}` |
 
 ### Registering Routers
 
@@ -937,8 +972,8 @@ $this->use(new MyRouter());
 ### Route Name Optimization
 
 Only use `->name('route-name')` when the route name is actually referenced via:
-- `{{ 'route-name'|link }}` in Templates
-- `$this->redirectTo('route-name')` in PHP controllers
+- `{{ 'route-name'|link }}` / `{{ 'route-name'|pattern }}` in Templates
+- `$this->generateRouteLink('route-name')` / `$this->redirectTo('route-name')` in PHP controllers
 
 Routes that are never referenced by name do not need `->name()`, reducing unnecessary overhead.
 
@@ -969,6 +1004,10 @@ All controllers extend `Dashboard\Controller`. Available methods:
 | `generateRouteLink($name, $params)` | Generate URL |
 | `getContainer()` | DI Container |
 | `getService($id)` | Get service |
+| `hasService($id)` | Service exists? |
+| `invalidateCache(...$keys)` | Delete cache keys (`{code}` placeholder iterates all languages) |
+| `getMountPath()` | Mount path of the running app (`/dashboard`) |
+| `setLanguageCode($code)` | Store the language in the session (no-op for web) |
 
 ### Example: Writing a New Controller
 
@@ -999,7 +1038,8 @@ class ProductsController extends \Dashboard\Controller
     {
         $body = $this->getRequest()->getParsedBody();
         $model = new ProductsModel($this->pdo);
-        $id = $model->insert($body);
+        $record = $model->insert($body);
+        $id = $record['id'];
 
         // Write log - use the standard `record_id` key so the entry shows up
         // in the record's Logger Protocol on its view/update page.
@@ -1076,8 +1116,14 @@ class CategoriesModel extends LocalizedModel
 
 | Method | Description |
 |--------|-------------|
-| `insert($record)` | Insert a record |
-| `updateById($id, $record)` | Update by ID |
+| `insert($record)` | Insert a record, returns the inserted row (LocalizedModel: `insert($record, $content)`) |
+| `updateById($id, $record)` | Update by ID (LocalizedModel: `updateById($id, $record, $content)`) |
+| `getById($id)` | Get single row by primary key |
+| `existsById($id)` | Row exists? |
+| `countRows($condition)` | Count rows matching a SELECT condition |
+| `hasColumn($name)` | Column declared on the model? |
+| `assertColumn($name)` | Throws `InvalidArgumentException` for an undeclared column (safe `GROUP BY` / selection) |
+| `orderBy($column, $dir)` | Driver-quoted `ORDER BY` fragment; throws for an undeclared column or a direction other than ASC/DESC (LocalizedModel returns the `p.` / `c.` alias) |
 | `deleteById($id)` | Hard delete by ID (used for content modules) |
 | `deactivateById($id, $record)` | Soft delete by ID (Users/Organizations soft delete, also consumes used Forgot tokens) |
 | `getRowWhere($with_values)` | Get single row by WHERE key=value conditions |
@@ -1130,13 +1176,15 @@ composer test:integration
 
 ### Configuration
 
-The `.env.testing` file contains test environment settings. Integration tests use a separate test database (e.g., `raptor12_test`).
+The `.env.testing` file contains test environment settings. Integration tests use a separate test database (`raptor_test`).
 
 ```env
-RAPTOR_DB_NAME=raptor12_test
+RAPTOR_DB_NAME=raptor_test
 ```
 
 ### Test Structure
+
+Selected files - `tests/Unit/` holds one folder per area (Authentication, Content, Controller, Exception, Localization, Log, Middleware, Migration, Notification, Router, Template, Trash, Web):
 
 ```
 tests/
@@ -1149,8 +1197,11 @@ tests/
 |   |   \-- UserTest.php       # User::is(), User::can() tests
 |   |-- Controller/
 |   |   \-- ControllerTextTest.php  # Controller::text() tests
-|   \-- Migration/
-|       \-- MigrationSecurityScannerTest.php  # Sensitive SQL pattern checks
+|   |-- Migration/
+|   |   \-- MigrationSecurityScannerTest.php  # Sensitive SQL pattern checks
+|   |-- Notification/
+|   |   \-- EventDispatchServiceTest.php      # Event action / listener contract
+|   \-- ...
 \-- Integration/
     |-- Model/
     |   |-- UsersModelTest.php          # User CRUD tests
@@ -1199,12 +1250,17 @@ class MyTest extends RaptorTestCase
 // application/dashboard/mymodule/MyModuleRouter.php
 namespace Dashboard\MyModule;
 
+use Dashboard\CsrfMiddleware;
+
 class MyModuleRouter extends \codesaur\Router\Router
 {
     public function __construct()
     {
-        $this->GET('/dashboard/mymodule', [MyModuleController::class, 'index'])->name('mymodule');
-        $this->GET_POST('/dashboard/mymodule/insert', [MyModuleController::class, 'insert'])->name('mymodule-insert');
+        // Paths are mount-naive: the app is mounted on /dashboard in public_html/index.php
+        $this->GET('/mymodule', [MyModuleController::class, 'index'])->name('mymodule');
+        $this->GET_POST('/mymodule/insert', [MyModuleController::class, 'insert'])
+            ->name('mymodule-insert')
+            ->middleware([CsrfMiddleware::class]);
     }
 }
 ```
@@ -1239,16 +1295,21 @@ $this->use(new MyModule\MyModuleRouter());  // New router
 
 ```php
 // application/web/WebRouter.php
-$this->GET('/products', [HomeController::class, 'products'])->name('products');
+$this->GET('/catalog', [HomeController::class, 'catalog'])->name('catalog');
 ```
 
 ```php
 // application/web/HomeController.php
-public function products()
+public function catalog()
 {
+    $code = $this->getLanguageCode();
     $model = new ProductsModel($this->pdo);
-    $products = $model->getRows(['WHERE' => "published=1 AND code='$code'"]);
-    $this->webTemplate(__DIR__ . '/products.html', ['products' => $products])->render();
+    // code IN (:code, '*') - language-neutral records show on every language
+    $products = $model->getRows([
+        'WHERE' => "published=1 AND code IN (:code, '*')",
+        'PARAM' => [':code' => $code]
+    ]);
+    $this->webTemplate(__DIR__ . '/catalog.html', ['products' => $products])->render();
 }
 ```
 

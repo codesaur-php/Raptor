@@ -3,6 +3,7 @@
 namespace Tests\Unit\Notification;
 
 use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 /**
  * ContainerMiddleware дээр events service бүртгэгдсэн эсэхийг шалгана.
@@ -128,6 +129,61 @@ class EventDispatchServiceTest extends TestCase
             $source,
             'DiscordNotifier must have host property'
         );
+    }
+
+    /**
+     * Action-аар салаалдаг event бүрийн хувьд: controller-оос dispatch хийсэн
+     * action нь DiscordListener-ийн харгалзах method-ийн боловсруулдаг утга
+     * байх ёстой. Listener нь танихгүй action-ийг чимээгүй алгасдаг тул
+     * буруу утга (жишээ нь OrderEvent('insert')) мэдэгдлийг ямар ч
+     * алдаагүйгээр алга болгоно. ContentEvent энд ороогүй - түүний
+     * танихгүй action contentAction() fallback руу очдог.
+     *
+     * @return array<string, array{string, string}>
+     */
+    public static function actionRoutedEvents(): array
+    {
+        return [
+            'OrderEvent' => ['OrderEvent', 'onOrderEvent'],
+            'UserEvent' => ['UserEvent', 'onUserEvent'],
+            'DevRequestEvent' => ['DevRequestEvent', 'onDevRequestEvent'],
+        ];
+    }
+
+    #[DataProvider('actionRoutedEvents')]
+    public function testDispatchedEventActionsAreHandledByListener(string $eventClass, string $listenerMethod): void
+    {
+        $listenerSource = \file_get_contents(
+            \dirname(__DIR__, 3) . '/application/dashboard/notification/DiscordListener.php'
+        );
+        \preg_match('/function\s+' . $listenerMethod . '\s*\(.*?\n    \}/s', $listenerSource, $m);
+        $this->assertNotEmpty($m, "$listenerMethod() method not found");
+        \preg_match_all('/\$event->action\s*===\s*\'([^\']+)\'/', $m[0], $handled);
+        $this->assertNotEmpty($handled[1], "$listenerMethod() must branch on \$event->action");
+
+        $files = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator(
+            \dirname(__DIR__, 3) . '/application', \FilesystemIterator::SKIP_DOTS
+        ));
+        $pattern = '/new\s+\\\\?(?:Dashboard\\\\Notification\\\\)?' . $eventClass . '\s*\(\s*\'([^\']+)\'/';
+        $found = 0;
+        foreach ($files as $file) {
+            if ($file->getExtension() !== 'php') {
+                continue;
+            }
+            $source = \file_get_contents($file->getPathname());
+            if (!\preg_match_all($pattern, $source, $dispatched)) {
+                continue;
+            }
+            foreach ($dispatched[1] as $action) {
+                $found++;
+                $this->assertContains($action, $handled[1], \sprintf(
+                    "%s dispatches %s('%s') but DiscordListener::%s() only handles: %s",
+                    \basename($file->getPathname()), $eventClass, $action,
+                    $listenerMethod, \implode(', ', $handled[1])
+                ));
+            }
+        }
+        $this->assertGreaterThan(0, $found, "No $eventClass dispatch found in application/");
     }
 
     /**

@@ -18,8 +18,8 @@ use Psr\Http\Server\RequestHandlerInterface;
  * concurrency сайжруулна.
  *
  * Constructor-аар needsWrite closure авна:
- *  - Dashboard: fn($path, $method) => str_contains($path, '/login')
- *  - Web: fn($path, $method) => str_starts_with($path, '/language/') || ...
+ *  - Dashboard: fn($path, $method) => str_contains($path, '/login') || empty($_SESSION['CSRF_TOKEN'])
+ *  - Web: fn($path, $method) => str_starts_with(preg_replace('#^/[a-z]{2}(?=/|$)#', '', $path), '/session/')
  *
  * Closure null бол бүх route дээр session_write_close() дуудна.
  */

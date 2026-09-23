@@ -2,6 +2,8 @@
 
 namespace Dashboard;
 
+use codesaur\DataObject\Constants;
+
 /**
  * Class DatabaseConnection
  *
@@ -9,8 +11,8 @@ namespace Dashboard;
  * helper класс. HTTP entry point болон тестүүд
  * бүгд энэ нэг газраас PDO авна.
  *
- * Driver сонголт `DRIVER` тогтмолоор хийгдэнэ ('mysql' | 'pgsql').
- * Тухайн системд DB сонгохдоо энэ тогтмолыг л өөрчилнө - өөр газар
+ * Driver сонголт `.env`-ийн `RAPTOR_DB_DRIVER` утгаар хийгдэнэ (`mysql` | `pgsql`).
+ * Тухайн системд DB сонгохдоо энэ утгыг л өөрчилнө - өөр газар
  * давтан тохируулах шаардлагагүй.
  *
  * @package Dashboard
@@ -24,8 +26,8 @@ final class DatabaseConnection
      */
     public static function driver(): string
     {
-        $driver = $_ENV['RAPTOR_DB_DRIVER'] ?? 'mysql';
-        if (!\in_array($driver, ['mysql', 'pgsql'], true)) {
+        $driver = $_ENV['RAPTOR_DB_DRIVER'] ?? Constants::DRIVER_MYSQL;
+        if (!\in_array($driver, [Constants::DRIVER_MYSQL, Constants::DRIVER_PGSQL], true)) {
             throw new \Exception(
                 "RAPTOR_DB_DRIVER зөвхөн 'mysql' эсвэл 'pgsql' байж болно. Авсан: '$driver'"
             );
@@ -45,7 +47,7 @@ final class DatabaseConnection
      */
     public static function connect(): \PDO
     {
-        return self::driver() === 'pgsql'
+        return self::driver() === Constants::DRIVER_PGSQL
             ? self::connectPostgres()
             : self::connectMySQL();
     }

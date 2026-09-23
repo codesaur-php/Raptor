@@ -6,7 +6,7 @@ namespace Dashboard\Notification;
  * Class UserEvent
  *
  * Хэрэглэгчтэй холбоотой event.
- * signup_request, approved, deactivated гэх мэт.
+ * action: signup_request, approved (DiscordListener::onUserEvent() зөвхөн эдгээрийг боловсруулна).
  *
  * @package Dashboard\Notification
  */

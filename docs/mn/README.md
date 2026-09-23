@@ -62,10 +62,12 @@ Raptor нь дараах codesaur packages-тэй хамтран ажиллан�
 
 | Package | Зориулалт |
 |---------|-----------|
-| `codesaur/http-application` | PSR-15 Application, Router, Middleware суурь |
+| `codesaur/http-application` | PSR-15 Application, Middleware суурь |
+| `codesaur/http-message` | PSR-7 ServerRequest / Response хэрэгжүүлэлт |
+| `codesaur/router` | Router суурь класс (http-application-аар дамжин ирнэ) |
 | `codesaur/dataobject` | PDO суурьтай ORM (Model, LocalizedModel) |
-| `codesaur/template` | Template engine wrapper |
-| `codesaur/http-client` | HTTP client (OpenAI API дуудлага) |
+| `codesaur/template` | Template engine (Twig-маягийн синтакс, autoescape) |
+| `codesaur/http-client` | HTTP client (OpenAI, Brevo mail API, Discord webhook, Turnstile шалгалт) |
 | `codesaur/container` | PSR-11 Dependency Injection Container |
 
 ---
@@ -126,6 +128,7 @@ CODESAUR_APP_NAME=raptor
 ### Өгөгдлийн сан
 
 ```env
+RAPTOR_DB_DRIVER=mysql
 RAPTOR_DB_HOST=localhost
 RAPTOR_DB_NAME=raptor
 RAPTOR_DB_USERNAME=root
@@ -135,6 +138,7 @@ RAPTOR_DB_COLLATION=utf8mb4_unicode_ci
 RAPTOR_DB_PERSISTENT=false
 ```
 
+- `RAPTOR_DB_DRIVER` - `mysql` (default) эсвэл `pgsql`; 5-р бүлгийн "Database driver сонголт"-ыг үз
 - Шинэ орчинд хоосон өгөгдлийн санг developer өөрөө заавал урьдчилж үүсгэнэ - Raptor зөвхөн бэлэн сан руу холбогддог, санг өөрөө үүсгэдэггүй (жишээ нь MySQL дээр: `CREATE DATABASE raptor CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`)
 - Харин сан доторх бүх хүснэгт болон анхны seed өгөгдлийг (permission, role, орчуулга, цэс, жишээ контент) Raptor анх ажиллах үедээ Model классуудаараа автоматаар үүсгэнэ
 - Хүснэгтүүдийг гараар үүсгэж болохгүй - бүтэц нь зөрсөн хүснэгт дээр код ажиллахгүй
@@ -145,12 +149,20 @@ RAPTOR_DB_PERSISTENT=false
 RAPTOR_JWT_ALGORITHM=HS256
 RAPTOR_JWT_LIFETIME=2592000
 RAPTOR_JWT_SECRET=auto-generated
-#RAPTOR_JWT_LEEWAY=10
 ```
 
 - `RAPTOR_JWT_SECRET` - Composer-ийн скриптээр автоматаар 128 тэмдэгт (64 байт hex) үүсгэнэ
 - `RAPTOR_JWT_LIFETIME` - Токений хүчинтэй хугацаа секундээр (2592000 = 30 хоног)
-- `RAPTOR_JWT_LEEWAY` - Серверийн цагийн зөрөөг зөвшөөрөх хугацаа
+
+### Аюулгүй байдал
+
+```env
+RAPTOR_PASSWORD_RESET_MINUTES=10
+RAPTOR_SIGNUP_VERIFY_HOURS=72
+```
+
+- `RAPTOR_PASSWORD_RESET_MINUTES` - нууц үг сэргээх холбоосын хүчинтэй хугацаа болон нэг имэйлд дахин илгээх хүлээлгийн хугацаа, минутаар
+- `RAPTOR_SIGNUP_VERIFY_HOURS` - бүртгүүлэх имэйл баталгаажуулах холбоосын хүчинтэй хугацаа, цагаар
 
 ### WAF Compatibility (mod_security)
 
@@ -187,9 +199,10 @@ URL болон JSON хариу нь жинхэнэ PUT-тэй яг ижил ту
 ### И-мэйл
 
 ```env
-RAPTOR_MAIL_FROM=noreply@codesaur.domain
+RAPTOR_MAIL_FROM=noreply@codesaur.net
 #RAPTOR_MAIL_FROM_NAME="Raptor Notification"
 #RAPTOR_MAIL_REPLY_TO=
+#RAPTOR_MAIL_REPLY_TO_NAME=
 
 # Transport: brevo (анхдагч), smtp, mail
 #RAPTOR_MAIL_TRANSPORT=brevo
@@ -201,17 +214,27 @@ RAPTOR_MAIL_FROM=noreply@codesaur.domain
 #RAPTOR_SMTP_USERNAME=
 #RAPTOR_SMTP_PASSWORD=
 #RAPTOR_SMTP_SECURE=ssl
+
+# Админы имэйл мэдэгдэл (хаяг бичвэл on, хоосон бол off)
+RAPTOR_CONTACT_EMAIL_TO=
+RAPTOR_ORDER_EMAIL_TO=
+RAPTOR_COMMENT_EMAIL_TO=
+RAPTOR_REVIEW_EMAIL_TO=
 ```
 
 - `send()` нь `RAPTOR_MAIL_TRANSPORT`-оос хамааран transport сонгоно (brevo/smtp/mail)
+- `RAPTOR_*_EMAIL_TO` - холбоо барих мессеж, захиалга, сэтгэгдэл, үнэлгээний админ мэдэгдэл хүлээн авагч; хоосон бол тухайн мэдэгдэл унтарна. `system_coder` тэдгээрийг модулийн index хуудаснаас засна (`SettingsController::updateEnv()`)
 
 ### OpenAI
 
 ```env
 #RAPTOR_OPENAI_API_KEY=sk-your-api-key-here
+#RAPTOR_OPENAI_MODEL=gpt-5-mini
+#RAPTOR_OPENAI_VISION_MODEL=gpt-5.1
 ```
 
-- moedit editor-ийн AI товчинд ашиглагдана
+- moedit editor-ийн AI товчинд ашиглагдана (`AIHelper`)
+- `RAPTOR_OPENAI_MODEL` / `RAPTOR_OPENAI_VISION_MODEL` - HTML болон vision горимын моделийг сонголтоор өөрчлөх (default `gpt-5-mini` / `gpt-5.1`)
 
 ### Зургийн optimize
 
@@ -268,17 +291,17 @@ Framework нь 2 GitHub Actions workflow-тэй:
 
 #### CI (`.github/workflows/ci.yml`)
 
-Repo-д анхнаасаа орсон default workflow. Push болон pull request бүрт код чанарын шалгалт хийнэ:
+Repo-д анхнаасаа орсон default workflow. `main` руу хийсэн push болон pull request бүрт код чанарын шалгалт хийнэ:
 
 - `composer validate --strict` - composer.json шалгах
-- PHP syntax check - бүх `.php` файлын синтакс
+- PHP syntax check - `application/`, `public_html/` доторх бүх `.php` файлын синтакс
 - Merge conflict markers - `<<<<<<<`, `=======`, `>>>>>>>` илрүүлэх
 - Debug statements - `var_dump`, `dd`, `print_r` анхааруулга
 - `composer dump-autoload --strict-psr` - autoload шалгах
 
 #### Deploy (`.github/workflows/deploy.yml`)
 
-Нэгдсэн deploy workflow, 3 job-той: **FTP**, **SSH**, болон **Windows Server self-hosted runner**. Job бүр зөвхөн шаардлагатай secrets/variables тохируулсан үед ажиллана. Тохируулсан бүх job-ууд зэрэг (parallel) ажиллана.
+Нэгдсэн deploy workflow, 3 deploy job-той - **FTP**, **SSH**, болон **Windows Server self-hosted runner** - дээр нь аль secrets/variables тохируулсныг илрүүлдэг жижиг `check-targets` урьдчилсан job. Deploy job бүр зөвхөн шаардлагатай secrets/variables тохируулсан үед ажиллана. Тохируулсан бүх job-ууд зэрэг (parallel) ажиллана.
 
 Доорх **A / B / C** нь энэ workflow-ийн job-ууд бөгөөд shared hosting, VPS, cloud VM, dedicated, Windows Server гээд бараг бүх орчныг хамарна. **D** нь workflow-оос гаднах, зөвхөн A/B/C-гийн аль нь ч сервер лүү хүрч чадахгүй онцгой орчны fallback.
 
@@ -289,7 +312,7 @@ Push to main -> CI workflow ажиллана -> Амжилттай бол -> Dep
                                      -> Амжилтгүй бол -> Deploy хийгдэхгүй
 ```
 
-Deploy workflow нь `workflow_run` trigger ашиглан CI workflow-н дүнг хүлээнэ. CI амжилттай дуусвал (`conclusion == 'success'`) deploy эхэлнэ. CI fail болвол deploy `skipped` болно - алдаатай код серверт очихгүй. Deploy-ийн secrets/variables тохируулаагүй бол (жишээ: developer clone) бүх job чимээгүй алгасагдана.
+Deploy workflow нь `workflow_run` trigger ашиглан CI workflow-н дүнг хүлээнэ. CI амжилттай дуусвал (`conclusion == 'success'`) deploy эхэлнэ. CI fail болвол deploy `skipped` болно - алдаатай код серверт очихгүй. Deploy-ийн secrets/variables тохируулаагүй бол (жишээ: developer clone) гурван deploy job чимээгүй алгасагдана (зөвхөн `check-targets` ажиллана).
 
 **A) FTP Deploy**
 
@@ -354,6 +377,7 @@ shared hosting. Ийм орчны нэг бодит жишээ нь Монгол
 - **`.env`** - Серверт гараар үүсгэж тохируулна
 - **Runtime хавтаснуудын агуулга** - `cache/`, `logs/`, `protected/`, `public_html/public/`, `database/migrations/` хавтаснууд guard файлуудтайгаа (`.htaccess` г.м.) deploy хийгдэж серверт үүснэ, харин доторх runtime агуулгыг нь (кэш, лог, upload файл, migration SQL) deploy хэзээ ч upload хийхгүй, дарахгүй, устгахгүй. Deploy зам бүр үүнийг өөр өөрийн механизмаар хангадаг тул `deploy.yml`-ийн гурван шүүлтүүрийн жагсаалт зориудаар ялгаатай - "жигдлэхээсээ" өмнө тэндхийн comment-уудыг уншина уу.
 - **`docs/`, `tests/`** - Зөвхөн хөгжүүлэлтийн зориулалттай
+- **`.github/`, `nbproject/`, `phpunit.xml`, `.git*`, `error_log`** - Repo, IDE, тест ажиллуулагчийн файлууд
 - **`vendor/`** - Workflow дотор `composer install/update --no-dev` ажиллуулж build хийнэ
 
 ---
@@ -367,11 +391,13 @@ public_html/index.php (Entry point)
 |
 |-- /dashboard/* -> Dashboard\Application (Админ панель)
 |    |-- Middleware: ErrorHandler -> MethodOverride -> BodyEncoding -> Session -> JWT -> Container -> Localization -> Settings (CSRF нь per-route)
-|    |-- Routers: Login, Users, Organization, RBAC, Localization, Contents, Messages, Comments, Logs, Template, Shop, Development, Migration
+|    |-- Routers: Login, Users, Organization, RBAC, Localization, Contents (news, pages, references, settings, messages, comments), Logs, Migration, Trash, Template, Home, Shop, Manual, Development, File, Badge
 |    \-- Controllers -> Templates -> HTML Response
 |
-\-- /* -> Web\Application (Нийтийн вэб сайт)
-     |-- Middleware: ExceptionHandler -> Container -> Session -> Localization -> Settings
+|-- /{xx}/* -> Web\Application, /{xx} дээр mount хийгдсэн (xx = default биш идэвхтэй хэлний хоёр үсэгт код; 'language_prefix' attribute тавина)
+|
+\-- /* -> Web\Application (Нийтийн вэб сайт, default хэл - prefix-гүй)
+     |-- Middleware: ExceptionHandler -> MethodOverride -> BodyEncoding -> Container -> Session -> Localization -> Settings
      |-- Router: WebRouter (/, /page, /news, /contact, /products, /order, /search, /sitemap, /rss, /session/language, /session/contact-send, /session/order, /session/news/{id}/comment, /session/product/{id}/review, ...)
      \-- Controllers -> Templates -> HTML Response
 ```
@@ -444,10 +470,12 @@ PDO холболт нь `public_html/index.php` entry point дотор
 | # | Middleware | Зориулалт |
 |---|-----------|-----------|
 | 1 | `ExceptionHandler` | Template ашиглан алдааны хуудас рендерлэнэ |
-| 2 | `ContainerMiddleware` | DI Container |
-| 3 | `SessionMiddleware` | Session (хэл хадгалах) |
-| 4 | `LocalizationMiddleware` | Олон хэл |
-| 5 | `SettingsMiddleware` | Тохиргоо (logo, title, footer) |
+| 2 | `MethodOverrideMiddleware` | `X-HTTP-Method-Override`-аас PUT/PATCH/DELETE-г сэргээнэ (dashboard-тай хуваалцсан) |
+| 3 | `BodyEncodingMiddleware` | `X-Body-Encoding`-той ирсэн form талбаруудыг base64-аас decode хийнэ (header-gated, энгийн вэб формд нөлөөгүй) |
+| 4 | `ContainerMiddleware` | DI Container |
+| 5 | `SessionMiddleware` | `/session/*` маршрутуудын session (холбоо барих форм, захиалга, сэтгэгдэл, үнэлгээний спам төлөв) |
+| 6 | `LocalizationMiddleware` | Хэл зөвхөн URL prefix-ээс (`/en/...`), prefix-гүй бол default хэл - session key-гүй |
+| 7 | `SettingsMiddleware` | Тохиргоо (logo, title, footer) |
 
 ### Database driver сонголт
 
@@ -499,7 +527,7 @@ RAPTOR_DB_DRIVER=pgsql
 
 ### 6.4 RBAC (Эрхийн удирдлага)
 
-**Классууд:** `RBACRouter`, `RBACController`, `RBAC`, `Roles`, `Permissions`, `RolePermissions`, `UserRole`
+**Классууд:** `RBACRouter`, `RBACController`, `RBAC`, `Role`, `Roles`, `Permissions`, `RolePermission`, `UserRole`
 
 - Role (дүр) үүсгэх, удирдах
 - Permission (эрх) үүсгэх, удирдах
@@ -544,7 +572,7 @@ $this->isUserCan('news_edit');
 - Хуудасны CRUD (бүрмөсөн устгах, Хогийн савд нөөцлөх), хялбаршуулсан нэг формтой интерфэйс (type wizard хасагдсан)
 - Parent-child бүтэц (олон түвшний навигацийн меню)
 - `position` талбараар эрэмбэлэх
-- `type` талбар: `content` (анхдагч), `nav` (эцэг/навигац хуудас - "Эцэг хуудас" switch ашиглан үүсгэнэ)
+- `type` талбар: dropdown санал бүхий чөлөөт текст, анхдагч `menu`; `type` нь `menu` эсвэл `-menu`-ээр төгссөн хуудсууд нийтийн навигацид гарна. Эцэг/хүүхэд холбоосыг `type`-аар биш, эцэг хуудасны dropdown-оор (`parent_id`) тохируулна
 - Эцэг хуудас (хүүхэдтэй хуудас) засах үед контент талбарууд (description, content, link, featured) нуугдана
 - `is_featured` талбар: Footer-д онцлох холбоос (хуудас эцэг болоход автоматаар 0 болно)
 - `link` талбар: URL эсвэл локал зам, frontend + backend шалгалттай (`isValidLink()`)
@@ -555,7 +583,7 @@ $this->isUserCan('news_edit');
 
 ### 6.8 Content - References (Лавлагаа)
 
-**Классууд:** `ReferencesController`, `ReferencesModel`
+**Классууд:** `ReferencesController`, `ReferenceModel`, `TemplateService` (и-мэйл загвар ачаалагч, cache-тэй)
 
 - Лавлагааны хүснэгтүүд (key-value хэлбэрийн)
 - Олон хэлтэй (LocalizedModel)
@@ -578,7 +606,7 @@ $this->isUserCan('news_edit');
 
 - Хэл нэмэх / засах / устгах
 - Орчуулгын текст удирдах (key -> value)
-- Session дээр суурилсан хэл сонголт
+- Хэл тодорхойлох дараалал: URL prefix (`language_prefix`, нийтийн вэб) -> session (`RAPTOR_LANGUAGE_CODE`, зөвхөн dashboard) -> default хэл
 - Template дотор `{{ 'key'|text }}` ашиглах
 
 ### 6.11 Log (Лог)
@@ -590,7 +618,7 @@ $this->isUserCan('news_edit');
 - Лог түвшин: emergency, alert, critical, error, warning, notice, info, debug
 - Server request metadata автоматаар бүртгэх
 - Хэрэглэгчийн мэдээлэл автоматаар бүртгэх
-- Error log таб (system_coder хэрэглэгчид) - PHP error.log файлыг Хандалтын протокол хуудаснаас шууд харах
+- Error log таб (system_coder хэрэглэгчид) - `error_log` тохиргоонд заасан PHP алдааны лог файлыг (default `logs/code.log`) Хандалтын протокол хуудаснаас шууд харах
 
 ### 6.12 Mail (И-мэйл)
 
@@ -601,12 +629,11 @@ $this->isUserCan('news_edit');
 
 ### 6.13 Template (Dashboard UI)
 
-**Классууд:** `TemplateRouter`, `TemplateController`, `DashboardTrait`, `MenuModel`, `FileController`
+**Классууд:** `TemplateRouter`, `TemplateController`, `DashboardTrait`, `MenuModel`
 
 - Dashboard layout рендерлэлт `DashboardTrait::dashboardTemplate()` ашиглан
 - Sidebar цэс олон хэл, эрх, parent/child бүтэцтэй (`MenuModel`)
-- Цэс удирдлагын CRUD (нэмэх, засах, идэвхгүй болгох)
-- Файл upload, шалгалт, зураг optimize `FileController` суурь классаар
+- Цэс удирдлагын CRUD (нэмэх, засах, бүрмөсөн устгах + Хогийн савд нөөцлөх)
 - SweetAlert2, motable, moedit зэрэг JS компонентууд
 - Responsive Bootstrap 5 дизайн
 
@@ -649,7 +676,8 @@ $this->isUserCan('news_edit');
 - `DiscordListener` нь бүх төрлийн event-д Discord webhook мэдэгдэл илгээнэ
 - Controller-ууд `$this->dispatch(new ContentEvent(...))` helper-ээр event дамжуулна
 - `DiscordNotifier` нь админы нэр, dashboard URL-г хадгална (`ContainerMiddleware`-д inject хийгдсэн)
-- Мэдэгдлийн төрлүүд: хэрэглэгч бүртгүүлсэн, хэрэглэгч зөвшөөрсөн, шинэ захиалга, захиалгын статус өөрчлөлт, контентийн үйлдлүүд (нэмэх, засах, устгах, нийтлэх)
+- Мэдэгдлийн төрлүүд: бүртгүүлэх хүсэлт, хэрэглэгч зөвшөөрсөн, шинэ захиалга, захиалгын статус өөрчлөлт, шинэ хөгжүүлэлтийн хүсэлт / хүсэлтийн хариу, шинэ холбоо барих мессеж, мэдээний шинэ сэтгэгдэл, бүтээгдэхүүний шинэ үнэлгээ, тохиргооны өөрчлөлт, контентийн үйлдлүүд (нэмэх, засах, устгах, нийтлэх)
+- Listener нь event-ийн `action` утгаар салаалж, танихгүй утгыг чимээгүй алгасна - dispatch хийгч нь event класс бүрийн хувьд `docs/mn/api.md`-д бичсэн action-уудыг яг тэр хэвээр нь ашиглах ёстой (`tests/Unit/Notification/EventDispatchServiceTest.php` зөрүүг илрүүлнэ)
 - Өнгөт Discord embed мессеж
 - `RAPTOR_DISCORD_WEBHOOK_URL` орчны хувьсагчаар тохируулна
 - Webhook URL тохируулаагүй эсвэл listener байхгүй бол чимээгүй алгасна
@@ -665,9 +693,9 @@ $this->isUserCan('news_edit');
 
 ### 6.18 Site Service (Web)
 
-**Классууд:** `SeoController`
+**Классууд:** `SearchController`, `SeoController`
 
-- Хуудас, мэдээ, бүтээгдэхүүн дундаас бүтэн текст хайлт
+- Хуудас, мэдээ, бүтээгдэхүүн дундаас бүтэн текст хайлт (`SearchController`, `/search?q=`)
 - Хүнд ээлтэй sitemap хуудас, шатлалтай хуудасны бүтэцтэй
 - XML sitemap (`/sitemap.xml`) хайлтын системүүдэд
 - RSS 2.0 feed (`/rss`) сүүлийн мэдээ, бүтээгдэхүүнтэй
@@ -695,7 +723,7 @@ Sitemap: https://example.com/sitemap.xml
 - HMAC токен цаг хугацааны хамт шалгах
 - Үйлдэл тус бүрийн хурд хязгаарлалт (login 2s, signup 5s, forgot 10s)
 - Формын хугацаа дуусах шалгалт (1 цагийн дотор)
-- Бөглөх хурдны доод хязгаар (1 секунд)
+- Бөглөх хугацааны доод хязгаар (нэвтрэх/бүртгүүлэх/нууц үг сэргээхэд 1 с, нийтийн формуудад 2-3 с)
 - Cloudflare Turnstile CAPTCHA дэмжлэг (`.env` дотор `RAPTOR_TURNSTILE_SECRET_KEY` тохируулсан үед идэвхжинэ)
 - Линк спам шүүлтүүр (хэт олон URL агуулсан текстийг хаана)
 - Нэвтрэх, бүртгүүлэх, нууц үг сэргээх, холбоо барих, сэтгэгдэл, үнэлгээ, захиалгын формуудад ашиглагдана
@@ -763,8 +791,8 @@ Sitemap: https://example.com/sitemap.xml
 - Sidebar цэсний зүйлс дээр модуль тус бүрийн уншаагүй үйлдлийн тоог өнгөт badge-ээр харуулна
 - `*_log` хүснэгтүүдээс уншина - тусдаа event хүснэгт шаардахгүй
 - Multi-tenant: `orgScopedModules()` жагсаасан модулийн badge-ийг харж буй админы байгууллагаар хязгаарлана - бичлэгийн байгууллагаар (log context-ийн `record_organization_id`) шүүж, байхгүй бол үйлдэгчийн байгууллага руу fallback хийнэ; `system_coder` болон системийн байгууллагаар нэвтэрсэн админ (`isSystemWideViewer()`) бүх байгууллагыг харна
-- Badge өнгө: ногоон (create), цэнхэр (update), улаан (delete)
-- Модуль бүрт 3 хүртэл badge, зүүнээс баруун тийш ногоон-цэнхэр-улаан дарааллаар
+- Badge өнгө: ногоон (create), info/усан цэнхэр (шинэ сэтгэгдэл эсвэл үнэлгээ), цэнхэр (update), улаан (delete)
+- Модуль бүрт 4 хүртэл badge, зүүнээс баруун тийш ногоон-info-цэнхэр-улаан дарааллаар
 - Админы эрхээр шүүж (PERMISSION_MAP), өөрийн үйлдлийг хасна
 - Шинэ хэрэглэгчид 30 хоногийн lookback
 - Manual, migration-д файлын тоон дээр суурилсан badge (лог бус)
@@ -772,7 +800,7 @@ Sitemap: https://example.com/sitemap.xml
 
 ### 6.25 Dashboard Home
 
-**Классууд:** `HomeRouter`, `SearchController`, `WebLogStatsController`, `WebLogStats`
+**Классууд:** `HomeRouter`, `HomeController`, `SearchController`, `WebLogStatsController`, `WebLogStats`
 
 - Dashboard нүүр хуудас системийн ерөнхий мэдээлэлтэй
 - Topbar түргэн icon-ууд (хайлт | хэл | загвар): хайлтын modal (Ctrl+K) - мэдээ, хуудас, бүтээгдэхүүн, захиалга, хэрэглэгч, байгууллага, хөгжүүлэлтийн хүсэлт, мессеж, сэтгэгдэл, үнэлгээнээс (RBAC шүүлтүүртэй - эх сурвалж бүр модулийнхаа index permission эсвэл мөрийн түвшний шүүлтээр хамгаалагдана); хэл солих dropdown (session-д хадгалагдана); цайвар/бараан загварын dropdown (reload-гүй шууд)
@@ -814,10 +842,9 @@ Sitemap: https://example.com/sitemap.xml
 
 **Классууд:** `TrashRouter`, `TrashController`, `TrashModel`
 
-- Бүрмөсөн устгахаас өмнө устгасан бичлэгүүдийг JSON хэлбэрээр хадгална
-- Контент модулиудын хуучин soft delete (`is_active=0`) загварыг орлосон
-- 15 model-оос `is_active` багана хасагдсан; `deactivateById()` нь `deleteById()` болж солигдсон: News, Pages, Products, Orders, Reviews, Comments, Messages, Files, References, Settings, DevRequests, DevResponses, Menus, Texts, Languages
-- Users болон Organizations нь soft delete хэвээр хадгалагдсан (`is_active` багана хэвээр)
+- Контент бичлэгийг бүрмөсөн устгасны дараа шууд JSON хуулбарыг нь хадгална (эхлээд `deleteById()`, дараа нь `TrashModel::store()`)
+- Контент model-уудад `is_active` багана байхгүй; устгалт `deleteById()` + Хогийн саваар явагдана: News, Pages, Products, Orders, Reviews, Comments, Messages, Files, References, DevRequests, Menus, Texts, Languages
+- Users, Organizations, Forgot (нууц үг сэргээх токен) `is_active` баганаа хэвээр хадгална (soft delete / токен идэвхгүй болгох); идэвхгүй болгосон хэрэглэгч, байгууллагыг дараа нь Хогийн савд нөөцлөн бүрмөсөн устгаж болно
 - Dashboard интерфэйсээс устгасан бичлэгүүдийг харах, шалгах, удирдах
 - **Сэргээх (Restore)**: бичлэгийг үндсэн хүснэгт рүү буцаах. Эхлээд анхны ID-аар оролдох (FK холбоосыг хадгалахын тулд), амжилтгүй бол auto-increment ID; UNIQUE талбар (slug, keyword, code, sku) давхцалтай бол админд ойлгомжтой алдаа буцаах; LocalizedModel-ийн `_content` мөрүүд хамт сэргээгдэнэ
 - **Хоёр давхар аудит лог**: сэргээх үйлдэл `trash_log` (бүрэн audit) ба trash бичлэгийн `log_table` баганаас уншсан channel-д аль алинд бичигдэнэ - энэ нь Logger Protocol-оор сэргээгдсэн record-ын view/update хуудсан дээр харагдана. Controller-ууд `TrashModel::store()`-руу log channel-ийн нэрийг шууд дамжуулна (жишээ: `ReviewsController` -> `'products'`, `ReferencesController` -> `'content'`)
@@ -839,15 +866,21 @@ Controller дотроос `template()` дуудахад доорх хувьса�
 | `user` | Нэвтэрсэн хэрэглэгчийн `User` объект (null байж болно) |
 | `index` | Script path (subdirectory дэмжлэг) |
 | `localization` | Хэл, орчуулгын мэдээлэл |
-| `request` | Одоогийн URL path |
+| `csrf_token` | `csrf-token` meta tag-д зориулсан CSRF token |
+| `waf_body_encoding` | `waf-body-encoding` meta tag-д зориулсан `'1'` / `'0'` флаг |
 
 ### Custom filter-ууд (Controller-ээс бүртгэгдсэн)
 
 | Filter | Хэрэглээ | Тайлбар |
 |--------|----------|---------|
 | `text` | `{{ 'key'\|text }}` | Орчуулгын текст авах |
-| `link` | `{{ 'news'\|link({'id': 5}) }}` | 5-р мэдээний URL үүсгэх |
-| `basename` | `{{ path\|basename }}` | Файлын нэр гаргах (Web templates) |
+| `link` | `{{ 'route'\|link({'id': 5}) }}` | Route нэрээр URL үүсгэх |
+| `pattern` | `{{ 'page-view'\|pattern }}` | Route pattern-ийг placeholder-той нь хэвээр (`/dashboard/pages/view/{id}`) - client талын JS-д зориулсан |
+| `basename` | `{{ path\|basename }}` | Файлын нэр гаргах (`webTemplate()`-ээр рендерлэгдсэн контент template-д) |
+
+### Autoescape
+
+`{{ }}` доторх бүх string анхдагчаар HTML-escape хийгдэнэ (`codesaur/template` ^5). Бодит HTML хэвлэхдээ `|raw` ашиглана (`{{ record['content']|raw }}`, `{{ text|nl2br|raw }}`, script дотор `{{ rows|json_encode|raw }}`); JS string literal дотор тавих утгад `|e('js')` хэрэглэнэ. `Markup` объект болон nested template объект (layout-уудын `{{ content }}`) хэзээ ч escape хийгдэхгүй; `setAutoEscape(false)`-г зөвхөн HTML биш гаралтад (и-мэйлийн subject гэх мэт) дуудна.
 
 ### Twig-ийн дэмжигдэхгүй боломжууд
 
@@ -862,7 +895,7 @@ Controller дотроос `template()` дуудахад доорх хувьса�
 | `{% verbatim %}`, `{% include %}`, `{% extends %}` | байхгүй |
 | `\|date(format='Y-m-d')` | `\|date('Y-m-d')` (зөвхөн positional) |
 
-> `codesaur/template` 4.1.0-аас хойш `in` / `not in` (membership), `ends with`, `matches` (regex), `is even` / `is odd` дэмжигдэнэ - жишээ: `{% if type in ['image', 'video'] %}`.
+> `in` / `not in` (membership), `ends with`, `matches` (regex), `is even` / `is odd` дэмжигдэнэ - жишээ: `{% if type in ['image', 'video'] %}`.
 
 ### Жишээ
 
@@ -871,7 +904,7 @@ Controller дотроос `template()` дуудахад доорх хувьса�
 <h1>{{ 'welcome'|text }}</h1>
 
 <!-- Route link -->
-<a href="{{ 'page'|link({'id': page.id}) }}">{{ page.title }}</a>
+<a href="{{ 'page'|link({'slug': page.slug}) }}">{{ page.title }}</a>
 
 <!-- Хэрэглэгч шалгах (object method дуудлага дэмжигдэнэ) -->
 {% if user is not null and user.can('system_content_index') %}
@@ -888,7 +921,7 @@ Controller дотроос `template()` дуудахад доорх хувьса�
 
 ## 8. Routing
 
-Raptor нь `codesaur/http-application` package-ийн Router классыг ашиглана.
+Raptor нь `codesaur/router` package-ийн `Router` классыг ашиглана (`codesaur/http-application`-аар дамжин ирнэ).
 
 ### Route тодорхойлох
 
@@ -925,9 +958,11 @@ class MyRouter extends \codesaur\Router\Router
 
 | Pattern | Тайлбар | Жишээ |
 |---------|---------|-------|
-| `{name}` | String параметр | `/page/{slug}` |
+| `{slug}` | String параметр (ASCII, URL-д аюулгүй) | `/page/{slug}` |
+| `{int:id}` | Тэмдэгтэй бүхэл тоо | `/offset/{int:id}` |
 | `{uint:id}` | Unsigned integer | `/page/{uint:id}` |
-| `{code}` | String (хэлний код) | `/language/{code}` |
+| `{float:price}` | Бутархай тоо | `/price/{float:price}` |
+| `{utf8:name}` | UTF-8 string (кирилл г.м.) | `/tag/{utf8:name}` |
 
 ### Router бүртгэх
 
@@ -940,8 +975,8 @@ $this->use(new MyRouter());
 ### Route нэрийн оновчлол
 
 `->name('route-name')` зөвхөн route нэр бодитоор ашиглагдаж байгаа үед тавина:
-- Template дотор `{{ 'route-name'|link }}` хэлбэрээр
-- PHP controller дотор `$this->redirectTo('route-name')` хэлбэрээр
+- Template дотор `{{ 'route-name'|link }}` / `{{ 'route-name'|pattern }}` хэлбэрээр
+- PHP controller дотор `$this->generateRouteLink('route-name')` / `$this->redirectTo('route-name')` хэлбэрээр
 
 Нэрээр дуудагддаггүй route-д `->name()` шаардлагагүй бөгөөд илүүдэл ачааллыг бууруулна.
 
@@ -972,6 +1007,10 @@ $this->use(new MyRouter());
 | `generateRouteLink($name, $params)` | URL үүсгэх |
 | `getContainer()` | DI Container |
 | `getService($id)` | Service авах |
+| `hasService($id)` | Service бүртгэлтэй эсэх |
+| `invalidateCache(...$keys)` | Cache key устгах (`{code}` placeholder бүх хэлээр давтана) |
+| `getMountPath()` | Ажиллаж буй app-ийн mount path (`/dashboard`) |
+| `setLanguageCode($code)` | Хэлийг session-д хадгалах (web-д юу ч хийхгүй) |
 
 ### Жишээ: Шинэ Controller бичих
 
@@ -1002,7 +1041,8 @@ class ProductsController extends \Dashboard\Controller
     {
         $body = $this->getRequest()->getParsedBody();
         $model = new ProductsModel($this->pdo);
-        $id = $model->insert($body);
+        $record = $model->insert($body);
+        $id = $record['id'];
 
         // Лог бичих - стандарт `record_id` түлхүүр ашиглах
         // (бичлэгийн харах/засах хуудсан дээрх Logger Protocol-д харагдана).
@@ -1079,8 +1119,14 @@ class CategoriesModel extends LocalizedModel
 
 | Метод | Тайлбар |
 |-------|---------|
-| `insert($record)` | Бичлэг нэмэх |
-| `updateById($id, $record)` | ID-р шинэчлэх |
+| `insert($record)` | Бичлэг нэмж, нэмэгдсэн мөрийг буцаана (LocalizedModel: `insert($record, $content)`) |
+| `updateById($id, $record)` | ID-р шинэчлэх (LocalizedModel: `updateById($id, $record, $content)`) |
+| `getById($id)` | Primary key-ээр нэг мөр авах |
+| `existsById($id)` | Мөр байгаа эсэх |
+| `countRows($condition)` | SELECT нөхцөлд таарах мөрийн тоо |
+| `hasColumn($name)` | Багана model дээр зарлагдсан эсэх |
+| `assertColumn($name)` | Зарлагдаагүй баганад `InvalidArgumentException` шидэнэ (аюулгүй `GROUP BY` / selection) |
+| `orderBy($column, $dir)` | Driver-quoted `ORDER BY` фрагмент; зарлагдаагүй багана эсвэл ASC/DESC-ээс өөр чиглэлд throw хийнэ (LocalizedModel `p.` / `c.` alias-тай буцаана) |
 | `deleteById($id)` | ID-р бүрмөсөн устгах (контент модулиудад) |
 | `deactivateById($id, $record)` | ID-р идэвхгүй болгох (Users/Organizations-ийн soft delete, мөн Forgot токеныг ашиглагдсаны дараа идэвхгүй болгоход) |
 | `getRowWhere($with_values)` | WHERE key=value хэлбэрийн нөхцөлөөр нэг мөр авах |
@@ -1133,13 +1179,15 @@ composer test:integration
 
 ### Тохиргоо
 
-`.env.testing` файл нь тест орчны тохиргоог агуулна. Integration тест нь тусдаа test database ашиглана (жишээ: `raptor12_test`).
+`.env.testing` файл нь тест орчны тохиргоог агуулна. Integration тест нь тусдаа test database (`raptor_test`) ашиглана.
 
 ```env
-RAPTOR_DB_NAME=raptor12_test
+RAPTOR_DB_NAME=raptor_test
 ```
 
 ### Тестийн бүтэц
+
+Түүвэр файлууд - `tests/Unit/` дотор чиглэл бүрд нэг хавтас бий (Authentication, Content, Controller, Exception, Localization, Log, Middleware, Migration, Notification, Router, Template, Trash, Web):
 
 ```
 tests/
@@ -1152,8 +1200,11 @@ tests/
 |   |   \-- UserTest.php       # User::is(), User::can() тест
 |   |-- Controller/
 |   |   \-- ControllerTextTest.php  # Controller::text() тест
-|   \-- Migration/
-|       \-- MigrationSecurityScannerTest.php  # Sensitive SQL pattern шалгалт
+|   |-- Migration/
+|   |   \-- MigrationSecurityScannerTest.php  # Sensitive SQL pattern шалгалт
+|   |-- Notification/
+|   |   \-- EventDispatchServiceTest.php      # Event action / listener гэрээ
+|   \-- ...
 \-- Integration/
     |-- Model/
     |   |-- UsersModelTest.php          # Хэрэглэгчийн CRUD тест
@@ -1202,12 +1253,17 @@ class MyTest extends RaptorTestCase
 // application/dashboard/mymodule/MyModuleRouter.php
 namespace Dashboard\MyModule;
 
+use Dashboard\CsrfMiddleware;
+
 class MyModuleRouter extends \codesaur\Router\Router
 {
     public function __construct()
     {
-        $this->GET('/dashboard/mymodule', [MyModuleController::class, 'index'])->name('mymodule');
-        $this->GET_POST('/dashboard/mymodule/insert', [MyModuleController::class, 'insert'])->name('mymodule-insert');
+        // Замууд mount-naive: app нь public_html/index.php-д /dashboard дээр mount хийгдсэн
+        $this->GET('/mymodule', [MyModuleController::class, 'index'])->name('mymodule');
+        $this->GET_POST('/mymodule/insert', [MyModuleController::class, 'insert'])
+            ->name('mymodule-insert')
+            ->middleware([CsrfMiddleware::class]);
     }
 }
 ```
@@ -1242,16 +1298,21 @@ $this->use(new MyModule\MyModuleRouter());  // Шинэ router
 
 ```php
 // application/web/WebRouter.php
-$this->GET('/products', [HomeController::class, 'products'])->name('products');
+$this->GET('/catalog', [HomeController::class, 'catalog'])->name('catalog');
 ```
 
 ```php
 // application/web/HomeController.php
-public function products()
+public function catalog()
 {
+    $code = $this->getLanguageCode();
     $model = new ProductsModel($this->pdo);
-    $products = $model->getRows(['WHERE' => "published=1 AND code='$code'"]);
-    $this->webTemplate(__DIR__ . '/products.html', ['products' => $products])->render();
+    // code IN (:code, '*') - хэлнээс үл хамаарах бичлэгүүд бүх хэл дээр харагдана
+    $products = $model->getRows([
+        'WHERE' => "published=1 AND code IN (:code, '*')",
+        'PARAM' => [':code' => $code]
+    ]);
+    $this->webTemplate(__DIR__ . '/catalog.html', ['products' => $products])->render();
 }
 ```
 

@@ -281,7 +281,7 @@ class ShopController extends TemplateController
             );
 
             $this->dispatch(new \Dashboard\Notification\OrderEvent(
-                'insert', (int)$record['id'],
+                'new', (int)$record['id'],
                 $payload['customer_name'],
                 $payload['customer_email'],
                 $payload['customer_phone'] ?? '',
