@@ -80,7 +80,6 @@ class TextInitial
         $model->insert(['keyword' => 'confirm', 'type' => 'sys-defined'], ['mn' => ['text' => 'Батлах'], 'en' => ['text' => 'Confirm']]);
         $model->insert(['keyword' => 'confirm-delete', 'type' => 'sys-defined'], ['mn' => ['text' => 'Устгахдаа итгэлтэй байна уу?'], 'en' => ['text' => 'Are you sure you want to delete?']]);
         $model->insert(['keyword' => 'confirm-delete-request', 'type' => 'sys-defined'], ['mn' => ['text' => 'Та энэ хүсэлтийг устгахдаа итгэлтэй байна уу?'], 'en' => ['text' => 'Are you sure you want to delete this request?']]);
-        $model->insert(['keyword' => 'confirm-logout', 'type' => 'sys-defined'], ['mn' => ['text' => 'Та системээс гарахдаа итгэлтэй байна уу?'], 'en' => ['text' => 'Are you sure you want to logout?']]);
         $model->insert(['keyword' => 'confirm-open-file', 'type' => 'sys-defined'], ['mn' => ['text' => 'Та энэ файлыг нээхдээ итгэлтэй байна уу?'], 'en' => ['text' => 'Are you sure you want to open this file?']]);
         $model->insert(['keyword' => 'contact', 'type' => 'sys-defined'], ['mn' => ['text' => 'Холбоо барих'], 'en' => ['text' => 'Contact']]);
         $model->insert(['keyword' => 'contact-us', 'type' => 'sys-defined'], ['mn' => ['text' => 'Бидэнтэй холбогдох'], 'en' => ['text' => 'Contact Us']]);

@@ -27,9 +27,14 @@ body {
     z-index: 1030;
 }
 
+/* max-width нь өргөн (wordmark) логог хязгаарлана - эс бөгөөс 36px
+   өндөртэй 180x48 лого 135px болж нэрийн зайг бүхэлд нь эзэлнэ.
+   max-height + max-width хоёулаа харьцааг хадгалж багасгана. */
 .topbar-brand-logo {
     max-height: 36px;
+    max-width: 160px;
     width: auto;
+    flex-shrink: 0;
 }
 
 .dashboard-topbar .dropdown-toggle {
@@ -191,7 +196,9 @@ body {
     font-size: .85rem;
 }
 
-/* topbar quick icons (search | language | theme | user | logout) */
+/* topbar quick icons (search | language | theme | account dropdown)
+   Mobile (<768px): toggle | brand ... search | account - language / theme
+   нь offcanvas-ийн .sidebar-quick блок руу шилжинэ */
 /* Баруун талын үйлдлүүдийн бүс - хөрш бүрийн зайг margin биш flex gap
    барина. Ингэснээр separator-ууд хоёр талдаа үргэлж ижил зайтай
    (gap + separator-ийн тэгш хэмт margin) харагдана. */
@@ -219,7 +226,7 @@ body {
     color: white;
 }
 
-/* Quick icons | user | logout хэсгүүдийн хоорондох босоо зураас.
+/* Quick icons | account хэсгүүдийн хоорондох босоо зураас.
    Суурь margin хоёр талдаа тэгш хэмтэй - нийт зай = gap + margin. */
 .topbar-sep {
     display: inline-block;
@@ -241,6 +248,22 @@ body {
 
 .topbar-sep:has(+ .topbar-icon) {
     margin-right: .15rem;
+}
+
+/* Brand хэсэг л агшина, actions хэсэг хэзээ ч агшихгүй - ингэснээр
+   topbar мөр viewport-оос хэтэрч хэвтээ scroll үүсгэхгүй.
+   min-width:0 байхгүй бол flex хүүхэд агуулгаасаа нарийсч чаддаггүй. */
+.topbar-brand,
+.topbar-brand > a {
+    min-width: 0;
+}
+
+.topbar-brand {
+    flex: 0 1 auto;
+}
+
+.topbar-actions {
+    flex-shrink: 0;
 }
 
 /* Байгууллагын нэр урт үед нэг мөрөнд ellipsis-ээр таслана
@@ -278,25 +301,88 @@ body {
     font-size: .875rem;
 }
 
-.topbar-org-item.active {
-    background-color: rgba(13,110,253,.1);
+/* Идэвхтэй байгууллага: Bootstrap-ийн .dropdown-item.active нь цагаан текст
+   өгдөг тул цайвар дэвсгэр дээр уншигдахгүй - subtle дэвсгэр + emphasis
+   өнгийг theme variable-аар өгснөөр light/dark хоёуланд тод харагдана */
+.topbar-org-item.active,
+.topbar-org-item.active:hover,
+.topbar-org-item.active:focus {
+    background-color: var(--bs-primary-bg-subtle);
+    color: var(--bs-primary-text-emphasis);
     font-weight: 500;
 }
 
+/* Лого / icon-д ижил өргөнтэй slot - нэрс нэг шулуунд эхэлнэ. 20x20
+   дөрвөлжинд өргөн (wordmark) лого нимгэн зураас болдог тул slot-ийг
+   хэвтээ тэгш өнцөгт болгож, object-fit:contain-оор харьцааг хадгална. */
 .topbar-org-logo {
-    width: 20px;
-    height: 20px;
+    width: 40px;
+    height: 22px;
     object-fit: contain;
+    flex-shrink: 0;
 }
 
-.topbar-org-ico {
-    width: 20px;
+.dashboard-topbar .topbar-org-item .topbar-org-ico {
+    width: 40px;
+    flex-shrink: 0;
     text-align: center;
     color: #6c757d;
 }
 
 .topbar-org-empty {
     font-size: .85rem;
+}
+
+/* topbar account dropdown (avatar + нэр -> Миний профайл / Гарах) */
+.topbar-user-name {
+    max-width: 12rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+.topbar-user-menu {
+    min-width: 220px;
+    max-width: min(300px, calc(100vw - 1rem));
+}
+
+.topbar-user-head {
+    font-size: .875rem;
+    line-height: 1.4;
+}
+
+/* Mobile (<768px): байгууллага сонгох dropdown-ийг topbar-ын доор бүтэн
+   өргөнөөр (bottom-sheet маягаар) дэлгэнэ - нарийн дэлгэцэнд 260px menu
+   баруун тийш хальж, жижиг мөрүүдэд хуруугаар дарахад хэцүү байдаг.
+   .topbar-brand-ийг static болгосноор menu-ийн containing block нь
+   sticky .dashboard-topbar болж, left/right-ийг topbar-аас хэмжинэ.
+   Toggle дээрх data-bs-display="static" (Popper-гүй) шаардлагатай -
+   Popper inline transform тавьбал энэ байрлал ажиллахгүй.
+
+   Coupling (English): relies on data-bs-display="static" on the brand
+   toggle in dashboard.html - with Popper the inline transform overrides
+   this left/right positioning. */
+@media (max-width: 767.98px) {
+    .topbar-brand.dropdown {
+        position: static;
+    }
+
+    .dashboard-topbar .topbar-org-menu[data-bs-popper] {
+        left: .5rem;
+        right: .5rem;
+        min-width: 0;
+        max-width: none;
+    }
+
+    .topbar-org-list {
+        max-height: 60vh;
+    }
+
+    .dashboard-topbar .topbar-org-item {
+        padding-top: .6rem;
+        padding-bottom: .6rem;
+    }
 }
 
 /* global search modal (Ctrl+K) */
@@ -472,6 +558,18 @@ body {
     text-align: right;
 }
 
+/* Mobile quick actions (offcanvas доторх language / theme).
+    Desktop дээр d-md-none-оор нуугдана - тэнд topbar-ын icon-ууд ажиллана. */
+.sidebar-quick {
+    border-top: 1px solid rgba(255,255,255,.12);
+}
+
+.sidebar-quick > div > i {
+    color: #727272;
+    width: 1.75rem;
+    flex-shrink: 0;
+}
+
 /* Divider */
 .sidebar-menu > hr {
     margin: 1rem 0;
@@ -486,8 +584,17 @@ body {
    quick icon болон separator-ийн зайг нягтруулна
     */
 @media (max-width: 575.98px) {
+    /* Өргөн лого нэрийн зайг идэхгүйн тулд утсан дээр илүү багасгана */
+    .topbar-brand-logo {
+        max-width: 25vw;
+        max-height: 30px;
+    }
+
+    /* Өргөнийг flex (.topbar-brand min-width:0) хязгаарлана - үлдсэн
+       бүх зайг ашиглаж, багтахгүй үед ellipsis-ээр таслагдана */
     .topbar-brand-name {
-        max-width: 30vw;
+        max-width: 100%;
+        min-width: 0;
     }
 
     .topbar-actions {

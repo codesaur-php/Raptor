@@ -6,6 +6,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 
 ---
 
+## [5.4.4] - 2026-09-29
+[5.4.4]: https://github.com/codesaur-php/Raptor/compare/v5.4.3...v5.4.4
+
+### Fixed
+
+- **The mobile sidebar toggle was pushed off-screen on narrow phones.** The topbar packed the brand, five icons, two separators, the avatar and the toggle into one flex row with no `min-width:0` anywhere, so on a ~360px portrait screen the row overflowed and the hamburger button - the last item - was only reachable by scrolling the viewport sideways. The toggle now sits first (left) and the sidebar opens from the start side (`offcanvas-start`, consistent with the desktop left sidebar and mirrored automatically in RTL). Only the brand shrinks (`.topbar-brand` with `min-width:0`, the organization name truncated with an ellipsis), `.topbar-actions` never shrinks, so a long organization name can no longer push any icon out of the viewport (checked at 320px and 360px).
+- **Wide (wordmark) organization logos crowded out the name.** A 180x48 logo grew to ~135px at the 36px topbar height, leaving a single letter of the organization name on a 320px screen, and shrank to a hairline inside the 20x20 slot of the organization switcher. The topbar logo is capped (`max-width` 160px, on phones `25vw` / 30px high) and the switcher gives every logo or fallback icon the same 40x22 `object-fit:contain` slot, so names line up whatever the logo's aspect ratio.
+- **The active row of the organization switcher was unreadable.** Bootstrap's `.dropdown-item.active` sets white text, which the custom light-blue background turned into white-on-pale. The active row now uses the theme variables `--bs-primary-bg-subtle` / `--bs-primary-text-emphasis` (hover and focus included), readable in both light and dark mode.
+
+### Changed
+
+- **The topbar avatar opens a standard account menu instead of jumping straight to the profile page.** Clicking the avatar/name used to navigate to `user-update` with no hint that it would; it now opens a dropdown with a header (full name, email, current organization), **My profile** and, at the bottom, **Logout** in red. Logout lives only in this menu, on every screen size.
+- **Mobile topbar reduced to `toggle | brand ... search | account`.** Below 768px the language and theme dropdowns leave the topbar and appear as segmented button groups in a new `.sidebar-quick` block at the bottom of the offcanvas sidebar; they carry the same `data-language-url` / `data-theme` attributes, so `initTopbarQuick()` drives both without new code.
+- **The organization switcher opens as a full-width panel on phones.** With `data-bs-display="static"` on the brand toggle and `.topbar-brand` made `position:static` below 768px, the menu anchors to the sticky topbar and spans its width, with a 60vh scrollable list and taller rows for touch. `initOrgSwitcher()` no longer auto-focuses the search input on touch devices (`pointer: coarse`), where the virtual keyboard used to cover the list. Desktop behavior is unchanged.
+
+### Removed
+
+- **Logout confirmation modal.** `#logout-confirm-modal`, `initLogoutConfirm()` and the `confirm-logout` text keyword (`TextInitial.php`) are gone: opening the account menu and then choosing Logout is already a deliberate two-step action, and the confirmation existed only because the old standalone topbar icon was easy to hit by accident. Existing databases keep the unused `confirm-logout` text row; it is harmless and can be deleted from Localization - Texts.
+
+---
+
 ## [5.4.3] - 2026-09-23
 [5.4.3]: https://github.com/codesaur-php/Raptor/compare/v5.4.2...v5.4.3
 

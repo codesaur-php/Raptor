@@ -12,7 +12,6 @@
  *  Scroll-To-Top Button (initScrollToTop)
  *  Global search modal, Ctrl+K (initGlobalSearch)
  *  Sidebar badge system (initSidebarBadges)
- *  Logout confirmation (initLogoutConfirm)
  *  Topbar language/theme dropdowns, dark mode (initTopbarQuick)
  *  Topbar organization switcher (initOrgSwitcher)
  *  Invalid tab focus (initInvalidTabFocus)
@@ -713,43 +712,12 @@ document.addEventListener('DOMContentLoaded', function () {
     initInvalidTabFocus();
     initOrgSwitcher();
     initTopbarQuick();
-    initLogoutConfirm();
 });
 
 /**
- * initLogoutConfirm()
- * - Topbar-ийн logout товчны баталгаажуулалт.
- *
- * Logout нь GET линк тул санамсаргүй click-ээс хамгаалж заавал асууна.
- * Эхлээд Bootstrap modal (#logout-confirm-modal) харуулахыг оролдоно -
- * dashboard-тай адил загвар, dark mode нийцэлтэй. Bootstrap CDN-ээс
- * ачаалагдаагүй (offline, CDN унасан) тохиолдолд native confirm()
- * fallback ашиглана - browser-ийн өөрийн dialog тул хэзээ ч ажиллана.
- * Аль ч замаар баталгаажвал data-logout-url руу шилжинэ.
- */
-function initLogoutConfirm() {
-    const btn = document.getElementById('topbar-logout');
-    if (!btn) return;
-
-    btn.addEventListener('click', function () {
-        try {
-            const modalEl = document.getElementById('logout-confirm-modal');
-            if (modalEl && window.bootstrap && bootstrap.Modal) {
-                bootstrap.Modal.getOrCreateInstance(modalEl).show();
-                return;
-            }
-        } catch (err) {
-            /* Bootstrap ачаалагдсан ч modal алдаа өгвөл confirm-руу унана */
-        }
-        if (window.confirm(btn.dataset.confirm || btn.title)) {
-            window.location.href = btn.dataset.logoutUrl;
-        }
-    });
-}
-
-/**
  * initTopbarQuick()
- * - Topbar-ийн language / theme dropdown-уудын үйлдэл.
+ * - Topbar-ийн language / theme dropdown-уудын үйлдэл (mobile offcanvas-ийн
+ *   .sidebar-quick товчнууд ижил attribute-тай тул мөн адил ажиллана).
  *
  * Language: data-language-url attribute-тай dropdown item click хийхэд
  *   тэр GET endpoint-ийг fetch хийнэ (session-д хэлний сонголт хадгалагдана),
@@ -833,11 +801,13 @@ function initOrgSwitcher() {
         if (empty) empty.style.display = count === 0 ? '' : 'none';
     });
 
-    /* Dropdown neegdeh burt search-iig цэвэрлэж, идэвхтэй мөр рүү scroll хийнэ. */
+    /* Dropdown neegdeh burt search-iig цэвэрлэж, идэвхтэй мөр рүү scroll хийнэ.
+     * Touch төхөөрөмж дээр автоматаар focus хийхгүй - virtual keyboard гарч
+     * ирээд жагсаалтын ихэнхийг халхалдаг. */
     menu.closest('.dropdown')?.addEventListener('shown.bs.dropdown', function () {
         input.value = '';
         input.dispatchEvent(new Event('input'));
-        input.focus();
+        if (!window.matchMedia('(pointer: coarse)').matches) input.focus();
         const active = menu.querySelector('.topbar-org-item.active');
         if (active) active.scrollIntoView({ block: 'nearest' });
     });
