@@ -92,7 +92,7 @@ class CommentsController extends \Dashboard\Controller
     public function comment(int $id)
     {
         try {
-            if (!$this->isUserCan('system_content_index')) {
+            if (!$this->isUserCan('system_content_update')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
 
@@ -234,9 +234,14 @@ class CommentsController extends \Dashboard\Controller
                 throw new \Exception($this->text('no-record-selected'), 404);
             }
 
-            // Reply-уудыг мөн устгах
-            $table = $model->getName();
-            $this->exec("DELETE FROM $table WHERE parent_id=$id");
+            // Reply-уудыг мөн устгаж trash-д хадгална
+            $replies = $model->getRows(['WHERE' => "parent_id=$id"]);
+            foreach ($replies as $reply) {
+                $model->deleteById((int)$reply['id']);
+                (new \Dashboard\Trash\TrashModel($this->pdo))->store(
+                    'news', $model->getName(), (int)$reply['id'], $reply, $this->getUserId()
+                );
+            }
 
             $model->deleteById($id);
             (new \Dashboard\Trash\TrashModel($this->pdo))->store(

@@ -181,17 +181,17 @@
 
                 let actions = `<button class="btn btn-sm btn-outline-info view-msg" data-id="${id}" title="{{ 'view'|text }}"><i class="bi bi-eye"></i></button>`;
                 if (canReply && readState !== 2) {
-                    actions += ` <button class="btn btn-sm btn-outline-primary reply-msg" data-id="${id}" data-email="${record.email || ''}" title="{{ 'replied'|text }}"><i class="bi bi-reply"></i></button>`;
+                    actions += ` <button class="btn btn-sm btn-outline-primary reply-msg" data-id="${id}" data-email="${escapeHtml(record.email)}" title="{{ 'replied'|text }}"><i class="bi bi-reply"></i></button>`;
                 }
                 if (canDelete) {
                     actions += ` <button class="btn btn-sm btn-outline-danger delete-msg" data-id="${id}" title="{{ 'delete'|text }}"><i class="bi bi-trash"></i></button>`;
                 }
 
                 rowsHTML += `<tr class="${bold}">
-                    <td>${id}<br><small class="text-muted">${record.created_at}</small></td>
-                    <td>${record.name}</td>
-                    <td>${record.phone}<br><small>${record.email || ''}</small></td>
-                    <td><small>${msg}</small></td>
+                    <td>${id}<br><small class="text-muted">${escapeHtml(record.created_at)}</small></td>
+                    <td>${escapeHtml(record.name)}</td>
+                    <td>${escapeHtml(record.phone)}<br><small>${escapeHtml(record.email)}</small></td>
+                    <td><small>${escapeHtml(msg)}</small></td>
                     <td>${badge}</td>
                     <td>${actions}</td>
                 </tr>`;
@@ -302,7 +302,7 @@
                         title: 'Email',
                         text: `{{ 'email'|text|e('js') }}`,
                         input: 'email',
-                        inputValue: `{{ settings_email|e('js') }}`,
+                        inputValue: {{ (settings_email ?? '')|json_encode|raw }},
                         inputPlaceholder: 'email@example.com',
                         showCancelButton: true,
                         confirmButtonText: `{{ 'save'|text|e('js') }}`,

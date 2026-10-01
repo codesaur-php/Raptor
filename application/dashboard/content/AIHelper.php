@@ -312,7 +312,7 @@ class AIHelper extends \Dashboard\Controller
             [\CURLOPT_HTTP_VERSION => \CURL_HTTP_VERSION_1_1]
         );
         if (isset($data['error'])) {
-            throw new \Exception('OpenAI API алдаа: ' . ($data['error']['message'] ?? 'Unknown error'), $data['error']['code'] ?? 500);
+            throw new \Exception('OpenAI API алдаа: ' . ($data['error']['message'] ?? 'Unknown error'), \is_numeric($data['error']['code'] ?? null) ? (int) $data['error']['code'] : 502);
         }
 
         $content = $data['choices'][0]['message']['content'] ?? '';
@@ -382,7 +382,7 @@ class AIHelper extends \Dashboard\Controller
             [\CURLOPT_HTTP_VERSION => \CURL_HTTP_VERSION_1_1]
         );
         if (isset($data['error'])) {
-            throw new \Exception('OpenAI API алдаа: ' . ($data['error']['message'] ?? 'Unknown error'), $data['error']['code'] ?? 500);
+            throw new \Exception('OpenAI API алдаа: ' . ($data['error']['message'] ?? 'Unknown error'), \is_numeric($data['error']['code'] ?? null) ? (int) $data['error']['code'] : 502);
         }
 
         $content = $data['choices'][0]['message']['content'] ?? '';

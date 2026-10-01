@@ -113,6 +113,7 @@ class BadgeController extends \Dashboard\Controller
         ],
         'files' => [
             'files-upload'   => ['/files', 'green'],
+            'files-post'     => ['/files', 'green'],
             'files-update'   => ['/files', 'blue'],
             'files-delete'   => ['/files', 'red'],
         ],
@@ -168,6 +169,7 @@ class BadgeController extends \Dashboard\Controller
             'template-menu-create'     => ['/manage/menu', 'green'],
             'template-menu-update'     => ['/manage/menu', 'blue'],
             'template-menu-delete'     => ['/manage/menu', 'red'],
+            'signup'                   => ['/users', 'green'],
         ],
         'dev_requests' => [
             'store'      => ['/dev-requests', 'green'],

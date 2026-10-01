@@ -121,10 +121,7 @@ class OrganizationController extends FileController
 
             // POST -> Шинэ байгууллага үүсгэх
             if ($this->getRequest()->getMethod() == 'POST') {
-                $payload = $this->getParsedBody();
-                if (empty($payload['alias']) || empty($payload['name'])) {
-                    throw new \InvalidArgumentException($this->text('invalid-request'), 400);
-                }
+                $payload = $this->filterPayload($this->getParsedBody());
 
                 $record = $model->insert($payload + ['created_by' => $this->getUserId()]);
                 if (empty($record)) {
@@ -288,16 +285,11 @@ class OrganizationController extends FileController
             if ($this->getRequest()->getMethod() == 'PUT') {
                 // PUT -> Update submission
 
-                $payload = $this->getParsedBody();
-                if (empty($payload['alias']) || empty($payload['name'])) {
-                    throw new \InvalidArgumentException($this->text('invalid-request'), 400);
-                }
-
-                // alias -> зөвшөөрөгдөх тэмдэгт үлдээх
-                $payload['alias'] = \preg_replace('/[^A-Za-z0-9_-]/', '', $payload['alias']);
+                $body = $this->getParsedBody();
+                $payload = $this->filterPayload($body);
 
                 $oldLogoFile = $record['logo_file'] ?? '';
-                $logoRemovedRequested = (int)($payload['logo_removed'] ?? 0) === 1;
+                $logoRemovedRequested = (int)($body['logo_removed'] ?? 0) === 1;
                 $newUploadedFile = null;
 
                 if ($logoRemovedRequested) {
@@ -305,7 +297,6 @@ class OrganizationController extends FileController
                     $payload['logo_file'] = '';
                     $payload['logo_size'] = 0;
                 }
-                unset($payload['logo_removed']);
 
                 $this->setFolder("/{$model->getName()}/$id");
                 $this->allowImageOnly();
@@ -320,7 +311,7 @@ class OrganizationController extends FileController
                 // Өөрчлөгдсөн талбаруудыг тодорхойлох
                 $updates = [];
                 foreach ($payload as $field => $value) {
-                    if ($record[$field] != $value) {
+                    if (($record[$field] ?? null) != $value) {
                         $updates[] = $field;
                     }
                 }
@@ -556,5 +547,37 @@ class OrganizationController extends FileController
             }
             $this->log('organizations', $level, $message, $context);
         }
+    }
+
+    /**
+     * Insert/update формоос ирсэн өгөгдлөөс зөвхөн засварлах боломжтой
+     * талбаруудыг (parent_id, alias, name) шүүж авна.
+     *
+     * logo/logo_file/logo_size нь зөвхөн upload логикоос, is_active/created_by/id
+     * зэрэг талбар client-ээс хэзээ ч ирэхгүй. alias нь RBAC permission alias
+     * болж ашиглагддаг тул зөвхөн латин үсэг, тоо, "-" үлдээнэ ("_" хориотой).
+     *
+     * Security (English): whitelist of client-editable columns - logo* columns
+     * (logo_file is later unlink()ed) come only from the upload handling, and
+     * is_active/created_by/id are never accepted from the client. alias is used
+     * as an RBAC permission alias, so only [A-Za-z0-9-] is kept (no underscore).
+     *
+     * @param array $body Request body
+     * @return array Шүүгдсэн payload
+     * @throws \InvalidArgumentException alias эсвэл name хоосон бол
+     */
+    private function filterPayload(array $body): array
+    {
+        $alias = \preg_replace('/[^A-Za-z0-9-]/', '', (string)($body['alias'] ?? ''));
+        $name = \trim((string)($body['name'] ?? ''));
+        if ($alias === '' || $name === '') {
+            throw new \InvalidArgumentException($this->text('invalid-request'), 400);
+        }
+
+        $payload = ['alias' => $alias, 'name' => $name];
+        if (\array_key_exists('parent_id', $body)) {
+            $payload['parent_id'] = (int)$body['parent_id'];
+        }
+        return $payload;
     }
 }

@@ -262,6 +262,12 @@ class TrashController extends \Dashboard\Controller
                 throw $txErr;
             }
 
+            // Сэргээгдсэн бичлэг ямар ч хүснэгтийнх байж болох (цэс, орчуулга,
+            // хуудас, мэдээ ...) тул cached дата хуучирсан байж болзошгүй - бүх cache-г цэвэрлэнэ.
+            if ($this->hasService('cache')) {
+                $this->getService('cache')->clear();
+            }
+
             // 6. Сэргээгдсэн record-н log table-д "restored" мөр бичих - Logger Protocol-д
             // тухайн record-н үзэх/засах хуудас дээр харагдахын тулд. `$logTable` нь
             // store() үед log channel-ийн нэрээр шууд хадгалагдсан байна.

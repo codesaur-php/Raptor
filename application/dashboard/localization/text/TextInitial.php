@@ -52,7 +52,7 @@ class TextInitial
 
         $model->insert(['keyword' => 'address', 'type' => 'sys-defined'], ['mn' => ['text' => 'Хаяг'], 'en' => ['text' => 'Address']]);
         $model->insert(['keyword' => 'archive', 'type' => 'sys-defined'], ['mn' => ['text' => 'Архив'], 'en' => ['text' => 'Archive']]);
-        $model->insert(['keyword' => 'ask-dont-have-user-yet', 'type' => 'sys-defined'], ['mn' => ['text' => 'Хэрэглэгч болж амжаагүй байна уу?'], 'en' => ['text' => 'Don\'t have an user yet?']]);
+        $model->insert(['keyword' => 'ask-dont-have-user-yet', 'type' => 'sys-defined'], ['mn' => ['text' => 'Хэрэглэгч болж амжаагүй байна уу?'], 'en' => ['text' => 'Don\'t have an account yet?']]);
         $model->insert(['keyword' => 'assign-to', 'type' => 'sys-defined'], ['mn' => ['text' => 'Хариуцуулах'], 'en' => ['text' => 'Assign to']]);
         $model->insert(['keyword' => 'assigned-to', 'type' => 'sys-defined'], ['mn' => ['text' => 'Хариуцагч'], 'en' => ['text' => 'Assigned to']]);
         $model->insert(['keyword' => 'attachments', 'type' => 'sys-defined'], ['mn' => ['text' => 'Хавсралт файлууд'], 'en' => ['text' => 'Attachments']]);
@@ -120,9 +120,9 @@ class TextInitial
         $model->insert(['keyword' => 'enter-search-terms', 'type' => 'sys-defined'], ['mn' => ['text' => 'Хайх утгаа оруулна уу..'], 'en' => ['text' => 'Enter search terms..']]);
         $model->insert(['keyword' => 'enter-valid-email', 'type' => 'sys-defined'], ['mn' => ['text' => 'Имэйл хаягыг зөв оруулна уу'], 'en' => ['text' => 'Please enter a valid email address']]);
         $model->insert(['keyword' => 'error', 'type' => 'sys-defined'], ['mn' => ['text' => 'Алдаа'], 'en' => ['text' => 'Error']]);
-        $model->insert(['keyword' => 'error-existing-lang-code', 'type' => 'sys-defined'], ['mn' => ['text' => 'Хэлний кодыг системд ашиглаж байгаа тул өөр код сонгоно уу!'], 'en' => ['text' => 'Хэлний кодыг системд ашиглаж байгаа тул өөр код сонгоно уу!']]);
-        $model->insert(['keyword' => 'error-lang-existing', 'type' => 'sys-defined'], ['mn' => ['text' => 'Системд хэлийг ашиглаж байгаа тул өөр хэл сонгоно уу!'], 'en' => ['text' => 'Системд хэлийг ашиглаж байгаа тул өөр хэл сонгоно уу!']]);
-        $model->insert(['keyword' => 'error-lang-name-existing', 'type' => 'sys-defined'], ['mn' => ['text' => 'Системд хэлний нэрийг ашиглаж байгаа тул өөр нэр ашиглана уу!'], 'en' => ['text' => 'Системд хэлний нэрийг ашиглаж байгаа тул өөр нэр ашиглана уу!']]);
+        $model->insert(['keyword' => 'error-existing-lang-code', 'type' => 'sys-defined'], ['mn' => ['text' => 'Хэлний кодыг системд ашиглаж байгаа тул өөр код сонгоно уу!'], 'en' => ['text' => 'This language code is already in use, please choose a different code!']]);
+        $model->insert(['keyword' => 'error-lang-existing', 'type' => 'sys-defined'], ['mn' => ['text' => 'Системд хэлийг ашиглаж байгаа тул өөр хэл сонгоно уу!'], 'en' => ['text' => 'This language is already in use, please choose a different language!']]);
+        $model->insert(['keyword' => 'error-lang-name-existing', 'type' => 'sys-defined'], ['mn' => ['text' => 'Системд хэлний нэрийг ашиглаж байгаа тул өөр нэр ашиглана уу!'], 'en' => ['text' => 'This language name is already in use, please use a different name!']]);
         $model->insert(['keyword' => 'error-occurred', 'type' => 'sys-defined'], ['mn' => ['text' => 'Алдаа гарлаа'], 'en' => ['text' => 'Error occurred']]);
         $model->insert(['keyword' => 'error-password-empty', 'type' => 'sys-defined'], ['mn' => ['text' => 'Нууц үг талбарыг оруулна уу'], 'en' => ['text' => 'Please enter password']]);
         $model->insert(['keyword' => 'error-username-empty', 'type' => 'sys-defined'], ['mn' => ['text' => 'Нэвтрэх нэр талбарыг оруулна уу'], 'en' => ['text' => 'Please enter username']]);
@@ -229,7 +229,7 @@ class TextInitial
         $model->insert(['keyword' => 'personal-info', 'type' => 'sys-defined'], ['mn' => ['text' => 'Хувийн мэдээлэл'], 'en' => ['text' => 'Personal Info']]);
         $model->insert(['keyword' => 'phone', 'type' => 'sys-defined'], ['mn' => ['text' => 'Утас'], 'en' => ['text' => 'Phone']]);
         $model->insert(['keyword' => 'photo', 'type' => 'sys-defined'], ['mn' => ['text' => 'Зураг'], 'en' => ['text' => 'Photo']]);
-        $model->insert(['keyword' => 'please-confirm-info', 'type' => 'sys-defined'], ['mn' => ['text' => 'Мэдээллийг баталгаажуулна уу'], 'en' => ['text' => 'Please confirm infomations']]);
+        $model->insert(['keyword' => 'please-confirm-info', 'type' => 'sys-defined'], ['mn' => ['text' => 'Мэдээллийг баталгаажуулна уу'], 'en' => ['text' => 'Please confirm the information']]);
         $model->insert(['keyword' => 'position', 'type' => 'sys-defined'], ['mn' => ['text' => 'Байршил'], 'en' => ['text' => 'Position']]);
         $model->insert(['keyword' => 'price', 'type' => 'sys-defined'], ['mn' => ['text' => 'Үнэ'], 'en' => ['text' => 'Price']]);
         $model->insert(['keyword' => 'privacy-policy', 'type' => 'sys-defined'], ['mn' => ['text' => 'хувийн нууцлалын бодлого'], 'en' => ['text' => 'privacy policy']]);
@@ -259,7 +259,7 @@ class TextInitial
         $model->insert(['keyword' => 'request-new-user', 'type' => 'sys-defined'], ['mn' => ['text' => 'Бүртгүүлэх хүсэлт'], 'en' => ['text' => 'Signup requests']]);
         $model->insert(['keyword' => 'request-registered-success', 'type' => 'sys-defined'], ['mn' => ['text' => 'Хүсэлт амжилттай бүртгэгдлээ'], 'en' => ['text' => 'Request registered successfully']]);
         $model->insert(['keyword' => 'reset-and-start-production', 'type' => 'sys-defined'], ['mn' => ['text' => 'Reset & Production эхлэх'], 'en' => ['text' => 'Reset & Start Production']]);
-        $model->insert(['keyword' => 'reset-email-sent', 'type' => 'sys-defined'], ['mn' => ['text' => 'Нууц үгийг шинэчлэх зааврыг амжилттай илгээлээ.<br />Та заасан имейл хаягаа шалгаж зааврын дагуу нууц үгээ шинэчлэнэ үү!'], 'en' => ['text' => 'An reset e-mail has been sent.<br />Please check your email for further instructions!']]);
+        $model->insert(['keyword' => 'reset-email-sent', 'type' => 'sys-defined'], ['mn' => ['text' => 'Нууц үгийг шинэчлэх зааврыг амжилттай илгээлээ.<br />Та заасан имейл хаягаа шалгаж зааврын дагуу нууц үгээ шинэчлэнэ үү!'], 'en' => ['text' => 'A password reset e-mail has been sent.<br />Please check your email for further instructions!']]);
         $model->insert(['keyword' => 'reset-only-sample-data', 'type' => 'sys-defined'], ['mn' => ['text' => 'Зөвхөн жишиг дата байгаа үед reset хийх боломжтой'], 'en' => ['text' => 'Reset is only available when only sample data exists']]);
 
         $model->insert(['keyword' => 'resolved', 'type' => 'sys-defined'], ['mn' => ['text' => 'Шийдвэрлэсэн'], 'en' => ['text' => 'Resolved']]);
@@ -328,7 +328,7 @@ class TextInitial
         $model->insert(['keyword' => 'updated-by', 'type' => 'sys-defined'], ['mn' => ['text' => 'Өөрчилсөн хэрэглэгч'], 'en' => ['text' => 'Modified by']]);
         $model->insert(['keyword' => 'upload-files', 'type' => 'sys-defined'], ['mn' => ['text' => 'Файлуудыг илгээх'], 'en' => ['text' => 'Upload Files']]);
         $model->insert(['keyword' => 'urgent', 'type' => 'sys-defined'], ['mn' => ['text' => 'Яаралтай'], 'en' => ['text' => 'Urgent']]);
-        $model->insert(['keyword' => 'usefull-links', 'type' => 'sys-defined'], ['mn' => ['text' => 'Хэрэгтэй холбоосууд'], 'en' => ['text' => 'Usefull Links']]);
+        $model->insert(['keyword' => 'usefull-links', 'type' => 'sys-defined'], ['mn' => ['text' => 'Хэрэгтэй холбоосууд'], 'en' => ['text' => 'Useful Links']]);
         $model->insert(['keyword' => 'user', 'type' => 'sys-defined'], ['mn' => ['text' => 'Хэрэглэгч'], 'en' => ['text' => 'User']]);
         $model->insert(['keyword' => 'user-exists', 'type' => 'sys-defined'], ['mn' => ['text' => 'Заасан мэдээлэл бүхий хэрэглэгч аль хэдийн бүртгэгдсэн байна'], 'en' => ['text' => 'It looks like information belongs to an existing user']]);
         $model->insert(['keyword' => 'username', 'type' => 'sys-defined'], ['mn' => ['text' => 'Нэвтрэх нэр'], 'en' => ['text' => 'Username']]);

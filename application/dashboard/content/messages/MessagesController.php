@@ -93,27 +93,30 @@ class MessagesController extends \Dashboard\Controller
      */
     public function view(int $id)
     {
-        if (!$this->isUserCan('system_content_index')) {
-            $this->dashboardProhibited(null, 401)->render();
-            return;
+        try {
+            if (!$this->isUserCan('system_content_index')) {
+                throw new \Exception($this->text('system-no-permission'), 401);
+            }
+
+            $model = new MessagesModel($this->pdo);
+            $table = $model->getName();
+            $record = $model->getById($id);
+            if (empty($record)) {
+                throw new \Exception($this->text('no-record-selected'), 404);
+            }
+
+            // Уншаагүй бол уншсан болгох
+            if (empty($record['is_read'])) {
+                $this->exec("UPDATE $table SET is_read=1 WHERE id=$id");
+                $record['is_read'] = 1;
+            }
+
+            $this->template(__DIR__ . '/messages-view-modal.html', ['record' => $record])->render();
+
+            $this->log('messages', LogLevel::NOTICE, '#{record_id} ({name}) мессежийг нээж үзэж байна', ['action' => 'view', 'record_id' => $id, 'name' => $record['name']]);
+        } catch (\Throwable $err) {
+            $this->modalProhibited($err->getMessage(), $err->getCode())->render();
         }
-
-        $model = new MessagesModel($this->pdo);
-        $table = $model->getName();
-        $record = $model->getById($id);
-        if (empty($record)) {
-            throw new \Exception($this->text('no-record-selected'), 404);
-        }
-
-        // Уншаагүй бол уншсан болгох
-        if (empty($record['is_read'])) {
-            $this->exec("UPDATE $table SET is_read=1 WHERE id=$id");
-            $record['is_read'] = 1;
-        }
-
-        $this->template(__DIR__ . '/messages-view-modal.html', ['record' => $record])->render();
-
-        $this->log('messages', LogLevel::NOTICE, '#{record_id} ({name}) мессежийг нээж үзэж байна', ['action' => 'view', 'record_id' => $id, 'name' => $record['name']]);
     }
 
     /**

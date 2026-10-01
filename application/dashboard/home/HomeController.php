@@ -20,9 +20,12 @@ class HomeController extends \Dashboard\Controller
      */
     public function index()
     {
+        // Зочны IP / User-Agent агуулдаг тул статистикийг зөвхөн system_logger эрхтэй хэрэглэгчид харуулна
         $this->dashboardTemplate(
             __DIR__ . '/home.html',
-            ['web_log_stats' => $this->template(__DIR__ . '/web-log-stats.html')]
+            ['web_log_stats' => $this->isUserCan('system_logger')
+                ? $this->template(__DIR__ . '/web-log-stats.html')
+                : '']
         )->render();
 
         $this->log('dashboard', LogLevel::NOTICE, 'Нүүр хуудсыг уншиж байна');

@@ -250,6 +250,8 @@ class SeoController extends TemplateController
         // Feed-ийн холбоосууд тухайн хэлний URL prefix-тэй (mount path) байна
         $baseUrl = (string)$this->getRequest()->getUri()->withPath($this->getScriptPath() . $this->getMountPath())->withQuery('');
         $baseUrl = \rtrim($baseUrl, '/');
+        // scheme://host[:port] - root-relative файлын замыг absolute болгоход
+        $origin = \rtrim((string)$this->getRequest()->getUri()->withPath('')->withQuery('')->withFragment(''), '/');
 
         // Site settings
         $settings = $this->getAttribute('settings', []);
@@ -320,7 +322,12 @@ class SeoController extends TemplateController
             echo '    <pubDate>' . $pubDate . "</pubDate>\n";
             echo '    <description>' . \htmlspecialchars($desc) . "</description>\n";
             if (!empty($item['photo'])) {
-                echo '    <enclosure url="' . \htmlspecialchars($item['photo']) . '" type="image/jpeg"/>' . "\n";
+                // RSS enclosure-д absolute URL шаардлагатай. photo нь root-relative
+                // зам (script path-тай) тул scheme://host-ийг л урд нь залгана.
+                $photoUrl = \preg_match('#^https?://#i', $item['photo'])
+                    ? $item['photo']
+                    : $origin . '/' . \ltrim($item['photo'], '/');
+                echo '    <enclosure url="' . \htmlspecialchars($photoUrl) . '" type="image/jpeg"/>' . "\n";
             }
             echo "  </item>\n";
         }

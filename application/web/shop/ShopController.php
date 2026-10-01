@@ -76,7 +76,7 @@ class ShopController extends TemplateController
     }
 
     /**
-     * ID-аар бүтээгдэхүүн хайж slug-аар чиглүүлэх.
+     * ID-аар нийтлэгдсэн бүтээгдэхүүн хайж slug URL руу 301 redirect хийх.
      *
      * @param int $id Бүтээгдэхүүний ID дугаар
      * @return void
@@ -86,14 +86,14 @@ class ShopController extends TemplateController
     {
         $model = new ProductsModel($this->pdo);
         $table = $model->getName();
-        $stmt = $this->prepare("SELECT slug FROM $table WHERE id=:id");
+        $stmt = $this->prepare("SELECT slug FROM $table WHERE id=:id AND published=1");
         $stmt->bindValue(':id', $id, \PDO::PARAM_INT);
         $stmt->execute();
         $row = $stmt->fetch();
         if (empty($row)) {
             throw new \Exception('Бүтээгдэхүүн олдсонгүй', 404);
         }
-        return $this->product($row['slug']);
+        $this->redirectPermanently('product', ['slug' => $row['slug']]);
     }
 
     /**
@@ -118,7 +118,7 @@ class ShopController extends TemplateController
             "FROM $table p " .
             "LEFT JOIN $users c ON p.created_by = c.id " .
             "LEFT JOIN $users pb ON p.published_by = pb.id " .
-            "WHERE p.slug = :slug LIMIT 1"
+            "WHERE p.slug = :slug AND p.published = 1 LIMIT 1"
         );
         $stmt->bindValue(':slug', $slug);
         $stmt->execute();
@@ -245,10 +245,34 @@ class ShopController extends TemplateController
                     400
                 );
             }
+            if (!\filter_var($payload['customer_email'], \FILTER_VALIDATE_EMAIL)) {
+                throw new \Exception(
+                    $code === 'mn' ? 'Зөв имэйл хаяг оруулна уу' : 'Please enter a valid email address',
+                    400
+                );
+            }
+
+            // Бүтээгдэхүүний нэрийг client-ийн product_title-д итгэлгүйгээр
+            // нийтлэгдсэн бүтээгдэхүүний бичлэгээс product_id-аар авна
+            $productId = (int)($payload['product_id'] ?? 0);
+            $productTitle = '';
+            if ($productId > 0) {
+                $productsTable = (new ProductsModel($this->pdo))->getName();
+                $pstmt = $this->prepare(
+                    "SELECT title FROM $productsTable WHERE id=:id AND published=1"
+                );
+                $pstmt->bindValue(':id', $productId, \PDO::PARAM_INT);
+                $pstmt->execute();
+                $productRow = $pstmt->fetch();
+                if (empty($productRow)) {
+                    throw new \Exception('Invalid request', 400);
+                }
+                $productTitle = (string)$productRow['title'];
+            }
 
             $model = new ProductOrdersModel($this->pdo);
             $orderData = [
-                'product_title' => $payload['product_title'] ?? '',
+                'product_title' => $productTitle,
                 'customer_name' => $payload['customer_name'],
                 'customer_email' => $payload['customer_email'],
                 'customer_phone' => $payload['customer_phone'] ?? '',
@@ -257,8 +281,8 @@ class ShopController extends TemplateController
                 'code' => $code,
                 'status' => 'new'
             ];
-            if (!empty($payload['product_id'])) {
-                $orderData['product_id'] = (int)$payload['product_id'];
+            if ($productId > 0) {
+                $orderData['product_id'] = $productId;
             }
             $record = $model->insert($orderData);
 
@@ -275,7 +299,7 @@ class ShopController extends TemplateController
                 (int)$record['id'],
                 $payload['customer_name'],
                 $payload['customer_email'],
-                $payload['product_title'] ?? '',
+                $productTitle,
                 \max(1, (int)($payload['quantity'] ?? 1)),
                 $code
             );
@@ -285,7 +309,7 @@ class ShopController extends TemplateController
                 $payload['customer_name'],
                 $payload['customer_email'],
                 $payload['customer_phone'] ?? '',
-                $payload['product_title'] ?? '',
+                $productTitle,
                 \max(1, (int)($payload['quantity'] ?? 1)),
                 '', ''
             ));
@@ -294,7 +318,7 @@ class ShopController extends TemplateController
                 (int)$record['id'],
                 $payload['customer_name'],
                 $payload['customer_email'],
-                $payload['product_title'] ?? '',
+                $productTitle,
                 \max(1, (int)($payload['quantity'] ?? 1)),
                 $payload['customer_phone'] ?? ''
             );
@@ -302,7 +326,7 @@ class ShopController extends TemplateController
             $this->webTemplate(__DIR__ . '/order-success.html', [
                 'order_id' => $record['id'],
                 'customer_name' => $payload['customer_name'],
-                'product_title' => $payload['product_title'] ?? '',
+                'product_title' => $productTitle,
                 'title' => $code === 'mn' ? 'Захиалга амжилттай' : 'Order Success'
             ])->render();
 
@@ -313,7 +337,7 @@ class ShopController extends TemplateController
                 [
                     'action' => 'order',
                     'record_id' => $record['id'],
-                    'product_title' => $payload['product_title'] ?? '',
+                    'product_title' => $productTitle,
                     'auth_user' => [
                         'username'   => $payload['customer_name'],
                         'email'      => $payload['customer_email'],
@@ -324,7 +348,7 @@ class ShopController extends TemplateController
                 ]
             );
         } catch (\Throwable $err) {
-            $this->respondJSON(['message' => $err->getMessage()], $err->getCode() ?: 500);
+            $this->respondJSONError($err);
         }
     }
 
@@ -343,10 +367,10 @@ class ShopController extends TemplateController
             $parsed = $this->getParsedBody();
             $code = $this->getLanguageCode();
 
-            // Бүтээгдэхүүн байгаа эсэх, comment идэвхтэй эсэх шалгах
+            // Бүтээгдэхүүн байгаа, нийтлэгдсэн, review идэвхтэй эсэх шалгах
             $productsModel = new ProductsModel($this->pdo);
             $product = $productsModel->getById($id);
-            if (empty($product) || empty($product['review'])) {
+            if (empty($product) || empty($product['published']) || empty($product['review'])) {
                 throw new \Exception('Invalid request', 400);
             }
 
@@ -358,16 +382,16 @@ class ShopController extends TemplateController
             $comment = \trim($parsed['comment'] ?? '');
 
             if (empty($name)) {
-                throw new \InvalidArgumentException($code === 'mn' ? 'Нэрээ оруулна уу' : 'Please enter your name');
+                throw new \InvalidArgumentException($code === 'mn' ? 'Нэрээ оруулна уу' : 'Please enter your name', 400);
             }
             if ($rating < 1 || $rating > 5) {
-                throw new \InvalidArgumentException($code === 'mn' ? 'Үнэлгээ сонгоно уу (1-5)' : 'Please select a rating (1-5)');
+                throw new \InvalidArgumentException($code === 'mn' ? 'Үнэлгээ сонгоно уу (1-5)' : 'Please select a rating (1-5)', 400);
             }
             if (empty($comment)) {
-                throw new \InvalidArgumentException($code === 'mn' ? 'Сэтгэгдлээ бичнэ үү' : 'Please enter your review');
+                throw new \InvalidArgumentException($code === 'mn' ? 'Сэтгэгдлээ бичнэ үү' : 'Please enter your review', 400);
             }
             if (!empty($email) && !\filter_var($email, \FILTER_VALIDATE_EMAIL)) {
-                throw new \InvalidArgumentException($code === 'mn' ? 'Зөв имэйл хаяг оруулна уу' : 'Please enter a valid email address');
+                throw new \InvalidArgumentException($code === 'mn' ? 'Зөв имэйл хаяг оруулна уу' : 'Please enter a valid email address', 400);
             }
             $this->checkLinkSpam($comment);
 
@@ -410,7 +434,7 @@ class ShopController extends TemplateController
                 ]
             ]);
         } catch (\Throwable $err) {
-            $this->respondJSON(['message' => $err->getMessage()], $err->getCode() ?: 500);
+            $this->respondJSONError($err);
         }
     }
 

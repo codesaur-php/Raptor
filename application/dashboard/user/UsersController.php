@@ -314,29 +314,40 @@ class UsersController extends FileController
                 // -----------------------------
                 // POST - хэрэглэгч үүсгэх
                 // -----------------------------
-                $payload = $this->getParsedBody();
-                
+                $body = $this->getParsedBody();
+
                 // Заавал байх ёстой талбаруудыг шалгах (username / email)
-                if (empty($payload['username']) || empty($payload['email'])
-                    || \filter_var($payload['email'], \FILTER_VALIDATE_EMAIL) === false
+                if (empty($body['username']) || empty($body['email'])
+                    || \filter_var($body['email'], \FILTER_VALIDATE_EMAIL) === false
                 ) {
                     throw new \InvalidArgumentException($this->text('invalid-request'), 400);
                 }
-                $payload['email'] = $this->normalizeEmail($payload['email']);
+
+                // Зөвхөн формын талбаруудыг авна (mass assignment-аас хамгаална) -
+                // photo*/is_active/id зэрэг багануудыг client-ээс хүлээж авахгүй.
+                //
+                // Security (English): whitelist of client-supplied columns; photo*,
+                // is_active, id and audit columns are never taken from the client.
+                $payload = ['username' => (string)$body['username']];
+                foreach (['first_name', 'last_name', 'phone'] as $field) {
+                    if (\array_key_exists($field, $body)) {
+                        $payload[$field] = (string)$body[$field];
+                    }
+                }
+                $payload['email'] = $this->normalizeEmail($body['email']);
 
                 // Нууц үг хоосон байвал санамсаргүй үүсгэнэ, байвал шууд ашиглана
-                if (empty($payload['password'])) {
+                if (empty($body['password'])) {
                     $bytes = \random_bytes(10);
                     $password = \bin2hex($bytes);
                 } else {
-                    $password = $payload['password'];
+                    $password = $body['password'];
                 }
                 // Нууц үгийг bcrypt-аар hash хийж DB-д хадгалах бэлэн болно
                 $payload['password'] = \password_hash($password, \PASSWORD_BCRYPT);
-                
+
                 // POST дээр ирсэн organization (optional) - дараа нь OrganizationUserModel-д ашиглана
-                $post_organization = $payload['organization'] ?? null;
-                unset($payload['organization']);
+                $post_organization = $body['organization'] ?? null;
                 
                 // created_by-г одоогийн хэрэглэгчийн ID-аар тавьж insert хийнэ
                 $record = $model->insert($payload + ['created_by' => $this->getUserId()]);
@@ -480,37 +491,51 @@ class UsersController extends FileController
             
             if ($this->getRequest()->getMethod() == 'PUT') {
                 // PUT - Формаас ирсэн өгөгдлийг хадгална
-                $payload = $this->getParsedBody();
-                if (empty($payload['username']) || empty($payload['email'])
-                    || \filter_var($payload['email'], \FILTER_VALIDATE_EMAIL) === false
+                $body = $this->getParsedBody();
+                if (empty($body['username']) || empty($body['email'])
+                    || \filter_var($body['email'], \FILTER_VALIDATE_EMAIL) === false
                 ) {
                     throw new \InvalidArgumentException($this->text('invalid-request'), 400);
                 }
-                $payload['email'] = $this->normalizeEmail($payload['email']);
+
+                // Зөвхөн формын засварлах боломжтой талбаруудыг авна (mass assignment-аас хамгаална).
+                // username өөрчлөгдөхгүй; photo/photo_file/photo_size зөвхөн upload логикоос,
+                // is_active/created_by/id зэрэг талбар client-ээс хэзээ ч ирэхгүй.
+                //
+                // Security (English): whitelist of client-editable columns. username is
+                // immutable; photo* columns come only from the upload handling below
+                // (photo_file is later unlink()ed); is_active/created_by/id are never
+                // accepted from the client.
+                $payload = [];
+                foreach (['first_name', 'last_name', 'phone'] as $field) {
+                    if (\array_key_exists($field, $body)) {
+                        $payload[$field] = (string)$body[$field];
+                    }
+                }
+                $payload['email'] = $this->normalizeEmail($body['email']);
 
                 // Нууц үг ирсэн бол hash хийнэ
-                if (!empty($payload['password'])) {
-                    $payload['password'] = \password_hash($payload['password'], \PASSWORD_BCRYPT);
+                if (!empty($body['password'])) {
+                    $payload['password'] = \password_hash($body['password'], \PASSWORD_BCRYPT);
                 }
-                
-                // Organizations ирүүлсэн массивыг validate хийн хадгалах
-                $post_organizations = \filter_var(
-                    $payload['organizations'] ?? [],
-                    \FILTER_VALIDATE_INT,
-                    \FILTER_REQUIRE_ARRAY
-                ) ?: [];
-                unset($payload['organizations']);
-                
-                // Roles ирүүлсэн массивыг validate хийн хадгалах
-                $post_roles = \filter_var(
-                    $payload['roles'] ?? [],
-                    \FILTER_VALIDATE_INT,
-                    \FILTER_REQUIRE_ARRAY
-                ) ?: [];
-                unset($payload['roles']);
 
-                // Username өөрчлөхийг хориглох
-                unset($payload['username']);
+                // Organizations / Roles талбар формд байгаа үед л (эрхтэй үед template
+                // render хийдэг) тохируулна - талбар ирээгүй бол одоогийнхыг устгахгүй
+                $orgs_submitted = \array_key_exists('organizations', $body)
+                    || !empty($body['organizations_present']);
+                $post_organizations = \filter_var(
+                    $body['organizations'] ?? [],
+                    \FILTER_VALIDATE_INT,
+                    \FILTER_REQUIRE_ARRAY
+                ) ?: [];
+
+                $roles_submitted = \array_key_exists('roles', $body)
+                    || !empty($body['roles_present']);
+                $post_roles = \filter_var(
+                    $body['roles'] ?? [],
+                    \FILTER_VALIDATE_INT,
+                    \FILTER_REQUIRE_ARRAY
+                ) ?: [];
 
                 // Email давхардал шалгах
                 $existing_email = $model->getRowWhere(['email' => $payload['email']]);
@@ -522,7 +547,7 @@ class UsersController extends FileController
                 }
                 
                 $oldPhotoFile = $record['photo_file'] ?? '';
-                $photoRemovedRequested = (int)($payload['photo_removed'] ?? 0) === 1;
+                $photoRemovedRequested = (int)($body['photo_removed'] ?? 0) === 1;
                 $newUploadedFile = null;
 
                 if ($photoRemovedRequested) {
@@ -530,7 +555,6 @@ class UsersController extends FileController
                     $payload['photo_file'] = '';
                     $payload['photo_size'] = 0;
                 }
-                unset($payload['photo_removed']);
 
                 $this->setFolder("/{$model->getName()}/$id");
                 $this->allowImageOnly();
@@ -545,16 +569,22 @@ class UsersController extends FileController
                 // Аль талбар өөрчлөгдсөн бэ? - updates[] массив
                 $updates = [];
                 foreach ($payload as $field => $value) {
-                    if ($record[$field] != $value) {
+                    if (($record[$field] ?? null) != $value) {
                         $updates[] = $field;
                     }
                 }
-                
-                // Organizations ба Roles тохируулья
-                if ($this->configureOrgs($id, $post_organizations)) {
+
+                // Organizations ба Roles тохируулья - зөвхөн эрхтэй бөгөөд талбар ирсэн үед
+                if ($orgs_submitted
+                    && $this->isUserCan('system_user_organization_set')
+                    && $this->configureOrgs($id, $post_organizations)
+                ) {
                     $updates[] = 'organizations-configure';
                 }
-                if ($this->configureRoles($id, $post_roles)) {
+                if ($roles_submitted
+                    && $this->isUserCan('system_rbac')
+                    && $this->configureRoles($id, $post_roles)
+                ) {
                     $updates[] = 'roles-configure';
                 }
                 
@@ -1028,12 +1058,10 @@ class UsersController extends FileController
                                 $now = new \DateTime();
                                 $then = new \DateTime($created_at);
                                 $diff = $then->diff($now);
-                                return
-                                    $diff->y > 0 ||
-                                    $diff->m > 0 ||
-                                    $diff->d > 0 ||
-                                    $diff->h > 0 ||
-                                    $diff->i > RAPTOR_PASSWORD_RESET_MINUTES;
+                                // Нийт өнгөрсөн минут ($diff->days нь сар/жилийг багтаасан нийт хоног)
+                                $minutes = $diff->days * 1440 + $diff->h * 60 + $diff->i;
+                                return $diff->invert === 0
+                                    && $minutes > RAPTOR_PASSWORD_RESET_MINUTES;
                             }
                         );
                     }
@@ -1576,7 +1604,7 @@ class UsersController extends FileController
                     && (empty($post_organizations) || !\in_array(1, $post_organizations))
                 ) {
                     // Root user бол үргэлж organization_id=1 -т харьяалагдсан байх ёстой
-                    throw new \Exception('Root user must belong to a system organization', 503);
+                    throw new \Exception('Root user must belong to a system organization', 403);
                 }
                 // configureOrgs() -> нэмэх/хасах үйлдлүүдийг автоматаар гүйцэтгээд амжилттай бол true
                 if (!$this->configureOrgs($id, $post_organizations)) {
@@ -1799,7 +1827,7 @@ class UsersController extends FileController
                     $this->getParsedBody()['roles'] ?? [],
                     \FILTER_VALIDATE_INT,
                     \FILTER_REQUIRE_ARRAY
-                );
+                ) ?: [];
                  
                 // ROOT хэрэглэгч -> заавал system coder дүртэй байх ёстой
                 if (($id == 1) &&
@@ -1937,10 +1965,10 @@ class UsersController extends FileController
     {
         $configured = false;
         try {            
-            if (!$this->isUserCan('system_user_organization_set')) {
+            if (!$this->isUserCan('system_rbac')) {
                 throw new \Exception($this->text('system-no-permission'), 401);
             }
-            
+
             // Log бичихэд ашиглах logger instance бэлтгэх
             $logger = new Logger($this->pdo);
             $logger->setTable('users');
@@ -2017,6 +2045,11 @@ class UsersController extends FileController
             }
         } catch (\Throwable) {
             // Алдааг залгия (UI дээр crash биш)
+        }
+        if ($configured) {
+            // JWTAuthMiddleware хэрэглэгчийн эрхийг rbac.{id} key-д cache хийдэг -
+            // дүр өөрчлөгдсөн бол шууд хүчинтэй болгохын тулд устгана
+            $this->invalidateCache("rbac.$id");
         }
         return $configured;
     }

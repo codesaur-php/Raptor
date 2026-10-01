@@ -107,6 +107,9 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
+        with:
+          # CI шалгасан commit-ийг deploy хийнэ (default branch-ийн сүүлийн commit биш)
+          ref: ${{ github.event.workflow_run.head_sha }}
 
       - name: Setup PHP 8.2
         uses: shivammathur/setup-php@v2
@@ -151,6 +154,9 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
+        with:
+          # CI шалгасан commit-ийг deploy хийнэ (default branch-ийн сүүлийн commit биш)
+          ref: ${{ github.event.workflow_run.head_sha }}
 
       - name: Setup PHP 8.2
         uses: shivammathur/setup-php@v2
@@ -222,6 +228,9 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
+        with:
+          # CI шалгасан commit-ийг deploy хийнэ (default branch-ийн сүүлийн commit биш)
+          ref: ${{ github.event.workflow_run.head_sha }}
 
       # Runtime хавтаснуудыг (cache, logs, protected, public_html\public,
       # database\migrations) /XD-д эх болон зорьсон талын бүтэн замаар нь
@@ -230,10 +239,16 @@ jobs:
       # мод даяар таардаг тул application доторх ижил нэртэй хавтас хамт хасагдана.
       # Дараагийн жижиг robocopy-нууд (/MIR-гүй, юу ч устгадаггүй)
       # guard файлуудыг хуулж хавтаснуудыг серверт үүсгэнэ.
+      # vendor\ (/XD) болон composer.lock (/XF) git-д ороогүй тул checkout-д
+      # байхгүй - мөн адил бүтэн замын хосоор хасаж /MIR-ийн устгалтаас
+      # хамгаална; дараагийн composer алхам тэдгээрийг серверт шинэчилнэ.
+      # composer.lock git-д ороогүй тул "install" биш "update" хэвээр байна -
+      # install нь сервер дээрх хуучин lock-оор түгжигдэж composer.json-ий
+      # өөрчлөлтийг үл тоомсорлоно.
       - name: Sync files to deploy path
         shell: cmd
         run: |
-          robocopy "%GITHUB_WORKSPACE%" "${{ vars.DEPLOY_PATH }}" /MIR /XD .git .github docs tests nbproject "%GITHUB_WORKSPACE%\cache" "%GITHUB_WORKSPACE%\logs" "%GITHUB_WORKSPACE%\protected" "%GITHUB_WORKSPACE%\public_html\public" "%GITHUB_WORKSPACE%\database\migrations" "${{ vars.DEPLOY_PATH }}\cache" "${{ vars.DEPLOY_PATH }}\logs" "${{ vars.DEPLOY_PATH }}\protected" "${{ vars.DEPLOY_PATH }}\public_html\public" "${{ vars.DEPLOY_PATH }}\database\migrations" /XF .env .env.* phpunit.xml error_log /NFL /NDL /NJH /NJS /R:3 /W:5
+          robocopy "%GITHUB_WORKSPACE%" "${{ vars.DEPLOY_PATH }}" /MIR /XD .git .github docs tests nbproject "%GITHUB_WORKSPACE%\cache" "%GITHUB_WORKSPACE%\logs" "%GITHUB_WORKSPACE%\protected" "%GITHUB_WORKSPACE%\public_html\public" "%GITHUB_WORKSPACE%\database\migrations" "${{ vars.DEPLOY_PATH }}\cache" "${{ vars.DEPLOY_PATH }}\logs" "${{ vars.DEPLOY_PATH }}\protected" "${{ vars.DEPLOY_PATH }}\public_html\public" "${{ vars.DEPLOY_PATH }}\database\migrations" "%GITHUB_WORKSPACE%\vendor" "${{ vars.DEPLOY_PATH }}\vendor" /XF .env .env.* phpunit.xml error_log "%GITHUB_WORKSPACE%\composer.lock" "${{ vars.DEPLOY_PATH }}\composer.lock" /NFL /NDL /NJH /NJS /R:3 /W:5
           if %ERRORLEVEL% GTR 7 exit /b 1
           robocopy "%GITHUB_WORKSPACE%\cache" "${{ vars.DEPLOY_PATH }}\cache" .htaccess /NJH /NJS /R:3 /W:5
           if %ERRORLEVEL% GTR 7 exit /b 1

@@ -69,7 +69,7 @@
                                 <i class="bi bi-clock text-primary me-3 mt-1"></i>
                                 <div>
                                     <strong>{{ 'working-hours'|text }}</strong><br>
-                                    {{ config['open-hours'][localization.code ?? 'mn'] }}
+                                    {{ config['open-hours'][localization.code ?? 'mn']|raw }}
                                 </div>
                             </li>
                             {% endif %}

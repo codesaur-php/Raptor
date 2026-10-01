@@ -37,7 +37,9 @@ class MigrationRunner
     {
         $this->pdo = $pdo;
         $this->migrationsPath = \rtrim($migrationsPath, "/\\");
-        $this->scanner = new MigrationSecurityScanner();
+        $this->scanner = new MigrationSecurityScanner(
+            (string) $pdo->getAttribute(\PDO::ATTR_DRIVER_NAME)
+        );
     }
 
     /**
@@ -416,6 +418,23 @@ class MigrationRunner
                     break;
                 }
                 $i = $end;
+                continue;
+            }
+
+            // Block comment /* ... */ - дотор нь байх ; эсвэл ' нь statement
+            // хуваалт / string эхлүүлэхгүй. MySQL-ийн /*! ... */ (versioned) ба
+            // /*+ ... */ (optimizer hint) нь executable тул хэвээр үлдээнэ.
+            if ($char === '/' && $i + 1 < $length && $sql[$i + 1] === '*') {
+                $end = \strpos($sql, '*/', $i + 2);
+                $end = $end === false ? $length : $end + 2;
+                if ($mysqlEscape && $i + 2 < $length
+                    && ($sql[$i + 2] === '!' || $sql[$i + 2] === '+')
+                ) {
+                    $current .= \substr($sql, $i, $end - $i);
+                } else {
+                    $current .= ' ';
+                }
+                $i = $end - 1;
                 continue;
             }
 

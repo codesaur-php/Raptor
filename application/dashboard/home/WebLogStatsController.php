@@ -17,6 +17,9 @@ class WebLogStatsController extends \Dashboard\Controller
     public function stats()
     {
         try {
+            if (!$this->isUserCan('system_logger')) {
+                throw new \Exception($this->text('system-no-permission'), 401);
+            }
             $stats = new WebLogStats($this->pdo);
             $this->respondJSON($stats->getStats());
         } catch (\Throwable $err) {
@@ -31,6 +34,9 @@ class WebLogStatsController extends \Dashboard\Controller
     public function logStats()
     {
         try {
+            if (!$this->isUserCan('system_logger')) {
+                throw new \Exception($this->text('system-no-permission'), 401);
+            }
             $stats = new WebLogStats($this->pdo);
             $this->respondJSON(['status' => 'success', 'logs' => $stats->getLogStats()]);
         } catch (\Throwable $err) {

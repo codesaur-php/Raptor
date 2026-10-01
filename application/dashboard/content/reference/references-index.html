@@ -177,9 +177,9 @@
 
                     let question;
                     if (document.documentElement.lang === 'mn') {
-                        question = `<p class="text-danger mb-3">Та [${cleanKey}] түлхүүртэй бичлэгийг устгахдаа итгэлтэй байна уу?</p>`;
+                        question = `<p class="text-danger mb-3">Та [${escapeHtml(cleanKey)}] түлхүүртэй бичлэгийг устгахдаа итгэлтэй байна уу?</p>`;
                     } else {
-                        question = `<p class="text-danger mb-3">Are you sure to delete the reference with keyword [${cleanKey}]?</p>`;
+                        question = `<p class="text-danger mb-3">Are you sure to delete the reference with keyword [${escapeHtml(cleanKey)}]?</p>`;
                     }
 
                     /* SweetAlert Confirm */

@@ -69,7 +69,7 @@
                     autocomplete="off"
                     id="rbac_permission_insert"
                     role="form"
-                    action="{{ 'rbac-insert-permission'|link({'alias':alias}) }}?title={{ title|e }}"
+                    action="{{ 'rbac-insert-permission'|link({'alias':alias}) }}?title={{ title|url_encode }}"
                     method="POST"
                     enctype="multipart/form-data"
                 >
@@ -174,7 +174,7 @@
         const modules = formInsert.querySelectorAll('.dropdown-item');
         modules.forEach(a =>
             a.addEventListener('click', function () {
-                formInsert.querySelector('input[name="module"]').value = a.innerHTML;
+                formInsert.querySelector('input[name="module"]').value = a.textContent.trim();
             })
         );
 

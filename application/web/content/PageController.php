@@ -46,7 +46,7 @@ class PageController extends TemplateController
             "FROM $table p " .
             "LEFT JOIN $users c ON p.created_by = c.id " .
             "LEFT JOIN $users pb ON p.published_by = pb.id " .
-            "WHERE p.slug = :slug LIMIT 1"
+            "WHERE p.slug = :slug AND p.published = 1 LIMIT 1"
         );
         $stmt->bindValue(':slug', $slug);
         $stmt->execute();
@@ -67,7 +67,7 @@ class PageController extends TemplateController
         // болон бүх хэлний ('*') sibling-үүд орно.
         $parentId = (int) ($record['parent_id'] ?? 0);
         if ($parentId > 0) {
-            $parentStmt = $this->prepare("SELECT title FROM $table WHERE id = :id LIMIT 1");
+            $parentStmt = $this->prepare("SELECT title FROM $table WHERE id = :id AND published = 1 LIMIT 1");
             $parentStmt->bindValue(':id', $parentId, \PDO::PARAM_INT);
             $parentStmt->execute();
             $parent = $parentStmt->fetch();
@@ -106,7 +106,7 @@ class PageController extends TemplateController
     }
     
     /**
-     * ID-аар хуудас хайж slug-аар чиглүүлэх.
+     * ID-аар нийтлэгдсэн хуудас хайж slug URL руу 301 redirect хийх.
      *
      * @param int $id Хуудасны ID дугаар
      * @return void
@@ -116,13 +116,13 @@ class PageController extends TemplateController
     {
         $model = new PagesModel($this->pdo);
         $table = $model->getName();
-        $stmt = $this->prepare("SELECT slug FROM $table WHERE id=:id");
+        $stmt = $this->prepare("SELECT slug FROM $table WHERE id=:id AND published=1");
         $stmt->bindValue(':id', $id, \PDO::PARAM_INT);
         $stmt->execute();
         $row = $stmt->fetch();
         if (empty($row)) {
             throw new \Exception('Хуудас олдсонгүй', 404);
         }
-        return $this->page($row['slug']);
+        $this->redirectPermanently('page', ['slug' => $row['slug']]);
     }
 }

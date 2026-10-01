@@ -26,16 +26,16 @@ class ExceptionHandler implements ExceptionHandlerInterface
             return;
         }
 
-        $code = $throwable->getCode();
+        // HTTP статус: стандарт мужид (RFC 9110: 100-599) багтах int code бол
+        // түүнийг, бусад (\Error-ийн 0, PDOException-ий SQLSTATE '42S02' гэх
+        // мэт) бүгд 500
+        $rawCode = $throwable->getCode();
+        $code = \is_int($rawCode) && $rawCode >= 100 && $rawCode <= 599 ? $rawCode : 500;
         $message = $throwable->getMessage();
         $title = $throwable instanceof \Exception ? 'Exception' : 'Error';
 
-        if ($code != 0) {
-            // Стандарт HTTP статус кодын мужид (RFC 9110: 100-599) багтаж
-            // байвал -> HTTP статус илгээх
-            if (\is_numeric($code) && $code >= 100 && $code <= 599 && !\headers_sent()) {
-                \http_response_code((int) $code);
-            }
+        if (!\headers_sent()) {
+            \http_response_code($code);
         }
 
         // Log файл руу бичих. 404 (олдоогүй хуудас, unknown route) нь ихэвчлэн
@@ -45,6 +45,12 @@ class ExceptionHandler implements ExceptionHandlerInterface
         // тэнд бүх 404 хүсэлт IP, User-Agent мэдээллийн хамт хадгалагддаг.
         if ($code != 404 || CODESAUR_DEVELOPMENT) {
             \error_log("$title: $message");
+        }
+
+        // 5xx алдааны дотоод мессеж (SQL алдаа, файлын зам гэх мэт) production
+        // дээр зочинд харагдахгүй - зөвхөн log-д үлдэнэ
+        if ($code >= 500 && !CODESAUR_DEVELOPMENT) {
+            $message = 'Something went wrong. Please try again later.';
         }
 
         // message нь энд бүрэн escape хийгдсэн HTML тул template-ийн autoescape-аас

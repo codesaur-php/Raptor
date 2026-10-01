@@ -222,7 +222,9 @@ class AutoescapeTest extends TestCase
      * template-д өгдөг тул {{ address }} гэж filter-гүй хэвлэвэл HTML эх код
      * текстээр харагдана. Ийм bare print бүр |raw-аар төгсөх ёстой (settings
      * form-ийн textarea нь record['localized'][code][...] замаар хэвлэдэг тул
-     * энд хамаарахгүй).
+     * энд хамаарахгүй). Settings-ийн config JSON доторх open-hours (хэл бүрийн
+     * ажлын цаг) мөн адил HTML агуулж болох тул config['open-hours'] print нь
+     * |raw-аар төгсөх ёстой.
      */
     public function testHtmlSettingsPrintsAreRaw(): void
     {
@@ -233,7 +235,7 @@ class AutoescapeTest extends TestCase
                 continue;
             }
             $src = \file_get_contents($file->getPathname());
-            if (!\preg_match_all('/\{\{\s*(urgent|contact|address|copyright)\b[^}]*\}\}/', $src, $m, \PREG_SET_ORDER)) {
+            if (!\preg_match_all('/\{\{\s*(urgent|contact|address|copyright|config\[\'open-hours\'\])(?![\w-])[^}]*\}\}/', $src, $m, \PREG_SET_ORDER)) {
                 continue;
             }
             foreach ($m as $match) {
@@ -244,7 +246,7 @@ class AutoescapeTest extends TestCase
             }
         }
 
-        $this->assertSame([], $violations, "HTML-capable settings fields (urgent, contact, address, copyright) must be printed with |raw:\n" . \implode("\n", $violations));
+        $this->assertSame([], $violations, "HTML-capable settings fields (urgent, contact, address, copyright, config['open-hours']) must be printed with |raw:\n" . \implode("\n", $violations));
     }
 
     /**

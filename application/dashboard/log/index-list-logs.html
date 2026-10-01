@@ -162,16 +162,18 @@ document.addEventListener('DOMContentLoaded', function () {
             log_li.appendChild(a_link);
             log_li.appendChild(document.createTextNode(' '));
 
-            /* Логийн мессеж хэсэг (HTML хэлбэрээр ирдэг тул innerHTML ашиглаж байна) */
+            /* Логийн мессеж хэсэг - хэрэглэгчийн оруулсан утга агуулж болох тул энгийн текстээр харуулна.
+             * Зарим мессеж tag агуулдаг (файлын холбоос) тул идэвхгүй DOMParser баримтаар tag-ийг хуулж зөвхөн текстийг авна */
             const span_msg = document.createElement('span');
-            span_msg.innerHTML = log.message;
+            span_msg.textContent = new DOMParser().parseFromString(String(log.message ?? ''), 'text/html').body.textContent;
             log_li.appendChild(span_msg);
             log_li.appendChild(document.createTextNode(' '));
 
             /* Үйлдэл болон хэрэглэгчийн мэдээллийг харуулах жижиг текст */
             const span_user_action = document.createElement('span');
-            span_user_action.innerHTML =
-                `<span class="text-muted small"><u>${log.context?.action ?? ''} by ${log.context?.auth_user?.username ?? ''}</u></span>`;
+            const u_user_action = document.createElement('u');
+            u_user_action.textContent = `${log.context?.action ?? ''} by ${log.context?.auth_user?.username ?? ''}`;
+            span_user_action.appendChild(u_user_action);
             span_user_action.classList.add('text-muted', 'small');
             log_li.appendChild(span_user_action);
 

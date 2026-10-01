@@ -735,7 +735,7 @@ class DevRequestController extends FileController
             "SELECT DISTINCT u.id, u.email, u.first_name FROM $users u " .
             "INNER JOIN $userRoles ur ON u.id = ur.user_id " .
             "INNER JOIN $roles r ON ur.role_id = r.id " .
-            "WHERE r.name = 'coder' " .
+            "WHERE (r.alias = 'system' AND r.name = 'coder') " .
             "OR ur.role_id IN (" .
             "  SELECT rp.role_id FROM $rolePerms rp " .
             "  INNER JOIN $permissions p ON rp.permission_id = p.id " .

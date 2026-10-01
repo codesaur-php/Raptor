@@ -172,7 +172,7 @@
             data.list.forEach(record => {
                 const id = record.id;
                 const createdAt = record.created_at ? record.created_at.substring(0, 16) : '';
-                const statusBadge = statusLabels[record.status] || `<span class="badge bg-light text-dark">${record.status}</span>`;
+                const statusBadge = statusLabels[record.status] || `<span class="badge bg-light text-dark">${escapeHtml(record.status)}</span>`;
 
                 const ac = parseInt(record.attachment_count) || 0;
                 const attachCount = ac > 0
@@ -186,11 +186,11 @@
                 const actions = `<div class="mb-1">${buttons.join(' ')}</div>`;
 
                 rowsHTML += `<tr>` +
-                    `<th scope="row">${id}</th>` +
-                    `<td>${createdAt}</td>` +
-                    `<td>${record.title || ''}</td>` +
-                    `<td>${record.created_user || ''}</td>` +
-                    `<td>${record.assigned_user || '-'}</td>` +
+                    `<th scope="row">${escapeHtml(id)}</th>` +
+                    `<td>${escapeHtml(createdAt)}</td>` +
+                    `<td>${escapeHtml(record.title || '')}</td>` +
+                    `<td>${escapeHtml(record.created_user || '')}</td>` +
+                    `<td>${escapeHtml(record.assigned_user || '-')}</td>` +
                     `<td>${statusBadge}</td>` +
                     `<td>${attachCount}</td>` +
                     `<td>${actions}</td>` +
@@ -214,7 +214,7 @@
                 const title = thisRow.children[2].textContent;
 
                 Swal.fire({
-                    html: `<i class="bi bi-question-circle text-danger mb-4" style="font-size:3rem"></i><p class="text-danger mb-3">{{ 'confirm-delete-request'|text|e('js') }}: "${title}"?</p>`,
+                    html: `<i class="bi bi-question-circle text-danger mb-4" style="font-size:3rem"></i><p class="text-danger mb-3">{{ 'confirm-delete-request'|text|e('js') }}: "${escapeHtml(title)}"?</p>`,
                     showCancelButton: true,
                     cancelButtonText: `{{ 'cancel'|text|e }}`,
                     confirmButtonText: `<i class="bi bi-trash"></i> {{ 'delete'|text|e }}`,

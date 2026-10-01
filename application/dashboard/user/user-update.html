@@ -194,6 +194,8 @@
         <div class="tab-pane" id="tab-options" role="tabpanel">
             {% if user.can('system_user_organization_set') %}
                 <!-- Байгууллага сонгох -->
+                <!-- Хоосон multi-select FormData-д огт орохгүй тул байгууллагын талбар илгээгдсэнийг энэ marker-аар серверт мэдэгдэнэ -->
+                <input type="hidden" name="organizations_present" value="1">
                 <label class="form-label">{{ 'organization'|text }}</label>
                 <div class="form-text" id="organzationHelpBlock">
                     хэрэглэгчийн харьяалагдах байгууллагыг сонгоно уу
@@ -215,6 +217,8 @@
 
             {% if user.can('system_rbac') %}
                 <!-- Role сонгох -->
+                <!-- Хоосон multi-select FormData-д огт орохгүй тул дүрийн талбар илгээгдсэнийг энэ marker-аар серверт мэдэгдэнэ -->
+                <input type="hidden" name="roles_present" value="1">
                 <label class="mt-1">{{ 'role'|text }}</label>
                 <div class="form-text" id="roleHelpBlock">
                     хэрэглэгчийн эрхийн дүрийг тохируулна уу

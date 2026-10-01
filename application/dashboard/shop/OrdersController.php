@@ -59,7 +59,9 @@ class OrdersController extends \Dashboard\Controller
         $languages = $this->getLanguages();
         $filters['code']['title'] = $this->text('language');
         foreach ($codes_result as $row) {
-            $filters['code']['values'][$row['code']] = "{$languages[$row['code']]['title']} [{$row['code']}]";
+            $filters['code']['values'][$row['code']] = $row['code'] === '*'
+                ? $this->text('all-languages')
+                : ($languages[$row['code']]['title'] ?? $row['code']) . " [{$row['code']}]";
         }
         $settings = $this->getAttribute('settings', []);
         $dashboard = $this->dashboardTemplate(__DIR__ . '/orders-index.html', [

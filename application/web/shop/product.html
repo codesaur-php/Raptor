@@ -6,7 +6,7 @@
         <div class="text-center mb-3 pb-2 border-bottom">
             <h2>{{ title }}</h2>
 
-            {% if price is defined and price is not empty %}
+            {% if price is defined and price > 0 %}
             <p class="mb-1">
                 {% if sale_price is defined and sale_price is not empty and sale_price > 0 %}
                     <del class="text-muted fs-6">{{ price|number_format(2) }}</del>
@@ -184,7 +184,7 @@
     </div>
     {% endif %}
 
-    {% if sku is not empty or barcode is not empty or stock is defined or sizes is not empty or colors is not empty %}
+    {% if sku is not empty or barcode is not empty or stock > 0 or sizes is not empty or colors is not empty %}
     <div class="row mb-3 g-2 text-muted small">
         {% if sku is not empty %}
         <div class="col-auto"><span class="badge bg-light text-dark border"><i class="bi bi-upc me-1"></i>SKU: {{ sku|e }}</span></div>
@@ -192,7 +192,7 @@
         {% if barcode is not empty %}
         <div class="col-auto"><span class="badge bg-light text-dark border"><i class="bi bi-upc-scan me-1"></i>{{ 'barcode'|text }}: {{ barcode|e }}</span></div>
         {% endif %}
-        {% if stock is defined %}
+        {% if stock > 0 %}
         <div class="col-auto"><span class="badge bg-light text-dark border"><i class="bi bi-box-seam me-1"></i>{{ 'stock'|text }}: {{ stock }}</span></div>
         {% endif %}
         {% if sizes is not empty %}
@@ -272,7 +272,7 @@
             <div class="fs-2 fw-bold text-warning">{{ avg_rating }}</div>
             <div class="mb-1">
                 {% for i in range(1, 5) %}
-                    {% if i <= avg_rating|round(0, 'floor') %}
+                    {% if i <= avg_rating|int %}
                         <i class="bi bi-star-fill text-warning fs-5"></i>
                     {% elseif i - avg_rating < 1 and i - avg_rating > 0 %}
                         <i class="bi bi-star-half text-warning fs-5"></i>
@@ -481,21 +481,27 @@ document.addEventListener('DOMContentLoaded', function () {
     const thumbs = document.getElementById('gallery-thumbs');
     if (!main || !thumbs) return;
 
+    /* dataset утгууд (файлын нэр, зам) innerHTML-д орохоос өмнө escape хийнэ */
+    const esc = (s) => String(s ?? '').replace(/[&<>"'`]/g, c => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;', '`': '&#96;'
+    }[c]));
+
     thumbs.querySelectorAll('.product-thumb, .product-thumb-icon').forEach(thumb => {
         thumb.addEventListener('click', function () {
             thumbs.querySelectorAll('.product-thumb, .product-thumb-icon').forEach(t => t.classList.remove('active'));
             this.classList.add('active');
 
             const type = this.dataset.type;
-            const src = this.dataset.src;
+            const src = esc(this.dataset.src);
+            const mime = esc(this.dataset.mime);
             if (type === 'image') {
                 main.innerHTML = `<img src="${src}" alt="" data-fancybox="gallery" data-src="${src}" style="max-height:480px;max-width:100%;object-fit:contain;cursor:zoom-in">`;
                 Fancybox.bind('[data-fancybox="gallery"]', { groupAll: true });
             } else if (type === 'video') {
-                main.innerHTML = `<video controls autoplay style="max-height:480px;max-width:100%"><source src="${src}" type="${this.dataset.mime}"></video>`;
+                main.innerHTML = `<video controls autoplay style="max-height:480px;max-width:100%"><source src="${src}" type="${mime}"></video>`;
             } else if (type === 'audio') {
-                const name = this.dataset.name || '';
-                main.innerHTML = `<div class="text-center py-4"><i class="bi bi-music-note-beamed text-info" style="font-size:3rem"></i><div class="mt-2 mb-3 small text-muted">${name}</div><audio controls autoplay><source src="${src}" type="${this.dataset.mime}"></audio></div>`;
+                const name = esc(this.dataset.name);
+                main.innerHTML = `<div class="text-center py-4"><i class="bi bi-music-note-beamed text-info" style="font-size:3rem"></i><div class="mt-2 mb-3 small text-muted">${name}</div><audio controls autoplay><source src="${src}" type="${mime}"></audio></div>`;
             }
         });
     });

@@ -63,7 +63,8 @@ main() {
         /bin/rm -rf "$DEPLOYPATH/bin" && /bin/cp -a bin "$DEPLOYPATH/bin"
         /bin/cp -af public_html/. "$DEPLOYPATH/public_html/"
         /bin/cp -f composer.json "$DEPLOYPATH/composer.json"
-        /bin/cp -f composer.lock "$DEPLOYPATH/composer.lock"
+        # composer.lock-ийг git-д commit хийх ёстой (docs/mn/CPANEL.md); байхгүй бол алгасна
+        if [ -f composer.lock ]; then /bin/cp -f composer.lock "$DEPLOYPATH/composer.lock"; fi
         /bin/cp -f README.md "$DEPLOYPATH/README.md"
         /bin/cp -f CHANGELOG.md "$DEPLOYPATH/CHANGELOG.md"
     } >>"$LOG" 2>&1

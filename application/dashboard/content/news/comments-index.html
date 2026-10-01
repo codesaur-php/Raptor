@@ -58,15 +58,15 @@ document.addEventListener('DOMContentLoaded', function () {
                 ? record.comment.substring(0, 60) + '...'
                 : record.comment;
             const newsTitle = record.news_title
-                ? `<small>${record.news_title}</small>`
-                : `<small class="text-muted">#${record.news_id}</small>`;
+                ? `<small>${escapeHtml(record.news_title)}</small>`
+                : `<small class="text-muted">#${escapeHtml(record.news_id)}</small>`;
 
             const actions = `<a class="btn btn-sm btn-outline-info" href="${commentViewPattern.replace('{id}', id)}" title="View Comment"><i class="bi bi-eye"></i></a>`;
 
             rowsHTML += `<tr>
-                <td>${id}<br><small class="text-muted">${record.created_at}</small></td>
-                <td>${replyIcon}${icon}${record.name}</td>
-                <td><small>${msg}</small></td>
+                <td>${id}<br><small class="text-muted">${escapeHtml(record.created_at)}</small></td>
+                <td>${replyIcon}${icon}${escapeHtml(record.name)}</td>
+                <td><small>${escapeHtml(msg)}</small></td>
                 <td>${newsTitle}</td>
                 <td>${actions}</td>
             </tr>`;
@@ -87,7 +87,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     title: 'Email',
                     text: `{{ 'email'|text|e('js') }}`,
                     input: 'email',
-                    inputValue: `{{ settings_email|e('js') }}`,
+                    inputValue: {{ (settings_email ?? '')|json_encode|raw }},
                     inputPlaceholder: 'email@example.com',
                     showCancelButton: true,
                     confirmButtonText: `{{ 'save'|text|e('js') }}`,

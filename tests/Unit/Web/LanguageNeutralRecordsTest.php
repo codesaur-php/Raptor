@@ -47,6 +47,7 @@ class LanguageNeutralRecordsTest extends TestCase
             ['web/shop/ShopController.php'],
             ['web/service/SeoController.php'],
             ['web/service/SearchController.php'],
+            ['web/service/ContactController.php'],
             ['dashboard/content/news/NewsModel.php'],
             ['dashboard/content/page/PagesModel.php'],
         ];

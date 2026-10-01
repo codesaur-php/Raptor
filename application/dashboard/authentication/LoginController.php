@@ -560,13 +560,7 @@ class LoginController extends \Dashboard\Controller
 
         // 8) Redirect logic
         $home = $this->generateRouteLink('home');
-        if (isset($this->getRequest()->getServerParams()['HTTP_REFERER'])) {
-            $referer = \filter_var($this->getRequest()->getServerParams()['HTTP_REFERER'], \FILTER_SANITIZE_URL);
-            $location = \str_contains($referer, $home) ? $referer : $home;
-        } else {
-            $location = $home;
-        }
-        \header('Location: ' . $location, true, 302);
+        \header('Location: ' . $this->getSafeRefererLocation($home), true, 302);
         exit;
     }
 
@@ -721,8 +715,18 @@ class LoginController extends \Dashboard\Controller
             }
 
             // 4) Signup хүсэлт DB-д insert хийх (имэйл баталгаажуулах токентой)
-            $payload['token'] = \bin2hex(\random_bytes(32));
-            $profile = $userRequest->insert($payload);
+            // Insert-ийн талбаруудыг тодорхой зааж бүрдүүлнэ - client status,
+            // verified_at, created_at, user_id зэргийг тохируулж чадахгүй.
+            //
+            // Security (English): the insert row is built explicitly so the client
+            // can never set status, verified_at, created_at, user_id, etc.
+            $profile = $userRequest->insert([
+                'username' => (string)$payload['username'],
+                'email'    => $payload['email'],
+                'password' => $payload['password'],
+                'code'     => $payload['code'],
+                'token'    => \bin2hex(\random_bytes(32))
+            ]);
             if (empty($profile)) {
                 throw new \Exception(
                     "Шинээр [{$payload['username']}] нэртэй [{$payload['email']}] хаягтай хэрэглэгч үүсгэх хүсэлт DB-д хадгалах явцад алдаа гарлаа.",
@@ -763,7 +767,7 @@ class LoginController extends \Dashboard\Controller
             $this->respondJSON(
                 [
                     'message' =>
-                        '<span class="text-secondary">Шинэ хэрэглэгч үүсгэх хүсэлт бүртгүүлэх үед алдаа гарлаа.</span><br/>' .
+                        'Шинэ хэрэглэгч үүсгэх хүсэлт бүртгүүлэх үед алдаа гарлаа. ' .
                         $e->getMessage()
                 ],
                 $e->getCode()
@@ -981,7 +985,9 @@ class LoginController extends \Dashboard\Controller
                 throw new \Exception($this->text('email-template-not-set'), 500);
             }
 
-            // 3) Хэрэглэгчийг шалгах
+            // 3) Хэрэглэгчийг шалгах - users.email нь normalize хийгдсэн хэлбэрээр
+            //    хадгалагддаг тул хайлтын өмнө ижил normalize хийнэ
+            $payload['email'] = $this->normalizeEmail($payload['email']);
             $users = new UsersModel($this->pdo);
             $user = $users->getRowWhere([
                 'email' => $payload['email']
@@ -1045,7 +1051,7 @@ class LoginController extends \Dashboard\Controller
             $this->respondJSON(
                 [
                     'message' =>
-                        '<span class="text-secondary">Хэрэглэгч нууц үгээ шинэчлэх хүсэлт илгээх үед алдаа гарлаа.</span><br/>' .
+                        'Хэрэглэгч нууц үгээ шинэчлэх хүсэлт илгээх үед алдаа гарлаа. ' .
                         $e->getMessage()
                 ],
                 $e->getCode()
@@ -1102,10 +1108,8 @@ class LoginController extends \Dashboard\Controller
      *        -> login form руу redirect хийх (token-г хадгалсаар)
      *
      * 3) Token хугацаа дууссан эсэхийг шалгах
-     *    - created_at-аас хойш:
-     *        - өдрөөр, сараар, жилээр өөрчлөгдсөн бол -> дууссан
-     *        - цаг >= 1 бол (тохиолдолд) -> дууссан
-     *        - минут >= RAPTOR_PASSWORD_RESET_MINUTES бол -> дууссан
+     *    - created_at-аас хойш өнгөрсөн нийт минут
+     *      RAPTOR_PASSWORD_RESET_MINUTES-ээс их бол -> дууссан
      *    - Хугацаа дууссан бол -> алдаа (403)
      *
      * 4) Template рүү өгөгдөл дамжуулах
@@ -1162,13 +1166,7 @@ class LoginController extends \Dashboard\Controller
             // 3) Token хугацаа дууссан эсэх шалгах
             $now_date = new \DateTime();
             $then     = new \DateTime($forgot['created_at']);
-            $diff     = $then->diff($now_date);
-            if ($diff->y > 0 ||
-                $diff->m > 0 ||
-                $diff->d > 0 ||
-                $diff->h > 0 ||
-                $diff->i > RAPTOR_PASSWORD_RESET_MINUTES
-            ) {
+            if ($this->isResetExpired($then, $now_date)) {
                 throw new \Exception(
                     'Хугацаа дууссан код ашиглан нууц үг шинээр тааруулахыг хүсэв',
                     403
@@ -1181,12 +1179,13 @@ class LoginController extends \Dashboard\Controller
                 'message' => $e->getMessage()
             ];
         } finally {
-            // 4) Template рэндерлэх
-            $login_reset = $this->template(
-                __DIR__ . '/login-reset-password.html',
-                $error ?? $forgot
-            );
+            // 4) Template рэндерлэх - эхлээд settings, дараа нь action-ий хувьсагчид
+            //    (error title гэх мэт) settings-ийн ижил нэртэй утгыг (title) дарна
+            $login_reset = $this->template(__DIR__ . '/login-reset-password.html');
             foreach ($this->getAttribute('settings', []) as $key => $value) {
+                $login_reset->set($key, $value);
+            }
+            foreach (($error ?? $forgot ?? []) as $key => $value) {
                 $login_reset->set($key, $value);
             }
             $login_reset->render();
@@ -1232,8 +1231,8 @@ class LoginController extends \Dashboard\Controller
      *    - Олдохгүй бол -> 403
      *
      * 3) Token хугацаа дууссан эсэхийг шалгах
-     *    - created_at -> NOW() хүртэлх зөрүү
-     *    - минут >= RAPTOR_PASSWORD_RESET_MINUTES бол -> expired
+     *    - created_at -> NOW() хүртэлх нийт минут
+     *    - RAPTOR_PASSWORD_RESET_MINUTES-ээс их бол -> expired
      *    - Алдаа -> 403
      *
      * 4) Хэрэглэгчийг шалгах
@@ -1280,7 +1279,7 @@ class LoginController extends \Dashboard\Controller
             $user_id = \filter_var($parsedBody['user_id'], \FILTER_VALIDATE_INT);
             if ($user_id === false) {
                 throw new \Exception(
-                    '<span class="text-secondary">Хэрэглэгчийн дугаар заагдаагүй байна.</span><br/>Мэдээлэл буруу оруулсан байна. Анхааралтай бөглөөд дахин оролдоно уу',
+                    'Хэрэглэгчийн дугаар заагдаагүй байна. Мэдээлэл буруу оруулсан байна. Анхааралтай бөглөөд дахин оролдоно уу',
                     400
                 );
             }
@@ -1293,8 +1292,7 @@ class LoginController extends \Dashboard\Controller
             }
             if (empty($password_new) || $password_new !== $password_retype) {
                 throw new \Exception(
-                    '<span class="text-secondary">Шинэ нууц үгээ буруу бичсэн.</span><br/>' .
-                    $this->text('password-must-match'),
+                    'Шинэ нууц үгээ буруу бичсэн. ' . $this->text('password-must-match'),
                     400
                 );
             }
@@ -1317,13 +1315,7 @@ class LoginController extends \Dashboard\Controller
             // 3) Token хугацаа дууссан эсэх
             $now_date = new \DateTime();
             $then     = new \DateTime($forgot['created_at']);
-            $diff     = $then->diff($now_date);
-            if ($diff->y > 0
-                || $diff->m > 0
-                || $diff->d > 0
-                || $diff->h > 0
-                || $diff->i > RAPTOR_PASSWORD_RESET_MINUTES
-            ) {
+            if ($this->isResetExpired($then, $now_date)) {
                 throw new \Exception(
                     'Хугацаа дууссан код ашиглан нууц үг шинээр тааруулахыг хүсэв',
                     403
@@ -1369,12 +1361,13 @@ class LoginController extends \Dashboard\Controller
             // Error template variables
             $vars = ['error' => $e->getMessage()] + ($forgot ?? []);
         } finally {
-            // 7) UI render
-            $login_reset = $this->template(
-                __DIR__ . '/login-reset-password.html',
-                $vars
-            );
+            // 7) UI render - эхлээд settings, дараа нь $vars (success title нь
+            //    settings-ийн title-г дарна)
+            $login_reset = $this->template(__DIR__ . '/login-reset-password.html');
             foreach ($this->getAttribute('settings', []) as $key => $value) {
+                $login_reset->set($key, $value);
+            }
+            foreach ($vars as $key => $value) {
                 $login_reset->set($key, $value);
             }
             $login_reset->render();
@@ -1471,14 +1464,77 @@ class LoginController extends \Dashboard\Controller
         // 5) Redirect хийх
         $script_path = $this->getScriptPath();
         $home        = (string) $this->getRequest()->getUri()->withPath($script_path);
-        if (isset($this->getRequest()->getServerParams()['HTTP_REFERER'])) {
-            $referer  = \filter_var($this->getRequest()->getServerParams()['HTTP_REFERER'], \FILTER_SANITIZE_URL);
-            $location = \str_contains($referer, $home) ? $referer : $home;
-        } else {
-            $location = $home;
-        }
-        \header('Location: ' . $location, true, 302);
+        \header('Location: ' . $this->getSafeRefererLocation($home), true, 302);
         exit;
+    }
+
+    /**
+     * Нууц үг сэргээх токены хугацаа дууссан эсэх.
+     *
+     * created_at-аас хойш өнгөрсөн нийт минутыг (хоног*1440 + цаг*60 + минут)
+     * RAPTOR_PASSWORD_RESET_MINUTES-тэй харьцуулна - 60-аас их утга ч зөв ажиллана.
+     *
+     * @param \DateTime $createdAt Токен үүссэн огноо
+     * @param \DateTime $now       Одоогийн огноо
+     * @return bool
+     */
+    private function isResetExpired(\DateTime $createdAt, \DateTime $now): bool
+    {
+        $diff = $createdAt->diff($now);
+        if ($diff->invert === 1) {
+            // created_at ирээдүйд байвал (цагийн зөрүү) дууссан гэж үзэхгүй
+            return false;
+        }
+        $minutes = $diff->days * 1440 + $diff->h * 60 + $diff->i;
+        return $minutes > RAPTOR_PASSWORD_RESET_MINUTES;
+    }
+
+    /**
+     * HTTP_REFERER руу буцаах аюулгүй байршлыг тодорхойлно.
+     *
+     * Referer нь ижил host (болон port) дээрх, dashboard-ийн mount path-аар
+     * эхэлсэн зам байвал түүний path + query-г буцаана, бусад тохиолдолд
+     * $fallback. Буцаах утга нь үргэлж relative зам тул өөр домэйн руу
+     * чиглүүлэх (open redirect) боломжгүй.
+     *
+     * Security (English): returns the referer only when it is same-origin
+     * (host + port) and its path is under the dashboard mount path; the result
+     * is rebuilt as a relative path + query so it can never point to another
+     * origin (open redirect protection). Otherwise returns $fallback.
+     *
+     * @param string $fallback Аюултай/байхгүй үед буцаах байршил
+     * @return string
+     */
+    private function getSafeRefererLocation(string $fallback): string
+    {
+        $referer = $this->getRequest()->getServerParams()['HTTP_REFERER'] ?? '';
+        if (!\is_string($referer) || $referer === ''
+            || \preg_match('/[\\\\\x00-\x1F\x7F]/', $referer)
+        ) {
+            return $fallback;
+        }
+        $parts = \parse_url($referer);
+        if ($parts === false || empty($parts['host'])
+            || !\in_array(\strtolower($parts['scheme'] ?? ''), ['http', 'https'], true)
+        ) {
+            return $fallback;
+        }
+        $uri = $this->getRequest()->getUri();
+        if (\strcasecmp($parts['host'], $uri->getHost()) !== 0
+            || ($parts['port'] ?? null) !== $uri->getPort()
+        ) {
+            return $fallback;
+        }
+        $path = $parts['path'] ?? '/';
+        $prefix = \rtrim($this->getScriptPath() . $this->getMountPath(), '/');
+        if ($prefix !== '' && $path !== $prefix && !\str_starts_with($path, "$prefix/")) {
+            return $fallback;
+        }
+        // "//evil.com" хэлбэрийн protocol-relative зам үүсэхээс сэргийлнэ
+        if (\str_starts_with($path, '//')) {
+            return $fallback;
+        }
+        return $path . (isset($parts['query']) ? "?{$parts['query']}" : '');
     }
 
     // =========================================================================

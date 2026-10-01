@@ -60,6 +60,14 @@ Cron тохиргоо (cPanel -> Cron Jobs, N=2-5 минут):
    шийднэ. Хэрэв scaffold-гүй/composer серверт ажиллахгүй бол дараагийн дүрмийг
    бариар.
 
+   **composer.lock-ийг заавал commit хийнэ:** Raptor-ийн root `.gitignore`
+   нь `composer.lock`-ийг ignore хийдэг. Энэ замаар (path D) deploy хийх төсөл
+   `.gitignore`-оос `composer.lock` мөрийг устгаж, lock файлаа commit хийх
+   ёстой - эс бөгөөс scaffold lock өөрчлөгдсөнийг хэзээ ч илрүүлэхгүй
+   (`composer install` ажиллахгүй) бөгөөд серверийн `vendor/` нь хөгжүүлэгчийн
+   туршсан хувилбартай таарахгүй болно. Lock байхгүй үед scaffold зөвхөн
+   хуулалтыг алгасна (deploy унахгүй).
+
 2. **Фолдер нэрлэх дүрэм (composer ажиллахгүй үеийн найдвартай хувилбар):**
    Шинэ модулийн фолдерын нэрийг namespace-ийн сегменттэй яг адил (PascalCase)
    нэрлэвэл composer огт хэрэггүйгээр ажиллана. Учир: суурийн PSR-4 prefix

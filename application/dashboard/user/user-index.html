@@ -98,7 +98,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 photo = `
                     <div class="text-center">
                         <img class="img-fluid img-thumbnail mb-1" 
-                             src="${profile.photo}" 
+                             src="${escapeHtml(profile.photo)}" 
                              style="max-width:60px;max-height:60px">
                         <div style="font-size:0.7rem;" class="text-muted">${sizeKB}</div>
                     </div>
@@ -112,7 +112,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             /* -------- Хэрэглэгчийн мэдээлэл -------- */
-            let usernameInfo = `<strong>${profile.username}</strong>`;
+            let usernameInfo = `<strong>${escapeHtml(profile.username)}</strong>`;
             if (profile.is_active == 0) {
                 usernameInfo += `<span class="badge bg-danger ms-3">${deactivated_title}</span>`;
             }
@@ -120,22 +120,22 @@ document.addEventListener('DOMContentLoaded', function () {
             if (fullName.length > 1) {
                 usernameInfo += '<br/>';
             }
-            usernameInfo += fullName;
+            usernameInfo += escapeHtml(fullName);
                 
              /* Email + утас */
             usernameInfo += `
                 <hr style="margin:0.2rem 0 0 0;">
                 <div style="font-size:.8rem">
-                    <a class="text-decoration-none" href="mailto:${profile.email}">
+                    <a class="text-decoration-none" href="mailto:${escapeHtml(profile.email)}">
                         <i class="bi bi-envelope-at"></i>
-                    </a> ${profile.email}
+                    </a> ${escapeHtml(profile.email)}
                 </div>`;
             if (profile.phone) {
                 usernameInfo += `
                     <div style="font-size:.8rem;">
-                        <a class="text-decoration-none" href="tel:${profile.phone}">
+                        <a class="text-decoration-none" href="tel:${escapeHtml(profile.phone)}">
                             <i class="bi bi-telephone"></i>
-                        </a> ${profile.phone}
+                        </a> ${escapeHtml(profile.phone)}
                     </div>`;
             }
 
@@ -169,7 +169,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                ${org.alias === 'system' ? '' : 'fw-normal '} shadow-sm"
                        href="${orgViewPattern.replace('{id}', org.id)}"
                        data-bs-target="#static-modal" data-bs-toggle="modal">
-                       ${org.name}
+                       ${escapeHtml(org.name)}
                     </a>`;
             });
 
@@ -194,9 +194,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 rolesHtml += `
                     <a class="ajax-modal badge text-bg-light text-decoration-none
                                ${role === 'system_coder' ? '' : 'fw-normal '} shadow-sm"
-                       href="${rbacRoleViewLink}?role=${role}"
+                       href="${rbacRoleViewLink}?role=${encodeURIComponent(role)}"
                        data-bs-target="#static-modal" data-bs-toggle="modal">
-                       ${role}
+                       ${escapeHtml(role)}
                     </a>`;
             });
                 
@@ -299,9 +299,9 @@ document.addEventListener('DOMContentLoaded', function () {
             }
                 
             /* Устгах гэж буй хэрэглэгчийн нэр */
-            const name = thisRow.children[2]?.querySelector('strong')?.innerHTML;                
+            const name = thisRow.children[2]?.querySelector('strong')?.textContent;                
             /* Устгах (deactivate) баталгаажуулах асуулт */
-            let ask = questionDeletion(name);                
+            let ask = questionDeletion(escapeHtml(name));                
             /* Зураг байвал dialog-д харуулна */
             let photo = thisRow.children[1].querySelector('img');
             let src;
@@ -352,7 +352,7 @@ document.addEventListener('DOMContentLoaded', function () {
                          * төлөвтэй (badge + бүрэн устгах товч) болж шинэчлэгдэнэ */
                         loadUsers();
 
-                        Notify('success', `{{ 'success'|text|e }}`, response.message ?? `User (${name}) deactivated`);
+                        Notify('success', `{{ 'success'|text|e }}`, response.message ?? `User (${escapeHtml(name)}) deactivated`);
                     }).catch(error => {
                         Swal.showValidationMessage(error.message);
                     });
@@ -379,8 +379,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 return Notify('warning', `{{ 'error'|text|e }}`, 'Cannot select row!');
             }
 
-            const name = thisRow.children[2]?.querySelector('strong')?.innerHTML;
-            let ask = questionHardDelete(name);
+            const name = thisRow.children[2]?.querySelector('strong')?.textContent;
+            let ask = questionHardDelete(escapeHtml(name));
             let photo = thisRow.children[1].querySelector('img');
             let src;
             if (photo) {
@@ -417,7 +417,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         Swal.close();
                         thisRow.remove();
                         users.setReady();
-                        Notify('success', `{{ 'success'|text|e }}`, response.message ?? `User (${name}) permanently deleted`);
+                        Notify('success', `{{ 'success'|text|e }}`, response.message ?? `User (${escapeHtml(name)}) permanently deleted`);
                     }).catch(error => {
                         Swal.showValidationMessage(error.message);
                     });

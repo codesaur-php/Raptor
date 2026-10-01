@@ -247,6 +247,10 @@ trait DashboardTrait
                 );
                 $cache?->set($menuKey, $rows);
             }
+            // Шүүлтийг давж харагдсан parent-уудын id. Child нь parent-аасаа өмнө
+            // (position-оор) ирж болох тул placeholder бүлэг үүсгээд, эцэст нь
+            // parent нь харагдаагүй (нуугдсан/шүүгдсэн/устгагдсан) бүлгийг хасна.
+            $visibleParents = [];
             foreach ($rows as $row) {
                 $title = $row['localized']['title'] ?? null;
 
@@ -263,6 +267,7 @@ trait DashboardTrait
 
                 // Parent menu
                 if ($row['parent_id'] == 0) {
+                    $visibleParents[$row['id']] = true;
                     if (!isset($sidemenu[$row['id']])) {
                         $sidemenu[$row['id']] = ['title' => $title, 'submenu' => []];
                     } else {
@@ -283,9 +288,9 @@ trait DashboardTrait
                 }
             }
 
-            // submenu хоосон parent-уудыг устгах
+            // submenu хоосон эсвэл parent нь харагдаагүй бүлгүүдийг устгах
             foreach ($sidemenu as $key => $rows) {
-                if (empty($rows['submenu'])) {
+                if (empty($rows['submenu']) || !isset($visibleParents[$key])) {
                     unset($sidemenu[$key]);
                 }
             }

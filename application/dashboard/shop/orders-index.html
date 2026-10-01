@@ -194,14 +194,14 @@
                 /* Хэлний туг */
                 let flag = '';
                 if (record.code) {
-                    const codeFlag = record.code === 'en' ? 'us' : record.code;
+                    const codeFlag = escapeHtml(record.code === 'en' ? 'us' : record.code);
                     flag = `<img src="https://flagcdn.com/20x15/${codeFlag}.png" srcset="https://flagcdn.com/40x30/${codeFlag}.png 2x" width="16" height="12">`;
                 }
 
                 /* Хэрэглэгчийн мэдээлэл */
-                let customer = `<strong>${record.customer_name}</strong>`;
+                let customer = `<strong>${escapeHtml(record.customer_name)}</strong>`;
                 if (record.customer_email) {
-                    customer += `<br><small class="text-muted">${record.customer_email}</small>`;
+                    customer += `<br><small class="text-muted">${escapeHtml(record.customer_email)}</small>`;
                 }
 
                 /* Үйлдлийн товчнуудыг үүсгэх */
@@ -214,7 +214,7 @@
                 const actions = `<div class="mb-1">${buttons.join(' ')}</div>`;
 
                 /* Хүснэгтийн мөр үүсгэх */
-                rowsHTML += `<tr><th scope="row"><span class="text-secondary">${id} /</span> ${record['created_date']}</th><td>${flag} <span class="text-secondary fw-lighter">${record.code}</span></td><td>${customer}</td><td>${record.product_title}</td><td>${record.quantity}</td><td>${statusBadge(record.status)}</td><td>${actions}</td></tr>`;
+                rowsHTML += `<tr><th scope="row"><span class="text-secondary">${id} /</span> ${escapeHtml(record['created_date'])}</th><td>${flag} <span class="text-secondary fw-lighter">${escapeHtml(record.code)}</span></td><td>${customer}</td><td>${escapeHtml(record.product_title)}</td><td>${escapeHtml(record.quantity)}</td><td>${statusBadge(record.status)}</td><td>${actions}</td></tr>`;
             });
 
             /* Хүснэгтэд өгөгдөл оруулах */
@@ -234,7 +234,7 @@
                 }
 
                 const id = btn.value;
-                const customer = thisRow.children[2].querySelector('strong')?.textContent?.trim() ?? '';
+                const customer = escapeHtml(thisRow.children[2].querySelector('strong')?.textContent?.trim() ?? '');
 
                 let question = document.documentElement.lang === 'mn'
                     ? `<p class="text-danger mb-3">Та (${customer}) захиалгыг устгахдаа итгэлтэй байна уу?</p>`
@@ -292,7 +292,7 @@
                         title: 'Email',
                         text: `{{ 'email'|text|e('js') }}`,
                         input: 'email',
-                        inputValue: `{{ settings_email|e('js') }}`,
+                        inputValue: {{ (settings_email ?? '')|json_encode|raw }},
                         inputPlaceholder: 'email@example.com',
                         showCancelButton: true,
                         confirmButtonText: `{{ 'save'|text|e('js') }}`,

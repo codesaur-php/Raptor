@@ -606,6 +606,10 @@ class ProductsController extends FileController
         foreach ($files['attachments']['existing'] ?? [] as $att) {
             $attId = (int)$att['id'];
             $newDesc = $att['description'] ?? '';
+            // Энэ бичлэгт хамааралгүй файлын id-г алгасна
+            if (!\array_key_exists($attId, $currentDescriptions)) {
+                continue;
+            }
             if (($currentDescriptions[$attId] ?? '') !== $newDesc) {
                 $filesModel->updateById($attId, [
                     'description' => $newDesc,
@@ -618,12 +622,14 @@ class ProductsController extends FileController
 
         foreach ($files['attachments']['deleted'] ?? [] as $fileId) {
             $fileRecord = $filesModel->getById((int)$fileId);
-            $filesModel->deleteById((int)$fileId);
-            if ($fileRecord) {
-                (new \Dashboard\Trash\TrashModel($this->pdo))->store(
-                    'products', $filesModel->getName(), (int)$fileId, $fileRecord, $userId
-                );
+            // Энэ бичлэгт хамааралгүй файлын id-г алгасна
+            if (!$fileRecord || (int)$fileRecord['record_id'] !== (int)$record['id']) {
+                continue;
             }
+            $filesModel->deleteById((int)$fileId);
+            (new \Dashboard\Trash\TrashModel($this->pdo))->store(
+                'products', $filesModel->getName(), (int)$fileId, $fileRecord, $userId
+            );
             $changes[] = "attachment deleted: #$fileId";
         }
 

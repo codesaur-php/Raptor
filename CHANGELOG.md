@@ -6,6 +6,80 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 
 ---
 
+## [5.4.5] - 2026-10-01
+[5.4.5]: https://github.com/codesaur-php/Raptor/compare/v5.4.4...v5.4.5
+
+A full audit of `application/`, the dashboard assets, the deploy workflows and the seed data. Upgrade every deployed site: several items below are security fixes.
+
+### Security
+
+- **Privilege escalation through the user edit form.** `UsersController::configureRoles()` checked `system_user_organization_set` instead of `system_rbac`, so a `manager` (who has `user_update` + `user_organization_set` but not `rbac`) could post `roles[]` and make any user - including themselves - `admin`. Worse, `user-update.html` renders the roles select only for `system_rbac`, so every profile save by such a user wiped the target's roles. `configureRoles()` now requires `system_rbac`; roles and organizations are only reconfigured when the form actually carried them (hidden `roles_present` / `organizations_present` markers, so clearing a multi-select still works). A role change now drops the user's `rbac.{id}` cache entry - before, a revoked role stayed effective for up to 12 hours.
+- **Mass assignment in user, organization, file and signup saves.** `UsersController::insert()/update()`, `OrganizationController::insert()/update()`, `FilesController::update()` and `LoginController::signup()` passed the whole request body to the model, so a client could set `photo_file` / `logo_file` (a path that a later "remove photo" `unlink()`ed - arbitrary file deletion by any logged-in user editing their own profile), `is_active`, `created_by`, `id`, or on signup `verified_at` (skipping the e-mail double opt-in) and `created_at`. Each save now takes an explicit field whitelist; file columns come only from the upload handling.
+- **Stored XSS from public forms into the dashboard.** Visitor-supplied values (contact message, comment, review, order, signup e-mail, User-Agent) and user-editable values (names, titles, file descriptions, dev-request titles) were written into `innerHTML` / SweetAlert2 `html` by the dashboard list pages, the Logger Protocol, the logs page, the visitor statistics, the Files page, Trash and `Notify()`. A new global `escapeHtml()` in `dashboard.js` is applied to every such value; the Logger Protocol, the logs page and `Notify()` render text only (tags in a message are stripped in an inert `DOMParser` document, `<br>` stays a line break). `motable.error()` escapes its message and its closing `</span>` typo is fixed. The login page `?message=` parameter is rendered as text with a whitelisted alert type (DOM XSS).
+- **`|e('js')` did not escape a backtick or `$`.** Values printed inside JS template literals on the news/page/product edit pages (header image path, attachment JSON) and the e-mail prompt of the messages/comments/orders/reviews pages could execute code. `codesaur/template` is raised to `^5.0.1`, whose `js` strategy escapes `` ` ``, `$`, U+2028 and U+2029, which closes the hole for every `|e('js')` print; the listed values are additionally printed as JS expressions with `|json_encode|raw`. Run `composer update codesaur/template` on each deployed site.
+- **Attachment ids were not checked against the record.** `processFiles()` in News/Pages/Products accepted any file id in `attachments.deleted[]` / `existing[]`, so the owner of an unpublished draft could delete or rename attachments of any other record. Ids that do not belong to the record are now ignored.
+- **Unpublished news, pages and products were publicly readable** by slug and by `/news/{id}`-style URLs, and accepted comments/reviews. The public detail lookups, comment and review submits now require `published = 1`.
+- **Open redirect** in the organization switch and dashboard language routes (`str_contains($referer, $home)` accepted `https://evil.example/dashboard/home`). They now return only to a same-host referer under the dashboard mount path.
+- **Visitor statistics (`/dashboard/stats`, `/dashboard/log-stats`)** showed visitor IPs and user agents to every logged-in user; they now require `system_logger`.
+- `SettingsController::updateEnv()` took the value type from the client and wrote values through `preg_replace` (a `$1` became a backreference, a newline injected extra `.env` lines). The type comes from the key name, `\r`/`\n`/`\0` are rejected, and the value is written literally.
+- `MigrationSecurityScanner` missed quoted identifiers (`UPDATE "users"` on PostgreSQL, `` UPDATE `users` `` on MySQL) and honoured MySQL backslash escapes on PostgreSQL. `MigrationRunner::splitStatements()` now skips `/* */` comments, so a `;` or `'` inside one no longer breaks a migration.
+- `FilesController::index()` logged to the client-chosen `?table=` channel, auto-creating arbitrary `*_log` tables; unknown tables fall back to `files`.
+- Organization `alias` is validated identically on insert and update (letters, digits, `-`; no underscore, which `Permissions` rejects).
+
+### Fixed
+
+- **The public contact page printed the working hours setting (`config['open-hours']`) as HTML source text.** It now ends with `|raw` like `address`; `AutoescapeTest` covers it.
+- **The moedit AI actions always failed with "CSRF token mismatch".** `moedit.ui.js` called the CSRF-protected `moedit-ai` route with plain `fetch()`; it now uses `csrfFetch()`.
+- **Facebook / X share buttons sent an empty URL** - `current_url` was set only on the layout, not on the news/page/product content template.
+- **Star ratings rounded up** (`|round(0, 'floor')` - the filter has no rounding-mode argument): 4.6 showed five full stars. Public product pages and the dashboard product view now floor correctly.
+- **Comment replies were shown under the wrong parent** (flat `created_at` order); replies now follow their parent, and a reply's parent must belong to the same news item.
+- **Public error responses returned HTTP 200 with the SQL error text** for `PDOException` / `\Error` (non-numeric or zero codes). Error pages and the public AJAX endpoints now send 500 for those, 400 for validation errors, and hide 5xx messages outside development.
+- Public `/news/{id}`, `/page/{id}`, `/product/{id}` now 301-redirect to the slug URL as documented, instead of serving duplicate content.
+- Public search, dashboard global search: case-insensitive on PostgreSQL (`ILIKE`); dashboard search no longer drops matches found only in an article body.
+- Contact page: honours language-neutral (`code = '*'`) pages and fills the meta description.
+- Order form: validates the customer e-mail and takes the product title from the database instead of the client.
+- Products with no price no longer show "0.00"; "Stock: 0" is no longer always shown.
+- RSS image enclosures use absolute URLs.
+- Admin root comments required only `system_content_index` (a viewer could post one); they now require `system_content_update` like replies. Deleting a root comment stores its replies in Trash instead of hard-deleting them.
+- Trash restore clears the cache, so restored texts, menus, pages and news show immediately.
+- A menu section whose parent is hidden or filtered no longer shows its children under an empty heading.
+- The Products and Orders sidebar links required `system_content_index` instead of `system_product_index` (fresh installs; see migration below).
+- Three English error texts of the language module were Mongolian; several English typos fixed (see migration below).
+- Password-reset expiry compared only the minutes part of the interval (`RAPTOR_PASSWORD_RESET_MINUTES >= 60` broke); it now compares total minutes. Forgot-password normalizes the e-mail like signup does. The reset-password page shows plain-text errors and its own title.
+- `AIHelper` turned OpenAI's string error codes into a `TypeError`.
+- `PagesController` sends `null` for emptied numeric fields (PostgreSQL / MySQL strict rejected `''`).
+- Orders index language filter handles `'*'` and inactive languages; Messages view uses the modal "no permission" fragment and catches a missing id.
+- Reference Logger Protocol filters by table as well as `record_id`; `DevRequestController` matches the coder role by alias too; `setOrganization()` returns 403 instead of 503; RBAC alias links URL-encode the title.
+- Badges: Files page uploads (`files-post`) and new signup requests now raise badges.
+- Sample-data detection: samples set `created_at` equal to `published_at`.
+- Global search modal readable in dark mode; ArrowUp selects the last result; closing the modal cancels a pending search. motable sorts numbers in multi-line cells numerically.
+- Assets: `dashboard.css?v=7`, `dashboard.js?v=9`, `motable.js?v=2`, `moedit.ui.js?v=5`.
+
+### Changed
+
+- **CI runs the Unit test suite** (`ci.yml`, against the runner's MySQL), so a failing test now blocks the deploy.
+- `deploy.yml`: all jobs check out the commit CI tested (`workflow_run.head_sha`); the Windows job no longer deletes the server's `vendor/` and `composer.lock` on every run.
+- cPanel scaffold (`docs/conf.example/`): the `composer.lock` copy is skipped when the file is absent; `docs/mn/CPANEL.md` tells path D projects to commit `composer.lock`.
+- Organization switch returns to the dashboard page it was called from (same-host only) instead of always the home page.
+
+### Migration
+
+Fresh installs get the corrected seeds. Deployed databases: apply this SQL through `/dashboard/migrations` (`raptor_menu` is on the sensitive list, so the dashboard asks for `CONFIRM`; the cache is cleared after a successful apply):
+
+```sql
+-- 5.4.5: Shop menu permission and English text fixes
+UPDATE raptor_menu SET permission = 'system_product_index' WHERE permission = 'system_content_index' AND (href LIKE '%/products' OR href LIKE '%/orders');
+UPDATE localization_text_content SET text = 'This language code is already in use, please choose a different code!' WHERE code = 'en' AND parent_id IN (SELECT id FROM localization_text WHERE keyword = 'error-existing-lang-code');
+UPDATE localization_text_content SET text = 'This language is already in use, please choose a different language!' WHERE code = 'en' AND parent_id IN (SELECT id FROM localization_text WHERE keyword = 'error-lang-existing');
+UPDATE localization_text_content SET text = 'This language name is already in use, please use a different name!' WHERE code = 'en' AND parent_id IN (SELECT id FROM localization_text WHERE keyword = 'error-lang-name-existing');
+UPDATE localization_text_content SET text = 'Don''t have an account yet?' WHERE code = 'en' AND parent_id IN (SELECT id FROM localization_text WHERE keyword = 'ask-dont-have-user-yet');
+UPDATE localization_text_content SET text = 'Please confirm the information' WHERE code = 'en' AND parent_id IN (SELECT id FROM localization_text WHERE keyword = 'please-confirm-info');
+UPDATE localization_text_content SET text = 'A password reset e-mail has been sent.<br />Please check your email for further instructions!' WHERE code = 'en' AND parent_id IN (SELECT id FROM localization_text WHERE keyword = 'reset-email-sent');
+UPDATE localization_text_content SET text = 'Useful Links' WHERE code = 'en' AND parent_id IN (SELECT id FROM localization_text WHERE keyword = 'usefull-links');
+```
+
+---
+
 ## [5.4.4] - 2026-09-29
 [5.4.4]: https://github.com/codesaur-php/Raptor/compare/v5.4.3...v5.4.4
 

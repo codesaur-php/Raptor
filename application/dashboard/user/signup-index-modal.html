@@ -111,14 +111,14 @@
     let acceptQuestion, questionRejection;
     if (document.documentElement.lang === 'mn') {
         acceptQuestion = name =>
-            `<p class="text-primary">Та (${name}) хэрэглэгчийн бүртгүүлэх хүсэлтийг зөвшөөрөхдөө итгэлтэй байна уу?</p>`;
+            `<p class="text-primary">Та (${escapeHtml(name)}) хэрэглэгчийн бүртгүүлэх хүсэлтийг зөвшөөрөхдөө итгэлтэй байна уу?</p>`;
         questionRejection = name =>
-            `<p class="text-danger">Та (${name}) хэрэглэгчийн бүртгүүлэх хүсэлтийг татгалзахдаа итгэлтэй байна уу?</p><p class="text-muted">Татгалзсан хүсэлтийн мөр устгагдтал ижил нэр/хаягаар дахин хүсэлт өгөх боломжгүй</p>`;
+            `<p class="text-danger">Та (${escapeHtml(name)}) хэрэглэгчийн бүртгүүлэх хүсэлтийг татгалзахдаа итгэлтэй байна уу?</p><p class="text-muted">Татгалзсан хүсэлтийн мөр устгагдтал ижил нэр/хаягаар дахин хүсэлт өгөх боломжгүй</p>`;
     } else {
         acceptQuestion = name =>
-            `<p class="text-primary">Are you sure to accept this user request (${name})?</p>`;
+            `<p class="text-primary">Are you sure to accept this user request (${escapeHtml(name)})?</p>`;
         questionRejection = name =>
-            `<p class="text-danger">Are you sure to reject this user request (${name})?</p><p class="text-muted">The same name/email cannot be used for a new request until the rejected row is deleted</p>`;
+            `<p class="text-danger">Are you sure to reject this user request (${escapeHtml(name)})?</p><p class="text-muted">The same name/email cannot be used for a new request until the rejected row is deleted</p>`;
     }
 
     /* motable - хүснэгтийн UI helper */
@@ -247,7 +247,7 @@
                         Notify(
                             'success',
                             `{{ 'success'|text|e }}`,
-                            response.message ?? `User (${name}) request rejected`
+                            response.message ?? `User (${escapeHtml(name)}) request rejected`
                         );
 
                         /* UI дээр badge өөрчлөх */
@@ -275,10 +275,10 @@
     let questionHardDelete;
     if (document.documentElement.lang === 'mn') {
         questionHardDelete = name =>
-            `<p class="text-danger"><strong>АНХААРУУЛГА!</strong> Та (${name}) хүсэлтийг бүрэн устгахдаа итгэлтэй байна уу?</p><p class="text-muted">Устгасан хүсэлт Хогийн сав (Trash) руу орох бөгөөд шаардлагатай бол дараа нь сэргээх боломжтой</p>`;
+            `<p class="text-danger"><strong>АНХААРУУЛГА!</strong> Та (${escapeHtml(name)}) хүсэлтийг бүрэн устгахдаа итгэлтэй байна уу?</p><p class="text-muted">Устгасан хүсэлт Хогийн сав (Trash) руу орох бөгөөд шаардлагатай бол дараа нь сэргээх боломжтой</p>`;
     } else {
         questionHardDelete = name =>
-            `<p class="text-danger"><strong>WARNING!</strong> Are you sure to permanently delete this request (${name})?</p><p class="text-muted">The deleted request is moved to Trash and can be restored later if needed</p>`;
+            `<p class="text-danger"><strong>WARNING!</strong> Are you sure to permanently delete this request (${escapeHtml(name)})?</p><p class="text-muted">The deleted request is moved to Trash and can be restored later if needed</p>`;
     }
 
     /* Товчинд hard delete handler холбоно - deactivate хийсний дараа шинээр

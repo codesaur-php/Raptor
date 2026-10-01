@@ -12,7 +12,7 @@
             {% if product.photo %}<img src="{{ product.photo }}" class="rounded me-3" style="width:80px;height:80px;object-fit:cover">{% endif %}
             <div>
                 <h5 class="mb-1">{{ product.title|e }}</h5>
-                {% if product.price %}<span class="badge bg-success">{{ product.price|e }}</span>{% endif %}
+                {% if product.price > 0 %}<span class="badge bg-success">{{ product.price|e }}</span>{% endif %}
             </div>
         </div>
     </div>
@@ -20,7 +20,6 @@
 
     <form id="order_form" action="{{ 'order-submit'|link }}" method="POST">
         <input type="hidden" name="product_id" value="{{ product is defined ? product.id : '' }}">
-        <input type="hidden" name="product_title" value="{{ product is defined ? product.title|e : '' }}">
         <input type="hidden" name="_ts" value="{{ spam_ts }}">
         <input type="hidden" name="_token" value="{{ spam_token }}">
 

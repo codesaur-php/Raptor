@@ -92,19 +92,19 @@ document.addEventListener('DOMContentLoaded', function () {
                 list.forEach(row => {
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
-                        <td>${row.id}</td>
-                        <td><code>${row.table_name}</code></td>
-                        <td>${row.original_id}</td>
-                        <td>${row.deleted_by_name}</td>
-                        <td>${row.deleted_at}</td>
+                        <td>${escapeHtml(row.id)}</td>
+                        <td><code>${escapeHtml(row.table_name)}</code></td>
+                        <td>${escapeHtml(row.original_id)}</td>
+                        <td>${escapeHtml(row.deleted_by_name)}</td>
+                        <td>${escapeHtml(row.deleted_at)}</td>
                         <td>
-                            <button class="btn btn-sm btn-outline-info view-trash" data-id="${row.id}" type="button" title="View">
+                            <button class="btn btn-sm btn-outline-info view-trash" data-id="${escapeHtml(row.id)}" type="button" title="View">
                                 <i class="bi bi-eye"></i>
                             </button>
-                            <button class="btn btn-sm btn-outline-success restore-trash" data-id="${row.id}" type="button" title="Restore">
+                            <button class="btn btn-sm btn-outline-success restore-trash" data-id="${escapeHtml(row.id)}" type="button" title="Restore">
                                 <i class="bi bi-arrow-counterclockwise"></i>
                             </button>
-                            <button class="btn btn-sm btn-outline-danger delete-trash" data-id="${row.id}" type="button" title="Permanently delete">
+                            <button class="btn btn-sm btn-outline-danger delete-trash" data-id="${escapeHtml(row.id)}" type="button" title="Permanently delete">
                                 <i class="bi bi-fire"></i>
                             </button>
                         </td>
@@ -138,7 +138,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         Swal.fire({
                             title: 'Restore record?',
                             html:
-                                `<p>Restore record <strong>#${originalId}</strong> back into <code>${tableName}</code>?</p>` +
+                                `<p>Restore record <strong>#${escapeHtml(originalId)}</strong> back into <code>${escapeHtml(tableName)}</code>?</p>` +
                                 '<p class="text-muted small">Will try with the original ID first; ' +
                                 'if that ID is already taken, a new auto-increment ID will be used.</p>',
                             icon: 'question',
@@ -163,11 +163,11 @@ document.addEventListener('DOMContentLoaded', function () {
                                     Swal.fire({
                                         icon: type,
                                         title: title,
-                                        html: `<p>${res.message}</p>`,
+                                        html: `<p>${escapeHtml(res.message)}</p>`,
                                         confirmButtonText: 'OK'
                                     });
                                 })
-                                .catch(err => Swal.showValidationMessage(err.message));
+                                .catch(err => Swal.showValidationMessage(escapeHtml(err.message)));
                             }
                         });
                     });
@@ -195,14 +195,14 @@ document.addEventListener('DOMContentLoaded', function () {
                                     btn.closest('tr').remove();
                                     Notify('success', res.title, res.message);
                                 })
-                                .catch(err => Swal.showValidationMessage(err.message));
+                                .catch(err => Swal.showValidationMessage(escapeHtml(err.message)));
                             }
                         });
                     });
                 });
             })
             .catch(err => {
-                tbody.innerHTML = `<tr><td colspan="6" class="text-danger">${err.message}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="6" class="text-danger">${escapeHtml(err.message)}</td></tr>`;
             });
     }
 
@@ -229,7 +229,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     Notify('success', res.title, res.message);
                     loadTrash('');
                 })
-                .catch(err => Swal.showValidationMessage(err.message));
+                .catch(err => Swal.showValidationMessage(escapeHtml(err.message)));
             }
         });
     });

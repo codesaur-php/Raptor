@@ -219,6 +219,46 @@ class MigrationSecurityScannerTest extends RaptorTestCase
         $this->assertEmpty($this->scanner->scan($sql));
     }
 
+    public function testBacktickQuotedUsersIsFlagged(): void
+    {
+        $scanner = new MigrationSecurityScanner('mysql');
+        $this->assertNotEmpty($scanner->scan("UPDATE `users` SET password = 'x';"));
+        $this->assertNotEmpty($scanner->scan("INSERT INTO `users` (username) VALUES ('h');"));
+        $this->assertNotEmpty($scanner->scan('DELETE FROM `users` WHERE id = 1;'));
+        $this->assertNotEmpty($scanner->scan('DROP TABLE IF EXISTS `users`;'));
+        $this->assertNotEmpty($scanner->scan('TRUNCATE `db`.`users`;'));
+        $this->assertNotEmpty($scanner->scan('DROP TABLE `rbac_roles`;'));
+    }
+
+    public function testDoubleQuotedUsersIsFlaggedOnPostgres(): void
+    {
+        $scanner = new MigrationSecurityScanner('pgsql');
+        $this->assertNotEmpty($scanner->scan("UPDATE \"users\" SET password = 'x';"));
+        $this->assertNotEmpty($scanner->scan("UPDATE public.\"users\" SET password = 'x';"));
+        $this->assertNotEmpty($scanner->scan('INSERT INTO "rbac_user_role" (user_id, role_id) VALUES (5, 1);'));
+        $this->assertNotEmpty($scanner->scan('TRUNCATE TABLE "raptor_menu";'));
+    }
+
+    public function testDoubleQuotedUsersIsFlaggedWhenDriverUnknown(): void
+    {
+        // Driver тодорхойгүй үед "..." -г identifier гэж үзнэ (аюулгүй тал)
+        $this->assertNotEmpty($this->scanner->scan('DELETE FROM "users" WHERE id = 1;'));
+    }
+
+    public function testDoubleQuotedStringIsIgnoredOnMysql(): void
+    {
+        // MySQL (default sql_mode) дээр "..." нь string literal
+        $scanner = new MigrationSecurityScanner('mysql');
+        $this->assertEmpty($scanner->scan('INSERT INTO audit_log (msg) VALUES ("UPDATE users SET x = 1");'));
+    }
+
+    public function testBackslashDoesNotHideCodeOnPostgres(): void
+    {
+        // pgsql дээр \ нь literal - string 'a\' дээр хаагдаж, дараах UPDATE илэрнэ
+        $scanner = new MigrationSecurityScanner('pgsql');
+        $this->assertNotEmpty($scanner->scan("SELECT 'a\\'; UPDATE users SET password = 'x';"));
+    }
+
     public function testMultipleSensitivePatternsProduceMultipleWarnings(): void
     {
         $sql = "UPDATE users SET email = 'x';\nINSERT INTO rbac_user_role (user_id, role_id) VALUES (1,1);";

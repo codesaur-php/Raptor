@@ -84,6 +84,8 @@ class TemplateController extends \Dashboard\Controller
             . ($uri->getPort() && !\in_array($uri->getPort(), [80, 443]) ? ':' . $uri->getPort() : '');
         $index->set('base_url', $baseUrl);
         $index->set('current_url', (string) $uri);
+        // Контент template-ийн share товчнууд (news/page/product) мөн ашиглана
+        $content->set('current_url', (string) $uri);
 
         // Хэл бүрийн URL (language_urls, hreflang_urls) + canonical
         $recordCode = $vars['code'] ?? '';
@@ -116,6 +118,47 @@ class TemplateController extends \Dashboard\Controller
         $index->set('featured_pages', $featuredPages);
 
         return $index;
+    }
+
+    /**
+     * Олон нийтийн AJAX endpoint-ийн catch блокоос алдааны JSON хариу буцаах.
+     *
+     * Exception-ий code нь 400-599 мужийн int бол HTTP статус болгоно, бусад
+     * тохиолдолд (PDOException-ий SQLSTATE string '42S02', \Error-ийн 0 гэх
+     * мэт) 500. 5xx алдааны дотоод мессеж (SQL алдаа гэх мэт) production дээр
+     * зочинд харагдахгүй - ерөнхий мессежээр солино.
+     *
+     * @param \Throwable $err Барьсан алдаа
+     * @return void
+     */
+    protected function respondJSONError(\Throwable $err): void
+    {
+        $code = $err->getCode();
+        $status = \is_int($code) && $code >= 400 && $code <= 599 ? $code : 500;
+        $message = $status >= 500 && !CODESAUR_DEVELOPMENT
+            ? $this->text('something-went-wrong')
+            : $err->getMessage();
+        $this->respondJSON(['message' => $message], $status);
+    }
+
+    /**
+     * Нэрлэсэн route руу 301 (Moved Permanently) redirect хийх.
+     *
+     * ID-аар орж ирсэн хуудсыг (/news/{id}) slug URL руу шилжүүлэхэд
+     * ашиглана - хайлтын систем canonical slug URL-ийг индекслэнэ.
+     * String параметрүүдийг path segment болгон rawurlencode хийнэ (кирилл
+     * slug FILTER_SANITIZE_URL-д тасрахгүй).
+     *
+     * @param string $routeName Route нэр
+     * @param array  $params    Route параметрүүд
+     * @return void
+     */
+    protected function redirectPermanently(string $routeName, array $params = []): void
+    {
+        $params = \array_map(fn($v) => \is_string($v) ? \rawurlencode($v) : $v, $params);
+        $link = $this->generateRouteLink($routeName, $params);
+        \header('Location: ' . \filter_var($link, \FILTER_SANITIZE_URL), true, 301);
+        exit;
     }
 
     /**

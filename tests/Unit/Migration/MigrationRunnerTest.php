@@ -99,6 +99,28 @@ class MigrationRunnerTest extends RaptorTestCase
         $this->assertCount(2, $runner->splitStatements($sql));
     }
 
+    public function testIgnoresSemicolonAndQuoteInsideBlockComment(): void
+    {
+        $sql = "/* header; it's a comment */\nSELECT 1; /* trailing ; ' */ SELECT 2;\n/* only comment; */";
+        $this->assertSame(['SELECT 1', 'SELECT 2'], $this->runner->splitStatements($sql));
+    }
+
+    public function testKeepsMysqlExecutableComment(): void
+    {
+        $sql = "/*!40101 SET NAMES utf8mb4 */; SELECT 1;";
+        $this->assertSame(['/*!40101 SET NAMES utf8mb4 */', 'SELECT 1'], $this->runner->splitStatements($sql));
+    }
+
+    public function testIgnoresBlockCommentOnPostgres(): void
+    {
+        $pgPdo = $this->createMock(\PDO::class);
+        $pgPdo->method('getAttribute')->willReturn('pgsql');
+        $runner = new MigrationRunner($pgPdo, \sys_get_temp_dir());
+
+        $sql = "/* a; b ' */ SELECT 1; SELECT 2;";
+        $this->assertSame(['SELECT 1', 'SELECT 2'], $runner->splitStatements($sql));
+    }
+
     public function testSkipsEmptyStatements(): void
     {
         $sql = ";;; SELECT 1; ;;";

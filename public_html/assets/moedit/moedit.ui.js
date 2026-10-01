@@ -2248,7 +2248,9 @@ moedit.prototype._shine = async function() {
     const customPrompt = promptTextarea.value.trim();
 
     try {
-      const response = await fetch(this.opts.ai_helper, {
+      /* moedit-ai route нь CsrfMiddleware-тэй тул csrfFetch (X-CSRF-TOKEN) ашиглана */
+      const doFetch = typeof csrfFetch === 'function' ? csrfFetch : fetch;
+      const response = await doFetch(this.opts.ai_helper, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ html: html, prompt: customPrompt })
@@ -2843,7 +2845,8 @@ moedit.prototype._ocr = async function() {
       });
 
       /* OpenAI Vision API руу илгээх */
-      const response = await fetch(ai_helper, {
+      const doFetch = typeof csrfFetch === 'function' ? csrfFetch : fetch;
+      const response = await doFetch(ai_helper, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -4709,7 +4712,8 @@ moedit.prototype._insertPdf = async function() {
       const canvas = await renderPageToCanvas(page, 2);
       const base64Image = canvas.toDataURL('image/png');
 
-      const response = await fetch(ai_helper, {
+      const doFetch = typeof csrfFetch === 'function' ? csrfFetch : fetch;
+      const response = await doFetch(ai_helper, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

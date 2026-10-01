@@ -384,9 +384,10 @@ class SettingsController extends FileController
      * .env файлын нэг утгыг хэсэгчлэн шинэчлэх.
      *
      * PATCH /dashboard/settings/env
-     * Body: { "name": "RAPTOR_...", "value": "...", "type": "bool|email|string" }
+     * Body: { "name": "RAPTOR_...", "value": "..." }
      *
      * Нэг удаад зөвхөн нэг key-value pair солино.
+     * Утгын төрлийг (bool|email|string) key нэрээр $allowed map-аас авна.
      * bool төрөлд одоогийн утгыг toggle хийнэ.
      *
      * Зөвшөөрөгдсөн .env нэрс:
@@ -407,16 +408,22 @@ class SettingsController extends FileController
             $payload = $this->getParsedBody();
             $name = \trim($payload['name'] ?? '');
             $value = \trim($payload['value'] ?? '');
-            $type = \trim($payload['type'] ?? 'string');
 
+            // Утгын төрлийг client-ээс биш, key нэрээр тодорхойлно
             $allowed = [
-                'RAPTOR_CONTACT_EMAIL_TO',
-                'RAPTOR_ORDER_EMAIL_TO',
-                'RAPTOR_COMMENT_EMAIL_TO',
-                'RAPTOR_REVIEW_EMAIL_TO',
+                'RAPTOR_CONTACT_EMAIL_TO' => 'email',
+                'RAPTOR_ORDER_EMAIL_TO'   => 'email',
+                'RAPTOR_COMMENT_EMAIL_TO' => 'email',
+                'RAPTOR_REVIEW_EMAIL_TO'  => 'email',
             ];
-            if (!\in_array($name, $allowed, true)) {
+            if (!isset($allowed[$name])) {
                 throw new \Exception($this->text('invalid-request'), 403);
+            }
+            $type = $allowed[$name];
+
+            // Мөр таслах тэмдэгтийг хориглоно (.env-д шинэ мөр буюу өөр key оруулах боломж олгодог)
+            if (\preg_match('/[\r\n\0]/', $value)) {
+                throw new \Exception($this->text('invalid-request'), 400);
             }
 
             if ($type === 'bool') {
@@ -467,10 +474,12 @@ class SettingsController extends FileController
         $activePattern = '/^' . $escaped . '=.*/m';
         $commentedPattern = '/^#\s*' . $escaped . '=.*/m';
 
+        // Callback ашиглана: утга дахь $1, \1 зэрэг нь backreference болохгүй
+        $line = "$key=$value";
         if (\preg_match($activePattern, $content)) {
-            $content = \preg_replace($activePattern, "$key=$value", $content);
+            $content = \preg_replace_callback($activePattern, fn() => $line, $content);
         } elseif (\preg_match($commentedPattern, $content)) {
-            $content = \preg_replace($commentedPattern, "$key=$value\n$0", $content);
+            $content = \preg_replace_callback($commentedPattern, fn($m) => "$line\n{$m[0]}", $content);
         } else {
             $content = \rtrim($content) . "\n$key=$value\n";
         }

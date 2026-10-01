@@ -201,14 +201,25 @@
                 /* ============================================================
                    Helper functions
                    ============================================================ */
+                /* Alert-ийн зөвшөөрөгдсөн төрлүүд - бусад утга secondary болно */
+                const ALERT_TYPES = ['success', 'info', 'warning', 'danger', 'primary', 'secondary'];
+
                 function showMessage(form, type, msg)
                 {
                     removeAlert(form);
-                    
+
                     const alert = document.createElement('div');
                     alert.setAttribute('role', 'alert');
-                    alert.className = `alert alert-${type}`;
-                    alert.innerHTML = msg;
+                    alert.className = `alert alert-${ALERT_TYPES.includes(type) ? type : 'secondary'}`;
+                    /* Мессеж (URL query, server хариу) нь HTML биш энгийн текст - XSS-ээс хамгаална */
+                    /* Security (English): messages are rendered as plain text (DOM XSS protection) */
+                    /* Зөвхөн <br> мөр шилжүүлэлтийг DOM элемент болгоно (орчуулгын текстэд байдаг) */
+                    String(msg ?? '').split(/<br\s*\/?>/i).forEach((line, i) => {
+                        if (i > 0) {
+                            alert.appendChild(document.createElement('br'));
+                        }
+                        alert.appendChild(document.createTextNode(line));
+                    });
                     form.insertBefore(alert, form.firstChild);
                 };
                 
@@ -262,7 +273,7 @@
                 /* URL query message support (?message=...&message_type=...) */
                 const urlParams = new URLSearchParams(window.location.search);
                 if (urlParams && urlParams.get('message')) {
-                    showMessage(formLogin, urlParams.get('message_type') ?? 'warning', urlParams.get('message'));
+                    showMessage(formLogin, urlParams.get('message_type') ?? 'secondary', urlParams.get('message'));
                     window.history.replaceState({}, document.title, location.protocol + '//' + location.host + location.pathname);
                 }
                 

@@ -144,8 +144,11 @@ function motable(
 
                 let sorting = false;
                 const sorted = rows.sort((a, b) => {
-                    const atext = a.cells[i]?.textContent ?? '';
-                    const btext = b.cells[i]?.textContent ?? '';
+                    /* Server-rendered cell-ийн textContent нь мөрийн шилжилт, индент
+                       агуулдаг тул trim хийхгүй бол isNumeric false болж тоог
+                       үсгийн дарааллаар эрэмбэлнэ */
+                    const atext = (a.cells[i]?.textContent ?? '').trim();
+                    const btext = (b.cells[i]?.textContent ?? '').trim();
                     if (atext === btext) return 0;
 
                     sorting = true;
@@ -236,9 +239,19 @@ motable.prototype.setReady = function () {
     }
 };
 
-/* error(msg) - info дээр алдаа харуулах */
+/* error(msg) - info дээр алдаа харуулах.
+   msg нь server-ийн алдааны мессеж (Error объект ч байж болно) тул HTML биш,
+   текст байдлаар escape хийж хэвлэнэ. motable нь dashboard.js-гүйгээр
+   бие даан ажилладаг тул escape-ийг энд дотроо хийнэ. */
 motable.prototype.error = function (message) {
-    this.info.innerHTML = `<span style="color:red">${message}<span>`;
+    const text = (message === null || message === undefined) ? '' : String(message);
+    const safe = text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    this.info.innerHTML = `<span style="color:red">${safe}</span>`;
 };
 
 /* updateScrollable() - scroll shadow toggle */

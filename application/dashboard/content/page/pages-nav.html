@@ -210,7 +210,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 const title = btn.getAttribute('data-title');
                 const photo = btn.getAttribute('data-photo');
 
-                let question = `<h5>${title}</h5><p class="text-danger mb-3">{{ 'confirm-delete'|text|e('js') }}?</p>`;
+                let question = `<h5>${escapeHtml(title)}</h5><p class="text-danger mb-3">{{ 'confirm-delete'|text|e('js') }}?</p>`;
                 let src = '';
                 if (photo) {
                     src = photo;
@@ -257,20 +257,6 @@ document.addEventListener('DOMContentLoaded', function () {
         errorEl.textContent = err.message;
     });
 
-    /* HTML attribute-д аюулгүй болгох */
-    function escAttr(str) {
-        const div = document.createElement('div');
-        div.appendChild(document.createTextNode(str));
-        return div.innerHTML;
-    }
-
-    /* HTML tag хасаж цэвэр текст авах */
-    function stripTags(str) {
-        const div = document.createElement('div');
-        div.innerHTML = str;
-        return div.textContent || div.innerText || '';
-    }
-
     /* Recursive render */
     function renderTree(items, childrenMap, depth, langCode) {
         if (!items || items.length === 0) return '<div class="text-muted ps-3 small">-</div>';
@@ -283,8 +269,8 @@ document.addEventListener('DOMContentLoaded', function () {
             const collapseId = `tree-node-${id}`;
 
             /* Type / Category badge */
-            let typeBadge = `<span class="badge bg-warning text-dark">${page.type}</span>`;
-            typeBadge += ` <span class="badge bg-secondary">${page.category}</span>`;
+            let typeBadge = `<span class="badge bg-warning text-dark">${escapeHtml(page.type)}</span>`;
+            typeBadge += ` <span class="badge bg-secondary">${escapeHtml(page.category)}</span>`;
 
             /* Published */
             const isPublished = page.published == 1;
@@ -299,7 +285,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 actions += ` <a class="btn btn-sm btn-primary py-0 px-1" href="${updatePattern.replace('{id}', id)}?from=nav" title="Edit"><i class="bi bi-pencil-square"></i></a>`;
             }
             if (canDelete) {
-                actions += ` <button class="delete-page btn btn-sm btn-danger py-0 px-1" type="button" value="${id}" data-title="${escAttr(stripTags(page.title))}"${page.photo ? ` data-photo="${page.photo}"` : ''} title="Delete"><i class="bi bi-trash"></i></button>`;
+                actions += ` <button class="delete-page btn btn-sm btn-danger py-0 px-1" type="button" value="${id}" data-title="${escapeHtml(page.title)}"${page.photo ? ` data-photo="${escapeHtml(page.photo)}"` : ''} title="Delete"><i class="bi bi-trash"></i></button>`;
             }
 
             /* Toggle / leaf icon */
@@ -311,16 +297,16 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             const nodeIcon = hasChildren ? '<i class="bi bi-folder text-warning me-1"></i>' : '';
-            const pagePhoto = page.photo ? `<img src="${page.photo}" style="max-height:24px;max-width:36px;object-fit:cover" class="rounded me-1">` : '';
+            const pagePhoto = page.photo ? `<img src="${escapeHtml(page.photo)}" style="max-height:24px;max-width:36px;object-fit:cover" class="rounded me-1">` : '';
 
             html += `<div class="list-group-item list-group-item-action d-flex align-items-center py-2">
                 <div class="d-flex align-items-center flex-grow-1">
                     ${toggleBtn}${nodeIcon}${pagePhoto}
-                    <span class="fw-medium me-2${isPublished ? ' text-primary' : ''}">${page.title}</span>
+                    <span class="fw-medium me-2${isPublished ? ' text-primary' : ''}">${escapeHtml(page.title)}</span>
                     ${typeBadge}
                     <span class="ms-2">${publishedIcon}</span>
                     <small class="text-muted ms-2">#${id}</small>
-                    ${page.position ? `<small class="text-muted ms-2"><i class="bi bi-arrow-down-up"></i> ${page.position}</small>` : ''}
+                    ${page.position ? `<small class="text-muted ms-2"><i class="bi bi-arrow-down-up"></i> ${escapeHtml(page.position)}</small>` : ''}
                 </div>
                 <div class="ms-auto text-nowrap">${actions}</div>
             </div>`;

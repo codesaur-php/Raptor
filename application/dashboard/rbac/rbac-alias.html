@@ -65,12 +65,12 @@
     </h5>
     <div class="d-flex gap-1 flex-wrap mt-1 mt-md-0">
         <button class="btn btn-sm btn-info text-white"
-            href="{{ 'rbac-insert-role'|link({'alias': alias}) }}?title={{ title|e }}"
+            href="{{ 'rbac-insert-role'|link({'alias': alias}) }}?title={{ title|url_encode }}"
             data-bs-target="#static-modal" data-bs-toggle="modal" type="button">
             <i class="bi bi-plus-circle"></i> <span class="d-none d-sm-inline">Add Role</span>
         </button>
         <button class="btn btn-sm btn-success"
-            href="{{ 'rbac-insert-permission'|link({'alias': alias}) }}?title={{ title|e }}"
+            href="{{ 'rbac-insert-permission'|link({'alias': alias}) }}?title={{ title|url_encode }}"
             data-bs-target="#static-modal" data-bs-toggle="modal" type="button">
             <i class="bi bi-plus-circle"></i> <span class="d-none d-sm-inline">Add Permission</span>
         </button>
@@ -147,7 +147,7 @@
     <ul class="list-group logger-protocol" id="logger-dashboard"
         data-retrieve="{{ 'logs-retrieve'|link }}"
         data-view="{{ 'logs-view'|link }}"
-        data-context='{"action":"rbac-*","alias":"{{ alias }}"}'
+        data-context="{{ {'action': 'rbac-*', 'alias': alias}|json_encode|e }}"
         style="max-height:240px; overflow-y:auto">
     </ul>
 </div>

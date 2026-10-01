@@ -28,7 +28,7 @@
                 autocomplete="off"
                 id="rbac_role_insert"
                 role="form"
-                action="{{ 'rbac-insert-role'|link({'alias':alias}) }}?title={{ title|e }}"
+                action="{{ 'rbac-insert-role'|link({'alias':alias}) }}?title={{ title|url_encode }}"
                 method="POST"
                 enctype="multipart/form-data"
             >

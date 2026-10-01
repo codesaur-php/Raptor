@@ -25,10 +25,13 @@ class PagesSamples
         }
         $assets = $path . '/assets/images';
 
+        // created_at = published_at нь жишиг дата танихад ашиглагдана
+        $now = \date('Y-m-d H:i:s');
         $seed = [
             'category' => '_raptor_sample_',
             'published' => 1,
-            'published_at' => \date('Y-m-d H:i:s')
+            'published_at' => $now,
+            'created_at' => $now
         ];
 
         // ============ MN хуудсууд ============

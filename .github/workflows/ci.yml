@@ -10,6 +10,7 @@
 #   - Merge conflict markers
 #   - Debug statements (var_dump, dd, print_r)
 #   - Autoload verification
+#   - PHPUnit Unit test suite (Integration suite нь DB шаарддаг тул энд ажиллахгүй)
 # ======================================================================
 
 name: CI
@@ -61,3 +62,29 @@ jobs:
 
       - name: Verify autoload
         run: composer dump-autoload --optimize --strict-psr
+
+      # tests/bootstrap.php нь .env.testing (эсвэл .env) ачаалж, mysql driver
+      # үед test database-г CREATE DATABASE-аар бэлддэг (холбогдож чадахгүй бол
+      # exit 1). ubuntu-latest runner дээр MySQL суусан (root/root) боловч
+      # зогссон байдаг тул асаагаад түүн рүү чиглэсэн .env.testing үүсгэнэ.
+      - name: Prepare test environment
+        run: |
+          sudo systemctl start mysql.service
+          cat > .env.testing <<'EOF'
+          CODESAUR_APP_NAME=raptor
+          CODESAUR_APP_ENV=development
+          RAPTOR_DB_DRIVER=mysql
+          RAPTOR_DB_HOST=127.0.0.1
+          RAPTOR_DB_NAME=raptor_test
+          RAPTOR_DB_USERNAME=root
+          RAPTOR_DB_PASSWORD=root
+          RAPTOR_DB_CHARSET=utf8mb4
+          RAPTOR_DB_COLLATION=utf8mb4_unicode_ci
+          RAPTOR_JWT_ALGORITHM=HS256
+          RAPTOR_JWT_LIFETIME=2592000
+          RAPTOR_JWT_SECRET=ci-unit-test-secret-not-used-in-production
+          RAPTOR_WAF_BODY_ENCODING=true
+          EOF
+
+      - name: Run Unit tests
+        run: php vendor/bin/phpunit --testsuite Unit

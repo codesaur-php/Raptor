@@ -4,6 +4,8 @@ namespace Web\Service;
 
 use Psr\Log\LogLevel;
 
+use codesaur\DataObject\Constants;
+
 use Dashboard\Content\NewsModel;
 use Dashboard\Content\PagesModel;
 
@@ -43,6 +45,9 @@ class SearchController extends TemplateController
         $results = [];
         if (\mb_strlen($q) >= 2) {
             $like = '%' . $q . '%';
+            // PostgreSQL-ийн LIKE том/жижиг үсэг ялгадаг тул ILIKE ашиглана
+            // (MySQL-ийн LIKE нь _ci collation-оор аль хэдийн ялгадаггүй)
+            $op = $this->getDriverName() === Constants::DRIVER_PGSQL ? 'ILIKE' : 'LIKE';
 
             // Pages-ээс хайх
             $pages_table = (new PagesModel($this->pdo))->getName();
@@ -50,8 +55,8 @@ class SearchController extends TemplateController
                 "SELECT id, title, slug, description, content, source, link, 'page' AS type
                  FROM $pages_table
                  WHERE published=1 AND code IN (:code, '*')
-                   AND (title LIKE :q1 OR slug LIKE :q2 OR description LIKE :q3
-                        OR content LIKE :q4 OR source LIKE :q5 OR link LIKE :q6)
+                   AND (title $op :q1 OR slug $op :q2 OR description $op :q3
+                        OR content $op :q4 OR source $op :q5 OR link $op :q6)
                  ORDER BY published_at DESC
                  LIMIT 20"
             );
@@ -72,8 +77,8 @@ class SearchController extends TemplateController
                 "SELECT id, title, slug, description, content, source, 'news' AS type
                  FROM $news_table
                  WHERE published=1 AND code IN (:code, '*')
-                   AND (title LIKE :q1 OR slug LIKE :q2 OR description LIKE :q3
-                        OR content LIKE :q4 OR source LIKE :q5)
+                   AND (title $op :q1 OR slug $op :q2 OR description $op :q3
+                        OR content $op :q4 OR source $op :q5)
                  ORDER BY published_at DESC
                  LIMIT 20"
             );
@@ -94,8 +99,8 @@ class SearchController extends TemplateController
                 "SELECT id, title, slug, description, content, link, 'product' AS type
                  FROM $products_table
                  WHERE published=1 AND code IN (:code, '*')
-                   AND (title LIKE :q1 OR slug LIKE :q2 OR description LIKE :q3
-                        OR content LIKE :q4 OR link LIKE :q5)
+                   AND (title $op :q1 OR slug $op :q2 OR description $op :q3
+                        OR content $op :q4 OR link $op :q5)
                  ORDER BY published_at DESC
                  LIMIT 20"
             );

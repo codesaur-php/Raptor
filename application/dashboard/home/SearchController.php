@@ -2,6 +2,8 @@
 
 namespace Dashboard\Home;
 
+use codesaur\DataObject\Constants;
+
 use Dashboard\Content\CommentsModel;
 use Dashboard\Content\MessagesModel;
 use Dashboard\Content\NewsModel;
@@ -50,6 +52,9 @@ class SearchController extends \Dashboard\Controller
             }
 
             $like = '%' . $q . '%';
+            // PostgreSQL-ийн LIKE том/жижиг үсэг ялгадаг тул ILIKE ашиглана
+            // (MySQL-ийн LIKE нь _ci collation-оор аль хэдийн ялгахгүй)
+            $likeOp = $this->getDriverName() === Constants::DRIVER_PGSQL ? 'ILIKE' : 'LIKE';
             $results = [];
             
             // NEWS
@@ -57,9 +62,9 @@ class SearchController extends \Dashboard\Controller
                 try {
                     $table = (new NewsModel($this->pdo))->getName();
                     $stmt = $this->prepare(
-                        "SELECT id, title, description, code, type, published, 'news' AS source
+                        "SELECT id, title, description, code, type, published, content AS match_content, source AS match_source, 'news' AS source
                          FROM $table
-                         WHERE title LIKE :q OR description LIKE :q2 OR content LIKE :q3 OR source LIKE :q4
+                         WHERE title {$likeOp} :q OR description {$likeOp} :q2 OR content {$likeOp} :q3 OR source {$likeOp} :q4
                          ORDER BY created_at DESC LIMIT 10"
                     );
                     $stmt->bindValue(':q', $like);
@@ -85,9 +90,9 @@ class SearchController extends \Dashboard\Controller
                 try {
                     $table = (new PagesModel($this->pdo))->getName();
                     $stmt = $this->prepare(
-                        "SELECT id, title, description, code, type, published, link, 'pages' AS source
+                        "SELECT id, title, description, code, type, published, link, content AS match_content, source AS match_source, 'pages' AS source
                          FROM $table
-                         WHERE title LIKE :q OR description LIKE :q2 OR content LIKE :q3 OR link LIKE :q4 OR source LIKE :q5
+                         WHERE title {$likeOp} :q OR description {$likeOp} :q2 OR content {$likeOp} :q3 OR link {$likeOp} :q4 OR source {$likeOp} :q5
                          ORDER BY created_at DESC LIMIT 10"
                     );
                     $stmt->bindValue(':q', $like);
@@ -114,9 +119,9 @@ class SearchController extends \Dashboard\Controller
                 try {
                     $table = (new ProductsModel($this->pdo))->getName();
                     $stmt = $this->prepare(
-                        "SELECT id, title, description, code, type, published, sku, 'products' AS source
+                        "SELECT id, title, description, code, type, published, sku, content AS match_content, 'products' AS source
                          FROM $table
-                         WHERE title LIKE :q OR description LIKE :q2 OR sku LIKE :q3 OR content LIKE :q4
+                         WHERE title {$likeOp} :q OR description {$likeOp} :q2 OR sku {$likeOp} :q3 OR content {$likeOp} :q4
                          ORDER BY created_at DESC LIMIT 10"
                     );
                     $stmt->bindValue(':q', $like);
@@ -145,7 +150,7 @@ class SearchController extends \Dashboard\Controller
                     $stmt = $this->prepare(
                         "SELECT id, product_title AS title, customer_name, customer_email, customer_phone, message, status, 'orders' AS source
                          FROM $table
-                         WHERE product_title LIKE :q OR customer_name LIKE :q2 OR customer_email LIKE :q3 OR customer_phone LIKE :q4 OR message LIKE :q5
+                         WHERE product_title {$likeOp} :q OR customer_name {$likeOp} :q2 OR customer_email {$likeOp} :q3 OR customer_phone {$likeOp} :q4 OR message {$likeOp} :q5
                          ORDER BY created_at DESC LIMIT 10"
                     );
                     $stmt->bindValue(':q', $like);
@@ -175,7 +180,7 @@ class SearchController extends \Dashboard\Controller
                         "SELECT id, username, first_name, last_name, email, phone, 'users' AS source
                          FROM $table
                          WHERE is_active=1
-                           AND (username LIKE :q OR first_name LIKE :q2 OR last_name LIKE :q3 OR email LIKE :q4 OR phone LIKE :q5)
+                           AND (username {$likeOp} :q OR first_name {$likeOp} :q2 OR last_name {$likeOp} :q3 OR email {$likeOp} :q4 OR phone {$likeOp} :q5)
                          ORDER BY id DESC LIMIT 10"
                     );
                     $stmt->bindValue(':q', $like);
@@ -206,7 +211,7 @@ class SearchController extends \Dashboard\Controller
                     $stmt = $this->prepare(
                         "SELECT id, name AS title, alias AS code, 'organizations' AS source
                          FROM $table
-                         WHERE is_active=1 AND name LIKE :q
+                         WHERE is_active=1 AND name {$likeOp} :q
                          ORDER BY name LIMIT 10"
                     );
                     $stmt->bindValue(':q', $like);
@@ -232,7 +237,7 @@ class SearchController extends \Dashboard\Controller
                 $sql =
                     "SELECT id, title, status, content, 'dev-requests' AS source
                      FROM $table
-                     WHERE (title LIKE :q OR content LIKE :q2)";
+                     WHERE (title {$likeOp} :q OR content {$likeOp} :q2)";
                 if (!$this->isUserCan('system_development')) {
                     $sql .= ' AND (created_by=:uid OR assigned_to=:uid2)';
                 }
@@ -264,7 +269,7 @@ class SearchController extends \Dashboard\Controller
                     $stmt = $this->prepare(
                         "SELECT id, name AS title, email, message, 'messages' AS source
                          FROM $table
-                         WHERE name LIKE :q OR email LIKE :q2 OR message LIKE :q3
+                         WHERE name {$likeOp} :q OR email {$likeOp} :q2 OR message {$likeOp} :q3
                          ORDER BY created_at DESC LIMIT 10"
                     );
                     $stmt->bindValue(':q', $like);
@@ -293,7 +298,7 @@ class SearchController extends \Dashboard\Controller
                     $stmt = $this->prepare(
                         "SELECT news_id AS id, name AS title, email, comment, 'comments' AS source
                          FROM $table
-                         WHERE name LIKE :q OR comment LIKE :q2
+                         WHERE name {$likeOp} :q OR comment {$likeOp} :q2
                          ORDER BY created_at DESC LIMIT 10"
                     );
                     $stmt->bindValue(':q', $like);
@@ -320,7 +325,7 @@ class SearchController extends \Dashboard\Controller
                     $stmt = $this->prepare(
                         "SELECT id, name AS title, email, comment, 'reviews' AS source
                          FROM $table
-                         WHERE name LIKE :q OR comment LIKE :q2
+                         WHERE name {$likeOp} :q OR comment {$likeOp} :q2
                          ORDER BY created_at DESC LIMIT 10"
                     );
                     $stmt->bindValue(':q', $like);
@@ -340,8 +345,9 @@ class SearchController extends \Dashboard\Controller
             }
 
             // HTML tag доторх текстээс олдсон үр дүнг шүүх:
-            // title, description зэрэг талбарт хайлтын үг байвал үлдээнэ,
-            // зөвхөн content-ийн HTML tag дотор олдсон бол хасна.
+            // title, description, content (match_content), эх сурвалж (match_source)
+            // зэрэг талбарын текстэд хайлтын үг байвал үлдээнэ, зөвхөн content-ийн
+            // HTML tag дотор (attribute, tag нэр) олдсон бол хасна.
             $best_results = \array_values(\array_filter($results, function ($row) use ($q) {
                 $start = \mb_strtolower($q);
                 foreach ($row as $key => $value) {
@@ -354,6 +360,11 @@ class SearchController extends \Dashboard\Controller
                 }
                 return false;
             }));
+            // match_* баганууд зөвхөн шүүлтэд хэрэгтэй - JSON хариуг томруулахгүйн тулд хасна
+            foreach ($best_results as &$row) {
+                unset($row['match_content'], $row['match_source']);
+            }
+            unset($row);
 
             $this->respondJSON([
                 'status' => 'success',

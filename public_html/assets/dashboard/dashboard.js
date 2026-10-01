@@ -3,6 +3,7 @@
  *
  * Энэ файл нь Dashboard UI-ийн нийтлэг функцуудыг нэгтгэсэн сан юм.
  *  Доорх функцууд нь:
+ *  HTML escape helper (escapeHtml)
  *  CSRF + WAF-compatible fetch wrapper (getCsrfToken / wafBodyEncodingEnabled /
  *      b64EncodeUnicode / csrfFetch)
  *  AJAX Modal Loader (ajaxModal)
@@ -31,6 +32,26 @@
  *  * Notify() нь системийн бүх popup notification-ийг орлодог
  *  * Button-ууд дээр .spinNstop() ашиглахад илүү амар
  */
+
+/**
+ * escapeHtml(value)
+ * - Хэрэглэгч/зочны оруулсан утгыг innerHTML, template literal HTML,
+ *   attribute дотор хэвлэхийн өмнө HTML escape хийнэ (null/undefined -> '').
+ *   Олон нийтийн форм (contact, comment, order, review)-оос ирсэн өгөгдөл
+ *   dashboard дээр script болж ажиллахаас (stored XSS) хамгаална.
+ *
+ *   Security (English): every visitor/user supplied value rendered through
+ *   innerHTML or an HTML string MUST go through escapeHtml() - otherwise a
+ *   public form submission becomes stored XSS in an admin's session. */
+function escapeHtml(value) {
+    if (value === null || value === undefined) return '';
+    return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
 
 /**
  * getCsrfToken()
@@ -197,7 +218,7 @@ function ajaxModal(link)
                                 <div class="modal-body">
                                     <div class="alert alert-danger shadow-sm mt-3">
                                         <i class="bi bi-bug-fill"></i>
-                                        Error [${this.status}]: <strong>${this.statusText}</strong>
+                                        Error [${this.status}]: <strong>${escapeHtml(this.statusText)}</strong>
                                     </div>
                                 </div>
                                 <div class="modal-footer">
@@ -278,10 +299,22 @@ function Notify(type, title, content, _velocity = 5, delay = 2500)
          box-shadow:0 8px 32px rgba(0,0,0,.25);
          text-align:center;max-width:min(420px,90vw);width:max-content;
          opacity:0;transition:transform .3s ease,opacity .3s ease;pointer-events:none`;
+    /* title/content нь template-ээс escape хийгдсэн (|e) эсвэл серверийн
+     * response.message (хэрэглэгчийн оруулсан утга агуулж болно) байдаг.
+     * Идэвхгүй DOMParser баримтаар текст болгож (entity decode, tag хасна)
+     * textContent-оор хэвлэнэ - <br> нь мөр шилжилт хэвээр үлдэнэ.
+     *
+     * Security (English): never assign title/content to innerHTML - server
+     * messages may echo user input (stored XSS). */
+    const toText = (value) => new DOMParser()
+        .parseFromString(String(value ?? '').replace(/<br\s*\/?>/gi, '\n'), 'text/html')
+        .body.textContent;
     el.innerHTML =
         `<div style="font-size:1.5rem;margin-bottom:.25rem"><i class="bi ${icon}"></i></div>
-         <div style="font-weight:600;text-transform:uppercase;margin-bottom:.25rem">${title}</div>
-         <div style="font-size:.9rem;opacity:.9">${content}</div>`;
+         <div style="font-weight:600;text-transform:uppercase;margin-bottom:.25rem"></div>
+         <div style="font-size:.9rem;opacity:.9;white-space:pre-line"></div>`;
+    el.children[1].textContent = toText(title);
+    el.children[2].textContent = toText(content);
 
     document.body.appendChild(el);
 
@@ -447,12 +480,6 @@ function initGlobalSearch(config) {
     let xhr = null;
     let active = -1; /* keyboard navigatsiin idevhtei muriin index */
 
-    function escapeHtml(str) {
-        const div = document.createElement('div');
-        div.textContent = str;
-        return div.innerHTML;
-    }
-
     /* Render */
 
     function render(q, searchHtml) {
@@ -492,7 +519,7 @@ function initGlobalSearch(config) {
             /* Route бүртгэгдээгүй модуль (|pattern -> '#') эсвэл pattern
                заагдаагүй source: хоосон линк рүү хөтөлдөг үр дүнг харуулахгүй */
             if (!pattern || pattern === '#') return;
-            const href = pattern.replace('{id}', item.id);
+            const href = pattern.replace('{id}', encodeURIComponent(item.id));
 
             let subtitle = '';
             if (item.email) subtitle = item.email;
@@ -510,12 +537,12 @@ function initGlobalSearch(config) {
                 ? ' data-bs-target="#static-modal"'
                 : '';
 
-            html += '<a class="global-search-item" href="' + href + '"' + modalAttrs + '>' +
+            html += '<a class="global-search-item" href="' + escapeHtml(href) + '"' + modalAttrs + '>' +
                 '<span class="search-icon"><i class="bi ' + meta.icon + '"></i></span>' +
                 '<span class="search-title">' + escapeHtml(item.title || '') +
                     (subtitle ? ' <small class="text-muted">(' + escapeHtml(subtitle) + ')</small>' : '') +
                 '</span>' +
-                '<span class="badge ' + meta.badge + ' search-badge ms-auto">' + meta.label + '</span>' +
+                '<span class="badge ' + meta.badge + ' search-badge ms-auto">' + escapeHtml(meta.label) + '</span>' +
                 '</a>';
         });
         return html;
@@ -549,8 +576,13 @@ function initGlobalSearch(config) {
     function moveActive(step) {
         const items = resultsDiv.querySelectorAll('.global-search-item');
         if (!items.length) return;
-        if (active >= 0) items[active].classList.remove('active');
-        active = (active + step + items.length) % items.length;
+        if (active >= 0) {
+            items[active].classList.remove('active');
+            active = (active + step + items.length) % items.length;
+        } else {
+            /* Songolt baihgui uyed: ArrowDown -> ehnii mur, ArrowUp -> suuliin mur */
+            active = step > 0 ? 0 : items.length - 1;
+        }
         items[active].classList.add('active');
         items[active].scrollIntoView({ block: 'nearest' });
     }
@@ -595,6 +627,15 @@ function initGlobalSearch(config) {
     });
 
     modalEl.addEventListener('hidden.bs.modal', function () {
+        /* Huleegdej bui debounce timer bolon xhr-iig tsutsalna - ugui bol
+           haasan modal-d hojuu irsen ur dun render hiigdene */
+        clearTimeout(timer);
+        timer = null;
+        if (xhr) {
+            xhr.onreadystatechange = null;
+            xhr.abort();
+            xhr = null;
+        }
         input.value = '';
         render('', '');
     });
@@ -937,15 +978,21 @@ function initLoggerProtocol() {
                 li.appendChild(a);
                 li.appendChild(document.createTextNode(' '));
 
+                /* Log message/context нь хэрэглэгч, зочны оруулсан утга агуулж
+                 * болох тул textContent-оор (HTML биш) хэвлэнэ - stored XSS.
+                 * Зарим мессеж tag агуулдаг (файлын холбоос) тул идэвхгүй
+                 * DOMParser баримтаар tag-ийг хуулж зөвхөн текстийг авна. */
                 const msg = document.createElement('span');
-                msg.innerHTML = log.message;
+                msg.textContent = new DOMParser().parseFromString(String(log.message ?? ''), 'text/html').body.textContent;
                 li.appendChild(msg);
                 li.appendChild(document.createTextNode(' '));
 
                 const who = document.createElement('span');
                 who.classList.add('text-muted', 'small');
                 const ctx = log.context ?? {};
-                who.innerHTML = `<u>${ctx.action ?? ''} by ${ctx.auth_user?.username ?? ''}</u>`;
+                const u = document.createElement('u');
+                u.textContent = `${ctx.action ?? ''} by ${ctx.auth_user?.username ?? ''}`;
+                who.appendChild(u);
                 li.appendChild(who);
 
                 logger.appendChild(li);

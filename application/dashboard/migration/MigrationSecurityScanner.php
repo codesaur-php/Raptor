@@ -2,6 +2,8 @@
 
 namespace Dashboard\Migration;
 
+use codesaur\DataObject\Constants;
+
 /**
  * Class MigrationSecurityScanner
  *
@@ -32,6 +34,15 @@ class MigrationSecurityScanner
     ];
 
     /**
+     * Хүснэгтийн нэрийн өмнөх optional schema prefix болон quote.
+     *
+     * MySQL backtick (`users`), PostgreSQL/ANSI double-quote ("users") болон
+     * schema-qualified (public.users, `db`.`users`) нэрүүдийг ч таньдаг байх
+     * ёстой - эс бөгөөс quote хийсэн нэрээр sensitive хүснэгт warning-гүй үлдэнэ.
+     */
+    private const Q = '(?:[`"]?\w+[`"]?\.)?[`"]?';
+
+    /**
      * Pattern -> warning тайлбар.
      *
      * Бүх pattern нь case-insensitive (`/i` flag).
@@ -42,27 +53,27 @@ class MigrationSecurityScanner
      * хийхээс сэргийлнэ (жишээ: `UPDATE products; ... rbac_roles` хоёр statement).
      */
     private const PATTERNS = [
-        '/\bUPDATE\s+users\b/i'                         => 'Modifies users table (potential password / role change)',
-        '/\bINSERT\s+INTO\s+users\b/i'                  => 'Inserts user record',
-        '/\bDELETE\s+FROM\s+users\b/i'                  => 'Deletes user record',
-        '/\bDROP\s+TABLE\s+(IF\s+EXISTS\s+)?users\b/i'  => 'Drops users table',
-        '/\bTRUNCATE\s+(TABLE\s+)?users\b/i'            => 'Truncates users table',
+        '/\bUPDATE\s+(?:(?:LOW_PRIORITY|IGNORE|ONLY)\s+)*' . self::Q . 'users\b/i' => 'Modifies users table (potential password / role change)',
+        '/\bINSERT\s+(?:(?:LOW_PRIORITY|DELAYED|HIGH_PRIORITY|IGNORE)\s+)*(?:INTO\s+)?' . self::Q . 'users\b/i' => 'Inserts user record',
+        '/\bDELETE\s+(?:(?:LOW_PRIORITY|QUICK|IGNORE)\s+)*FROM\s+(?:ONLY\s+)?' . self::Q . 'users\b/i' => 'Deletes user record',
+        '/\bDROP\s+TABLE\s+(IF\s+EXISTS\s+)?' . self::Q . 'users\b/i' => 'Drops users table',
+        '/\bTRUNCATE\s+(TABLE\s+)?' . self::Q . 'users\b/i' => 'Truncates users table',
 
         '/\b(INSERT|UPDATE|DELETE)[^;]*\brbac_/i'       => 'Modifies RBAC table (potential privilege escalation)',
-        '/\bDROP\s+TABLE\s+(IF\s+EXISTS\s+)?rbac_/i'    => 'Drops RBAC table',
-        '/\bTRUNCATE\s+(TABLE\s+)?rbac_/i'              => 'Truncates RBAC table',
+        '/\bDROP\s+TABLE\s+(IF\s+EXISTS\s+)?' . self::Q . 'rbac_/i' => 'Drops RBAC table',
+        '/\bTRUNCATE\s+(TABLE\s+)?' . self::Q . 'rbac_/i' => 'Truncates RBAC table',
 
         '/\b(INSERT|UPDATE|DELETE)[^;]*\borganizations(_users)?\b/i' => 'Modifies organizations table (multi-tenant boundary)',
-        '/\bDROP\s+TABLE\s+(IF\s+EXISTS\s+)?organizations(_users)?\b/i' => 'Drops organizations table',
-        '/\bTRUNCATE\s+(TABLE\s+)?organizations(_users)?\b/i' => 'Truncates organizations table',
+        '/\bDROP\s+TABLE\s+(IF\s+EXISTS\s+)?' . self::Q . 'organizations(_users)?\b/i' => 'Drops organizations table',
+        '/\bTRUNCATE\s+(TABLE\s+)?' . self::Q . 'organizations(_users)?\b/i' => 'Truncates organizations table',
 
         '/\b(INSERT|UPDATE|DELETE)[^;]*\blocalization_language\b/i' => 'Modifies localization_language table (site-wide locale impact)',
-        '/\bDROP\s+TABLE\s+(IF\s+EXISTS\s+)?localization_language\b/i' => 'Drops localization_language table',
-        '/\bTRUNCATE\s+(TABLE\s+)?localization_language\b/i' => 'Truncates localization_language table',
+        '/\bDROP\s+TABLE\s+(IF\s+EXISTS\s+)?' . self::Q . 'localization_language\b/i' => 'Drops localization_language table',
+        '/\bTRUNCATE\s+(TABLE\s+)?' . self::Q . 'localization_language\b/i' => 'Truncates localization_language table',
 
         '/\b(INSERT|UPDATE|DELETE)[^;]*\braptor_menu\b/i' => 'Modifies raptor_menu table (dashboard navigation)',
-        '/\bDROP\s+TABLE\s+(IF\s+EXISTS\s+)?raptor_menu\b/i' => 'Drops raptor_menu table',
-        '/\bTRUNCATE\s+(TABLE\s+)?raptor_menu\b/i'       => 'Truncates raptor_menu table',
+        '/\bDROP\s+TABLE\s+(IF\s+EXISTS\s+)?' . self::Q . 'raptor_menu\b/i' => 'Drops raptor_menu table',
+        '/\bTRUNCATE\s+(TABLE\s+)?' . self::Q . 'raptor_menu\b/i' => 'Truncates raptor_menu table',
 
         '/\bGRANT\b/i'                                  => 'Grants database privileges',
         '/\bREVOKE\b/i'                                 => 'Revokes database privileges',
@@ -74,6 +85,22 @@ class MigrationSecurityScanner
         // CREATE USER is matched above first; this pattern excludes that case via the negative lookahead.
         '/\bCREATE\s+(?!USER\b)(TEMPORARY\s+)?TABLE\b/i' => 'CREATE TABLE used - prefer defining a Model with setTable() instead; tables auto-create on first use',
     ];
+
+    /**
+     * PDO driver нэр (Constants::DRIVER_*). Quote-ийн утгыг тодорхойлно:
+     * MySQL дээр "..." нь string literal (default sql_mode), PostgreSQL/SQLite
+     * дээр identifier. null (тодорхойгүй) үед аюулгүй тал руу - "..." -г
+     * identifier гэж үзэж агуулгыг нь шалгана.
+     */
+    private ?string $driver;
+
+    /**
+     * @param string|null $driver PDO driver нэр (`\PDO::ATTR_DRIVER_NAME`)
+     */
+    public function __construct(?string $driver = null)
+    {
+        $this->driver = $driver;
+    }
 
     /**
      * SQL текстийг шалгах.
@@ -104,7 +131,8 @@ class MigrationSecurityScanner
     }
 
     /**
-     * Sanitized SQL: comment-ууд ба string literal-уудыг хоосон зайгаар сольсон.
+     * Sanitized SQL: comment-ууд ба string literal-уудыг хоосон зайгаар сольсон
+     * (identifier quote - backtick, pgsql-ийн "..." - агуулгаараа үлдэнэ).
      * Ингэснээр `'-- UPDATE users'` гэсэн string literal эсвэл
      * `-- comment with UPDATE users` нь pattern-д тохирохгүй.
      */
@@ -113,6 +141,7 @@ class MigrationSecurityScanner
         $out = '';
         $length = \strlen($sql);
         $i = 0;
+        $mysql = $this->driver === Constants::DRIVER_MYSQL;
 
         while ($i < $length) {
             $ch = $sql[$i];
@@ -139,11 +168,14 @@ class MigrationSecurityScanner
                 continue;
             }
 
-            // single-quoted string
+            // single-quoted string. Backslash escape (\') зөвхөн MySQL дээр
+            // хүчинтэй - PostgreSQL (standard_conforming_strings) / SQLite дээр
+            // backslash literal тул түүнийг escape гэж үзвэл string-ийн дараах
+            // жинхэнэ код (`'a\'; UPDATE users ...`) нуугдана.
             if ($ch === '\'') {
                 $i++;
                 while ($i < $length) {
-                    if ($sql[$i] === '\\' && $i + 1 < $length) {
+                    if ($mysql && $sql[$i] === '\\' && $i + 1 < $length) {
                         $i += 2;
                         continue;
                     }
@@ -157,11 +189,18 @@ class MigrationSecurityScanner
                 continue;
             }
 
-            // double-quoted string / identifier
+            // double-quoted: MySQL дээр string literal -> хоосолно.
+            // PostgreSQL/SQLite (болон тодорхойгүй driver) дээр identifier
+            // ("users") тул агуулгыг нь хадгалж pattern-д шалгуулна.
+            //
+            // Critical (English): on pgsql "..." is an identifier - stripping it
+            // would hide `UPDATE "users"` from every pattern. Only MySQL treats
+            // it as a string literal.
             if ($ch === '"') {
+                $start = $i;
                 $i++;
                 while ($i < $length) {
-                    if ($sql[$i] === '\\' && $i + 1 < $length) {
+                    if ($mysql && $sql[$i] === '\\' && $i + 1 < $length) {
                         $i += 2;
                         continue;
                     }
@@ -171,7 +210,17 @@ class MigrationSecurityScanner
                     }
                     $i++;
                 }
-                $out .= ' ';
+                $out .= $mysql ? ' ' : \substr($sql, $start, $i - $start);
+                continue;
+            }
+
+            // backtick identifier (MySQL): агуулгыг хэвээр хадгална, гэхдээ
+            // дотор нь байх ' эсвэл -- нь string/comment эхлүүлэхгүй.
+            if ($ch === '`') {
+                $end = \strpos($sql, '`', $i + 1);
+                $end = $end === false ? $length : $end + 1;
+                $out .= \substr($sql, $i, $end - $i);
+                $i = $end;
                 continue;
             }
 

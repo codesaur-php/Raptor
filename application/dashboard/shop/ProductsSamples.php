@@ -24,11 +24,14 @@ class ProductsSamples
             $path = '';
         }
         
+        // created_at = published_at нь жишиг дата танихад ашиглагдана
+        $now = \date('Y-m-d H:i:s');
         $seed = [
             'category' => '_raptor_sample_',
             'review' => 1,
             'published' => 1,
-            'published_at' => \date('Y-m-d H:i:s')
+            'published_at' => $now,
+            'created_at' => $now
         ];
 
         $model->insert($seed + [

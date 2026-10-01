@@ -40,10 +40,10 @@ class ContactController extends TemplateController
         $code = $this->getLanguageCode();
         $pages_table = (new PagesModel($this->pdo))->getName();
         $stmt = $this->prepare(
-            "SELECT id, title, content, photo, code
+            "SELECT id, title, description, content, photo, code
              FROM $pages_table
              WHERE published=1
-               AND code=:code
+               AND code IN (:code, '*')
                AND link LIKE '%/contact'
              ORDER BY published_at DESC
              LIMIT 1"
@@ -101,16 +101,16 @@ class ContactController extends TemplateController
             $message = \trim($parsed['message'] ?? '');
 
             if (empty($name)) {
-                throw new \InvalidArgumentException($code === 'mn' ? 'Нэрээ оруулна уу' : 'Please enter your name');
+                throw new \InvalidArgumentException($code === 'mn' ? 'Нэрээ оруулна уу' : 'Please enter your name', 400);
             }
             if (empty($phone)) {
-                throw new \InvalidArgumentException($code === 'mn' ? 'Утасны дугаараа оруулна уу' : 'Please enter your phone number');
+                throw new \InvalidArgumentException($code === 'mn' ? 'Утасны дугаараа оруулна уу' : 'Please enter your phone number', 400);
             }
             if (!empty($email) && !\filter_var($email, \FILTER_VALIDATE_EMAIL)) {
-                throw new \InvalidArgumentException($code === 'mn' ? 'Зөв имэйл хаяг оруулна уу' : 'Please enter a valid email address');
+                throw new \InvalidArgumentException($code === 'mn' ? 'Зөв имэйл хаяг оруулна уу' : 'Please enter a valid email address', 400);
             }
             if (empty($message)) {
-                throw new \InvalidArgumentException($code === 'mn' ? 'Мессежээ бичнэ үү' : 'Please enter your message');
+                throw new \InvalidArgumentException($code === 'mn' ? 'Мессежээ бичнэ үү' : 'Please enter your message', 400);
             }
             $this->checkLinkSpam($message);
 
@@ -160,7 +160,7 @@ class ContactController extends TemplateController
             // И-мэйл мэдэгдэл (settings-д email тохируулсан бол)
             $this->sendContactEmail($name, $phone, $email, $message);
         } catch (\Throwable $err) {
-            $this->respondJSON(['message' => $err->getMessage()], $err->getCode() ?: 500);
+            $this->respondJSONError($err);
         }
     }
 

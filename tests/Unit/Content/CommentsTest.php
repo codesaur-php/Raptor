@@ -54,14 +54,14 @@ class CommentsTest extends RaptorTestCase
     }
 
     /**
-     * comment() нь system_content_index эрх шалгадаг эсэх.
+     * comment() нь reply() болон comment form-той ижил system_content_update эрх шалгадаг эсэх.
      */
-    public function testCommentRequiresContentIndexPermission(): void
+    public function testCommentRequiresContentUpdatePermission(): void
     {
         \preg_match('/function\s+comment\s*\(.*?\{(.+?)(?=\n    public\s|\n\})/s', self::$dashboardController, $m);
         $this->assertNotEmpty($m, 'comment() method not found');
-        $this->assertStringContainsString("isUserCan('system_content_index')", $m[1],
-            'comment() must check system_content_index permission');
+        $this->assertStringContainsString("isUserCan('system_content_update')", $m[1],
+            'comment() must check system_content_update permission');
     }
 
     /**
@@ -115,15 +115,25 @@ class CommentsTest extends RaptorTestCase
     }
 
     /**
-     * delete() нь reply-уудыг мөн устгадаг эсэх (cascade delete).
+     * delete() нь reply-уудыг мөн устгаж trash-д хадгалдаг эсэх (cascade delete).
      */
     public function testDeleteCascadesToReplies(): void
     {
         \preg_match('/function\s+delete\s*\(.*?\{(.+?)(?=\n    public\s|\n\})/s', self::$dashboardController, $m);
         $this->assertMatchesRegularExpression(
-            '/DELETE\s+FROM\s+.*WHERE\s+parent_id/',
+            '/parent_id=\$id/',
             $m[1],
-            'delete() must also delete child replies'
+            'delete() must also load child replies'
+        );
+        $this->assertMatchesRegularExpression(
+            '/foreach\s*\(\s*\$replies.*?deleteById\(.*?TrashModel\(\$this->pdo\)\)->store\(/s',
+            $m[1],
+            'delete() must deleteById each reply and then store it in trash'
+        );
+        $this->assertDoesNotMatchRegularExpression(
+            '/DELETE\s+FROM/i',
+            $m[1],
+            'delete() must not hard-delete replies with raw SQL (bypasses trash)'
         );
     }
 

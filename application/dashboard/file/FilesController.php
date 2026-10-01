@@ -86,12 +86,16 @@ class FilesController extends FileController
         }
 
         // Query параметрт table өгсөн эсэх, default = 'files'.
-        // Дээрх мөр 82-85 нь $tables-д 'files' түлхүүрийг (байрлалаас үл хамааран)
+        // Дээрх блок $tables-д 'files' түлхүүрийг (байрлалаас үл хамааран)
         // үргэлж нэмдэг тул default 'files' хэзээ ч хоосон гарахгүй.
+        // Зөвхөн бодитоор байгаа {table}_files хүснэгтийг зөвшөөрнө - эс бөгөөс
+        // доорх log() дурын нэртэй {table}_log хүснэгт үүсгэх боломжтой болно.
+        $table = 'files';
         if (isset($this->getQueryParams()['table'])) {
-            $table = \preg_replace('/[^A-Za-z0-9_-]/', '', $this->getQueryParams()['table']);
-        } else {
-            $table = 'files';
+            $requested = \preg_replace('/[^A-Za-z0-9_-]/', '', (string) $this->getQueryParams()['table']);
+            if (isset($tables[$requested])) {
+                $table = $requested;
+            }
         }
         
         $total['total_bytes'] = (int) $total['sizes'];
@@ -460,13 +464,18 @@ class FilesController extends FileController
                 throw new \InvalidArgumentException($this->text('invalid-request'), 400);
             }
 
-            // Payload боловсруулах (file_ -> арилга)
+            // Payload боловсруулах (file_ -> арилга). Зөвхөн засварлах боломжтой
+            // талбаруудыг (files-update-modal.html-ийн форм) авна - path, record_id,
+            // created_by зэрэг бусад баганыг клиентээс өөрчлөхийг хориглоно.
+            $editable = ['keyword', 'description'];
             $payload = [];
             foreach ($parsedBody as $k => $v) {
                 if (\str_starts_with($k, 'file_')) {
                     $k = \substr($k, 5);
                 }
-                $payload[$k] = $v;
+                if (\in_array($k, $editable, true)) {
+                    $payload[$k] = $v;
+                }
             }
 
             $model = new FilesModel($this->pdo);

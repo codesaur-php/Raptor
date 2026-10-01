@@ -55,7 +55,7 @@ class NewsController extends TemplateController
             "FROM $table n " .
             "LEFT JOIN $users c ON n.created_by = c.id " .
             "LEFT JOIN $users u ON n.updated_by = u.id " .
-            "WHERE n.slug = :slug LIMIT 1"
+            "WHERE n.slug = :slug AND n.published = 1 LIMIT 1"
         );
         $stmt->bindValue(':slug', $slug);
         $stmt->execute();
@@ -82,9 +82,14 @@ class NewsController extends TemplateController
         if (!empty($record['comment'])) {
             $commentsModel = new CommentsModel($this->pdo);
             $commentsTable = $commentsModel->getName();
+            // Хариулт (reply) бүр өөрийн parent сэтгэгдлийн дараа шууд орохоор
+            // thread-ээр эрэмбэлнэ: COALESCE(parent_id, id) нь parent-ийн id
             $cstmt = $this->prepare(
                 "SELECT id, parent_id, created_by, name, comment, created_at FROM $commentsTable
-                 WHERE news_id=:nid ORDER BY created_at ASC"
+                 WHERE news_id=:nid
+                 ORDER BY COALESCE(parent_id, id) ASC,
+                          CASE WHEN parent_id IS NULL THEN 0 ELSE 1 END ASC,
+                          created_at ASC, id ASC"
             );
             $record['comments'] = $cstmt->execute([':nid' => $id]) ? $cstmt->fetchAll() : [];
 
@@ -113,7 +118,7 @@ class NewsController extends TemplateController
     }    
     
     /**
-     * ID-аар мэдээ хайж slug-аар чиглүүлэх.
+     * ID-аар нийтлэгдсэн мэдээ хайж slug URL руу 301 redirect хийх.
      *
      * @param int $id Мэдээний ID дугаар
      * @return void
@@ -123,14 +128,14 @@ class NewsController extends TemplateController
     {
         $model = new NewsModel($this->pdo);
         $table = $model->getName();
-        $stmt = $this->prepare("SELECT slug FROM $table WHERE id=:id");
+        $stmt = $this->prepare("SELECT slug FROM $table WHERE id=:id AND published=1");
         $stmt->bindValue(':id', $id, \PDO::PARAM_INT);
         $stmt->execute();
         $row = $stmt->fetch();
         if (empty($row)) {
             throw new \Exception('Мэдээ олдсонгүй', 404);
         }
-        return $this->news($row['slug']);
+        $this->redirectPermanently('news', ['slug' => $row['slug']]);
     }
 
     /**
@@ -279,10 +284,10 @@ class NewsController extends TemplateController
             $parsed = $this->getParsedBody();
             $code = $this->getLanguageCode();
 
-            // Мэдээ байгаа эсэх, comment идэвхтэй эсэх шалгах
+            // Мэдээ байгаа, нийтлэгдсэн, comment идэвхтэй эсэх шалгах
             $newsModel = new NewsModel($this->pdo);
             $news = $newsModel->getById($id);
-            if (empty($news) || empty($news['comment'])) {
+            if (empty($news) || empty($news['published']) || empty($news['comment'])) {
                 throw new \Exception('Invalid request', 400);
             }
 
@@ -293,13 +298,13 @@ class NewsController extends TemplateController
             $comment = \trim($parsed['comment'] ?? '');
 
             if (empty($name)) {
-                throw new \InvalidArgumentException($code === 'mn' ? 'Нэрээ оруулна уу' : 'Please enter your name');
+                throw new \InvalidArgumentException($code === 'mn' ? 'Нэрээ оруулна уу' : 'Please enter your name', 400);
             }
             if (empty($comment)) {
-                throw new \InvalidArgumentException($code === 'mn' ? 'Сэтгэгдлээ бичнэ үү' : 'Please enter your comment');
+                throw new \InvalidArgumentException($code === 'mn' ? 'Сэтгэгдлээ бичнэ үү' : 'Please enter your comment', 400);
             }
             if (!empty($email) && !\filter_var($email, \FILTER_VALIDATE_EMAIL)) {
-                throw new \InvalidArgumentException($code === 'mn' ? 'Зөв имэйл хаяг оруулна уу' : 'Please enter a valid email address');
+                throw new \InvalidArgumentException($code === 'mn' ? 'Зөв имэйл хаяг оруулна уу' : 'Please enter a valid email address', 400);
             }
             $this->checkLinkSpam($comment);
 
@@ -308,10 +313,14 @@ class NewsController extends TemplateController
             $parentId = !empty($parsed['parent_id']) ? (int)$parsed['parent_id'] : null;
             $commentsModel = new CommentsModel($this->pdo);
 
-            // 1-level reply only: reply-д reply хийхийг хориглох
+            // 1-level reply only: reply-д reply хийхийг хориглох.
+            // Parent сэтгэгдэл заавал энэ мэдээнийх байх ёстой.
             if ($parentId) {
                 $parentComment = $commentsModel->getById($parentId);
-                if (empty($parentComment) || !empty($parentComment['parent_id'])) {
+                if (empty($parentComment)
+                    || (int)$parentComment['news_id'] !== $id
+                    || !empty($parentComment['parent_id'])
+                ) {
                     throw new \Exception('Invalid request', 400);
                 }
             }
@@ -351,7 +360,7 @@ class NewsController extends TemplateController
             // Админд email мэдэгдэл
             $this->sendCommentNotifyEmail($name, $email, $comment, $news['title']);
         } catch (\Throwable $err) {
-            $this->respondJSON(['message' => $err->getMessage()], $err->getCode() ?: 500);
+            $this->respondJSONError($err);
         }
     }
 

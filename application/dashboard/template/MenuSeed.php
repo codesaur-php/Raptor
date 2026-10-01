@@ -139,7 +139,7 @@ class MenuSeed
                     'parent_id' => $shop['id'],
                     'position' => '210',
                     'alias' => 'system',
-                    'permission' => 'system_content_index',
+                    'permission' => 'system_product_index',
                     'icon' => 'bi bi-box2-heart',
                     'href' => "$path$mount/products"
                 ],
@@ -150,7 +150,7 @@ class MenuSeed
                     'parent_id' => $shop['id'],
                     'position' => '220',
                     'alias' => 'system',
-                    'permission' => 'system_content_index',
+                    'permission' => 'system_product_index',
                     'icon' => 'bi bi-cart3',
                     'href' => "$path$mount/orders"
                 ],

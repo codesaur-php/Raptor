@@ -45,7 +45,7 @@
             renderDashboard(d, results[1]);
         })
         .catch(function(err) {
-            loading.innerHTML = '<span class="text-danger"><i class="bi bi-exclamation-triangle me-1"></i>' + err.message + '</span>';
+            loading.innerHTML = '<span class="text-danger"><i class="bi bi-exclamation-triangle me-1"></i>' + escapeHtml(err.message) + '</span>';
             console.error('Stats error:', err);
         });
     })();
@@ -89,7 +89,7 @@
             /* ===== WEB LOG STATISTICS (дээр) ===== */
             '<div class="d-flex align-items-center mb-3">' +
                 '<h5 class="mb-0"><i class="bi bi-globe me-2"></i>' + t.webStats + '</h5>' +
-                (d.log_from ? '<span class="badge bg-body-secondary text-body border ms-3 fs-6 fw-normal px-3 py-2"><i class="bi bi-clock-history me-1"></i>' + d.log_from + ' -> ' + d.log_to + '</span>' : '') +
+                (d.log_from ? '<span class="badge bg-body-secondary text-body border ms-3 fs-6 fw-normal px-3 py-2"><i class="bi bi-clock-history me-1"></i>' + escapeHtml(d.log_from) + ' -> ' + escapeHtml(d.log_to) + '</span>' : '') +
             '</div>' +
             /* Stat Cards */
             '<div class="row g-3 mb-4">' +
@@ -212,11 +212,11 @@
             for (var i = 0; i < logData.logs.length; i++) {
                 var log = logData.logs[i];
                 html += '<tr>' +
-                    '<td class="ps-3"><i class="bi bi-journal-text me-1 text-muted"></i><strong>' + log.label + '</strong><small class="text-muted ms-1">_log</small></td>' +
+                    '<td class="ps-3"><i class="bi bi-journal-text me-1 text-muted"></i><strong>' + escapeHtml(log.label) + '</strong><small class="text-muted ms-1">_log</small></td>' +
                     '<td class="text-end">' + (log.today > 0 ? '<span class="badge bg-primary">' + log.today.toLocaleString() + '</span>' : '<span class="text-muted">0</span>') + '</td>' +
                     '<td class="text-end">' + (log.week > 0 ? '<span class="badge bg-success">' + log.week.toLocaleString() + '</span>' : '<span class="text-muted">0</span>') + '</td>' +
                     '<td class="text-end"><span class="badge bg-secondary">' + log.total.toLocaleString() + '</span></td>' +
-                    '<td class="text-end pe-3 small text-muted">' + (log.last_at || '-') + '</td>' +
+                    '<td class="text-end pe-3 small text-muted">' + escapeHtml(log.last_at || '-') + '</td>' +
                 '</tr>';
             }
 
@@ -273,15 +273,15 @@
             var val;
             var idx = (i+1);
             if (field === 'ip' || field === 'ua') {
-                val = '<code class="small">' + item[field] + '</code>';
+                val = '<code class="small">' + escapeHtml(item[field]) + '</code>';
             } else {
-                val = item[field];
+                val = escapeHtml(item[field]);
                 var flag = item.code === 'en' ? 'us' : item.code;
-                var flagImg = '<img src="https://flagcdn.com/16x12/' + flag + '.png" width="16" height="12" alt="' + item.code + '">';
+                var flagImg = '<img src="https://flagcdn.com/16x12/' + encodeURIComponent(flag) + '.png" width="16" height="12" alt="' + escapeHtml(item.code) + '">';
                 if (item._type && item.id && item.id !== '0') {
-                    idx = '<span class="badge bg-body-tertiary text-body-secondary">' + flagImg + ' ' + item._type + ':' + item.id + '</span>';
+                    idx = '<span class="badge bg-body-tertiary text-body-secondary">' + flagImg + ' ' + escapeHtml(item._type) + ':' + escapeHtml(item.id) + '</span>';
                 } else if (item.code && item.id && item.id !== '0') {
-                    idx = '<span class="badge bg-body-tertiary text-body-secondary">' + flagImg + ' ' + item.id + '</span>';
+                    idx = '<span class="badge bg-body-tertiary text-body-secondary">' + flagImg + ' ' + escapeHtml(item.id) + '</span>';
                 } else if (item.code) {
                     idx = flagImg;
                 }
@@ -318,7 +318,7 @@
                 chart: { type: 'donut', height: 300, background: 'transparent' },
                 theme: { mode: isDark ? 'dark' : 'light' },
                 series: d.actions.map(function(r){ return r.count; }),
-                labels: d.actions.map(function(r){ return r.action; }),
+                labels: d.actions.map(function(r){ return escapeHtml(r.action); }),
                 colors: ['#0d6efd','#198754','#ffc107','#dc3545','#0dcaf0','#6f42c1','#fd7e14','#20c997'],
                 legend: { position: 'bottom' },
                 plotOptions: { pie: { donut: { size: '55%' } } },
