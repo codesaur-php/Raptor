@@ -867,6 +867,8 @@ class PagesController extends FileController
      * Link талбарын утгыг шалгах.
      *
      * Хоосон утга зөвшөөрнө. Хоосон биш бол URL эсвэл локал зам байх ёстой.
+     * Template-ийн autoescape нь `javascript:` зэрэг scheme-ийг хаадаггүй тул
+     * href-д хэвлэгдэх утгыг хадгалахаас өмнө энэ шалгалтаар дамжуулна.
      *
      * @param string $link Шалгах утга
      * @return bool Зөв эсэх

@@ -131,6 +131,12 @@
     <div class="mt-3">
         <label class="form-label">{{ 'link'|text }} <i class="bi bi-link-45deg"></i></label>
         <input class="form-control border-info" name="link" type="text" value="" maxlength="255" placeholder="{{ 'optional'|text }}">
+        <div class="form-text text-warning-emphasis d-none" id="link_lang_warning">
+            <i class="bi bi-exclamation-triangle"></i> {{ 'link-language-prefix-warning'|text }} <code></code>
+        </div>
+        <div class="form-text text-warning-emphasis d-none" id="link_all_lang_warning">
+            <i class="bi bi-exclamation-triangle"></i> {{ 'link-all-languages-warning'|text }}
+        </div>
     </div>
     <!-- Нийтлэх тохиргоо -->
     {% if user.can('system_content_publish') %}
@@ -283,6 +289,41 @@ document.addEventListener('DOMContentLoaded', function () {
             filterParentsByCode(code);
         }
     });
+
+    /* Default бус хэлний хуудасны link-д prefix-гүй локал зам бичвэл анхааруулах.
+       Link нь цэсэнд яг хэвээрээ href болдог тул en хуудасны /products нь зочныг
+       default хэл рүү шилжүүлнэ - зөв нь /en/products. Хадгалахыг хориглохгүй. */
+    const linkInput = document.querySelector('input[name="link"]');
+    const linkLangWarning = document.getElementById('link_lang_warning');
+    const linkAllLangWarning = document.getElementById('link_all_lang_warning');
+    const defaultLangCode = `{{ first_code|e('js') }}`;
+    const scriptPath = `{{ index|e('js') }}`;
+    function checkLinkLanguagePrefix() {
+        const code = langInput.value;
+        let path = linkInput.value.trim();
+        let suggestion = '';
+        let allLanguages = false;
+        if (path.startsWith('/') && !path.startsWith('//')
+            && (scriptPath === '' || path === scriptPath || path.startsWith(scriptPath + '/'))
+        ) {
+            path = path.substring(scriptPath.length) || '/';
+            /* Dashboard (prefix-гүй апп) руу заасан линк хэлнээс хамааралгүй */
+            if (!/^\/dashboard(\/|\?|#|$)/.test(path)) {
+                if (code === '*') {
+                    /* Бүх хэлний хуудасны локал зам бүх хэл дээр нэг л хэл рүү заана */
+                    allLanguages = true;
+                } else if (code !== defaultLangCode && !/^\/[a-z]{2}(\/|\?|#|$)/.test(path)) {
+                    suggestion = scriptPath + '/' + code + path;
+                }
+            }
+        }
+        linkLangWarning.querySelector('code').textContent = suggestion;
+        linkLangWarning.classList.toggle('d-none', suggestion === '');
+        linkAllLangWarning.classList.toggle('d-none', !allLanguages);
+    }
+    linkInput.addEventListener('input', checkLinkLanguagePrefix);
+    document.getElementById('lang_list').addEventListener('click', checkLinkLanguagePrefix);
+    checkLinkLanguagePrefix();
 
     /* Төрөл сонгох */
     const typeInput = document.querySelector('input[name="type"]');

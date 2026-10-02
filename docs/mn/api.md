@@ -812,6 +812,8 @@ Dashboard болон Web app хоёуланд ашиглагдана. Constructo
 
 Сонгох дараалал: `language_prefix` request attribute (`public_html/index.php` `/xx/` URL prefix-ээс тавьдаг; идэвхгүй код бол 404) -> session утга (session key өгсөн үед л) -> default хэл (эхний идэвхтэй хэл). Вэбд default хэл prefix-гүй (`/news/x`), бусад хэл prefix-тэй (`/en/news/x`); prefix нь Web application-ий mount path тул `|link` / `generateRouteLink()` автоматаар нэмнэ.
 
+Default хэлийг суулгах үеийн шийдвэр гэж үзнэ. Ажиллаж буй сайтын default хэлийг солиход URL бүтэц эргэнэ: `/news/x` шинэ default хэлийг харуулж эхэлнэ, харин хайлтын системийн индекс, гаднын линк, хуваалцсан холбоосууд хуучин хэлийг хүлээсээр байна; гараар бичсэн бүх локал зам (хуудасны `link` талбар, контент доторх линк) буруу хэл рүү заана. Заавал солих бол migration болгон төлөвлөнө: хадгалагдсан локал замуудыг шинэчилж, хуучин URL-аас 301 redirect нэмнэ.
+
 Request attribute-д `localization` массив inject хийнэ:
 
 ```php

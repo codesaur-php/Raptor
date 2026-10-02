@@ -812,6 +812,8 @@ Shared middleware for both Dashboard and Web apps. Constructor accepts a nullabl
 
 Resolution order: the `language_prefix` request attribute (set by `public_html/index.php` from a `/xx/` URL prefix; an inactive code throws a 404) -> the session value (only when a session key was given) -> the default language (first active language). On the public web the default language has no prefix (`/news/x`), every other language is prefixed (`/en/news/x`); the prefix is the Web application's mount path, so `|link` / `generateRouteLink()` prepend it automatically.
 
+Treat the default language as an install-time decision. Changing it on a live site swaps the URL structure: `/news/x` starts serving the new default language, while search-engine indexes, backlinks and shared links still expect the old one, and every hand-written local path (page `link` fields, links inside content) points to the wrong language. If the default must change, plan it as a migration: rewrite the stored local paths and add 301 redirects from the old URLs.
+
 Injects `localization` array into request attributes:
 
 ```php

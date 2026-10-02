@@ -178,6 +178,11 @@ class ProductsController extends FileController
                     $this->validateHtmlContent($parsedBody['content']);
                 }
 
+                // Link шалгах
+                if (!$this->isValidLink(\trim($parsedBody['link'] ?? ''))) {
+                    throw new \InvalidArgumentException($this->text('link-must-be-url'), 400);
+                }
+
                 $isPublished = ($parsedBody['published'] ?? 0) == 1;
                 $needsPublishPermission =
                     $isPublished ||
@@ -299,6 +304,11 @@ class ProductsController extends FileController
 
                 if (!empty($parsedBody['content'])) {
                     $this->validateHtmlContent($parsedBody['content']);
+                }
+
+                // Link шалгах
+                if (!$this->isValidLink(\trim($parsedBody['link'] ?? ''))) {
+                    throw new \InvalidArgumentException($this->text('link-must-be-url'), 400);
                 }
 
                 $isPublished = ($parsedBody['published'] ?? 0) == 1;
@@ -797,6 +807,36 @@ class ProductsController extends FileController
         } catch (\Throwable) {
             return [];
         }
+    }
+
+    /**
+     * Link талбарын утгыг шалгах.
+     *
+     * Хоосон утга зөвшөөрнө. Хоосон биш бол URL эсвэл локал зам байх ёстой.
+     * Template-ийн autoescape нь `javascript:` зэрэг scheme-ийг хаадаггүй тул
+     * href-д хэвлэгдэх утгыг (products-view.html) хадгалахаас өмнө энэ
+     * шалгалтаар дамжуулна.
+     *
+     * @param string $link Шалгах утга
+     * @return bool Зөв эсэх
+     */
+    private function isValidLink(string $link): bool
+    {
+        if ($link === '') {
+            return true;
+        }
+
+        // Локал зам: / -ээр эхлэх
+        if ($link[0] === '/') {
+            return true;
+        }
+
+        // URL: http://, https://, //, mailto:, tel:
+        if (\preg_match('#^(https?://|//|mailto:|tel:)#i', $link)) {
+            return true;
+        }
+
+        return false;
     }
 
     /**

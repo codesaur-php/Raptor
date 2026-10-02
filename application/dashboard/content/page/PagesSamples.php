@@ -105,6 +105,15 @@ class PagesSamples
 
         // ============ EN хуудсууд ============
 
+        // Хуудасны link нь цэсэнд яг хэвээрээ href болдог тул default бус хэлний
+        // локал зам хэлний prefix-ээ агуулна. LanguageModel::__initial() нь mn-г
+        // default (prefix-гүй), en-г /en prefix-тэй хэл болгон бүртгэдэг.
+        //
+        // Coupling (English): page links are printed verbatim, so a non-default
+        // language link carries its prefix. This relies on LanguageModel::__initial()
+        // seeding mn as the default language and en as the /en-prefixed one.
+        $enPath = $path . '/en';
+
         // Introduction (root content)
         $model->insert($seed + [
             'code' => 'en',
@@ -148,7 +157,7 @@ class PagesSamples
             'code' => 'en',
             'title' => '<i class="bi bi-newspaper"></i> News',
             'position' => 800,
-            'link' => $path . '/news/type/all'
+            'link' => $enPath . '/news/type/all'
         ]);
 
         // Products (link)
@@ -156,7 +165,7 @@ class PagesSamples
             'code' => 'en',
             'title' => '<i class="bi bi-box2-heart"></i> Products',
             'position' => 850,
-            'link' => $path . '/products'
+            'link' => $enPath . '/products'
         ]);
 
         // Contact
@@ -164,7 +173,7 @@ class PagesSamples
             'code' => 'en',
             'title' => 'Contact',
             'position' => 900,
-            'link' => $path . '/contact',
+            'link' => $enPath . '/contact',
             'photo' => $assets . '/office-view.jpg',
             'content' => '<p>We welcome your feedback, inquiries, and partnership proposals.</p>'
                 . '<p>Please fill out the form to get in touch with us.</p>'

@@ -46,7 +46,7 @@ class WebRouter extends Router
         $this->GET('/archive', [Content\NewsController::class, 'archive'])->name('archive');
 
         // Бүтээгдэхүүнүүд (жагсаалт)
-        $this->GET('/products', [Shop\ShopController::class, 'products']);
+        $this->GET('/products', [Shop\ShopController::class, 'products'])->name('products');
 
         // Динамик Product (ID-аар болон slug-аар)
         $this->GET('/product/{uint:id}', [Shop\ShopController::class, 'productById']);

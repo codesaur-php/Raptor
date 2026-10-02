@@ -6,6 +6,45 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 
 ---
 
+## [5.4.6] - 2026-10-02
+[5.4.6]: https://github.com/codesaur-php/Raptor/compare/v5.4.5...v5.4.6
+
+### Security
+
+- **Product `link` had no backend validation.** The products form uses `<input type="url">`, which accepts any absolute URL including `javascript:`, and `ProductsController::insert()/update()` stored the value unchecked; `products-view.html` prints it as an `href`, so a stored `javascript:` link ran in the admin's session when clicked (autoescape does not neutralize a URL scheme). `ProductsController` now has its own private `isValidLink()` with the same rule as `PagesController` (kept per module, so a module can be removed or customized on its own): an empty value, a local path (`/path`), `http(s)://`, `//`, `mailto:` or `tel:` - anything else is rejected with `link-must-be-url`.
+
+### Fixed
+
+- **The English sample menu sent visitors back to the default language.** The language URL prefix (5.3.0) did not touch `PagesSamples.php`, so the English "News", "Products" and "Contact" menu pages kept the unprefixed `/news/type/all`, `/products`, `/contact`. A page `link` is printed verbatim as the menu `href`, so a visitor on `/en/` who clicked "Products" landed on `/products` - the default-language page. The English samples now store `/en/...` (the seeds rely on `LanguageModel::__initial()` registering `mn` as the default and `en` as the prefixed language).
+
+### Added
+
+- **Page form warnings for language-unsafe links.** The page insert/update forms show a non-blocking warning under the `link` field: `link-language-prefix-warning` with the corrected path (`/products` -> `/en/products`, subdirectory deploys included) when a page in a non-default language gets a local path without a language prefix, and `link-all-languages-warning` when an "All languages" (`*`) page gets a local path, since such a link sends every language to the same one. `/dashboard` paths and URLs are ignored. The check re-runs when the link or the language changes and on opening the update form, so existing wrong links show up too. The pages and moedit manuals (MN/EN) explain the rule for page links and for local links inside content.
+- The public `/products` route is named `products`, so templates can use `{{ 'products'|link }}`.
+
+### Changed
+
+- CLAUDE.md and `docs/*/api.md`: `{{ index }}` carries no language prefix, so web links should preferably use `{{ 'route'|link }}`; the default language is an install-time decision - changing it on a live site swaps the URL structure and needs a planned migration (stored paths + 301 redirects).
+
+### Migration
+
+Fresh installs get the new texts and corrected samples. Deployed databases: apply this SQL through `/dashboard/migrations` (no sensitive tables, no `CONFIRM`; the cache is cleared after a successful apply). The `UPDATE` matches root installs only - on a subdirectory install the sample links carry the script path, fix those in the Pages form (the new warning shows the correct value).
+
+```sql
+-- 5.4.6: page link language warnings + /en prefix for the EN sample menu links
+INSERT INTO localization_text (keyword, type, created_at) SELECT 'link-all-languages-warning', 'sys-defined', NOW() WHERE NOT EXISTS (SELECT 1 FROM localization_text WHERE keyword = 'link-all-languages-warning');
+INSERT INTO localization_text (keyword, type, created_at) SELECT 'link-language-prefix-warning', 'sys-defined', NOW() WHERE NOT EXISTS (SELECT 1 FROM localization_text WHERE keyword = 'link-language-prefix-warning');
+INSERT INTO localization_text_content (parent_id, code, text) SELECT t.id, 'mn', 'Энэ хуудас бүх хэл дээр харагдана. Сайтын хуудас руу заасан локал зам аль ч хэлнээс нэг л хэл рүү (prefix-гүй бол default хэл рүү) шилжүүлнэ - хэл тус бүрд тусдаа хуудас үүсгэнэ үү.' FROM localization_text t WHERE t.keyword = 'link-all-languages-warning' AND NOT EXISTS (SELECT 1 FROM localization_text_content c WHERE c.parent_id = t.id AND c.code = 'mn');
+INSERT INTO localization_text_content (parent_id, code, text) SELECT t.id, 'en', 'This page is shown in every language. A local path to a site page sends visitors from every language to one language (the default one without a prefix) - create a separate page per language.' FROM localization_text t WHERE t.keyword = 'link-all-languages-warning' AND NOT EXISTS (SELECT 1 FROM localization_text_content c WHERE c.parent_id = t.id AND c.code = 'en');
+INSERT INTO localization_text_content (parent_id, code, text) SELECT t.id, 'mn', 'Энэ хуудас default бус хэлтэй. Сайтын хуудас руу заасан локал зам хэлний prefix-тэй байх ёстой, эс бөгөөс зочин default хэл рүү шилжинэ. Зөв хэлбэр:' FROM localization_text t WHERE t.keyword = 'link-language-prefix-warning' AND NOT EXISTS (SELECT 1 FROM localization_text_content c WHERE c.parent_id = t.id AND c.code = 'mn');
+INSERT INTO localization_text_content (parent_id, code, text) SELECT t.id, 'en', 'This page is not in the default language. A local path to a site page must carry the language prefix, otherwise visitors are switched to the default language. Correct form:' FROM localization_text t WHERE t.keyword = 'link-language-prefix-warning' AND NOT EXISTS (SELECT 1 FROM localization_text_content c WHERE c.parent_id = t.id AND c.code = 'en');
+UPDATE pages SET link = CONCAT('/en', link) WHERE code = 'en' AND category = '_raptor_sample_' AND link IN ('/news/type/all', '/products', '/contact');
+```
+
+Product links saved before this release are not re-validated; to find stored values the new check would reject: `SELECT id, title, link FROM products WHERE link <> '' AND link NOT LIKE '/%' AND link NOT LIKE 'http://%' AND link NOT LIKE 'https://%' AND link NOT LIKE 'mailto:%' AND link NOT LIKE 'tel:%';`
+
+---
+
 ## [5.4.5] - 2026-10-01
 [5.4.5]: https://github.com/codesaur-php/Raptor/compare/v5.4.4...v5.4.5
 
