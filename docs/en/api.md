@@ -1362,7 +1362,8 @@ Central router that registers all content module routes: News, Comments, Pages, 
 | `barcode` | varchar(64) | Barcode |
 | `sizes` | text | Available sizes |
 | `colors` | text | Available colors |
-| `stock` | int, default 0 | Stock quantity |
+| `manage_stock` | tinyint, default 0 | Track stock (1 = ordering closes at stock 0, 0 = unlimited) |
+| `stock` | int, default 0 | Stock quantity (when manage_stock=1) |
 | `link` | varchar(255) | External link |
 | `photo` | varchar(255) | Cover image |
 | `code` | varchar(2) | Language code, or `*` for a language-neutral record shown on every language |
@@ -1400,10 +1401,12 @@ Extracts a plain-text excerpt from HTML content.
 | `customer_name` | varchar(128) | Customer name |
 | `customer_email` | varchar(128) | Customer email |
 | `customer_phone` | varchar(32) | Customer phone |
+| `customer_address` | text | Delivery address |
 | `message` | text | Customer message |
 | `quantity` | int (default: 1) | Quantity |
 | `code` | varchar(2) | Language code |
 | `status` | varchar(32, default: 'new') | Order status |
+| `stock_reduced` | tinyint (default: 0) | 1 = quantity subtracted from product stock (set on confirmed/shipped/completed, cleared on cancel) |
 | `created_at` | datetime | Created date |
 | `created_by` | bigint | Created by user (FK -> users) |
 | `updated_at` | datetime | Updated date |

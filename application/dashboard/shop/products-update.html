@@ -109,9 +109,16 @@
             <label class="form-label">{{ 'sale-price'|text }} <i class="bi bi-tag"></i></label>
             <input class="form-control" name="sale_price" type="number" value="{{ record['sale_price']|default('')|e }}" min="0" step="0.01" placeholder="{{ 'optional'|text }}">
         </div>
+        <!-- Нөөц хянах үед л stock идэвхтэй. Хянахгүй бараа хязгааргүй захиалагдана -->
         <div class="col-md-4 mb-3">
-            <label class="form-label">{{ 'stock'|text }} <i class="bi bi-box-seam"></i></label>
-            <input class="form-control" name="stock" type="number" value="{{ record['stock']|default(0)|e }}" min="0">
+            <div class="d-flex justify-content-between">
+                <label class="form-label">{{ 'stock'|text }} <i class="bi bi-box-seam"></i></label>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" name="manage_stock" id="manage_stock"{{ record['manage_stock'] == 1 ? ' checked' : '' }} type="checkbox" role="switch">
+                    <label class="form-check-label small" for="manage_stock">{{ 'manage-stock'|text }}</label>
+                </div>
+            </div>
+            <input class="form-control" name="stock" type="number" value="{{ record['stock']|default(0)|e }}" min="0"{{ record['manage_stock'] == 1 ? '' : ' disabled' }}>
         </div>
     </div>
     <!-- Хэмжээ, Өнгө, sku, Баркод -->
@@ -263,6 +270,13 @@
         if (!formUpdate) {
             Notify('danger', `{{ 'error'|text|e }}`, 'Form not found!');
         } else {
+            /* Нөөц хянах switch унтраалттай үед stock талбарыг идэвхгүй болгоно */
+            const manageStock = formUpdate.querySelector('input[name="manage_stock"]');
+            const stockInput = formUpdate.querySelector('input[name="stock"]');
+            manageStock?.addEventListener('change', function () {
+                stockInput.disabled = !this.checked;
+            });
+
             const submitters = document.querySelectorAll('button.submit-update');
             submitters.forEach(function (button) {
                 button.addEventListener('click', function (e) {
@@ -305,6 +319,10 @@
                 const reviewSwitch = formUpdate.querySelector('input[name="review"]');
                 if (reviewSwitch) {
                     data.set('review', reviewSwitch.checked ? 1 : 0);
+                }
+                const manageStockSwitch = formUpdate.querySelector('input[name="manage_stock"]');
+                if (manageStockSwitch) {
+                    data.set('manage_stock', manageStockSwitch.checked ? 1 : 0);
                 }
                 csrfFetch(
                     this.action,

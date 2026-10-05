@@ -184,7 +184,10 @@
     </div>
     {% endif %}
 
-    {% if sku is not empty or barcode is not empty or stock > 0 or sizes is not empty or colors is not empty %}
+    <!-- Нөөц хянадаг (manage_stock=1) бараа: stock 0 бол "Дууссан" тэмдэгтэй, захиалах товч идэвхгүй; low_stock_threshold-оос бага бол "Ердөө N үлдлээ"; бусад үед яг тоогүй "Нөөцөд байгаа". Хянадаггүй бараа хязгааргүй -->
+    {% set tracked = manage_stock is defined and manage_stock == 1 %}
+    {% set out_of_stock = tracked and stock <= 0 %}
+    {% if sku is not empty or barcode is not empty or tracked or sizes is not empty or colors is not empty %}
     <div class="row mb-3 g-2 text-muted small">
         {% if sku is not empty %}
         <div class="col-auto"><span class="badge bg-light text-dark border"><i class="bi bi-upc me-1"></i>SKU: {{ sku|e }}</span></div>
@@ -192,8 +195,12 @@
         {% if barcode is not empty %}
         <div class="col-auto"><span class="badge bg-light text-dark border"><i class="bi bi-upc-scan me-1"></i>{{ 'barcode'|text }}: {{ barcode|e }}</span></div>
         {% endif %}
-        {% if stock > 0 %}
-        <div class="col-auto"><span class="badge bg-light text-dark border"><i class="bi bi-box-seam me-1"></i>{{ 'stock'|text }}: {{ stock }}</span></div>
+        {% if out_of_stock %}
+        <div class="col-auto"><span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i>{{ 'out-of-stock'|text }}</span></div>
+        {% elseif tracked and stock <= low_stock_threshold %}
+        <div class="col-auto"><span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split me-1"></i>{{ 'only-n-left'|text|format(stock) }}</span></div>
+        {% elseif tracked %}
+        <div class="col-auto"><span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>{{ 'in-stock'|text }}</span></div>
         {% endif %}
         {% if sizes is not empty %}
         <div class="col-auto"><span class="badge bg-light text-dark border"><i class="bi bi-rulers me-1"></i>{{ 'sizes'|text }}: {{ sizes|e }}</span></div>
@@ -250,9 +257,15 @@
     {% endif %}
 
     <div class="text-center my-4">
+        {% if not out_of_stock %}
         <a class="btn btn-lg btn-success shadow" href="{{ 'order'|link }}?product_id={{ id }}">
             <i class="bi bi-cart-plus me-1"></i>{{ 'order-now'|text }}
         </a>
+        {% else %}
+        <button class="btn btn-lg btn-secondary shadow" type="button" disabled>
+            <i class="bi bi-x-circle me-1"></i>{{ 'out-of-stock'|text }}
+        </button>
+        {% endif %}
     </div>
 
     {% if review is defined and review %}

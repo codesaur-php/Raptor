@@ -41,6 +41,14 @@ use Web\Template\TemplateController;
 class ShopController extends TemplateController
 {
     use \Dashboard\SpamProtectionTrait;
+
+    /**
+     * Нөөц хянадаг барааны үлдэгдэл энэ тооноос бага буюу тэнцүү бол
+     * "Ердөө N үлдлээ", их бол яг тоогүйгээр "Нөөцөд байгаа" гэж харуулна.
+     * Төсөлдөө тохируулан шууд засна.
+     */
+    public const LOW_STOCK_THRESHOLD = 5;
+
     /**
      * Бүтээгдэхүүний жагсаалтыг харуулах.
      *
@@ -56,7 +64,7 @@ class ShopController extends TemplateController
         $reviewsTable = (new ReviewsModel($this->pdo))->getName();
         $stmt = $this->prepare(
             "SELECT p.id, p.title, p.slug, p.description, p.photo, p.price, p.sale_price,
-                    rv.avg_rating, rv.review_count
+                    p.manage_stock, p.stock, rv.avg_rating, rv.review_count
              FROM $table p
              LEFT JOIN (
                  SELECT product_id, AVG(rating) as avg_rating, COUNT(*) as review_count
@@ -69,6 +77,7 @@ class ShopController extends TemplateController
 
         $this->webTemplate(__DIR__ . '/products.html', [
             'products' => $products,
+            'low_stock_threshold' => self::LOW_STOCK_THRESHOLD,
             'title' => $this->text('products')
         ])->render();
 
@@ -166,6 +175,7 @@ class ShopController extends TemplateController
             $record['turnstile_site_key'] = $this->getTurnstileSiteKey();
         }
 
+        $record['low_stock_threshold'] = self::LOW_STOCK_THRESHOLD;
         $this->webTemplate(__DIR__ . '/product.html', $record)->render();
 
         // Read count
@@ -184,7 +194,9 @@ class ShopController extends TemplateController
      *
      * Spam хамгаалалтын timestamp болон HMAC token-г бэлтгэж
      * template-д дамжуулна. product_id query parameter-аар
-     * бүтээгдэхүүний мэдээллийг урьдчилан дуудна.
+     * бүтээгдэхүүний мэдээлэл, үлдэгдлийг урьдчилан дуудна.
+     * Нөөц хянадаг (manage_stock=1) барааны үлдэгдэл 0 бол template форм биш
+     * "out-of-stock" мэдэгдэл харуулна. Нөөц хянадаггүй бараа хязгааргүй.
      *
      * @return void
      */
@@ -196,15 +208,19 @@ class ShopController extends TemplateController
             $model = new ProductsModel($this->pdo);
             $table = $model->getName();
             $stmt = $this->prepare(
-                "SELECT id, title, photo, price FROM $table WHERE id=:id AND published=1"
+                "SELECT id, title, slug, photo, price, manage_stock, stock FROM $table WHERE id=:id AND published=1"
             );
             $stmt->bindValue(':id', (int)$productId, \PDO::PARAM_INT);
             $stmt->execute();
             $product = $stmt->fetch();
             if ($product) {
+                $product['manage_stock'] = (int)($product['manage_stock'] ?? 0) === 1;
+                $product['stock'] = (int)($product['stock'] ?? 0);
                 $vars['product'] = $product;
             }
         }
+
+        $vars['low_stock_threshold'] = self::LOW_STOCK_THRESHOLD;
 
         $ts = \time();
         $vars['spam_ts'] = $ts;
@@ -251,21 +267,46 @@ class ShopController extends TemplateController
                     400
                 );
             }
+            $address = \trim((string)($payload['customer_address'] ?? ''));
+            if ($address === '') {
+                throw new \Exception(
+                    $code === 'mn' ? 'Хүргүүлэх хаягаа оруулна уу' : 'Please enter a delivery address',
+                    400
+                );
+            }
+            $quantity = \max(1, (int)($payload['quantity'] ?? 1));
 
             // Бүтээгдэхүүний нэрийг client-ийн product_title-д итгэлгүйгээр
-            // нийтлэгдсэн бүтээгдэхүүний бичлэгээс product_id-аар авна
+            // нийтлэгдсэн бүтээгдэхүүний бичлэгээс product_id-аар авна.
+            // Үлдэгдлийг мөн серверт шалгана - форм нээгдэхгүй байсан ч
+            // шууд POST илгээж болох тул template-ийн шалгалт хангалтгүй.
             $productId = (int)($payload['product_id'] ?? 0);
             $productTitle = '';
             if ($productId > 0) {
                 $productsTable = (new ProductsModel($this->pdo))->getName();
                 $pstmt = $this->prepare(
-                    "SELECT title FROM $productsTable WHERE id=:id AND published=1"
+                    "SELECT title, manage_stock, stock FROM $productsTable WHERE id=:id AND published=1"
                 );
                 $pstmt->bindValue(':id', $productId, \PDO::PARAM_INT);
                 $pstmt->execute();
                 $productRow = $pstmt->fetch();
                 if (empty($productRow)) {
                     throw new \Exception('Invalid request', 400);
+                }
+                if ((int)($productRow['manage_stock'] ?? 0) === 1) {
+                    $stock = (int)($productRow['stock'] ?? 0);
+                    if ($stock <= 0) {
+                        throw new \Exception(
+                            $code === 'mn' ? 'Уучлаарай, энэ бүтээгдэхүүн нөөцөд байхгүй байна' : 'Sorry, this product is out of stock',
+                            400
+                        );
+                    }
+                    if ($quantity > $stock) {
+                        throw new \Exception(
+                            $code === 'mn' ? "Үлдэгдэл хүрэлцэхгүй байна. Хамгийн ихдээ $stock ширхэг захиалах боломжтой" : "Not enough stock. You can order at most $stock",
+                            400
+                        );
+                    }
                 }
                 $productTitle = (string)$productRow['title'];
             }
@@ -276,8 +317,9 @@ class ShopController extends TemplateController
                 'customer_name' => $payload['customer_name'],
                 'customer_email' => $payload['customer_email'],
                 'customer_phone' => $payload['customer_phone'] ?? '',
+                'customer_address' => $address,
                 'message' => $payload['message'] ?? '',
-                'quantity' => \max(1, (int)($payload['quantity'] ?? 1)),
+                'quantity' => $quantity,
                 'code' => $code,
                 'status' => 'new'
             ];
@@ -300,7 +342,7 @@ class ShopController extends TemplateController
                 $payload['customer_name'],
                 $payload['customer_email'],
                 $productTitle,
-                \max(1, (int)($payload['quantity'] ?? 1)),
+                $quantity,
                 $code
             );
 
@@ -310,7 +352,7 @@ class ShopController extends TemplateController
                 $payload['customer_email'],
                 $payload['customer_phone'] ?? '',
                 $productTitle,
-                \max(1, (int)($payload['quantity'] ?? 1)),
+                $quantity,
                 '', ''
             ));
 
@@ -319,8 +361,9 @@ class ShopController extends TemplateController
                 $payload['customer_name'],
                 $payload['customer_email'],
                 $productTitle,
-                \max(1, (int)($payload['quantity'] ?? 1)),
-                $payload['customer_phone'] ?? ''
+                $quantity,
+                $payload['customer_phone'] ?? '',
+                $address
             );
 
             $this->webTemplate(__DIR__ . '/order-success.html', [
@@ -506,7 +549,8 @@ class ShopController extends TemplateController
         string $customerEmail,
         string $productTitle,
         int $quantity,
-        string $phone
+        string $phone,
+        string $address
     ) {
         try {
             $notifyEmail = $_ENV['RAPTOR_ORDER_EMAIL_TO'] ?? '';
@@ -547,6 +591,7 @@ class ShopController extends TemplateController
             $bodyTemplate->set('customer_name', $customerName);
             $bodyTemplate->set('customer_email', $customerEmail);
             $bodyTemplate->set('customer_phone', $phone);
+            $bodyTemplate->set('customer_address', $address);
             $bodyTemplate->set('product_title', $productTitle);
             $bodyTemplate->set('quantity', $quantity);
             $bodyTemplate->set('orders_link', $ordersLink);

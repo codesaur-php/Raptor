@@ -1,4 +1,8 @@
-{% if turnstile_site_key is not empty %}
+<!-- Variables: product (id, title, slug, photo, price, manage_stock, stock), low_stock_threshold, spam_ts, spam_token, turnstile_site_key -->
+<!-- Нөөц хянадаг барааны stock 0 үед форм рендерлэгдэхгүй, зөвхөн "out-of-stock" мэдэгдэл харагдана -->
+{% set tracked = product is defined and product.manage_stock %}
+{% set out_of_stock = tracked and product.stock <= 0 %}
+{% if turnstile_site_key is not empty and not out_of_stock %}
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 {% endif %}
 <div class="container mt-4" style="max-width:600px">
@@ -7,17 +11,34 @@
     </div>
 
     {% if product is defined %}
-    <div class="card mb-4 border-success">
+    <div class="card mb-4 {{ out_of_stock ? 'border-danger' : 'border-success' }}">
         <div class="card-body d-flex align-items-center">
             {% if product.photo %}<img src="{{ product.photo }}" class="rounded me-3" style="width:80px;height:80px;object-fit:cover">{% endif %}
             <div>
                 <h5 class="mb-1">{{ product.title|e }}</h5>
                 {% if product.price > 0 %}<span class="badge bg-success">{{ product.price|e }}</span>{% endif %}
+                {% if out_of_stock %}
+                <span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i>{{ 'out-of-stock'|text }}</span>
+                {% elseif tracked and product.stock <= low_stock_threshold %}
+                <span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split me-1"></i>{{ 'only-n-left'|text|format(product.stock) }}</span>
+                {% elseif tracked %}
+                <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>{{ 'in-stock'|text }}</span>
+                {% endif %}
             </div>
         </div>
     </div>
     {% endif %}
 
+    {% if out_of_stock %}
+    <div class="alert alert-danger text-center">
+        <i class="bi bi-exclamation-triangle me-1"></i>{{ 'out-of-stock'|text }}
+    </div>
+    <div class="text-center">
+        <a class="btn btn-outline-secondary" href="{{ 'product'|link({'slug': product.slug}) }}">
+            <i class="bi bi-arrow-left me-1"></i>{{ product.title }}
+        </a>
+    </div>
+    {% else %}
     <form id="order_form" action="{{ 'order-submit'|link }}" method="POST">
         <input type="hidden" name="product_id" value="{{ product is defined ? product.id : '' }}">
         <input type="hidden" name="_ts" value="{{ spam_ts }}">
@@ -43,8 +64,13 @@
         </div>
 
         <div class="mb-3">
+            <label for="customer_address" class="form-label">{{ 'delivery-address'|text }} <span class="text-danger">*</span></label>
+            <textarea class="form-control" id="customer_address" name="customer_address" rows="2" required maxlength="500"></textarea>
+        </div>
+
+        <div class="mb-3">
             <label for="quantity" class="form-label">{{ 'quantity'|text }}</label>
-            <input type="number" class="form-control" id="quantity" name="quantity" min="1" value="1">
+            <input type="number" class="form-control" id="quantity" name="quantity" min="1"{% if tracked %} max="{{ product.stock }}"{% endif %} value="1">
         </div>
 
         <div class="mb-3">
@@ -59,6 +85,7 @@
             <i class="bi bi-cart-check me-1"></i>{{ 'submit-order'|text }}
         </button>
     </form>
+    {% endif %}
 </div>
 <script type="text/javascript">
 document.addEventListener('DOMContentLoaded', function () {

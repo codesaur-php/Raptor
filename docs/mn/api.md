@@ -1363,7 +1363,8 @@ moedit editor-ийн AI товчинд зориулсан OpenAI API proxy.
 | `barcode` | varchar(64) | Баркод |
 | `sizes` | text | Хэмжээнүүд |
 | `colors` | text | Өнгөнүүд |
-| `stock` | int, default 0 | Нөөцийн тоо |
+| `manage_stock` | tinyint, default 0 | Нөөц хянах эсэх (1 = stock 0 үед захиалга хаагдана, 0 = хязгааргүй) |
+| `stock` | int, default 0 | Нөөцийн тоо (manage_stock=1 үед) |
 | `link` | varchar(255) | Гадаад холбоос |
 | `photo` | varchar(255) | Нүүр зураг |
 | `code` | varchar(2) | Хэлний код, эсвэл бүх хэл дээр харагдах хэлнээс үл хамаарах бичлэгт `*` |
@@ -1401,10 +1402,12 @@ HTML контентоос товч хураангуй гаргах.
 | `customer_name` | varchar(128) | Захиалагчийн нэр |
 | `customer_email` | varchar(128) | Захиалагчийн и-мэйл |
 | `customer_phone` | varchar(32) | Захиалагчийн утас |
+| `customer_address` | text | Хүргүүлэх хаяг |
 | `message` | text | Захиалагчийн мессеж |
 | `quantity` | int (default: 1) | Тоо ширхэг |
 | `code` | varchar(2) | Хэлний код |
 | `status` | varchar(32, default: 'new') | Захиалгын статус |
+| `stock_reduced` | tinyint (default: 0) | 1 = бүтээгдэхүүний үлдэгдлээс хасагдсан (confirmed/shipped/completed болоход тавигдаж, цуцлахад арилна) |
 | `created_at` | datetime | Үүсгэсэн огноо |
 | `created_by` | bigint | Үүсгэсэн хэрэглэгч (FK -> users) |
 | `updated_at` | datetime | Шинэчилсэн огноо |

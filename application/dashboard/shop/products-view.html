@@ -69,7 +69,14 @@
             </div>
             <div class="col-md-4">
                 <label class="form-label text-muted">{{ 'stock'|text }}</label>
-                <div>{{ record['stock']|default(0) }}</div>
+                {% if record['manage_stock'] == 1 %}
+                <div>
+                    {{ record['stock']|default(0) }}
+                    {% if record['stock'] <= 0 %}<span class="badge bg-danger ms-1">{{ 'out-of-stock'|text }}</span>{% endif %}
+                </div>
+                {% else %}
+                <div class="text-muted">{{ 'manage-stock'|text }}: {{ 'off'|text }}</div>
+                {% endif %}
             </div>
         </div>
         <!-- Хэмжээ, Өнгө, sku, Баркод -->

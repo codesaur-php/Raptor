@@ -42,6 +42,7 @@ class ProductsModel extends Model
             new Column('barcode', 'varchar', 64),
             new Column('sizes', 'text'),
             new Column('colors', 'text'),
+           (new Column('manage_stock', 'tinyint'))->default(0), // 1 = нөөц хянана (stock 0 бол захиалга хаагдана), 0 = хязгааргүй
            (new Column('stock', 'int'))->default(0),
             new Column('link', 'varchar', 255),
             new Column('photo', 'varchar', 255),

@@ -6,6 +6,48 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 
 ---
 
+## [5.5.0] - 2026-10-05
+[5.5.0]: https://github.com/codesaur-php/Raptor/compare/v5.4.6...v5.5.0
+
+### Added
+
+- **Delivery address on the order form.** The public order form has a required "Delivery address" field (`delivery-address`); it is stored in the new `products_orders.customer_address` column (`text`), shown on the dashboard order view and passed to the `order-notify` admin e-mail as `{{ customer_address }}`. `ShopController::orderSubmit()` rejects an order without an address.
+- **Per-product stock tracking.** The new `products.manage_stock` flag (`tinyint`, default 0) - the "Track stock" switch next to the stock field in the product form - decides whether a product's `stock` is enforced, the same model as Shopify "Track quantity" / WooCommerce "Manage stock". The stock input is disabled while the switch is off. Untracked products (services, made-to-order, digital goods) can always be ordered; the dashboard product view shows "Track stock: Off" for them.
+- **Out-of-stock handling for tracked products.** At `stock` 0 the product page stays visible (no 404, no SEO loss) with an `out-of-stock` badge and a disabled order button; the product list shows the same badge, and the order form is not rendered (an `out-of-stock` notice and a link back to the product are shown instead). The quantity input is capped at the stock, and `orderSubmit()` repeats both checks on the server, since a request can be posted without opening the form.
+- **Low-stock display.** Tracked products show `only-n-left` ("Only 3 left") when the stock is at or below `ShopController::LOW_STOCK_THRESHOLD` (default 5, edit the constant per project) and `in-stock` without the exact number above it.
+- **Stock is reduced when an order is confirmed and restored when it is cancelled.** `OrdersController::updateStatus()` subtracts the order quantity from the product stock when the status enters `confirmed`, `shipped` or `completed` (`STOCK_HOLDING_STATUSES`) and adds it back when it leaves them (`cancelled`, or back to `new` / `processing`). The new `products_orders.stock_reduced` flag records whether the order currently holds stock, so repeated status changes never subtract twice. The product row is locked (`SELECT ... FOR UPDATE`) and the stock change and the status update run in one transaction; when the stock is insufficient the confirmation is rejected with `not-enough-stock` and nothing changes. Untracked or deleted products are skipped. The change is written to the order log as `stock_change`. Deleting an order does not touch stock - cancel it first.
+
+### Migration
+
+Fresh installs get the new columns, texts and e-mail template row. Deployed databases: apply this SQL through `/dashboard/migrations` (no sensitive tables, no `CONFIRM`; the cache is cleared after a successful apply). Existing products get `manage_stock = 0`, so nothing becomes unorderable; turn "Track stock" on per product once its real stock is entered. Existing orders get `stock_reduced = 0`, so confirming or cancelling an order placed before this update does not change stock; only status changes made after it do. The `order-notify` e-mail template is not changed by the migration - to include the address in the admin e-mail, add a row with `{{ customer_address }}` to it under Dashboard > References.
+
+```sql
+-- 5.5.0: delivery address, per-product stock tracking, stock reduction on order confirmation
+ALTER TABLE products ADD COLUMN manage_stock SMALLINT NOT NULL DEFAULT 0;
+ALTER TABLE products_orders ADD COLUMN customer_address TEXT;
+ALTER TABLE products_orders ADD COLUMN stock_reduced SMALLINT NOT NULL DEFAULT 0;
+INSERT INTO localization_text (keyword, type, created_at) SELECT 'delivery-address', 'sys-defined', NOW() WHERE NOT EXISTS (SELECT 1 FROM localization_text WHERE keyword = 'delivery-address');
+INSERT INTO localization_text (keyword, type, created_at) SELECT 'in-stock', 'sys-defined', NOW() WHERE NOT EXISTS (SELECT 1 FROM localization_text WHERE keyword = 'in-stock');
+INSERT INTO localization_text (keyword, type, created_at) SELECT 'manage-stock', 'sys-defined', NOW() WHERE NOT EXISTS (SELECT 1 FROM localization_text WHERE keyword = 'manage-stock');
+INSERT INTO localization_text (keyword, type, created_at) SELECT 'not-enough-stock', 'sys-defined', NOW() WHERE NOT EXISTS (SELECT 1 FROM localization_text WHERE keyword = 'not-enough-stock');
+INSERT INTO localization_text (keyword, type, created_at) SELECT 'only-n-left', 'sys-defined', NOW() WHERE NOT EXISTS (SELECT 1 FROM localization_text WHERE keyword = 'only-n-left');
+INSERT INTO localization_text (keyword, type, created_at) SELECT 'out-of-stock', 'sys-defined', NOW() WHERE NOT EXISTS (SELECT 1 FROM localization_text WHERE keyword = 'out-of-stock');
+INSERT INTO localization_text_content (parent_id, code, text) SELECT t.id, 'mn', 'Хүргүүлэх хаяг' FROM localization_text t WHERE t.keyword = 'delivery-address' AND NOT EXISTS (SELECT 1 FROM localization_text_content c WHERE c.parent_id = t.id AND c.code = 'mn');
+INSERT INTO localization_text_content (parent_id, code, text) SELECT t.id, 'en', 'Delivery address' FROM localization_text t WHERE t.keyword = 'delivery-address' AND NOT EXISTS (SELECT 1 FROM localization_text_content c WHERE c.parent_id = t.id AND c.code = 'en');
+INSERT INTO localization_text_content (parent_id, code, text) SELECT t.id, 'mn', 'Нөөцөд байгаа' FROM localization_text t WHERE t.keyword = 'in-stock' AND NOT EXISTS (SELECT 1 FROM localization_text_content c WHERE c.parent_id = t.id AND c.code = 'mn');
+INSERT INTO localization_text_content (parent_id, code, text) SELECT t.id, 'en', 'In stock' FROM localization_text t WHERE t.keyword = 'in-stock' AND NOT EXISTS (SELECT 1 FROM localization_text_content c WHERE c.parent_id = t.id AND c.code = 'en');
+INSERT INTO localization_text_content (parent_id, code, text) SELECT t.id, 'mn', 'Нөөц хянах' FROM localization_text t WHERE t.keyword = 'manage-stock' AND NOT EXISTS (SELECT 1 FROM localization_text_content c WHERE c.parent_id = t.id AND c.code = 'mn');
+INSERT INTO localization_text_content (parent_id, code, text) SELECT t.id, 'en', 'Track stock' FROM localization_text t WHERE t.keyword = 'manage-stock' AND NOT EXISTS (SELECT 1 FROM localization_text_content c WHERE c.parent_id = t.id AND c.code = 'en');
+INSERT INTO localization_text_content (parent_id, code, text) SELECT t.id, 'mn', 'Бүтээгдэхүүний үлдэгдэл хүрэлцэхгүй байна' FROM localization_text t WHERE t.keyword = 'not-enough-stock' AND NOT EXISTS (SELECT 1 FROM localization_text_content c WHERE c.parent_id = t.id AND c.code = 'mn');
+INSERT INTO localization_text_content (parent_id, code, text) SELECT t.id, 'en', 'Not enough product stock' FROM localization_text t WHERE t.keyword = 'not-enough-stock' AND NOT EXISTS (SELECT 1 FROM localization_text_content c WHERE c.parent_id = t.id AND c.code = 'en');
+INSERT INTO localization_text_content (parent_id, code, text) SELECT t.id, 'mn', 'Ердөө %s үлдлээ' FROM localization_text t WHERE t.keyword = 'only-n-left' AND NOT EXISTS (SELECT 1 FROM localization_text_content c WHERE c.parent_id = t.id AND c.code = 'mn');
+INSERT INTO localization_text_content (parent_id, code, text) SELECT t.id, 'en', 'Only %s left' FROM localization_text t WHERE t.keyword = 'only-n-left' AND NOT EXISTS (SELECT 1 FROM localization_text_content c WHERE c.parent_id = t.id AND c.code = 'en');
+INSERT INTO localization_text_content (parent_id, code, text) SELECT t.id, 'mn', 'Нөөцөд байхгүй байна' FROM localization_text t WHERE t.keyword = 'out-of-stock' AND NOT EXISTS (SELECT 1 FROM localization_text_content c WHERE c.parent_id = t.id AND c.code = 'mn');
+INSERT INTO localization_text_content (parent_id, code, text) SELECT t.id, 'en', 'Out of stock' FROM localization_text t WHERE t.keyword = 'out-of-stock' AND NOT EXISTS (SELECT 1 FROM localization_text_content c WHERE c.parent_id = t.id AND c.code = 'en');
+```
+
+---
+
 ## [5.4.6] - 2026-10-02
 [5.4.6]: https://github.com/codesaur-php/Raptor/compare/v5.4.5...v5.4.6
 

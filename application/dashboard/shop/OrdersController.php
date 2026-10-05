@@ -31,6 +31,13 @@ class OrdersController extends \Dashboard\Controller
     use \Dashboard\Template\DashboardTrait;
 
     /**
+     * Бүтээгдэхүүний үлдэгдлээс хасагдсан байх статусууд.
+     * Захиалга эдгээрийн аль нэгэнд орвол үлдэгдэл хасагдаж,
+     * эндээс гарвал (cancelled, new, processing) буцаж нэмэгдэнэ.
+     */
+    private const STOCK_HOLDING_STATUSES = ['confirmed', 'shipped', 'completed'];
+
+    /**
      * Захиалгын жагсаалтын dashboard хуудсыг харуулах.
      *
      * Permission: system_product_index
@@ -207,13 +214,28 @@ class OrdersController extends \Dashboard\Controller
                 throw new \InvalidArgumentException('No update!');
             }
 
-            $updated = $model->updateById($id, [
-                'status' => $payload['status'],
-                'updated_at' => \date('Y-m-d H:i:s'),
-                'updated_by' => $this->getUserId()
-            ]);
-            if (empty($updated)) {
-                throw new \Exception($this->text('no-record-selected'));
+            // Үлдэгдэл ба статус нэг transaction-д өөрчлөгдөнө - статус хадгалагдаагүй
+            // үед үлдэгдэл хасагдсан хэвээр үлдэх (эсвэл эсрэгээр) боломжгүй
+            $this->pdo->beginTransaction();
+            try {
+                $stockChange = $this->applyStockChange($record, $payload['status']);
+                $updated = $model->updateById($id, [
+                    'status' => $payload['status'],
+                    'stock_reduced' => match (true) {
+                        $stockChange < 0 => 1,
+                        $stockChange > 0 => 0,
+                        default => (int)($record['stock_reduced'] ?? 0)
+                    },
+                    'updated_at' => \date('Y-m-d H:i:s'),
+                    'updated_by' => $this->getUserId()
+                ]);
+                if (empty($updated)) {
+                    throw new \Exception($this->text('no-record-selected'));
+                }
+                $this->pdo->commit();
+            } catch (\Throwable $e) {
+                $this->pdo->rollBack();
+                throw $e;
             }
 
             $this->sendStatusNotification($record, $payload['status']);
@@ -239,10 +261,65 @@ class OrdersController extends \Dashboard\Controller
             } else {
                 $level = LogLevel::INFO;
                 $message = '{record_id} ({name}) дугаартай захиалгын статусыг амжилттай шинэчлэлээ';
-                $context += ['old_status' => $record['status'], 'new_status' => $payload['status'], 'name' => $record['customer_name'], 'record' => $updated];
+                $context += ['old_status' => $record['status'], 'new_status' => $payload['status'], 'name' => $record['customer_name'], 'stock_change' => $stockChange, 'record' => $updated];
             }
             $this->log('products_orders', $level, $message, $context);
         }
+    }
+
+    /**
+     * Статус өөрчлөгдөхөд бүтээгдэхүүний үлдэгдлийг хасах/буцаах.
+     *
+     * Захиалга STOCK_HOLDING_STATUSES-ийн аль нэгэнд орох үед (баталгаажих)
+     * үлдэгдлээс quantity-г хасна. Тэндээс гарах үед (цуцлах, эсвэл new/processing
+     * руу буцаах) хассан тоог буцааж нэмнэ. Аль хэдийн хасагдсан эсэхийг
+     * захиалгын stock_reduced талбар тэмдэглэдэг тул давхар хасалт гарахгүй.
+     * Нөөц хянадаггүй (manage_stock=0) эсвэл устгагдсан бүтээгдэхүүнд хасалт хийхгүй.
+     *
+     * Transaction дотор дуудагдана (updateStatus).
+     *
+     * @param array  $order     Захиалгын одоогийн бичлэг
+     * @param string $newStatus Шинэ статус
+     * @return int Үлдэгдлийн өөрчлөлт: сөрөг = хассан, эерэг = буцаасан, 0 = өөрчлөлтгүй
+     * @throws \Exception Үлдэгдэл хүрэлцэхгүй бол (статус хадгалагдахгүй)
+     */
+    private function applyStockChange(array $order, string $newStatus): int
+    {
+        $productId = (int)($order['product_id'] ?? 0);
+        $quantity = \max(1, (int)($order['quantity'] ?? 1));
+        $reduced = (int)($order['stock_reduced'] ?? 0) === 1;
+        $holds = \in_array($newStatus, self::STOCK_HOLDING_STATUSES, true);
+        if ($productId <= 0 || $reduced === $holds) {
+            return 0;
+        }
+
+        $products = (new ProductsModel($this->pdo))->getName();
+        if ($reduced) {
+            // Цуцлах / буцаах - хассан тоог буцааж нэмнэ
+            $stmt = $this->prepare("UPDATE $products SET stock=stock+:qty WHERE id=:id");
+            $stmt->bindValue(':qty', $quantity, \PDO::PARAM_INT);
+            $stmt->bindValue(':id', $productId, \PDO::PARAM_INT);
+            $stmt->execute();
+            return $stmt->rowCount() > 0 ? $quantity : 0;
+        }
+
+        // Баталгаажуулах - мөрийг түгжиж үлдэгдэл шалгаад хасна
+        $stmt = $this->prepare("SELECT manage_stock, stock FROM $products WHERE id=:id FOR UPDATE");
+        $stmt->bindValue(':id', $productId, \PDO::PARAM_INT);
+        $stmt->execute();
+        $product = $stmt->fetch();
+        if (empty($product) || (int)$product['manage_stock'] !== 1) {
+            return 0;
+        }
+        $stock = (int)$product['stock'];
+        if ($stock < $quantity) {
+            throw new \Exception($this->text('not-enough-stock') . " ($stock < $quantity)", 400);
+        }
+        $update = $this->prepare("UPDATE $products SET stock=stock-:qty WHERE id=:id");
+        $update->bindValue(':qty', $quantity, \PDO::PARAM_INT);
+        $update->bindValue(':id', $productId, \PDO::PARAM_INT);
+        $update->execute();
+        return -$quantity;
     }
 
     /**
