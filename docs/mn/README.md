@@ -398,7 +398,7 @@ public_html/index.php (Entry point)
 |
 \-- /* -> Web\Application (Нийтийн вэб сайт, default хэл - prefix-гүй)
      |-- Middleware: ExceptionHandler -> MethodOverride -> BodyEncoding -> Container -> Session -> Localization -> Settings
-     |-- Router: WebRouter (/, /page, /news, /contact, /products, /order, /search, /sitemap, /rss, /session/language, /session/contact-send, /session/order, /session/news/{id}/comment, /session/product/{id}/review, ...)
+     |-- Router: WebRouter (/, /page, /news, /contact, /products, /cart, /order, /search, /sitemap, /rss, /session/language, /session/contact-send, /session/cart/add, /session/cart/update, /session/order, /session/news/{id}/comment, /session/product/{id}/review, ...)
      \-- Controllers -> Templates -> HTML Response
 ```
 
@@ -644,6 +644,7 @@ $this->isUserCan('news_edit');
 - Бүтээгдэхүүний CRUD (бүрмөсөн устгах, Хогийн савд нөөцлөх), slug үүсгэх, хураангуй гаргах
 - Бүтээгдэхүүний талбарууд: үнэ, хямдралын үнэ, SKU, barcode, хэмжээ, өнгө, нөөц, ангилал, онцлох, үнэлгээ зөвшөөрөх
 - Захиалгын удирдлага (`products_orders` хүснэгт) - хэрэглэгчийн мэдээлэл, статус хянах
+- Вэб сагс: session сагс (`Web\Shop\Cart`, `/cart`, `/session/cart/add`, `/session/cart/update`) нэг олон бүтээгдэхүүнтэй захиалга болж илгээгдэнэ (`items` JSON үнийн хуулбар + `total`); захиалга үргэлж сагсны бүх барааг хамарна - бүтээгдэхүүний хуудсанд ганц "Сагсанд нэмэх" товч бий, түүний цонхноос "Худалдан авалтаа үргэлжлүүлэх", "Сагсаа харах" эсвэл "Захиалга баталгаажуулах" сонгоно. Хэрэглэгчийн бүртгэл / social login нь framework-д ороогүй - [WEB-MEMBERSHIP.md](WEB-MEMBERSHIP.md)-г үз
 - Бүтээгдэхүүний үнэлгээ, одтой үнэлгээ (1-5), бичмэл сэтгэгдэл
 - Үнэлгээ products-view дотор харагдана (web болон dashboard)
 - Web бүтээгдэхүүний хуудсанд media gallery (thumbnail strip + том preview)

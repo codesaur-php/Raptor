@@ -398,7 +398,7 @@ public_html/index.php (Entry point)
 |
 \-- /* -> Web\Application (Public Website, default language - no prefix)
      |-- Middleware: ExceptionHandler -> MethodOverride -> BodyEncoding -> Container -> Session -> Localization -> Settings
-     |-- Router: WebRouter (/, /page, /news, /contact, /products, /order, /search, /sitemap, /rss, /session/language, /session/contact-send, /session/order, /session/news/{id}/comment, /session/product/{id}/review, ...)
+     |-- Router: WebRouter (/, /page, /news, /contact, /products, /cart, /order, /search, /sitemap, /rss, /session/language, /session/contact-send, /session/cart/add, /session/cart/update, /session/order, /session/news/{id}/comment, /session/product/{id}/review, ...)
      \-- Controllers -> Templates -> HTML Response
 ```
 
@@ -642,6 +642,7 @@ $this->isUserCan('news_edit');
 - Product CRUD (hard delete with Trash backup) with slug generation, excerpt extraction
 - Product fields: price, sale_price, SKU, barcode, sizes, colors, stock, category, featured, review toggle
 - Order management (`products_orders` table) with customer info and status tracking
+- Web cart: session cart (`Web\Shop\Cart`, `/cart`, `/session/cart/add`, `/session/cart/update`) checked out as one multi-product order (`items` JSON price snapshot + `total`); an order always covers the whole cart - the product page has a single "Add to cart" button whose dialog offers "Continue shopping", "View cart" or "Checkout". Customer accounts / social login are not part of the framework - see [WEB-MEMBERSHIP.md](WEB-MEMBERSHIP.md)
 - Product reviews with star rating (1-5) and written comments
 - Reviews displayed in product detail view (both web and dashboard)
 - Media gallery on web product page (thumbnail strip + large preview for images/video/audio)

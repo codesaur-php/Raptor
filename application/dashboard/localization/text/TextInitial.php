@@ -46,6 +46,8 @@ class TextInitial
         $model->insert(['keyword' => 'active-user-can-login', 'type' => 'sys-defined'], ['mn' => ['text' => 'зөвхөн идэвхитэй хэрэглэгч системд нэвтэрч чадна'], 'en' => ['text' => 'only active users can login']]);
 
         $model->insert(['keyword' => 'add-record', 'type' => 'sys-defined'], ['mn' => ['text' => 'Бичлэг нэмэх'], 'en' => ['text' => 'Add Record']]);
+        $model->insert(['keyword' => 'add-to-cart', 'type' => 'sys-defined'], ['mn' => ['text' => 'Сагсанд нэмэх'], 'en' => ['text' => 'Add to Cart']]);
+        $model->insert(['keyword' => 'added-to-cart', 'type' => 'sys-defined'], ['mn' => ['text' => 'Сагсанд нэмэгдлээ'], 'en' => ['text' => 'Added to cart']]);
         $model->insert(['keyword' => 'additional-info', 'type' => 'sys-defined'], ['mn' => ['text' => 'Нэмэлт мэдээлэл'], 'en' => ['text' => 'Additional Information']]);
         $model->insert(['keyword' => 'all', 'type' => 'sys-defined'], ['mn' => ['text' => 'Бүх'], 'en' => ['text' => 'All']]);
         $model->insert(['keyword' => 'all-languages', 'type' => 'sys-defined'], ['mn' => ['text' => 'Бүх хэл'], 'en' => ['text' => 'All languages']]);
@@ -65,9 +67,12 @@ class TextInitial
         $model->insert(['keyword' => 'can-review', 'type' => 'sys-defined'], ['mn' => ['text' => 'Хэрэглэгч үнэлгээ өгч болох эсэх'], 'en' => ['text' => 'Can user review this product?']]);
         $model->insert(['keyword' => 'cancel', 'type' => 'sys-defined'], ['mn' => ['text' => 'Болих'], 'en' => ['text' => 'Cancel']]);
         $model->insert(['keyword' => 'cannot-set-descendant-as-parent', 'type' => 'sys-defined'], ['mn' => ['text' => 'Өөрийн дэд хуудсыг эцэг хуудсаар сонгох боломжгүй'], 'en' => ['text' => 'Cannot set a descendant page as parent']]);
+        $model->insert(['keyword' => 'cart', 'type' => 'sys-defined'], ['mn' => ['text' => 'Сагс'], 'en' => ['text' => 'Cart']]);
+        $model->insert(['keyword' => 'cart-empty', 'type' => 'sys-defined'], ['mn' => ['text' => 'Таны сагс хоосон байна'], 'en' => ['text' => 'Your cart is empty']]);
         $model->insert(['keyword' => 'category', 'type' => 'sys-defined'], ['mn' => ['text' => 'Ангилал'], 'en' => ['text' => 'Category']]);
         $model->insert(['keyword' => 'change', 'type' => 'sys-defined'], ['mn' => ['text' => 'Өөрчлөх'], 'en' => ['text' => 'Change']]);
         $model->insert(['keyword' => 'change-child-pages-language-first', 'type' => 'sys-defined'], ['mn' => ['text' => 'Дэд хуудсуудын хэл шинэ хэлтэй нийцэхгүй байна - эхлээд дэд хуудсуудын хэлийг солино уу'], 'en' => ['text' => 'Child pages do not match the new language - change the child pages first']]);
+        $model->insert(['keyword' => 'checkout', 'type' => 'sys-defined'], ['mn' => ['text' => 'Захиалга баталгаажуулах'], 'en' => ['text' => 'Checkout']]);
         $model->insert(['keyword' => 'choose', 'type' => 'sys-defined'], ['mn' => ['text' => 'Сонгох'], 'en' => ['text' => 'Choose']]);
         $model->insert(['keyword' => 'clear-sample-data', 'type' => 'sys-defined'], ['mn' => ['text' => 'Жишиг дата цэвэрлэх'], 'en' => ['text' => 'Clear sample data']]);
         $model->insert(['keyword' => 'close', 'type' => 'sys-defined'], ['mn' => ['text' => 'Хаах'], 'en' => ['text' => 'Close']]);
@@ -88,6 +93,7 @@ class TextInitial
         $model->insert(['keyword' => 'contacted-by-phone', 'type' => 'sys-defined'], ['mn' => ['text' => 'Утсаар холбогдсон'], 'en' => ['text' => 'Contacted by phone']]);
         $model->insert(['keyword' => 'content', 'type' => 'sys-defined'], ['mn' => ['text' => 'Агуулга'], 'en' => ['text' => 'Content']]);
         $model->insert(['keyword' => 'continue', 'type' => 'sys-defined'], ['mn' => ['text' => 'Үргэлжлүүлэх'], 'en' => ['text' => 'Continue']]);
+        $model->insert(['keyword' => 'continue-shopping', 'type' => 'sys-defined'], ['mn' => ['text' => 'Худалдан авалтаа үргэлжлүүлэх'], 'en' => ['text' => 'Continue shopping']]);
         $model->insert(['keyword' => 'copy-text-from', 'type' => 'sys-defined'], ['mn' => ['text' => 'Текст хуулбарлах хэл'], 'en' => ['text' => 'Copy texts from']]);
         $model->insert(['keyword' => 'create-new-user', 'type' => 'sys-defined'], ['mn' => ['text' => 'Хэрэглэгч шинээр үүсгэх'], 'en' => ['text' => 'Create new user']]);
 
@@ -236,6 +242,7 @@ class TextInitial
         $model->insert(['keyword' => 'pending', 'type' => 'sys-defined'], ['mn' => ['text' => 'Хүлээгдэж буй'], 'en' => ['text' => 'Pending']]);
         $model->insert(['keyword' => 'personal-info', 'type' => 'sys-defined'], ['mn' => ['text' => 'Хувийн мэдээлэл'], 'en' => ['text' => 'Personal Info']]);
         $model->insert(['keyword' => 'phone', 'type' => 'sys-defined'], ['mn' => ['text' => 'Утас'], 'en' => ['text' => 'Phone']]);
+        $model->insert(['keyword' => 'phone-for-delivery', 'type' => 'sys-defined'], ['mn' => ['text' => 'Хүргэлтийн үед тантай холбогдоход ашиглана'], 'en' => ['text' => 'Used to contact you about the delivery']]);
         $model->insert(['keyword' => 'photo', 'type' => 'sys-defined'], ['mn' => ['text' => 'Зураг'], 'en' => ['text' => 'Photo']]);
         $model->insert(['keyword' => 'please-confirm-info', 'type' => 'sys-defined'], ['mn' => ['text' => 'Мэдээллийг баталгаажуулна уу'], 'en' => ['text' => 'Please confirm the information']]);
         $model->insert(['keyword' => 'position', 'type' => 'sys-defined'], ['mn' => ['text' => 'Байршил'], 'en' => ['text' => 'Position']]);
@@ -328,6 +335,7 @@ class TextInitial
 
         $model->insert(['keyword' => 'to-complete-registration-check-email', 'type' => 'sys-defined'], ['mn' => ['text' => 'Танд баярлалаа. Бүртгэлээ баталгаажуулахын тулд заасан имейлээ шалгана уу'], 'en' => ['text' => 'Thank you. To complete your registration please check your email']]);
         $model->insert(['keyword' => 'too-many-login-attempts', 'type' => 'sys-defined'], ['mn' => ['text' => 'Нэвтрэх оролдлого хэт олон удаа хийгдсэн байна. Түр хүлээнэ үү.'], 'en' => ['text' => 'Too many login attempts. Please try again later.']]);
+        $model->insert(['keyword' => 'total', 'type' => 'sys-defined'], ['mn' => ['text' => 'Нийт'], 'en' => ['text' => 'Total']]);
         $model->insert(['keyword' => 'type', 'type' => 'sys-defined'], ['mn' => ['text' => 'Төрөл'], 'en' => ['text' => 'Type']]);
         $model->insert(['keyword' => 'u-have-some-form-errors', 'type' => 'sys-defined'], ['mn' => ['text' => 'Та мэдээллийг алдаатай бөглөсөн байна. Доорх талбаруудаа шалгана уу'], 'en' => ['text' => 'You have some form errors. Please check below']]);
         $model->insert(['keyword' => 'update', 'type' => 'sys-defined'], ['mn' => ['text' => 'Шинэчлэх'], 'en' => ['text' => 'Update']]);
@@ -344,6 +352,7 @@ class TextInitial
         $model->insert(['keyword' => 'version', 'type' => 'sys-defined'], ['mn' => ['text' => 'Хувилбар'], 'en' => ['text' => 'Version']]);
         $model->insert(['keyword' => 'view', 'type' => 'sys-defined'], ['mn' => ['text' => 'Харах'], 'en' => ['text' => 'View']]);
         $model->insert(['keyword' => 'view-all', 'type' => 'sys-defined'], ['mn' => ['text' => 'Бүгдийг харах'], 'en' => ['text' => 'View All']]);
+        $model->insert(['keyword' => 'view-cart', 'type' => 'sys-defined'], ['mn' => ['text' => 'Сагсаа харах'], 'en' => ['text' => 'View cart']]);
 
         $model->insert(['keyword' => 'view-record', 'type' => 'sys-defined'], ['mn' => ['text' => 'Бичлэг харах'], 'en' => ['text' => 'View record']]);
         $model->insert(['keyword' => 'visible-on-site', 'type' => 'sys-defined'], ['mn' => ['text' => 'Сайт дээр харагдах'], 'en' => ['text' => 'Visible on site']]);

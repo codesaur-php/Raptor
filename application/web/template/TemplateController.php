@@ -117,6 +117,9 @@ class TemplateController extends \Dashboard\Controller
         $index->set('main_menu', $mainMenu);
         $index->set('featured_pages', $featuredPages);
 
+        // Navbar-ын сагсны icon - сагс хоосон үед layout юу ч харуулахгүй
+        $index->set('cart_count', \Web\Shop\Cart::count());
+
         return $index;
     }
 

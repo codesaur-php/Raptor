@@ -1,8 +1,8 @@
 {
     "name": "codesaur/raptor",
     "extra": {
-        "version": "5.5.0",
-        "modified": "2026-10-05 16:30"
+        "version": "5.6.0",
+        "modified": "2026-10-06 14:53"
     },
     "type": "project",
     "description": "Цэвэр архитектуртай объект хандалттай веб хөгжүүлэлтийн фреймворк",

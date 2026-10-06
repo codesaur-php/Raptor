@@ -1,0 +1,79 @@
+<!-- Variables: items (product_id, title, slug, photo, price, quantity, line_total, manage_stock, stock, error), total, has_error, low_stock_threshold -->
+<!-- Сагс JS-гүй ажиллана: тоо ширхэг шинэчлэх, хасах товч нь cart-update руу энгийн POST илгээж сагс руу буцна -->
+<div class="container mt-4" style="max-width:860px">
+    <div class="text-center mb-4">
+        <h2><i class="bi bi-cart3 me-1"></i>{{ 'cart'|text }}</h2>
+    </div>
+
+    {% if items is empty %}
+    <div class="alert alert-light border text-center py-5">
+        <i class="bi bi-cart-x d-block mb-2" style="font-size:3rem"></i>
+        {{ 'cart-empty'|text }}
+    </div>
+    <div class="text-center">
+        <a class="btn btn-outline-success" href="{{ 'products'|link }}">
+            <i class="bi bi-arrow-left me-1"></i>{{ 'products'|text }}
+        </a>
+    </div>
+    {% else %}
+    <form method="POST" action="{{ 'cart-update'|link }}">
+        <!-- Input дээр Enter дарахад эхний "хасах" товч биш энэ (шинэчлэх) товч ажиллана -->
+        <button type="submit" style="position:absolute;left:-9999px" tabindex="-1" aria-hidden="true"></button>
+        <div class="list-group mb-3">
+            {% for item in items %}
+            <div class="list-group-item py-3{{ item.error is not null ? ' list-group-item-danger' : '' }}">
+                <div class="d-flex flex-wrap align-items-center gap-3">
+                    {% if item.photo %}
+                    <img src="{{ item.photo }}" class="rounded" style="width:64px;height:64px;object-fit:cover" alt="">
+                    {% endif %}
+                    <div class="flex-grow-1" style="min-width:160px">
+                        <a class="fw-semibold text-decoration-none" href="{{ 'product'|link({'slug': item.slug}) }}">{{ item.title }}</a>
+                        <div class="small text-muted">{{ item.price|number_format(2) }}</div>
+                        {% if item.error == 'out-of-stock' %}
+                        <span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i>{{ 'out-of-stock'|text }}</span>
+                        {% elseif item.error == 'not-enough-stock' %}
+                        <span class="badge bg-danger"><i class="bi bi-exclamation-triangle me-1"></i>{{ 'only-n-left'|text|format(item.stock) }}</span>
+                        {% elseif item.manage_stock and item.stock <= low_stock_threshold %}
+                        <span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split me-1"></i>{{ 'only-n-left'|text|format(item.stock) }}</span>
+                        {% endif %}
+                    </div>
+                    <div style="width:96px">
+                        <input type="number" class="form-control form-control-sm" name="quantity[{{ item.product_id }}]"
+                               value="{{ item.quantity }}" min="0"{% if item.manage_stock %} max="{{ item.stock }}"{% endif %}
+                               aria-label="{{ 'quantity'|text }}">
+                    </div>
+                    <div class="text-end fw-semibold" style="min-width:100px">{{ item.line_total|number_format(2) }}</div>
+                    <button class="btn btn-sm btn-outline-danger" type="submit" name="remove" value="{{ item.product_id }}" title="{{ 'remove'|text }}">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+            <button class="btn btn-outline-secondary" type="submit">
+                <i class="bi bi-arrow-repeat me-1"></i>{{ 'update'|text }}
+            </button>
+            <div class="fs-5">
+                {{ 'total'|text }}: <strong>{{ total|number_format(2) }}</strong>
+            </div>
+        </div>
+    </form>
+
+    <div class="d-flex flex-wrap justify-content-between gap-2">
+        <a class="btn btn-outline-success" href="{{ 'products'|link }}">
+            <i class="bi bi-arrow-left me-1"></i>{{ 'products'|text }}
+        </a>
+        {% if has_error %}
+        <button class="btn btn-success" type="button" disabled>
+            <i class="bi bi-bag-check me-1"></i>{{ 'checkout'|text }}
+        </button>
+        {% else %}
+        <a class="btn btn-success" href="{{ 'order'|link }}">
+            <i class="bi bi-bag-check me-1"></i>{{ 'checkout'|text }}
+        </a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>

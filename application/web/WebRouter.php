@@ -52,7 +52,8 @@ class WebRouter extends Router
         $this->GET('/product/{uint:id}', [Shop\ShopController::class, 'productById']);
         $this->GET('/product/{slug}', [Shop\ShopController::class, 'product'])->name('product');
 
-        // Захиалгын форм (GET нь session write шаардахгүй)
+        // Сагс ба захиалгын форм (GET нь сагсыг зөвхөн уншина, session write шаардахгүй)
+        $this->GET('/cart', [Shop\ShopController::class, 'cart'])->name('cart');
         $this->GET('/order', [Shop\ShopController::class, 'order'])->name('order');
 
         // Хайлт
@@ -84,7 +85,11 @@ class WebRouter extends Router
         // Холбоо барих мессеж илгээх
         $this->POST('/session/contact-send', [Service\ContactController::class, 'contactSend'])->name('contact-send');
 
-        // Захиалга илгээх
+        // Сагсанд нэмэх, сагс засах
+        $this->POST('/session/cart/add', [Shop\ShopController::class, 'cartAdd'])->name('cart-add');
+        $this->POST('/session/cart/update', [Shop\ShopController::class, 'cartUpdate'])->name('cart-update');
+
+        // Захиалга илгээх (сагснаас илгээсэн бол сагсыг хоослоно)
         $this->POST('/session/order', [Shop\ShopController::class, 'orderSubmit'])->name('order-submit');
 
         // Мэдээний сэтгэгдэл

@@ -148,9 +148,11 @@ class OrdersController extends \Dashboard\Controller
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));
             }
+            // Сагснаас үүссэн захиалгын мөрүүд. Хоосон бол хуучин нэг бүтээгдэхүүнтэй захиалга
+            $items = \json_decode((string)($record['items'] ?? ''), true);
             $dashboard = $this->dashboardTemplate(
                 __DIR__ . '/orders-view.html',
-                ['table' => $table, 'record' => $record]
+                ['table' => $table, 'record' => $record, 'items' => \is_array($items) ? $items : []]
             );
             $dashboard->set('title', $this->text('view-record') . ' | Orders');
             $dashboard->render();
@@ -271,7 +273,7 @@ class OrdersController extends \Dashboard\Controller
      * Статус өөрчлөгдөхөд бүтээгдэхүүний үлдэгдлийг хасах/буцаах.
      *
      * Захиалга STOCK_HOLDING_STATUSES-ийн аль нэгэнд орох үед (баталгаажих)
-     * үлдэгдлээс quantity-г хасна. Тэндээс гарах үед (цуцлах, эсвэл new/processing
+     * захиалгын бүтээгдэхүүн бүрийн үлдэгдлээс тоо ширхэгийг нь хасна (orderLines). Тэндээс гарах үед (цуцлах, эсвэл new/processing
      * руу буцаах) хассан тоог буцааж нэмнэ. Аль хэдийн хасагдсан эсэхийг
      * захиалгын stock_reduced талбар тэмдэглэдэг тул давхар хасалт гарахгүй.
      * Нөөц хянадаггүй (manage_stock=0) эсвэл устгагдсан бүтээгдэхүүнд хасалт хийхгүй.
@@ -285,41 +287,83 @@ class OrdersController extends \Dashboard\Controller
      */
     private function applyStockChange(array $order, string $newStatus): int
     {
-        $productId = (int)($order['product_id'] ?? 0);
-        $quantity = \max(1, (int)($order['quantity'] ?? 1));
         $reduced = (int)($order['stock_reduced'] ?? 0) === 1;
         $holds = \in_array($newStatus, self::STOCK_HOLDING_STATUSES, true);
-        if ($productId <= 0 || $reduced === $holds) {
+        $lines = $this->orderLines($order);
+        if (empty($lines) || $reduced === $holds) {
             return 0;
         }
 
         $products = (new ProductsModel($this->pdo))->getName();
+        $change = 0;
         if ($reduced) {
-            // Цуцлах / буцаах - хассан тоог буцааж нэмнэ
-            $stmt = $this->prepare("UPDATE $products SET stock=stock+:qty WHERE id=:id");
-            $stmt->bindValue(':qty', $quantity, \PDO::PARAM_INT);
-            $stmt->bindValue(':id', $productId, \PDO::PARAM_INT);
-            $stmt->execute();
-            return $stmt->rowCount() > 0 ? $quantity : 0;
+            // Цуцлах / буцаах - хассан тоог буцааж нэмнэ. Баталгаажуулахад зөвхөн нөөц
+            // хянадаг бүтээгдэхүүнээс хассан тул буцаахдаа мөн тэдгээрт л нэмнэ
+            $stmt = $this->prepare("UPDATE $products SET stock=stock+:qty WHERE id=:id AND manage_stock=1");
+            foreach ($lines as $productId => $quantity) {
+                $stmt->bindValue(':qty', $quantity, \PDO::PARAM_INT);
+                $stmt->bindValue(':id', $productId, \PDO::PARAM_INT);
+                $stmt->execute();
+                if ($stmt->rowCount() > 0) {
+                    $change += $quantity;
+                }
+            }
+            return $change;
         }
 
-        // Баталгаажуулах - мөрийг түгжиж үлдэгдэл шалгаад хасна
-        $stmt = $this->prepare("SELECT manage_stock, stock FROM $products WHERE id=:id FOR UPDATE");
-        $stmt->bindValue(':id', $productId, \PDO::PARAM_INT);
-        $stmt->execute();
-        $product = $stmt->fetch();
-        if (empty($product) || (int)$product['manage_stock'] !== 1) {
-            return 0;
-        }
-        $stock = (int)$product['stock'];
-        if ($stock < $quantity) {
-            throw new \Exception($this->text('not-enough-stock') . " ($stock < $quantity)", 400);
-        }
+        // Баталгаажуулах - мөр бүрийг түгжиж үлдэгдэл шалгаад хасна. Аль нэг
+        // бүтээгдэхүүний үлдэгдэл хүрэлцэхгүй бол exception - дуудагч transaction-ийг
+        // rollback хийж өмнө хасагдсан мөрүүд ч буцна
+        $select = $this->prepare("SELECT title, manage_stock, stock FROM $products WHERE id=:id FOR UPDATE");
         $update = $this->prepare("UPDATE $products SET stock=stock-:qty WHERE id=:id");
-        $update->bindValue(':qty', $quantity, \PDO::PARAM_INT);
-        $update->bindValue(':id', $productId, \PDO::PARAM_INT);
-        $update->execute();
-        return -$quantity;
+        foreach ($lines as $productId => $quantity) {
+            $select->bindValue(':id', $productId, \PDO::PARAM_INT);
+            $select->execute();
+            $product = $select->fetch();
+            $select->closeCursor();
+            if (empty($product) || (int)$product['manage_stock'] !== 1) {
+                continue;
+            }
+            $stock = (int)$product['stock'];
+            if ($stock < $quantity) {
+                throw new \Exception($this->text('not-enough-stock') . " - {$product['title']} ($stock < $quantity)", 400);
+            }
+            $update->bindValue(':qty', $quantity, \PDO::PARAM_INT);
+            $update->bindValue(':id', $productId, \PDO::PARAM_INT);
+            $update->execute();
+            $change -= $quantity;
+        }
+        return $change;
+    }
+
+    /**
+     * Захиалгын бүтээгдэхүүн бүрийн тоо ширхэг [product_id => quantity].
+     *
+     * items JSON (сагснаас үүссэн захиалга) байвал түүнээс, үгүй бол хуучин
+     * нэг бүтээгдэхүүнтэй захиалгын product_id/quantity-аас уншина.
+     * Устгагдсан бүтээгдэхүүний (product_id хоосон) мөрийг алгасна.
+     *
+     * @param array $order Захиалгын бичлэг
+     * @return array<int,int>
+     */
+    private function orderLines(array $order): array
+    {
+        $lines = [];
+        $items = \json_decode((string)($order['items'] ?? ''), true);
+        if (\is_array($items) && !empty($items)) {
+            foreach ($items as $item) {
+                $productId = (int)($item['product_id'] ?? 0);
+                if ($productId > 0) {
+                    $lines[$productId] = ($lines[$productId] ?? 0) + \max(1, (int)($item['quantity'] ?? 1));
+                }
+            }
+            return $lines;
+        }
+        $productId = (int)($order['product_id'] ?? 0);
+        if ($productId > 0) {
+            $lines[$productId] = \max(1, (int)($order['quantity'] ?? 1));
+        }
+        return $lines;
     }
 
     /**

@@ -6,6 +6,63 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 
 ---
 
+## [5.6.0] - 2026-10-06
+[5.6.0]: https://github.com/codesaur-php/Raptor/compare/v5.5.0...v5.6.0
+
+### Added
+
+- **Web cart.** Visitors collect several products in a session cart and send them as one order. `Web\Shop\Cart` keeps only `[product_id => quantity]` in `$_SESSION['RAPTOR_WEB_CART']` (capped at `MAX_LINES` 50 products and `MAX_QUANTITY` 999 per product); titles, prices, stock and the published flag are re-read from `products` every time the cart is shown or checked out, so a price is never taken from the session or the client. New routes: `GET /cart` (`cart`), `POST /session/cart/add` (`cart-add`) and `POST /session/cart/update` (`cart-update`; quantity `0` or the trash button removes a line). Both POST routes redirect back to the cart (303) and work without JavaScript. The product page has a single "Add to cart" button (the separate "Order Now" link is gone - the order is placed from the cart), and the navbar shows a cart icon with the item count while the cart is not empty (`cart_count`, set by `TemplateController::webTemplate()`).
+- **"Add to cart" feedback without leaving the page.** With JavaScript the product page sends the add-to-cart form with `fetch()` (`Accept: application/json`); `cartAdd()` then answers `{status, message, in_cart, count}` instead of redirecting. A dialog confirms the result - "Added to cart" with the product photo and title (`success`), a warning with the remaining stock when the quantity was capped at the stock (`limited`), or an error (`error`, out of stock / unknown product) - with three buttons: "Continue shopping" (closes the dialog), "View cart" (`/cart`) and "Checkout" (opens the `/order` checkout with the whole cart); the last two are hidden while the cart is empty. The buttons stack vertically on phones and sit in one row from the `sm` breakpoint. The button briefly shows a check mark, and the navbar cart icon appears (if hidden), updates its count and plays a short bump animation (`#navbar-cart`, `cart-bump`; disabled under `prefers-reduced-motion`). Without JavaScript the form still posts and redirects to the cart.
+- **Multi-product orders.** `/order` is the cart checkout: it lists the cart with line totals and the order total, and `ShopController::orderSubmit()` creates one order for the whole cart and empties the cart afterwards. An order always covers the whole cart - there is no separate single-product order path. Stock is checked per product on the cart and checkout pages and again on submit. The price is `sale_price` when it is greater than 0, otherwise `price`.
+- **`products_orders.items` and `products_orders.total`.** `items` (`text`) stores the order lines as JSON (`product_id`, `title`, `price`, `quantity`) - a snapshot taken at ordering time, so a later price change does not alter the order; `total` (`decimal(12,2)`) is the order total. For a multi-product order `product_title` holds a `Name x2, Name x1` summary, `quantity` the total units and `product_id` is NULL, so the order list, global search, e-mails and Discord notifications keep working unchanged. Orders created before this version have an empty `items` and are read from `product_id` / `product_title` / `quantity` as before.
+- The dashboard order view lists each product with price, quantity, line total and the order total. Confirming a multi-product order subtracts the stock of every tracked product in one transaction - if any product has insufficient stock, nothing is subtracted and the status does not change; cancelling adds it back to the tracked products.
+- The `order-confirmation` and `order-notify` e-mail templates also receive `items` and `total`; the shipped templates are unchanged and keep using `product_title` / `quantity`.
+- `docs/en/WEB-MEMBERSHIP.md` / `docs/mn/WEB-MEMBERSHIP.md` - a guide for projects that need customer accounts and "Sign in with Google" (separate `customers` table, `/session/` routes, web CSRF, OpenID Connect with PKCE and `firebase/php-jwt`, identifying accounts by `sub`, the `email_verified` linking rule). Customer accounts are not part of the framework: most Raptor sites do not need them, and the subsystem would touch the layout, routing, session and CSRF of every project.
+
+### Changed
+
+- **`/order` checks out the cart only.** `/order?product_id=` used to order that single product and `/order` without it showed a form with no product. `/order` now always checks out the cart (a `cart-empty` notice when the cart is empty); old `/order?product_id=` links redirect (301) to the product page, or to the product list when the product is not published. `orderSubmit()` ignores `product_id` / `quantity` in the body and takes the lines from the cart.
+- **The phone number on the order form is required**, like the delivery address - the courier calls the customer during delivery. The field is `type="tel"` with `autocomplete="tel"` and a `phone-for-delivery` hint under it ("Used to contact you about the delivery"). `orderSubmit()` repeats the check on the server: digits, `+`, spaces, `-` and parentheses, 6-32 characters with at least 6 digits; no country format is enforced, so foreign numbers are accepted. A project selling only digital goods or services can drop the `required` attribute and the server check.
+
+### Migration
+
+Fresh installs get the new columns and texts. Deployed databases: apply this SQL through `/dashboard/migrations` (no sensitive tables, no `CONFIRM`; the cache is cleared after a successful apply). Existing orders get an empty `items` and `total = 0`, and are displayed and stock-handled exactly as before.
+
+```sql
+-- 5.6.0: web cart, multi-product orders
+ALTER TABLE products_orders ADD COLUMN items TEXT;
+ALTER TABLE products_orders ADD COLUMN total DECIMAL(12,2) NOT NULL DEFAULT 0;
+INSERT INTO localization_text (keyword, type, created_at) SELECT 'add-to-cart', 'sys-defined', NOW() WHERE NOT EXISTS (SELECT 1 FROM localization_text WHERE keyword = 'add-to-cart');
+INSERT INTO localization_text (keyword, type, created_at) SELECT 'added-to-cart', 'sys-defined', NOW() WHERE NOT EXISTS (SELECT 1 FROM localization_text WHERE keyword = 'added-to-cart');
+INSERT INTO localization_text (keyword, type, created_at) SELECT 'cart', 'sys-defined', NOW() WHERE NOT EXISTS (SELECT 1 FROM localization_text WHERE keyword = 'cart');
+INSERT INTO localization_text (keyword, type, created_at) SELECT 'cart-empty', 'sys-defined', NOW() WHERE NOT EXISTS (SELECT 1 FROM localization_text WHERE keyword = 'cart-empty');
+INSERT INTO localization_text (keyword, type, created_at) SELECT 'checkout', 'sys-defined', NOW() WHERE NOT EXISTS (SELECT 1 FROM localization_text WHERE keyword = 'checkout');
+INSERT INTO localization_text (keyword, type, created_at) SELECT 'continue-shopping', 'sys-defined', NOW() WHERE NOT EXISTS (SELECT 1 FROM localization_text WHERE keyword = 'continue-shopping');
+INSERT INTO localization_text (keyword, type, created_at) SELECT 'phone-for-delivery', 'sys-defined', NOW() WHERE NOT EXISTS (SELECT 1 FROM localization_text WHERE keyword = 'phone-for-delivery');
+INSERT INTO localization_text (keyword, type, created_at) SELECT 'total', 'sys-defined', NOW() WHERE NOT EXISTS (SELECT 1 FROM localization_text WHERE keyword = 'total');
+INSERT INTO localization_text (keyword, type, created_at) SELECT 'view-cart', 'sys-defined', NOW() WHERE NOT EXISTS (SELECT 1 FROM localization_text WHERE keyword = 'view-cart');
+INSERT INTO localization_text_content (parent_id, code, text) SELECT t.id, 'mn', 'Сагсанд нэмэх' FROM localization_text t WHERE t.keyword = 'add-to-cart' AND NOT EXISTS (SELECT 1 FROM localization_text_content c WHERE c.parent_id = t.id AND c.code = 'mn');
+INSERT INTO localization_text_content (parent_id, code, text) SELECT t.id, 'en', 'Add to Cart' FROM localization_text t WHERE t.keyword = 'add-to-cart' AND NOT EXISTS (SELECT 1 FROM localization_text_content c WHERE c.parent_id = t.id AND c.code = 'en');
+INSERT INTO localization_text_content (parent_id, code, text) SELECT t.id, 'mn', 'Сагсанд нэмэгдлээ' FROM localization_text t WHERE t.keyword = 'added-to-cart' AND NOT EXISTS (SELECT 1 FROM localization_text_content c WHERE c.parent_id = t.id AND c.code = 'mn');
+INSERT INTO localization_text_content (parent_id, code, text) SELECT t.id, 'en', 'Added to cart' FROM localization_text t WHERE t.keyword = 'added-to-cart' AND NOT EXISTS (SELECT 1 FROM localization_text_content c WHERE c.parent_id = t.id AND c.code = 'en');
+INSERT INTO localization_text_content (parent_id, code, text) SELECT t.id, 'mn', 'Сагс' FROM localization_text t WHERE t.keyword = 'cart' AND NOT EXISTS (SELECT 1 FROM localization_text_content c WHERE c.parent_id = t.id AND c.code = 'mn');
+INSERT INTO localization_text_content (parent_id, code, text) SELECT t.id, 'en', 'Cart' FROM localization_text t WHERE t.keyword = 'cart' AND NOT EXISTS (SELECT 1 FROM localization_text_content c WHERE c.parent_id = t.id AND c.code = 'en');
+INSERT INTO localization_text_content (parent_id, code, text) SELECT t.id, 'mn', 'Таны сагс хоосон байна' FROM localization_text t WHERE t.keyword = 'cart-empty' AND NOT EXISTS (SELECT 1 FROM localization_text_content c WHERE c.parent_id = t.id AND c.code = 'mn');
+INSERT INTO localization_text_content (parent_id, code, text) SELECT t.id, 'en', 'Your cart is empty' FROM localization_text t WHERE t.keyword = 'cart-empty' AND NOT EXISTS (SELECT 1 FROM localization_text_content c WHERE c.parent_id = t.id AND c.code = 'en');
+INSERT INTO localization_text_content (parent_id, code, text) SELECT t.id, 'mn', 'Захиалга баталгаажуулах' FROM localization_text t WHERE t.keyword = 'checkout' AND NOT EXISTS (SELECT 1 FROM localization_text_content c WHERE c.parent_id = t.id AND c.code = 'mn');
+INSERT INTO localization_text_content (parent_id, code, text) SELECT t.id, 'en', 'Checkout' FROM localization_text t WHERE t.keyword = 'checkout' AND NOT EXISTS (SELECT 1 FROM localization_text_content c WHERE c.parent_id = t.id AND c.code = 'en');
+INSERT INTO localization_text_content (parent_id, code, text) SELECT t.id, 'mn', 'Худалдан авалтаа үргэлжлүүлэх' FROM localization_text t WHERE t.keyword = 'continue-shopping' AND NOT EXISTS (SELECT 1 FROM localization_text_content c WHERE c.parent_id = t.id AND c.code = 'mn');
+INSERT INTO localization_text_content (parent_id, code, text) SELECT t.id, 'en', 'Continue shopping' FROM localization_text t WHERE t.keyword = 'continue-shopping' AND NOT EXISTS (SELECT 1 FROM localization_text_content c WHERE c.parent_id = t.id AND c.code = 'en');
+INSERT INTO localization_text_content (parent_id, code, text) SELECT t.id, 'mn', 'Хүргэлтийн үед тантай холбогдоход ашиглана' FROM localization_text t WHERE t.keyword = 'phone-for-delivery' AND NOT EXISTS (SELECT 1 FROM localization_text_content c WHERE c.parent_id = t.id AND c.code = 'mn');
+INSERT INTO localization_text_content (parent_id, code, text) SELECT t.id, 'en', 'Used to contact you about the delivery' FROM localization_text t WHERE t.keyword = 'phone-for-delivery' AND NOT EXISTS (SELECT 1 FROM localization_text_content c WHERE c.parent_id = t.id AND c.code = 'en');
+INSERT INTO localization_text_content (parent_id, code, text) SELECT t.id, 'mn', 'Нийт' FROM localization_text t WHERE t.keyword = 'total' AND NOT EXISTS (SELECT 1 FROM localization_text_content c WHERE c.parent_id = t.id AND c.code = 'mn');
+INSERT INTO localization_text_content (parent_id, code, text) SELECT t.id, 'en', 'Total' FROM localization_text t WHERE t.keyword = 'total' AND NOT EXISTS (SELECT 1 FROM localization_text_content c WHERE c.parent_id = t.id AND c.code = 'en');
+INSERT INTO localization_text_content (parent_id, code, text) SELECT t.id, 'mn', 'Сагсаа харах' FROM localization_text t WHERE t.keyword = 'view-cart' AND NOT EXISTS (SELECT 1 FROM localization_text_content c WHERE c.parent_id = t.id AND c.code = 'mn');
+INSERT INTO localization_text_content (parent_id, code, text) SELECT t.id, 'en', 'View cart' FROM localization_text t WHERE t.keyword = 'view-cart' AND NOT EXISTS (SELECT 1 FROM localization_text_content c WHERE c.parent_id = t.id AND c.code = 'en');
+```
+
+---
+
 ## [5.5.0] - 2026-10-05
 [5.5.0]: https://github.com/codesaur-php/Raptor/compare/v5.4.6...v5.5.0
 

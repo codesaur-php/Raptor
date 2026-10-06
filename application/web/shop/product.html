@@ -258,15 +258,145 @@
 
     <div class="text-center my-4">
         {% if not out_of_stock %}
-        <a class="btn btn-lg btn-success shadow" href="{{ 'order'|link }}?product_id={{ id }}">
-            <i class="bi bi-cart-plus me-1"></i>{{ 'order-now'|text }}
-        </a>
+        <!-- Ганц үйлдэл: барааг сагсанд нэмнэ. Захиалга үргэлж сагсны бүх бараагаар хийгдэнэ.
+             JS-тэй үед доорх script fetch-ээр илгээж хуудаснаас гаралгүй #cartModal цонхоор үр дүнг харуулна,
+             цонхноос "Худалдан авалтаа үргэлжлүүлэх" эсвэл "Захиалах" (order) сонгоно. JS-гүй үед сагс руу шилжинэ -->
+        <form class="d-inline" id="add_to_cart_form" method="POST" action="{{ 'cart-add'|link }}">
+            <input type="hidden" name="product_id" value="{{ id }}">
+            <button class="btn btn-lg btn-success shadow" id="add_to_cart_btn" type="submit">
+                <i class="bi bi-cart-plus me-1"></i>{{ 'add-to-cart'|text }}
+            </button>
+        </form>
         {% else %}
         <button class="btn btn-lg btn-secondary shadow" type="button" disabled>
             <i class="bi bi-x-circle me-1"></i>{{ 'out-of-stock'|text }}
         </button>
         {% endif %}
     </div>
+
+    {% if not out_of_stock %}
+    <!-- Сагсанд нэмсэн үр дүнгийн цонх (success - ногоон, limited - шар, error - улаан) -->
+    <div class="modal fade" id="cartModal" tabindex="-1" aria-labelledby="cartModalTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0">
+                <div class="modal-body text-center pt-5 pb-4">
+                    <i id="cartModalIcon" class="bi bi-cart-check-fill text-success cart-modal-icon" style="font-size:4rem"></i>
+                    <h4 class="fw-bold mt-3" id="cartModalTitle">{{ 'added-to-cart'|text }}</h4>
+                    <div class="d-flex align-items-center justify-content-center gap-2 mt-3">
+                        {% if photo is not empty %}
+                        <img src="{{ photo }}" alt="" class="rounded" style="width:48px;height:48px;object-fit:cover">
+                        {% endif %}
+                        <span class="fw-semibold" id="cartModalMessage">{{ title }}</span>
+                    </div>
+                    <p class="text-muted small mt-2 mb-0" id="cartModalCount"></p>
+                </div>
+                <!-- Гурван сонголт: үргэлжлүүлэх (цонх хаана), сагсаа харах (cart), захиалга баталгаажуулах (order).
+                     Утсан дээр доошоо дараалж, sm-ээс дээш нэг мөрөнд. Сагс хоосон үед (error, count 0) сүүлийн хоёрыг script нууна -->
+                <div class="modal-footer border-0 pb-4 pt-0 d-grid gap-2 d-sm-flex justify-content-sm-center">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-arrow-left me-1"></i>{{ 'continue-shopping'|text }}
+                    </button>
+                    <a class="btn btn-outline-success cart-modal-cart-action" href="{{ 'cart'|link }}">
+                        <i class="bi bi-cart3 me-1"></i>{{ 'view-cart'|text }}
+                    </a>
+                    <a class="btn btn-success cart-modal-cart-action" href="{{ 'order'|link }}">
+                        <i class="bi bi-bag-check me-1"></i>{{ 'checkout'|text }}
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <style>
+        @keyframes cart-modal-pop {
+            0% { transform: scale(.3); opacity: 0; }
+            60% { transform: scale(1.15); opacity: 1; }
+            100% { transform: scale(1); }
+        }
+        #cartModal.show .cart-modal-icon {
+            display: inline-block;
+            animation: cart-modal-pop .45s ease-out;
+        }
+        @media (prefers-reduced-motion: reduce) {
+            #cartModal.show .cart-modal-icon {
+                animation: none;
+            }
+        }
+    </style>
+    <script type="text/javascript">
+        document.addEventListener('DOMContentLoaded', function () {
+            const form = document.getElementById('add_to_cart_form');
+            const btn = document.getElementById('add_to_cart_btn');
+            if (!form || !btn || typeof bootstrap === 'undefined') return;
+
+            const btnHtml = btn.innerHTML;
+            const modalEl = document.getElementById('cartModal');
+            const icon = document.getElementById('cartModalIcon');
+            const titleEl = document.getElementById('cartModalTitle');
+            const messageEl = document.getElementById('cartModalMessage');
+            const countEl = document.getElementById('cartModalCount');
+            const cartActions = modalEl.querySelectorAll('.cart-modal-cart-action');
+            const styles = {
+                success: ['bi bi-cart-check-fill text-success', `{{ 'added-to-cart'|text|e('js') }}`],
+                limited: ['bi bi-exclamation-circle-fill text-warning', `{{ 'warning'|text|e('js') }}`],
+                error: ['bi bi-x-circle-fill text-danger', `{{ 'error'|text|e('js') }}`]
+            };
+
+            /* Navbar-ын сагсны тоог шинэчилж icon-ыг "үсрүүлнэ" (index.html: #navbar-cart, cart-bump) */
+            function updateNavbarCart(count) {
+                const link = document.getElementById('navbar-cart');
+                const badge = document.getElementById('navbar-cart-count');
+                if (!link || !badge) return;
+                badge.textContent = count;
+                link.classList.toggle('d-none', count <= 0);
+                link.classList.remove('cart-bump');
+                void link.offsetWidth;
+                link.classList.add('cart-bump');
+            }
+
+            function showResult(status, message, count) {
+                const style = styles[status] ?? styles.error;
+                icon.className = style[0] + ' cart-modal-icon';
+                titleEl.textContent = style[1];
+                messageEl.textContent = message;
+                countEl.textContent = count > 0 ? `{{ 'cart'|text|e('js') }}: ${count}` : '';
+                cartActions.forEach(a => a.classList.toggle('d-none', count <= 0));
+                bootstrap.Modal.getOrCreateInstance(modalEl).show();
+            }
+
+            form.addEventListener('submit', function (e) {
+                e.preventDefault();
+                if (btn.disabled) return;
+                btn.disabled = true;
+                btn.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span>{{ 'add-to-cart'|text|e('js') }}`;
+
+                fetch(form.action, {
+                    method: 'POST',
+                    headers: { 'Accept': 'application/json' },
+                    body: new FormData(form)
+                }).then(res => {
+                    if (res.headers.get('content-type')?.includes('application/json')) return res.json();
+                    throw new Error(`HTTP [${res.status}]`);
+                }).then(response => {
+                    if (response.status !== 'error') {
+                        updateNavbarCart(response.count ?? 0);
+                    }
+                    showResult(response.status, response.message ?? '', response.count ?? 0);
+                    if (response.status === 'success') {
+                        btn.innerHTML = `<i class="bi bi-check2 me-1"></i>{{ 'added-to-cart'|text|e('js') }}`;
+                        setTimeout(() => { btn.innerHTML = btnHtml; btn.disabled = false; }, 1500);
+                        return;
+                    }
+                    btn.innerHTML = btnHtml;
+                    btn.disabled = false;
+                }).catch(error => {
+                    showResult('error', error.message, 0);
+                    btn.innerHTML = btnHtml;
+                    btn.disabled = false;
+                });
+            });
+        });
+    </script>
+    {% endif %}
 
     {% if review is defined and review %}
     {% if turnstile_site_key is not empty %}

@@ -22,7 +22,8 @@ use Web\Template\TemplateController;
  * Энэ контроллер нь:
  *   - Бүтээгдэхүүний жагсаалт харуулах (products)
  *   - Бүтээгдэхүүнийг slug эсвэл ID-аар харуулах (review, rating мэдээлэлтэй)
- *   - Захиалгын форм харуулах (order)
+ *   - Сагс харуулах, бүтээгдэхүүн нэмэх/засах (cart, cartAdd, cartUpdate)
+ *   - Захиалгын форм харуулах (order) - үргэлж сагсны бүх бараагаар
  *   - Захиалга илгээх (orderSubmit) - spam хамгаалалттай
  *   - Бүтээгдэхүүнд үнэлгээ илгээх (reviewSubmit) - spam хамгаалалттай
  *   - Захиалга амжилттай болсон тухай имэйл илгээх
@@ -190,37 +191,238 @@ class ShopController extends TemplateController
     }
 
     /**
+     * Сагсыг харуулах.
+     *
+     * Session-д зөвхөн [product_id => quantity] хадгалагддаг тул нэр, үнэ,
+     * үлдэгдлийг resolveItems() DB-ээс шинээр уншина. Нийтлэгдээгүй болсон
+     * эсвэл устгагдсан бүтээгдэхүүн сагсанд харагдахгүй.
+     *
+     * @return void
+     */
+    public function cart()
+    {
+        $resolved = $this->resolveItems(Cart::lines());
+        $this->webTemplate(__DIR__ . '/cart.html', [
+            'items' => $resolved['items'],
+            'total' => $resolved['total'],
+            'has_error' => $this->hasItemError($resolved['items']),
+            'low_stock_threshold' => self::LOW_STOCK_THRESHOLD,
+            'title' => $this->text('cart')
+        ])->render();
+    }
+
+    /**
+     * Сагсанд бүтээгдэхүүн нэмэх (POST /session/cart/add).
+     *
+     * Нийтлэгдсэн бүтээгдэхүүнийг л нэмнэ. Нөөц хянадаг барааны тоо
+     * ширхэгийг үлдэгдлээр хязгаарлана, үлдэгдэлгүй бол нэмэхгүй.
+     *
+     * Accept: application/json толгойтой (product.html-ийн fetch) хүсэлтэд
+     * {status: success|limited|error, message, in_cart, count} JSON буцаана.
+     * Бусад үед (JS-гүй энгийн форм) сагсны хуудас руу 303 redirect хийнэ (PRG).
+     *
+     * @return void
+     */
+    public function cartAdd()
+    {
+        $payload = $this->getParsedBody();
+        $productId = (int)($payload['product_id'] ?? 0);
+        $quantity = \max(1, (int)($payload['quantity'] ?? 1));
+
+        // Үр дүн: success - бүтэн нэмэгдсэн, limited - үлдэгдлээр хязгаарлагдсан
+        // (хэсэгчлэн эсвэл огт нэмэгдээгүй), error - бараа олдсонгүй / үлдэгдэлгүй
+        $status = 'error';
+        $message = $this->text('invalid-request');
+        $inCart = 0;
+        $product = $productId > 0 ? ($this->resolveItems([$productId => 1])['items'][0] ?? null) : null;
+        if ($product !== null) {
+            $current = Cart::lines()[$productId] ?? 0;
+            $wanted = $current + $quantity;
+            if ($product['manage_stock']) {
+                $wanted = \min($wanted, $product['stock']);
+            }
+            if ($product['manage_stock'] && $product['stock'] <= 0) {
+                $message = $this->text('out-of-stock');
+            } else {
+                if ($wanted > $current) {
+                    Cart::set($productId, $wanted);
+                }
+                $inCart = $wanted;
+                $status = $wanted === $current + $quantity ? 'success' : 'limited';
+                $message = $status === 'success'
+                    ? $product['title']
+                    : \sprintf($this->text('only-n-left'), $product['stock']) . '. ' . $this->text('cart') . ": $inCart";
+            }
+        }
+
+        // fetch()-ээр (Accept: application/json) дуудсан бол хуудаснаас гаралгүй
+        // JSON хариу - product.html цонхоор харуулна. JS-гүй үед сагс руу redirect
+        if (\str_contains($this->getRequest()->getHeaderLine('Accept'), 'application/json')) {
+            $this->respondJSON([
+                'status' => $status,
+                'message' => $message,
+                'in_cart' => $inCart,
+                'count' => Cart::count()
+            ], $status === 'error' ? 400 : 200);
+            return;
+        }
+        $this->redirectAfterPost('cart');
+    }
+
+    /**
+     * Сагсны тоо ширхэгийг шинэчлэх, мөр хасах (POST /session/cart/update).
+     *
+     * Body: quantity[product_id] = тоо (0 бол хасна), remove = product_id.
+     *
+     * @return void
+     */
+    public function cartUpdate()
+    {
+        $payload = $this->getParsedBody();
+        $lines = Cart::lines();
+        if (\is_array($payload['quantity'] ?? null)) {
+            foreach ($payload['quantity'] as $productId => $quantity) {
+                // Зөвхөн сагсанд байгаа мөрийг засна - шинэ бараа cartAdd()-аар л нэмэгдэнэ
+                if (isset($lines[(int)$productId])) {
+                    Cart::set((int)$productId, (int)$quantity);
+                }
+            }
+        }
+        if (!empty($payload['remove'])) {
+            Cart::set((int)$payload['remove'], 0);
+        }
+        $this->redirectAfterPost('cart');
+    }
+
+    /**
+     * Нэрлэсэн route руу 303 See Other redirect (POST-оос дахин илгээгдэхгүй).
+     *
+     * @param string $routeName Route нэр (жишээ: 'cart')
+     */
+    private function redirectAfterPost(string $routeName): never
+    {
+        $link = $this->generateRouteLink($routeName);
+        \header('Location: ' . \filter_var($link, \FILTER_SANITIZE_URL), true, 303);
+        exit;
+    }
+
+    /**
+     * Сагсны мөрүүдийг DB дахь нийтлэгдсэн бүтээгдэхүүнээр баяжуулах.
+     *
+     * Үнэ нь sale_price (0-ээс их бол) эсвэл price. Нөөц хянадаг барааны
+     * үлдэгдэл хүрэлцэхгүй бол мөрөнд 'error' ('out-of-stock' эсвэл
+     * 'not-enough-stock') тэмдэглэнэ. Нийтлэгдээгүй/устгагдсан бүтээгдэхүүнийг
+     * үр дүнд оруулахгүй.
+     *
+     * @param array<int,int> $lines [product_id => quantity]
+     * @return array{items: array<int,array>, total: float}
+     */
+    private function resolveItems(array $lines): array
+    {
+        if (empty($lines)) {
+            return ['items' => [], 'total' => 0.0];
+        }
+        $table = (new ProductsModel($this->pdo))->getName();
+        $ids = \array_keys($lines);
+        $placeholders = [];
+        foreach ($ids as $i => $id) {
+            $placeholders[] = ":id$i";
+        }
+        $stmt = $this->prepare(
+            'SELECT id, title, slug, photo, price, sale_price, manage_stock, stock ' .
+            "FROM $table WHERE published=1 AND id IN (" . \implode(',', $placeholders) . ')'
+        );
+        foreach ($ids as $i => $id) {
+            $stmt->bindValue(":id$i", $id, \PDO::PARAM_INT);
+        }
+        $stmt->execute();
+        $rows = [];
+        foreach ($stmt->fetchAll() as $row) {
+            $rows[(int)$row['id']] = $row;
+        }
+
+        $items = [];
+        $total = 0.0;
+        foreach ($lines as $id => $quantity) {
+            if (!isset($rows[$id])) {
+                continue;
+            }
+            $row = $rows[$id];
+            $salePrice = (float)($row['sale_price'] ?? 0);
+            $price = $salePrice > 0 ? $salePrice : (float)$row['price'];
+            $manageStock = (int)($row['manage_stock'] ?? 0) === 1;
+            $stock = (int)($row['stock'] ?? 0);
+            $error = null;
+            if ($manageStock && $stock <= 0) {
+                $error = 'out-of-stock';
+            } elseif ($manageStock && $quantity > $stock) {
+                $error = 'not-enough-stock';
+            }
+            $lineTotal = \round($price * $quantity, 2);
+            $total += $lineTotal;
+            $items[] = [
+                'product_id' => $id,
+                'title' => (string)$row['title'],
+                'slug' => (string)$row['slug'],
+                'photo' => (string)($row['photo'] ?? ''),
+                'price' => $price,
+                'quantity' => $quantity,
+                'line_total' => $lineTotal,
+                'manage_stock' => $manageStock,
+                'stock' => $stock,
+                'error' => $error
+            ];
+        }
+        return ['items' => $items, 'total' => \round($total, 2)];
+    }
+
+    /**
+     * resolveItems()-ийн мөрүүдийн аль нэг нь үлдэгдлийн алдаатай эсэх
+     * (сагс, захиалгын хуудас дээр захиалах товчийг хаана).
+     */
+    private function hasItemError(array $items): bool
+    {
+        foreach ($items as $item) {
+            if ($item['error'] !== null) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * Захиалгын формыг харуулах.
      *
+     * Захиалга үргэлж сагсны бүх барааг хамарна: сагсны агуулгыг (items,
+     * total) харуулж, доор нь захиалагчийн мэдээллийн форм. Сагс хоосон бол
+     * форм биш "cart-empty" мэдэгдэл, аль нэг барааны үлдэгдэл хүрэлцэхгүй
+     * бол сагс руу буцах холбоос харагдана.
+     *
+     * Хуучин "/order?product_id=" холбоос (нэг барааг тусад нь захиалдаг байсан)
+     * тухайн барааны хуудас руу 301 redirect хийнэ.
+     *
      * Spam хамгаалалтын timestamp болон HMAC token-г бэлтгэж
-     * template-д дамжуулна. product_id query parameter-аар
-     * бүтээгдэхүүний мэдээлэл, үлдэгдлийг урьдчилан дуудна.
-     * Нөөц хянадаг (manage_stock=1) барааны үлдэгдэл 0 бол template форм биш
-     * "out-of-stock" мэдэгдэл харуулна. Нөөц хянадаггүй бараа хязгааргүй.
+     * template-д дамжуулна.
      *
      * @return void
      */
     public function order()
     {
-        $vars = [];
-        $productId = $this->getQueryParams()['product_id'] ?? null;
-        if ($productId) {
-            $model = new ProductsModel($this->pdo);
-            $table = $model->getName();
-            $stmt = $this->prepare(
-                "SELECT id, title, slug, photo, price, manage_stock, stock FROM $table WHERE id=:id AND published=1"
-            );
-            $stmt->bindValue(':id', (int)$productId, \PDO::PARAM_INT);
-            $stmt->execute();
-            $product = $stmt->fetch();
-            if ($product) {
-                $product['manage_stock'] = (int)($product['manage_stock'] ?? 0) === 1;
-                $product['stock'] = (int)($product['stock'] ?? 0);
-                $vars['product'] = $product;
+        $productId = (int)($this->getQueryParams()['product_id'] ?? 0);
+        if ($productId > 0) {
+            $product = $this->resolveItems([$productId => 1])['items'][0] ?? null;
+            if ($product !== null) {
+                $this->redirectPermanently('product', ['slug' => $product['slug']]);
             }
+            $this->redirectPermanently('products');
         }
 
-        $vars['low_stock_threshold'] = self::LOW_STOCK_THRESHOLD;
+        $resolved = $this->resolveItems(Cart::lines());
+        $vars = [
+            'items' => $resolved['items'],
+            'total' => $resolved['total'],
+            'has_error' => $this->hasItemError($resolved['items'])
+        ];
 
         $ts = \time();
         $vars['spam_ts'] = $ts;
@@ -230,11 +432,7 @@ class ShopController extends TemplateController
         $vars['title'] = $this->text('order');
         $this->webTemplate(__DIR__ . '/order.html', $vars)->render();
 
-        $context = ['action' => 'order'];
-        if (isset($product)) {
-            $context['product_id'] = $product['id'];
-            $context['title'] = $product['title'];
-        }
+        $context = ['action' => 'order', 'title' => $this->text('cart') . ' (' . \count($vars['items']) . ')'];
         $this->log('web', LogLevel::NOTICE, '[{server_request.code}] {title} - бүтээгдэхүүний захиалгын формыг нээж байна', $context);
     }
 
@@ -274,57 +472,83 @@ class ShopController extends TemplateController
                     400
                 );
             }
-            $quantity = \max(1, (int)($payload['quantity'] ?? 1));
-
-            // Бүтээгдэхүүний нэрийг client-ийн product_title-д итгэлгүйгээр
-            // нийтлэгдсэн бүтээгдэхүүний бичлэгээс product_id-аар авна.
-            // Үлдэгдлийг мөн серверт шалгана - форм нээгдэхгүй байсан ч
-            // шууд POST илгээж болох тул template-ийн шалгалт хангалтгүй.
-            $productId = (int)($payload['product_id'] ?? 0);
-            $productTitle = '';
-            if ($productId > 0) {
-                $productsTable = (new ProductsModel($this->pdo))->getName();
-                $pstmt = $this->prepare(
-                    "SELECT title, manage_stock, stock FROM $productsTable WHERE id=:id AND published=1"
+            // Утас заавал - хүргэлтийн үед холбогдоно. Улсын формат шахахгүй (гадаад
+            // дугаар орж болно): тоо, +, хоосон зай, -, () тэмдэгтүүдээс бүрдсэн 6-32 тэмдэгт
+            $phone = \trim((string)($payload['customer_phone'] ?? ''));
+            if (!\preg_match('/^\+?[0-9 ()\-]{6,32}$/', $phone)
+                || \preg_match_all('/[0-9]/', $phone) < 6
+            ) {
+                throw new \Exception(
+                    $code === 'mn' ? 'Утасны дугаараа зөв оруулна уу' : 'Please enter a valid phone number',
+                    400
                 );
-                $pstmt->bindValue(':id', $productId, \PDO::PARAM_INT);
-                $pstmt->execute();
-                $productRow = $pstmt->fetch();
-                if (empty($productRow)) {
-                    throw new \Exception('Invalid request', 400);
-                }
-                if ((int)($productRow['manage_stock'] ?? 0) === 1) {
-                    $stock = (int)($productRow['stock'] ?? 0);
-                    if ($stock <= 0) {
-                        throw new \Exception(
-                            $code === 'mn' ? 'Уучлаарай, энэ бүтээгдэхүүн нөөцөд байхгүй байна' : 'Sorry, this product is out of stock',
-                            400
-                        );
-                    }
-                    if ($quantity > $stock) {
-                        throw new \Exception(
-                            $code === 'mn' ? "Үлдэгдэл хүрэлцэхгүй байна. Хамгийн ихдээ $stock ширхэг захиалах боломжтой" : "Not enough stock. You can order at most $stock",
-                            400
-                        );
-                    }
-                }
-                $productTitle = (string)$productRow['title'];
             }
+            // Захиалга үргэлж сагснаас. Нэр, үнийг client-д итгэлгүйгээр
+            // нийтлэгдсэн бүтээгдэхүүний бичлэгээс авна. Үлдэгдлийг мөн серверт
+            // шалгана - форм нээгдэхгүй байсан ч шууд POST илгээж болох тул
+            // template-ийн шалгалт хангалтгүй.
+            $lines = Cart::lines();
+            if (empty($lines)) {
+                throw new \Exception($this->text('cart-empty'), 400);
+            }
+            $resolved = $this->resolveItems($lines);
+            $items = $resolved['items'];
+            if (\count($items) !== \count($lines)) {
+                throw new \Exception(
+                    $code === 'mn' ? 'Зарим бүтээгдэхүүн захиалах боломжгүй болсон байна. Сагсаа шалгана уу' : 'Some products are no longer available. Please check your cart',
+                    400
+                );
+            }
+            foreach ($items as $item) {
+                if ($item['error'] === 'out-of-stock') {
+                    throw new \Exception(
+                        $code === 'mn' ? "Уучлаарай, \"{$item['title']}\" нөөцөд байхгүй байна" : "Sorry, \"{$item['title']}\" is out of stock",
+                        400
+                    );
+                }
+                if ($item['error'] === 'not-enough-stock') {
+                    throw new \Exception(
+                        $code === 'mn' ? "\"{$item['title']}\" - үлдэгдэл хүрэлцэхгүй байна. Хамгийн ихдээ {$item['stock']} ширхэг захиалах боломжтой" : "\"{$item['title']}\" - not enough stock. You can order at most {$item['stock']}",
+                        400
+                    );
+                }
+            }
+
+            // Захиалгын мөрүүд (items) нь захиалах үеийн нэр, үнийн хуулбар -
+            // дараа нь бүтээгдэхүүний үнэ өөрчлөгдсөн ч захиалга хэвээр үлдэнэ.
+            // product_title/quantity нь жагсаалт, хайлт, имэйл, Discord-д зориулсан хураангуй.
+            $orderItems = [];
+            $summary = [];
+            $quantity = 0;
+            foreach ($items as $item) {
+                $orderItems[] = [
+                    'product_id' => $item['product_id'],
+                    'title' => $item['title'],
+                    'price' => $item['price'],
+                    'quantity' => $item['quantity']
+                ];
+                $summary[] = \count($items) > 1 ? "{$item['title']} x{$item['quantity']}" : $item['title'];
+                $quantity += $item['quantity'];
+            }
+            $productTitle = \mb_substr(\implode(', ', $summary), 0, 255);
+            $total = $resolved['total'];
 
             $model = new ProductOrdersModel($this->pdo);
             $orderData = [
                 'product_title' => $productTitle,
+                'items' => \json_encode($orderItems, \JSON_UNESCAPED_UNICODE),
+                'total' => $total,
                 'customer_name' => $payload['customer_name'],
                 'customer_email' => $payload['customer_email'],
-                'customer_phone' => $payload['customer_phone'] ?? '',
+                'customer_phone' => $phone,
                 'customer_address' => $address,
                 'message' => $payload['message'] ?? '',
                 'quantity' => $quantity,
                 'code' => $code,
                 'status' => 'new'
             ];
-            if ($productId > 0) {
-                $orderData['product_id'] = $productId;
+            if (\count($items) === 1) {
+                $orderData['product_id'] = $items[0]['product_id'];
             }
             $record = $model->insert($orderData);
 
@@ -336,6 +560,7 @@ class ShopController extends TemplateController
             }
 
             $_SESSION['_last_order_at'] = \time();
+            Cart::clear();
 
             $this->sendOrderConfirmation(
                 (int)$record['id'],
@@ -343,6 +568,8 @@ class ShopController extends TemplateController
                 $payload['customer_email'],
                 $productTitle,
                 $quantity,
+                $orderItems,
+                $total,
                 $code
             );
 
@@ -350,7 +577,7 @@ class ShopController extends TemplateController
                 'new', (int)$record['id'],
                 $payload['customer_name'],
                 $payload['customer_email'],
-                $payload['customer_phone'] ?? '',
+                $phone,
                 $productTitle,
                 $quantity,
                 '', ''
@@ -362,7 +589,9 @@ class ShopController extends TemplateController
                 $payload['customer_email'],
                 $productTitle,
                 $quantity,
-                $payload['customer_phone'] ?? '',
+                $orderItems,
+                $total,
+                $phone,
                 $address
             );
 
@@ -370,6 +599,8 @@ class ShopController extends TemplateController
                 'order_id' => $record['id'],
                 'customer_name' => $payload['customer_name'],
                 'product_title' => $productTitle,
+                'items' => $orderItems,
+                'total' => $total,
                 'title' => $code === 'mn' ? 'Захиалга амжилттай' : 'Order Success'
             ])->render();
 
@@ -384,7 +615,7 @@ class ShopController extends TemplateController
                     'auth_user' => [
                         'username'   => $payload['customer_name'],
                         'email'      => $payload['customer_email'],
-                        'phone'      => $payload['customer_phone'] ?? '',
+                        'phone'      => $phone,
                         'first_name' => $payload['customer_name'],
                         'last_name'  => ''
                     ]
@@ -492,7 +723,9 @@ class ShopController extends TemplateController
      * @param string $customerName  Захиалагчийн нэр
      * @param string $customerEmail Захиалагчийн имэйл
      * @param string $productTitle  Бүтээгдэхүүний нэр
-     * @param int    $quantity      Тоо ширхэг
+     * @param int    $quantity      Нийт тоо ширхэг
+     * @param array  $items         Захиалгын мөрүүд (product_id, title, price, quantity)
+     * @param float  $total         Нийт дүн
      * @param string $code          Хэлний код
      * @return void
      */
@@ -502,6 +735,8 @@ class ShopController extends TemplateController
         string $customerEmail,
         string $productTitle,
         int $quantity,
+        array $items,
+        float $total,
         string $code
     ) {
         try {
@@ -530,6 +765,8 @@ class ShopController extends TemplateController
             $bodyTemplate->set('customer_name', $customerName);
             $bodyTemplate->set('product_title', $productTitle);
             $bodyTemplate->set('quantity', $quantity);
+            $bodyTemplate->set('items', $items);
+            $bodyTemplate->set('total', $total);
             $body = $bodyTemplate->output();
             
             $mailer->mail($customerEmail, $customerName, $subject, $body)->send();
@@ -542,6 +779,8 @@ class ShopController extends TemplateController
 
     /**
      * Шинэ захиалга ирсэн тухай админд email мэдэгдэл.
+     *
+     * Template-д product_title (хураангуй), quantity (нийт), items, total дамжина.
      */
     private function sendOrderNotifyEmail(
         int $orderId,
@@ -549,6 +788,8 @@ class ShopController extends TemplateController
         string $customerEmail,
         string $productTitle,
         int $quantity,
+        array $items,
+        float $total,
         string $phone,
         string $address
     ) {
@@ -594,6 +835,8 @@ class ShopController extends TemplateController
             $bodyTemplate->set('customer_address', $address);
             $bodyTemplate->set('product_title', $productTitle);
             $bodyTemplate->set('quantity', $quantity);
+            $bodyTemplate->set('items', $items);
+            $bodyTemplate->set('total', $total);
             $bodyTemplate->set('orders_link', $ordersLink);
             $body = $bodyTemplate->output();
 

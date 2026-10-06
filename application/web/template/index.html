@@ -87,6 +87,21 @@
                     color: #000 !important;
                 }
             }
+            /* Сагсанд бараа нэмэгдэхэд navbar-ын сагсны icon "үсрэх" (product.html cart-bump класс нэмнэ) */
+            @keyframes cart-bump {
+                0% { transform: scale(1); }
+                30% { transform: scale(1.35) rotate(-8deg); }
+                60% { transform: scale(.92) rotate(4deg); }
+                100% { transform: scale(1); }
+            }
+            #navbar-cart.cart-bump {
+                animation: cart-bump .6s ease;
+            }
+            @media (prefers-reduced-motion: reduce) {
+                #navbar-cart.cart-bump {
+                    animation: none;
+                }
+            }
         </style>
     </head>
     <body>
@@ -184,6 +199,14 @@
                             {% endif %}
                         {% endfor %}
                     </ul>
+
+                    <!-- Сагс (cart_count - Web\Shop\Cart::count()). Сагс хоосон үед d-none-оор нуугдана.
+                         id-уудыг product.html-ийн "Сагсанд нэмэх" script ашиглаж тоог шинэчилж, cart-bump animation тоглуулна -->
+                    {% set cart_total = cart_count ?? 0 %}
+                    <a class="btn btn-sm btn-outline-light position-relative me-3 mb-2 mb-lg-0{{ cart_total > 0 ? '' : ' d-none' }}" id="navbar-cart" href="{{ 'cart'|link }}" title="{{ 'cart'|text }}">
+                        <i class="bi bi-cart3"></i>
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="navbar-cart-count">{{ cart_total }}</span>
+                    </a>
 
                     <!-- Search (right side) -->
                     <form class="d-flex me-2" method="GET" action="{{ 'search'|link }}">

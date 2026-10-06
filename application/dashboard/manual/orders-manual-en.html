@@ -17,9 +17,10 @@
         <ul>
             <li><strong>Order status workflow</strong> - New -> Processing -> Confirmed -> Shipped -> Completed</li>
             <li><strong>Email notifications</strong> - Automatic notifications sent to users</li>
+            <li><strong>Cart</strong> - Visitors add several products to a cart on the website and send them as one order. An order always covers the whole cart: the product page has a single "Add to Cart" button, and its dialog offers "Continue shopping", "View cart" or "Checkout". For a multi-product order the list's "Product" column shows a "Name x2, Name x1" summary, and the view page shows each product's price, quantity and the order total. Prices are the prices at the time of ordering - changing a product price later does not change the order</li>
             <li><strong>User information</strong> - Customer name, email address, phone and delivery address</li>
             <li><strong>Stock check</strong> - Applies only to products with "Track stock" turned on in the product form. At stock 0 the product is marked "Out of stock" and the order form does not open; an order cannot exceed the remaining stock. When few are left (5 or fewer) the site shows "Only N left", otherwise "In stock" without the exact number. Products with "Track stock" off can always be ordered</li>
-            <li><strong>Automatic stock reduction</strong> - Setting an order to <code>confirmed</code>, <code>shipped</code> or <code>completed</code> subtracts the ordered quantity from stock; setting it to <code>cancelled</code> (or back to <code>new</code> / <code>processing</code>) adds it back. An order is never subtracted twice. An order cannot be confirmed when stock is insufficient. Deleting an order does not change stock - cancel it first, then delete</li>
+            <li><strong>Automatic stock reduction</strong> - Setting an order to <code>confirmed</code>, <code>shipped</code> or <code>completed</code> subtracts the ordered quantity from stock; setting it to <code>cancelled</code> (or back to <code>new</code> / <code>processing</code>) adds it back. An order is never subtracted twice. A multi-product order is subtracted per product; if any product has insufficient stock, the whole order cannot be confirmed. Deleting an order does not change stock - cancel it first, then delete</li>
         </ul>
     </div>
 </div>
@@ -77,7 +78,7 @@
         <h4 class="text-primary mb-3"><i class="bi bi-eye"></i> View Order</h4>
         <p>Click the <strong>view</strong> (eye) button from the list.</p>
         <ul>
-            <li>Detailed order information - product, quantity, user information, delivery address</li>
+            <li>Detailed order information - product (for a cart order, each product's price, quantity and the order total), quantity, user information, delivery address</li>
             <li>Change status - select a new status from the dropdown</li>
             <li>Send email to the customer</li>
         </ul>
