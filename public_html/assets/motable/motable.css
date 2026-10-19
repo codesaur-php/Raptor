@@ -4,48 +4,76 @@
  * Bootstrap шаардлагагүй, бие даан ажиллах боломжтой.
  */
 
-/* CSS Variables - Өнгөний тохиргоо */
+/*
+ * CSS Variables - Өнгөний тохиргоо.
+ * --mt-* prefix нь motable-д зориулагдсан. moedit --mo-* ашигладаг тул
+ * хоёулаа нэг хуудсанд ачаалагдахад хувьсагч нь бие биенээ дарахгүй.
+ */
 :root{
-  --mo-bg:#fff;
-  --mo-text:#212529;
-  --mo-border:#dee2e6;
-  --mo-header-bg:#f8f9fa;
-  --mo-hover-bg:#f5f5f5;
-  --mo-stripe-bg:#f9f9f9;
-  --mo-input-bg:#fff;
-  --mo-input-border:#ced4da;
-  --mo-input-focus:#86b7fe;
-  --mo-primary:#0d6efd;
-  --mo-shadow:linear-gradient(to left,rgba(255,255,255,0.9),transparent);
+  --mt-bg:#fff;
+  --mt-text:#212529;
+  --mt-border:#dee2e6;
+  --mt-header-bg:#f8f9fa;
+  --mt-hover-bg:#f5f5f5;
+  --mt-stripe-bg:#f9f9f9;
+  --mt-input-bg:#fff;
+  --mt-input-border:#ced4da;
+  --mt-input-focus:#86b7fe;
+  --mt-primary:#0d6efd;
+  --mt-shadow:linear-gradient(to left,rgba(255,255,255,0.9),transparent);
+  --mt-freeze-shadow:linear-gradient(to right,rgba(0,0,0,.08),transparent);
 }
 
-/* Dark mode variables */
+/*
+ * Dark mode - OS/browser theme.
+ * Хуудас өөрөө theme заагаагүй үед л OS/browser-ийн theme-ийг дагана.
+ * html дээр data-bs-theme/data-theme="light" байвал энэ дүрэм үйлчлэхгүй,
+ * body эсвэл дотор элемент дээрх "light" attribute-ийг доорх light блок дарна.
+ */
 @media (prefers-color-scheme:dark){
-  :root{
-    --mo-bg:#212529;
-    --mo-text:#e9ecef;
-    --mo-border:#495057;
-    --mo-header-bg:#343a40;
-    --mo-hover-bg:#2c3136;
-    --mo-stripe-bg:#2a2e32;
-    --mo-input-bg:#343a40;
-    --mo-input-border:#495057;
-    --mo-input-focus:#6ea8fe;
-    --mo-shadow:linear-gradient(to left,rgba(33,37,41,0.9),transparent);
+  :root:not([data-bs-theme="light"]):not([data-theme="light"]){
+    --mt-bg:#212529;
+    --mt-text:#e9ecef;
+    --mt-border:#495057;
+    --mt-header-bg:#343a40;
+    --mt-hover-bg:#2c3136;
+    --mt-stripe-bg:#2a2e32;
+    --mt-input-bg:#343a40;
+    --mt-input-border:#495057;
+    --mt-input-focus:#6ea8fe;
+    --mt-shadow:linear-gradient(to left,rgba(33,37,41,0.9),transparent);
+    --mt-freeze-shadow:linear-gradient(to right,rgba(0,0,0,.25),transparent);
   }
 }
+/* Light mode - хуудас light theme-ийг тодорхой заасан (OS dark байсан ч) */
+[data-bs-theme="light"],
+[data-theme="light"]{
+  --mt-bg:#fff;
+  --mt-text:#212529;
+  --mt-border:#dee2e6;
+  --mt-header-bg:#f8f9fa;
+  --mt-hover-bg:#f5f5f5;
+  --mt-stripe-bg:#f9f9f9;
+  --mt-input-bg:#fff;
+  --mt-input-border:#ced4da;
+  --mt-input-focus:#86b7fe;
+  --mt-shadow:linear-gradient(to left,rgba(255,255,255,0.9),transparent);
+  --mt-freeze-shadow:linear-gradient(to right,rgba(0,0,0,.08),transparent);
+}
+/* Dark mode - хуудас dark theme-ийг тодорхой заасан */
 [data-bs-theme="dark"],
 [data-theme="dark"]{
-  --mo-bg:#212529;
-  --mo-text:#e9ecef;
-  --mo-border:#495057;
-  --mo-header-bg:#343a40;
-  --mo-hover-bg:#2c3136;
-  --mo-stripe-bg:#2a2e32;
-  --mo-input-bg:#343a40;
-  --mo-input-border:#495057;
-  --mo-input-focus:#6ea8fe;
-  --mo-shadow:linear-gradient(to left,rgba(33,37,41,0.9),transparent);
+  --mt-bg:#212529;
+  --mt-text:#e9ecef;
+  --mt-border:#495057;
+  --mt-header-bg:#343a40;
+  --mt-hover-bg:#2c3136;
+  --mt-stripe-bg:#2a2e32;
+  --mt-input-bg:#343a40;
+  --mt-input-border:#495057;
+  --mt-input-focus:#6ea8fe;
+  --mt-shadow:linear-gradient(to left,rgba(33,37,41,0.9),transparent);
+  --mt-freeze-shadow:linear-gradient(to right,rgba(0,0,0,.25),transparent);
 }
 
 /* Loading animation */
@@ -71,7 +99,7 @@
   flex:1;
   margin:0;
   font-size:.875rem;
-  color:var(--mo-text);
+  color:var(--mt-text);
   min-width:200px;
 }
 
@@ -84,9 +112,9 @@
   font-size:.875rem;
   font-family:inherit;
   line-height:1.5;
-  color:var(--mo-text);
-  background-color:var(--mo-input-bg);
-  border:1px solid var(--mo-input-border);
+  color:var(--mt-text);
+  background-color:var(--mt-input-bg);
+  border:1px solid var(--mt-input-border);
   border-radius:.375rem;
   outline:none;
   transition:border-color .15s ease-in-out,box-shadow .15s ease-in-out;
@@ -94,11 +122,11 @@
   appearance:none;
 }
 .mosearch:focus{
-  border-color:var(--mo-input-focus);
+  border-color:var(--mt-input-focus);
   box-shadow:0 0 0 .2rem rgba(13,110,253,.25);
 }
 .mosearch:disabled{
-  background-color:var(--mo-header-bg);
+  background-color:var(--mt-header-bg);
   opacity:.65;
   cursor:not-allowed;
 }
@@ -127,7 +155,7 @@
   max-width:100%;
   position:relative;
   border-radius:.375rem;
-  background:var(--mo-bg);
+  background:var(--mt-bg);
 }
 
 /* Scrollbar загвар */
@@ -135,11 +163,11 @@
   height:8px;
 }
 .mocontainer::-webkit-scrollbar-track{
-  background:var(--mo-header-bg);
+  background:var(--mt-header-bg);
   border-radius:4px;
 }
 .mocontainer::-webkit-scrollbar-thumb{
-  background:var(--mo-border);
+  background:var(--mt-border);
   border-radius:4px;
 }
 .mocontainer::-webkit-scrollbar-thumb:hover{
@@ -155,7 +183,7 @@
   width:24px;
   height:100%;
   pointer-events:none;
-  background:var(--mo-shadow);
+  background:var(--mt-shadow);
   opacity:0;
   transition:opacity .3s ease;
 }
@@ -168,8 +196,8 @@
   width:100%;
   border-collapse:collapse;
   min-width:100%;
-  color:var(--mo-text);
-  background-color:var(--mo-bg);
+  color:var(--mt-text);
+  background-color:var(--mt-bg);
   font-size:.875rem;
 }
 
@@ -178,7 +206,7 @@
 .motable td{
   padding:.4rem .5rem;
   vertical-align:middle;
-  border-bottom:1px solid var(--mo-border);
+  border-bottom:1px solid var(--mt-border);
   text-align:left;
 }
 
@@ -188,30 +216,30 @@
   top:0;
   z-index:5;
   cursor:pointer;
-  background-color:var(--mo-header-bg);
+  background-color:var(--mt-header-bg);
   font-weight:600;
   white-space:nowrap;
-  border-bottom:2px solid var(--mo-border);
+  border-bottom:2px solid var(--mt-border);
   user-select:none;
 }
 
 /* Row hover effect */
 .motable tbody tr:hover{
-  background-color:var(--mo-hover-bg);
+  background-color:var(--mt-hover-bg);
 }
 
 /* Striped rows (optional class) */
 .motable.motable-striped tbody tr:nth-child(odd){
-  background-color:var(--mo-stripe-bg);
+  background-color:var(--mt-stripe-bg);
 }
 .motable.motable-striped tbody tr:nth-child(odd):hover{
-  background-color:var(--mo-hover-bg);
+  background-color:var(--mt-hover-bg);
 }
 
 /* Bordered table (optional class) */
 .motable.motable-bordered th,
 .motable.motable-bordered td{
-  border:1px solid var(--mo-border);
+  border:1px solid var(--mt-border);
 }
 
 /* Compact table (optional class) */
@@ -250,16 +278,16 @@
 .motable .freeze-col{
   position:sticky;
   left:0;
-  background-color:var(--mo-bg);
+  background-color:var(--mt-bg);
   z-index:2;
 }
 .motable thead .freeze-col{
   z-index:10;
-  background-color:var(--mo-header-bg);
+  background-color:var(--mt-header-bg);
 }
 /* Shadow on last frozen column - Google Sheets style */
 .motable .freeze-col-shadow{
-  border-right:1px solid var(--mo-border);
+  border-right:1px solid var(--mt-border);
 }
 .motable .freeze-col-shadow::before{
   content:"";
@@ -268,18 +296,8 @@
   right:-6px;
   width:6px;
   height:100%;
-  background:linear-gradient(to right,rgba(0,0,0,.08),transparent);
+  background:var(--mt-freeze-shadow);
   pointer-events:none;
-}
-/* Dark mode shadow */
-[data-bs-theme="dark"] .motable .freeze-col-shadow::before,
-[data-theme="dark"] .motable .freeze-col-shadow::before{
-  background:linear-gradient(to right,rgba(0,0,0,.25),transparent);
-}
-@media (prefers-color-scheme:dark){
-  .motable .freeze-col-shadow::before{
-    background:linear-gradient(to right,rgba(0,0,0,.25),transparent);
-  }
 }
 
 /* Mobile / small screen optimization */

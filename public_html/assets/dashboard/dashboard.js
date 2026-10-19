@@ -147,10 +147,13 @@ function csrfFetch(url, options = {}) {
     return fetch(url, options);
 }
 
-/* dark mode идэвхжүүлэх */
-if (localStorage.getItem('data-bs-theme') === 'dark') {
-    document.body.setAttribute('data-bs-theme', 'dark');
-}
+/*
+ * Theme-ийг body дээр үргэлж тодорхой заана (light ч гэсэн).
+ * motable зэрэг OS-ийн prefers-color-scheme-ийг дагадаг компонентууд
+ * data-bs-theme="light"-ийг хараад OS dark үед ч light хэвээр үлдэнэ.
+ */
+document.body.setAttribute('data-bs-theme',
+    localStorage.getItem('data-bs-theme') === 'dark' ? 'dark' : 'light');
 
 /**
  * ajaxModal(link)
@@ -796,11 +799,7 @@ function initTopbarQuick() {
         btn.addEventListener('click', function () {
             const value = btn.dataset.theme;
             localStorage.setItem('data-bs-theme', value);
-            if (value === 'dark') {
-                document.body.setAttribute('data-bs-theme', 'dark');
-            } else {
-                document.body.removeAttribute('data-bs-theme');
-            }
+            document.body.setAttribute('data-bs-theme', value === 'dark' ? 'dark' : 'light');
             markTheme(value);
         });
     });

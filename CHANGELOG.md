@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 
 ---
 
+## [5.6.1] - 2026-10-19
+[5.6.1]: https://github.com/codesaur-php/Raptor/compare/v5.6.0...v5.6.1
+
+### Fixed
+
+- **motable and moedit turned dark inside a light dashboard.** With the OS / browser in dark mode and the dashboard in light mode, only the data tables and the rich text editor rendered dark, because their `@media (prefers-color-scheme:dark)` rules applied unconditionally and the dashboard's light mode just removed the `data-bs-theme` attribute. Both components now resolve the theme in this order: an explicit `data-bs-theme` / `data-theme` of `"dark"` or `"light"` (on `<html>`, `<body>` or any ancestor) wins; only when the page declares no theme do they follow the OS / browser preference. This keeps standalone use outside Raptor working - a page that sets no theme still follows the system.
+- **motable and moedit no longer overwrite each other's CSS variables.** Both declared `--mo-*` variables on `:root`, and `--mo-shadow` meant a gradient in motable but a box-shadow in moedit, so on pages loading both (news / page / product insert and update) the later stylesheet broke the other's shadow. motable's variables are renamed to `--mt-*`; moedit keeps `--mo-*`.
+
+### Changed
+
+- **The dashboard always sets `data-bs-theme` on `<body>`** - `"light"` in light mode instead of removing the attribute (`dashboard.js`, page load and the topbar theme dropdown). Bootstrap renders identically; the explicit value is what lets theme-aware components ignore a dark OS preference.
+- motable's freeze-column shadow and moedit's toolbar, buttons, separators and header-image checkerboard take their colors from theme variables (`--mt-freeze-shadow`, `--mo-toolbar-bg`, `--mo-tool-*`, `--mo-sep`, `--mo-checker*`) instead of separate hard-coded dark rules.
+- Asset versions: `dashboard.js?v=10`, `motable.css?v=1`, `moedit.css?v=4`.
+
 ## [5.6.0] - 2026-10-06
 [5.6.0]: https://github.com/codesaur-php/Raptor/compare/v5.5.0...v5.6.0
 

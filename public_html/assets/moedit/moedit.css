@@ -23,11 +23,26 @@
   --mo-danger:#dc3545;
   --mo-warning:#ffc107;
   --mo-info:#0dcaf0;
+  /* Toolbar, separator, header image checker */
+  --mo-toolbar-bg:#e2e6ea;
+  --mo-toolbar-border:#ced4da;
+  --mo-tool-bg:#fff;
+  --mo-tool-border:#ced4da;
+  --mo-tool-hover-bg:#f0f1f3;
+  --mo-tool-hover-border:#bbc0c5;
+  --mo-sep:#ced4da;
+  --mo-checker-bg:#e8e8e8;
+  --mo-checker:#d5d5d5;
 }
 
-/* Dark mode - system preference */
+/*
+ * Dark mode - OS/browser theme.
+ * Хуудас өөрөө theme заагаагүй үед л OS/browser-ийн theme-ийг дагана.
+ * html дээр data-bs-theme/data-theme="light" байвал энэ дүрэм үйлчлэхгүй,
+ * body эсвэл дотор элемент дээрх "light" attribute-ийг доорх light блок дарна.
+ */
 @media (prefers-color-scheme:dark){
-  :root{
+  :root:not([data-bs-theme="light"]):not([data-theme="light"]){
     --mo-border:#495057;
     --mo-bg:#212529;
     --mo-soft:#343a40;
@@ -45,10 +60,50 @@
     --mo-danger:#ea868f;
     --mo-warning:#ffda6a;
     --mo-info:#6edff6;
+    --mo-toolbar-bg:#2b3035;
+    --mo-toolbar-border:#555b61;
+    --mo-tool-bg:#3a4046;
+    --mo-tool-border:#555b61;
+    --mo-tool-hover-bg:#454c52;
+    --mo-tool-hover-border:#60666c;
+    --mo-sep:#555b61;
+    --mo-checker-bg:#2a2a2a;
+    --mo-checker:#333;
   }
 }
 
-/* Dark mode - data attribute */
+/* Light mode - хуудас light theme-ийг тодорхой заасан (OS dark байсан ч) */
+[data-bs-theme="light"],
+[data-theme="light"]{
+  --mo-border:#dee2e6;
+  --mo-bg:#fff;
+  --mo-soft:#f8f9fa;
+  --mo-text:#212529;
+  --mo-primary:#0d6efd;
+  --mo-primary-hover:#0b5ed7;
+  --mo-shadow:0 0.125rem 0.25rem rgba(0,0,0,.075);
+  --mo-shadow-lg:0 0.5rem 1rem rgba(0,0,0,.15);
+  --mo-btn-bg:#fff;
+  --mo-btn-hover:#e9ecef;
+  --mo-source-bg:#f8f9fa;
+  --mo-source-focus:#fff;
+  --mo-placeholder:#6c757d;
+  --mo-success:#198754;
+  --mo-danger:#dc3545;
+  --mo-warning:#ffc107;
+  --mo-info:#0dcaf0;
+  --mo-toolbar-bg:#e2e6ea;
+  --mo-toolbar-border:#ced4da;
+  --mo-tool-bg:#fff;
+  --mo-tool-border:#ced4da;
+  --mo-tool-hover-bg:#f0f1f3;
+  --mo-tool-hover-border:#bbc0c5;
+  --mo-sep:#ced4da;
+  --mo-checker-bg:#e8e8e8;
+  --mo-checker:#d5d5d5;
+}
+
+/* Dark mode - хуудас dark theme-ийг тодорхой заасан */
 [data-bs-theme="dark"],
 [data-theme="dark"]{
   --mo-border:#495057;
@@ -68,26 +123,16 @@
   --mo-danger:#ea868f;
   --mo-warning:#ffda6a;
   --mo-info:#6edff6;
+  --mo-toolbar-bg:#2b3035;
+  --mo-toolbar-border:#555b61;
+  --mo-tool-bg:#3a4046;
+  --mo-tool-border:#555b61;
+  --mo-tool-hover-bg:#454c52;
+  --mo-tool-hover-border:#60666c;
+  --mo-sep:#555b61;
+  --mo-checker-bg:#2a2a2a;
+  --mo-checker:#333;
 }
-
-/* Dark mode - toolbar & button өнгө */
-@media (prefers-color-scheme:dark){
-  .moedit-toolbar{background:#2b3035;border-bottom-color:#555b61;}
-  .moedit-btn{background:#3a4046;border-color:#555b61;}
-  .moedit-btn:hover{background-color:#454c52;border-color:#60666c;}
-  .moedit-sep{border-left-color:#555b61;}
-  .moedit-header-image{background-color:#2a2a2a;background-image:linear-gradient(45deg,#333 25%,transparent 25%,transparent 75%,#333 75%),linear-gradient(45deg,#333 25%,transparent 25%,transparent 75%,#333 75%);}
-}
-[data-bs-theme="dark"] .moedit-toolbar,
-[data-theme="dark"] .moedit-toolbar{background:#2b3035;border-bottom-color:#555b61;}
-[data-bs-theme="dark"] .moedit-btn,
-[data-theme="dark"] .moedit-btn{background:#3a4046;border-color:#555b61;}
-[data-bs-theme="dark"] .moedit-btn:hover,
-[data-theme="dark"] .moedit-btn:hover{background-color:#454c52;border-color:#60666c;}
-[data-bs-theme="dark"] .moedit-sep,
-[data-theme="dark"] .moedit-sep{border-left-color:#555b61;}
-[data-bs-theme="dark"] .moedit-header-image,
-[data-theme="dark"] .moedit-header-image{background-color:#2a2a2a;background-image:linear-gradient(45deg,#333 25%,transparent 25%,transparent 75%,#333 75%),linear-gradient(45deg,#333 25%,transparent 25%,transparent 75%,#333 75%);}
 
 /* Color utility classes for buttons */
 .moedit-btn.mo-primary{ color:var(--mo-primary); }
@@ -112,8 +157,8 @@
   gap:0.25rem;
   align-items:center;
   padding:0.5rem;
-  background:#e2e6ea;
-  border-bottom:1px solid #ced4da;
+  background:var(--mo-toolbar-bg);
+  border-bottom:1px solid var(--mo-toolbar-border);
 }
 
 .moedit-group{ 
@@ -141,8 +186,8 @@
 
 .moedit-btn{
   appearance:none;
-  border:1px solid #ced4da;
-  background:#fff;
+  border:1px solid var(--mo-tool-border);
+  background:var(--mo-tool-bg);
   color:var(--mo-text);
   padding:0.375rem 0.75rem;
   border-radius:var(--mo-radius);
@@ -159,8 +204,8 @@
   height:2rem;
 }
 .moedit-btn:hover{
-  background-color:#f0f1f3;
-  border-color:#bbc0c5;
+  background-color:var(--mo-tool-hover-bg);
+  border-color:var(--mo-tool-hover-border);
   transform:translateY(-1px);
   box-shadow:var(--mo-shadow);
 }
@@ -275,7 +320,7 @@
   width:0;
   height:1.5rem;
   background:transparent;
-  border-left:1px solid #ced4da;
+  border-left:1px solid var(--mo-sep);
   margin:0 0.375rem;
   flex-shrink:0;
   box-sizing:border-box;
@@ -954,8 +999,8 @@
   position:relative;
   width:100%;
   min-height:80px;
-  background-color:#e8e8e8;
-  background-image:linear-gradient(45deg,#d5d5d5 25%,transparent 25%,transparent 75%,#d5d5d5 75%),linear-gradient(45deg,#d5d5d5 25%,transparent 25%,transparent 75%,#d5d5d5 75%);
+  background-color:var(--mo-checker-bg);
+  background-image:linear-gradient(45deg,var(--mo-checker) 25%,transparent 25%,transparent 75%,var(--mo-checker) 75%),linear-gradient(45deg,var(--mo-checker) 25%,transparent 25%,transparent 75%,var(--mo-checker) 75%);
   background-size:16px 16px;
   background-position:0 0,8px 8px;
   border:1px solid var(--mo-border);
