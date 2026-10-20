@@ -33,7 +33,31 @@
             <li>Checkbox арилгахад эрх хасагдана (AJAX DELETE)</li>
             <li>Эрхүүд модулиар бүлэглэгдсэн (<code>user</code>, <code>content</code>, <code>product</code>, <code>localization</code> гэх мэт)</li>
             <li>Баруун дээд талд <strong>Add Role</strong>, <strong>Add Permission</strong> товчнууд</li>
+            <li>🔒 <code>system_coder</code> биш бол зөвхөн өөрт тань байгаа эрхийг дүрд нэмж, хасна - бусад эрх түгжээтэй харагдана</li>
+            <li>🔒 Хандалт удирдах эрхээ (<code>system_rbac</code>, <code>system_user_organization_set</code>) өөрийн дүрээс хасахад тэр эрх өөр дүрээр тань үлдэхгүй бол хориглоно (өөрийгөө түгжихээс хамгаална)</li>
         </ul>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-incognito"></i> Дүрээр ажиллах (Act As)</h4>
+        <p>
+            Баруун дээд буланд байрлах хэрэглэгчийн цэснээс <strong>Дүрээр ажиллах</strong>-ыг сонгоод дүрээ сонговол
+            dashboard тухайн дүрийн эрхээр (цэс, товч, үйлдэл) харагдана. Дүр тохируулсны дараа шалгах, доод дүрийн
+            хүмүүст зааварчилгаа өгөхийн өмнө тэдний дэлгэцийг өөрөө үзэхэд зориулсан.
+        </p>
+        <ul>
+            <li><code>system_coder</code> - coder-оос бусад дурын дүр</li>
+            <li><code>system_rbac</code> эрхтэй - бүх эрх нь өөрт тань байгаа дүр</li>
+            <li>2 ба түүнээс олон дүртэй бусад хэрэглэгч - зөвхөн өөрийн дүрүүд</li>
+            <li>Ганц дүртэй бол энэ цэс харагдахгүй</li>
+        </ul>
+        <div class="alert alert-warning mb-0">
+            <i class="bi bi-exclamation-triangle"></i>
+            Хийсэн өөрчлөлт бодитоор хадгалагдаж таны нэрээр бүртгэгдэнэ. Шар мөрөн дээрх <strong>Гарах</strong> товчоор
+            буцна, 1 цагийн дараа автоматаар дуусна.
+        </div>
     </div>
 </div>
 

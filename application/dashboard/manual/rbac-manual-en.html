@@ -33,7 +33,31 @@
             <li>Unchecking a checkbox revokes the permission (AJAX DELETE)</li>
             <li>Permissions are grouped by module (<code>user</code>, <code>content</code>, <code>product</code>, <code>localization</code>, etc.)</li>
             <li><strong>Add Role</strong> and <strong>Add Permission</strong> buttons are located at the top right</li>
+            <li>🔒 a non-<code>system_coder</code> can only assign or revoke permissions they have themselves - the others are shown locked</li>
+            <li>🔒 revoking an access management permission (<code>system_rbac</code>, <code>system_user_organization_set</code>) from your own role is blocked when no other role of yours grants it (lockout protection)</li>
         </ul>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-incognito"></i> Act As (role preview)</h4>
+        <p>
+            Choose <strong>Act As</strong> in the account menu at the top right and pick a role - the dashboard is then shown
+            with that role's permissions (menus, buttons, actions). Use it to check a role after configuring it, or to see a
+            lower role's screens before instructing its users.
+        </p>
+        <ul>
+            <li><code>system_coder</code> - any role except coder</li>
+            <li><code>system_rbac</code> holders - roles whose permissions you all have</li>
+            <li>Other users with 2 or more roles - only your own roles</li>
+            <li>With a single role the menu item is not shown</li>
+        </ul>
+        <div class="alert alert-warning mb-0">
+            <i class="bi bi-exclamation-triangle"></i>
+            Changes are real and recorded under your name. Use <strong>Exit</strong> on the yellow bar to return;
+            the mode ends automatically after 1 hour.
+        </div>
     </div>
 </div>
 

@@ -20,7 +20,7 @@ application/web/account/
 
 `Web\Account\` namespace-ийг `composer.json`-ийн `autoload.psr-4`-д бүртгээд `composer dump-autoload` ажиллуулна.
 
-## 2. Хэрэглэгч нь dashboard-ын хэрэглэгч БИШ
+## 2. Хэрэглэгч нь dashboard-ын хэрэглэгч биш
 
 Зочдыг тусдаа хүснэгтэд (жишээ нь `customers`) хадгална, хэзээ ч `users`-д биш. `users` хүснэгт dashboard-ын RBAC-ийг удирддаг; тэнд хэрэглэгч холих нь эрхийн шалгалтын нэг л алдаа dashboard руу нэвтрэх эрх болно гэсэн үг. Төлөвшсөн платформ бүр эдгээрийг салгадаг (Sylius `ShopUser` ба `AdminUser`, Laravel-ийн тусдаа guard).
 
@@ -42,7 +42,7 @@ application/web/account/
 ## 3. Session
 
 - Нэвтэрсэн хэрэглэгчийг тусдаа session key-д хадгална, жишээ нь `$_SESSION['RAPTOR_WEB_CUSTOMER_ID']` - session нь dashboard-той хуваалцдаг тул dashboard-ын key-г хэзээ ч ашиглахгүй.
-- Session-д бичдэг route бүр (нэвтрэх, гарах, бүртгүүлэх, OAuth callback, профайл засах) `WebRouter.php`-д `/session/` prefix-тэй байх ЁСТОЙ - бусад route-д session зөвхөн уншигдана.
+- Session-д бичдэг route бүр (нэвтрэх, гарах, бүртгүүлэх, OAuth callback, профайл засах) `WebRouter.php`-д `/session/` prefix-тэй байх ёстой - бусад route-д session зөвхөн уншигдана.
 - Амжилттай нэвтэрсний дараа шууд `session_regenerate_id(true)` дуудна (session fixation).
 - Зочны сагс (`Cart::SESSION_KEY`) мөн энэ session-д байдаг тул нэвтрэхэд автоматаар хадгалагдана. Сагсыг бүртгэл тус бүрд DB-д хадгалдаг бол нэвтрэх үед зочны сагсыг хадгалсан сагстай нэгтгэнэ.
 

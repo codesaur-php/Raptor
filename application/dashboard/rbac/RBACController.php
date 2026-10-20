@@ -94,6 +94,15 @@ class RBACController extends \Dashboard\Controller
             $select_perms->bindParam(':alias', $alias);
             $select_perms->execute();
             $permissions = $select_perms->fetchAll() ?: [];
+            // Coder биш хэрэглэгч зөвхөн өөрт байгаа эрхийг өөрчилнө (setRolePermission()-тэй ижил дүрэм)
+            $locked_permissions = [];
+            if (!$this->isUser('system_coder')) {
+                foreach ($permissions as $permission) {
+                    if (!$this->isUserCan("{$alias}_{$permission['name']}")) {
+                        $locked_permissions[$permission['id']] = true;
+                    }
+                }
+            }
 
             // RolePermission mapping
             $role_perm_table = (new RolePermission($this->pdo))->getName();
@@ -117,6 +126,7 @@ class RBACController extends \Dashboard\Controller
                     'roles'           => $roles,
                     'permissions'     => $permissions,
                     'role_permission' => $role_permission,
+                    'locked_permissions' => $locked_permissions,
                 ]
             );
             $dashboard->set('title', "RBAC - $alias");
@@ -417,6 +427,14 @@ class RBACController extends \Dashboard\Controller
             $model = new RolePermission($this->pdo);
             $row   = $model->getRowWhere($payload);
             $method = $this->getRequest()->getMethod();
+
+            // Coder биш хэрэглэгч зөвхөн өөрт байгаа эрхийг дүрд нэмж, хасна, мөн өөрийн
+            // удирдлагын эрхийг (Permissions::MANAGEMENT) өөрийн дүрээс хасч өөрийгөө түгжихгүй
+            $this->assertRolePermissionChangeAllowed(
+                (int) $payload['role_id'],
+                (int) $payload['permission_id'],
+                $method === 'DELETE'
+            );
             if ($method === 'POST') {
                 // Assign
                 if (empty($row) && $model->insert($payload)) {
@@ -465,6 +483,62 @@ class RBACController extends \Dashboard\Controller
                     : 'заагдлаа');
             }
             $this->log('dashboard', $level, $message, $context);
+        }
+    }
+
+    /**
+     * Role <-> Permission өөрчлөлт нэвтэрсэн хэрэглэгчийн эрхийн хүрээнд байгаа эсэх.
+     *
+     * Coder биш хэрэглэгч:
+     *   * зөвхөн өөрт байгаа эрхийг дүрд нэмж, хасна - эс бөгөөс system_rbac эзэмшигч
+     *     өөрийн дүрд дурын эрх нэмж эрхээ хэтрүүлэх боломжтой болно
+     *   * өөрийн эзэмшдэг дүрээс Permissions::MANAGEMENT эрхийг хасаад тэр эрх өөр
+     *     ямар ч дүрээр нь үлдэхгүй бол хориглоно (өөрийгөө түгжихгүй)
+     *
+     * Security (English): a non-coder may only assign or revoke permissions
+     * they hold themselves (no self-escalation through the role matrix), and
+     * may not strip a management permission from themselves.
+     *
+     * @param int  $roleId
+     * @param int  $permissionId
+     * @param bool $revoke  DELETE (хасах) эсэх
+     * @return void
+     * @throws \Exception 403
+     */
+    private function assertRolePermissionChangeAllowed(int $roleId, int $permissionId, bool $revoke): void
+    {
+        if ($this->isUser('system_coder')) {
+            return;
+        }
+
+        $permission = (new Permissions($this->pdo))->getRowWhere(['id' => $permissionId]);
+        if (!isset($permission['id'])) {
+            throw new \InvalidArgumentException($this->text('invalid-values'), 400);
+        }
+        $key = "{$permission['alias']}_{$permission['name']}";
+        if (!$this->isUserCan($key)) {
+            throw new \Exception($this->text('permission-not-own') . ": $key", 403);
+        }
+
+        if ($revoke && \in_array($key, Permissions::MANAGEMENT, true)) {
+            // Энэ мөрийг хассаны дараа хэрэглэгчийн бусад дүрээр тэр эрх үлдэх эсэх
+            $user_role = (new UserRole($this->pdo))->getName();
+            $role_permission = (new RolePermission($this->pdo))->getName();
+            $stmt = $this->prepare(
+                "SELECT 1 FROM $user_role as ur INNER JOIN $role_permission as rp ON rp.role_id=ur.role_id " .
+                'WHERE ur.user_id=:user AND rp.permission_id=:perm AND rp.role_id<>:role'
+            );
+            $stmt->bindValue(':user', $this->getUserId(), \PDO::PARAM_INT);
+            $stmt->bindValue(':perm', $permissionId, \PDO::PARAM_INT);
+            $stmt->bindValue(':role', $roleId, \PDO::PARAM_INT);
+            $stmt->execute();
+            $holds_role = !empty((new UserRole($this->pdo))->getRowWhere([
+                'user_id' => $this->getUserId(),
+                'role_id' => $roleId
+            ]));
+            if ($holds_role && !$stmt->fetch()) {
+                throw new \Exception($this->text('cannot-remove-own-management-permission') . ": $key", 403);
+            }
         }
     }
 }

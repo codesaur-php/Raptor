@@ -41,6 +41,10 @@ class TextInitial
     public static function localization_text(TextModel $model)
     {
         $model->insert(['keyword' => 'accept', 'type' => 'sys-defined'], ['mn' => ['text' => 'Зөвшөөрөх'], 'en' => ['text' => 'Accept']]);
+        $model->insert(['keyword' => 'act-as', 'type' => 'sys-defined'], ['mn' => ['text' => 'Дүрээр ажиллах'], 'en' => ['text' => 'Act As']]);
+        $model->insert(['keyword' => 'act-as-exit', 'type' => 'sys-defined'], ['mn' => ['text' => 'Гарах'], 'en' => ['text' => 'Exit']]);
+        $model->insert(['keyword' => 'act-as-hint', 'type' => 'sys-defined'], ['mn' => ['text' => 'Сонгосон дүрийн эрхээр dashboard-ыг ашиглана: ямар цэс, товч, үйлдэл нээгдэж ажиллахыг шалгахад зориулсан. Хийсэн өөрчлөлт бодитоор хадгалагдаж, таны нэрээр бүртгэгдэнэ. Хугацаа дуусахад автоматаар буцна'], 'en' => ['text' => 'Use the dashboard with the selected role\'s permissions to check which menus, buttons and actions work for it. Changes are real and logged under your name; ends automatically after']]);
+        $model->insert(['keyword' => 'act-as-time-left', 'type' => 'sys-defined'], ['mn' => ['text' => 'үлдсэн хугацаа'], 'en' => ['text' => 'time left']]);
         $model->insert(['keyword' => 'action', 'type' => 'sys-defined'], ['mn' => ['text' => 'Үйлдэл'], 'en' => ['text' => 'Action']]);
 
         $model->insert(['keyword' => 'active-user-can-login', 'type' => 'sys-defined'], ['mn' => ['text' => 'зөвхөн идэвхитэй хэрэглэгч системд нэвтэрч чадна'], 'en' => ['text' => 'only active users can login']]);
@@ -51,6 +55,7 @@ class TextInitial
         $model->insert(['keyword' => 'additional-info', 'type' => 'sys-defined'], ['mn' => ['text' => 'Нэмэлт мэдээлэл'], 'en' => ['text' => 'Additional Information']]);
         $model->insert(['keyword' => 'all', 'type' => 'sys-defined'], ['mn' => ['text' => 'Бүх'], 'en' => ['text' => 'All']]);
         $model->insert(['keyword' => 'all-languages', 'type' => 'sys-defined'], ['mn' => ['text' => 'Бүх хэл'], 'en' => ['text' => 'All languages']]);
+        $model->insert(['keyword' => 'all-permissions', 'type' => 'sys-defined'], ['mn' => ['text' => 'Бүх эрх'], 'en' => ['text' => 'All permissions']]);
 
         $model->insert(['keyword' => 'address', 'type' => 'sys-defined'], ['mn' => ['text' => 'Хаяг'], 'en' => ['text' => 'Address']]);
         $model->insert(['keyword' => 'archive', 'type' => 'sys-defined'], ['mn' => ['text' => 'Архив'], 'en' => ['text' => 'Archive']]);
@@ -66,6 +71,9 @@ class TextInitial
         $model->insert(['keyword' => 'can-comment', 'type' => 'sys-defined'], ['mn' => ['text' => 'Хэрэглэгч сэтгэгдэл үлдээж(бичиж) болох эсэх'], 'en' => ['text' => 'Can user comment on this post?']]);
         $model->insert(['keyword' => 'can-review', 'type' => 'sys-defined'], ['mn' => ['text' => 'Хэрэглэгч үнэлгээ өгч болох эсэх'], 'en' => ['text' => 'Can user review this product?']]);
         $model->insert(['keyword' => 'cancel', 'type' => 'sys-defined'], ['mn' => ['text' => 'Болих'], 'en' => ['text' => 'Cancel']]);
+        $model->insert(['keyword' => 'cannot-change-coder-access', 'type' => 'sys-defined'], ['mn' => ['text' => 'system_coder хэрэглэгчийн дүр, байгууллагыг зөвхөн system_coder өөрчилнө'], 'en' => ['text' => 'Only a system_coder can change a system_coder user\'s roles and organizations']]);
+        $model->insert(['keyword' => 'cannot-remove-own-current-organization', 'type' => 'sys-defined'], ['mn' => ['text' => 'Одоо нэвтэрсэн байгууллагаасаа өөрийгөө хасах боломжгүй - эхлээд өөр байгууллага руу шилжинэ үү'], 'en' => ['text' => 'You cannot remove yourself from the organization you are signed in to - switch to another organization first']]);
+        $model->insert(['keyword' => 'cannot-remove-own-management-permission', 'type' => 'sys-defined'], ['mn' => ['text' => 'Хандалт удирдах эрхээ өөрөөсөө хасах боломжгүй (өөрийгөө түгжихээс хамгаална) - өөр admin эсвэл coder хийнэ'], 'en' => ['text' => 'You cannot remove an access management permission from yourself (lockout protection) - ask another admin or a coder']]);
         $model->insert(['keyword' => 'cannot-set-descendant-as-parent', 'type' => 'sys-defined'], ['mn' => ['text' => 'Өөрийн дэд хуудсыг эцэг хуудсаар сонгох боломжгүй'], 'en' => ['text' => 'Cannot set a descendant page as parent']]);
         $model->insert(['keyword' => 'cart', 'type' => 'sys-defined'], ['mn' => ['text' => 'Сагс'], 'en' => ['text' => 'Cart']]);
         $model->insert(['keyword' => 'cart-empty', 'type' => 'sys-defined'], ['mn' => ['text' => 'Таны сагс хоосон байна'], 'en' => ['text' => 'Your cart is empty']]);
@@ -226,6 +234,7 @@ class TextInitial
         $model->insert(['keyword' => 'orders', 'type' => 'sys-defined'], ['mn' => ['text' => 'Захиалгууд'], 'en' => ['text' => 'Orders']]);
         $model->insert(['keyword' => 'organization', 'type' => 'sys-defined'], ['mn' => ['text' => 'Байгууллага'], 'en' => ['text' => 'Organization']]);
         $model->insert(['keyword' => 'organizations', 'type' => 'sys-defined'], ['mn' => ['text' => 'Байгууллагууд'], 'en' => ['text' => 'Organizations']]);
+        $model->insert(['keyword' => 'organization-outside-own-scope', 'type' => 'sys-defined'], ['mn' => ['text' => 'Зөвхөн өөрийн харьяалагддаг байгууллагад хэрэглэгч нэмж, хасах боломжтой'], 'en' => ['text' => 'You can only add users to or remove them from organizations you belong to']]);
         $model->insert(['keyword' => 'other', 'type' => 'sys-defined'], ['mn' => ['text' => 'Бусад'], 'en' => ['text' => 'Other']]);
         $model->insert(['keyword' => 'other-users', 'type' => 'sys-defined'], ['mn' => ['text' => 'Бусад хэрэглэгчид'], 'en' => ['text' => 'Other users']]);
         $model->insert(['keyword' => 'out-of-stock', 'type' => 'sys-defined'], ['mn' => ['text' => 'Нөөцөд байхгүй байна'], 'en' => ['text' => 'Out of stock']]);
@@ -240,6 +249,8 @@ class TextInitial
         $model->insert(['keyword' => 'password-reset', 'type' => 'sys-defined'], ['mn' => ['text' => 'Нууц үг шинээр тааруулах'], 'en' => ['text' => 'Password reset']]);
         $model->insert(['keyword' => 'password-reset-cooldown', 'type' => 'sys-defined'], ['mn' => ['text' => 'Нууц үг сэргээх хүсэлт илгээгдсэн байна. Түр хүлээнэ үү.'], 'en' => ['text' => 'Password reset already requested. Please wait before trying again.']]);
         $model->insert(['keyword' => 'pending', 'type' => 'sys-defined'], ['mn' => ['text' => 'Хүлээгдэж буй'], 'en' => ['text' => 'Pending']]);
+        $model->insert(['keyword' => 'permission-not-own', 'type' => 'sys-defined'], ['mn' => ['text' => 'Өөрт тань байхгүй эрхийг дүрд нэмэх, хасах боломжгүй'], 'en' => ['text' => 'You cannot assign or revoke a permission you do not have']]);
+        $model->insert(['keyword' => 'permissions', 'type' => 'sys-defined'], ['mn' => ['text' => 'Эрхүүд'], 'en' => ['text' => 'Permissions']]);
         $model->insert(['keyword' => 'personal-info', 'type' => 'sys-defined'], ['mn' => ['text' => 'Хувийн мэдээлэл'], 'en' => ['text' => 'Personal Info']]);
         $model->insert(['keyword' => 'phone', 'type' => 'sys-defined'], ['mn' => ['text' => 'Утас'], 'en' => ['text' => 'Phone']]);
         $model->insert(['keyword' => 'phone-for-delivery', 'type' => 'sys-defined'], ['mn' => ['text' => 'Хүргэлтийн үед тантай холбогдоход ашиглана'], 'en' => ['text' => 'Used to contact you about the delivery']]);
@@ -283,6 +294,7 @@ class TextInitial
         $model->insert(['keyword' => 'retype-new-password', 'type' => 'sys-defined'], ['mn' => ['text' => 'Шинэ нууц үгийг давтах'], 'en' => ['text' => 'Re-type New Password']]);
         $model->insert(['keyword' => 'retype-password', 'type' => 'sys-defined'], ['mn' => ['text' => 'Нууц үгээ дахин бичнэ'], 'en' => ['text' => 'Re-type Password']]);
         $model->insert(['keyword' => 'role', 'type' => 'sys-defined'], ['mn' => ['text' => 'Дүр'], 'en' => ['text' => 'Role']]);
+        $model->insert(['keyword' => 'role-exceeds-own-permissions', 'type' => 'sys-defined'], ['mn' => ['text' => 'Таны эрхийн хүрээнээс хэтэрсэн эрхтэй дүрийг оноох, хасах боломжгүй'], 'en' => ['text' => 'You cannot grant or revoke a role that has permissions you do not have']]);
         $model->insert(['keyword' => 'sale-price', 'type' => 'sys-defined'], ['mn' => ['text' => 'Хямдралтай үнэ'], 'en' => ['text' => 'Sale Price']]);
         $model->insert(['keyword' => 'sample-data-cleared', 'type' => 'sys-defined'], ['mn' => ['text' => 'Жишиг дата амжилттай цэвэрлэгдлээ. Production эхэлж байна!'], 'en' => ['text' => 'Sample data cleared. Production started!']]);
         $model->insert(['keyword' => 'sample-data-info', 'type' => 'sys-defined'], ['mn' => ['text' => 'Хүснэгтэд жишиг (sample) дата байна. Production эхлүүлэхийн тулд цэвэрлэж болно.'], 'en' => ['text' => 'Table contains sample data. You can clear it to start production.']]);
@@ -293,6 +305,8 @@ class TextInitial
         $model->insert(['keyword' => 'select-an-image', 'type' => 'sys-defined'], ['mn' => ['text' => 'Зураг сонгох'], 'en' => ['text' => 'Select an Image']]);
         $model->insert(['keyword' => 'select-at-least-one-filter', 'type' => 'sys-defined'], ['mn' => ['text' => 'Шүүлтүүрээс ядаж нэгийг сонгоорой'], 'en' => ['text' => 'Select at least one filter']]);
         $model->insert(['keyword' => 'select-files', 'type' => 'sys-defined'], ['mn' => ['text' => 'Файлуудыг сонгох'], 'en' => ['text' => 'Select Files']]);
+        $model->insert(['keyword' => 'selected-organizations', 'type' => 'sys-defined'], ['mn' => ['text' => 'Сонгосон байгууллагууд'], 'en' => ['text' => 'Selected organizations']]);
+        $model->insert(['keyword' => 'selected-roles', 'type' => 'sys-defined'], ['mn' => ['text' => 'Сонгосон дүрүүд'], 'en' => ['text' => 'Selected roles']]);
 
         $model->insert(['keyword' => 'select-text-settings', 'type' => 'sys-defined'], ['mn' => ['text' => 'Текстийн тохиргоог сонгоно уу'], 'en' => ['text' => 'Select text settings']]);
         $model->insert(['keyword' => 'send', 'type' => 'sys-defined'], ['mn' => ['text' => 'Илгээх'], 'en' => ['text' => 'Send']]);

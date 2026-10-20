@@ -89,6 +89,20 @@ class Permissions extends Model
     public const RESERVED = ['system_coder'];
 
     /**
+     * Хандалт удирдах (management) permission key-үүд.
+     *
+     * Coder биш хэрэглэгч эдгээр эрхээ өөрөөсөө (өөрийн дүрээс эсвэл өөрийн
+     * дүрийн эрхээс) хасахыг хориглоно - өөрийгөө түгжихээс хамгаална
+     * (UsersController::assertRoleChangesAllowed(), RBACController::setRolePermission()).
+     *
+     * Coupling (English): self-lockout guard list shared by UsersController
+     * and RBACController - a non-coder can never strip these from themselves.
+     *
+     * @var string[]
+     */
+    public const MANAGEMENT = ['system_rbac', 'system_user_organization_set'];
+
+    /**
      * Permission модель үүсгэх - хүснэгт ба багануудыг тодорхойлох.
      *
      * @param \PDO $pdo  PDO instance

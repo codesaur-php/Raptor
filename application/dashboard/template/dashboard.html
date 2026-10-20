@@ -181,6 +181,16 @@
                                     <i class="bi bi-person me-2"></i>{{ 'my-profile'|text }}
                                 </a>
                             </li>
+                            <!-- Act As (act_as_available - жинхэнэ эрхээр: coder, system_rbac эсвэл 2+ ролтой;
+                                 Act As идэвхтэй үед banner-ийн Exit товчоор гарна тул энэ мөр нуугдана) -->
+                            {% if act_as_available and not act_as %}
+                            <li>
+                                <a class="dropdown-item d-flex align-items-center" href="{{ 'act-as-roles'|link }}"
+                                   data-bs-target="#static-modal" data-bs-toggle="modal">
+                                    <i class="bi bi-incognito me-2"></i>{{ 'act-as'|text }}
+                                </a>
+                            </li>
+                            {% endif %}
                             <li><hr class="dropdown-divider my-1"></li>
                             <li>
                                 <a class="dropdown-item d-flex align-items-center text-danger" href="{{ 'logout'|link }}">
@@ -191,6 +201,38 @@
                     </div>
                 </div>
             </div>
+            <!-- Act As banner. Variables: act_as (role, description, remaining, remaining_text) -
+                 JWTAuthMiddleware тавьж, DashboardTrait дамжуулна. remaining (секунд)-ээс
+                 #act-as-countdown хөтөч дээр mm:ss тоолж, 0 болоход хуудсыг reload хийнэ -->
+            {% if act_as %}
+            <!-- Desktop дээр .sidebar нь position:fixed бөгөөд topbar-ын 50px-ийг
+                 padding-top-оор нөхдөг (dashboard.css) - banner-ын өндрийг нэмж
+                 өгөхгүй бол sidebar-ын дээд линкүүд banner-ын доор нуугдана -->
+            <style>
+                .act-as-banner { min-height: 34px; }
+                @media (min-width: 768px) {
+                    .act-as-banner { height: 34px; flex-wrap: nowrap !important; overflow: hidden; }
+                    .sidebar { padding-top: 84px !important; }
+                    .sidebar-menu { min-height: calc(100vh - 84px); }
+                }
+            </style>
+            <div class="act-as-banner bg-warning text-dark px-3 py-1 small d-flex align-items-center flex-wrap gap-2">
+                <i class="bi bi-incognito"></i>
+                <span>{{ 'act-as'|text }}: <strong>{{ act_as['role'] }}</strong></span>
+                <!-- text-body-secondary биш: dark mode-д цайрч шар дэвсгэр дээр уншигдахгүй болдог.
+                     text-dark нь хоёр горимд ижил бараан өнгөтэй -->
+                <span class="text-dark">
+                    <span class="d-none d-sm-inline opacity-75">- {{ 'act-as-time-left'|text }}</span>
+                    <i class="bi bi-hourglass-split d-sm-none"></i>
+                    <strong class="font-monospace" id="act-as-countdown"
+                            data-remaining="{{ act_as['remaining'] }}">{{ act_as['remaining_text'] }}</strong>
+                </span>
+                <button class="btn btn-sm btn-dark py-0 ms-auto" type="button" id="act-as-stop"
+                        data-url="{{ 'act-as-stop'|link }}">
+                    <i class="bi bi-box-arrow-left"></i> {{ 'act-as-exit'|text }}
+                </button>
+            </div>
+            {% endif %}
         </header>
         <!-- Main layout grid -->
         <div class="container-fluid">
@@ -337,6 +379,39 @@
                 if (window.location.pathname.replace(/\/+$/, '') === "{{ index }}/dashboard") {
                     const home = document.querySelector('.sidebar-menu a.nav-link[href="{{ 'home'|link }}"]');
                     if (home) home.classList.add('active');
+                }
+
+                /* Act As горимоос гарах -> хэрэглэгчийн жинхэнэ эрхээр хуудсыг дахин ачаална */
+                const actAsStop = document.getElementById('act-as-stop');
+                if (actAsStop) {
+                    actAsStop.addEventListener('click', function () {
+                        actAsStop.disabled = true;
+                        csrfFetch(actAsStop.dataset.url, {method: 'POST'})
+                            .then(() => window.location.reload())
+                            .catch(() => { actAsStop.disabled = false; });
+                    });
+                }
+
+                /* Act As үлдсэн хугацааны тоолуур - серверт хүсэлт илгээхгүй, зөвхөн banner-ийн
+                   текстийг секунд тутам шинэчилнэ. Дуусах мөчийг хөтчийн цагаар нэг удаа тооцдог
+                   тул таб унтаж сэрсэн ч хоцрохгүй. Хугацаа дуусахад (сервер талын хугацаатай
+                   зөрөхгүйн тулд 2 секундийн нөөцтэй) хуудсыг reload хийж жинхэнэ эрх рүү буцаана */
+                const actAsCountdown = document.getElementById('act-as-countdown');
+                if (actAsCountdown) {
+                    const actAsEndsAt = Date.now() + (parseInt(actAsCountdown.dataset.remaining, 10) || 0) * 1000;
+                    let actAsTimer = null;
+                    const actAsTick = function () {
+                        const now = Date.now();
+                        const left = Math.max(0, Math.ceil((actAsEndsAt - now) / 1000));
+                        actAsCountdown.textContent = String(Math.floor(left / 60)).padStart(2, '0')
+                            + ':' + String(left % 60).padStart(2, '0');
+                        if (now >= actAsEndsAt + 2000) {
+                            if (actAsTimer) clearInterval(actAsTimer);
+                            window.location.reload();
+                        }
+                    };
+                    actAsTick();
+                    actAsTimer = setInterval(actAsTick, 1000);
                 }
 
                 initSidebarBadges("{{ 'dashboard-badges'|link }}");

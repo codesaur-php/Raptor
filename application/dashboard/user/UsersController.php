@@ -14,6 +14,8 @@ use Dashboard\Organization\OrganizationModel;
 use Dashboard\Organization\OrganizationUserModel;
 use Dashboard\RBAC\UserRole;
 use Dashboard\RBAC\Roles;
+use Dashboard\RBAC\Permissions;
+use Dashboard\RBAC\RolePermission;
 use Dashboard\Trash\TrashModel;
 use Dashboard\Log\Logger;
 
@@ -348,7 +350,13 @@ class UsersController extends FileController
 
                 // POST дээр ирсэн organization (optional) - дараа нь OrganizationUserModel-д ашиглана
                 $post_organization = $body['organization'] ?? null;
-                
+                // Coder биш хэрэглэгч шинэ хэрэглэгчийг зөвхөн өөрийн харьяалагддаг байгууллагад ононо
+                if (!empty($post_organization) && !$this->isUser('system_coder')
+                    && !isset($this->getUserOrganizationIds($this->getUserId())[(int) $post_organization])
+                ) {
+                    throw new \Exception($this->text('organization-outside-own-scope'), 403);
+                }
+
                 // created_by-г одоогийн хэрэглэгчийн ID-аар тавьж insert хийнэ
                 $record = $model->insert($payload + ['created_by' => $this->getUserId()]);
                 if (empty($record)) {
@@ -394,12 +402,18 @@ class UsersController extends FileController
                 // -----------------------------
                 // GET - хэрэглэгч үүсгэх form-тай Dashboard хуудсыг харуулах
                 // -----------------------------
+                // Зөвхөн идэвхтэй байгууллагууд, coder биш бол зөвхөн өөрийн харьяалагддаг байгууллагууд
+                $organizations = $orgModel->getRows(['WHERE' => 'is_active=1']);
+                if (!$this->isUser('system_coder')) {
+                    $own_organizations = $this->getUserOrganizationIds($this->getUserId());
+                    $organizations = \array_filter(
+                        $organizations,
+                        fn($org) => isset($own_organizations[$org['id']])
+                    );
+                }
                 $dashboard = $this->dashboardTemplate(
                     __DIR__ . '/user-insert.html',
-                    [
-                        // Зөвхөн идэвхтэй байгууллагуудыг сонгож form-д өгнө
-                        'organizations' => $orgModel->getRows(['WHERE' => 'is_active=1'])
-                    ]
+                    ['organizations' => $organizations]
                 );
                 $dashboard->set('title', $this->text('create-new-user'));
                 $dashboard->render();
@@ -537,6 +551,15 @@ class UsersController extends FileController
                     \FILTER_REQUIRE_ARRAY
                 ) ?: [];
 
+                // Байгууллага, дүрийн өөрчлөлт нэвтэрсэн хэрэглэгчийн хүрээнд байх ёстой
+                // (setOrganization/setRole-той ижил дүрэм) - ямар нэг юм бичихээс ӨМНӨ шалгана
+                if ($orgs_submitted && $this->isUserCan('system_user_organization_set')) {
+                    $this->assertOrganizationChangesAllowed($id, $post_organizations);
+                }
+                if ($roles_submitted && $this->isUserCan('system_rbac')) {
+                    $this->assertRoleChangesAllowed($id, $post_roles);
+                }
+
                 // Email давхардал шалгах
                 $existing_email = $model->getRowWhere(['email' => $payload['email']]);
                 if (!empty($existing_email) && $existing_email['id'] != $id) {
@@ -631,6 +654,36 @@ class UsersController extends FileController
                     $current_organizations[$org['id']] = true;
                 }
 
+                // Coder биш хэрэглэгч: coder хэрэглэгчийн хандалтыг энэ формоос өөрчлөхгүй
+                // (access_manageable=false), бусад үед өөрийн хүрээнээс гадуурх байгууллага,
+                // дүр болон өөрийн одоогийн байгууллага түгжигдэнэ (PUT-ийн
+                // assert*ChangesAllowed()-тэй ижил дүрэм)
+                $is_coder_user = $this->isUser('system_coder');
+                $access_manageable = true;
+                $locked_organizations = [];
+                $locked_roles = [];
+                if (!$is_coder_user) {
+                    try {
+                        $this->assertCanManageAccessOf($id);
+                    } catch (\Throwable) {
+                        $access_manageable = false;
+                    }
+                    $own_organizations = $this->getUserOrganizationIds($this->getUserId());
+                    foreach ($organizations as $org) {
+                        if (!isset($own_organizations[$org['id']])) {
+                            $locked_organizations[$org['id']] = true;
+                        }
+                    }
+                    if ($id == $this->getUserId() && isset($this->getUser()->organization['id'])) {
+                        $locked_organizations[$this->getUser()->organization['id']] = true;
+                    }
+                    foreach ($this->getRolePermissionKeys() as $role_id => $role) {
+                        if (!$this->isWithinOwnPermissions($role)) {
+                            $locked_roles[$role_id] = true;
+                        }
+                    }
+                }
+
                 // RBAC бүтэц бэлдэх
                 $rbacs = ['common' => 'Common'];
                 $alias_names = $this->query(
@@ -682,7 +735,10 @@ class UsersController extends FileController
                         'current_organizations' => $current_organizations,
                         'rbacs'                 => $rbacs,
                         'roles'                 => $roles,
-                        'current_roles'         => $current_role
+                        'current_roles'         => $current_role,
+                        'access_manageable'     => $access_manageable,
+                        'locked_organizations'  => $locked_organizations,
+                        'locked_roles'          => $locked_roles
                     ]
                 );
                 $dashboard->set('title', $this->text('edit-user'));
@@ -1161,6 +1217,20 @@ class UsersController extends FileController
                 throw new \Exception('Cannot approve a signup request with unverified email!', 403);
             }
             
+            // Шинэ хэрэглэгчийн байгууллага: ирээгүй бол coder -> системийн байгууллага (id=1),
+            // coder биш -> батлагчийн одоогийн байгууллага. Coder биш бол зөвхөн өөрийн
+            // харьяалагддаг байгууллагад ононо - хэрэглэгч үүсгэхээс ӨМНӨ шалгана
+            $organization_id = \filter_var($parsedBody['organization_id'] ?? 0, \FILTER_VALIDATE_INT);
+            if (empty($organization_id)) {
+                $organization_id = $this->isUser('system_coder')
+                    ? 1 : (int) ($this->getUser()->organization['id'] ?? 0);
+            }
+            if (!$this->isUser('system_coder')
+                && !isset($this->getUserOrganizationIds($this->getUserId())[$organization_id])
+            ) {
+                throw new \Exception($this->text('organization-outside-own-scope'), 403);
+            }
+
             // UsersModel-д яг ижил username / email давхардсан эсэхийг шалгах
             $model = new UsersModel($this->pdo);
             $existing = $this->prepare("SELECT id FROM {$model->getName()} WHERE username=:username OR email=:email");            
@@ -1197,11 +1267,7 @@ class UsersController extends FileController
                 ]
             );
             
-            // Хэрэв organization_id өгөгдвөл тухайн байгууллагад шууд холбох
-            $organization_id = \filter_var($parsedBody['organization_id'] ?? 0, \FILTER_VALIDATE_INT);
-            if (empty($organization_id)) {
-                $organization_id = 1; // system organization fallback
-            }            
+            // Дээр тодорхойлсон байгууллагад шууд холбох
             $orgModel = new OrganizationModel($this->pdo);
             $organization = $orgModel->getRowWhere([
                 'id' => $organization_id,
@@ -1591,7 +1657,13 @@ class UsersController extends FileController
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));
             }
-            
+
+            // Өөрийн болон coder хэрэглэгчийн хандалтыг coder биш хэрэглэгч өөрчлөхгүй
+            $this->assertCanManageAccessOf($id);
+            // Coder биш бол зөвхөн өөрийн харьяалагддаг байгууллагуудыг удирдана (null = хязгааргүй)
+            $own_organizations = $this->isUser('system_coder')
+                ? null : $this->getUserOrganizationIds($this->getUserId());
+
             // Хэрэв POST хүсэлт -> Update хийх
             if ($this->getRequest()->getMethod() == 'POST') {
                  // Ирсэн байгууллагуудын массивыг integer filter-тэйгээр цэвэрлэх
@@ -1599,13 +1671,15 @@ class UsersController extends FileController
                     \filter_var($this->getParsedBody()['organizations'] ?? [],
                         \FILTER_VALIDATE_INT,
                         \FILTER_REQUIRE_ARRAY
-                    ) ?: [];                
+                    ) ?: [];
                 if ($id == 1
                     && (empty($post_organizations) || !\in_array(1, $post_organizations))
                 ) {
                     // Root user бол үргэлж organization_id=1 -т харьяалагдсан байх ёстой
                     throw new \Exception('Root user must belong to a system organization', 403);
                 }
+                // Нэмэгдэх, хасагдах байгууллага бүр өөрийн харьяалалд байх ёстой
+                $this->assertOrganizationChangesAllowed($id, $post_organizations);
                 // configureOrgs() -> нэмэх/хасах үйлдлүүдийг автоматаар гүйцэтгээд амжилттай бол true
                 if (!$this->configureOrgs($id, $post_organizations)) {
                     throw new \Exception('No updates');
@@ -1616,19 +1690,29 @@ class UsersController extends FileController
                     'message' => $this->text('record-update-success')
                 ]);
             } else {
-                // Одоогийн байгууллагуудыг user_id-аар татах
+                // Одоогийн байгууллагууд - [id => true] бүтэцтэй, template-д O(1) шалгалт хийхэд зориулсан
                 $orgModel = new OrganizationModel($this->pdo);
-                $orgUserModel = new OrganizationUserModel($this->pdo);
-                $response = $this->query(
-                    'SELECT ou.organization_id as id ' .
-                    "FROM {$orgUserModel->getName()} as ou INNER JOIN {$orgModel->getName()} as o ON ou.organization_id=o.id " .
-                    "WHERE ou.user_id=$id AND o.is_active=1"
-                );
-                // [id => true] бүтэцтэй - template-д O(1) шалгалт хийхэд зориулсан
-                $current_organizations = [];
-                foreach ($response as $org) {
-                    $current_organizations[$org['id']] = true;
+                $current_organizations = $this->getUserOrganizationIds($id);
+
+                // Системийн байгууллага (id=1) эхэнд, бусад нь нэрээр эрэмбэлэгдэнэ
+                $organizations = $orgModel->getRows([
+                    'WHERE'    => 'is_active=1',
+                    'ORDER BY' => 'CASE WHEN id=1 THEN 0 ELSE 1 END, name'
+                ]);
+                // Эцэг байгууллагын нэрийг мөр бүрд харуулахад зориулсан (id => name)
+                $org_names = \array_column($organizations, 'name', 'id');
+                foreach ($organizations as &$org) {
+                    $org['parent_name'] = $org_names[$org['parent_id'] ?? 0] ?? '';
+                    // Root хэрэглэгчийг системийн байгууллагаас хэзээ ч хасахгүй (configureOrgs()-тэй ижил дүрэм),
+                    // coder биш хэрэглэгч өөрийн харьяалагдаагүй байгууллагад хүрэхгүй (POST-ийн шалгалттай ижил)
+                    // мөн өөрийгөө одоо нэвтэрсэн байгууллагаас хасахгүй (assertOrganizationChangesAllowed())
+                    $org['locked'] = ($id == 1 && $org['id'] == 1 && isset($current_organizations[1]))
+                        || ($own_organizations !== null && !isset($own_organizations[$org['id']]))
+                        || ($own_organizations !== null && $id == $this->getUserId()
+                            && $org['id'] == ($this->getUser()->organization['id'] ?? null));
+                    $org['search'] = \mb_strtolower("{$org['name']} {$org['alias']} {$org['parent_name']}");
                 }
+                unset($org);
 
                 // GET хүсэлт -> popup modal HTML-ийг render хийе
                 $this->template(
@@ -1636,7 +1720,7 @@ class UsersController extends FileController
                     [
                         'profile' => $record,
                         'current_organizations' => $current_organizations,
-                        'organizations' => $orgModel->getRows(['WHERE' => 'is_active=1'])
+                        'organizations' => $organizations
                     ]
                 )->render();
             }
@@ -1672,6 +1756,224 @@ class UsersController extends FileController
             }
             $this->log('users', $level, $message, $context);
         }
+    }
+
+    /**
+     * Coder биш хэрэглэгч тухайн хэрэглэгчийн хандалтыг (дүр, байгууллага) өөрчилж болох эсэх.
+     *
+     * Аюулгүй байдлын дүрэм (setRole, setOrganization хоёуланд GET/POST):
+     *   * system_coder -> хязгааргүй
+     *   * system_coder дүртэй хэрэглэгчийн дүр, байгууллагад хүрэхгүй - coder бүх эрхийг
+     *     давдаг тул subset / харьяаллын дүрмээр хамгаалагдахгүй
+     *
+     * Өөрийн хандалтыг өөрчлөхийг хориглохгүй: эрх хэтрэлтийг subset болон харьяаллын
+     * дүрэм хаадаг, өөрийгөө түгжихийг assert*ChangesAllowed() тусад нь хаадаг.
+     *
+     * Act As горимд хэрэглэгч сонгосон ролийн эрхээр шалгагдана (coder ч isUser('system_coder') = false).
+     *
+     * Security (English): a non-coder never touches a system_coder user's
+     * access. Keep this call at the top of setRole() and setOrganization()
+     * for both GET and POST.
+     *
+     * @param int $id  Хандалт нь өөрчлөгдөх хэрэглэгчийн ID
+     * @return void
+     * @throws \Exception 403
+     */
+    private function assertCanManageAccessOf(int $id): void
+    {
+        if ($this->isUser('system_coder')) {
+            return;
+        }
+
+        $roles_table = (new Roles($this->pdo))->getName();
+        $user_role_table = (new UserRole($this->pdo))->getName();
+        $stmt = $this->prepare(
+            "SELECT 1 FROM $user_role_table as ur INNER JOIN $roles_table as r ON ur.role_id=r.id " .
+            "WHERE ur.user_id=:id AND r.alias='system' AND r.name='coder'"
+        );
+        $stmt->bindValue(':id', $id, \PDO::PARAM_INT);
+        $stmt->execute();
+        if ($stmt->fetch()) {
+            throw new \Exception($this->text('cannot-change-coder-access'), 403);
+        }
+    }
+
+    /**
+     * Хэрэглэгчийн байгууллагын өөрчлөлт (нэмэх, хасах) нэвтэрсэн хэрэглэгчийн хүрээнд байгаа эсэх.
+     *
+     * Өөрчлөлтгүй бол (одоогийнхтой ижил set) юу ч шалгахгүй. Өөрчлөлттэй бол coder биш хэрэглэгч:
+     *   * assertCanManageAccessOf() - coder хэрэглэгчийг өөрчлөхгүй
+     *   * нэмэгдэх, хасагдах байгууллага бүр өөрийн харьяалагддаг байгууллага байх ёстой
+     *     (системийн байгууллага id=1-ийг зөвхөн түүнд харьяалагддаг хэрэглэгч удирдана)
+     *   * өөрийгөө одоо нэвтэрсэн байгууллагаас хасахгүй (session-оо таслахгүй)
+     *
+     * Security (English): every code path that writes organization membership
+     * (setOrganization, update) must call this BEFORE configureOrgs().
+     *
+     * @param int   $id      Харьяалал нь өөрчлөгдөх хэрэглэгч
+     * @param array $orgIds  Шинэ бүрэн organization_id set
+     * @return void
+     * @throws \Exception 403
+     */
+    private function assertOrganizationChangesAllowed(int $id, array $orgIds): void
+    {
+        if ($this->isUser('system_coder')) {
+            return;
+        }
+        $current = \array_keys($this->getUserOrganizationIds($id));
+        $changed = \array_merge(\array_diff($orgIds, $current), \array_diff($current, $orgIds));
+        if (empty($changed)) {
+            return;
+        }
+        $this->assertCanManageAccessOf($id);
+        $own = $this->getUserOrganizationIds($this->getUserId());
+        if (!empty(\array_diff($changed, \array_keys($own)))) {
+            throw new \Exception($this->text('organization-outside-own-scope'), 403);
+        }
+        $current_org_id = (int) ($this->getUser()->organization['id'] ?? 0);
+        if ($id == $this->getUserId()
+            && \in_array($current_org_id, \array_map('intval', \array_diff($current, $orgIds)), true)
+        ) {
+            throw new \Exception($this->text('cannot-remove-own-current-organization'), 403);
+        }
+    }
+
+    /**
+     * Хэрэглэгчийн дүрийн өөрчлөлт (нэмэх, хасах) нэвтэрсэн хэрэглэгчийн эрхийн хүрээнд байгаа эсэх.
+     *
+     * Өөрчлөлтгүй бол юу ч шалгахгүй. Өөрчлөлттэй бол coder биш хэрэглэгч:
+     *   * assertCanManageAccessOf() - coder хэрэглэгчийг өөрчлөхгүй
+     *   * нэмэгдэх, хасагдах дүр бүрийн бүх эрх өөрт нь байх ёстой (subset), coder дүрд хүрэхгүй
+     *   * өөрийн дүрийг өөрчлөхдөө Permissions::MANAGEMENT эрхээ алдахгүй (өөрийгөө түгжихгүй)
+     *
+     * Security (English): every code path that writes user roles (setRole,
+     * update) must call this BEFORE configureRoles().
+     *
+     * @param int   $id       Дүр нь өөрчлөгдөх хэрэглэгч
+     * @param array $roleIds  Шинэ бүрэн role_id set
+     * @return void
+     * @throws \Exception 403
+     */
+    private function assertRoleChangesAllowed(int $id, array $roleIds): void
+    {
+        if ($this->isUser('system_coder')) {
+            return;
+        }
+        $current = \array_column((new UserRole($this->pdo))->fetchAllRolesByUser($id), 'role_id');
+        $changed = \array_unique(\array_merge(\array_diff($roleIds, $current), \array_diff($current, $roleIds)));
+        if (empty($changed)) {
+            return;
+        }
+        $this->assertCanManageAccessOf($id);
+        $catalog = $this->getRolePermissionKeys();
+        $exceeding = [];
+        foreach ($changed as $role_id) {
+            if (isset($catalog[$role_id]) && !$this->isWithinOwnPermissions($catalog[$role_id])) {
+                $exceeding[] = $catalog[$role_id]['key'];
+            }
+        }
+        if (!empty($exceeding)) {
+            throw new \Exception(
+                $this->text('role-exceeds-own-permissions') . ': ' . \implode(', ', $exceeding),
+                403
+            );
+        }
+
+        if ($id == $this->getUserId()) {
+            // Шинэ дүрийн set-ийн нийлбэр эрхэд одоо эзэмшиж буй удирдлагын эрх үлдэх ёстой
+            $remaining = [];
+            foreach ($roleIds as $role_id) {
+                foreach ($catalog[$role_id]['permissions'] ?? [] as $permission) {
+                    $remaining[$permission] = true;
+                }
+            }
+            foreach (Permissions::MANAGEMENT as $permission) {
+                if ($this->isUserCan($permission) && !isset($remaining[$permission])) {
+                    throw new \Exception(
+                        $this->text('cannot-remove-own-management-permission') . ": $permission",
+                        403
+                    );
+                }
+            }
+        }
+    }
+
+    /**
+     * Хэрэглэгчийн харьяалагддаг идэвхтэй байгууллагууд.
+     *
+     * @param int $userId
+     * @return array  [organization_id => true]
+     */
+    private function getUserOrganizationIds(int $userId): array
+    {
+        $orgModel = new OrganizationModel($this->pdo);
+        $orgUserModel = new OrganizationUserModel($this->pdo);
+        $stmt = $this->prepare(
+            'SELECT ou.organization_id as id ' .
+            "FROM {$orgUserModel->getName()} as ou INNER JOIN {$orgModel->getName()} as o ON ou.organization_id=o.id " .
+            'WHERE ou.user_id=:id AND o.is_active=1'
+        );
+        $stmt->bindValue(':id', $userId, \PDO::PARAM_INT);
+        $stmt->execute();
+        $ids = [];
+        foreach ($stmt->fetchAll() as $row) {
+            $ids[(int) $row['id']] = true;
+        }
+        return $ids;
+    }
+
+    /**
+     * Бүх дүр болон тэдгээрийн permission key-үүд.
+     *
+     * @return array  [role_id => ['key' => '{alias}_{name}', 'is_coder' => bool, 'permissions' => ['{alias}_{name}', ...]]]
+     */
+    private function getRolePermissionKeys(): array
+    {
+        $roles_table = (new Roles($this->pdo))->getName();
+        $permissions_table = (new Permissions($this->pdo))->getName();
+        $role_permission_table = (new RolePermission($this->pdo))->getName();
+
+        $catalog = [];
+        foreach ($this->query("SELECT id, alias, name FROM $roles_table")->fetchAll() as $row) {
+            $catalog[$row['id']] = [
+                'key'         => "{$row['alias']}_{$row['name']}",
+                'is_coder'    => $row['alias'] == 'system' && $row['name'] == 'coder',
+                'permissions' => []
+            ];
+        }
+        $rows = $this->query(
+            "SELECT rp.role_id, p.alias, p.name FROM $role_permission_table as rp " .
+            "INNER JOIN $permissions_table as p ON rp.permission_id=p.id"
+        )->fetchAll();
+        foreach ($rows as $row) {
+            if (isset($catalog[$row['role_id']])) {
+                $catalog[$row['role_id']]['permissions'][] = "{$row['alias']}_{$row['name']}";
+            }
+        }
+        return $catalog;
+    }
+
+    /**
+     * Дүрийн бүх эрх нэвтэрсэн хэрэглэгчид өөрт нь байгаа эсэх (subset шалгалт).
+     * coder дүр бүх эрхийг давдаг тул coder биш хэрэглэгчид хэзээ ч хүрээнд орохгүй.
+     *
+     * @param array $role  getRolePermissionKeys()-ийн нэг мөр
+     * @return bool
+     */
+    private function isWithinOwnPermissions(array $role): bool
+    {
+        if ($this->isUser('system_coder')) {
+            return true;
+        }
+        if ($role['is_coder']) {
+            return false;
+        }
+        foreach ($role['permissions'] as $permission) {
+            if (!$this->isUserCan($permission)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
@@ -1817,18 +2119,21 @@ class UsersController extends FileController
             if (empty($record)) {
                 throw new \Exception($this->text('no-record-selected'));
             }
-            
+
+            // Өөрийн болон coder хэрэглэгчийн хандалтыг coder биш хэрэглэгч өөрчлөхгүй
+            $this->assertCanManageAccessOf($id);
+
             // -----------------------------------------------------------
             // POST -> Дүр солих UPDATE логик
             // -----------------------------------------------------------
-            if ($this->getRequest()->getMethod() == 'POST') {                
+            if ($this->getRequest()->getMethod() == 'POST') {
                 // UI-аас ирсэн role_id массивыг integer array болгон normalize хийнэ
                  $post_roles = \filter_var(
                     $this->getParsedBody()['roles'] ?? [],
                     \FILTER_VALIDATE_INT,
                     \FILTER_REQUIRE_ARRAY
                 ) ?: [];
-                 
+
                 // ROOT хэрэглэгч -> заавал system coder дүртэй байх ёстой
                 if (($id == 1) &&
                     (empty($post_roles) || !\in_array(1, $post_roles))
@@ -1838,6 +2143,9 @@ class UsersController extends FileController
                         403
                     );
                 }
+
+                // Нэмэгдэх, хасагдах дүр бүрийн эрхүүд өөрийн эрхийн хүрээнд байх ёстой
+                $this->assertRoleChangesAllowed($id, $post_roles);
                 
                 // configureRoles() - Дүрүүдийг нэмэх/хасах үндсэн логик
                 if (!$this->configureRoles($id, $post_roles)) {
@@ -1870,23 +2178,8 @@ class UsersController extends FileController
                 }
                 $vars['rbacs'] = $rbacs;
 
-                // Тухайн RBAC alias бүр дээр харьяалагдах дүрүүдийг татах
-                $roles_table = (new Roles($this->pdo))->getName();
-                $roles = \array_map(function() { return []; }, \array_flip(\array_keys($rbacs)));
-                $roles_result = $this->query("SELECT id,alias,name,description FROM $roles_table")->fetchAll();
-                \array_walk($roles_result, function($value) use (&$roles) {
-                    if (!isset($roles[$value['alias']])) {
-                        $roles[$value['alias']] = [];
-                    }
-                    $roles[$value['alias']][$value['id']] = [$value['name']];
-
-                    if (!empty($value['description'])) {
-                        $roles[$value['alias']][$value['id']][] = $value['description'];
-                    }
-                });
-                $vars['roles'] = $roles;
-
                 // Хэрэглэгчийн эзэмшиж буй дүрүүдийг татах
+                $roles_table = (new Roles($this->pdo))->getName();
                 $userRoleModel = new UserRole($this->pdo);
                 // [role_id => true] бүтэцтэй - template-д O(1) шалгалт хийхэд зориулсан
                 $current_role = [];
@@ -1898,6 +2191,64 @@ class UsersController extends FileController
                     $current_role[$row['role_id']] = true;
                 }
                 $vars['current_role'] = $current_role;
+
+                // Дүр бүрийн эрхүүд (role_id => [permission_id, ...]) болон
+                // modal-ын нэгтгэл хэсэгт ашиглах эрхийн каталог (permission_id => мэдээлэл)
+                $permissions_table = (new Permissions($this->pdo))->getName();
+                $role_permission_table = (new RolePermission($this->pdo))->getName();
+                $permissions = [];
+                $role_permissions = [];
+                $permissions_result = $this->query(
+                    "SELECT rp.role_id, p.id, p.alias, p.name, p.module, p.description " .
+                    "FROM $role_permission_table as rp INNER JOIN $permissions_table as p ON rp.permission_id=p.id " .
+                    "ORDER BY p.module, p.alias, p.name"
+                )->fetchAll();
+                foreach ($permissions_result as $row) {
+                    $permissions[$row['id']] ??= [
+                        'key'         => "{$row['alias']}_{$row['name']}",
+                        'module'      => $row['module'] ?: 'general',
+                        'description' => $row['description'] ?? ''
+                    ];
+                    $role_permissions[$row['role_id']][] = (int) $row['id'];
+                }
+                $vars['permissions'] = $permissions;
+
+                // coder (role_id=1) дүрийн checkbox-ийг configureRoles()-ийн дүрмээр түгжинэ:
+                // root-ээс хэзээ ч хасагдахгүй, зөвхөн system_coder хасна, зөвхөн root coder нэмнэ.
+                // Түгжсэн checkbox төлвөө хэвээр илгээдэг тул сервер талын шалгалт өөрчлөгдөхгүй.
+                $has_coder = isset($current_role[1]);
+                $coder_locked = ($has_coder && ($id == 1 || !$this->isUser('system_coder')))
+                    || (!$has_coder && !($this->isUser('system_coder') && $this->getUserId() == 1));
+
+                // Coder биш хэрэглэгч өөрийн эрхийн хүрээнээс хэтэрсэн дүрд хүрэхгүй (POST-ийн шалгалттай ижил)
+                $is_coder_user = $this->isUser('system_coder');
+                $role_catalog = $is_coder_user ? [] : $this->getRolePermissionKeys();
+
+                // Тухайн RBAC alias бүр дээр харьяалагдах дүрүүдийг татах
+                $roles = \array_map(function() { return []; }, \array_flip(\array_keys($rbacs)));
+                $roles_result = $this->query("SELECT id,alias,name,description FROM $roles_table ORDER BY id")->fetchAll();
+                foreach ($roles_result as $row) {
+                    $is_coder = $row['alias'] == 'system' && $row['name'] == 'coder';
+                    $permission_ids = $role_permissions[$row['id']] ?? [];
+                    // Хүснэгтийн хайлтад ашиглах текст: дүрийн нэр, тайлбар, эрхүүдийн нэр, тайлбар
+                    $search = ["{$row['alias']}_{$row['name']}", $row['description'] ?? ''];
+                    foreach ($permission_ids as $pid) {
+                        $search[] = $permissions[$pid]['key'];
+                        $search[] = $permissions[$pid]['description'];
+                    }
+                    $roles[$row['alias']][$row['id']] = [
+                        'id'          => (int) $row['id'],
+                        'key'         => "{$row['alias']}_{$row['name']}",
+                        'description' => $row['description'] ?? '',
+                        'is_coder'    => $is_coder,
+                        'locked'      => ($row['id'] == 1 && $coder_locked)
+                            || (!$is_coder_user && isset($role_catalog[$row['id']])
+                                && !$this->isWithinOwnPermissions($role_catalog[$row['id']])),
+                        'permissions' => $permission_ids,
+                        'search'      => \mb_strtolower(\implode(' ', $search))
+                    ];
+                }
+                $vars['roles'] = \array_filter($roles);
                 
                 // Modal форм рүү дамжуулж render хийе
                 $this->template(__DIR__ . '/user-set-role-modal.html', $vars)->render();

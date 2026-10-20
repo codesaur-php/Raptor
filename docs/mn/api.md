@@ -245,6 +245,7 @@ JWT decode + validate хийх. Хугацаа дууссан бол `RuntimeExc
 3. Хэрэглэгчийн profile DB-с татна
 4. RBAC эрхүүдийг ачаална (`rbac.{userId}` cache) - байгууллагын шалгалтаас өмнө, coder эсэхийг мэдэхийн тулд
 5. Байгууллагын хандалтыг шалгана: энгийн хэрэглэгчид `organizations_users` гишүүнчлэлийн мөр заавал; `system_coder` бол cross-tenant superuser тул зөвхөн байгууллага идэвхтэй байхад хангалттай (хандах эрх рольоос гарна - гишүүнчлэлийн мөр шаардахгүй, үүсгэхгүй)
+5a. Act As: `$_SESSION['RAPTOR_ACT_AS']` (`ACT_AS_SESSION_KEY`: `role_id`, `started_at`) тохируулагдсан, `ACT_AS_LIFETIME` (3600 сек)-ээс хэтрээгүй бол эрхийн матрицыг зөвхөн тэр ролийн permission-ээр солино (`rbac.act-as.{roleId}` cache) мөн `act_as` request attribute тавина (`role`, `role_id`, `description`, `started_at`, `expires_at`). Хүсэлт бүрд эхлээд `canActAs()`-ийг ЖИНХЭНЭ эрхээр дахин шалгаж, тэнцэхгүй бол горимыг дуусгана. Өөрчлөх хүсэлтийг хаахгүй - controller-ууд ролийн эрхээр шалгана, user ID хэрэглэгчийн өөрийнх хэвээр. Солигдоогүй матриц `rbac_real` attribute-аар дамжина (зөвхөн Act As-ийн эрхийн шалгалтад, энгийн эрх шалгалтад биш). [ActAsController](#actascontroller)-ийг үз
 6. `User` объект үүсгэж request attribute-д нэмнэ
 7. Алдаа гарвал `/dashboard/login` руу redirect хийнэ - харин замын хоёр дахь сегмент нь `login` эсвэл `protected` (`/dashboard/login/*`, `/dashboard/protected/*`) бол redirect хийхгүй: хүсэлт `user` attribute-гүйгээр (anonymous) controller-т хүрэх тул тэдгээр controller өөрсдөө `isUserAuthorized()` шалгалт хийнэ. Хөтчийн хуудас нээлт (GET/HEAD + `Accept: text/html`, dashboard root/home-оос бусад) дээр анхны зам + query-г `?redirect=...` параметрээр дамжуулна - `LoginController` үүнийг шүүж (зөвхөн dashboard mount доорх same-origin зам), амжилттай нэвтэрсний дараа `login.html` тэр хуудас руу шилжүүлнэ
 
@@ -259,7 +260,7 @@ Session эхлүүлж, read-only route дээр write-lock-ийг эрт сул
 Raptor нь session cookie-ийн хугацааг кодоос 30 хоног болгодог (`session_set_cookie_params(...)`); server талын `gc_maxlifetime` / `save_path` нь PHP / host тохиргоогоор ажиллана. Host бүрд тааруулах (эсвэл тэр мөрийг устгаад php.ini-д даатгах) талаар [SESSION-LIFETIME.md](SESSION-LIFETIME.md)-аас үз.
 
 Constructor-аар `needsWrite` closure авна:
-- Dashboard: `fn($path, $method) => str_contains($path, '/login') || empty($_SESSION['CSRF_TOKEN'])` (хоёр дахь нөхцөл нь CSRF token байхгүй үед үүсгэж чадахаар session-ийг бичих боломжтой үлдээнэ)
+- Dashboard: `fn($path, $method) => str_contains($path, '/login') || str_contains($path, '/act-as/') || empty($_SESSION['CSRF_TOKEN'])` (`/act-as/` нь `ActAsController`-д Act As төлвийг session-д бичих боломж олгоно; сүүлийн нөхцөл нь CSRF token байхгүй үед үүсгэж чадахаар session-ийг бичих боломжтой үлдээнэ)
 - Web: `fn($path, $method) => str_starts_with(preg_replace('#^/[a-z]{2}(?=/|$)#', '', $path), '/session/')` (эхэнд байгаа хэлний prefix-ийг хасаад `/session/` route prefix-тэй тулгана)
 
 Closure null бол бүх route дээр session_write_close() дуудна.
@@ -295,6 +296,8 @@ RBAC матриц (`RBAC::jsonSerialize()`-ийн үр дүн, `{alias}_{role} =
 | `is(string $role): bool` | Role шалгах |
 | `hasRoleAlias(string $alias): bool` | Тухайн alias-д хамаарах ямар ч роль эзэмшдэг эсэхийг шалгах (роль key нь `{alias}_{name}`) - multi-tenant visibility-г alias-аар хянахад ашиглана |
 | `can(string $permission, ?string $role = null): bool` | Permission шалгах; `$role` өгсөн бол зөвхөн тэр рольд байгаа эсэхийг шалгана. `system_coder` үргэлж `true` |
+
+Act As идэвхтэй үед матриц зөвхөн сонгосон ролийг агуулна - `is('system_coder')` нь `false`, `can()` тэр ролийн эрхээр хариулна; `$profile`, `$organization` хэрэглэгчийн өөрийнх хэвээр.
 
 ---
 
@@ -393,6 +396,23 @@ Role-Permission хамаарал (`role_id`, `permission_id`, `alias`).
 **Хүснэгт:** `rbac_user_role`
 
 User-Role хамаарал.
+
+### ActAsController
+
+**Файл:** `application/dashboard/rbac/ActAsController.php`
+**Extends:** `Dashboard\Controller` (`DashboardTrait` ашиглана)
+
+Act As (дүрээр ажиллах): хэрэглэгч сонгосон ролийн эрхээр dashboard-ыг ашиглаж, тэр рольд ямар цэс, товч, үйлдэл нээгдэхийг шалгана - жишээ нь дүр тохируулсны дараа, эсвэл доод дүрийн хүмүүст зааварчилгаа өгөхийн өмнө. Хэн, ямар ролиор (`JWTAuthMiddleware::canUseActAs()` / `canActAs()`, эрх зөвхөн багасна): `system_coder` - `system_coder`-оос бусад дурын роль; `system_rbac` эрхтэй - бүх эрх нь өөрт байгаа роль; бусад 2+ ролтой хэрэглэгч - зөвхөн өөрийн ролиуд; ганц ролтой хэрэглэгчид Act As цэс харагдахгүй. Account dropdown-оос нээнэ; идэвхтэй үед `dashboard.html` нь роль, үлдсэн хугацааны mm:ss тоолуур (зөвхөн хөтөч дээр тоолж, хугацаа дуусахад хуудсыг reload хийнэ), Гарах товчтой banner харуулна (`act_as` хувьсагчийг `DashboardTrait::dashboardTemplate()` тавина).
+
+| Маршрут | Метод | Нэр | Тайлбар |
+|---------|-------|-----|---------|
+| `/dashboard/act-as/roles` | GET | `act-as-roles` | Роль сонгох modal (`canActAs()` зөвшөөрөх ролиуд, alias-аар бүлэглэсэн). `canUseActAs()`-д тэнцсэн хэрэглэгч |
+| `/dashboard/act-as/start` | POST | `act-as-start` | Body `role_id`; `$_SESSION['RAPTOR_ACT_AS']` бичнэ. Роль `canActAs()`-д тэнцэх ёстой, CSRF. `dashboard_log`-д `act-as-start` (ALERT) бичнэ |
+| `/dashboard/act-as/stop` | POST | `act-as-stop` | Act As төлвийг цэвэрлэнэ (нэвтэрсэн хэн ч - устгах нь эрх нэмэхгүй). CSRF. `act-as-stop` бичнэ |
+
+- Үйлдэл хийж болно, өөрчлөлт бодит (coder-ийн нэрээр бүртгэгдэж, лог бүрд `auth_user.act_as`); хугацаатай (`JWTAuthMiddleware::ACT_AS_LIFETIME`), logout хийхэд цэвэрлэгдэнэ.
+- Идэвхтэй үед бичигдсэн бүх log-д `auth_user.act_as` (ролийн key) нэмэгдэнэ.
+- Хязгаарлалт: `getUserId()` coder-ийнх хэвээр (өөрийн нийтлэгдээгүй бичлэгийн owner шалгалт coder-ийн бичлэг дээр үйлчилнэ), sidebar-ын байгууллагын alias шүүлт одоогийн байгууллагаар явна.
 
 ---
 
@@ -1597,6 +1617,7 @@ Custom file-based DB cache (PSR-16 SimpleCache). Гадаад dependency-гүй,
 | `settings.{code}` | SettingsMiddleware | SettingsController |
 | `menu.{code}` | DashboardTrait | TemplateController (цэс CRUD) |
 | `rbac.{userId}` | JWTAuthMiddleware (`CacheService::fromDefaultPath()`-аар - ContainerMiddleware-ээс өмнө ажилладаг) | RBACController (`clear()`) |
+| `rbac.act-as.{roleId}` | JWTAuthMiddleware (Act As ролийн permission) | RBACController (`clear()`) |
 | `pages_nav.{code}` | Web TemplateController | PagesController |
 | `featured_pages.{code}` | Web TemplateController | PagesController |
 | `recent_news.{code}` | HomeController | NewsController |

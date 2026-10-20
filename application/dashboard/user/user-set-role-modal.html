@@ -1,56 +1,134 @@
 <!-- Хэрэглэгчийн role (Дүр) тохируулах Modal
-     Admin -> User access / permission update -->
-<div class="modal-lg modal-dialog modal-dialog-centered" role="document">
+     Admin -> User access / permission update
+
+     Variables:
+       profile      - дүр тохируулах хэрэглэгч
+       rbacs        - alias => байгууллагын нэр(үүд)
+       roles        - alias => role_id => (id, key, description, is_coder, locked, permissions, search)
+       permissions  - permission_id => (key, module, description)
+       current_role - role_id => true (хэрэглэгчийн одоогийн дүрүүд)
+
+     Бүтэц:
+       1) Дээд хэсэг - сонгосон дүрүүд болон тэдгээрийн нийлбэр эрхүүд (module-оор бүлэглэсэн, live)
+       2) Доод хэсэг - бүх дүрийн хүснэгт: checkbox + дүрийн нэр/тайлбар + эрхүүд -->
+<div class="modal-xl modal-dialog modal-dialog-centered modal-dialog-scrollable" role="document">
     <div class="modal-content">
         <!-- Modal Header - Гарчиг + Хаах товч -->
         <div class="modal-header">
             <h3 class="modal-title fs-6">
                 <i class="bi bi-shield-lock-fill"></i> {{ 'role'|text }}
+                <span class="text-muted fw-normal">
+                    - {{ profile['first_name'] ~ ' ' ~ profile['last_name'] }}
+                    ({{ profile['username'] }}, {{ profile['email'] }})
+                </span>
             </h3>
 
             <button class="btn-close"
                     type="button"
                     data-bs-dismiss="modal"
-                    aria-label="{{ 'close'|text|e }}"></button>
+                    aria-label="{{ 'close'|text }}"></button>
         </div>
 
-        <!-- Modal Body - role сонгох форм -->
+        <!-- Modal Body -->
         <div class="modal-body">
-            <!-- Role тохируулах form -->
             <form autocomplete="off"
                   id="set_user_role"
                   role="form"
                   action="{{ 'user-set-role'|link({'id':profile['id']}) }}"
                   method="POST"
-                  enctype="multipart/form-data">
-                <!-- Доторх хэсэг scroll-той -->
-                <div style="height:400px;overflow-y:auto;overflow-x:hidden;">
-                    <div class="form-group">
-                        <!-- Хэрэглэгчийн мэдээлэл -->
-                        <label>
-                            {{ profile['first_name'] ~ ' ' ~ profile['last_name'] ~
-                               ' (' ~ profile['username'] ~ ' => ' ~ profile['email'] ~ ')' }}
-                            хэрэглэгчийн дүрийг сонгон тохируулна уу!
-                        </label>
+                  enctype="multipart/form-data"
+                  data-permissions="{{ permissions|json_encode|e }}">
 
-                        <!-- Role олон сонголттой select -->
-                        <select class="form-control"
-                                multiple
-                                name="roles[]"
-                                id="user_roles">
-                            {% for key,data in roles %}
-                                <optgroup label="{{ rbacs[key]|e }}" alias="{{ key|e }}">
-                                    {% for value,name in data %}
-                                        <option value="{{ value|e }}"
-                                                {% if current_role[value] %}selected{% endif %}>
-                                            [{{ name[0]|e }}] {{ name[1]|e }}
-                                        </option>
-                                    {% endfor %}
-                                </optgroup>
-                            {% endfor %}
-                        </select>
+                <!-- 1) Сонгосон дүрүүд + нийлбэр эрхүүд -->
+                <div class="border rounded p-3 mb-3 bg-body-tertiary">
+                    <div class="fw-bold small text-uppercase mb-2">
+                        <i class="bi bi-person-check"></i> {{ 'selected-roles'|text }}
+                        <span class="badge text-bg-success ms-1" id="selected_role_count">0</span>
+                    </div>
+                    <div class="d-flex flex-wrap gap-2 mb-3" id="selected_roles"></div>
+
+                    <div class="fw-bold small text-uppercase mb-2">
+                        <i class="bi bi-key"></i> {{ 'permissions'|text }}
+                        <span class="badge text-bg-primary ms-1" id="permission_count">0</span>
+                    </div>
+                    <div id="selected_permissions" style="max-height:32vh;overflow-y:auto;overflow-x:hidden"></div>
+                </div>
+
+                <!-- 2) Дүрүүдийн хүснэгт: хайлт + зөвхөн сонгосныг харуулах -->
+                <div class="d-flex flex-wrap align-items-center gap-3 mb-2">
+                    <div class="input-group input-group-sm" style="max-width:360px">
+                        <span class="input-group-text"><i class="bi bi-search"></i></span>
+                        <input class="form-control" type="search" id="role_search"
+                               placeholder="{{ 'search'|text }}: {{ 'role'|text }} / {{ 'permissions'|text }}">
+                    </div>
+                    <div class="form-check form-switch mb-0 ms-auto">
+                        <input class="form-check-input" type="checkbox" role="switch" id="role_only_selected">
+                        <label class="form-check-label small" for="role_only_selected">{{ 'selected-roles'|text }}</label>
                     </div>
                 </div>
+
+                <table class="table table-sm table-hover align-middle mb-0" id="role_table">
+                    <thead>
+                        <tr>
+                            <th style="width:2.5rem"></th>
+                            <th style="width:30%">{{ 'role'|text }}</th>
+                            <th>{{ 'permissions'|text }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for alias, items in roles %}
+                            <tr class="role-group" data-alias="{{ alias }}">
+                                <th colspan="3" class="bg-secondary-subtle small text-uppercase">
+                                    <i class="bi bi-diagram-3"></i> {{ alias }}
+                                    <span class="fw-normal text-muted" style="text-transform:none">({{ rbacs[alias] ?? alias }})</span>
+                                </th>
+                            </tr>
+                            {% for role in items %}
+                                <tr class="role-row" data-alias="{{ alias }}" data-search="{{ role.search }}" style="cursor:pointer">
+                                    <td>
+                                        <input class="form-check-input role-check{% if role.locked %} opacity-50{% endif %}"
+                                               type="checkbox"
+                                               name="roles[]"
+                                               value="{{ role.id }}"
+                                               id="role_{{ role.id }}"
+                                               data-key="{{ role.key }}"
+                                               data-description="{{ role.description }}"
+                                               data-permissions="{{ role.permissions|json_encode|e }}"
+                                               {% if role.is_coder %}data-coder="1"{% endif %}
+                                               {% if role.locked %}data-locked="1" aria-disabled="true"{% endif %}
+                                               {% if current_role[role.id] %}checked{% endif %}>
+                                    </td>
+                                    <td>
+                                        <label class="form-check-label d-block" for="role_{{ role.id }}" style="cursor:pointer">
+                                            <code class="fw-bold">{{ role.key }}</code>
+                                            {% if role.locked %}<i class="bi bi-lock-fill text-muted small" title="{{ 'role-exceeds-own-permissions'|text }}"></i>{% endif %}
+                                            {% if role.description is not empty %}
+                                                <span class="d-block small text-muted">{{ role.description }}</span>
+                                            {% endif %}
+                                        </label>
+                                    </td>
+                                    <td class="small">
+                                        {% if role.is_coder %}
+                                            <span class="badge text-bg-danger">{{ 'all-permissions'|text }}</span>
+                                        {% else %}
+                                            <div class="d-flex flex-wrap gap-1">
+                                                {% for pid in role.permissions %}
+                                                    <span class="badge text-bg-light border fw-normal"
+                                                          title="{{ permissions[pid]['description'] }}">{{ permissions[pid]['key'] }}</span>
+                                                {% else %}
+                                                    <span class="text-muted">-</span>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% endfor %}
+                        <tr id="role_no_result" style="display:none">
+                            <td colspan="3" class="text-center text-muted py-3">{{ 'no-results-found'|text }}</td>
+                        </tr>
+                    </tbody>
+                </table>
             </form>
         </div>
 
@@ -72,18 +150,164 @@
 </div>
 
 <script type="text/javascript">
-    /* Choices.js ашиглан олон сонголттой select сайжруулах */
-    const userRoles = document.getElementById('user_roles');
-    if (userRoles) {
-        new Choices(userRoles, { removeItemButton: true });
-    }
-
     /* FORM submit логик */
     const userRolesForm = document.querySelector('form#set_user_role');
     if (!userRolesForm) {
         /* Form олдохгүй бол алдаа */
-        Notify('danger', `{{ 'error'|text|e }}`, 'Form not found!');
+        Notify('danger', `{{ 'error'|text|e('js') }}`, 'Form not found!');
     } else {
+        /* Эрхийн каталог: permission_id => {key, module, description} */
+        let permissionCatalog = {};
+        try {
+            permissionCatalog = JSON.parse(userRolesForm.dataset.permissions || '{}') || {};
+        } catch (e) {
+            permissionCatalog = {};
+        }
+
+        const roleChecks = Array.from(userRolesForm.querySelectorAll('input.role-check'));
+        const selectedRolesBox = document.getElementById('selected_roles');
+        const selectedPermsBox = document.getElementById('selected_permissions');
+        const roleCountBadge = document.getElementById('selected_role_count');
+        const permCountBadge = document.getElementById('permission_count');
+        const searchInput = document.getElementById('role_search');
+        const onlySelected = document.getElementById('role_only_selected');
+        const noResultRow = document.getElementById('role_no_result');
+
+        const rolePermissions = function (check) {
+            try {
+                return JSON.parse(check.dataset.permissions || '[]') || [];
+            } catch (e) {
+                return [];
+            }
+        };
+
+        /* Дээд хэсгийг (сонгосон дүрүүд + нийлбэр эрхүүд) шинэчлэх */
+        const renderSummary = function () {
+            const selected = roleChecks.filter(c => c.checked);
+            roleCountBadge.textContent = selected.length;
+
+            selectedRolesBox.innerHTML = selected.length === 0
+                ? '<span class="text-muted small">-</span>'
+                : selected.map(c => {
+                    const removable = !c.dataset.locked;
+                    return '<span class="badge text-bg-dark d-inline-flex align-items-center gap-1 py-2"'
+                        + ' title="' + escapeHtml(c.dataset.description || '') + '">'
+                        + escapeHtml(c.dataset.key)
+                        + (removable
+                            ? '<button type="button" class="btn-close btn-close-white ms-1" style="font-size:.55rem"'
+                              + ' data-uncheck="' + escapeHtml(c.value) + '" aria-label="{{ 'remove'|text|e('js') }}"></button>'
+                            : ' <i class="bi bi-lock-fill"></i>')
+                        + '</span>';
+                }).join('');
+
+            if (selected.some(c => c.dataset.coder)) {
+                permCountBadge.textContent = '*';
+                selectedPermsBox.innerHTML = '<div class="alert alert-danger py-2 mb-0 small">'
+                    + '<i class="bi bi-stars"></i> {{ 'all-permissions'|text|e('js') }}</div>';
+                return;
+            }
+
+            /* permission_id => [role key, ...] - нэг эрхийг ямар дүрүүд олгож байгааг tooltip-д харуулна */
+            const granted = {};
+            selected.forEach(c => {
+                rolePermissions(c).forEach(pid => {
+                    (granted[pid] ??= []).push(c.dataset.key);
+                });
+            });
+
+            /* module-оор бүлэглэх */
+            const modules = {};
+            Object.keys(granted).forEach(pid => {
+                const p = permissionCatalog[pid];
+                if (!p) return;
+                (modules[p.module] ??= []).push({pid: pid, p: p});
+            });
+
+            const ids = Object.keys(granted).filter(pid => permissionCatalog[pid]);
+            permCountBadge.textContent = ids.length;
+            if (ids.length === 0) {
+                selectedPermsBox.innerHTML = '<span class="text-muted small">-</span>';
+                return;
+            }
+
+            selectedPermsBox.innerHTML = Object.keys(modules).sort().map(module => {
+                const items = modules[module]
+                    .sort((a, b) => a.p.key.localeCompare(b.p.key))
+                    .map(item => '<div class="col">'
+                        + '<div class="border-start border-3 border-primary ps-2 h-100"'
+                        + ' title="' + escapeHtml(granted[item.pid].join(', ')) + '">'
+                        + '<div class="small">' + escapeHtml(item.p.description || item.p.key) + '</div>'
+                        + '<code class="small">' + escapeHtml(item.p.key) + '</code>'
+                        + '</div></div>')
+                    .join('');
+                return '<div class="mb-2">'
+                    + '<div class="small fw-semibold text-muted text-uppercase mb-1">' + escapeHtml(module) + '</div>'
+                    + '<div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-2">' + items + '</div>'
+                    + '</div>';
+            }).join('');
+        };
+
+        /* Хүснэгтийн мөрүүдийг хайлт / "зөвхөн сонгосон" шүүлтээр харуулах */
+        const filterRows = function () {
+            const q = (searchInput.value || '').trim().toLowerCase();
+            const only = onlySelected.checked;
+            const visibleAliases = {};
+            let visible = 0;
+            roleChecks.forEach(c => {
+                const tr = c.closest('tr');
+                const show = (!q || (tr.dataset.search || '').includes(q)) && (!only || c.checked);
+                tr.style.display = show ? '' : 'none';
+                tr.classList.toggle('table-success', c.checked);
+                if (show) {
+                    visible++;
+                    visibleAliases[tr.dataset.alias] = true;
+                }
+            });
+            userRolesForm.querySelectorAll('tr.role-group').forEach(tr => {
+                tr.style.display = visibleAliases[tr.dataset.alias] ? '' : 'none';
+            });
+            noResultRow.style.display = visible === 0 ? '' : 'none';
+        };
+
+        const refresh = function () {
+            renderSummary();
+            filterRows();
+        };
+
+        roleChecks.forEach(c => {
+            /* Түгжсэн (coder) checkbox төлвөө хэвээр хадгалж илгээгдэнэ */
+            c.addEventListener('click', function (e) {
+                if (this.dataset.locked) e.preventDefault();
+            });
+            c.addEventListener('change', refresh);
+        });
+
+        /* Мөрийн аль ч хэсэгт дарахад checkbox солигдоно */
+        userRolesForm.querySelectorAll('tr.role-row').forEach(tr => {
+            tr.addEventListener('click', function (e) {
+                if (e.target.closest('input, label')) return;
+                const c = this.querySelector('input.role-check');
+                if (!c || c.dataset.locked) return;
+                c.checked = !c.checked;
+                c.dispatchEvent(new Event('change'));
+            });
+        });
+
+        /* Сонгосон дүрийн badge дээрх x -> тухайн дүрийг хасна */
+        selectedRolesBox.addEventListener('click', function (e) {
+            const btn = e.target.closest('[data-uncheck]');
+            if (!btn) return;
+            const c = roleChecks.find(x => x.value === btn.dataset.uncheck);
+            if (c && !c.dataset.locked) {
+                c.checked = false;
+                c.dispatchEvent(new Event('change'));
+            }
+        });
+
+        searchInput.addEventListener('input', filterRows);
+        onlySelected.addEventListener('change', filterRows);
+        refresh();
+
         /* "Save" товч */
         const submitter = document.querySelector('button.submit-user-role');
 
@@ -96,19 +320,6 @@
         /* FORM submit event */
         userRolesForm.addEventListener('submit', function (event) {
             event.preventDefault();
-
-            /* HTML built-in validation */
-            const isValid = this.checkValidity();
-            this.classList.add('was-validated');
-
-            if (!isValid) {
-                event.stopPropagation();
-                return Notify(
-                    'danger',
-                    `{{ 'error'|text|e }}`,
-                    `{{ 'u-have-some-form-errors'|text|e }}`
-                );
-            }
 
             /* Loading animation */
             submitter.growNstop();
@@ -140,13 +351,13 @@
 
                 Notify(
                     response.type ?? 'success',
-                    response.title ?? `{{ 'success'|text|e }}`,
+                    response.title ?? `{{ 'success'|text|e('js') }}`,
                     response.message ?? 'User role set'
                 );
             })
             .catch(error => {
                 /* Алдаа гарвал */
-                Notify('danger', `{{ 'error'|text|e }}`, error.message);
+                Notify('danger', `{{ 'error'|text|e('js') }}`, error.message);
 
                 /* Loading эффектийг зогсоох */
                 submitter.growNstop();

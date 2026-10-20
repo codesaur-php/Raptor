@@ -192,7 +192,16 @@
 
         <!-- 3-р таб - Байгууллага / Role сонголтууд -->
         <div class="tab-pane" id="tab-options" role="tabpanel">
-            {% if user.can('system_user_organization_set') %}
+            <!-- access_manageable=false (coder хэрэглэгч, coder биш засагч) үед талбаруудыг огт render хийхгүй -
+                 *_present marker илгээгдэхгүй тул сервер байгууллага, дүрд хүрэхгүй.
+                 locked_organizations / locked_roles - өөрийн хүрээнээс гадуурх утгууд: сонгогдсон бол hidden input-оор
+                 төлвөө хадгална, сонгогдоогүй бол disabled option болно -->
+            {% if not access_manageable and (user.can('system_user_organization_set') or user.can('system_rbac')) %}
+                <div class="alert alert-secondary small">
+                    <i class="bi bi-lock-fill"></i> {{ 'cannot-change-coder-access'|text }}
+                </div>
+            {% endif %}
+            {% if access_manageable and user.can('system_user_organization_set') %}
                 <!-- Байгууллага сонгох -->
                 <!-- Хоосон multi-select FormData-д огт орохгүй тул байгууллагын талбар илгээгдсэнийг энэ marker-аар серверт мэдэгдэнэ -->
                 <input type="hidden" name="organizations_present" value="1">
@@ -207,15 +216,24 @@
                         id="organizations"
                         aria-describedby="organzationHelpBlock">
                     {% for organization in organizations %}
+                        {% if not (locked_organizations[organization['id']] and current_organizations[organization['id']]) %}
                         <option value="{{ organization['id'] }}"
+                                {% if locked_organizations[organization['id']] %} disabled{% endif %}
                                 {% if current_organizations[organization['id']] %} selected{% endif %}>
                             {{ organization['name'] }}
                         </option>
+                        {% endif %}
                     {% endfor %}
                 </select>
+                {% for organization in organizations %}
+                    {% if locked_organizations[organization['id']] and current_organizations[organization['id']] %}
+                        <input type="hidden" name="organizations[]" value="{{ organization['id'] }}">
+                        <span class="badge text-bg-secondary mt-1"><i class="bi bi-lock-fill"></i> {{ organization['name'] }}</span>
+                    {% endif %}
+                {% endfor %}
             {% endif %}
 
-            {% if user.can('system_rbac') %}
+            {% if access_manageable and user.can('system_rbac') %}
                 <!-- Role сонгох -->
                 <!-- Хоосон multi-select FormData-д огт орохгүй тул дүрийн талбар илгээгдсэнийг энэ marker-аар серверт мэдэгдэнэ -->
                 <input type="hidden" name="roles_present" value="1">
@@ -232,14 +250,25 @@
                     {% for key,data in roles %}
                         <optgroup label="{{ rbacs[key]|e }}" alias="{{ key|e }}">
                             {% for value,name in data %}
+                                {% if not (locked_roles[value] and current_roles[value]) %}
                                 <option value="{{ value|e }}"
+                                        {% if locked_roles[value] %} disabled{% endif %}
                                         {% if current_roles[value] %} selected{% endif %}>
                                     [{{ name[0]|e }}] {{ name[1]|e }}
                                 </option>
+                                {% endif %}
                             {% endfor %}
                         </optgroup>
                     {% endfor %}
                 </select>
+                {% for key,data in roles %}
+                    {% for value,name in data %}
+                        {% if locked_roles[value] and current_roles[value] %}
+                            <input type="hidden" name="roles[]" value="{{ value }}">
+                            <span class="badge text-bg-secondary mt-1"><i class="bi bi-lock-fill"></i> {{ key }}_{{ name[0] }}</span>
+                        {% endif %}
+                    {% endfor %}
+                {% endfor %}
             {% endif %}
         </div>
 

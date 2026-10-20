@@ -12,6 +12,8 @@ use Psr\Http\Message\ResponseFactoryInterface;
 
 use Dashboard\CacheService;
 use Dashboard\RBAC\RBAC;
+use Dashboard\RBAC\Role;
+use Dashboard\RBAC\Roles;
 use Dashboard\User\UsersModel;
 use Dashboard\Authentication\User;
 use Dashboard\Organization\OrganizationModel;
@@ -41,6 +43,18 @@ class JWTAuthMiddleware implements MiddlewareInterface
      * Орчны хувьсагчаар тодорхойлоогүй үед ашиглагдах үндсэн JWT алгоритм.
      */
     private const DEFAULT_ALGORITHM = 'HS256';
+
+    /**
+     * Act As горимын мэдээлэл хадгалах session key.
+     * Утга: ['role_id' => int, 'started_at' => unix time]
+     */
+    public const ACT_AS_SESSION_KEY = 'RAPTOR_ACT_AS';
+
+    /**
+     * Act As горимын амьдрах хугацаа (секунд). Хугацаа дуусвал
+     * coder өөрийн жинхэнэ эрх рүүгээ автоматаар буцна.
+     */
+    public const ACT_AS_LIFETIME = 3600;
 
     /**
      * JWT нууц түлхүүрийг ENV-аас уншина.
@@ -236,7 +250,7 @@ class JWTAuthMiddleware implements MiddlewareInterface
             // -------------------------------------------------------------
             // 4. RBAC эрхүүдийг ачаалах (cache-тэй)
             //    Байгууллагын шалгалтаас өмнө ачаална - хэрэглэгч system_coder
-            //    эсэхийг мэдэж, cross-tenant хандалтыг рольоор шийдэхийн тулд.
+            //    эсэхийг мэдэж, cross-tenant хандалтыг ролиор шийдэхийн тулд.
             //
             //    Cache-ийг container-аас биш, шууд CacheService::fromDefaultPath()-
             //    аас авна: ContainerMiddleware энэ middleware-ээс хойно ажилладаг
@@ -290,6 +304,50 @@ class JWTAuthMiddleware implements MiddlewareInterface
             }
 
             // -------------------------------------------------------------
+            // 5a. Act As - сонгосон ролиор ажиллах (role preview)
+            //
+            //     Байгууллагын шалгалтын дараа солино: хэрэглэгчийн хандалт
+            //     (одоогийн байгууллага) хэвээр үлдэж, зөвхөн эрхийн матриц
+            //     сонгосон ролийн permission-ээр солигдоно. Ингэснээр sidebar,
+            //     isUserCan(), search, badge бүгд тэр ролийн харагдацаар ажиллана.
+            //     Солих логик нь rbac.{id} cache-аас хойно байх ёстой.
+            //
+            //     Хэн, ямар ролиор: canActAs() - хүсэлт бүрд ЖИНХЭНЭ эрхээр дахин
+            //     шалгана (эхэлсний дараа эрх нь өөрчлөгдвөл горим дуусна). Эрх
+            //     зөвхөн багасна: coder -> coder-оос бусад дурын роль,
+            //     system_rbac -> бүх эрх нь өөрт байгаа роль, бусад -> өөрийн роль.
+            //
+            //     Critical (English): the swap runs AFTER the organization check
+            //     and after the rbac.{id} cache read, and only when canActAs()
+            //     accepts the role against the REAL permissions on this request.
+            //     The replaced matrix must never contain system_coder and must
+            //     never exceed the real permissions - Act As may only reduce rights.
+            // -------------------------------------------------------------
+            $realPermissions = $permissions;
+            $actAs = null;
+            if (!empty($_SESSION[self::ACT_AS_SESSION_KEY])) {
+                $actAs = $this->resolveActAs($pdo, $cache, $_SESSION[self::ACT_AS_SESSION_KEY]);
+                if ($actAs !== null
+                    && !self::canActAs($realPermissions, $actAs['role'], $actAs['permissions'])
+                ) {
+                    $actAs = null;
+                }
+                if ($actAs === null) {
+                    // Хугацаа дууссан эсвэл роль устгагдсан - session бичигдэх
+                    // боломжтой бол цэвэрлэнэ, үгүй бол зүгээр үл тооцно.
+                    if (\session_status() === \PHP_SESSION_ACTIVE) {
+                        unset($_SESSION[self::ACT_AS_SESSION_KEY]);
+                    }
+                } else {
+                    // Үйлдэл хориглохгүй: эрх зөвхөн багасна (canActAs()), user ID
+                    // нь хэрэглэгчийнх тул лог, created_by зэрэгт жинхэнэ хийсэн
+                    // хүн бичигдэнэ.
+                    $permissions = [$actAs['role'] => $actAs['permissions']];
+                    unset($actAs['permissions']);
+                }
+            }
+
+            // -------------------------------------------------------------
             // 6. User объект үүсгэх
             // -------------------------------------------------------------
             $userObject = new User($profile, $organization, $permissions);
@@ -298,6 +356,15 @@ class JWTAuthMiddleware implements MiddlewareInterface
             // 7. Request-д user attribute нэмнэ (handle()-г try-ийн гадна нэг л удаа дуудна)
             // -------------------------------------------------------------
             $request = $request->withAttribute('user', $userObject);
+            // Жинхэнэ (Act As-аар солигдоогүй) эрхийн матриц - ЗӨВХӨН Act As-ийн
+            // эрхийн шалгалтад (ActAsController) ашиглана, бусад эрх шалгалтад биш
+            //
+            // Security (English): rbac_real is the unswapped matrix - use it only
+            // for Act As eligibility, never for regular authorization checks.
+            $request = $request->withAttribute('rbac_real', $realPermissions);
+            if ($actAs !== null) {
+                $request = $request->withAttribute('act_as', $actAs);
+            }
         }
 
         // ==============================================================
@@ -368,6 +435,128 @@ class JWTAuthMiddleware implements MiddlewareInterface
         //   - login дээр auth алдсан бол original (anonymous) request
         // Downstream controller-ийн exception энд баригдахгүй, гадна талын ErrorHandler руу дамжина.
         return $handler->handle($request);
+    }
+
+    /**
+     * Хэрэглэгч (жинхэнэ эрхээрээ) Act As цэсийг ашиглах боломжтой эсэх.
+     *
+     *   * system_coder -> тийм
+     *   * system_rbac эрхтэй -> тийм (дүр тохируулдаг хүн дүрээ шалгана)
+     *   * 2+ ролтой -> тийм (өөрийн ролиудаас нэгээр нь ажиллана)
+     *   * ганц ролтой -> үгүй (өөрийн ганц ролиор "тоглох" утгагүй)
+     *
+     * @param array $realPermissions  RBAC::jsonSerialize() - [roleKey => [permission => true]]
+     * @return bool
+     */
+    public static function canUseActAs(array $realPermissions): bool
+    {
+        return isset($realPermissions['system_coder'])
+            || self::hasPermission($realPermissions, 'system_rbac')
+            || \count($realPermissions) >= 2;
+    }
+
+    /**
+     * Хэрэглэгч (жинхэнэ эрхээрээ) тухайн ролиор Act As хийж болох эсэх.
+     *
+     * Эрх хэзээ ч нэмэгдэхгүй байх нөхцөлүүд:
+     *   * system_coder ролиор хэзээ ч болохгүй (бүх шалгалтыг TRUE болгоно)
+     *   * system_coder -> бусад дурын роль
+     *   * өөрийн эзэмшдэг роль -> болно (түүний эрх нийлбэр эрхэд багтана)
+     *   * system_rbac эрхтэй -> ролийн бүх эрх өөрт байвал болно (subset)
+     *   * бусад тохиолдолд болохгүй
+     *
+     * Security (English): Act As must only ever reduce rights. Keep this the
+     * single eligibility rule for JWTAuthMiddleware (every request) and
+     * ActAsController (role list + start).
+     *
+     * @param array  $realPermissions  RBAC::jsonSerialize() - [roleKey => [permission => true]]
+     * @param string $roleKey          "{alias}_{name}"
+     * @param array  $rolePermissions  [permission => true]
+     * @return bool
+     */
+    public static function canActAs(array $realPermissions, string $roleKey, array $rolePermissions): bool
+    {
+        if ($roleKey === 'system_coder') {
+            return false;
+        }
+        if (isset($realPermissions['system_coder']) || isset($realPermissions[$roleKey])) {
+            return true;
+        }
+        if (!self::hasPermission($realPermissions, 'system_rbac')) {
+            return false;
+        }
+        foreach ($rolePermissions as $permission => $granted) {
+            if ($granted === true && !self::hasPermission($realPermissions, $permission)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Эрхийн матрицын аль нэг ролиор permission олгогдсон эсэх.
+     *
+     * @param array  $permissions  [roleKey => [permission => true]]
+     * @param string $permission
+     * @return bool
+     */
+    private static function hasPermission(array $permissions, string $permission): bool
+    {
+        foreach ($permissions as $rolePermissions) {
+            if (($rolePermissions[$permission] ?? false) === true) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Session дахь Act As мэдээллээс сонгосон ролийн эрхийг ачаална.
+     *
+     * Ролийн permission-ийг rbac.act-as.{roleId} key-д cache хийнэ. RBAC
+     * өөрчлөлт бүр (RBACController) cache-ийг бүхэлд нь clear() хийдэг тул
+     * тусдаа invalidation хэрэггүй.
+     *
+     * @param \PDO       $pdo
+     * @param mixed      $cache   CacheService эсвэл null
+     * @param mixed      $session $_SESSION[ACT_AS_SESSION_KEY] утга
+     * @return array|null ['role', 'role_id', 'description', 'started_at', 'expires_at', 'permissions']
+     *                    эсвэл хугацаа дууссан / роль олдоогүй / system_coder бол null
+     */
+    private function resolveActAs(\PDO $pdo, $cache, mixed $session): ?array
+    {
+        $roleId = (int) ($session['role_id'] ?? 0);
+        $startedAt = (int) ($session['started_at'] ?? 0);
+        $expiresAt = $startedAt + self::ACT_AS_LIFETIME;
+        if ($roleId < 1 || $expiresAt < \time()) {
+            return null;
+        }
+
+        $cacheKey = "rbac.act-as.$roleId";
+        $data = $cache?->get($cacheKey);
+        if ($data === null) {
+            $role = (new Roles($pdo))->getRowWhere(['id' => $roleId]);
+            if (!isset($role['id'])) {
+                return null;
+            }
+            $data = [
+                'role'        => "{$role['alias']}_{$role['name']}",
+                'description' => $role['description'] ?? '',
+                'permissions' => (new Role())->fetchPermissions($pdo, $roleId)->permissions
+            ];
+            $cache?->set($cacheKey, $data);
+        }
+
+        // Coder ролиор "Act As" хийх нь утгагүй бөгөөд бүх шалгалтыг TRUE болгоно
+        if ($data['role'] === 'system_coder') {
+            return null;
+        }
+
+        return $data + [
+            'role_id'    => $roleId,
+            'started_at' => $startedAt,
+            'expires_at' => $expiresAt
+        ];
     }
 
     /**

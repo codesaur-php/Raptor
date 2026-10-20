@@ -525,12 +525,13 @@ RAPTOR_DB_DRIVER=pgsql
 
 ### 6.4 RBAC (Access Control)
 
-**Classes:** `RBACRouter`, `RBACController`, `RBAC`, `Role`, `Roles`, `Permissions`, `RolePermission`, `UserRole`
+**Classes:** `RBACRouter`, `RBACController`, `ActAsController`, `RBAC`, `Role`, `Roles`, `Permissions`, `RolePermission`, `UserRole`
 
 - Create and manage roles
 - Create and manage permissions
 - Role-Permission assignments
 - User-Role assignments
+- Act As (role preview): picks a role from the account dropdown and uses the dashboard (menu, buttons, actions) with that role's permissions - `system_coder`: any role except coder, `system_rbac` holders: roles within their own permissions, other users with 2+ roles: their own roles; changes are real and attributed to the user, ends after 1 hour, shown with a banner and audited in `dashboard_log`
 - Check permissions in controllers:
 
 ```php

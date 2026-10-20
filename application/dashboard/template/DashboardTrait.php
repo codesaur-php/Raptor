@@ -75,7 +75,23 @@ trait DashboardTrait
         $dashboard = $this->template(__DIR__ . '/dashboard.html');
         $dashboard->set('sidemenu', $this->getUserMenu());
         $dashboard->set('user_organizations', $this->getUserOrganizations());
-        
+
+        // Act As горим идэвхтэй бол (JWTAuthMiddleware тавьдаг) layout banner харуулна.
+        // Үлдсэн хугацааг секундээр дамжуулна - хоёр Unix timestamp-ийн зөрүү тул серверийн
+        // цагийн бүсээс хамаарахгүй; banner-ийн JS үүнээс mm:ss тоолуур хөтөч дээр тоолно.
+        $act_as = $this->getAttribute('act_as');
+        if (!empty($act_as['expires_at'])) {
+            $act_as['remaining'] = \max(0, (int) $act_as['expires_at'] - \time());
+            $act_as['remaining_text'] = \sprintf('%02d:%02d', \intdiv($act_as['remaining'], 60), $act_as['remaining'] % 60);
+        }
+        $dashboard->set('act_as', $act_as);
+        // Act As цэс - жинхэнэ эрхээр (coder, system_rbac эсвэл 2+ ролтой) шийдэнэ
+        $real_rbac = $this->getAttribute('rbac_real');
+        $dashboard->set(
+            'act_as_available',
+            \is_array($real_rbac) && \Dashboard\Authentication\JWTAuthMiddleware::canUseActAs($real_rbac)
+        );
+
         // Хувилбар харуулах:
         // composer.json-ийн "name" болон "extra" доторх "version", "modified" утгуудаас sidebar-т харуулна
         // (extra.version байхгүй бол dashboard.html-ийн блок юу ч харуулахгүй).

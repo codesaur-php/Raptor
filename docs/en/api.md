@@ -245,6 +245,7 @@ Decodes and validates JWT. Throws `RuntimeException` if expired. Requires `user_
 3. Fetches user profile from DB
 4. Loads RBAC permissions (cached as `rbac.{userId}`) - BEFORE the organization check, so the coder role is known
 5. Verifies organization access: regular users need an `organizations_users` membership row; `system_coder` is a cross-tenant superuser and only needs the target organization to be active (access is derived from the role - no membership row is required or created)
+5a. Act As: when `$_SESSION['RAPTOR_ACT_AS']` (`ACT_AS_SESSION_KEY`: `role_id`, `started_at`) is set and not older than `ACT_AS_LIFETIME` (3600 s), the permission matrix is replaced with that role's permissions only (cached as `rbac.act-as.{roleId}`) and the `act_as` request attribute is set (`role`, `role_id`, `description`, `started_at`, `expires_at`). Every request re-checks `canActAs()` against the REAL permissions first and ends the mode when it fails. Mutating requests are not blocked - the controllers check them against the role's permissions, and the user ID stays the user's own. The unswapped matrix is passed as the `rbac_real` attribute (Act As eligibility only, never regular authorization). See [ActAsController](#actascontroller)
 6. Creates `User` object and adds to request attributes
 7. On failure, redirects to `/dashboard/login` - except for paths whose second segment is `login` or `protected` (`/dashboard/login/*`, `/dashboard/protected/*`), which fall through to their controller as an anonymous request (no `user` attribute) and must perform their own `isUserAuthorized()` check. For browser page loads (GET/HEAD with `Accept: text/html`, excluding the dashboard root/home) the original path + query is passed as `?redirect=...`, which `LoginController` sanitizes (same-origin path under the dashboard mount only) and `login.html` navigates to after a successful sign-in
 
@@ -259,7 +260,7 @@ Starts PHP session and releases write-lock early on read-only routes.
 Raptor sets the session cookie lifetime to 30 days from code (`session_set_cookie_params(...)`); the server-side `gc_maxlifetime` / `save_path` use PHP / host config. To tune session longevity per host (or remove that line and rely on php.ini), see [SESSION-LIFETIME.md](SESSION-LIFETIME.md).
 
 Constructor accepts a `needsWrite` closure to define which routes need session writes:
-- Dashboard: `fn($path, $method) => str_contains($path, '/login') || empty($_SESSION['CSRF_TOKEN'])` (the second clause keeps the session writable so a missing CSRF token can be generated)
+- Dashboard: `fn($path, $method) => str_contains($path, '/login') || str_contains($path, '/act-as/') || empty($_SESSION['CSRF_TOKEN'])` (`/act-as/` lets `ActAsController` write the Act As state; the last clause keeps the session writable so a missing CSRF token can be generated)
 - Web: `fn($path, $method) => str_starts_with(preg_replace('#^/[a-z]{2}(?=/|$)#', '', $path), '/session/')` (strips a leading language prefix, then matches the `/session/` route prefix)
 
 If closure is null, all routes are read-only (session_write_close on every request).
@@ -295,6 +296,8 @@ The RBAC matrix (`RBAC::jsonSerialize()` output, keyed `{alias}_{role} => [permi
 | `is(string $role): bool` | Check role |
 | `hasRoleAlias(string $alias): bool` | Check whether the user holds ANY role under the given alias (role keys are `{alias}_{name}`) - used to gate multi-tenant visibility by role alias |
 | `can(string $permission, ?string $role = null): bool` | Check permission; when `$role` is given, only inside that role. `system_coder` always `true` |
+
+While Act As is active the matrix holds only the previewed role, so `is('system_coder')` returns `false` and `can()` answers as that role; `$profile` and `$organization` stay the user's own.
 
 ---
 
@@ -393,6 +396,23 @@ Role-Permission relationships (`role_id`, `permission_id`, `alias`).
 **Table:** `rbac_user_role`
 
 User-Role relationships.
+
+### ActAsController
+
+**File:** `application/dashboard/rbac/ActAsController.php`
+**Extends:** `Dashboard\Controller` (uses `DashboardTrait`)
+
+Act As (role preview): a user works in the dashboard with a role's permissions to check which menus, buttons and actions that role gets - e.g. after configuring a role, or before instructing users of a lower role. Who and which roles (`JWTAuthMiddleware::canUseActAs()` / `canActAs()`, rights can only shrink): `system_coder` - any role except `system_coder`; a `system_rbac` holder - any role whose permissions they all have; any other user with 2+ roles - only their own roles; a single-role user gets no Act As menu. Opened from the account dropdown; while active, `dashboard.html` shows a banner (`act_as` variable from `DashboardTrait::dashboardTemplate()`) with the role, a live mm:ss countdown of the time left (browser-only, reloads the page when the time is up) and an Exit button.
+
+| Route | Method | Name | Description |
+|-------|--------|------|-------------|
+| `/dashboard/act-as/roles` | GET | `act-as-roles` | Role picker modal (the roles `canActAs()` allows, grouped by alias). Users passing `canUseActAs()` |
+| `/dashboard/act-as/start` | POST | `act-as-start` | Body `role_id`; writes `$_SESSION['RAPTOR_ACT_AS']`. The role must pass `canActAs()`, CSRF. Logs `act-as-start` (ALERT) to `dashboard_log` |
+| `/dashboard/act-as/stop` | POST | `act-as-stop` | Clears the Act As state (any authorized user - removing it never adds rights). CSRF. Logs `act-as-stop` |
+
+- Actions are allowed and real (attributed to the coder, logs carry `auth_user.act_as`); time-limited (`JWTAuthMiddleware::ACT_AS_LIFETIME`), cleared on logout.
+- Every log entry written while active carries `auth_user.act_as` (role key).
+- Limits: `getUserId()` stays the coder's (owner checks on own unpublished records apply to the coder's records), and the sidebar organization alias filter follows the current organization.
 
 ---
 
@@ -1596,6 +1616,7 @@ Custom file-based DB cache (PSR-16 SimpleCache). No external dependency beyond `
 | `settings.{code}` | SettingsMiddleware | SettingsController |
 | `menu.{code}` | DashboardTrait | TemplateController (menu CRUD) |
 | `rbac.{userId}` | JWTAuthMiddleware (via `CacheService::fromDefaultPath()` - it runs before ContainerMiddleware) | RBACController (`clear()`) |
+| `rbac.act-as.{roleId}` | JWTAuthMiddleware (Act As role permissions) | RBACController (`clear()`) |
 | `pages_nav.{code}` | Web TemplateController | PagesController |
 | `featured_pages.{code}` | Web TemplateController | PagesController |
 | `recent_news.{code}` | HomeController | NewsController |

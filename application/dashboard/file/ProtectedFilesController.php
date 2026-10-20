@@ -28,7 +28,7 @@ namespace Dashboard\File;
  * authorizeRead()-д бичнэ.
  *
  * --------------------------------------------------------------
- * ЭРХИЙН ШАЛГАЛТ - authorizeRead() hook
+ * Эрхийн шалгалт - authorizeRead() hook
  * --------------------------------------------------------------
  * read() нь файл дамжуулахаас өмнө authorizeRead($relativePath)
  * дуудна. Default зан төлөв нь permissive: нэвтэрсэн хэрэглэгч бүр

@@ -159,6 +159,20 @@
             Users with <code>system_user_organization_set</code> permission can add or remove
             users from organizations.
         </p>
+        <ul>
+            <li>The system organization (<code>id=1</code>, <span class="badge text-bg-danger">system</span>) is listed first, the other organizations follow sorted by name</li>
+            <li>The top of the dialog shows the selected organizations; remove one with its x button</li>
+            <li><strong>Search</strong> - filters by organization name, alias and parent organization name. The switch shows only the selected organizations</li>
+            <li>🔒 the root user cannot be removed from the system organization</li>
+            <li>🔒 a non-<code>system_coder</code> can only add users to or remove them from organizations they belong to (also when creating a user or approving a signup request)</li>
+        </ul>
+        <div class="alert alert-warning">
+            <i class="bi bi-shield-exclamation"></i>
+            <strong>Scope of rights:</strong> a non-<code>system_coder</code> cannot touch a <code>system_coder</code> user's
+            roles or organizations. Your own roles and organizations can be changed under the same rules, but
+            removing your own access management permissions (<code>system_rbac</code>, <code>system_user_organization_set</code>)
+            or removing yourself from the organization you are signed in to is blocked (lockout protection).
+        </div>
         <div class="alert alert-info mb-0">
             <i class="bi bi-info-circle"></i>
             Users with the <strong>system_coder</strong> role have access to all organizations.
@@ -173,6 +187,15 @@
             Users with <code>system_rbac</code> permission can assign or remove roles from users.
             (See: <a href="{{ 'manual-view'|link({'file': 'rbac-manual-' ~ localization.code ~ '.html'}) }}">RBAC Manual</a>)
         </p>
+        <ul>
+            <li><strong>Selected roles</strong> - the top of the dialog shows the user's selected roles; remove one with its x button</li>
+            <li><strong>Permissions</strong> - the combined permissions of the selected roles, grouped by module and listed by description and name. Updates instantly as roles are checked or unchecked</li>
+            <li><strong>Roles table</strong> - every role lists its permissions in its own row. Click a row to select it</li>
+            <li><strong>Search</strong> - filters by role name, description and permission name/description (e.g. typing <code>product</code> keeps the roles with product permissions)</li>
+            <li><strong>Selected roles</strong> switch - shows only the selected roles in the table</li>
+            <li>🔒 a locked <code>system_coder</code> role cannot be changed with your rights (only the root coder grants it, only a coder removes it, and it is never removed from the root user)</li>
+            <li>🔒 a non-<code>system_coder</code> can only grant or revoke roles whose permissions they all have themselves - other roles are shown locked</li>
+        </ul>
         <div class="alert alert-info mb-0">
             <i class="bi bi-info-circle"></i>
             Users with the <strong>system_coder</strong> role have permission to perform all actions.

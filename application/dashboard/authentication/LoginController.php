@@ -411,6 +411,7 @@ class LoginController extends \Dashboard\Controller
         // 1) JWT-г устгах
         if (isset($_SESSION['RAPTOR_JWT'])) {
             unset($_SESSION['RAPTOR_JWT']);
+            unset($_SESSION[JWTAuthMiddleware::ACT_AS_SESSION_KEY]);
 
             // 2) Logout үйлдлийг системийн лог руу бүртгэх
             $this->log(

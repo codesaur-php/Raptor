@@ -12,6 +12,7 @@
     roles           - Roles array
     permissions     - Permissions array
     role_permission - role_id -> permission_id mapping
+    locked_permissions - permission_id -> true (coder биш хэрэглэгчид өөрт нь байхгүй эрх - өөрчлөх боломжгүй)
  
   js: SweetAlert2 (inherited from dashboard)
  -->
@@ -112,9 +113,11 @@
                         id="rp-{{ role['id'] }}-{{ permission['id'] }}"
                         data-role="{{ role['id'] }}"
                         data-perm="{{ permission['id'] }}"
+                        {% if locked_permissions[permission['id']] is defined %}disabled{% endif %}
                         {% if role_permission[role['id']] is defined and role_permission[role['id']][permission['id']] is defined %}checked{% endif %}>
                     <label class="flex-grow-1" for="rp-{{ role['id'] }}-{{ permission['id'] }}">
                         <span class="perm-name">{{ alias }}_{{ permission['name'] }}</span>
+                        {% if locked_permissions[permission['id']] is defined %}<i class="bi bi-lock-fill text-muted small" title="{{ 'permission-not-own'|text }}"></i>{% endif %}
                         <span class="perm-desc d-none d-md-inline ms-1">{{ permission['description'] }}</span>
                     </label>
                 </div>
@@ -211,7 +214,7 @@ document.addEventListener('DOMContentLoaded', function () {
         btn.addEventListener('click', async function () {
             const roleId = this.dataset.role;
             const unchecked = document.querySelectorAll(
-                `input.perm-check[data-role="${roleId}"]:not(:checked)`
+                `input.perm-check[data-role="${roleId}"]:not(:checked):not(:disabled)`
             );
             for (const cb of unchecked) {
                 cb.checked = true;
@@ -223,7 +226,7 @@ document.addEventListener('DOMContentLoaded', function () {
         btn.addEventListener('click', async function () {
             const roleId = this.dataset.role;
             const checked = document.querySelectorAll(
-                `input.perm-check[data-role="${roleId}"]:checked`
+                `input.perm-check[data-role="${roleId}"]:checked:not(:disabled)`
             );
             for (const cb of checked) {
                 cb.checked = false;

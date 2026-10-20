@@ -576,6 +576,11 @@ abstract class Controller extends \codesaur\Http\Application\Controller
                     // Үйлдлийг хийсэн байгууллагын ID - multi-tenant audit-д ашиглана
                     'organization_id' => $user?->organization['id'] ?? null,
                 ];
+                // Act As горимд хийгдсэн үйлдэл - аль ролиор харж байсныг тэмдэглэнэ
+                $act_as = $this->getAttribute('act_as');
+                if (!empty($act_as['role'])) {
+                    $context['auth_user']['act_as'] = $act_as['role'];
+                }
             }
 
             // Log бичих

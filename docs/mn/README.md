@@ -527,12 +527,13 @@ RAPTOR_DB_DRIVER=pgsql
 
 ### 6.4 RBAC (Эрхийн удирдлага)
 
-**Классууд:** `RBACRouter`, `RBACController`, `RBAC`, `Role`, `Roles`, `Permissions`, `RolePermission`, `UserRole`
+**Классууд:** `RBACRouter`, `RBACController`, `ActAsController`, `RBAC`, `Role`, `Roles`, `Permissions`, `RolePermission`, `UserRole`
 
 - Role (дүр) үүсгэх, удирдах
 - Permission (эрх) үүсгэх, удирдах
 - Role-Permission хамаарал
 - User-Role оноох
+- Act As (дүрээр ажиллах): account dropdown-оос роль сонгоод dashboard-ыг (цэс, товч, үйлдэл) тэр ролийн эрхээр ашиглана - `system_coder`: coder-оос бусад дурын роль, `system_rbac` эрхтэй: өөрийн эрхийн хүрээн дэх роль, бусад 2+ ролтой хэрэглэгч: өөрийн ролиуд; өөрчлөлт бодитоор хадгалагдаж хэрэглэгчийн нэрээр бүртгэгдэнэ, 1 цагийн дараа дуусна, banner-аар харагдаж `dashboard_log`-д бүртгэгдэнэ
 - Controller дотроос эрх шалгах:
 
 ```php

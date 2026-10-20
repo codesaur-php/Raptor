@@ -89,5 +89,16 @@ class RBACRouter extends Router
             '/organizations/rbac/{alias}/role/permission',
             [RBACController::class, 'setRolePermission']
         )->name('rbac-set-role-permission')->middleware([CsrfMiddleware::class]);
+
+        // Act As (сонгосон ролиор ажиллах, role preview). /act-as/ угтвар нь
+        // Dashboard\Application-ийн SessionMiddleware closure-тэй уялдана
+        // (session бичигдэх боломжтой үлдэнэ) - угтварыг хамт өөрчилнө.
+        //
+        // Coupling (English): the /act-as/ prefix is matched by the
+        // SessionMiddleware needsWrite closure in Dashboard\Application -
+        // change them together.
+        $this->GET('/act-as/roles', [ActAsController::class, 'roles'])->name('act-as-roles');
+        $this->POST('/act-as/start', [ActAsController::class, 'start'])->name('act-as-start')->middleware([CsrfMiddleware::class]);
+        $this->POST('/act-as/stop', [ActAsController::class, 'stop'])->name('act-as-stop')->middleware([CsrfMiddleware::class]);
     }
 }

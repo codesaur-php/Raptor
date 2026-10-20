@@ -1,52 +1,113 @@
 <!-- Байгууллага тохируулах Modal (Хэрэглэгч -> Байгууллага олон сонголттой)
-     Modal-lg / modal-centered = төвд том харуулах -->
-<div class="modal-lg modal-dialog modal-dialog-centered" role="document">
+
+     Variables:
+       profile               - байгууллага тохируулах хэрэглэгч
+       organizations         - идэвхтэй байгууллагууд (id=1 системийн байгууллага эхэнд, бусад нь нэрээр)
+                               мөр бүр: id, name, alias, logo, parent_name, locked, search
+       current_organizations - organization_id => true (хэрэглэгчийн одоогийн байгууллагууд)
+
+     Бүтэц:
+       1) Дээд хэсэг - сонгосон байгууллагууд (live)
+       2) Доод хэсэг - хайлттай байгууллагын хүснэгт -->
+<div class="modal-lg modal-dialog modal-dialog-centered modal-dialog-scrollable" role="document">
     <div class="modal-content">
         <!-- Modal Header - Гарчиг + X товч -->
         <div class="modal-header">
-            <h3 class="modal-title fs-6 text-uppercase">
-                {{ 'organization'|text }}
+            <h3 class="modal-title fs-6">
+                <i class="bi bi-building"></i> {{ 'organization'|text }}
+                <span class="text-muted fw-normal">
+                    - {{ profile['first_name'] ~ ' ' ~ profile['last_name'] }}
+                    ({{ profile['username'] }}, {{ profile['email'] }})
+                </span>
             </h3>
 
             <!-- Modal хаах товч -->
             <button class="btn-close" type="button" data-bs-dismiss="modal"
-                    aria-label="{{ 'close'|text|e }}"></button>
+                    aria-label="{{ 'close'|text }}"></button>
         </div>
 
         <!-- Modal Body - Form хэсэг -->
         <div class="modal-body">
-            <!-- Хэрэглэгчийн байгууллага тохируулах Form -->
             <form autocomplete="off"
                   id="set_user_organization"
                   role="form"
                   action="{{ 'user-set-organization'|link({'id':profile['id']}) }}"
                   method="POST"
                   enctype="multipart/form-data">
-                <div style="height:400px;overflow-y:auto;overflow-x:hidden;">
-                    <div class="form-group">
-                        <!-- Хэрэглэгчийн нэр + логин + email -->
-                        <label>
-                            {{ profile['first_name'] ~ ' ' ~ profile['last_name'] ~
-                               ' (' ~ profile['username'] ~ ' => ' ~ profile['email'] ~ ')' }}
-                            хэрэглэгчийн харьяалагдах байгууллагыг сонгон тохируулна уу!
-                        </label>
 
-                        <!-- Байгууллагын олон сонголттой select -->
-                        <select class="form-control"
-                                multiple
-                                name="organizations[]"
-                                id="user_organizations">
-                            {% for organization in organizations %}
-                            <option value="{{ organization['id'] }}"
-                                    {% if current_organizations[organization['id']] %}
-                                    selected
-                                    {% endif %}>
-                                {{ organization['name'] }}
-                            </option>
-                            {% endfor %}
-                        </select>
+                <!-- 1) Сонгосон байгууллагууд -->
+                <div class="border rounded p-3 mb-3 bg-body-tertiary">
+                    <div class="fw-bold small text-uppercase mb-2">
+                        <i class="bi bi-check2-square"></i> {{ 'selected-organizations'|text }}
+                        <span class="badge text-bg-success ms-1" id="selected_org_count">0</span>
+                    </div>
+                    <div class="d-flex flex-wrap gap-2" id="selected_orgs"></div>
+                </div>
+
+                <!-- 2) Хайлт + зөвхөн сонгосныг харуулах -->
+                <div class="d-flex flex-wrap align-items-center gap-3 mb-2">
+                    <div class="input-group input-group-sm" style="max-width:360px">
+                        <span class="input-group-text"><i class="bi bi-search"></i></span>
+                        <input class="form-control" type="search" id="org_search"
+                               placeholder="{{ 'search'|text }}: {{ 'name'|text }} / alias">
+                    </div>
+                    <div class="form-check form-switch mb-0 ms-auto">
+                        <input class="form-check-input" type="checkbox" role="switch" id="org_only_selected">
+                        <label class="form-check-label small" for="org_only_selected">{{ 'selected-organizations'|text }}</label>
                     </div>
                 </div>
+
+                <table class="table table-sm table-hover align-middle mb-0" id="org_table">
+                    <thead>
+                        <tr>
+                            <th style="width:2.5rem"></th>
+                            <th>{{ 'organization'|text }}</th>
+                            <th style="width:20%">Alias</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for organization in organizations %}
+                            <tr class="org-row{% if organization['id'] == 1 %} border-bottom border-2{% endif %}"
+                                data-search="{{ organization['search'] }}" style="cursor:pointer">
+                                <td>
+                                    <input class="form-check-input org-check{% if organization['locked'] %} opacity-50{% endif %}"
+                                           type="checkbox"
+                                           name="organizations[]"
+                                           value="{{ organization['id'] }}"
+                                           id="org_{{ organization['id'] }}"
+                                           data-name="{{ organization['name'] }}"
+                                           {% if organization['locked'] %}data-locked="1" aria-disabled="true"{% endif %}
+                                           {% if current_organizations[organization['id']] %}checked{% endif %}>
+                                </td>
+                                <td>
+                                    <label class="form-check-label d-flex align-items-center gap-2" for="org_{{ organization['id'] }}" style="cursor:pointer">
+                                        {% if organization['logo'] is not empty %}
+                                            <img src="{{ organization['logo'] }}" alt="" style="width:24px;height:24px;object-fit:contain">
+                                        {% else %}
+                                            <i class="bi bi-building text-muted" style="width:24px;text-align:center"></i>
+                                        {% endif %}
+                                        <span>
+                                            <span class="fw-semibold">{{ organization['name'] }}</span>
+                                            {% if organization['id'] == 1 %}
+                                                <span class="badge text-bg-danger ms-1">system</span>
+                                            {% endif %}
+                                            {% if organization['locked'] %}<i class="bi bi-lock-fill text-muted small" title="{{ 'organization-outside-own-scope'|text }}"></i>{% endif %}
+                                            {% if organization['parent_name'] is not empty %}
+                                                <span class="d-block small text-muted">
+                                                    <i class="bi bi-arrow-return-right"></i> {{ organization['parent_name'] }}
+                                                </span>
+                                            {% endif %}
+                                        </span>
+                                    </label>
+                                </td>
+                                <td><code class="small">{{ organization['alias'] }}</code></td>
+                            </tr>
+                        {% endfor %}
+                        <tr id="org_no_result" style="display:none">
+                            <td colspan="3" class="text-center text-muted py-3">{{ 'no-results-found'|text }}</td>
+                        </tr>
+                    </tbody>
+                </table>
             </form>
         </div>
 
@@ -68,18 +129,88 @@
 </div>
 
 <script type="text/javascript">
-    /* Choices.js ашиглан олон сонголттой select сайжруулж байна */
-    const userOrgs = document.getElementById('user_organizations');
-    if (userOrgs) {
-        new Choices(userOrgs, { removeItemButton: true });
-    }
-
     /* FORM submit логик */
     const userOrgsForm = document.querySelector('form#set_user_organization');
     if (!userOrgsForm) {
         /* Хэрэв form олдохгүй бол алдаа харуулах */
-        Notify('danger', `{{ 'error'|text|e }}`, 'Form not found!');
+        Notify('danger', `{{ 'error'|text|e('js') }}`, 'Form not found!');
     } else {
+        const orgChecks = Array.from(userOrgsForm.querySelectorAll('input.org-check'));
+        const selectedOrgsBox = document.getElementById('selected_orgs');
+        const orgCountBadge = document.getElementById('selected_org_count');
+        const orgSearch = document.getElementById('org_search');
+        const orgOnlySelected = document.getElementById('org_only_selected');
+        const orgNoResult = document.getElementById('org_no_result');
+
+        /* Дээд хэсгийн сонгосон байгууллагуудыг шинэчлэх (хүснэгтийн дарааллаар) */
+        const renderSelectedOrgs = function () {
+            const selected = orgChecks.filter(c => c.checked);
+            orgCountBadge.textContent = selected.length;
+            selectedOrgsBox.innerHTML = selected.length === 0
+                ? '<span class="text-muted small">-</span>'
+                : selected.map(c => '<span class="badge text-bg-dark d-inline-flex align-items-center gap-1 py-2">'
+                    + escapeHtml(c.dataset.name)
+                    + (c.dataset.locked
+                        ? ' <i class="bi bi-lock-fill"></i>'
+                        : '<button type="button" class="btn-close btn-close-white ms-1" style="font-size:.55rem"'
+                          + ' data-uncheck="' + escapeHtml(c.value) + '" aria-label="{{ 'remove'|text|e('js') }}"></button>')
+                    + '</span>').join('');
+        };
+
+        /* Хайлт / "зөвхөн сонгосон" шүүлт */
+        const filterOrgs = function () {
+            const q = (orgSearch.value || '').trim().toLowerCase();
+            const only = orgOnlySelected.checked;
+            let visible = 0;
+            orgChecks.forEach(c => {
+                const tr = c.closest('tr');
+                const show = (!q || (tr.dataset.search || '').includes(q)) && (!only || c.checked);
+                tr.style.display = show ? '' : 'none';
+                tr.classList.toggle('table-success', c.checked);
+                if (show) visible++;
+            });
+            orgNoResult.style.display = visible === 0 ? '' : 'none';
+        };
+
+        const refreshOrgs = function () {
+            renderSelectedOrgs();
+            filterOrgs();
+        };
+
+        orgChecks.forEach(c => {
+            /* Түгжсэн (root хэрэглэгчийн системийн байгууллага) checkbox төлвөө хэвээр илгээгдэнэ */
+            c.addEventListener('click', function (e) {
+                if (this.dataset.locked) e.preventDefault();
+            });
+            c.addEventListener('change', refreshOrgs);
+        });
+
+        /* Мөрийн аль ч хэсэгт дарахад checkbox солигдоно */
+        userOrgsForm.querySelectorAll('tr.org-row').forEach(tr => {
+            tr.addEventListener('click', function (e) {
+                if (e.target.closest('input, label')) return;
+                const c = this.querySelector('input.org-check');
+                if (!c || c.dataset.locked) return;
+                c.checked = !c.checked;
+                c.dispatchEvent(new Event('change'));
+            });
+        });
+
+        /* Сонгосон байгууллагын badge дээрх x -> хасна */
+        selectedOrgsBox.addEventListener('click', function (e) {
+            const btn = e.target.closest('[data-uncheck]');
+            if (!btn) return;
+            const c = orgChecks.find(x => x.value === btn.dataset.uncheck);
+            if (c && !c.dataset.locked) {
+                c.checked = false;
+                c.dispatchEvent(new Event('change'));
+            }
+        });
+
+        orgSearch.addEventListener('input', filterOrgs);
+        orgOnlySelected.addEventListener('change', filterOrgs);
+        refreshOrgs();
+
         /* Хадгалах товч */
         const submitter = document.querySelector('button.submit-set-organization');
 
@@ -92,19 +223,6 @@
         /* FORM submit event */
         userOrgsForm.addEventListener('submit', function (event) {
             event.preventDefault();
-
-            /* HTML5 validation шалгалт */
-            const isValid = this.checkValidity();
-            this.classList.add('was-validated');
-
-            if (!isValid) {
-                event.stopPropagation();
-                return Notify(
-                    'danger',
-                    `{{ 'error'|text|e }}`,
-                    `{{ 'u-have-some-form-errors'|text|e }}`
-                );
-            }
 
             /* Ажиллаж буй эффектийг харуулах */
             submitter.growNstop();
@@ -135,13 +253,13 @@
 
                 Notify(
                     response.type ?? 'success',
-                    response.title ?? `{{ 'success'|text|e }}`,
+                    response.title ?? `{{ 'success'|text|e('js') }}`,
                     response.message ?? 'User organization set'
                 );
             })
             .catch(error => {
                 /* Алдаа гарвал */
-                Notify('danger', `{{ 'error'|text|e }}`, error.message);
+                Notify('danger', `{{ 'error'|text|e('js') }}`, error.message);
 
                 /* Анимэйшн зогсоох */
                 submitter.growNstop();
