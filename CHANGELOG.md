@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 
 ---
 
+## [5.7.1] - 2026-10-27
+[5.7.1]: https://github.com/codesaur-php/Raptor/compare/v5.7.0...v5.7.1
+
+### Added
+
+- **Server PHP security notice on the dashboard home page (`system_coder` only).** Raptor runs on VPS, shared hosting and localhost, and on many of them the full PHP version that serves the website is not visible anywhere (shared hosting control panels show only the branch, and the CLI `php -v` can be a different binary from the web server's PHP). `Dashboard\Home\PhpSecurityStatus` checks the PHP of the current web request against a known advisory - currently PHP2Shell (CVE-2026-109618, CVE-2026-109619; patched in 8.2.35, 8.3.36, 8.4.27, 8.5.12) - and `HomeController::index()` passes the result to `home.html` as `php_status`, only when `isUser('system_coder')` (everyone else, and a coder in Act As mode, gets `null`; the version, ini values and php.ini path are server details).
+  - **Patched:** one muted line with the version, SAPI and advisory name.
+  - **Vulnerable:** a red alert with the minimum patched release of the running branch, the SAPI, the loaded `php.ini` path, the user ini file name, and the **actual** values of the interim mitigation settings (`session.upload_progress.enabled = Off`, `memory_limit = -1`) each with its required value and a check / cross, whether the mitigation is in effect, and a short hint on where to set it for the detected SAPI (`apache2handler` - php.ini / Apache config / `.htaccess`; `fpm-fcgi` - FPM pool or php.ini, with a note that a `.user.ini` value may apply too late; others - php.ini / control panel PHP INI editor / `.user.ini`).
+  - The text is Mongolian when the dashboard language is `mn`, English for every other language (no new text keywords, so no migration is needed).
+  - The values are only reported, never set from code: `session.upload_progress.enabled` is `PHP_INI_PERDIR` and upload parsing happens before any PHP code runs.
+  - For a new advisory edit `ADVISORY`, `PATCHED` (branch => first fixed release) and `MITIGATION` (ini setting => required value).
+  - Tests: `tests/Unit/Controller/PhpSecurityStatusTest.php`.
+- **`docs/en/PHP-SECURITY.md` and `docs/mn/PHP-SECURITY.md`** - how to upgrade PHP and how to apply the interim mitigation on each environment (server php.ini / conf.d drop-in, PHP-FPM pool, Apache `php_admin_*` / `.htaccess`, shared hosting control panels and `.user.ini`, Docker, XAMPP / WAMP, Homebrew), how to verify it on the home page, and the `memory_limit = -1` caution (restore the previous value after upgrading). Linked from the Dashboard Home section of each language's README and `api.md`.
+
 ## [5.7.0] - 2026-10-20
 [5.7.0]: https://github.com/codesaur-php/Raptor/compare/v5.6.1...v5.7.0
 

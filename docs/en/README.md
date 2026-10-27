@@ -799,13 +799,14 @@ Sitemap: https://example.com/sitemap.xml
 
 ### 6.25 Dashboard Home
 
-**Classes:** `HomeRouter`, `HomeController`, `SearchController`, `WebLogStatsController`, `WebLogStats`
+**Classes:** `HomeRouter`, `HomeController`, `SearchController`, `WebLogStatsController`, `WebLogStats`, `PhpSecurityStatus`
 
 - Dashboard home page with system overview
 - Topbar quick icons (search | language | theme): search modal (Ctrl+K) across news, pages, products, orders, users, organizations, dev-requests, messages, comments, and reviews (RBAC-filtered, each source gated by its module's index permission or row-level filter); language dropdown (session-persisted); light/dark theme dropdown (instant, no reload); account dropdown (name / email / organization header, My profile, Logout). On mobile (<768px) the topbar keeps only sidebar toggle | brand | search | account; language and theme move to the bottom of the offcanvas sidebar, and the organization switcher opens as a full-width panel under the topbar
 - Web visit statistics with chart data, top pages/news/products, IP addresses
 - System log statistics per `*_log` table (today/week/total counts)
 - `web_log_cache` table for performance optimization
+- Server PHP security notice (`system_coder` only, home page only): the running PHP version against a known advisory, and - when vulnerable - the SAPI, php.ini path and the actual values of the interim mitigation settings with a per-SAPI hint. See [PHP-SECURITY.md](PHP-SECURITY.md)
 
 ### 6.26 Dashboard Manual
 

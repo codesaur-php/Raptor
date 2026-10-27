@@ -5,8 +5,61 @@
 
     Controller: Dashboard\Home\HomeController
     Статистик ui: web-stats.HTML
+    Variables: web_log_stats, php_status
 -->
 <div id="hello" class="mb-3"></div>
+
+<!-- Серверийн PHP эмзэг байдлын мэдэгдэл - зөвхөн system_coder (php_status, Dashboard\Home\PhpSecurityStatus;
+     бусад хэрэглэгчид null). Засвартай бол нэг мөр, эмзэг бол түр хамгаалалтын тохиргооны бодит утгатай анхааруулга.
+     Тохиргоог хаана хийх зааврыг docs/en/PHP-SECURITY.md, docs/mn/PHP-SECURITY.md-ээс үз. -->
+{% if php_status %}
+{% set mn = localization.code == 'mn' %}
+{% if php_status['patched'] %}
+<div class="small text-muted mb-3" title="{{ php_status['advisory'] }}">
+    <i class="bi bi-shield-check text-success"></i>
+    PHP {{ php_status['version'] }} ({{ php_status['sapi'] }}) -
+    {{ mn ? 'мэдэгдэж буй эмзэг байдлын засвартай' : 'patched against the known advisory' }}: {{ php_status['advisory'] }}
+</div>
+{% else %}
+<div class="alert alert-danger small d-flex align-items-start gap-2 mb-3" role="alert">
+    <i class="bi bi-shield-exclamation fs-4"></i>
+    <div>
+        <strong>{{ mn ? 'Серверийн PHP эмзэг хувилбартай байна' : 'The server runs a vulnerable PHP version' }}: {{ php_status['version'] }}</strong>
+        - {{ php_status['advisory'] }}.
+        {{ mn ? 'Засвартай хувилбар руу шинэчилнэ үү (VPS / localhost дээр өөрөө, shared hosting дээр хостингоор)' : 'Upgrade to a patched release (yourself on a VPS / localhost, through the hosting provider on shared hosting)' }}{% if php_status['required'] %}: <strong>{{ php_status['required'] }}+</strong>{% endif %}.
+        <div class="mt-2">
+            {{ mn ? 'Ажиллах горим' : 'SAPI' }}: <code>{{ php_status['sapi'] }}</code>
+            {% if php_status['ini_file'] %} | php.ini: <code>{{ php_status['ini_file'] }}</code>{% endif %}
+            {% if php_status['user_ini'] %} | user ini: <code>{{ php_status['user_ini'] }}</code>{% endif %}
+        </div>
+        <ul class="mb-0 mt-1 ps-3">
+            {% for key, item in php_status['ini'] %}
+            <li>
+                {% if item['ok'] %}<i class="bi bi-check-circle text-success"></i>{% else %}<i class="bi bi-x-circle"></i>{% endif %}
+                <code>{{ key }} = {{ item['value'] }}</code>
+                ({{ mn ? 'шаардлагатай' : 'required' }}: <code>{{ item['required'] }}</code>)
+            </li>
+            {% endfor %}
+        </ul>
+        <div class="mt-2">
+            {% if php_status['mitigated'] %}
+            {{ mn ? 'Түр хамгаалалтын тохиргоо энэ серверт үйлчилж байна. Бүрэн шийдэл нь PHP шинэчлэлт хэвээр - шинэчилсний дараа тохиргоог өмнөх утгад нь буцаана.' : 'The interim mitigation is in effect on this server. Upgrading PHP is still the real fix - restore the previous values after the upgrade.' }}
+            {% else %}
+            {{ mn ? 'Түр хамгаалалтын тохиргоо үйлчлээгүй байна. PHP-г шууд шинэчлэх боломжгүй бол дээрх утгуудыг тохируулна:' : 'The interim mitigation is not in effect. If PHP cannot be upgraded right away, set the values above:' }}
+            {% endif %}
+            {% if php_status['sapi'] == 'apache2handler' %}
+            {{ mn ? 'Apache module (mod_php) - php.ini, Apache config (php_admin_flag, php_admin_value) эсвэл .htaccess-д (php_flag, php_value); php.ini / Apache config-ийг өөрчилсний дараа Apache-г restart хийнэ.' : 'Apache module (mod_php) - in php.ini, the Apache config (php_admin_flag, php_admin_value) or .htaccess (php_flag, php_value); restart Apache after changing php.ini / the Apache config.' }}
+            {% elseif php_status['sapi'] == 'fpm-fcgi' %}
+            {{ mn ? 'PHP-FPM - FPM pool-ийн тохиргоонд (php_admin_flag[...], php_admin_value[...]) эсвэл php.ini-д, дараа нь php-fpm-г reload хийнэ. .user.ini-ээр тохируулсан утга энд харагдсан ч хүсэлт задлахаас өмнө хэрэгжээгүй байж болзошгүй - боломжтой бол pool / php.ini-д тохируулна (shared hosting дээр хостингоор).' : 'PHP-FPM - in the FPM pool config (php_admin_flag[...], php_admin_value[...]) or php.ini, then reload php-fpm. A .user.ini value shown here may still apply too late for request parsing - prefer the pool / php.ini (on shared hosting, ask the provider).' }}
+            {% else %}
+            {{ mn ? 'php.ini-д, эсвэл shared hosting дээр хяналтын самбарын PHP INI засварлагч / .user.ini-ээр (5 минут хүртэл хүлээгдэж болно).' : 'In php.ini, or on shared hosting through the control panel PHP INI editor / .user.ini (may take up to 5 minutes to apply).' }}
+            {% endif %}
+            {{ mn ? 'Дэлгэрэнгүй: docs/mn/PHP-SECURITY.md' : 'Details: docs/en/PHP-SECURITY.md' }}
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endif %}
 
 <script>
     /** Хэрэглэгчийг мэндчилж, өнөөдрийн огноог харуулах. */

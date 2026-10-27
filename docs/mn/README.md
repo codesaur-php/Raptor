@@ -802,13 +802,14 @@ Sitemap: https://example.com/sitemap.xml
 
 ### 6.25 Dashboard Home
 
-**Классууд:** `HomeRouter`, `HomeController`, `SearchController`, `WebLogStatsController`, `WebLogStats`
+**Классууд:** `HomeRouter`, `HomeController`, `SearchController`, `WebLogStatsController`, `WebLogStats`, `PhpSecurityStatus`
 
 - Dashboard нүүр хуудас системийн ерөнхий мэдээлэлтэй
 - Topbar icon-ууд (хайлт | хэл | загвар): хайлтын modal (Ctrl+K) - мэдээ, хуудас, бүтээгдэхүүн, захиалга, хэрэглэгч, байгууллага, хөгжүүлэлтийн хүсэлт, мессеж, сэтгэгдэл, үнэлгээнээс (RBAC шүүлтүүртэй - эх сурвалж бүр модулийнхаа index permission эсвэл мөрийн түвшний шүүлтээр хамгаалагдана); хэл солих dropdown (session-д хадгалагдана); цайвар/бараан загварын dropdown (reload-гүй шууд); account dropdown (нэр / email / байгууллага толгой, Миний профайл, Гарах). Mobile (<768px) дээр topbar-т зөвхөн sidebar toggle | брэнд | хайлт | account үлдэж, хэл, загвар offcanvas sidebar-ын доод хэсэг рүү шилжинэ, байгууллага сонгох цэс topbar-ын доор бүтэн өргөнөөр нээгдэнэ
 - Вэб зочилсон статистик: график, шилдэг хуудас/мэдээ/бүтээгдэхүүн, IP хаяг
 - Системийн `*_log` хүснэгтүүдийн статистик (өнөөдөр/долоо хоног/нийт)
 - `web_log_cache` хүснэгт гүйцэтгэлийг хурдасгахад ашиглана
+- Серверийн PHP аюулгүй байдлын мэдэгдэл (зөвхөн `system_coder`, зөвхөн нүүр хуудсанд): ажиллаж буй PHP хувилбарыг мэдэгдэж буй эмзэг байдалтай харьцуулж, эмзэг бол SAPI, php.ini-ийн зам, түр хамгаалалтын тохиргооны бодит утгыг SAPI-д тохирсон заавартай харуулна. [PHP-SECURITY.md](PHP-SECURITY.md)-г үз
 
 ### 6.26 Dashboard Manual (Гарын авлага)
 

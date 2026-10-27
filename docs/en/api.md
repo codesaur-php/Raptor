@@ -1182,6 +1182,21 @@ Returns system `*_log` table statistics JSON (today/week/total counts, last upda
 
 Standalone utility that calculates web visit statistics. Maintains a `web_log_cache` table for performance. Supports both MySQL (`JSON_EXTRACT`) and PostgreSQL (`::jsonb`).
 
+### PhpSecurityStatus
+
+**File:** `application/dashboard/home/PhpSecurityStatus.php`
+
+Checks the PHP serving the current web request against a known advisory. `HomeController::index()` passes `check()` as `php_status` to `home.html` only for `system_coder` (`null` for everyone else); `home.html` shows one line when patched and a red alert when vulnerable (Mongolian for `mn`, English otherwise). Edit `ADVISORY`, `PATCHED` (branch => first fixed release) and `MITIGATION` (ini setting => required value) for a new advisory. See [PHP-SECURITY.md](PHP-SECURITY.md).
+
+#### `check(string $version = PHP_VERSION): array`
+`version`, `patched`, `required` (minimum patched release of the branch, `null` when the branch is newer than the list), `advisory`, plus everything from `runtime()`.
+
+#### `runtime(): array`
+`sapi` (`PHP_SAPI`), `ini` (per `MITIGATION` key: `value`, `required`, `ok`), `mitigated` (all `ok`), `ini_file` (`php_ini_loaded_file()`), `user_ini` (`user_ini.filename`).
+
+#### `iniMatches(string $actual, string $required): bool`
+On/Off values compare regardless of spelling (`''`, `0`, `off` = Off); other values compare as exact strings.
+
 ---
 
 ## Dashboard Manual
