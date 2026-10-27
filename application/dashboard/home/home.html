@@ -10,23 +10,23 @@
 <div id="hello" class="mb-3"></div>
 
 <!-- Серверийн PHP эмзэг байдлын мэдэгдэл - зөвхөн system_coder (php_status, Dashboard\Home\PhpSecurityStatus;
-     бусад хэрэглэгчид null). Засвартай бол нэг мөр, эмзэг бол түр хамгаалалтын тохиргооны бодит утгатай анхааруулга.
+     бусад хэрэглэгчид null). Зөвхөн эмзэг үед түр хамгаалалтын тохиргооны бодит утгатай анхааруулга харуулна;
+     засвартай (дистрибьюторын backport-оор ч) бол юу ч харуулахгүй.
      Тохиргоог хаана хийх зааврыг docs/en/PHP-SECURITY.md, docs/mn/PHP-SECURITY.md-ээс үз. -->
-{% if php_status %}
+{% if php_status and not php_status['patched'] %}
 {% set mn = localization.code == 'mn' %}
-{% if php_status['patched'] %}
-<div class="small text-muted mb-3" title="{{ php_status['advisory'] }}">
-    <i class="bi bi-shield-check text-success"></i>
-    PHP {{ php_status['version'] }} ({{ php_status['sapi'] }}) -
-    {{ mn ? 'мэдэгдэж буй эмзэг байдлын засвартай' : 'patched against the known advisory' }}: {{ php_status['advisory'] }}
-</div>
-{% else %}
 <div class="alert alert-danger small d-flex align-items-start gap-2 mb-3" role="alert">
     <i class="bi bi-shield-exclamation fs-4"></i>
     <div>
         <strong>{{ mn ? 'Серверийн PHP эмзэг хувилбартай байна' : 'The server runs a vulnerable PHP version' }}: {{ php_status['version'] }}</strong>
         - {{ php_status['advisory'] }}.
         {{ mn ? 'Засвартай хувилбар руу шинэчилнэ үү (VPS / localhost дээр өөрөө, shared hosting дээр хостингоор)' : 'Upgrade to a patched release (yourself on a VPS / localhost, through the hosting provider on shared hosting)' }}{% if php_status['required'] %}: <strong>{{ php_status['required'] }}+</strong>{% endif %}.
+        {% if php_status['package'] %}
+        <div class="mt-2">
+            {{ mn ? 'Дистрибьюторын багц' : 'Distribution package' }}: <code>{{ php_status['package'] }}</code>
+            - {{ mn ? 'засвар backport хийгдсэн эсэхийг багцын хувилбараар шалгана; шинэчилсний дараа PHP процессыг restart хийнэ.' : 'a backported fix is recognized by the package version; restart the PHP process after upgrading.' }}
+        </div>
+        {% endif %}
         <div class="mt-2">
             {{ mn ? 'Ажиллах горим' : 'SAPI' }}: <code>{{ php_status['sapi'] }}</code>
             {% if php_status['ini_file'] %} | php.ini: <code>{{ php_status['ini_file'] }}</code>{% endif %}
@@ -58,7 +58,6 @@
         </div>
     </div>
 </div>
-{% endif %}
 {% endif %}
 
 <script>

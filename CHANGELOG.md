@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 
 ---
 
+## [5.7.2] - 2026-10-27
+[5.7.2]: https://github.com/codesaur-php/Raptor/compare/v5.7.1...v5.7.2
+
+### Changed
+
+- **The dashboard PHP security notice is shown only when the server is vulnerable.** A patched server no longer gets the muted "patched against the known advisory" line - nothing is shown when it is safe; the red alert (fix required, interim mitigation in effect or not) is unchanged.
+
+### Fixed
+
+- **`PhpSecurityStatus` recognizes distribution backports.** Ubuntu fixes PHP without moving to the new upstream release (the patched Ubuntu 24.04 `php8.3` is `8.3.6-0ubuntu0.24.04.13`, still reporting PHP `8.3.6`), so the upstream comparison flagged patched servers as vulnerable. The new `BACKPORTS` constant maps a distribution package base to its first patched package version (USN-8948-1: Ubuntu 22.04 `8.1.2-1ubuntu2.28`, 24.04 `8.3.6-0ubuntu0.24.04.13`, 26.04 `8.5.4-0ubuntu1.5`, 26.10 `8.5.9-0ubuntu2.1`).
+  - The package version comes from the `PHP_VERSION` suffix, or - when PHP reports no suffix - from the installed version of the current SAPI's package in `/var/lib/dpkg/status` (`php8.x-fpm`, `libapache2-mod-php8.x`, `php8.x-cgi`, `php8.x-cli`). It counts only when its upstream part equals the running version; SRU numbers compare numerically and suffixes such as `+esm1` are ignored. Where the file cannot be read (shared hosting, Windows, `open_basedir`) the upstream comparison stays in effect.
+  - A vulnerable distribution build shows the package version in the alert and the patched package version as the required one. Debian already moves to the patched upstream release (`8.2.35-1~deb12u1`), so `PATCHED` covers it.
+  - `check()` takes an optional `$package` argument and returns `package` and `backport`; new public `backportFixed()`.
+  - Docs: "Distribution backports" in `docs/{en,mn}/PHP-SECURITY.md`, `docs/{en,mn}/api.md`. Tests: `tests/Unit/Controller/PhpSecurityStatusTest.php`.
+
 ## [5.7.1] - 2026-10-27
 [5.7.1]: https://github.com/codesaur-php/Raptor/compare/v5.7.0...v5.7.1
 

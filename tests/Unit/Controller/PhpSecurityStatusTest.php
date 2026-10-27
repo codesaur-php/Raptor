@@ -31,6 +31,34 @@ class PhpSecurityStatusTest extends RaptorTestCase
         $this->assertNull(PhpSecurityStatus::check('8.6.0')['required']);
     }
 
+    public function testDistributionBackports(): void
+    {
+        /* Ubuntu-ийн засвартай багц upstream хувилбараа хадгална (8.3.6 < 8.3.36) */
+        foreach (['8.3.6-0ubuntu0.24.04.13', '8.3.6-0ubuntu0.24.04.14', '8.1.2-1ubuntu2.28', '8.1.2-1ubuntu2.28+esm1', '8.5.9-0ubuntu2.1'] as $v) {
+            $status = PhpSecurityStatus::check($v);
+            $this->assertTrue($status['patched'], $v);
+            $this->assertTrue($status['backport'], $v);
+            $this->assertSame($v, $status['package']);
+        }
+        foreach (['8.3.6-0ubuntu0.24.04.12', '8.3.6-0ubuntu0.24.04', '8.5.4-0ubuntu1', '8.5.4-0ubuntu1.4'] as $v) {
+            $this->assertFalse(PhpSecurityStatus::check($v)['patched'], $v);
+        }
+        /* Шаардлагатай хувилбар нь upstream биш, дистрибьюторын засвартай багц */
+        $this->assertSame('8.3.6-0ubuntu0.24.04.13', PhpSecurityStatus::check('8.3.6-0ubuntu0.24.04.5')['required']);
+
+        /* PHP_VERSION-д залгаасгүй build - багцын хувилбарыг тусад нь өгнө */
+        $this->assertTrue(PhpSecurityStatus::check('8.3.6', '8.3.6-0ubuntu0.24.04.13')['patched']);
+        $this->assertFalse(PhpSecurityStatus::check('8.3.6', '')['patched']);
+        /* Ажиллаж буй хувилбартай таарахгүй багц (өөр PHP) тооцогдохгүй */
+        $this->assertFalse(PhpSecurityStatus::check('8.3.5', '8.3.6-0ubuntu0.24.04.13')['patched']);
+        /* Суурь яг таарах ёстой */
+        $this->assertNull(PhpSecurityStatus::backportFixed('8.1.2-1ubuntu20.1'));
+        /* Debian upstream засвартай хувилбар руу шилждэг - PATCHED-ээр танигдана */
+        $status = PhpSecurityStatus::check('8.2.35-1~deb12u1');
+        $this->assertTrue($status['patched']);
+        $this->assertFalse($status['backport']);
+    }
+
     public function testRuntimeReportsSapiAndMitigationSettings(): void
     {
         $status = PhpSecurityStatus::check();

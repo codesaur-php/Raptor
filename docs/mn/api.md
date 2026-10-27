@@ -1187,10 +1187,13 @@ Dashboard ерөнхий хайлт - topbar хайлтын modal (Ctrl+K)-ий�
 
 **Файл:** `application/dashboard/home/PhpSecurityStatus.php`
 
-Одоогийн вэб хүсэлтэд үйлчилж буй PHP-г мэдэгдэж буй эмзэг байдалтай харьцуулна. `HomeController::index()` нь `check()`-ийг `php_status` нэрээр `home.html`-д зөвхөн `system_coder`-т дамжуулна (бусдад `null`); `home.html` засвартай бол нэг мөр, эмзэг бол улаан анхааруулга харуулна (`mn` үед монголоор, бусад үед англиар). Шинэ эмзэг байдалд `ADVISORY`, `PATCHED` (салбар => анхны засвартай хувилбар), `MITIGATION` (ini тохиргоо => шаардлагатай утга)-г засна. [PHP-SECURITY.md](PHP-SECURITY.md)-г үз.
+Одоогийн вэб хүсэлтэд үйлчилж буй PHP-г мэдэгдэж буй эмзэг байдалтай харьцуулна. `HomeController::index()` нь `check()`-ийг `php_status` нэрээр `home.html`-д зөвхөн `system_coder`-т дамжуулна (бусдад `null`); `home.html` засвартай бол юу ч харуулахгүй, эмзэг бол улаан анхааруулга харуулна (`mn` үед монголоор, бусад үед англиар). Шинэ эмзэг байдалд `ADVISORY`, `PATCHED` (салбар => анхны засвартай хувилбар), `MITIGATION` (ini тохиргоо => шаардлагатай утга), `BACKPORTS` (дистрибьюторын багцын суурь => анхны засвартай багц)-г засна. [PHP-SECURITY.md](PHP-SECURITY.md)-г үз.
 
-#### `check(string $version = PHP_VERSION): array`
-`version`, `patched`, `required` (салбарын засвартай хамгийн бага хувилбар, салбар нь жагсаалтаас шинэ бол `null`), `advisory` болон `runtime()`-ийн бүх утга.
+#### `check(string $version = PHP_VERSION, ?string $package = null): array`
+`version`, `patched`, `required` (салбарын засвартай хамгийн бага хувилбар, салбар нь жагсаалтаас шинэ бол `null`; дистрибьюторын backport үед засвартай багцын хувилбар), `advisory`, `package` (дистрибьюторын багцын хувилбар - `PHP_VERSION`-ий залгаас эсвэл SAPI-ийн багцын dpkg бичлэг; `$package = ''` бол хайхгүй), `backport` (`BACKPORTS`-оор засвартай), мөн `runtime()`-ийн бүх утга.
+
+#### `backportFixed(string $package): ?string`
+Суурь нь багцтай яг таарах эсвэл `.` + SRU дугаараар үргэлжлэх `BACKPORTS`-ийн засвартай хувилбар, үгүй бол `null`.
 
 #### `runtime(): array`
 `sapi` (`PHP_SAPI`), `ini` (`MITIGATION`-ийн түлхүүр бүрээр: `value`, `required`, `ok`), `mitigated` (бүгд `ok`), `ini_file` (`php_ini_loaded_file()`), `user_ini` (`user_ini.filename`).

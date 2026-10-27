@@ -1186,10 +1186,13 @@ Standalone utility that calculates web visit statistics. Maintains a `web_log_ca
 
 **File:** `application/dashboard/home/PhpSecurityStatus.php`
 
-Checks the PHP serving the current web request against a known advisory. `HomeController::index()` passes `check()` as `php_status` to `home.html` only for `system_coder` (`null` for everyone else); `home.html` shows one line when patched and a red alert when vulnerable (Mongolian for `mn`, English otherwise). Edit `ADVISORY`, `PATCHED` (branch => first fixed release) and `MITIGATION` (ini setting => required value) for a new advisory. See [PHP-SECURITY.md](PHP-SECURITY.md).
+Checks the PHP serving the current web request against a known advisory. `HomeController::index()` passes `check()` as `php_status` to `home.html` only for `system_coder` (`null` for everyone else); `home.html` shows nothing when patched and a red alert when vulnerable (Mongolian for `mn`, English otherwise). Edit `ADVISORY`, `PATCHED` (branch => first fixed release), `MITIGATION` (ini setting => required value) and `BACKPORTS` (distribution package base => first patched package) for a new advisory. See [PHP-SECURITY.md](PHP-SECURITY.md).
 
-#### `check(string $version = PHP_VERSION): array`
-`version`, `patched`, `required` (minimum patched release of the branch, `null` when the branch is newer than the list), `advisory`, plus everything from `runtime()`.
+#### `check(string $version = PHP_VERSION, ?string $package = null): array`
+`version`, `patched`, `required` (minimum patched release of the branch, `null` when the branch is newer than the list; the patched package version for a distribution backport), `advisory`, `package` (distribution package version - the `PHP_VERSION` suffix or the dpkg entry of the SAPI's package; `$package = ''` skips the lookup), `backport` (patched through a `BACKPORTS` entry), plus everything from `runtime()`.
+
+#### `backportFixed(string $package): ?string`
+The `BACKPORTS` patched version whose base equals the package or is followed by `.` + SRU number, otherwise `null`.
 
 #### `runtime(): array`
 `sapi` (`PHP_SAPI`), `ini` (per `MITIGATION` key: `value`, `required`, `ok`), `mitigated` (all `ok`), `ini_file` (`php_ini_loaded_file()`), `user_ini` (`user_ini.filename`).
