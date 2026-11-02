@@ -314,6 +314,9 @@ class PagesController extends FileController
                 }
 
                 $payload = $this->sanitizePayload($model, $payload);
+                // Дарааллыг гараар оруулахгүй - ах дүүсийн төгсгөлд орж, дараа нь
+                // Хуудасны навигаци хуудсанд чирж байрлуулна (sort())
+                $payload['position'] = $this->nextPagePosition($table, (int) ($payload['parent_id'] ?? 0));
                 $record = $model->insert(
                     $payload + ['created_by' => $this->getUserId()]
                 );
@@ -364,9 +367,11 @@ class PagesController extends FileController
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } elseif ($this->getRequest()->getMethod() == 'POST') {
                 $level = LogLevel::INFO;
-                $message = '{record.id} дугаартай [{record.title}] хуудсыг амжилттай үүсгэлээ';
-                $context += ['record_id' => $id, 'record' => $record];
-                $context['file_changes'] = !empty($fileChanges) ? $fileChanges : 'files not changed';
+                $message = '{record_id} дугаартай [{payload.title}] хуудсыг амжилттай үүсгэлээ';
+                $context += ['record_id' => $id, 'payload' => $payload];
+                if (!empty($fileChanges)) {
+                    $context['file_changes'] = $fileChanges;
+                }
             } else {
                 $level = LogLevel::NOTICE;
                 $message = 'Хуудас үүсгэх үйлдлийг эхлүүллээ';
@@ -432,8 +437,7 @@ class PagesController extends FileController
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } else {
                 $level = LogLevel::NOTICE;
-                $message = '{record.id} дугаартай [{record.title}] хуудасны мэдээллийг үзэж байна';
-                $context += ['record' => $record, 'files' => $files];
+                $message = '{record_id} дугаартай хуудасны мэдээллийг үзэж байна';
             }
             $this->log('pages', $level, $message, $context);
         }
@@ -566,6 +570,8 @@ class PagesController extends FileController
                 if (\array_key_exists('id', $payload)) {
                     unset($payload['id']);
                 }
+                // position-ийг зөвхөн чирэх (sort()) өөрчилнө
+                unset($payload['position']);
                 $payload = $this->sanitizePayload($model, $payload);
 
                 // Файлуудыг эхлээд боловсруулах
@@ -583,6 +589,14 @@ class PagesController extends FileController
                 }
                 if (empty($updates)) {
                     throw new \InvalidArgumentException('No update!');
+                }
+
+                // Өөр эцэг рүү шилжвэл шинэ ах дүүсийнхээ төгсгөлд орно. int-ээр
+                // харьцуулна: form top-level-д '0' илгээдэг, DB-д NULL хадгалагддаг
+                if (\array_key_exists('parent_id', $payload)
+                    && (int) $payload['parent_id'] !== (int) ($record['parent_id'] ?? 0)
+                ) {
+                    $payload['position'] = $this->nextPagePosition($table, (int) ($payload['parent_id'] ?? 0));
                 }
 
                 // Description хоосон бол content-оос автоматаар үүсгэх
@@ -652,13 +666,17 @@ class PagesController extends FileController
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } elseif ($this->getRequest()->getMethod() == 'PUT') {
                 $level = LogLevel::INFO;
-                $message = '{record.id} дугаартай [{record.title}] хуудасны мэдээллийг амжилттай шинэчлэлээ';
-                $context += ['updates' => $updates, 'record' => $updated];
-                $context['file_changes'] = !empty($fileChanges) ? $fileChanges : 'files not changed';
+                $message = '{record_id} дугаартай [{title}] хуудасны мэдээллийг амжилттай шинэчлэлээ';
+                $context += [
+                    'title' => $updated['title'] ?? '',
+                    'changes' => $this->recordChanges($record, $updated)
+                ];
+                if (!empty($fileChanges)) {
+                    $context['file_changes'] = $fileChanges;
+                }
             } else {
                 $level = LogLevel::NOTICE;
-                $message = '{record.id} дугаартай [{record.title}] хуудасны мэдээллийг шинэчлэхээр нээж байна';
-                $context += ['record' => $record, 'files' => $files];
+                $message = '{record_id} дугаартай хуудасны мэдээллийг шинэчлэхээр нээж байна';
             }
             $this->log('pages', $level, $message, $context);
         }
@@ -725,11 +743,200 @@ class PagesController extends FileController
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } else {
                 $level = LogLevel::ALERT;
-                $message = '{record_id} дугаартай [{server_request.body.title}] хуудсыг устгалаа';
-                $context += ['record_id' => $id];
+                $message = '{record_id} дугаартай [{title}] хуудсыг устгалаа';
+                $context += ['record_id' => $id, 'title' => $record['title'] ?? ($payload['title'] ?? '')];
             }
             $this->log('pages', $level, $message, $context);
         }
+    }
+
+    /**
+     * Хуудасны навигаци (pages-nav.html) дээрх чирж өөрчилсөн дарааллыг хадгалах.
+     *
+     * Body: {"lists": [[id, ...], ...], "moves": {id: parentId, ...}} - аль нэг нь заавал
+     *   - lists - чирсэн жагсаалтын хуудсууд дэлгэцийн дарааллаар. Тус бүрд
+     *     position = 10, 20, 30 ... болно - хуудас нь эцэг бүрийн дотор
+     *     position-оор эрэмбэлэгддэг тул ах дүүсийн хооронд дугаарлахад хангалттай.
+     *     Чирэх нь эцэг солихгүй (санамсаргүй зөөхөөс сэргийлж).
+     *   - moves - (заавал биш) хуудасны шинэ эцэг (0 = top-level) - одоогоор UI ашигладаггүй, эцгийг update() солино; хуудас шинэ
+     *     ах дүүсийнхээ төгсгөлд орно.
+     *     update()-тэй ижил шалгалт: эцэг байгаа, өөрөө/өөрийн удам биш, хэл
+     *     нийцтэй (isParentCodeCompatible). Хэл солихгүй - тэр нь засах формоор.
+     *
+     * Эрх: system_content_update; нийтлэгдсэн хуудас өөрчлөгдвөл system_content_publish
+     * (update()-тэй адил - нийтэд харагдах навигаци өөрчлөгдөнө).
+     *
+     * @return void
+     */
+    public function sort()
+    {
+        try {
+            if (!$this->isUserCan('system_content_update')) {
+                throw new \Exception($this->text('system-no-permission'), 401);
+            }
+
+            $body = $this->getParsedBody();
+            $lists = $body['lists'] ?? null;
+            $moves = $body['moves'] ?? [];
+            $lists ??= [];
+            if (!\is_array($lists) || !\is_array($moves) || (empty($lists) && empty($moves))) {
+                throw new \InvalidArgumentException($this->text('invalid-request'), 400);
+            }
+
+            $model = new PagesModel($this->pdo);
+            $table = $model->getName();
+            $pages = [];
+            foreach ($this->query("SELECT id, parent_id, code, position, published, is_featured FROM $table")->fetchAll() as $row) {
+                $pages[(int) $row['id']] = $row;
+            }
+
+            // Эцэг солих
+            $parentChanges = [];
+            foreach ($moves as $id => $parentId) {
+                $id = \filter_var($id, \FILTER_VALIDATE_INT);
+                $parentId = \filter_var($parentId, \FILTER_VALIDATE_INT);
+                if ($id === false || $parentId === false || $parentId < 0 || !isset($pages[$id])) {
+                    throw new \InvalidArgumentException($this->text('invalid-request'), 400);
+                }
+                if ($parentId > 0) {
+                    if (!isset($pages[$parentId])
+                        || !$this->isParentCodeCompatible($pages[$parentId]['code'], $pages[$id]['code'])
+                    ) {
+                        throw new \InvalidArgumentException($this->text('invalid-request'), 400);
+                    }
+                    if ($parentId === $id || \in_array($parentId, $this->getDescendantIds($id, $table), true)) {
+                        throw new \InvalidArgumentException($this->text('cannot-set-descendant-as-parent'), 400);
+                    }
+                }
+                if ((int) ($pages[$id]['parent_id'] ?? 0) !== $parentId) {
+                    $parentChanges[$id] = ['old' => (int) ($pages[$id]['parent_id'] ?? 0), 'new' => $parentId];
+                }
+            }
+
+            // Ах дүүсийн дараалал
+            $positions = [];
+            $seen = [];
+            foreach ($lists as $list) {
+                if (!\is_array($list)) {
+                    throw new \InvalidArgumentException($this->text('invalid-request'), 400);
+                }
+                foreach (\array_values($list) as $index => $id) {
+                    $id = \filter_var($id, \FILTER_VALIDATE_INT);
+                    if ($id === false || !isset($pages[$id]) || isset($seen[$id])) {
+                        throw new \InvalidArgumentException($this->text('invalid-request'), 400);
+                    }
+                    $seen[$id] = true;
+                    $position = ($index + 1) * 10;
+                    if ((int) $pages[$id]['position'] !== $position) {
+                        $positions[$id] = $position;
+                    }
+                }
+            }
+
+            // Эцэг сольсон (moves) бөгөөд жагсаалтад ороогүй хуудас шинэ
+            // ах дүүсийнхээ төгсгөлд орно
+            foreach ($parentChanges as $id => $change) {
+                if (isset($seen[$id])) {
+                    continue;
+                }
+                $max = 0;
+                foreach ($pages as $pid => $page) {
+                    if ($pid !== $id && (int) ($page['parent_id'] ?? 0) === $change['new']) {
+                        $max = \max($max, (int) ($positions[$pid] ?? $page['position']));
+                    }
+                }
+                $positions[$id] = $max + 10;
+                $pages[$id]['parent_id'] = $change['new'];
+            }
+
+            // Нийтлэгдсэн хуудас өөрчлөгдвөл нийтлэх эрх шаардлагатай
+            if (!$this->isUserCan('system_content_publish')) {
+                foreach (\array_keys($positions + $parentChanges) as $id) {
+                    if ((int) $pages[$id]['published'] === 1) {
+                        throw new \Exception($this->text('system-no-permission'), 401);
+                    }
+                }
+            }
+
+            $now = \date('Y-m-d H:i:s');
+            $this->pdo->beginTransaction();
+            $setPosition = $this->prepare("UPDATE $table SET position=:position WHERE id=:id");
+            foreach ($positions as $id => $position) {
+                $setPosition->bindValue(':position', $position, \PDO::PARAM_INT);
+                $setPosition->bindValue(':id', $id, \PDO::PARAM_INT);
+                $setPosition->execute();
+            }
+            if (!empty($parentChanges)) {
+                $setParent = $this->prepare(
+                    "UPDATE $table SET parent_id=:parent_id, updated_at=:updated_at, updated_by=:updated_by WHERE id=:id"
+                );
+                // Эцэг болсон хуудас онцлох (footer) байж болохгүй - формын дүрэмтэй адил
+                $unfeature = $this->prepare("UPDATE $table SET is_featured=0 WHERE id=:id AND is_featured=1");
+                foreach ($parentChanges as $id => $change) {
+                    if ($change['new'] > 0) {
+                        $setParent->bindValue(':parent_id', $change['new'], \PDO::PARAM_INT);
+                        $unfeature->bindValue(':id', $change['new'], \PDO::PARAM_INT);
+                        $unfeature->execute();
+                    } else {
+                        $setParent->bindValue(':parent_id', null, \PDO::PARAM_NULL);
+                    }
+                    $setParent->bindValue(':updated_at', $now);
+                    $setParent->bindValue(':updated_by', $this->getUserId(), \PDO::PARAM_INT);
+                    $setParent->bindValue(':id', $id, \PDO::PARAM_INT);
+                    $setParent->execute();
+                }
+            }
+            $this->pdo->commit();
+
+            $this->invalidateCache('pages_nav.{code}', 'featured_pages.{code}');
+            $this->respondJSON([
+                'status' => 'success',
+                'type' => 'primary',
+                'message' => $this->text('record-update-success')
+            ]);
+        } catch (\Throwable $err) {
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+            $this->respondJSON(['message' => $err->getMessage()], $err->getCode());
+        } finally {
+            $context = ['action' => 'sort'];
+            if (isset($err)) {
+                $this->log(
+                    'pages',
+                    LogLevel::ERROR,
+                    'Хуудасны дараалал өөрчлөх үед алдаа гарлаа',
+                    $context + ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]]
+                );
+            } else {
+                $this->log(
+                    'pages',
+                    LogLevel::INFO,
+                    'Хуудасны дарааллыг амжилттай өөрчиллөө',
+                    $context + ['positions' => $positions]
+                        + (empty($parentChanges) ? [] : ['parent_changes' => $parentChanges])
+                );
+            }
+        }
+    }
+
+    /**
+     * Шинэ (эсвэл эцэг сольсон) хуудасны position: ах дүүсийнх нь хамгийн их + 10.
+     * Top-level хуудасны parent_id нь NULL (эсвэл 0) хадгалагддаг.
+     *
+     * @param string $table
+     * @param int    $parentId 0 = top-level
+     * @return int
+     */
+    private function nextPagePosition(string $table, int $parentId): int
+    {
+        $where = $parentId > 0 ? 'parent_id=:pid' : '(parent_id IS NULL OR parent_id=0)';
+        $stmt = $this->prepare("SELECT MAX(position) FROM $table WHERE $where");
+        if ($parentId > 0) {
+            $stmt->bindValue(':pid', $parentId, \PDO::PARAM_INT);
+        }
+        $max = $stmt->execute() ? $stmt->fetchColumn() : null;
+        return ((int) $max) + 10;
     }
 
     /**

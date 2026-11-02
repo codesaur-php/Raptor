@@ -215,6 +215,7 @@ class TextInitial
         $model->insert(['keyword' => 'no-news-found', 'type' => 'sys-defined'], ['mn' => ['text' => 'Мэдээ олдсонгүй'], 'en' => ['text' => 'No news found']]);
         $model->insert(['keyword' => 'no-products-found', 'type' => 'sys-defined'], ['mn' => ['text' => 'Бүтээгдэхүүн олдсонгүй'], 'en' => ['text' => 'No products available']]);
         $model->insert(['keyword' => 'no-record-selected', 'type' => 'sys-defined'], ['mn' => ['text' => 'Бичлэг сонгогдоогүй байна'], 'en' => ['text' => 'No record selected']]);
+        $model->insert(['keyword' => 'no-recipients', 'type' => 'sys-defined'], ['mn' => ['text' => 'Хүлээн авагч алга (идэвхтэй, имэйлтэй хэрэглэгч)'], 'en' => ['text' => 'No recipients (active users with an email)']]);
         $model->insert(['keyword' => 'no-responses-yet', 'type' => 'sys-defined'], ['mn' => ['text' => 'Одоогоор хариулт байхгүй'], 'en' => ['text' => 'No responses yet']]);
         $model->insert(['keyword' => 'not-enough-stock', 'type' => 'sys-defined'], ['mn' => ['text' => 'Бүтээгдэхүүний үлдэгдэл хүрэлцэхгүй байна'], 'en' => ['text' => 'Not enough product stock']]);
         $model->insert(['keyword' => 'not-published', 'type' => 'sys-defined'], ['mn' => ['text' => 'нийтлээгүй'], 'en' => ['text' => 'not published']]);
@@ -270,6 +271,7 @@ class TextInitial
         $model->insert(['keyword' => 'read', 'type' => 'sys-defined'], ['mn' => ['text' => 'Уншсан'], 'en' => ['text' => 'Read']]);
         $model->insert(['keyword' => 'read-more', 'type' => 'sys-defined'], ['mn' => ['text' => 'Дэлгэрэнгүй'], 'en' => ['text' => 'Read more']]);
         $model->insert(['keyword' => 'recent-news', 'type' => 'sys-defined'], ['mn' => ['text' => 'Сүүлийн үеийн мэдээ'], 'en' => ['text' => 'Recent News']]);
+        $model->insert(['keyword' => 'recipients', 'type' => 'sys-defined'], ['mn' => ['text' => 'Хүлээн авагч'], 'en' => ['text' => 'Recipients']]);
         $model->insert(['keyword' => 'replied', 'type' => 'sys-defined'], ['mn' => ['text' => 'Хариулсан'], 'en' => ['text' => 'Replied']]);
         $model->insert(['keyword' => 'record-insert-error', 'type' => 'sys-defined'], ['mn' => ['text' => 'Бичлэг нэмэх явцад алдаа гарлаа'], 'en' => ['text' => 'Error occurred while inserting record']]);
         $model->insert(['keyword' => 'record-insert-success', 'type' => 'sys-defined'], ['mn' => ['text' => 'Бичлэг амжилттай нэмэгдлээ'], 'en' => ['text' => 'Record successfully added']]);
@@ -310,6 +312,7 @@ class TextInitial
 
         $model->insert(['keyword' => 'select-text-settings', 'type' => 'sys-defined'], ['mn' => ['text' => 'Текстийн тохиргоог сонгоно уу'], 'en' => ['text' => 'Select text settings']]);
         $model->insert(['keyword' => 'send', 'type' => 'sys-defined'], ['mn' => ['text' => 'Илгээх'], 'en' => ['text' => 'Send']]);
+        $model->insert(['keyword' => 'send-email', 'type' => 'sys-defined'], ['mn' => ['text' => 'Имэйл илгээх'], 'en' => ['text' => 'Send email']]);
         $model->insert(['keyword' => 'send-message', 'type' => 'sys-defined'], ['mn' => ['text' => 'Мессеж илгээх'], 'en' => ['text' => 'Send a Message']]);
         $model->insert(['keyword' => 'sending', 'type' => 'sys-defined'], ['mn' => ['text' => 'Илгээж байна'], 'en' => ['text' => 'Sending']]);
         $model->insert(['keyword' => 'server-error', 'type' => 'sys-defined'], ['mn' => ['text' => 'Серверийн алдаа'], 'en' => ['text' => 'Server error']]);
@@ -331,6 +334,7 @@ class TextInitial
         $model->insert(['keyword' => 'source', 'type' => 'sys-defined'], ['mn' => ['text' => 'Эх сурвалж'], 'en' => ['text' => 'Source']]);
         $model->insert(['keyword' => 'status', 'type' => 'sys-defined'], ['mn' => ['text' => 'Төлөв'], 'en' => ['text' => 'Status']]);
         $model->insert(['keyword' => 'stock', 'type' => 'sys-defined'], ['mn' => ['text' => 'Нөөцийн тоо'], 'en' => ['text' => 'Stock']]);
+        $model->insert(['keyword' => 'subject', 'type' => 'sys-defined'], ['mn' => ['text' => 'Гарчиг'], 'en' => ['text' => 'Subject']]);
         $model->insert(['keyword' => 'submit', 'type' => 'sys-defined'], ['mn' => ['text' => 'Батлах'], 'en' => ['text' => 'Submit']]);
         $model->insert(['keyword' => 'submit-order', 'type' => 'sys-defined'], ['mn' => ['text' => 'Захиалга илгээх'], 'en' => ['text' => 'Submit Order']]);
         $model->insert(['keyword' => 'success', 'type' => 'sys-defined'], ['mn' => ['text' => 'Амжилттай'], 'en' => ['text' => 'Success']]);
@@ -349,6 +353,7 @@ class TextInitial
 
         $model->insert(['keyword' => 'to-complete-registration-check-email', 'type' => 'sys-defined'], ['mn' => ['text' => 'Танд баярлалаа. Бүртгэлээ баталгаажуулахын тулд заасан имейлээ шалгана уу'], 'en' => ['text' => 'Thank you. To complete your registration please check your email']]);
         $model->insert(['keyword' => 'too-many-login-attempts', 'type' => 'sys-defined'], ['mn' => ['text' => 'Нэвтрэх оролдлого хэт олон удаа хийгдсэн байна. Түр хүлээнэ үү.'], 'en' => ['text' => 'Too many login attempts. Please try again later.']]);
+        $model->insert(['keyword' => 'too-many-recipients', 'type' => 'sys-defined'], ['mn' => ['text' => 'Нэг удаад илгээх хүлээн авагч хэт олон байна'], 'en' => ['text' => 'Too many recipients at once']]);
         $model->insert(['keyword' => 'total', 'type' => 'sys-defined'], ['mn' => ['text' => 'Нийт'], 'en' => ['text' => 'Total']]);
         $model->insert(['keyword' => 'type', 'type' => 'sys-defined'], ['mn' => ['text' => 'Төрөл'], 'en' => ['text' => 'Type']]);
         $model->insert(['keyword' => 'u-have-some-form-errors', 'type' => 'sys-defined'], ['mn' => ['text' => 'Та мэдээллийг алдаатай бөглөсөн байна. Доорх талбаруудаа шалгана уу'], 'en' => ['text' => 'You have some form errors. Please check below']]);

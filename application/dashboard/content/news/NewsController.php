@@ -264,9 +264,11 @@ class NewsController extends FileController
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } elseif ($this->getRequest()->getMethod() == 'POST') {
                 $level = LogLevel::INFO;
-                $message = '{record.id} дугаартай [{record.title}] мэдээг амжилттай үүсгэлээ';
-                $context += ['record_id' => $id, 'record' => $record];
-                $context['file_changes'] = !empty($fileChanges) ? $fileChanges : 'files not changed';
+                $message = '{record_id} дугаартай [{payload.title}] мэдээг амжилттай үүсгэлээ';
+                $context += ['record_id' => $id, 'payload' => $payload];
+                if (!empty($fileChanges)) {
+                    $context['file_changes'] = $fileChanges;
+                }
             } else {
                 $level = LogLevel::NOTICE;
                 $message = 'Мэдээ үүсгэх үйлдлийг эхлүүллээ';
@@ -425,13 +427,17 @@ class NewsController extends FileController
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } elseif ($this->getRequest()->getMethod() == 'PUT') {
                 $level = LogLevel::INFO;
-                $message = '{record.id} дугаартай [{record.title}] мэдээг амжилттай шинэчлэлээ';
-                $context += ['updates' => $updates, 'record' => $updated];
-                $context['file_changes'] = !empty($fileChanges) ? $fileChanges : 'files not changed';
+                $message = '{record_id} дугаартай [{title}] мэдээг амжилттай шинэчлэлээ';
+                $context += [
+                    'title' => $updated['title'] ?? '',
+                    'changes' => $this->recordChanges($record, $updated)
+                ];
+                if (!empty($fileChanges)) {
+                    $context['file_changes'] = $fileChanges;
+                }
             } else {
                 $level = LogLevel::NOTICE;
-                $message = '{record.id} дугаартай [{record.title}] мэдээг шинэчлэхээр нээж байна';
-                $context += ['record' => $record, 'files' => $files];
+                $message = '{record_id} дугаартай мэдээг шинэчлэхээр нээж байна';
             }
             $this->log('news', $level, $message, $context);
         }
@@ -494,8 +500,7 @@ class NewsController extends FileController
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } else {
                 $level = LogLevel::NOTICE;
-                $message = '{record.id} дугаартай [{record.title}] мэдээг үзэж байна';
-                $context += ['record' => $record, 'files' => $files];
+                $message = '{record_id} дугаартай мэдээг үзэж байна';
             }
             $this->log('news', $level, $message, $context);
         }
@@ -729,8 +734,8 @@ class NewsController extends FileController
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } else {
                 $level = LogLevel::ALERT;
-                $message = '{record_id} дугаартай [{server_request.body.title}] мэдээг устгалаа';
-                $context += ['record_id' => $id];
+                $message = '{record_id} дугаартай [{title}] мэдээг устгалаа';
+                $context += ['record_id' => $id, 'title' => $record['title'] ?? ($payload['title'] ?? '')];
             }
             $this->log('news', $level, $message, $context);
         }

@@ -570,7 +570,8 @@ $this->isUserCan('news_edit');
 
 - Page CRUD (hard delete with Trash backup) with simplified single-form interface (no type wizard)
 - Parent-child structure (multi-level navigation menu)
-- `position` field for ordering
+- Order among sibling pages (`position`) is set by drag and drop in the Navigation tree (`pages-nav.html`, SortableJS) - no Position input in the forms: dragging only reorders siblings (each list is `pull/put: false`, so an accidental drag never changes a parent), and the parent is changed in the edit form's Parent page field; `PagesController::sort()` (`PUT /dashboard/pages/sort`) re-checks language compatibility, descendants, `system_content_update` and - for published pages - `system_content_publish`, renumbers siblings `10, 20, 30 ...` and clears the `pages_nav` / `featured_pages` cache. A new page, or a page whose parent changes in the edit form, goes to the end of its siblings
+- Navigation tree (`pages-nav.html`): every page row has an "add sub-page" (+) button that opens the insert form with that page as the parent (so a page without children can become a parent); pages the public menu never shows (type not `menu` / `*-menu`, or a page above them is not a menu page - the `PagesModel::getNavigation()` rule) are listed in a separate "Pages not in navigation" section at the bottom of each language card, without drag handles; a collapsible tip explains ordering and parents. The pages table (`/dashboard/pages/table`) has no Position column
 - `type` field: free text with dropdown suggestions, default `menu`; pages whose type is `menu` or ends with `-menu` appear in the public navigation. Parent/child is set through the parent dropdown (`parent_id`), not through `type`
 - Parent pages (pages with children) automatically hide content fields (description, content, link, featured) in edit form
 - `is_featured` field: featured pages in footer (auto-reset to 0 when page becomes a parent)
@@ -615,16 +616,19 @@ $this->isUserCan('news_edit');
 - PSR-3 standard logging system
 - Logs stored in database
 - Log levels: emergency, alert, critical, error, warning, notice, info, debug
-- Auto-captures server request metadata
-- Auto-captures authenticated user info
+- Auto-captures server request metadata (`requestMeta()`: language, method, target, IP, user agent) - NOT the request body or uploaded files
+- Auto-captures authenticated user info (incl. the organization the action was done from)
+- Slim contexts: insert logs the `payload`, update logs only the changed fields (`changes` from `recordChanges()`, `old`/`new`), view / edit-form logs only `record_id`, delete logs `record_id` + title/reason (the full record is in Trash)
+- Secret keys (PASSWORD, TOKEN, PIN, JWT) are masked as `*** hidden ***`, including their whole subtree
 - Error log viewer tab (system_coder users) - view the PHP error log file configured in `error_log` (`logs/code.log` by default) directly in the Access Logs page
 
 ### 6.12 Mail
 
-**Classes:** `Mailer`
+**Classes:** `Mailer`, `MailController`, `MailRouter`
 
 - `send()` selects transport via `RAPTOR_MAIL_TRANSPORT` env var (brevo/smtp/mail)
 - HTML messages, CC/BCC, attachments
+- **System - Send email** (`/dashboard/mail-send`, permission `system_mail_send`, given to `admin` by default): email every user with chosen roles and/or selected users - service announcements, not marketing. Recipients are resolved on the server (active users with a valid email, deduplicated), each gets a separate email, at most 1000 per send. `mode=prepare` fixes the recipient list and the confirmation shows the exact count, then the page sends it in batches of 20 (`mode=batch`) with a progress bar; the server re-checks every id per batch (users deactivated or removed meanwhile are skipped), and a failed batch stops sending without retry (no double emails) with an option to continue. Outside the system organization only the current organization's members are listed and reached. Logged as `mail-broadcast`
 
 ### 6.13 Template (Dashboard UI)
 
@@ -632,7 +636,10 @@ $this->isUserCan('news_edit');
 
 - Dashboard layout rendering via `DashboardTrait::dashboardTemplate()`
 - Sidebar menu with i18n, permissions, parent/child hierarchy (`MenuModel`)
-- Menu management CRUD (insert, update, hard delete with Trash backup)
+- Menu management CRUD (insert, update, hard delete with Trash backup), `system_coder` only
+- Menu order is set by drag and drop (SortableJS), never by typing a position: a parent moves with its group, a child inside its group or into another parent's group (which changes its `parent_id`); the server saves the parent changes and renumbers every position in tree order (`manageMenuSort()`). A child cannot become a top-level menu by drag (and vice versa) - use the edit dialog. A new item lands at the end of its group; changing the parent in the edit dialog moves it to the end of the new group
+- The Permission dropdown also offers `system_coder` for coder-only menu entries (it is a reserved permission name - `Permissions::RESERVED`)
+- Desktop sidebar width `--sidebar-width: clamp(240px, 22vw, 340px)` (>=992px); a long menu title truncates with an ellipsis instead of wrapping (`.nav-link-title`), so badges never change the row height
 - SweetAlert2, motable, moedit JS components
 - Responsive Bootstrap 5 design
 
@@ -690,6 +697,7 @@ $this->isUserCan('news_edit');
 - Lives in `application/dashboard/development/` (`Dashboard\Development` namespace)
 - Any authenticated user can create requests and can view, respond to and delete only their own or assigned ones
 - Users with the `system_development` permission manage all requests (view, respond, delete any)
+- Each request stores a snapshot of the sender's organization (`organization_id`, the one they were signed in to) and roles (`created_roles`, real roles even in Act As mode); the list and view page show both
 
 ### 6.18 Site Service (Web)
 
@@ -793,7 +801,9 @@ Sitemap: https://example.com/sitemap.xml
 - Badge colors: green (create), info/cyan (new comment or review), blue (update), red (delete)
 - Up to 4 badges per module, shown left to right in green-info-blue-red order
 - Filters by admin permissions (PERMISSION_MAP) and excludes admin's own actions
-- First-time users get 30-day lookback
+- Counts changed records, not events: distinct `record_id` per color (10 edits of one record = 1); entries without `record_id` count one each
+- Counts at most the last 30 days (`WINDOW_DAYS`), even when the admin's last "seen" time is older
+- A tenant-scoped module must log `record_organization_id` (the record's organization) - when most actions are done by system-organization staff, the actor fallback would hide them from the record's own organization
 - File-count badges for manual and migrations (non-log based)
 - JS: `initSidebarBadges()` in `dashboard.js` fetches and renders badges on page load
 

@@ -49,7 +49,6 @@
                 <tr><td>Title</td><td>Page name</td></tr>
                 <tr><td>Attachments</td><td>Number of attached files</td></tr>
                 <tr><td>Type / Category</td><td>Page type and category</td></tr>
-                <tr><td>Position</td><td>Menu order (lower number = first)</td></tr>
                 <tr><td>Published</td><td>Publication status and date</td></tr>
                 <tr><td>Actions</td><td>View, Edit, Delete buttons</td></tr>
             </tbody>
@@ -67,8 +66,11 @@
         <ul>
             <li>Expand/collapse parent pages</li>
             <li><strong>Expand All / Collapse All</strong> buttons</li>
-            <li>Add child pages directly under a parent</li>
+            <li><strong>Add sub-page</strong> - the <i class="bi bi-plus-lg"></i> button on every page row opens the new page form with that page as the parent; this is how a page without children becomes a menu (parent) page</li>
+            <li><strong>Pages not in navigation</strong> - pages the website menu never shows (type is not <code>menu</code> / <code>*-menu</code>, e.g. <code>special-page</code>, <code>content</code>, or a page above them is not in the menu) are listed in a separate section at the bottom of each language card (open by default, collapsible by its title)</li>
             <li>Total page count per language</li>
+            <li><strong>Drag to reorder</strong> - grab a page by its <i class="bi bi-grip-vertical"></i> handle and drop it among its siblings. Dragging only changes the order, never the parent (so an accidental drag cannot move a page under another one)</li>
+            <li><strong>Change the parent</strong> - pick it in the <strong>Parent page</strong> field of the edit form; the page goes to the end of its new parent's children</li>
         </ul>
     </div>
 </div>
@@ -87,7 +89,6 @@
                 <tr><td><strong>Language</strong></td><td>Page language (mn, en, etc.). Choose "All languages" to show the page in the navigation of every language. A parent page must have the same language as its child, or be "All languages". When changing the language of a page that has child pages, the children must match the new language - otherwise change the child pages first</td><td>Yes</td></tr>
                 <tr><td><strong>Type</strong></td><td>menu, mega-menu, special</td><td>Yes</td></tr>
                 <tr><td><strong>Category</strong></td><td>general, info, service, legal, reference</td><td>Yes</td></tr>
-                <tr><td><strong>Position</strong></td><td>Menu order (default: 100)</td><td>Yes</td></tr>
                 <tr><td><strong>Parent page</strong></td><td>Place under which page (must share same language)</td><td>No</td></tr>
                 <tr><td><strong>Title</strong></td><td>Page name (up to 255 characters)</td><td>Yes</td></tr>
                 <tr><td><strong>Description</strong></td><td>Short description (auto-generated from content if empty)</td><td>No</td></tr>
@@ -117,7 +118,7 @@
         <ul>
             <li><strong>Slug</strong> - Auto-generated from title (Cyrillic to Latin transliteration)</li>
             <li><strong>Description</strong> - Auto-extracted from content (200 characters) if left empty</li>
-            <li><strong>Position</strong> - Auto-calculated based on parent hierarchy</li>
+            <li><strong>Position</strong> - Not typed by hand: a new page goes to the end of its sibling pages, and so does a page whose parent you change. Reorder by dragging in the Navigation tree</li>
         </ul>
     </div>
 </div>

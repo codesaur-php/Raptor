@@ -90,8 +90,8 @@ class TextController extends \Dashboard\Controller
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } elseif ($this->getRequest()->getMethod() == 'POST') {
                 $level = LogLevel::INFO;
-                $message = '[{record.keyword}] текст амжилттай үүслээ';
-                $context += ['record_id' => $record['id'], 'record' => $record];
+                $message = '[{payload.keyword}] текст амжилттай үүслээ';
+                $context += ['record_id' => $record['id'], 'payload' => $payload, 'content' => $content];
             } else {
                 $level = LogLevel::NOTICE;
                 $message = 'Текст үүсгэх үйлдлийг эхлүүллээ';
@@ -126,16 +126,15 @@ class TextController extends \Dashboard\Controller
         } finally {
             $context = [
                 'action' => 'localization-text-view',
-                'id' => $id
+                'record_id' => $id
             ];
             if (isset($err) && $err instanceof \Throwable) {
                 $level = LogLevel::ERROR;
-                $message = '{id} дугаартай текст мэдээллийг нээх үед алдаа гарч зогслоо';
+                $message = '{record_id} дугаартай текст мэдээллийг нээх үед алдаа гарч зогслоо';
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } else {
                 $level = LogLevel::NOTICE;
-                $message = '[{record.keyword}] текст мэдээллийг үзэж байна';
-                $context += ['record' => $record];
+                $message = '{record_id} дугаартай текст мэдээллийг үзэж байна';
             }
             $this->log('content', $level, $message, $context);
         }
@@ -231,12 +230,14 @@ class TextController extends \Dashboard\Controller
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } elseif ($this->getRequest()->getMethod() == 'PUT') {
                 $level = LogLevel::INFO;
-                $message = '[{record.keyword}] текст мэдээллийг амжилттай шинэчлэлээ';
-                $context += ['updates' => $updates, 'record' => $updated];
+                $message = '[{keyword}] текст мэдээллийг амжилттай шинэчлэлээ';
+                $context += [
+                    'keyword' => $updated['keyword'] ?? '',
+                    'changes' => $this->recordChanges($record, $updated)
+                ];
             } else {
                 $level = LogLevel::NOTICE;
-                $message = '[{record.keyword}] текст мэдээллийг шинэчлэхээр нээж байна';
-                $context += ['record' => $record];
+                $message = '{record_id} дугаартай текст мэдээллийг шинэчлэхээр нээж байна';
             }
             $this->log('content', $level, $message, $context);
         }
@@ -295,8 +296,11 @@ class TextController extends \Dashboard\Controller
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } else {
                 $level = LogLevel::ALERT;
-                $message = '{record_id} дугаартай [{server_request.body.keyword}] текст мэдээллийг устгалаа';
-                $context += ['record_id' => $id];
+                $message = '{record_id} дугаартай [{keyword}] текст мэдээллийг устгалаа';
+                $context += [
+                    'record_id' => $id,
+                    'keyword' => $record['keyword'] ?? (string) ($payload['keyword'] ?? '')
+                ];
             }
             $this->log('content', $level, $message, $context);
         }

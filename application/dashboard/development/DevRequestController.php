@@ -95,6 +95,7 @@ class DevRequestController extends FileController
             $model = new DevRequestModel($this->pdo);
             $table = $model->getName();
             $users = (new \Dashboard\User\UsersModel($this->pdo))->getName();
+            $organizations = (new \Dashboard\Organization\OrganizationModel($this->pdo))->getName();
             $reqFilesModel = new FilesModel($this->pdo);
             $reqFilesModel->setTable('dev_requests');
             $reqFilesTable = $reqFilesModel->getName();
@@ -105,6 +106,7 @@ class DevRequestController extends FileController
             $respFilesTable = $respFilesModel->getName();
             $sql =
                 "SELECT t.id, t.title, t.status, t.created_at, t.created_by, t.assigned_to, " .
+                "t.created_roles, o.name as organization_name, " .
                 "CONCAT(u.first_name, ' ', u.last_name) as created_user, " .
                 "CONCAT(a.first_name, ' ', a.last_name) as assigned_user, " .
                 "(" .
@@ -114,7 +116,8 @@ class DevRequestController extends FileController
                         "WHERE r.request_id = t.id)" .
                 ") as attachment_count " .
                 "FROM $table t LEFT JOIN $users u ON t.created_by = u.id " .
-                "LEFT JOIN $users a ON t.assigned_to = a.id" .
+                "LEFT JOIN $users a ON t.assigned_to = a.id " .
+                "LEFT JOIN $organizations o ON t.organization_id = o.id" .
                 "$whereClause ORDER BY t.created_at DESC";
             $stmt = $this->prepare($sql);
             foreach ($params as $name => $value) {
@@ -203,7 +206,11 @@ class DevRequestController extends FileController
             $insertData = [
                 'title' => $payload['title'],
                 'content' => $payload['content'],
-                'created_by' => $this->getUserId()
+                'created_by' => $this->getUserId(),
+                // Админ хүсэлтийг ямар байгууллагын ямар рольтой хэрэглэгч
+                // илгээснийг мэдэх snapshot
+                'organization_id' => $this->getUser()->organization['id'] ?? null,
+                'created_roles' => $this->getCreatorRoles($this->getUserId())
             ];
             if ($assignedTo) {
                 $insertData['assigned_to'] = $assignedTo;
@@ -261,7 +268,11 @@ class DevRequestController extends FileController
             } else {
                 $level = LogLevel::INFO;
                 $message = '{record_id} ({title}) дугаартай хөгжүүлэлтийн хүсэлт амжилттай бүртгэгдлээ';
-                $context += ['record_id' => $id ?? null, 'title' => $payload['title'] ?? ''];
+                $context += [
+                    'record_id' => $id ?? null,
+                    'title'     => $payload['title'] ?? '',
+                    'payload'   => $insertData ?? []
+                ];
             }
             $this->log('dev_requests', $level, $message, $context);
         }
@@ -289,12 +300,15 @@ class DevRequestController extends FileController
             $model = new DevRequestModel($this->pdo);
             $table = $model->getName();
             $users = (new \Dashboard\User\UsersModel($this->pdo))->getName();
+            $organizations = (new \Dashboard\Organization\OrganizationModel($this->pdo))->getName();
 
             $sql =
                 "SELECT t.*, CONCAT(u.first_name, ' ', u.last_name) as created_user, " .
-                "CONCAT(a.first_name, ' ', a.last_name) as assigned_user " .
+                "CONCAT(a.first_name, ' ', a.last_name) as assigned_user, " .
+                "o.name as organization_name " .
                 "FROM $table t LEFT JOIN $users u ON t.created_by = u.id " .
                 "LEFT JOIN $users a ON t.assigned_to = a.id " .
+                "LEFT JOIN $organizations o ON t.organization_id = o.id " .
                 "WHERE t.id = :id";
             $stmt = $this->prepare($sql);
             $stmt->bindValue(':id', $id, \PDO::PARAM_INT);
@@ -370,8 +384,7 @@ class DevRequestController extends FileController
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } else {
                 $level = LogLevel::NOTICE;
-                $message = '{record_id} ({title}) дугаартай хөгжүүлэлтийн хүсэлтийг үзэж байна';
-                $context += ['title' => $record['title'], 'record' => $record];
+                $message = '{record_id} дугаартай хөгжүүлэлтийн хүсэлтийг үзэж байна';
             }
             $this->log('dev_requests', $level, $message, $context);
         }
@@ -486,7 +499,13 @@ class DevRequestController extends FileController
             } else {
                 $level = LogLevel::INFO;
                 $message = '{record_id} ({title}) дугаартай хүсэлтэд хариулт бичлээ';
-                $context += ['record_id' => $id, 'title' => $record['title'] ?? ''];
+                // Хариултын бүтэн текст dev_requests_responses-д хадгалагдана
+                $context += [
+                    'record_id'   => $id,
+                    'title'       => $record['title'] ?? '',
+                    'response_id' => $responseId ?? null,
+                    'status'      => $newStatus ?? ''
+                ];
             }
             $this->log('dev_requests', $level, $message, $context);
         }
@@ -744,5 +763,38 @@ class DevRequestController extends FileController
 
         $stmt = $this->prepare($sql);
         return $stmt->execute() ? $stmt->fetchAll() : [];
+    }
+
+    /**
+     * Хүсэлт илгээгчийн роль key-үүд ("system_admin, common_editor") -
+     * created_roles snapshot-д хадгална.
+     *
+     * DB-ээс шууд уншдаг тул Act As горимд ч хэрэглэгчийн бодит ролиуд
+     * бичигдэнэ (Act As-ийн солигдсон матрицыг биш). Энэ нь зөвхөн
+     * мэдээллийн зориулалттай - эрх шалгахад ашиглахгүй.
+     *
+     * @param int $userId
+     * @return string|null Роль байхгүй бол null
+     */
+    private function getCreatorRoles(int $userId): ?string
+    {
+        $userRoles = (new \Dashboard\RBAC\UserRole($this->pdo))->getName();
+        $roles = (new \Dashboard\RBAC\Roles($this->pdo))->getName();
+        $stmt = $this->prepare(
+            "SELECT r.alias, r.name FROM $userRoles ur " .
+            "INNER JOIN $roles r ON ur.role_id = r.id " .
+            "WHERE ur.user_id = :uid ORDER BY r.alias, r.name"
+        );
+        $stmt->bindValue(':uid', $userId, \PDO::PARAM_INT);
+        $keys = [];
+        if ($stmt->execute()) {
+            foreach ($stmt->fetchAll() as $row) {
+                $keys[] = "{$row['alias']}_{$row['name']}";
+            }
+        }
+        if (empty($keys)) {
+            return null;
+        }
+        return \mb_substr(\implode(', ', $keys), 0, 255);
     }
 }

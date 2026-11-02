@@ -223,6 +223,10 @@ class SettingsController extends FileController
             } else {
                 $level = LogLevel::INFO;
                 $message = 'Тохируулгыг амжилттай шинэчиллээ';
+                // Body автоматаар хуулагдахгүй болсон - зөвхөн өөрчлөгдсөн талбарууд
+                $context['changes'] = $this->recordChanges(
+                    $current ?? [], $payload + ['localized' => $content]
+                );
             }
             $this->log('content', $level, $message, $context);
         }
@@ -375,6 +379,9 @@ class SettingsController extends FileController
             } else {
                 $level = LogLevel::INFO;
                 $message = 'Тохируулга файлуудыг амжилттай шинэчиллээ';
+                $context['changes'] = $this->recordChanges(
+                    $current ?? [], $payload + ['localized' => $content]
+                );
             }
             $this->log('content', $level, $message, $context);
         }

@@ -98,7 +98,13 @@ Outputs a JSON response with `Content-Type: application/json` header. When `$cod
 Redirects to a named route (302). Calls `exit`.
 
 #### `log(string $table, string $level, string $message, array $context = []): void`
-Writes a system log entry to the `{$table}_log` database table. Server request metadata and user info are auto-appended.
+Writes a system log entry to the `{$table}_log` database table. Server request metadata (`requestMeta()`) and user info are auto-appended; the request body and uploaded files are NOT - pass only what matters (`payload` on insert, `changes` on update, just `record_id` on view).
+
+#### `requestMeta(): array`
+Request metadata written to every log: language code, method, target, remote address, user agent (no body, no files).
+
+#### `recordChanges(array $before, array $after, array $ignore = ['updated_at', 'updated_by']): array`
+Returns only the changed fields as `['field' => ['old' => ..., 'new' => ...]]` for update logs. Nested arrays (LocalizedModel `localized`) are compared recursively; comparison is loose (`'1' == 1`, `null == ''`).
 
 #### `dispatch(object $event): void`
 Dispatches a PSR-14 event via the `EventDispatcher` service from the DI container. Silently skips if the dispatcher is not available.
@@ -693,6 +699,7 @@ Extracts a plain-text excerpt from HTML content.
 | `/dashboard/pages/table` | GET | `pages-table` |
 | `/dashboard/pages/list` | GET | `pages-list` |
 | `/dashboard/pages/insert` | GET+POST | `page-insert` |
+| `/dashboard/pages/sort` | PUT | `pages-sort` |
 | `/dashboard/pages/{uint:id}` | GET+PUT | `page-update` |
 | `/dashboard/pages/view/{uint:id}` | GET | `page-view` |
 | `/dashboard/pages/delete` | DELETE | `page-delete` |
@@ -880,6 +887,24 @@ Writes a log entry.
 **File:** `application/dashboard/mail/Mailer.php`
 
 Sends email. `send()` selects transport via `RAPTOR_MAIL_TRANSPORT` env var: `brevo` (default), `smtp`, `mail`.
+
+### MailController
+
+**File:** `application/dashboard/mail/MailController.php` - System - Send email page (`DashboardTrait`).
+
+| Method | Description |
+|--------|-------------|
+| `index()` | Page: roles with recipient counts, user list for search. Requires `system_mail_send` |
+| `send()` | POST, two modes. `mode=prepare` `{subject, body, role_ids, user_ids}`: resolves recipients on the server (active users with a valid email, deduplicated, max `MAX_RECIPIENTS` 1000) and returns `{broadcast_id, recipients, ids, batch_size}` without sending; logs `mail-broadcast-start` (full text). `mode=batch` `{subject, body, broadcast_id, user_ids}` (at most `BATCH_SIZE` 20 ids): re-resolves every id (inactive / removed / out-of-scope ids are skipped), sends one email each and returns `{sent, failed, skipped}`; logs `mail-broadcast` |
+
+Organization scope: `system_coder` or a user signed in to the system organization (`id=1`) reaches all users; anyone else only members of the current organization (`organizations_users`) - in the role counts, the user list and the recipient query.
+
+### MailRouter - Routes
+
+| Route | Method | Name |
+|-------|--------|------|
+| `/dashboard/mail-send` | GET | `mail-send` |
+| `/dashboard/mail-send/send` | POST (CSRF) | `mail-send-post` |
 
 ---
 
@@ -1075,7 +1100,7 @@ Requires `RAPTOR_OPENAI_API_KEY` in `.env`. The caller must be logged in AND hol
 Dashboard sidebar badge system showing unseen activity counts per module. Reads from existing `*_log` tables.
 
 #### `list(): void`
-GET `/dashboard/badges` - Returns JSON with badge counts per module. Groups badges by color (green=create, blue=update, red=delete, info=new comment/review). Filters by admin permissions (`PERMISSION_MAP`). Excludes the admin's own actions except for `/trash` (own deletions are meant to be seen there). Modules listed in `orgScopedModules()` (default empty) are further filtered to the viewing admin's current organization unless the viewer is `system_coder` or `isSystemWideViewer()` (current organization `id=1`). `/manual` and `/migrations` get file-count badges instead of log counts. First-time users get 30-day lookback.
+GET `/dashboard/badges` - Returns JSON with badge counts per module. Groups badges by color (green=create, blue=update, red=delete, info=new comment/review). Filters by admin permissions (`PERMISSION_MAP`). Excludes the admin's own actions except for `/trash` (own deletions are meant to be seen there). Modules listed in `orgScopedModules()` (default empty) are further filtered to the viewing admin's current organization unless the viewer is `system_coder` or `isSystemWideViewer()` (current organization `id=1`). `/manual` and `/migrations` get file-count badges instead of log counts. Counts changed records, not events: distinct `record_id` per color (entries without `record_id` count one each), over at most the last `WINDOW_DAYS` (30) days - `max(checked_at, now - 30 days)`.
 
 #### `seen(): void`
 POST `/dashboard/badges/seen` - Marks a module as seen. Updates `checked_at` timestamp for the current admin.
@@ -1124,7 +1149,7 @@ Dashboard sidebar menu items with multilingual titles and parent/child hierarchy
 | `href` | varchar(255) | Menu link URL |
 | `alias` | varchar(64) | Organization alias filter |
 | `permission` | varchar(128) | Required permission to see menu item |
-| `position` | smallint (default: 100) | Sort order |
+| `position` | smallint (default: 100) | Sort order - set by drag and drop on the menu page (`manageMenuSort()` renumbers all rows in tree order), new items get `MAX(position) + 1` |
 | `is_visible` | tinyint (default: 1) | Visibility toggle |
 | `created_at` | datetime | Created date |
 | `created_by` | bigint | Created by user (FK -> users) |

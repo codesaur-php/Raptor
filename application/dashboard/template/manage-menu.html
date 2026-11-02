@@ -21,9 +21,27 @@
     .menu-table > tbody > tr.parent > td {
         color: dimgray;
     }
+    .menu-table > tbody > tr.child > td.caption {
+        padding-left: 1.5rem;
+    }
+    .menu-table .drag-handle {
+        cursor: grab;
+        touch-action: none;
+        color: var(--bs-secondary-color);
+        width: 2rem;
+        text-align: center;
+    }
+    .menu-table .sortable-ghost {
+        opacity: .4;
+    }
+    .menu-table.saving {
+        pointer-events: none;
+        opacity: .6;
+    }
 </style>
 
 <script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11" type="text/javascript"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js" type="text/javascript"></script>
 
 <!-- Цэсний жагсаалтын толгой хэсэг (toolbar) -->
 <div class="d-flex flex-wrap justify-content-between align-items-center rounded p-1 mb-2 shadow">
@@ -44,10 +62,33 @@
     </div>
 </div>
 
-<!-- Raptor Admin - Sidebar/Topbar-ийн цэсний мастер жагсаалт -->
+<!-- Raptor Admin - Sidebar/Topbar-ийн цэсний мастер жагсаалт.
+     Parent бүр өөрийн child-уудтайгаа нэг tbody (бүлэг). Дарааллыг гараар
+     бичихгүй - бариулаас (grip) чирж өөрчилнө: parent-ыг бүлгээр нь, child-ыг
+     өөрийн эсвэл өөр parent-ын бүлэг рүү (тэгвэл parent нь солигдоно). -->
+{% if user_can %}
+    <!-- Чирж дараалал өөрчлөх тухай зөвлөмж -->
+    <div class="alert alert-info d-flex align-items-start gap-2 py-2 small" role="alert">
+        <i class="bi bi-lightbulb"></i>
+        <div>
+            {% if localization.code == 'mn' %}
+                Дарааллыг өөрчлөхдөө мөрийн зүүн талын <i class="bi bi-grip-vertical"></i> бариулаас барьж чирээд хүссэн байрлалд буулгана - шууд хадгалагдана.
+                Үндсэн цэсийг чирвэл дэд цэсүүд нь хамт зөөгдөнө.
+                Дэд цэсийг өөр үндсэн цэсийн бүлэг рүү чирж буулгавал тэр цэсийн дэд цэс болно.
+            {% else %}
+                To change the order, grab the <i class="bi bi-grip-vertical"></i> handle on the left of a row and drop it where you want - it is saved immediately.
+                Dragging a main menu moves its submenus with it.
+                Drop a submenu into another main menu's group to make it a submenu of that menu.
+            {% endif %}
+        </div>
+    </div>
+{% endif %}
+<!-- Гар утсанд өргөн хүснэгт хуудсыг хажуу тийш сунгахгүй - зөвхөн хүснэгт гүйлгэгдэнэ -->
+<div class="table-responsive">
 <table class="table table-sm table-hover table-bordered menu-table" id="raptor_menu">
     <thead>
         <tr>
+            <th scope="col"></th>
             <th scope="col">Icon</th>
             {% for language in localization.language %}
                 <th scope="col">Caption ({{ language['title'] }})</th>
@@ -55,22 +96,26 @@
             <th scope="col">Link</th>
             <th scope="col">RBAC</th>
             <th scope="col">Permission</th>
-            <th scope="col">Position</th>
             <th scope="col">Visiblity</th>
             <th scope="col" style="width:8rem">Action</th>
         </tr>
     </thead>
-    <tbody>
-    {% for item in menu %}
+    {% for group in menu_groups %}
+    {% set rows = group['parent'] is null ? group['children'] : [group['parent']]|merge(group['children']) %}
+    <tbody class="menu-group{% if group['parent'] is null %} orphan{% endif %}">
+    {% for item in rows %}
         <!-- Data-record дээр тухайн мөрийн бүх мэдээллийг JSON хэлбэрээр хадгална (view/update modal-д ашиглана) -->
-        <tr{% if item['parent_id'] == 0 %} class="parent"{% endif %} data-record="{{ item|json_encode|e }}">
+        <tr class="{{ item['parent_id'] == 0 ? 'parent' : 'child' }}" data-id="{{ item['id'] }}" data-record="{{ item|json_encode|e }}">
+            <td class="drag-handle {{ item['parent_id'] == 0 ? 'group-handle' : 'child-handle' }}">
+                {% if user_can %}<i class="bi bi-grip-vertical"></i>{% endif %}
+            </td>
             <th scope="row">
                 {% if item['icon'] is not empty %}
                     <i class="{{ item['icon'] }}"></i>
                 {% endif %}
             </th>
             {% for code in localization.language|keys %}
-                <td>{{ item['localized'][code]['title'] }}</td>
+                <td class="caption">{{ item['localized'][code]['title'] }}</td>
             {% endfor %}
             <td>
                 {% if item['href'] is not empty %}
@@ -79,7 +124,6 @@
             </td>
             <td>{{ item['alias'] }}</td>
             <td>{{ item['permission'] }}</td>
-            <td>{{ item['position'] }}</td>
             <td>
                 {% if item['is_visible'] %}
                     <i class="bi bi-emoji-heart-eyes-fill text-success"></i>
@@ -123,7 +167,9 @@
         </tr>
     {% endfor %}
     </tbody>
+    {% endfor %}
 </table>
+</div>
 
 <!-- Menu insert modal - Шинэ цэс үүсгэх форм -->
 <div class="modal fade" id="menu-insert-modal" role="dialog" tabindex="-1" aria-hidden="true">
@@ -165,23 +211,6 @@
                                     {% endfor %}
                                 </select>
                                 <label>Parent</label>
-                            </div>
-                        </div>
-
-                        <!-- Дэс дугаар / байрлал -->
-                        <div class="col">
-                            <div class="form-floating">
-                                <input
-                                    class="form-control"
-                                    required
-                                    name="position"
-                                    value="100"
-                                    placeholder="Position"
-                                    type="number"
-                                    autocomplete="off"
-                                >
-                                <label>Position</label>
-                                <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
                             </div>
                         </div>
 
@@ -336,12 +365,6 @@
                                     {% endfor %}
                                 </select>
                                 <label>Parent</label>
-                            </div>
-                        </div>
-                        <div class="col">
-                            <div class="form-floating">
-                                <input class="form-control" name="position" disabled value="">
-                                <label>Position</label>
                             </div>
                         </div>
                         <div class="col">
@@ -505,21 +528,6 @@
                             </div>
                         </div>
                         <div class="col">
-                            <div class="form-floating">
-                                <input
-                                    class="form-control"
-                                    required
-                                    name="position"
-                                    value=""
-                                    placeholder="Position"
-                                    type="number"
-                                    autocomplete="off"
-                                >
-                                <label>Position</label>
-                                <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
-                            </div>
-                        </div>
-                        <div class="col">
                             <div class="form-check form-switch mt-3">
                                 <label>Visiblity</label>
                                 <input
@@ -655,12 +663,104 @@
 
 <script type="text/javascript">
 document.addEventListener('DOMContentLoaded', function () {
-    /* motable - Raptor стандарт хүснэгт helper */
-    const menu = new motable('table#raptor_menu');
-    menu.setReady();
+    const table = document.querySelector('table#raptor_menu');
+
+    /* DRAG & DROP - дарааллыг чирж өөрчилнө (position-ийг гараар бичихгүй).
+       Parent мөр бүлгээ (tbody) бүхэлд нь зөөнө. Child мөрийг өөрийн бүлэг
+       дотор эсвэл өөр parent-ын бүлэг рүү чирж болно - тэгвэл parent нь
+       солигдоно. Буулгах бүрт бүх мөрийн id-г дэлгэцийн дарааллаар, child
+       бүрийн parent-ыг хамт илгээж, сервер parent_id болон бүх position-ийг
+       хадгална. */
+    const saveOrder = () => {
+        /* Хамгаалалт: бүтэц эвдэрсэн (tbody дотор tbody, tbody-гүй мөр, parent-гүй
+           бүлэг) бол буруу parent хадгалахгүйн тулд илгээхгүй, хуудсыг сэргээнэ */
+        const broken = table.querySelector('tbody tbody')
+            || table.querySelector(':scope > tr')
+            || Array.from(table.querySelectorAll(':scope > tbody.menu-group:not(.orphan)'))
+                .some(tbody => tbody.querySelectorAll(':scope > tr.parent').length !== 1);
+        if (broken) {
+            Notify('danger', `{{ 'error'|text|e }}`, 'Invalid menu structure - reloading');
+            setTimeout(() => window.location.reload(), 1000);
+            return;
+        }
+        const ids = Array.from(table.querySelectorAll('tbody > tr[data-id]')).map(tr => tr.dataset.id);
+        const parents = {};
+        table.querySelectorAll(':scope > tbody.menu-group:not(.orphan)').forEach(tbody => {
+            const parentRow = tbody.querySelector(':scope > tr.parent');
+            if (!parentRow) return;
+            tbody.querySelectorAll(':scope > tr.child').forEach(tr => { parents[tr.dataset.id] = parentRow.dataset.id; });
+        });
+        table.classList.add('saving');
+        csrfFetch(`{{ 'manage-menu-sort'|link }}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ids, parents })
+        }).then(res => {
+            const contentType = res.headers.get('content-type') || '';
+            if (contentType.includes('application/json')) return res.json();
+            throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+        }).then(response => {
+            if (response.status !== 'success') {
+                throw new Error(response.message ?? 'Invalid response!');
+            }
+            table.classList.remove('saving');
+            Notify(response.type ?? 'success', `{{ 'success'|text|e }}`, response.message ?? 'Menu order saved');
+        }).catch(error => {
+            Notify('danger', `{{ 'error'|text|e }}`, error.message);
+            /* Сервер дээрх бодит дарааллыг сэргээх */
+            setTimeout(() => window.location.reload(), 1500);
+        });
+    };
+    if ({{ user_can ? 'true' : 'false' }} && typeof Sortable !== 'undefined') {
+        /* Анхаар: Sortable-ийн put: true (мөн group-гүй default) нь дурын
+           жагсаалтаас ирсэн элементийг хүлээн авдаг - бүлгийг (tbody) чирэхэд
+           child жагсаалт түүнийг өөр tbody дотор оруулж, child мөрийг чирэхэд
+           хүснэгт өөрөө tbody-гүй tr авдаг байсан. Тиймээс жагсаалт бүр зөвхөн
+           өөрийн төрлийн элементийг (tbody / tr.child) авна.
+
+           Critical (English): put: true (and the default group) accepts items
+           from ANY list - a dragged tbody got nested into another tbody. Each
+           list must accept only its own item type. */
+        Sortable.create(table, {
+            group: { name: 'menu-groups', pull: false, put: (to, from, dragEl) => dragEl.tagName === 'TBODY' },
+            draggable: 'tbody.menu-group:not(.orphan)',
+            handle: '.group-handle',
+            animation: 150,
+            onEnd: (evt) => { if (evt.oldIndex !== evt.newIndex) saveOrder(); }
+        });
+        table.querySelectorAll('tbody.menu-group').forEach(tbody => Sortable.create(tbody, {
+            /* Нэг group нэр - child бүлэг хооронд зөөгдөнө. Parent-гүй (orphan)
+               бүлэг рүү буулгахгүй, зөвхөн тэндээс гаргаж болно. */
+            group: {
+                name: 'menu-children',
+                pull: true,
+                put: (to, from, dragEl) => !tbody.classList.contains('orphan')
+                    && dragEl.tagName === 'TR' && dragEl.classList.contains('child')
+            },
+            draggable: 'tr.child',
+            handle: '.child-handle',
+            animation: 150,
+            emptyInsertThreshold: 20,
+            /* Child-ийг parent мөрийн дээр гаргахгүй */
+            onMove: (evt) => !(evt.related?.classList?.contains('parent') && !evt.willInsertAfter),
+            onEnd: (evt) => {
+                if (evt.from === evt.to && evt.oldIndex === evt.newIndex) return;
+                if (evt.from !== evt.to) {
+                    /* Засах цонх data-record-оос parent-ыг уншдаг тул шинэчилнэ */
+                    const parentRow = evt.to.querySelector('tr.parent');
+                    try {
+                        const record = JSON.parse(evt.item.dataset.record ?? '{}');
+                        record.parent_id = parentRow ? Number(parentRow.dataset.id) : record.parent_id;
+                        evt.item.dataset.record = JSON.stringify(record);
+                    } catch (e) {}
+                }
+                saveOrder();
+            }
+        }));
+    }
 
     /* Цэс устгах товч (trash icon) дээрх click event */
-    const deletes = menu.table.querySelectorAll('.delete-item');
+    const deletes = table.querySelectorAll('.delete-item');
     deletes.forEach(btn => btn.addEventListener('click', function (e) {
         e.preventDefault();
 
@@ -669,14 +769,15 @@ document.addEventListener('DOMContentLoaded', function () {
             return Notify('warning', `{{ 'error'|text|e }}`, 'Cannot select row!');
         }
 
-        const caption = thisRow.children[1].innerHTML;
+        /* children[0] - drag handle, [1] - icon, [2] - эхний хэлний caption */
+        const caption = thisRow.children[2].innerHTML;
         const cleanCaption = caption.replace(/<\/?[^>]+(>|$)/g, '');
         let ask =
             document.documentElement.lang === 'mn'
                 ? `<p class="text-danger mb-3">Та (${cleanCaption}) цэсийг устгахдаа итгэлтэй байна уу?</p><p>Хэрвээ тийм бол шалтгаан тайлбар бичнэ үү</p>`
                 : `<p class="text-danger mb-3">Are you sure to delete the menu (${cleanCaption})?</p><p>If so, please provide a reason</p>`;
 
-        const icon = thisRow.children[0].querySelector('i');
+        const icon = thisRow.children[1].querySelector('i');
         if (icon) {
             ask = `<p>${icon.parentElement.innerHTML}</p>${ask}`;
         }
@@ -717,7 +818,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
                     /* Тухайн мөрийг хүснэгтээс хасна */
                     thisRow.remove();
-                    menu.setReady();
 
                     /* UI-г шинэчлэх (refresh) */
                     window.location.reload();
@@ -735,7 +835,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }));
 
     /* UPDATE MODAL - Мөр дээрх "Edit" товч дарахад form-ийг populate хийнэ */
-    const updates = menu.table.querySelectorAll('button[data-bs-target="#menu-update-modal"]');
+    const updates = table.querySelectorAll('button[data-bs-target="#menu-update-modal"]');
     updates.forEach(btn => btn.addEventListener('click', function () {
         const thisRow = btn.closest('tr');
         const record = JSON.parse(thisRow.dataset.record ?? '{}');
@@ -744,7 +844,6 @@ document.addEventListener('DOMContentLoaded', function () {
         const updateModal = document.querySelector('div#menu-update-modal');
         updateModal.querySelector('input[name="id"]').value = record.id;
         updateModal.querySelector('select[name="parent_id"]').value = record.parent_id;
-        updateModal.querySelector('input[name="position"]').value = record.position;
         updateModal.querySelector('input[name="is_visible"]').checked = record.is_visible == 1;
         updateModal.querySelector('input[name="icon"]').value = record.icon ?? '';
         updateModal.querySelector('input[name="href"]').value = record.href ?? '';
@@ -763,7 +862,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }));
 
     /* VIEW MODAL - Мөр дээрх "View" товч дарахад readonly form-ийг populate хийнэ */
-    const views = menu.table.querySelectorAll('button[data-bs-target="#menu-view-modal"]');
+    const views = table.querySelectorAll('button[data-bs-target="#menu-view-modal"]');
     views.forEach(btn => btn.addEventListener('click', function () {
         const thisRow = btn.closest('tr');
         const record = JSON.parse(thisRow.dataset.record ?? '{}');
@@ -772,7 +871,6 @@ document.addEventListener('DOMContentLoaded', function () {
         const viewModal = document.querySelector('div#menu-view-modal');
         viewModal.querySelector('input[name="id"]').value = record.id;
         viewModal.querySelector('select[name="parent_id"]').value = record.parent_id;
-        viewModal.querySelector('input[name="position"]').value = record.position;
         viewModal.querySelector('input[name="is_visible"]').checked = record.is_visible == 1;
         viewModal.querySelector('input[name="icon"]').value = record.icon ?? '';
         viewModal.querySelector('input[name="href"]').value = record.href ?? '';
@@ -884,12 +982,10 @@ document.addEventListener('DOMContentLoaded', function () {
             submitter.growNstop();
 
             const data = new FormData(this);
-            console.log(data);
             const visible = this.querySelector('input[name="is_visible"]');
             if (visible) { /* CHECKBOX NORMALIZE: is_visible -> 1/0 */
                 data.set('is_visible', visible.checked ? '1' : '0');
             }
-            console.log(data);
             csrfFetch(
                 this.action,
                 {

@@ -63,6 +63,9 @@ class PermissionsSeed
 
             // Development
             ['module' => 'development',  'name' => 'development',           'description' => 'Manage all development requests and respond to others'],
+
+            // Mail
+            ['module' => 'mail',         'name' => 'mail_send',             'description' => 'Send email to users by role or selection (own organization only outside the system organization)'],
         ];
 
         $stmt = $pdo->prepare(

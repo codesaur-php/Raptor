@@ -31,6 +31,10 @@ class DevRequestModel extends Model
             new Column('content', 'text'),
            (new Column('status', 'varchar', 16))->default('pending'),
             new Column('assigned_to', 'bigint'),
+            // Хүсэлт үүсгэх үеийн snapshot: хэрэглэгч аль байгууллагад нэвтэрсэн,
+            // ямар рольтой байсан (дараа нь роль/байгууллага солигдсон ч өөрчлөгдөхгүй)
+            new Column('organization_id', 'bigint'),
+            new Column('created_roles', 'varchar', 255),
             new Column('created_at', 'datetime'),
             new Column('created_by', 'bigint'),
             new Column('updated_at', 'datetime'),
@@ -52,6 +56,8 @@ class DevRequestModel extends Model
         $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_created_by FOREIGN KEY (created_by) REFERENCES $users(id) ON DELETE SET NULL ON UPDATE CASCADE");
         $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_updated_by FOREIGN KEY (updated_by) REFERENCES $users(id) ON DELETE SET NULL ON UPDATE CASCADE");
         $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_assigned_to FOREIGN KEY (assigned_to) REFERENCES $users(id) ON DELETE SET NULL ON UPDATE CASCADE");
+        $organizations = (new \Dashboard\Organization\OrganizationModel($this->pdo))->getName();
+        $this->exec("ALTER TABLE $table ADD CONSTRAINT {$table}_fk_organization_id FOREIGN KEY (organization_id) REFERENCES $organizations(id) ON DELETE SET NULL ON UPDATE CASCADE");
 
         // Хүсэлтийн шүүлтийн гүйцэтгэлийг сайжруулах индекс
         $this->exec("CREATE INDEX {$table}_idx_status ON $table (status)");

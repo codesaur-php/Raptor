@@ -119,8 +119,6 @@ class FilesController extends FileController
             '[{table}] файлын жагсаалтыг үзэж байна',
             [
                 'action' => 'files-index',
-                'tables' => $tables,
-                'total'  => $total,
                 'table'  => $table
             ]
         );
@@ -533,7 +531,11 @@ class FilesController extends FileController
                 if (!empty($updated['record_id'])) {
                     $message = "{record_id}-р бичлэгт зориулсан $message";
                 }
-                $context = $updated;
+                $context = [
+                    'path'      => $updated['path'] ?? '',
+                    'record_id' => $updated['record_id'] ?? null,
+                    'changes'   => $this->recordChanges($record, $updated)
+                ];
             }
             $this->log($table, $level, $message, ['action' => 'files-update', 'id' => $id] + $context);
         }
@@ -611,7 +613,12 @@ class FilesController extends FileController
                 if (!empty($record['record_id'])) {
                     $message = "{record_id}-р бичлэгт зориулсан $message";
                 }
-                $context = $record;
+                $context = [
+                    'id'        => $record['id'] ?? $id,
+                    'path'      => $record['path'] ?? '',
+                    'file'      => $record['file'] ?? '',
+                    'record_id' => $record['record_id'] ?? null
+                ];
             } else {
                 $level = LogLevel::ERROR;
                 $message = 'Файлын бичлэгийг устгах үйлдлийг гүйцэтгэх явцад алдаа гарч зогслоо';

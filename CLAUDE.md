@@ -77,7 +77,7 @@ $this->dispatch(new \Dashboard\Notification\ContentEvent(
 
 **DashboardTrait method collision rule:** a controller that uses `Dashboard\Template\DashboardTrait` MUST NOT define a method with the same name as any of the trait's methods (`dashboardTemplate`, `dashboardProhibited`, `modalProhibited`, `getUserMenu`, `getUserOrganizations`, and the protected `retrieveUsersDetail`). In PHP a class method silently overrides the trait method, so the trait's internal calls (e.g. `dashboardTemplate()` calling `getUserOrganizations()` for the topbar org switcher) would dispatch to the controller's unrelated version and break the layout. If a controller needs a similar helper, pick a distinct name (e.g. `getMemberOrganizations()`).
 
-**Customizing the dashboard layout:** the three layout templates DashboardTrait renders internally live in `application/dashboard/template/` (`dashboard.html`, `alert-no-permission.html`, `modal-no-permission.html`). When redesigning `dashboard.html`, it must keep `{{ content }}`, the `csrf-token` and `waf-body-encoding` meta tags, and the `dashboard.js`/`dashboard.css` includes, otherwise CSRF, WAF encoding, badges and the org switcher break. The sidemenu loop is optional - the developer can build their own navigation any way they like (keep the loop only if you want the ready-made RBAC-filtered menu).
+**Customizing the dashboard layout:** the three layout templates DashboardTrait renders internally live in `application/dashboard/template/` (`dashboard.html`, `alert-no-permission.html`, `modal-no-permission.html`). When redesigning `dashboard.html`, it must keep `{{ content }}`, the `csrf-token` and `waf-body-encoding` meta tags, and the `dashboard.js`/`dashboard.css` includes, otherwise CSRF, WAF encoding, badges and the org switcher break. The sidemenu loop is optional - the developer can build their own navigation any way they like (keep the loop only if you want the ready-made RBAC-filtered menu). If you keep it, keep the title inside `<span class="nav-link-title">` (with the full name in the link's `title`): `dashboard.css` makes that span fill the row and truncate with an ellipsis, so badges appended by `initSidebarBadges()` never wrap a long title onto a second line. The desktop sidebar width is `--sidebar-width` in `dashboard.css` (>=992px), which overrides BOTH the sidebar `col-lg-2` and the main `col-lg-10` - change them together.
 
 ```php
 // AJAX modal - standalone, no layout
@@ -573,7 +573,7 @@ Colored badge pills on sidebar menu items showing unseen activity counts per adm
 
 `BadgeController::orgScopedModules()` (default `[]`) returns mount-naive module paths whose badges must be scoped to the viewing admin's current organization. For those modules the count query filters by `COALESCE(context.record_organization_id, context.auth_user.organization_id) == currentOrgId`:
 
-- `record_organization_id` - the RECORD's owning organization. A tenant-scoped module's controller should add it to the log context on insert/update/delete (same convention as `record_id`), so the badge reaches the record's organization even when the action was performed by an admin logged into a different organization.
+- `record_organization_id` - the RECORD's owning organization. A tenant-scoped module's controller MUST add it to the log context of every badge-counted action (same convention as `record_id`), so the badge reaches the record's organization even when the action was performed by an admin logged into a different organization. In a typical multi-tenant app most actions on a tenant's records (review, approve, control) are done by system-organization staff, so without it the actor fallback resolves to the system organization and the tenant never sees its own badge; a public/unauthenticated action (signup, web form) has no actor organization either and without it counts for EVERY tenant. Adding a module to `orgScopedModules()` without `record_organization_id` in its logs is therefore a bug in both directions - check the log contexts first.
 - `auth_user.organization_id` - the actor's org, recorded automatically by `Controller::log()`. Fallback when `record_organization_id` is absent.
 - Both NULL (old logs, web frontend) - counts for all admins, backward-compatible.
 
@@ -594,9 +594,9 @@ Up to 3 badges per module, shown left to right in green-blue-red order.
 1. On dashboard page load, JS calls `GET /dashboard/badges`
 2. BadgeController builds a reverse map from BADGE_MAP: module -> [(log_table, action, color)]
 3. For each module, checks admin permission via PERMISSION_MAP. Skips unauthorized modules
-4. Queries `{table}_log` for entries after admin's `checked_at` using JSON_EXTRACT on the `context` column
+4. Queries `{table}_log` for entries after `max(checked_at, now - WINDOW_DAYS)` (`WINDOW_DAYS = 30`; no `admin_badge_seen` row = the 30-day window) using JSON_EXTRACT on the `context` column - an admin who has not opened a menu for months does not get every event since then
 5. Filters out admin's own actions via `auth_user.id != admin_id`
-6. If no `admin_badge_seen` entry exists (new permission or first use), counts from last 30 days
+6. Counts changed RECORDS, not events: groups by `action` + `record_id` and counts distinct `record_id` per color (10 edits of one record = 1); entries without `record_id` (web messages, uploads) count one each. So `record_id` in the log context is what makes a badge mean "N records"
 7. When admin clicks a sidebar link, JS removes the badge and POSTs `seen` -> `checked_at = NOW()`
 
 ### BADGE_MAP
@@ -678,6 +678,14 @@ Common context patterns:
 - Record-specific: `{"record_id":"{{ record['id'] }}"}`
 - Action-specific: `{"action":"reference-*","record_id":"{{ record['id'] }}"}`
 - No filter: omit `data-context` entirely
+
+**Log context size rules:** `Controller::log()` adds only request metadata (`requestMeta()`: code, method, target, IP, user agent) and `auth_user` (incl. `organization_id`, `act_as`) - it does NOT copy the request body or uploaded files. Each call passes only what matters:
+- insert -> `'record_id'` + `'payload'` (what was written; LocalizedModel also `'content'`), never the re-read record
+- update -> `'changes' => $this->recordChanges($before, $after)` (only changed fields as `old`/`new`, nested `localized` supported; `updated_at`/`updated_by` ignored) + a short `title`/`name` if the message shows it
+- view / open edit form / modal of one record -> only `'record_id'` (who and from which organization is in `auth_user`)
+- delete -> `'record_id'` + small fields the message needs (title, reason) - the full record is in `trash`
+- a message placeholder must name a key present in the context (`{payload.title}`, `{title}`), never `{server_request.body.*}` - interpolation happens when the log is READ. Exception: the failed-login log writes `server_request.body.username` explicitly, because `LoginController::checkLoginAttempts()` counts brute-force attempts by that path.
+`Logger` masks PASSWORD/TOKEN/PIN/JWT keys including their whole subtree (`changes.password` -> `*** hidden ***`).
 
 **Convention:** any log entry tied to a record must use `'record_id' => $id` in the context array - never `'id' => $id`. This single convention keeps Logger Protocol filters consistent across modules. The separate `auth_user.id` field has its own semantic (used by the Badge system to filter out the actor's own actions) and is unrelated.
 

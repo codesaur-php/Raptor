@@ -133,7 +133,7 @@ class CommentsController extends \Dashboard\Controller
                 $adminName, ['news_title' => $news['title'] ?? '']
             ));
 
-            $this->log('news', LogLevel::INFO, '{record_id} мэдээнд сэтгэгдэл бичлээ ({name})', ['action' => 'comment-insert', 'record_id' => $id, 'name' => $adminName]);
+            $this->log('news', LogLevel::INFO, '{record_id} мэдээнд сэтгэгдэл бичлээ ({name})', ['action' => 'comment-insert', 'record_id' => $id, 'name' => $adminName, 'payload' => ['comment' => $comment]]);
         } catch (\Throwable $err) {
             $this->respondJSON([
                 'status' => 'error',
@@ -198,7 +198,7 @@ class CommentsController extends \Dashboard\Controller
                 $adminName
             ));
 
-            $this->log('news', LogLevel::INFO, '{record_id} мэдээний #{parent_id} ({name}) сэтгэгдэлд хариулт бичлээ', ['action' => 'comment-reply', 'record_id' => $parent['news_id'], 'parent_id' => $id, 'name' => $parent['name']]);
+            $this->log('news', LogLevel::INFO, '{record_id} мэдээний #{parent_id} ({name}) сэтгэгдэлд хариулт бичлээ', ['action' => 'comment-reply', 'record_id' => $parent['news_id'], 'parent_id' => $id, 'name' => $parent['name'], 'payload' => ['comment' => $comment]]);
         } catch (\Throwable $err) {
             $this->respondJSON([
                 'status' => 'error',

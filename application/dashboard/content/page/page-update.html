@@ -82,7 +82,7 @@
                 </ul>
             </div>
         </div>
-        <div class="col-3">
+        <div class="col-5">
             <label class="form-label">{{ 'category'|text }} <i class="bi bi-bookmark"></i></label>
             <div class="input-group">
                 <input class="form-control" name="category" type="text" value="{{ record['category']|e }}" maxlength="32">
@@ -93,11 +93,6 @@
                     {% endfor %}
                 </ul>
             </div>
-        </div>
-        <div class="col-2">
-            <label class="form-label">{{ 'position'|text }} <i class="bi bi-sort-numeric-down"></i></label>
-            <input class="form-control" name="position" value="{{ record['position']|e }}" placeholder="" type="number" autocomplete="off">
-            <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
         </div>
     </div>
     <!-- Эцэг хуудас -->

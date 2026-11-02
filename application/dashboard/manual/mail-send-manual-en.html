@@ -1,0 +1,63 @@
+<div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-3 shadow bg-secondary">
+    <h3 class="px-2 my-auto fs-6 text-white">
+        <i class="bi bi-book"></i> Send Email - Manual
+    </h3>
+    <a href="{{ 'manual'|link }}" class="btn btn-sm btn-light m-1">
+        <i class="bi bi-arrow-left"></i> {{ 'manual'|text }}
+    </a>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-envelope-paper"></i> What is Send Email?</h4>
+        <p>
+            <strong>System - Send email</strong> sends an email to the system's users: everyone with a chosen role and/or individually selected users.
+            It is meant for <strong>service announcements</strong> (planned maintenance, new features, policy changes) - not for marketing.
+        </p>
+        <ul>
+            <li>Only <strong>active</strong> users with a valid email address receive it; a user in several chosen roles gets it once</li>
+            <li>Each recipient gets a <strong>separate</strong> email, so nobody sees the other addresses</li>
+            <li>At most <strong>1000</strong> recipients per send</li>
+            <li>Every send is written to the access logs (subject, message text, chosen roles and users, sent and failed counts)</li>
+        </ul>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-send"></i> How to send</h4>
+        <ol>
+            <li><strong>Recipients</strong> - tick roles (the badge shows how many users each role reaches) and/or search users by name or email and add them</li>
+            <li><strong>Subject</strong> and <strong>message</strong> - the message is plain text: line breaks are kept and links become clickable</li>
+            <li>Click <strong>Send</strong> - a confirmation shows the exact number of recipients (duplicates removed); confirm to send</li>
+            <li>The email goes out <strong>in batches of 20</strong> with a progress bar - keep the page open until it finishes</li>
+            <li>The result shows how many were <strong>sent</strong>, which addresses <strong>failed</strong>, and who was <strong>skipped</strong> - a user deactivated, removed from the organization or left without an email while the send was running does not get it</li>
+            <li>If a batch request itself fails (connection lost, session expired), sending <strong>stops</strong> and is <strong>not retried automatically</strong>, because part of that batch may already have been sent. The dialog lists that batch as <strong>uncertain</strong> and shows how many are left; <strong>Continue with the rest</strong> sends the remaining batches</li>
+        </ol>
+        <p class="mb-0">The email footer shows the website name from <strong>Settings</strong>.</p>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-building"></i> Organization scope</h4>
+        <ul class="mb-0">
+            <li>Signed in to the <strong>system organization</strong> (or a <code>system_coder</code>) - you can send to all users</li>
+            <li>Signed in to <strong>any other organization</strong> - only that organization's users are listed and receive the email (a notice on the page says so). Switch organizations in the top bar to send to another organization</li>
+        </ul>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-shield-lock"></i> Required Permissions</h4>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Action</th><th>Permission</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Open the page, send email</td><td><code>system_mail_send</code> (given to the <code>admin</code> role by default; <code>system_coder</code> always)</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>

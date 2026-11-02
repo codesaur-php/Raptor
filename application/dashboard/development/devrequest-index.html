@@ -189,7 +189,11 @@
                     `<th scope="row">${escapeHtml(id)}</th>` +
                     `<td>${escapeHtml(createdAt)}</td>` +
                     `<td>${escapeHtml(record.title || '')}</td>` +
-                    `<td>${escapeHtml(record.created_user || '')}</td>` +
+                    /* Илгээгч + хүсэлт үүсгэх үеийн байгууллага, роль */
+                    `<td>${escapeHtml(record.created_user || '')}` +
+                        (record.organization_name ? `<div class="small text-body-secondary"><i class="bi bi-building"></i> ${escapeHtml(record.organization_name)}</div>` : '') +
+                        (record.created_roles ? `<div class="small text-body-secondary"><i class="bi bi-person-badge"></i> ${escapeHtml(record.created_roles)}</div>` : '') +
+                    `</td>` +
                     `<td>${escapeHtml(record.assigned_user || '-')}</td>` +
                     `<td>${statusBadge}</td>` +
                     `<td>${attachCount}</td>` +

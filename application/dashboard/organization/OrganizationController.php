@@ -174,8 +174,11 @@ class OrganizationController extends FileController
                 ];
             } elseif ($this->getRequest()->getMethod() == 'POST') {
                 $level = LogLevel::INFO;
-                $message = 'Байгууллага [{record.name}] амжилттай үүслээ';
-                $context += ['record_id' => $id, 'record' => $record];
+                $message = 'Байгууллага [{payload.name}] амжилттай үүслээ';
+                $context += ['record_id' => $id, 'payload' => $payload];
+                if (!empty($logo['path'])) {
+                    $context['payload']['logo'] = $logo['path'];
+                }
             } else {
                 $level = LogLevel::NOTICE;
                 $message = 'Байгууллага үүсгэх үйлдлийг эхлүүллээ';
@@ -244,8 +247,7 @@ class OrganizationController extends FileController
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } else {
                 $level = LogLevel::NOTICE;
-                $message = '{record.id} дугаартай [{record.name}] байгууллагын мэдээллийг үзэж байна';
-                $context += ['record' => $record];
+                $message = '{record_id} дугаартай байгууллагын мэдээллийг үзэж байна';
             }
             $this->log('organizations', $level, $message, $context);
         }
@@ -374,12 +376,14 @@ class OrganizationController extends FileController
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } elseif ($this->getRequest()->getMethod() == 'PUT') {
                 $level = LogLevel::INFO;
-                $message = '{record.id} дугаартай [{record.name}] байгууллагын мэдээллийг амжилттай шинэчиллээ';
-                $context += ['updates' => $updates, 'record' => $updated];
+                $message = '{record_id} дугаартай [{name}] байгууллагын мэдээллийг амжилттай шинэчиллээ';
+                $context += [
+                    'name' => $updated['name'] ?? '',
+                    'changes' => $this->recordChanges($record, $updated)
+                ];
             } else {
                 $level = LogLevel::NOTICE;
-                $message = '{record.id} дугаартай [{record.name}] байгууллагын мэдээллийг шинэчлэхээр нээж байна';
-                $context += ['record' => $record];
+                $message = '{record_id} дугаартай байгууллагын мэдээллийг шинэчлэхээр нээж байна';
             }
             $this->log('organizations', $level, $message, $context);
         }
@@ -459,8 +463,13 @@ class OrganizationController extends FileController
             } else {
                 $level = LogLevel::ALERT;
                 $message =
-                    '{server_request.body.id} дугаартай [{server_request.body.name}] байгууллагыг ' .
-                    '[{server_request.body.reason}] шалтгаанаар идэвхгүй болголоо';
+                    '{record_id} дугаартай [{name}] байгууллагыг ' .
+                    '[{reason}] шалтгаанаар идэвхгүй болголоо';
+                $context += [
+                    'record_id' => $id,
+                    'name' => (string) ($payload['name'] ?? ''),
+                    'reason' => (string) ($payload['reason'] ?? '')
+                ];
             }
             $this->log('organizations', $level, $message, $context);
         }
@@ -542,8 +551,13 @@ class OrganizationController extends FileController
             } else {
                 $level = LogLevel::CRITICAL;
                 $message =
-                    '{server_request.body.id} дугаартай [{server_request.body.name}] байгууллагыг ' .
-                    '[{server_request.body.reason}] шалтгаанаар бүрэн устгалаа';
+                    '{record_id} дугаартай [{name}] байгууллагыг ' .
+                    '[{reason}] шалтгаанаар бүрэн устгалаа';
+                $context += [
+                    'record_id' => $id,
+                    'name' => (string) ($payload['name'] ?? $org['name'] ?? ''),
+                    'reason' => (string) ($payload['reason'] ?? '')
+                ];
             }
             $this->log('organizations', $level, $message, $context);
         }

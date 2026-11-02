@@ -7,7 +7,7 @@
   Route: get /dashboard/dev-requests/view/{id}
  
   Variables:
-    record      - Хүсэлтийн бичлэг
+    record      - Хүсэлтийн бичлэг (organization_name, created_roles - илгээгчийн snapshot)
     attachments - Хавсралтуудын массив
     responses   - Хариултуудын thread массив
     can_manage  - system_development эрхтэй эсэх
@@ -61,6 +61,15 @@
     <div class="col-md-3">
         <label class="form-label fw-bolder">{{ 'assigned-to'|text }}</label>
         <div class="form-control bg-body-secondary text-body">{{ record['assigned_user']|default('-') }}</div>
+    </div>
+    <!-- Илгээгчийн хүсэлт үүсгэх үеийн байгууллага, роль (snapshot) -->
+    <div class="col-md-4">
+        <label class="form-label fw-bolder">{{ 'created-by'|text }} - {{ 'organization'|text }}</label>
+        <div class="form-control bg-body-secondary text-body">{{ record['organization_name']|default('-') }}</div>
+    </div>
+    <div class="col-md-5">
+        <label class="form-label fw-bolder">{{ 'created-by'|text }} - {{ 'role'|text }}</label>
+        <div class="form-control bg-body-secondary text-body">{{ record['created_roles']|default('-') }}</div>
     </div>
 </div>
 

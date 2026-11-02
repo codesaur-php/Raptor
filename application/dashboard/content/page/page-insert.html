@@ -79,7 +79,7 @@
                 </ul>
             </div>
         </div>
-        <div class="col-3">
+        <div class="col-5">
             <label class="form-label">{{ 'category'|text }} <i class="bi bi-bookmark"></i></label>
             <div class="input-group">
                 <input class="form-control" name="category" type="text" value="{{ categories|keys|first|e }}" maxlength="32">
@@ -90,11 +90,6 @@
                     {% endfor %}
                 </ul>
             </div>
-        </div>
-        <div class="col-2">
-            <label class="form-label">{{ 'position'|text }} <i class="bi bi-sort-numeric-down"></i></label>
-            <input class="form-control" name="position" value="100" placeholder="" type="number" autocomplete="off">
-            <div class="invalid-feedback">{{ 'field-is-required'|text }}</div>
         </div>
     </div>
     <!-- Эцэг хуудас -->
@@ -197,11 +192,9 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    /* Эцэг хуудас URL-аас автоматаар сонгох + position тооцоолох */
+    /* Эцэг хуудас URL-аас автоматаар сонгох */
     const allInfosData = {{ all_infos|json_encode|raw }};
-    const infosData = {{ infos|json_encode|raw }};
     const parentSelect = document.querySelector('select[name="parent_id"]');
-    const positionInput = document.querySelector('input[name="position"]');
     const presetCodeParam = urlParams.get('code');
 
     /* Хэлээр parent жагсаалтыг шүүх: адил хэлтэй эсвэл бүх хэлний ('*') эцэг зөвшөөрнө
@@ -225,42 +218,10 @@ document.addEventListener('DOMContentLoaded', function () {
             parentSelect.value = '0';
         }
     }
-    function calcNextPosition(pid) {
-        let maxPos = 0;
-        let hasSibling = false;
-        for (const key in infosData) {
-            if (String(infosData[key]['parent_id']) === String(pid)) {
-                const p = parseInt(infosData[key]['position']) || 0;
-                if (p > maxPos) maxPos = p;
-                hasSibling = true;
-            }
-        }
-        if (hasSibling) return maxPos + 10;
-        /* Анхны хүүхэд: эцгийн position + 10 */
-        const parentPos = parseInt(infosData[pid]?.['position']) || 0;
-        return parentPos + 10;
-    }
-    if (parentId) {
-        if (parentSelect) {
-            parentSelect.value = parentId;
-        }
-        if (positionInput) {
-            positionInput.value = calcNextPosition(parentId);
-        }
-    } else if (presetCodeParam && positionInput) {
-        /* Top-level: адил хэлийн top-level item-үүдийн max position + 100 */
-        let maxPos = 0;
-        let found = false;
-        for (const key in infosData) {
-            if (String(infosData[key]['parent_id']) === '0' && infosData[key]['code'] === presetCodeParam) {
-                const p = parseInt(infosData[key]['position']) || 0;
-                if (p > maxPos) maxPos = p;
-                found = true;
-            }
-        }
-        if (found) {
-            positionInput.value = maxPos + 100;
-        }
+    /* Дарааллыг гараар бичихгүй: сервер шинэ хуудсыг ах дүүсийнх нь төгсгөлд
+       оруулна, дараа нь Хуудасны навигаци хуудсанд чирж байрлуулна */
+    if (parentId && parentSelect) {
+        parentSelect.value = parentId;
     }
 
     /* Хэл сонгох ('*' = бүх хэл, туг биш глобус дүрс) */

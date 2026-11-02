@@ -517,10 +517,24 @@ abstract class Controller extends \codesaur\Http\Application\Controller
      *   - LogLevel::DEBUG
      *
      * Log context дотор дараах мэдээллүүд автоматаар түүдэг:
-     *   - server_request (method, path, remote_addr)
-     *   - parsed body (POST өгөгдөл)
-     *   - uploaded files (файл upload)
-     *   - authenticated user info (id, name, email, гэх мэт)
+     *   - server_request (code, method, target, remote_addr, user_agent)
+     *   - authenticated user info (id, name, email, organization_id)
+     *
+     * Request body болон upload файлыг автоматаар хуулахгүй - лог хэт томордог
+     * байсан. Дуудагч зөвхөн хэрэгтэйгээ өөрөө дамжуулна:
+     *   - insert -> 'payload' (бичсэн өгөгдөл)
+     *   - update -> 'changes' (recordChanges(): зөвхөн өөрчлөгдсөн талбар, old -> new)
+     *   - view / засах форм нээх -> зөвхөн 'record_id' (хэн, аль байгууллагаас
+     *     харсныг auth_user хадгална - бичлэгийн өгөгдлийг хуулахгүй)
+     *   - delete -> 'record_id' + шалтгаан зэрэг жижиг талбар (бүтэн бичлэг trash-д)
+     * Context-д 'server_request' өгвөл автомат metadata-г орлоно (requestMeta()-тай
+     * нийлүүлж болно).
+     *
+     * Critical (English): the request body is NOT copied into the log any more -
+     * pass only what matters ('payload' on insert, 'changes' on update, just
+     * 'record_id' on view). LoginController's brute-force throttle reads
+     * server_request.body.username, so the login log passes it explicitly -
+     * keep that if you touch login logging.
      *
      * Хэрвээ Logger::log() дуудах үед хүснэгтийн нэр ($table) эсвэл
      * мессеж ($message) хоосон бол лог бичилтийг алгасан Exception шиднэ.
@@ -539,27 +553,9 @@ abstract class Controller extends \codesaur\Http\Application\Controller
                 throw new \InvalidArgumentException("Log table info can't be empty!");
             }
 
-            // Server request metadata
+            // Server request metadata (body/files хуулахгүй - дээрх тайлбарыг үз)
             if (!isset($context['server_request'])) {
-                $server_request = [
-                    'code'   => $this->getLanguageCode(),
-                    'method' => $this->getRequest()->getMethod(),
-                    'target' => $this->getRequest()->getRequestTarget(),
-                ];
-                $serverParams = $this->getRequest()->getServerParams();
-                if (isset($serverParams['REMOTE_ADDR'])) {
-                    $server_request['remote_addr'] = $serverParams['REMOTE_ADDR'];
-                }
-                if (isset($serverParams['HTTP_USER_AGENT'])) {
-                    $server_request['user_agent'] = $serverParams['HTTP_USER_AGENT'];
-                }
-                if (!empty($this->getRequest()->getParsedBody())) {
-                    $server_request['body'] = $this->getRequest()->getParsedBody();
-                }
-                if (!empty($this->getRequest()->getUploadedFiles())) {
-                    $server_request['files'] = $this->getRequest()->getUploadedFiles();
-                }
-                $context['server_request'] = $server_request;
+                $context['server_request'] = $this->requestMeta();
             }
 
             // Authenticated user metadata
@@ -592,6 +588,67 @@ abstract class Controller extends \codesaur\Http\Application\Controller
                 \error_log($e->getMessage());
             }
         }
+    }
+
+    /**
+     * Лог-д бичих request metadata: хэл, method, target, IP, user agent.
+     * Body, upload файл орохгүй.
+     *
+     * @return array
+     */
+    protected final function requestMeta(): array
+    {
+        $meta = [
+            'code'   => $this->getLanguageCode(),
+            'method' => $this->getRequest()->getMethod(),
+            'target' => $this->getRequest()->getRequestTarget(),
+        ];
+        $serverParams = $this->getRequest()->getServerParams();
+        if (isset($serverParams['REMOTE_ADDR'])) {
+            $meta['remote_addr'] = $serverParams['REMOTE_ADDR'];
+        }
+        if (isset($serverParams['HTTP_USER_AGENT'])) {
+            $meta['user_agent'] = $serverParams['HTTP_USER_AGENT'];
+        }
+        return $meta;
+    }
+
+    /**
+     * Update лог-д: өөрчлөгдсөн талбаруудыг л ['field' => ['old' => .., 'new' => ..]]
+     * хэлбэрээр буцаана. $before - өөрчлөхийн өмнөх бичлэг, $after - хадгалсны
+     * дараах бичлэг (эсвэл бичсэн payload). Nested массив (LocalizedModel-ийн
+     * 'localized' => [code => [field => ..]]) рекурсив харьцуулна.
+     *
+     * updated_at / updated_by нь өөрчлөлт биш тул тооцохгүй. '1' ба 1, null ба ''
+     * ижил (DB-ээс string/null ирдэг, form '' илгээдэг) гэж үзэхийн тулд сул (!=)
+     * харьцуулалт.
+     *
+     * @param array $before
+     * @param array $after
+     * @param array $ignore Харьцуулахгүй талбарууд
+     * @return array Өөрчлөлт байхгүй бол хоосон массив
+     */
+    protected final function recordChanges(
+        array $before,
+        array $after,
+        array $ignore = ['updated_at', 'updated_by']
+    ): array {
+        $changes = [];
+        foreach ($after as $key => $value) {
+            if (\in_array($key, $ignore, true)) {
+                continue;
+            }
+            $old = $before[$key] ?? null;
+            if (\is_array($value) && (\is_array($old) || $old === null)) {
+                $nested = $this->recordChanges($old ?? [], $value, $ignore);
+                if (!empty($nested)) {
+                    $changes[$key] = $nested;
+                }
+            } elseif ($old != $value) {
+                $changes[$key] = ['old' => $old, 'new' => $value];
+            }
+        }
+        return $changes;
     }
 
     /**

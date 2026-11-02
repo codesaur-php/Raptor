@@ -134,10 +134,10 @@ class LanguageController extends \Dashboard\Controller
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } elseif ($this->getRequest()->getMethod() == 'POST') {
                 $level = LogLevel::INFO;
-                $message = 'Хэл [{record.code} - {record.title}] амжилттай үүслээ';
+                $message = 'Хэл [{payload.code} - {payload.title}] амжилттай үүслээ';
                 $context += [
-                    'id' => $record['id'],
-                    'record' => $record,
+                    'record_id' => $record['id'],
+                    'payload' => $payload,
                     "copied-localized-content-{$mother['code']}-to-{$record['code']}" => $copied
                 ];
             } else {
@@ -184,7 +184,7 @@ class LanguageController extends \Dashboard\Controller
             $context = ['action' => 'localization-language-view', 'record_id' => $id];
             if (isset($err)) {
                 $level = LogLevel::ERROR;
-                $message = '{id} дугаартай хэлний мэдээлэл нээх үед алдаа гарлаа';
+                $message = '{record_id} дугаартай хэлний мэдээлэл нээх үед алдаа гарлаа';
                 $context += [
                     'error' => [
                         'code' => $err->getCode(),
@@ -193,8 +193,7 @@ class LanguageController extends \Dashboard\Controller
                 ];
             } else {
                 $level = LogLevel::NOTICE;
-                $message = '{record.title} хэлний мэдээллийг үзэж байна';
-                $context += ['record' => $record];
+                $message = '{record_id} дугаартай хэлний мэдээллийг үзэж байна';
             }
             $this->log('content', $level, $message, $context);
         }
@@ -304,12 +303,14 @@ class LanguageController extends \Dashboard\Controller
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } elseif ($this->getRequest()->getMethod() == 'PUT') {
                 $level = LogLevel::INFO;
-                $message = '[{record.title}] хэл амжилттай шинэчлэгдлээ';
-                $context += ['updates' => $updates, 'record' => $updated];
+                $message = '[{title}] хэл амжилттай шинэчлэгдлээ';
+                $context += [
+                    'title' => $updated['title'] ?? '',
+                    'changes' => $this->recordChanges($record, $updated)
+                ];
             } else {
                 $level = LogLevel::NOTICE;
-                $message = '[{record.title}] хэлний мэдээллийг шинэчлэхээр нээв';
-                $context += ['record' => $record];
+                $message = '{record_id} дугаартай хэлний мэдээллийг шинэчлэхээр нээв';
             }
             $this->log('content', $level, $message, $context);
         }
@@ -395,8 +396,8 @@ class LanguageController extends \Dashboard\Controller
                 ];
             } else {
                 $level = LogLevel::ALERT;
-                $message = '{record.title} хэлийг устгалаа';
-                $context += ['record' => $record];
+                $message = '{record_id} дугаартай [{title}] хэлийг устгалаа';
+                $context += ['record_id' => $id, 'title' => $record['title'] ?? ''];
             }
             $this->log('content', $level, $message, $context);
         }

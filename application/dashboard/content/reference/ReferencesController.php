@@ -190,8 +190,8 @@ class ReferencesController extends \Dashboard\Controller
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } elseif ($this->getRequest()->getMethod() == 'POST') {
                 $level = LogLevel::INFO;
-                $message = '[{record.keyword}] түлхүүртэй лавлах мэдээллийг [{table}] хүснэгт дээр амжилттай үүсгэлээ';
-                $context += ['record_id' => $record['id'], 'record' => $record];
+                $message = '[{payload.keyword}] түлхүүртэй лавлах мэдээллийг [{table}] хүснэгт дээр амжилттай үүсгэлээ';
+                $context += ['record_id' => $record['id'], 'payload' => $payload, 'content' => $content];
             } else {
                 $level = LogLevel::NOTICE;
                 $message = 'Лавлах мэдээллийг {table} хүснэгт дээр үүсгэх үйлдлийг эхлүүллээ';
@@ -252,8 +252,7 @@ class ReferencesController extends \Dashboard\Controller
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } else {
                 $level = LogLevel::NOTICE;
-                $message = '{table} хүснэгтийн {record.id} дугаартай [{record.keyword}] түлхүүртэй лавлах мэдээллийг үзэж байна';
-                $context += ['record' => $record];
+                $message = '{table} хүснэгтийн {record_id} дугаартай лавлах мэдээллийг үзэж байна';
             }
             $this->log('content', $level, $message, $context);
         }
@@ -368,12 +367,14 @@ class ReferencesController extends \Dashboard\Controller
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } elseif ($this->getRequest()->getMethod() == 'PUT') {
                 $level = LogLevel::INFO;
-                $message = '{table} хүснэгтийн {record.id} дугаартай [{record.keyword}] түлхүүртэй лавлах мэдээллийг амжилттай шинэчлэлээ';
-                $context += ['updates' => $updates, 'record' => $updated];
+                $message = '{table} хүснэгтийн {record_id} дугаартай [{keyword}] түлхүүртэй лавлах мэдээллийг амжилттай шинэчлэлээ';
+                $context += [
+                    'keyword' => $updated['keyword'] ?? '',
+                    'changes' => $this->recordChanges($record, $updated)
+                ];
             } else {
                 $level = LogLevel::NOTICE;
-                $message = '{table} хүснэгтийн {record.id} дугаартай [{record.keyword}] түлхүүртэй лавлах мэдээллийг шинэчлэхээр нээж байна';
-                $context += ['record' => $record];
+                $message = '{table} хүснэгтийн {record_id} дугаартай лавлах мэдээллийг шинэчлэхээр нээж байна';
             }
             $this->log('content', $level, $message, $context);
         }
@@ -447,8 +448,12 @@ class ReferencesController extends \Dashboard\Controller
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } else {
                 $level = LogLevel::ALERT;
-                $message = '{table} хүснэгтээс {record_id} дугаартай [{server_request.body.keyword}] түлхүүртэй лавлах мэдээллийг устгалаа';
-                $context += ['table' => $table, 'record_id' => $id];
+                $message = '{table} хүснэгтээс {record_id} дугаартай [{keyword}] түлхүүртэй лавлах мэдээллийг устгалаа';
+                $context += [
+                    'table' => $table,
+                    'record_id' => $id,
+                    'keyword' => $record['keyword'] ?? ($payload['keyword'] ?? '')
+                ];
             }
             $this->log('content', $level, $message, $context);
         }

@@ -76,6 +76,12 @@ class BadgeController extends \Dashboard\Controller
     ];
 
     /**
+     * Badge хамгийн ихдээ хэдэн хоногийн үйлдлийг тоолох вэ. Цэсийг удаан
+     * нээгээгүй админы хуучин checked_at-аас биш энэ хугацаанаас тоолно.
+     */
+    public const WINDOW_DAYS = 30;
+
+    /**
      * Log хүснэгт + action -> [module path, color] зураглал.
      *
      * Бүтэц: [log_table_prefix][action_name] => [module_path, color]
@@ -101,6 +107,7 @@ class BadgeController extends \Dashboard\Controller
         'pages' => [
             'create'         => ['/pages', 'green'],
             'update'         => ['/pages', 'blue'],
+            'sort'           => ['/pages', 'blue'],
             'delete'         => ['/pages', 'red'],
         ],
         'news' => [
@@ -168,6 +175,7 @@ class BadgeController extends \Dashboard\Controller
             'rbac-set-role-permission' => ['/organizations', 'blue'],
             'template-menu-create'     => ['/manage/menu', 'green'],
             'template-menu-update'     => ['/manage/menu', 'blue'],
+            'template-menu-sort'       => ['/manage/menu', 'blue'],
             'template-menu-delete'     => ['/manage/menu', 'red'],
             'signup'                   => ['/users', 'green'],
         ],
@@ -192,7 +200,10 @@ class BadgeController extends \Dashboard\Controller
      *    action тоолохыг тодорхойлно
      * 3) Module бүрт PERMISSION_MAP-аар эрх шалгана - эрхгүй module-г алгасна
      * 4) Module бүрт холбогдох log хүснэгтүүдэд SQL query хийнэ:
-     *    - checked_at-аас хойшхи бичлэгийг тоолно (бичлэг байхгүй бол 30 хоног)
+     *    - checked_at-аас хойшхи бичлэгийг тоолно, гэхдээ хамгийн ихдээ
+     *      WINDOW_DAYS (30) хоногийн өмнөөс (seen бичлэг байхгүй эсвэл хуучин бол)
+     *    - Үйлдэл биш, өөрчлөгдсөн бичлэгийн тоо: өнгө тус бүрд DISTINCT record_id
+     *      (record_id-гүй үйлдэл тус бүрдээ тоологдоно)
      *    - JSON_EXTRACT ашиглан context доторх action талбараар шүүнэ
      *    - Тухайн admin-ий өөрийнхөн хийсэн action-г хасна (auth_user.id != adminId).
      *      Гагцхүү trash module-д хасахгүй - trash нь admin-ий өөрийн устгасан
@@ -278,9 +289,11 @@ class BadgeController extends \Dashboard\Controller
                     && $currentOrgId > 0
                     && isset($orgScopedSet[$naiveModule]);
 
-                // Бичлэг байхгүй бол сүүлийн 30 хоногоос тоолно
-                $checkedAt = $checkedMap[$module]['checked_at']
-                    ?? \date('Y-m-d H:i:s', \strtotime('-30 days'));
+                // Хамгийн ихдээ сүүлийн 30 хоногоос тоолно: seen бичлэг байхгүй
+                // эсвэл хуучин (цэсийг удаан нээгээгүй) бол 30 хоногоор хязгаарлана -
+                // эс бөгөөс хэдэн сарын үйлдэл хуримтлагдаж badge хэт өсдөг.
+                $windowStart = \date('Y-m-d H:i:s', \strtotime('-' . self::WINDOW_DAYS . ' days'));
+                $checkedAt = \max($checkedMap[$module]['checked_at'] ?? $windowStart, $windowStart);
 
                 // Log table-аар бүлэглэх
                 $byTable = [];
@@ -309,7 +322,8 @@ class BadgeController extends \Dashboard\Controller
 
                     if ($this->getDriverName() === Constants::DRIVER_PGSQL) {
                         $sql =
-                            "SELECT (context::jsonb)->>'action' as act, COUNT(*) as cnt " .
+                            "SELECT (context::jsonb)->>'action' as act, " .
+                            "(context::jsonb)->>'record_id' as rid, COUNT(*) as cnt " .
                             "FROM $tableName " .
                             "WHERE created_at > ? " .
                             "AND level IN ('info', 'alert', 'warning') " .
@@ -329,10 +343,11 @@ class BadgeController extends \Dashboard\Controller
                                 "     OR COALESCE((context::jsonb)->>'record_organization_id', " .
                                 "                 (context::jsonb)->'auth_user'->>'organization_id')::int = ?) ";
                         }
-                        $sql .= "GROUP BY act";
+                        $sql .= "GROUP BY act, rid";
                     } else {
                         $sql =
-                            "SELECT JSON_UNQUOTE(JSON_EXTRACT(context, '$.action')) as act, COUNT(*) as cnt " .
+                            "SELECT JSON_UNQUOTE(JSON_EXTRACT(context, '$.action')) as act, " .
+                            "NULLIF(JSON_UNQUOTE(JSON_EXTRACT(context, '$.record_id')), 'null') as rid, COUNT(*) as cnt " .
                             "FROM $tableName " .
                             "WHERE created_at > ? " .
                             "AND level IN ('info', 'alert', 'warning') " .
@@ -363,7 +378,7 @@ class BadgeController extends \Dashboard\Controller
                                 "AND (COALESCE($recOrg, $actOrg) IS NULL " .
                                 "     OR COALESCE($recOrg, $actOrg) = ?) ";
                         }
-                        $sql .= "GROUP BY act";
+                        $sql .= "GROUP BY act, rid";
                     }
 
                     $stmt = $this->prepare($sql);
@@ -379,15 +394,23 @@ class BadgeController extends \Dashboard\Controller
                         $stmt->bindValue($i, $currentOrgId, \PDO::PARAM_INT);
                     }
 
+                    // Badge нь үйлдлийн тоо биш, өөрчлөгдсөн бичлэгийн тоо: нэг
+                    // бичлэг дээрх 10 засвар нэг л тоологдоно (өнгө тус бүрд).
+                    // record_id-гүй үйлдэл (web мессеж, upload г.м) тус бүрдээ тоологдоно.
                     if ($stmt->execute()) {
                         while ($row = $stmt->fetch()) {
                             $color = $colorByAction[$row['act']] ?? 'blue';
-                            $moduleCounts[$color] = ($moduleCounts[$color] ?? 0) + (int)$row['cnt'];
+                            if ($row['rid'] === null || $row['rid'] === '') {
+                                $moduleCounts[$color]['events'] = ($moduleCounts[$color]['events'] ?? 0) + (int) $row['cnt'];
+                            } else {
+                                $moduleCounts[$color]['records']["$logTable|{$row['rid']}"] = true;
+                            }
                         }
                     }
                 }
 
-                foreach ($moduleCounts as $color => $count) {
+                foreach ($moduleCounts as $color => $counted) {
+                    $count = ($counted['events'] ?? 0) + \count($counted['records'] ?? []);
                     if ($count > 0) {
                         $badges[$module][] = ['color' => $color, 'count' => $count];
                     }

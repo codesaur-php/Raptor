@@ -139,6 +139,7 @@ class Application extends \codesaur\Http\Application\Application
         $this->use(new Shop\ShopRouter());
         $this->use(new Manual\ManualRouter());
         $this->use(new Development\DevelopmentRouter());
+        $this->use(new Mail\MailRouter());
         $this->use(new File\FileRouter());
         $this->use(new Badge\BadgeRouter());
     }

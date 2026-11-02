@@ -61,7 +61,6 @@
             <th scope="col">{{ 'title'|text }}</th>
             <th scope="col"><i class="bi bi-paperclip"></i></th>
             <th scope="col">{{ 'type'|text }} / {{ 'category'|text }}</th>
-            <th scope="col">{{ 'position'|text }}</th>
             <th scope="col">{{ 'publish'|text }}</th>
             <th scope="col" style="width:8.5rem">{{ 'action'|text }}</th>
         </tr>
@@ -211,7 +210,7 @@
                 }
                 const actions = `<div class="mb-1">${buttons.join(' ')}</div>`;
 
-                rowsHTML += `<tr><th scope="row">${id}</th><td>${flag} <span class="text-secondary fw-lighter">${escapeHtml(page.code)}</span> </td><td>${image}</td><td>${title}</td><td>${data.files_counts[id]?.attach || ''}</td><td>${type_category}</td><td>${escapeHtml(page.position)}</td><td>${published}</td><td>${actions}</td></tr>`;
+                rowsHTML += `<tr><th scope="row">${id}</th><td>${flag} <span class="text-secondary fw-lighter">${escapeHtml(page.code)}</span> </td><td>${image}</td><td>${title}</td><td>${data.files_counts[id]?.attach || ''}</td><td>${type_category}</td><td>${published}</td><td>${actions}</td></tr>`;
             });
             /* Жишиг дата байвал reset товч харуулах */
             if (data.is_sample && canDelete) {

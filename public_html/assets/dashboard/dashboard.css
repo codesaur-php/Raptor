@@ -475,6 +475,24 @@ body {
     }
 }
 
+/* Desktop (>=992px) дээр sidebar-ыг col-lg-2 (16.67%)-оос өргөн болгоно:
+   22vw, 240-340px хооронд. 30-35 тэмдэгттэй нэр (жишээ "Мэдээ бүрдүүлэлтийн
+   мониторинг") icon + badge-тайгаа ~340px эзэлдэг - 1366px дэлгэцэд 22vw =
+   300px, 1920px-д 340px. Үүнээс урт нэр .nav-link-title-ээр "..." болно.
+   dashboard.html-ийн sidebar (col-lg-2), main (col-lg-10) хоёрыг хамт дарна -
+   нэгийг нь л өөрчилбөл контент sidebar-ын доор орно. */
+@media (min-width: 992px) {
+    :root {
+        --sidebar-width: clamp(240px, 22vw, 340px);
+    }
+    .sidebar.col-lg-2 {
+        width: var(--sidebar-width);
+    }
+    .sidebar.col-lg-2 ~ main.col-lg-10 {
+        width: calc(100% - var(--sidebar-width));
+    }
+}
+
 /* 4) sidebar menu - Links, Icons, Hover, Active */
 @media (min-width: 768px) {
     .sidebar-menu {
@@ -540,10 +558,28 @@ body {
 .sidebar-menu .badge {
     font-size: .65rem;
     margin-left: .25rem;
+    flex-shrink: 0;
 }
 
 .sidebar-menu .badge:first-of-type {
     margin-left: auto;
+}
+
+/* Цэсний нэр (dashboard.html .nav-link-title) үлдсэн зайг эзэлж badge-уудыг
+    баруун тийш түлхэнэ, урт нэр нэг мөрөнд "..."-ээр тасарна - badge
+    нэмэгдэхэд мөр 2 мөр болж өндөр нь хэлбэлзэхгүй. Бүтэн нэр link-ийн title-д.
+    .nav-link-title нь span тул .badge:first-of-type таарахгүй - margin-ийг
+    энэ flex:1 орлоно. */
+.sidebar-menu .nav-link > i {
+    flex-shrink: 0;
+}
+
+.sidebar-menu .nav-link-title {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 /* Хувилбар (sidebar-ын доод хэсэг).

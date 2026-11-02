@@ -247,9 +247,11 @@ class ProductsController extends FileController
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } elseif ($this->getRequest()->getMethod() == 'POST') {
                 $level = LogLevel::INFO;
-                $message = '{record.id} дугаартай [{record.title}] бүтээгдэхүүнийг амжилттай үүсгэлээ';
-                $context += ['record_id' => $id, 'record' => $record];
-                $context['file_changes'] = !empty($fileChanges) ? $fileChanges : 'files not changed';
+                $message = '{record_id} дугаартай [{payload.title}] бүтээгдэхүүнийг амжилттай үүсгэлээ';
+                $context += ['record_id' => $id, 'payload' => $payload];
+                if (!empty($fileChanges)) {
+                    $context['file_changes'] = $fileChanges;
+                }
             } else {
                 $level = LogLevel::NOTICE;
                 $message = 'Бүтээгдэхүүн үүсгэх үйлдлийг эхлүүллээ';
@@ -410,13 +412,17 @@ class ProductsController extends FileController
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } elseif ($this->getRequest()->getMethod() == 'PUT') {
                 $level = LogLevel::INFO;
-                $message = '{record.id} дугаартай [{record.title}] бүтээгдэхүүнийг амжилттай шинэчлэлээ';
-                $context += ['updates' => $updates, 'record' => $updated];
-                $context['file_changes'] = !empty($fileChanges) ? $fileChanges : 'files not changed';
+                $message = '{record_id} дугаартай [{title}] бүтээгдэхүүнийг амжилттай шинэчлэлээ';
+                $context += [
+                    'title' => $updated['title'] ?? '',
+                    'changes' => $this->recordChanges($record, $updated)
+                ];
+                if (!empty($fileChanges)) {
+                    $context['file_changes'] = $fileChanges;
+                }
             } else {
                 $level = LogLevel::NOTICE;
-                $message = '{record.id} дугаартай [{record.title}] бүтээгдэхүүнийг шинэчлэхээр нээж байна';
-                $context += ['record' => $record, 'files' => $files];
+                $message = '{record_id} дугаартай бүтээгдэхүүнийг шинэчлэхээр нээж байна';
             }
             $this->log('products', $level, $message, $context);
         }
@@ -488,8 +494,7 @@ class ProductsController extends FileController
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } else {
                 $level = LogLevel::NOTICE;
-                $message = '{record.id} дугаартай [{record.title}] бүтээгдэхүүнийг үзэж байна';
-                $context += ['record' => $record, 'files' => $files];
+                $message = '{record_id} дугаартай бүтээгдэхүүнийг үзэж байна';
             }
             $this->log('products', $level, $message, $context);
         }
@@ -708,8 +713,8 @@ class ProductsController extends FileController
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } else {
                 $level = LogLevel::ALERT;
-                $message = '{record_id} дугаартай [{server_request.body.title}] бүтээгдэхүүнийг устгалаа';
-                $context += ['record_id' => $id];
+                $message = '{record_id} дугаартай [{title}] бүтээгдэхүүнийг устгалаа';
+                $context += ['record_id' => $id, 'title' => $record['title'] ?? ($payload['title'] ?? '')];
             }
             $this->log('products', $level, $message, $context);
         }

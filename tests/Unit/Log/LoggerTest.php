@@ -164,6 +164,25 @@ class LoggerTest extends RaptorTestCase
         $this->assertEquals('*** hidden ***', $decoded['password']);
     }
 
+    /**
+     * Update лог-ийн changes.password = ['old' => .., 'new' => ..] - массив
+     * утгатай secret түлхүүр бүхлээрээ далдлагдана (навч нь old/new).
+     */
+    public function testEncodeContextMasksSecretSubtree(): void
+    {
+        $json = $this->invokeMethod('encodeContext', [
+            ['changes' => [
+                'password' => ['old' => '$2y$old', 'new' => '$2y$new'],
+                'email' => ['old' => 'a@x.mn', 'new' => 'b@x.mn']
+            ]],
+        ]);
+
+        $decoded = json_decode($json, true);
+        $this->assertEquals('*** hidden ***', $decoded['changes']['password']);
+        $this->assertEquals(['old' => 'a@x.mn', 'new' => 'b@x.mn'], $decoded['changes']['email']);
+        $this->assertStringNotContainsString('$2y$', $json);
+    }
+
     public function testEncodeContextMasksPasswordCaseInsensitive(): void
     {
         $json = $this->invokeMethod('encodeContext', [

@@ -254,12 +254,25 @@ class Logger extends AbstractLogger
         // (password_retype, csrf_token, _token г.м.)
         $secretPattern = '~PASSWORD|TOKEN~';
         
-        \array_walk_recursive($context, function (&$value, $k) use ($secretExact, $secretPattern) {
-            $key = \strtoupper((string) $k);
-            if (\in_array($key, $secretExact) || \preg_match($secretPattern, $key)) {
-                $value = '*** hidden ***';
+        // Массив утгатай түлхүүрийг ч бүхлээр нь далдална: update лог-ийн
+        // changes.password = ['old' => .., 'new' => ..] дотор навч түлхүүр нь
+        // old/new тул навч шалгадаг array_walk_recursive үүнийг алгасна.
+        //
+        // Security (English): a matching key hides its whole subtree - in
+        // changes.password = ['old' => .., 'new' => ..] the leaf keys are
+        // old/new, so leaf-only masking would leak the hash.
+        $mask = function (array $data) use (&$mask, $secretExact, $secretPattern): array {
+            foreach ($data as $k => $value) {
+                $key = \strtoupper((string) $k);
+                if (\in_array($key, $secretExact) || \preg_match($secretPattern, $key)) {
+                    $data[$k] = '*** hidden ***';
+                } elseif (\is_array($value)) {
+                    $data[$k] = $mask($value);
+                }
             }
-        });
+            return $data;
+        };
+        $context = $mask($context);
 
         $json = \json_encode($context, \JSON_INVALID_UTF8_SUBSTITUTE);
         if ($json === false) {

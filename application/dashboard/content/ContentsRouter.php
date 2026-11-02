@@ -103,6 +103,9 @@ class ContentsRouter extends Router
         // Хуудас шинээр нэмэх
         $this->GET_POST('/pages/insert', [PagesController::class, 'insert'])->name('page-insert')->middleware([CsrfMiddleware::class]);
 
+        // Хуудасны навигаци дээр чирж өөрчилсөн дараалал / эцгийг хадгалах
+        $this->PUT('/pages/sort', [PagesController::class, 'sort'])->name('pages-sort')->middleware([CsrfMiddleware::class]);
+
         // Хуудас засварлах
         $this->GET_PUT('/pages/{uint:id}', [PagesController::class, 'update'])->name('page-update')->middleware([CsrfMiddleware::class]);
 

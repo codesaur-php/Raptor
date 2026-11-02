@@ -72,8 +72,11 @@ use Dashboard\Log\Logger;
  *          'users',
  *          LogLevel::NOTICE | ERROR | ALERT,
  *          'Мессеж',
- *          ['action' => '...', 'id' => ..., 'record' => ...]
+ *          ['action' => '...', 'record_id' => ..., 'payload' | 'changes' => ...]
  *      );
+ *
+ *  insert -> 'payload', update -> 'changes' (recordChanges()), view / form
+ *  нээх -> зөвхөн 'record_id' (бүтэн бичлэг хуулахгүй, Controller::log()-ийг үз).
  *
  * --------------------------------------------------------------
  * File upload
@@ -438,9 +441,13 @@ class UsersController extends FileController
             } elseif ($this->getRequest()->getMethod() == 'POST') {
                 // Амжилттай шинэ хэрэглэгч үүсгэсэн үед INFO level
                 $level = LogLevel::INFO;
-                $message = 'Хэрэглэгч [{record.username}] {record.id} дугаартай амжилттай үүслээ';
-                // POST амжилттай тул $record-г лог дээр нь хадгална
-                $context += ['record_id' => $record['id'], 'record' => $record];
+                $message = 'Хэрэглэгч [{payload.username}] {record_id} дугаартай амжилттай үүслээ';
+                // Бичсэн өгөгдөл (нууц үгийн hash-гүй) + сонгосон байгууллага
+                $context += [
+                    'record_id' => $record['id'],
+                    'payload' => \array_diff_key($payload, ['password' => true])
+                        + ['organization' => $post_organization ?? null]
+                ];
             } else {
                 // Зөвхөн create form-ийг нээсэн үед NOTICE level
                 $level = LogLevel::NOTICE;
@@ -768,13 +775,20 @@ class UsersController extends FileController
             } elseif ($this->getRequest()->getMethod() == 'PUT') {
                 // Амжилттай update хийсэн үед
                 $level = LogLevel::INFO;
-                $message = '[{record.username}] {record.id} дугаартай хэрэглэгчийн мэдээллийг амжилттай шинэчлэлээ';
-                $context += ['updates' => $updates, 'record' => $updated];
+                $message = '[{username}] {record_id} дугаартай хэрэглэгчийн мэдээллийг амжилттай шинэчлэлээ';
+                $context += [
+                    'username' => $updated['username'] ?? '',
+                    'changes' => $this->recordChanges($record, $updated)
+                ];
+                // Байгууллага / дүр өөрчлөгдсөн эсэх (дэлгэрэнгүйг configureOrgs/Roles-ийн ALERT лог бичнэ)
+                $accessChanges = \array_values(\array_intersect($updates, ['organizations-configure', 'roles-configure']));
+                if (!empty($accessChanges)) {
+                    $context['access_changes'] = $accessChanges;
+                }
             } else {
                 // Form нээсэн үед
                 $level = LogLevel::NOTICE;
-                $message = '[{record.username}] {record.id} дугаартай хэрэглэгчийн мэдээллийг шинэчлэх үйлдлийг эхлүүллээ';
-                $context += ['record' => $record, 'current_roles' => $current_role, 'current_organizations' => $current_organizations];
+                $message = '{record_id} дугаартай хэрэглэгчийн мэдээллийг шинэчлэх үйлдлийг эхлүүллээ';
             }
             $this->log('users', $level, $message, $context);
         }
@@ -884,8 +898,7 @@ class UsersController extends FileController
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } else {
                 $level = LogLevel::NOTICE;
-                $message = '{record.username} хэрэглэгчийн мэдээллийг үзэж байна';
-                $context += ['record' => $record, 'roles' => $roles, 'organizations' => $organizations];
+                $message = '{record_id} дугаартай хэрэглэгчийн мэдээллийг үзэж байна';
             }
             $this->log('users', $level, $message, $context);
         }
@@ -976,9 +989,14 @@ class UsersController extends FileController
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } else {
                 $level = LogLevel::ALERT;
-                $message = 
-                    '[{server_request.body.id}] дугаартай [{server_request.body.name}] хэрэглэгчийг '
-                    . '[{server_request.body.reason}] шалтгаанаар идэвхгүй болголоо';
+                $message =
+                    '[{record_id}] дугаартай [{name}] хэрэглэгчийг '
+                    . '[{reason}] шалтгаанаар идэвхгүй болголоо';
+                $context += [
+                    'record_id' => $id,
+                    'name' => (string) ($payload['name'] ?? ''),
+                    'reason' => (string) ($payload['reason'] ?? '')
+                ];
             }
             $this->log('users', $level, $message, $context);
         }
@@ -1059,8 +1077,13 @@ class UsersController extends FileController
             } else {
                 $level = LogLevel::CRITICAL;
                 $message =
-                    '[{server_request.body.id}] дугаартай [{server_request.body.name}] хэрэглэгчийг '
-                    . '[{server_request.body.reason}] шалтгаанаар бүрэн устгалаа';
+                    '[{record_id}] дугаартай [{name}] хэрэглэгчийг '
+                    . '[{reason}] шалтгаанаар бүрэн устгалаа';
+                $context += [
+                    'record_id' => $id,
+                    'name' => (string) ($payload['name'] ?? $user['username'] ?? ''),
+                    'reason' => (string) ($payload['reason'] ?? '')
+                ];
             }
             $this->log('users', $level, $message, $context);
         }
@@ -1334,8 +1357,14 @@ class UsersController extends FileController
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } else {
                 $level = LogLevel::ALERT;
-                $message = 'Шинэ бүртгүүлсэн {signup.username} нэртэй {signup.email} хаягтай хүсэлтийг зөвшөөрч системд хэрэглэгчээр нэмлээ';
-                $context += ['signup' => $signup, 'record' => $record];
+                $message = 'Шинэ бүртгүүлсэн {username} нэртэй {email} хаягтай хүсэлтийг зөвшөөрч системд хэрэглэгчээр нэмлээ';
+                $context += [
+                    'record_id' => $record['id'],
+                    'signup_id' => $id,
+                    'username' => $signup['username'],
+                    'email' => $signup['email'],
+                    'organization_id' => !empty($user_org) ? $organization_id : null
+                ];
             }
             $this->log('users', $level, $message, $context);
         }
@@ -1424,7 +1453,11 @@ class UsersController extends FileController
             } else {
                 // Амжилттай татгалзсан
                 $level = LogLevel::ALERT;
-                $message = '[{server_request.body.name}] хэрэглэгчээр бүртгүүлэх хүсэлтийг татгалзав';
+                $message = '[{name}] хэрэглэгчээр бүртгүүлэх хүсэлтийг татгалзав';
+                $context += [
+                    'signup_id' => $id,
+                    'name' => (string) ($payload['name'] ?? $signup['username'] ?? '')
+                ];
             }
             $this->log('users', $level, $message, $context);
         }
@@ -1490,7 +1523,11 @@ class UsersController extends FileController
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } else {
                 $level = LogLevel::CRITICAL;
-                $message = '[{server_request.body.name}] signup хүсэлтийг бүрэн устгалаа';
+                $message = '[{name}] signup хүсэлтийг бүрэн устгалаа';
+                $context += [
+                    'signup_id' => $id,
+                    'name' => (string) ($payload['name'] ?? $record['username'] ?? '')
+                ];
             }
             $this->log('users', $level, $message, $context);
         }
@@ -1607,8 +1644,8 @@ class UsersController extends FileController
                 $message = '{record_id} дугаартай хэрэглэгчийн нууц үг өөрчлөх үйлдлийг гүйцэтгэх үед алдаа гарлаа';
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } else {
-                $context += ['record' => $record];
-                $message = '{record_id} дугаартай [{record.username}] хэрэглэгчийн нууц ';
+                $context += ['username' => $record['username'] ?? ''];
+                $message = '{record_id} дугаартай [{username}] хэрэглэгчийн нууц ';
                 if ($this->getRequest()->getMethod() == 'POST') {
                     $level = LogLevel::INFO;
                     $message .= 'үгийг амжилттай шинэчлэв';
@@ -1743,15 +1780,16 @@ class UsersController extends FileController
                 $message = '{record_id} дугаартай хэрэглэгчийн байгууллага тохируулах үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } else {
-                $context += ['record' => $record];
-                $message = '{record_id} дугаартай [{record.username}] хэрэглэгчийн байгууллага ';
+                $context += ['username' => $record['username'] ?? ''];
+                $message = '{record_id} дугаартай [{username}] хэрэглэгчийн байгууллага ';
                 if ($this->getRequest()->getMethod() == 'POST') {
                     $level = LogLevel::INFO;
                     $message .= 'амжилттай тохируулав';
+                    // Шинэ байгууллагуудын id (нэмсэн/хассаныг configureOrgs()-ийн лог бичнэ)
+                    $context += ['organizations' => \array_values($post_organizations ?? [])];
                 } else {
                     $level = LogLevel::NOTICE;
                     $message .= 'тохируулах үйлдлийг эхлүүллээ';
-                    $context += ['current_organizations' => $current_organizations];
                 }
             }
             $this->log('users', $level, $message, $context);
@@ -2272,15 +2310,16 @@ class UsersController extends FileController
                 $message = '{record_id} дугаартай хэрэглэгчийн дүрийг тохируулах үйлдлийг гүйцэтгэх үед алдаа гарч зогслоо';
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } else {
-                $context += ['record' => $record];
-                $message = '{record_id} дугаартай [{record.username}] хэрэглэгчийн дүрийг ';
+                $context += ['username' => $record['username'] ?? ''];
+                $message = '{record_id} дугаартай [{username}] хэрэглэгчийн дүрийг ';
                 if ($this->getRequest()->getMethod() == 'POST') {
                     $level = LogLevel::INFO;
                     $message .= 'амжилттай тохируулав';
+                    // Шинэ дүрүүдийн id (нэмсэн/хассаныг configureRoles()-ийн лог бичнэ)
+                    $context += ['roles' => \array_values($post_roles ?? [])];
                 } else {
                     $level = LogLevel::NOTICE;
                     $message .= 'тохируулах үйлдлийг эхлүүллээ';
-                    $context += ['current_role' => $current_role];
                 }
             }
             $this->log('users', $level, $message, $context);

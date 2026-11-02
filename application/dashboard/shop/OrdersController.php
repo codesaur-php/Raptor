@@ -166,8 +166,7 @@ class OrdersController extends \Dashboard\Controller
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } else {
                 $level = LogLevel::NOTICE;
-                $message = '{record.id} ({record.customer_name}) дугаартай захиалгыг үзэж байна';
-                $context += ['record' => $record];
+                $message = '{record_id} дугаартай захиалгыг үзэж байна';
             }
             $this->log('products_orders', $level, $message, $context);
         }
@@ -263,7 +262,7 @@ class OrdersController extends \Dashboard\Controller
             } else {
                 $level = LogLevel::INFO;
                 $message = '{record_id} ({name}) дугаартай захиалгын статусыг амжилттай шинэчлэлээ';
-                $context += ['old_status' => $record['status'], 'new_status' => $payload['status'], 'name' => $record['customer_name'], 'stock_change' => $stockChange, 'record' => $updated];
+                $context += ['old_status' => $record['status'], 'new_status' => $payload['status'], 'name' => $record['customer_name'], 'stock_change' => $stockChange, 'changes' => $this->recordChanges($record, $updated)];
             }
             $this->log('products_orders', $level, $message, $context);
         }

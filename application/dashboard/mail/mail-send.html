@@ -1,0 +1,271 @@
+<!--
+    mail-send.html
+    ------------------------------------------------------------
+    Систем - Имэйл илгээх: дүртэй бүх хэрэглэгч ба/эсвэл сонгосон хэрэглэгчид рүү.
+    Controller: Dashboard\Mail\MailController::index()
+    Variables: roles, users, scoped_organization, max_recipients
+-->
+<script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+{% set mn = localization.code == 'mn' %}
+
+<div class="d-flex justify-content-between align-items-center mb-2">
+    <h5 class="text-uppercase"><i class="bi bi-envelope-paper"></i> {{ 'send-email'|text }}</h5>
+    <a class="btn btn-sm btn-outline-secondary" href="{{ 'manual-view'|link({'file': 'mail-send-manual-' ~ localization.code ~ '.html'}) }}" title="{{ 'manual'|text }}" target="_blank">
+        <i class="bi bi-question-circle"></i>
+    </a>
+</div>
+
+<div class="small text-muted mb-2">
+    <i class="bi bi-info-circle"></i>
+    {% if mn %}
+        Зөвхөн идэвхтэй, имэйлтэй хэрэглэгчид очно. Хүлээн авагч бүрт тусдаа имэйл илгээгдэх тул бусдын хаяг харагдахгүй. Үйлчилгээний мэдэгдэлд (засвар, шинэ боломж, журам) зориулсан. Илгээлт бүр Хандалтын протоколд бичигдэнэ.
+    {% else %}
+        Only active users with an email receive it. Each recipient gets a separate email, so nobody sees the other addresses. Meant for service announcements (maintenance, new features, policies). Every send is logged in the access logs.
+    {% endif %}
+</div>
+{% if scoped_organization is not null %}
+    <div class="alert alert-warning py-2 small">
+        <i class="bi bi-building"></i>
+        {% if mn %}
+            Та <strong>{{ scoped_organization }}</strong> байгууллагаар нэвтэрсэн тул зөвхөн энэ байгууллагын хэрэглэгчид рүү илгээнэ.
+        {% else %}
+            You are signed in to <strong>{{ scoped_organization }}</strong>, so you can send only to this organization's users.
+        {% endif %}
+    </div>
+{% endif %}
+
+<div class="row g-3">
+    <div class="col-lg-5">
+        <div class="card h-100">
+            <div class="card-header fw-semibold"><i class="bi bi-people"></i> {{ 'recipients'|text }}</div>
+            <div class="card-body">
+                <div class="small fw-semibold mb-1">{{ mn ? 'Дүрээр (дүртэй бүх хэрэглэгч)' : 'By role (all users with the role)' }}</div>
+                <div class="border rounded p-2 mb-3" style="max-height:30vh;overflow-y:auto" id="mail-roles">
+                    {% for role in roles %}
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" value="{{ role['id'] }}" id="mail-role-{{ role['id'] }}" data-count="{{ role['recipients'] }}">
+                        <label class="form-check-label small" for="mail-role-{{ role['id'] }}">
+                            <code>{{ role['alias'] }}_{{ role['name'] }}</code> <span class="badge text-bg-secondary">{{ role['recipients'] }}</span>
+                            <span class="text-muted d-block text-truncate" style="max-width:28rem" title="{{ role['description'] }}">{{ role['description'] }}</span>
+                        </label>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div class="small fw-semibold mb-1">{{ mn ? 'Сонгосон хэрэглэгчид' : 'Selected users' }}</div>
+                <input class="form-control form-control-sm mb-1" id="mail-user-search" autocomplete="off" placeholder="{{ mn ? 'Нэр, имэйлээр хайх...' : 'Search by name or email...' }}">
+                <div class="list-group small mb-2" id="mail-user-results" style="max-height:20vh;overflow-y:auto"></div>
+                <div class="d-flex flex-wrap gap-1" id="mail-user-chips"></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-7">
+        <div class="card h-100">
+            <div class="card-header fw-semibold"><i class="bi bi-pencil-square"></i> {{ 'message'|text }}</div>
+            <div class="card-body">
+                <label class="form-label small mb-1" for="mail-subject">{{ 'subject'|text }}</label>
+                <input class="form-control mb-2" id="mail-subject" maxlength="200">
+                <label class="form-label small mb-1" for="mail-body">{{ mn ? 'Агуулга (энгийн текст, мөр таслал хадгалагдана, холбоос идэвхжинэ)' : 'Message (plain text; line breaks kept, links become clickable)' }}</label>
+                <textarea class="form-control font-monospace mb-3" id="mail-body" rows="14"></textarea>
+                <div class="d-flex flex-wrap align-items-center gap-2">
+                    <span class="small text-muted" id="mail-count"></span>
+                    <button class="btn btn-primary ms-auto" type="button" id="mail-send"><i class="bi bi-send"></i> {{ 'send'|text }}</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+document.addEventListener('DOMContentLoaded', function () {
+    const isMn = document.documentElement.lang === 'mn';
+    const T = (m, e) => isMn ? m : e;
+    const users = {{ users|json_encode|raw }};
+    const maxRecipients = {{ max_recipients }};
+    const sendUrl = `{{ 'mail-send-post'|link }}`;
+    const selected = new Map();
+
+    function renderChips() {
+        document.getElementById('mail-user-chips').innerHTML = [...selected.values()].map(u =>
+            `<span class="badge text-bg-primary d-inline-flex align-items-center gap-1">${escapeHtml(u.name)} &lt;${escapeHtml(u.email)}&gt;
+                <button type="button" class="btn-close btn-close-white" style="font-size:.5rem" data-remove="${u.id}" aria-label="x"></button></span>`).join('');
+        updateCount();
+    }
+    function updateCount() {
+        let roles = 0;
+        document.querySelectorAll('#mail-roles input:checked').forEach(c => roles += parseInt(c.dataset.count, 10) || 0);
+        const total = roles + selected.size;
+        document.getElementById('mail-count').textContent = total
+            ? T(`Хүлээн авагч: ~${total} (давхардал хасагдана)`, `Recipients: ~${total} (duplicates removed)`)
+            : T('Хүлээн авагч сонгоогүй', 'No recipients selected');
+    }
+
+    const search = document.getElementById('mail-user-search');
+    const results = document.getElementById('mail-user-results');
+    search.addEventListener('input', () => {
+        const q = search.value.trim().toLowerCase();
+        if (q.length < 2) { results.innerHTML = ''; return; }
+        const found = users.filter(u => u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q)).slice(0, 30);
+        results.innerHTML = found.map(u => `<button type="button" class="list-group-item list-group-item-action py-1" data-add="${u.id}">${escapeHtml(u.name)} <span class="text-muted">&lt;${escapeHtml(u.email)}&gt;</span></button>`).join('')
+            || `<div class="list-group-item text-muted py-1">${T('Олдсонгүй', 'Not found')}</div>`;
+    });
+    results.addEventListener('click', e => {
+        const b = e.target.closest('[data-add]');
+        if (!b) return;
+        const u = users.find(x => x.id === parseInt(b.dataset.add, 10));
+        if (u) selected.set(u.id, u);
+        renderChips();
+        search.value = '';
+        results.innerHTML = '';
+    });
+    document.getElementById('mail-user-chips').addEventListener('click', e => {
+        const b = e.target.closest('[data-remove]');
+        if (!b) return;
+        selected.delete(parseInt(b.dataset.remove, 10));
+        renderChips();
+    });
+    document.querySelectorAll('#mail-roles input').forEach(c => c.addEventListener('change', updateCount));
+
+    /* Сервер рүү POST - JSON буцаана, HTTP алдаа бол Error шиднэ */
+    function post(fields) {
+        const data = new FormData();
+        Object.entries(fields).forEach(([k, v]) => data.append(k, v));
+        return csrfFetch(sendUrl, { method: 'POST', body: data })
+            .then(res => res.json().catch(() => ({})).then(json => {
+                if (!res.ok) throw new Error(json.message ?? `HTTP ${res.status}`);
+                return json;
+            }));
+    }
+
+    const nameOf = id => {
+        const u = users.find(x => x.id === Number(id));
+        return u ? `${u.name} <${u.email}>` : `#${id}`;
+    };
+    const listHtml = (title, items) => items.length === 0 ? '' :
+        `<div class="text-start small mt-2"><strong>${title} (${items.length})</strong>`
+        + `<div class="border rounded p-1 mt-1" style="max-height:20vh;overflow-y:auto">`
+        + items.map(x => `<div>${escapeHtml(x)}</div>`).join('') + '</div></div>';
+
+    /* Илгээлтийн дүн: илгээсэн, алдаатай, алгассан (хооронд нь идэвхгүй болсон,
+       хасагдсан, имэйлгүй болсон), тодорхойгүй (амжилтгүй болсон багц), үлдсэн */
+    function summaryHtml(t, remaining) {
+        return `<p class="fs-5 mb-1">${T('Илгээсэн', 'Sent')}: <strong>${t.sent}</strong></p>`
+            + listHtml(T('Алдаатай', 'Failed'), t.failed.map(f => f.email))
+            + listHtml(T('Алгассан - хооронд нь идэвхгүй болсон, хасагдсан эсвэл имэйлгүй болсон', 'Skipped - deactivated, removed or left without an email meanwhile'), t.skipped.map(nameOf))
+            + listHtml(T('Тодорхойгүй - энэ багцын хүсэлт амжилтгүй болсон, зарим нь очсон байж магадгүй', 'Uncertain - this batch request failed, some may have been sent'), t.uncertain.map(nameOf))
+            + (remaining > 0 ? `<p class="small text-muted mt-2 mb-0">${T('Илгээгээгүй үлдсэн', 'Not sent yet')}: ${remaining}</p>` : '');
+    }
+
+    /* Багцаар илгээх: багц бүр нэг хүсэлт (сервер id бүрийг дахин шалгана).
+       Багцын хүсэлт амжилтгүй болбол автоматаар дахин илгээхгүй (давхар имэйл
+       очих эрсдэлтэй) - зогсоож, үргэлжлүүлэх эсэхийг хэрэглэгчээр сонгуулна */
+    async function run(plan, fields, start, totals) {
+        const batches = [];
+        for (let i = 0; i < plan.ids.length; i += plan.batch_size) {
+            batches.push(plan.ids.slice(i, i + plan.batch_size));
+        }
+        const total = plan.ids.length;
+        let done = batches.slice(0, start).reduce((n, b) => n + b.length, 0);
+        const guard = e => { e.preventDefault(); e.returnValue = ''; };
+        window.addEventListener('beforeunload', guard);
+
+        Swal.fire({
+            title: T('Илгээж байна...', 'Sending...'),
+            html: `<div class="progress mb-2" style="height:1.25rem"><div class="progress-bar progress-bar-striped progress-bar-animated" id="mail-progress" style="width:0%"></div></div>`
+                + `<div id="mail-progress-text" class="small"></div>`
+                + `<div class="small text-muted mt-2">${T('Илгээж дуустал энэ хуудсыг хаах хэрэггүй', 'Keep this page open until it finishes')}</div>`,
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            showConfirmButton: false
+        });
+        const progress = () => {
+            const pct = total ? Math.round(done * 100 / total) : 100;
+            const bar = document.getElementById('mail-progress');
+            if (bar) bar.style.width = `${pct}%`;
+            const txt = document.getElementById('mail-progress-text');
+            if (txt) txt.textContent = `${done} / ${total}  -  ${T('илгээсэн', 'sent')} ${totals.sent}, ${T('алдаатай', 'failed')} ${totals.failed.length}, ${T('алгассан', 'skipped')} ${totals.skipped.length}`;
+        };
+        progress();
+
+        for (let i = start; i < batches.length; i++) {
+            try {
+                const r = await post({ ...fields, mode: 'batch', broadcast_id: plan.broadcast_id, user_ids: batches[i].join(',') });
+                totals.sent += parseInt(r.sent, 10) || 0;
+                totals.failed.push(...(r.failed ?? []));
+                totals.skipped.push(...(r.skipped ?? []));
+                done += batches[i].length;
+                progress();
+            } catch (err) {
+                totals.uncertain.push(...batches[i]);
+                done += batches[i].length;
+                window.removeEventListener('beforeunload', guard);
+                const remaining = total - done;
+                const choice = await Swal.fire({
+                    icon: 'error',
+                    title: T('Илгээлт зогслоо', 'Sending stopped'),
+                    html: `<p class="text-danger small">${escapeHtml(err.message)}</p>` + summaryHtml(totals, remaining),
+                    showConfirmButton: remaining > 0,
+                    confirmButtonText: T('Үлдсэнийг үргэлжлүүлэх', 'Continue with the rest'),
+                    showCancelButton: true,
+                    cancelButtonText: T('Зогсоох', 'Stop'),
+                    allowOutsideClick: false
+                });
+                if (choice.isConfirmed && remaining > 0) {
+                    return run(plan, fields, i + 1, totals);
+                }
+                return;
+            }
+        }
+
+        window.removeEventListener('beforeunload', guard);
+        const clean = totals.failed.length === 0 && totals.uncertain.length === 0;
+        Swal.fire({
+            icon: clean ? 'success' : 'warning',
+            title: T('Илгээлт дууслаа', 'Sending finished'),
+            html: summaryHtml(totals, 0)
+        });
+    }
+
+    const sendBtn = document.getElementById('mail-send');
+    sendBtn.addEventListener('click', () => {
+        const subject = document.getElementById('mail-subject').value.trim();
+        const body = document.getElementById('mail-body').value.trim();
+        const roleIds = [...document.querySelectorAll('#mail-roles input:checked')].map(c => c.value);
+        const userIds = [...selected.keys()];
+        if (!subject || !body) {
+            Notify('warning', `{{ 'email'|text|e('js') }}`, T('Гарчиг, агуулгыг бичнэ үү', 'Enter the subject and the message'));
+            return;
+        }
+        if (!roleIds.length && !userIds.length) {
+            Notify('warning', `{{ 'email'|text|e('js') }}`, T('Хүлээн авагч сонгоно уу', 'Select recipients'));
+            return;
+        }
+        const fields = { subject, body };
+
+        /* 1) Сервер хүлээн авагчийг тогтоож id жагсаалт буцаана 2) яг тоог харуулж
+           баталгаажуулна 3) тэр жагсаалтыг багцаар илгээнэ */
+        sendBtn.disabled = true;
+        post({ ...fields, mode: 'prepare', role_ids: roleIds.join(','), user_ids: userIds.join(',') }).then(plan => {
+            sendBtn.disabled = false;
+            return Swal.fire({
+                icon: 'question',
+                html: `<p>${T('Имэйл илгээх үү', 'Send the email')}: <strong>${escapeHtml(subject)}</strong></p>`
+                    + `<p class="fs-5">${T('Хүлээн авагч', 'Recipients')}: <strong>${parseInt(plan.recipients, 10) || 0}</strong></p>`
+                    + `<p class="small text-muted">${T('', 'Sent in batches of ')}${parseInt(plan.batch_size, 10) || 0}${T(' хүнээр багцлан илгээнэ', '')}</p>`,
+                showCancelButton: true,
+                cancelButtonText: `{{ 'no'|text|e('js') }}`,
+                confirmButtonText: `<i class="bi bi-send"></i> {{ 'send'|text|e('js') }}`
+            }).then(result => {
+                if (result.isConfirmed) {
+                    return run(plan, fields, 0, { sent: 0, failed: [], skipped: [], uncertain: [] });
+                }
+            });
+        }).catch(err => {
+            sendBtn.disabled = false;
+            Notify('danger', `{{ 'error'|text|e('js') }}`, err.message);
+        });
+    });
+
+    updateCount();
+});
+</script>

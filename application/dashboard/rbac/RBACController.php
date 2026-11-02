@@ -220,8 +220,8 @@ class RBACController extends \Dashboard\Controller
                 $context += ['error' => ['code' => $err->getCode(), 'message' => $err->getMessage()]];
             } elseif ($this->getRequest()->getMethod() == 'POST') {
                 $level = LogLevel::INFO;
-                $message = 'RBAC дүр [{record.name}] амжилттай үүсгэлээ';
-                $context += ['record_id' => $record['id'], 'record' => $record];
+                $message = 'RBAC дүр [{payload.name}] амжилттай үүсгэлээ';
+                $context += ['record_id' => $record['id'], 'payload' => $payload];
             } else {
                 $level = LogLevel::NOTICE;
                 $message = 'RBAC дүр үүсгэх үйлдлийг эхлүүллээ';
@@ -296,11 +296,10 @@ class RBACController extends \Dashboard\Controller
                 $context += ['error' => ['code'=>$err->getCode(), 'message'=>$err->getMessage()]];
             } else {
                 $level = LogLevel::NOTICE;
-                $message = 'RBAC дүр [{record.name}] дэлгэрэнгүйг үзэж байна';
+                $message = 'RBAC [{alias}] {record_id} дугаартай дүрийн дэлгэрэнгүйг үзэж байна';
                 $context += [
                     'alias'     => $record['alias'],
-                    'record_id' => $record['id'],
-                    'record'    => $record
+                    'record_id' => $record['id']
                 ];
             }
             $this->log('dashboard', $level, $message, $context);
@@ -380,8 +379,8 @@ class RBACController extends \Dashboard\Controller
                 $context += ['error' => ['code' => $err->getCode(), 'message'=>$err->getMessage()]];
             } elseif ($this->getRequest()->getMethod() == 'POST') {
                 $level = LogLevel::INFO;
-                $message = 'RBAC зөвшөөрөл [{record.name}] амжилттай үүсгэлээ';
-                $context += ['record_id'=>$record['id'], 'record'=>$record];
+                $message = 'RBAC зөвшөөрөл [{payload.name}] амжилттай үүсгэлээ';
+                $context += ['record_id' => $record['id'], 'payload' => $payload];
             } else {
                 $level = LogLevel::NOTICE;
                 $message = 'RBAC зөвшөөрөл үүсгэх үйлдлийг эхлүүллээ';

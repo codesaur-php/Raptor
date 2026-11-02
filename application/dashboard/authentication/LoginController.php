@@ -377,7 +377,15 @@ class LoginController extends \Dashboard\Controller
                 $message = '{error.message}';
                 $context = [
                     'auth_user' => [],
-                    'error'     => ['code' => $err->getCode(), 'message' => $err->getMessage()]
+                    'error'     => ['code' => $err->getCode(), 'message' => $err->getMessage()],
+                    // Controller::log() body хуулахаа больсон тул checkLoginAttempts()-ийн
+                    // уншдаг server_request.body.username-ийг энд шууд бичнэ
+                    //
+                    // Coupling (English): checkLoginAttempts() counts failed logins by
+                    // server_request.body.username - keep this path in sync with it.
+                    'server_request' => $this->requestMeta() + [
+                        'body' => ['username' => (string) ($this->getParsedBody()['username'] ?? '')]
+                    ]
                 ];
             }
             $this->log('dashboard', $level, $message, ['action' => 'login'] + $context);
@@ -777,8 +785,11 @@ class LoginController extends \Dashboard\Controller
             // 6) Лог бичих
             if (!empty($profile)) {
                 $level   = LogLevel::ALERT;
-                $message = '{server_request.body.username} нэртэй {server_request.body.email} хаягтай шинэ хэрэглэгч үүсгэх хүсэлт бүртгүүллээ';
-                $context = [];
+                $message = '{username} нэртэй {email} хаягтай шинэ хэрэглэгч үүсгэх хүсэлт бүртгүүллээ';
+                $context = [
+                    'username' => $profile['username'] ?? '',
+                    'email'    => $profile['email'] ?? ''
+                ];
             } else {
                 $level   = LogLevel::ERROR;
                 $message = '{error.message}';
@@ -1061,8 +1072,11 @@ class LoginController extends \Dashboard\Controller
             // 6) Лог бичих
             if (!empty($request)) {
                 $level   = LogLevel::INFO;
-                $message = '{server_request.body.email} хаягтай хэрэглэгч нууц үгээ шинээр тааруулах хүсэлт илгээснийг бүртгэлээ';
-                $context = ['forgot' => $request];
+                $message = '{email} хаягтай хэрэглэгч нууц үгээ шинээр тааруулах хүсэлт илгээснийг бүртгэлээ';
+                $context = [
+                    'email'  => (string) ($this->getParsedBody()['email'] ?? ''),
+                    'forgot' => $request
+                ];
             } else {
                 $level   = LogLevel::ERROR;
                 $message = '{error.message}';
