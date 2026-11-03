@@ -1,0 +1,109 @@
+<div class="d-flex flex-wrap justify-content-between align-items-center text-uppercase rounded p-1 mb-3 shadow bg-secondary">
+    <h3 class="px-2 my-auto fs-6 text-white">
+        <i class="bi bi-book"></i> User Activity - Manual
+    </h3>
+    <a href="{{ 'manual'|link }}" class="btn btn-sm btn-light m-1">
+        <i class="bi bi-arrow-left"></i> {{ 'manual'|text }}
+    </a>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-person-lines-fill"></i> What is User Activity?</h4>
+        <p>
+            <strong>System - User activity</strong> shows all audit information about one user in one place (an audit trail).
+            It collects nothing new - it filters that user's entries out of every log table and the trash.
+            The page is <strong>read-only</strong>: records cannot be edited or deleted.
+        </p>
+        <ul class="mb-0">
+            <li>Use it only for <strong>security and troubleshooting</strong> - it is not a tool for continuous monitoring of staff</li>
+            <li>Whose activity you viewed, and with which filters, is written to the access logs (<code>user-activity-view</code>)</li>
+            <li>Users are told that their actions are logged in the <strong>Terms of use</strong> (section 9) and the <strong>Privacy policy</strong> (References - Templates: <code>tos</code>, <code>pp</code>)</li>
+        </ul>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-ui-checks"></i> How to use</h4>
+        <ol>
+            <li>Search the <strong>User</strong> field by name, username or email and pick one (deactivated users are listed too)</li>
+            <li>Optionally choose an <strong>action type</strong> (Created, Updated, Deleted, Viewed, Sign-in / Act As - on the "Actions" tab only), a <strong>log table</strong> and a <strong>from / to</strong> date, then click the filter button</li>
+            <li>Pick a tab (table below). Rows are newest first: date, table, message, action</li>
+            <li>Click a row to open its full <strong>context</strong> (IP, browser, old / new values of changed fields, etc.)</li>
+            <li>When there are more than 50 rows, a <strong>Load more</strong> button appears</li>
+        </ol>
+        <table class="table table-bordered table-sm mb-0">
+            <thead class="table-light">
+                <tr><th>Tab</th><th>What it shows</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Actions</td><td>Everything the user did - from every log table. Actions made in Act As mode carry an <span class="badge text-bg-warning">Act As</span> badge</td></tr>
+                <tr><td>Done to the user</td><td>Changes made to this user's account: profile edits, roles and organizations granted / removed, activation / deactivation - with who made them</td></tr>
+                <tr><td>Sign-ins</td><td>Sign-ins, sign-outs, organization switches, and <strong>failed attempts</strong> with this username (to spot password guessing)</td></tr>
+                <tr><td>Emails received</td><td>Emails the system sent to the user's address (To / Cc / Bcc) and whether they were delivered to the transport</td></tr>
+                <tr><td>Deleted records</td><td>Records the user deleted (Trash). The log table filter does not apply here</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-building"></i> Auditing an organization</h4>
+        <p>
+            Click <strong>By organization</strong> at the top to list the actions of <strong>every member</strong> of one organization
+            (like the "Organization audit log" of GitHub or Google Workspace). Each row shows who did it in a blue badge.
+        </p>
+        <ul class="mb-0">
+            <li>Pick the <strong>Organization</strong> - any organization when signed in to the system organization, otherwise your active organization (fixed)</li>
+            <li>The <strong>User</strong> is optional - picking one shows only that person's actions in the organization; the x on the badge clears it</li>
+            <li>An entry belongs to the organization of the record (<code>record_organization_id</code>) when it is logged, otherwise to the organization the actor was signed in to - so system staff working on that organization's records show up here too</li>
+            <li>Entries logged without an organization are not included: public website actions (contact form, sign-up) and successful sign-ins; actions on global content (news, pages, products) count for the actor's organization</li>
+            <li>Only the "Actions" tab works in this mode</li>
+        </ul>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-filetype-csv"></i> CSV export</h4>
+        <ul class="mb-0">
+            <li>The <strong>CSV</strong> button downloads what the current mode, tab and filters return - at most <strong>10000</strong> rows (newest first). For more, split the export by date range</li>
+            <li>Columns: date, table, level, action, message, record id, record organization, user, signed-in organization, Act As, IP, browser, full context (JSON)</li>
+            <li>UTF-8 with BOM so Cyrillic opens correctly in Excel. Cells starting with "=", "+", "-", "@" get a leading "'" so they never run as formulas</li>
+            <li>Every export is written to the access logs (<code>user-activity-export</code>, with the row count)</li>
+        </ul>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-building"></i> Organization scope</h4>
+        <ul class="mb-0">
+            <li>Signed in to the <strong>system organization</strong> (or a <code>system_coder</code>): every user and every record</li>
+            <li>Signed in to <strong>another organization</strong>:
+                <ul>
+                    <li>only that organization's members can be selected, and <code>system_coder</code> users are not listed</li>
+                    <li>the "Actions" and "Done to the user" tabs only show actions made while signed in to that organization</li>
+                    <li>the "Sign-ins" tab only shows switches into that organization, sign-outs from it and failed sign-in attempts</li>
+                    <li>the "Emails received" and "Deleted records" tabs are hidden - emails and the trash carry no organization, so this keeps the user's other organizations' data from leaking</li>
+                </ul>
+            </li>
+        </ul>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-shield-lock"></i> Required permission</h4>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Action</th><th>Permission</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Open the page, view a user's activity</td><td><code>system_audit</code> (given to the <code>admin</code> role by default; <code>system_coder</code> always). You can create a dedicated "auditor" role with only this permission</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>

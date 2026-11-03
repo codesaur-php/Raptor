@@ -285,8 +285,11 @@ class Logger extends AbstractLogger
     /**
      * Лог бичлэгийн context-г decode хийж, message interpolation хийж,
      * ашиглахад бэлэн болгож форматлана.
+     *
+     * Public - олон хүснэгтийг UNION-оор уншдаг LogsController::userActivityRetrieve()
+     * мөр бүрийг үүгээр форматлана.
      */
-    private function normalizeLogRecord(array $record): array
+    public function normalizeLogRecord(array $record): array
     {
         $record['context'] =
             \json_decode($record['context'], true, 100000, \JSON_INVALID_UTF8_SUBSTITUTE)

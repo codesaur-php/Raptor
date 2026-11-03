@@ -7,6 +7,7 @@ use Psr\Log\LogLevel;
 use codesaur\Template\Markup;
 use codesaur\Template\MemoryTemplate;
 
+use Dashboard\Organization\OrganizationModel;
 use Dashboard\Organization\OrganizationUserModel;
 use Dashboard\RBAC\Roles;
 use Dashboard\RBAC\UserRole;
@@ -20,7 +21,7 @@ use Dashboard\User\UsersModel;
  * шинэ боломж, журам) зориулсан - маркетингийн рассылка биш.
  *
  *  - Эрх: system_mail_send (system_coder автоматаар).
- *  - Байгууллагын хүрээ: системийн байгууллагаар (id=1) нэвтэрсэн эсвэл
+ *  - Байгууллага дотроо: системийн байгууллагаар (id=1) нэвтэрсэн эсвэл
  *    system_coder бол бүх хэрэглэгч; бусад байгууллагаар нэвтэрсэн бол зөвхөн
  *    тэр байгууллагын хэрэглэгчид (organizationScope()).
  *  - Хүлээн авагчийг сервер дүр / хэрэглэгчийн ID-аас тогтооно - зөвхөн
@@ -29,6 +30,12 @@ use Dashboard\User\UsersModel;
  *    MAX_RECIPIENTS хүртэл. Хоёр алхамтай (send()): prepare - хүлээн авагчийг
  *    тогтоож id жагсаалт буцаана; batch - клиент тэр жагсаалтыг BATCH_SIZE-аар
  *    хувааж дараалсан хүсэлтээр илгээнэ (progress харагдана, timeout-д өртөхгүй).
+ *  - Гарчиг, агуулга template-ээр дамжина (personalize()): хүлээн авагчийн
+ *    мэдээлэл, дүрээр сонгосон бол тэр дүр (role), байгууллага, илгээгч, огноо.
+ *    prepare нь эхний хүлээн авагчаар туршиж рэндэрлэнэ. batch-д имэйл бүрийг
+ *    тухайн хэрэглэгчийн өөрийн мэдээллээр тусад нь рэндэрлэнэ. Хэнд илгээхийг
+ *    зөвхөн user_ids тогтооно; role_ids нь зөвхөн role хувьсагчийн утгыг
+ *    тодорхойлно (хэрэглэгчийн дүрүүдээс сонгосон дүрүүдтэй давхцсан нь).
  *
  * Security (English): system_mail_send required. Outside the system organization
  * the recipients are limited to the members of the user's current organization,
@@ -127,13 +134,16 @@ class MailController extends \Dashboard\Controller
      * Route: POST /dashboard/mail-send/send
      *
      * 1) mode=prepare {subject, body, role_ids, user_ids}
-     *    Хүлээн авагчийг тогтоож (идэвхтэй, зөв имэйлтэй, давхардалгүй, байгууллагын
-     *    хүрээнд), тоо болон хэрэглэгчийн id жагсаалтыг (имэйл бүрт нэг) буцаана. Юу ч
+     *    Хүлээн авагчийг тогтоож (идэвхтэй, зөв имэйлтэй, давхардалгүй, зөвхөн
+     *    өөрийн байгууллага дотроо), тоо болон хэрэглэгчийн id жагсаалтыг (имэйл бүрт нэг) буцаана. Юу ч
      *    илгээхгүй. broadcast_id үүсгэж, бүтэн гарчиг, агуулгыг логт бичнэ.
-     * 2) mode=batch {subject, body, user_ids (<= BATCH_SIZE), broadcast_id}
+     * 2) mode=batch {subject, body, user_ids (<= BATCH_SIZE), role_ids, broadcast_id}
      *    Ирсэн id бүрийг серверт дахин шалгана - prepare-ээс хойш идэвхгүй болсон,
      *    устгагдсан, байгууллагаас хасагдсан, имэйлгүй болсон хэрэглэгч алгасагдана
-     *    (skipped). Нэг имэйлийн алдаа (failed) бусдыг зогсоохгүй.
+     *    (skipped). Хүлээн авагч бүрт гарчиг, агуулгыг тэр хүний мэдээллээр
+     *    рэндэрлэж илгээнэ. Хэнд илгээхийг зөвхөн user_ids тогтооно; role_ids нь
+     *    зөвхөн role хувьсагчийн утгыг тодорхойлно. Нэг имэйлийн алдаа (failed)
+     *    бусдыг зогсоохгүй.
      *
      * Багц бүр богино (BATCH_SIZE имэйл) тул proxy / вэб серверийн timeout-д
      * өртөхгүй. Багцын хүсэлт бүхэлдээ амжилтгүй болбол клиент автоматаар дахин
@@ -178,13 +188,30 @@ class MailController extends \Dashboard\Controller
                         400
                     );
                 }
+                // Хувьсагчтай гарчиг, агуулгыг эхний хүлээн авагчаар туршиж рэндэрлэнэ -
+                // алдаатай template бол юу ч илгээхээс өмнө зогсоно, баталгаажуулах
+                // цонхонд жишээ гарчиг харагдана
+                try {
+                    $sample = $this->enrich([$recipients[0]], $roleIds, $orgId)[0];
+                    $previewSubject = $this->personalize($subject, $sample);
+                    $this->personalize($text, $sample);
+                } catch (\Throwable $tplErr) {
+                    throw new \InvalidArgumentException(
+                        $this->text('invalid-request') . ' (template: ' . $tplErr->getMessage() . ')',
+                        400
+                    );
+                }
                 $broadcastId = \bin2hex(\random_bytes(8));
                 $this->respondJSON([
                     'status' => 'success',
                     'broadcast_id' => $broadcastId,
                     'recipients' => \count($recipients),
                     'ids' => \array_column($recipients, 'id'),
-                    'batch_size' => self::BATCH_SIZE
+                    'batch_size' => self::BATCH_SIZE,
+                    'preview' => [
+                        'email' => $recipients[0]['email'],
+                        'subject' => $previewSubject
+                    ]
                 ]);
                 return;
             }
@@ -198,18 +225,23 @@ class MailController extends \Dashboard\Controller
             if (empty($userIds) || \count($userIds) > self::BATCH_SIZE) {
                 throw new \InvalidArgumentException($this->text('invalid-request'), 400);
             }
-            $recipients = $this->recipients([], $userIds, $orgId);
+            // Хэнд илгээхийг зөвхөн user_ids тогтооно; role_ids нь зөвхөн role
+            // хувьсагчийн утгыг тодорхойлно (хэрэглэгчийн дүрүүдээс сонгосонтой давхцсан нь)
+            $roleIds = $ids($payload['role_ids'] ?? []);
+            $recipients = $this->enrich($this->recipients([], $userIds, $orgId), $roleIds, $orgId);
             $found = \array_column($recipients, 'id');
             $skipped = \array_values(\array_diff($userIds, $found));
 
             \ignore_user_abort(true);
-            $html = $this->bodyHtml($subject, $text);
             $sent = 0;
             $failed = [];
             foreach ($recipients as $r) {
                 $ok = false;
                 try {
-                    $ok = (new Mailer($this->pdo))->mail($r['email'], $r['name'], $subject, $html)->send();
+                    // Хүлээн авагч бүрийн мэдээллээр гарчиг, агуулгыг тус тусад нь рэндэрлэнэ
+                    $mailSubject = $this->personalize($subject, $r);
+                    $html = $this->bodyHtml($mailSubject, $this->personalize($text, $r));
+                    $ok = (new Mailer($this->pdo))->mail($r['email'], $r['name'], $mailSubject, $html)->send();
                 } catch (\Throwable) {
                     $ok = false;
                 }
@@ -264,6 +296,7 @@ class MailController extends \Dashboard\Controller
                         'broadcast_id' => $broadcastId ?? null,
                         'subject' => $subject ?? null,
                         'body_sha1' => isset($text) ? \sha1($text) : null,
+                        'role_ids' => $roleIds ?? [],
                         'user_ids' => $userIds ?? [],
                         'sent' => $sent ?? 0,
                         'failed' => $failed ?? [],
@@ -277,7 +310,7 @@ class MailController extends \Dashboard\Controller
     }
 
     /**
-     * Хүлээн авагчийн байгууллагын хүрээ.
+     * Хүлээн авагчийг аль байгууллага дотроос сонгох вэ.
      *
      * system_coder эсвэл системийн байгууллагаар (id=1) нэвтэрсэн бол null (бүх
      * хэрэглэгч), бусад тохиолдолд одоогийн байгууллагын id - тэр байгууллагын
@@ -298,7 +331,7 @@ class MailController extends \Dashboard\Controller
     }
 
     /**
-     * Хэрэглэгчийн хүснэгтийн alias-д байгууллагын хүрээний SQL нөхцөл (:org параметртэй).
+     * Хэрэглэгчийн хүснэгтийн alias-д "зөвхөн тэр байгууллагын гишүүд" SQL нөхцөл (:org параметртэй).
      *
      * @param string   $alias Хэрэглэгчийн хүснэгтийн alias
      * @param int|null $orgId organizationScope() үр дүн
@@ -315,7 +348,7 @@ class MailController extends \Dashboard\Controller
 
     /**
      * Дүр ба хэрэглэгчийн ID-аас идэвхтэй, зөв имэйлтэй хэрэглэгчид (давхардалгүй),
-     * байгууллагын хүрээнд.
+     * зөвхөн өөрийн байгууллага дотроо.
      *
      * @param int[]    $roleIds
      * @param int[]    $userIds
@@ -338,7 +371,7 @@ class MailController extends \Dashboard\Controller
             $where[] = 'u.id IN (' . \implode(',', $userIds) . ')';
         }
         $stmt = $this->prepare(
-            "SELECT u.id, u.username, u.first_name, u.last_name, u.email FROM $users u
+            "SELECT u.id, u.username, u.first_name, u.last_name, u.phone, u.email FROM $users u
               WHERE u.is_active = 1 AND u.email IS NOT NULL AND u.email <> ''
                 AND (" . \implode(' OR ', $where) . ')' . $this->scopeSql('u', $orgId)
         );
@@ -353,12 +386,135 @@ class MailController extends \Dashboard\Controller
                     $result[$email] = [
                         'id' => (int) $u['id'],
                         'email' => $email,
-                        'name' => \trim("{$u['first_name']} {$u['last_name']}") ?: (string) $u['username']
+                        'name' => \trim("{$u['first_name']} {$u['last_name']}") ?: (string) $u['username'],
+                        'first_name' => (string) ($u['first_name'] ?? ''),
+                        'last_name' => (string) ($u['last_name'] ?? ''),
+                        'username' => (string) $u['username'],
+                        'phone' => (string) ($u['phone'] ?? '')
                     ];
                 }
             }
         }
         return \array_values($result);
+    }
+
+    /**
+     * Хүлээн авагчдад template-ийн нэмэлт мэдээлэл: сонгосон дүрүүдээс тухайн
+     * хэрэглэгчид байгаа нь (role, role_description, roles) ба байгууллага
+     * (organization - системийн бус байгууллагаар нэвтэрсэн бол зөвхөн тэр байгууллага).
+     *
+     * role нь сонгосон дүрүүдийн эхнийх (хуудсан дээрх дарааллаар); хэрэглэгчийг
+     * дүрээр бус тусад нь сонгосон бол role хоосон.
+     *
+     * @param array    $recipients recipients()-ийн үр дүн
+     * @param int[]    $roleIds    Сонгосон дүрүүд (intval + > 0 шүүсэн)
+     * @param int|null $orgId      organizationScope() үр дүн
+     * @return array
+     */
+    private function enrich(array $recipients, array $roleIds, ?int $orgId): array
+    {
+        if (empty($recipients)) {
+            return [];
+        }
+        // ID-ууд нь intval + > 0 шүүлтээр орсон бүхэл тоо
+        $userIn = \implode(',', \array_column($recipients, 'id'));
+        $userRoles = [];
+        if (!empty($roleIds)) {
+            $roles = (new Roles($this->pdo))->getName();
+            $ur = (new UserRole($this->pdo))->getName();
+            $stmt = $this->prepare(
+                "SELECT ur.user_id, r.id, r.alias, r.name, r.description FROM $ur ur
+                   INNER JOIN $roles r ON r.id = ur.role_id
+                  WHERE ur.user_id IN ($userIn) AND ur.role_id IN (" . \implode(',', $roleIds) . ')'
+            );
+            $order = \array_flip($roleIds);
+            if ($stmt->execute()) {
+                foreach ($stmt->fetchAll(\PDO::FETCH_ASSOC) as $row) {
+                    $userRoles[(int) $row['user_id']][$order[(int) $row['id']] ?? \PHP_INT_MAX] = $row;
+                }
+            }
+        }
+        $userOrgs = [];
+        $orgs = (new OrganizationModel($this->pdo))->getName();
+        $members = (new OrganizationUserModel($this->pdo))->getName();
+        $stmt = $this->prepare(
+            "SELECT ou.user_id, o.name FROM $members ou
+               INNER JOIN $orgs o ON o.id = ou.organization_id
+              WHERE ou.user_id IN ($userIn) AND o.is_active = 1"
+            . ($orgId !== null ? ' AND ou.organization_id = :org' : '')
+            . ' ORDER BY o.id'
+        );
+        if ($orgId !== null) {
+            $stmt->bindValue(':org', $orgId, \PDO::PARAM_INT);
+        }
+        if ($stmt->execute()) {
+            foreach ($stmt->fetchAll(\PDO::FETCH_ASSOC) as $row) {
+                $userOrgs[(int) $row['user_id']][] = (string) $row['name'];
+            }
+        }
+        foreach ($recipients as &$r) {
+            $matched = $userRoles[$r['id']] ?? [];
+            \ksort($matched);
+            $first = \reset($matched) ?: null;
+            $r['role'] = $first ? $first['name'] : '';
+            $r['role_description'] = $first ? (string) $first['description'] : '';
+            $r['roles'] = \implode(', ', \array_column($matched, 'name'));
+            $r['organization'] = \implode(', ', \array_unique($userOrgs[$r['id']] ?? []));
+        }
+        unset($r);
+        return $recipients;
+    }
+
+    /**
+     * Гарчиг эсвэл агуулгыг хүлээн авагчийн мэдээллээр template-ээр рэндэрлэнэ.
+     *
+     * Хувьсагчид: name, first_name, last_name, username, email, phone, role,
+     * role_description, roles, organization (enrich()), sender_name, sender_email,
+     * site, date.
+     * Жишээ: "Сайн байна уу, {{ first_name }}!" эсвэл
+     * "{% if first_name %}{{ first_name }}{% else %}{{ username }}{% endif %}".
+     *
+     * Autoescape унтраалттай - гарчиг энгийн текст, агуулгыг bodyHtml() дараа нь
+     * бүхэлд нь escape хийнэ (хэрэглэгчийн нэрэн дэх `<`, `&` давхар escape-гүй,
+     * HTML болж хувирахгүй). Зөвхөн скаляр утга дамжина - объект, method дуудах
+     * зам байхгүй.
+     *
+     * Security (English): only scalar recipient fields are exposed, never objects,
+     * so the admin-written template cannot reach PHP methods. Autoescape is off on
+     * purpose: the subject is plain text and the rendered body is escaped as a
+     * whole by bodyHtml() - escaping here as well would double-escape.
+     *
+     * @param string $source Админы бичсэн гарчиг / агуулга
+     * @param array  $r      recipients()-ийн нэг мөр
+     * @return string
+     */
+    private function personalize(string $source, array $r): string
+    {
+        if (!\str_contains($source, '{{') && !\str_contains($source, '{%')) {
+            return $source;
+        }
+        $settings = $this->getAttribute('settings', []);
+        $sender = $this->getUser()?->profile ?? [];
+        $template = new MemoryTemplate();
+        $template->setAutoEscape(false);
+        $template->setVars([
+            'name' => (string) $r['name'],
+            'first_name' => (string) ($r['first_name'] ?? ''),
+            'last_name' => (string) ($r['last_name'] ?? ''),
+            'username' => (string) ($r['username'] ?? ''),
+            'email' => (string) $r['email'],
+            'phone' => (string) ($r['phone'] ?? ''),
+            'role' => (string) ($r['role'] ?? ''),
+            'role_description' => (string) ($r['role_description'] ?? ''),
+            'roles' => (string) ($r['roles'] ?? ''),
+            'organization' => (string) ($r['organization'] ?? ''),
+            'sender_name' => \trim(($sender['first_name'] ?? '') . ' ' . ($sender['last_name'] ?? '')) ?: (string) ($sender['username'] ?? ''),
+            'sender_email' => (string) ($sender['email'] ?? ''),
+            'site' => (string) ($settings['title'] ?? ''),
+            'date' => \date('Y-m-d')
+        ]);
+        $template->source($source);
+        return \trim($template->output());
     }
 
     /**

@@ -66,7 +66,45 @@
                 <label class="form-label small mb-1" for="mail-subject">{{ 'subject'|text }}</label>
                 <input class="form-control mb-2" id="mail-subject" maxlength="200">
                 <label class="form-label small mb-1" for="mail-body">{{ mn ? 'Агуулга (энгийн текст, мөр таслал хадгалагдана, холбоос идэвхжинэ)' : 'Message (plain text; line breaks kept, links become clickable)' }}</label>
-                <textarea class="form-control font-monospace mb-3" id="mail-body" rows="14"></textarea>
+                <textarea class="form-control font-monospace mb-2" id="mail-body" rows="14"></textarea>
+                <!-- Хувьсагчийн жишээг HTML entity-ээр бичсэн - template engine үнэлэхгүй -->
+                <div class="alert alert-info small py-2 mb-3">
+                    <div class="fw-semibold mb-1"><i class="bi bi-braces"></i> {{ mn ? 'Хүлээн авагчийн мэдээллийг оруулах' : 'Insert recipient details' }}</div>
+                    {% if mn %}
+                        Гарчиг, агуулгад доорх хувьсагчийг бичвэл хүлээн авагч бүрийн өөрийн мэдээллээр солигдоно (имэйл бүр тусдаа үүснэ):
+                    {% else %}
+                        Variables written in the subject or the message are replaced with each recipient's own details (every email is rendered separately):
+                    {% endif %}
+                    <div class="d-flex flex-wrap gap-1 my-1">
+                        <code class="mail-var" role="button" title="{{ mn ? 'Овог нэр (хоосон бол нэвтрэх нэр)' : 'Full name (username when empty)' }}">&#123;&#123; name &#125;&#125;</code>
+                        <code class="mail-var" role="button" title="{{ mn ? 'Нэр' : 'First name' }}">&#123;&#123; first_name &#125;&#125;</code>
+                        <code class="mail-var" role="button" title="{{ mn ? 'Овог' : 'Last name' }}">&#123;&#123; last_name &#125;&#125;</code>
+                        <code class="mail-var" role="button" title="{{ mn ? 'Нэвтрэх нэр' : 'Username' }}">&#123;&#123; username &#125;&#125;</code>
+                        <code class="mail-var" role="button" title="{{ mn ? 'Имэйл хаяг' : 'Email address' }}">&#123;&#123; email &#125;&#125;</code>
+                        <code class="mail-var" role="button" title="{{ mn ? 'Утас' : 'Phone' }}">&#123;&#123; phone &#125;&#125;</code>
+                        <code class="mail-var" role="button" title="{{ mn ? 'Байгууллага' : 'Organization' }}">&#123;&#123; organization &#125;&#125;</code>
+                    </div>
+                    <div class="d-flex flex-wrap gap-1 my-1">
+                        <code class="mail-var" role="button" title="{{ mn ? 'Дүрээр сонгосон бол тэр дүрийн нэр' : 'Role name when selected by role' }}">&#123;&#123; role &#125;&#125;</code>
+                        <code class="mail-var" role="button" title="{{ mn ? 'Тэр дүрийн тайлбар' : 'That role description' }}">&#123;&#123; role_description &#125;&#125;</code>
+                        <code class="mail-var" role="button" title="{{ mn ? 'Сонгосон дүрүүдээс тухайн хүнд байгаа бүгд' : 'All selected roles the recipient has' }}">&#123;&#123; roles &#125;&#125;</code>
+                        <code class="mail-var" role="button" title="{{ mn ? 'Илгээгч (таны нэр)' : 'Sender (your name)' }}">&#123;&#123; sender_name &#125;&#125;</code>
+                        <code class="mail-var" role="button" title="{{ mn ? 'Илгээгчийн имэйл' : 'Sender email' }}">&#123;&#123; sender_email &#125;&#125;</code>
+                        <code class="mail-var" role="button" title="{{ mn ? 'Вэб сайтын нэр (Тохируулгууд)' : 'Website name (Settings)' }}">&#123;&#123; site &#125;&#125;</code>
+                        <code class="mail-var" role="button" title="{{ mn ? 'Өнөөдрийн огноо' : 'Today' }}">&#123;&#123; date &#125;&#125;</code>
+                    </div>
+                    {% if mn %}
+                        Жишээ: <code>Сайн байна уу, &#123;&#123; first_name &#125;&#125;!</code>. Нөхцөл бас болно:
+                        <code>&#123;% if first_name %&#125;&#123;&#123; first_name &#125;&#125;&#123;% else %&#125;&#123;&#123; username &#125;&#125;&#123;% endif %&#125;</code>.
+                        <code>&#123;&#123; role &#125;&#125;</code> нь хүлээн авагчийг дүрээр сонгосон үед л утгатай (тусад нь сонгосон бол хоосон).
+                        Хувьсагч дээр дарвал сүүлд идэвхтэй байсан талбарт (гарчиг / агуулга) курсорын байрлалд орно.
+                    {% else %}
+                        Example: <code>Hello, &#123;&#123; first_name &#125;&#125;!</code>. Conditions work too:
+                        <code>&#123;% if first_name %&#125;&#123;&#123; first_name &#125;&#125;&#123;% else %&#125;&#123;&#123; username &#125;&#125;&#123;% endif %&#125;</code>.
+                        <code>&#123;&#123; role &#125;&#125;</code> has a value only when the recipient was selected by role (empty for individually selected users).
+                        Click a variable to insert it at the cursor of the last focused field (subject / message).
+                    {% endif %}
+                </div>
                 <div class="d-flex flex-wrap align-items-center gap-2">
                     <span class="small text-muted" id="mail-count"></span>
                     <button class="btn btn-primary ms-auto" type="button" id="mail-send"><i class="bi bi-send"></i> {{ 'send'|text }}</button>
@@ -125,6 +163,17 @@ document.addEventListener('DOMContentLoaded', function () {
         renderChips();
     });
     document.querySelectorAll('#mail-roles input').forEach(c => c.addEventListener('change', updateCount));
+
+    /* Хувьсагч дээр дарвал сүүлд идэвхтэй байсан талбарын курсорт оруулна */
+    let lastField = document.getElementById('mail-body');
+    ['mail-subject', 'mail-body'].forEach(id => document.getElementById(id).addEventListener('focus', e => lastField = e.target));
+    document.querySelectorAll('.mail-var').forEach(v => v.addEventListener('click', () => {
+        const text = v.textContent;
+        const start = lastField.selectionStart ?? lastField.value.length;
+        const end = lastField.selectionEnd ?? start;
+        lastField.setRangeText(text, start, end, 'end');
+        lastField.focus();
+    }));
 
     /* Сервер рүү POST - JSON буцаана, HTTP алдаа бол Error шиднэ */
     function post(fields) {
@@ -240,16 +289,21 @@ document.addEventListener('DOMContentLoaded', function () {
             Notify('warning', `{{ 'email'|text|e('js') }}`, T('Хүлээн авагч сонгоно уу', 'Select recipients'));
             return;
         }
-        const fields = { subject, body };
+        /* role_ids batch-д ч очно: хэнд илгээхийг зөвхөн user_ids тогтооно,
+           role_ids нь зөвхөн role хувьсагчийн утгыг тодорхойлно */
+        const fields = { subject, body, role_ids: roleIds.join(',') };
 
         /* 1) Сервер хүлээн авагчийг тогтоож id жагсаалт буцаана 2) яг тоог харуулж
            баталгаажуулна 3) тэр жагсаалтыг багцаар илгээнэ */
         sendBtn.disabled = true;
-        post({ ...fields, mode: 'prepare', role_ids: roleIds.join(','), user_ids: userIds.join(',') }).then(plan => {
+        post({ ...fields, mode: 'prepare', user_ids: userIds.join(',') }).then(plan => {
             sendBtn.disabled = false;
             return Swal.fire({
                 icon: 'question',
                 html: `<p>${T('Имэйл илгээх үү', 'Send the email')}: <strong>${escapeHtml(subject)}</strong></p>`
+                    + (plan.preview && plan.preview.subject !== subject
+                        ? `<p class="small text-muted">${T('Жишээ', 'Example')} (${escapeHtml(plan.preview.email)}): <strong>${escapeHtml(plan.preview.subject)}</strong></p>`
+                        : '')
                     + `<p class="fs-5">${T('Хүлээн авагч', 'Recipients')}: <strong>${parseInt(plan.recipients, 10) || 0}</strong></p>`
                     + `<p class="small text-muted">${T('', 'Sent in batches of ')}${parseInt(plan.batch_size, 10) || 0}${T(' хүнээр багцлан илгээнэ', '')}</p>`,
                 showCancelButton: true,

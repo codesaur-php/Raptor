@@ -1,0 +1,366 @@
+<!--
+    user-activity.html
+    ------------------------------------------------------------
+    Систем - Хэрэглэгчийн үйл ажиллагаа (audit trail). Хоёр горимтой:
+     - Хэрэглэгчээр - нэг хэрэглэгчийн аудит (5 tab)
+     - Байгууллагаар - нэг байгууллагын бүх үйлдэл, хэрэглэгчээр шүүж болно
+    Шүүсэн үр дүнг CSV-ээр татна. Зөвхөн уншина.
+    Controller: Dashboard\Log\LogsController::userActivity()
+    Variables: users, organizations, log_tables, scoped_organization, hidden_views, export_limit
+-->
+{% set mn = localization.code == 'mn' %}
+
+<div class="d-flex justify-content-between align-items-center mb-2">
+    <h5 class="text-uppercase"><i class="bi bi-person-lines-fill"></i> {{ mn ? 'Хэрэглэгчийн үйл ажиллагаа' : 'User activity' }}</h5>
+    <a class="btn btn-sm btn-outline-secondary" href="{{ 'manual-view'|link({'file': 'user-activity-manual-' ~ localization.code ~ '.html'}) }}" title="{{ 'manual'|text }}" target="_blank">
+        <i class="bi bi-question-circle"></i>
+    </a>
+</div>
+
+<div class="small text-muted mb-2">
+    <i class="bi bi-info-circle"></i>
+    {% if mn %}
+        Хэрэглэгч эсвэл байгууллагын системд хийсэн үйлдлүүд (бүх логийн хүснэгтээс, шинэ нь эхэнд). Зөвхөн аюулгүй байдал, алдаа шалгах зорилгоор ашиглана. Таны юуг харсан, татсан нь Хандалтын протоколд бичигдэнэ.
+    {% else %}
+        Actions a user or an organization performed in the system (from every log table, newest first). Use it only for security and troubleshooting. What you view or export here is written to the access logs.
+    {% endif %}
+</div>
+{% if scoped_organization is not null %}
+    <div class="alert alert-warning py-2 small">
+        <i class="bi bi-building"></i>
+        {% if mn %}
+            Та <strong>{{ scoped_organization }}</strong> байгууллагаар нэвтэрсэн тул зөвхөн энэ байгууллагын хэрэглэгчид (system_coder-оос бусад), тэдний энэ байгууллагад хийсэн үйлдэл харагдана. Хүлээн авсан имэйл, устгасан бичлэг байгууллагаар салгагддаггүй тул энд харагдахгүй.
+        {% else %}
+            You are signed in to <strong>{{ scoped_organization }}</strong>, so only this organization's users (except system_coder) and their actions in this organization are shown. Emails received and deleted records cannot be separated by organization, so they are not shown here.
+        {% endif %}
+    </div>
+{% endif %}
+
+<div class="btn-group btn-group-sm mb-2" role="group" id="ua-modes">
+    <button type="button" class="btn btn-primary" data-mode="user"><i class="bi bi-person"></i> {{ mn ? 'Хэрэглэгчээр' : 'By user' }}</button>
+    <button type="button" class="btn btn-outline-primary" data-mode="org"><i class="bi bi-building"></i> {{ mn ? 'Байгууллагаар' : 'By organization' }}</button>
+</div>
+
+<div class="row g-2 align-items-end mb-3">
+    <div class="col-md-3" id="ua-org-box" style="display:none">
+        <label class="form-label small mb-1" for="ua-org">{{ mn ? 'Байгууллага' : 'Organization' }}</label>
+        <select class="form-select form-select-sm" id="ua-org"{{ (organizations|length == 1 ? ' disabled' : '')|raw }}>
+            {% for o in organizations %}
+                <option value="{{ o.id }}">{{ o.name }}{{ o.active ? '' : (mn ? ' (идэвхгүй)' : ' (inactive)') }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-3 position-relative">
+        <label class="form-label small mb-1" for="ua-user-search">
+            {{ 'user'|text }} <span class="text-muted" id="ua-user-optional" style="display:none">({{ mn ? 'заавал биш' : 'optional' }})</span>
+        </label>
+        <input class="form-control form-control-sm" id="ua-user-search" autocomplete="off" placeholder="{{ mn ? 'Нэр, нэвтрэх нэр, имэйлээр хайх...' : 'Search by name, username or email...' }}">
+        <div class="list-group small position-absolute w-100 shadow" id="ua-user-results" style="z-index:1050;max-height:40vh;overflow-y:auto"></div>
+    </div>
+    <div class="col-6 col-md-2">
+        <!-- Утгууд LogsController::ACTION_GROUPS-ийн түлхүүртэй ижил байх ёстой -->
+        <label class="form-label small mb-1" for="ua-group">{{ mn ? 'Үйлдлийн төрөл' : 'Action type' }}</label>
+        <select class="form-select form-select-sm" id="ua-group">
+            <option value="">{{ mn ? 'Бүгд' : 'All' }}</option>
+            <option value="create">{{ mn ? 'Үүсгэсэн' : 'Created' }}</option>
+            <option value="update">{{ mn ? 'Өөрчилсөн' : 'Updated' }}</option>
+            <option value="delete">{{ mn ? 'Устгасан' : 'Deleted' }}</option>
+            <option value="view">{{ mn ? 'Харсан' : 'Viewed' }}</option>
+            <option value="session">{{ mn ? 'Нэвтрэлт, Act As' : 'Sign-in, Act As' }}</option>
+        </select>
+    </div>
+    <div class="col-6 col-md-2">
+        <label class="form-label small mb-1" for="ua-table">{{ mn ? 'Логийн хүснэгт' : 'Log table' }}</label>
+        <select class="form-select form-select-sm" id="ua-table">
+            <option value="">{{ mn ? 'Бүгд' : 'All' }}</option>
+            {% for table in log_tables %}
+                <option value="{{ table }}">{{ table }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-6 col-md-2">
+        <label class="form-label small mb-1" for="ua-from">{{ mn ? 'Эхлэх огноо' : 'From' }}</label>
+        <input type="date" class="form-control form-control-sm" id="ua-from">
+    </div>
+    <div class="col-6 col-md-2">
+        <label class="form-label small mb-1" for="ua-to">{{ mn ? 'Дуусах огноо' : 'To' }}</label>
+        <input type="date" class="form-control form-control-sm" id="ua-to">
+    </div>
+    <div class="col-12 col-md-auto d-flex gap-1">
+        <button class="btn btn-sm btn-primary" type="button" id="ua-apply" title="{{ mn ? 'Шүүх' : 'Filter' }}"><i class="bi bi-funnel"></i> {{ mn ? 'Шүүх' : 'Filter' }}</button>
+        <button class="btn btn-sm btn-outline-success" type="button" id="ua-export" title="{{ mn ? 'Шүүсэн үр дүнг CSV-ээр татах' : 'Download the filtered result as CSV' }}"><i class="bi bi-filetype-csv"></i> CSV</button>
+    </div>
+</div>
+
+<div id="ua-selected" class="mb-2"></div>
+<ul class="nav nav-tabs mb-2" id="ua-views" role="tablist">
+    <li class="nav-item"><button class="nav-link active" type="button" data-view="actions" title="{{ mn ? 'Хэрэглэгчийн өөрөө хийсэн бүх үйлдэл' : 'Everything the user did' }}"><i class="bi bi-activity"></i> {{ mn ? 'Хийсэн үйлдэл' : 'Actions' }}</button></li>
+    <li class="nav-item ua-user-only"><button class="nav-link" type="button" data-view="received" title="{{ mn ? 'Бусдын тухайн хэрэглэгч дээр хийсэн өөрчлөлт: профайл, дүр, байгууллага, идэвхжүүлэлт' : 'Changes others made to this user: profile, roles, organizations, activation' }}"><i class="bi bi-person-gear"></i> {{ mn ? 'Хэрэглэгч дээр хийгдсэн' : 'Done to the user' }}</button></li>
+    <li class="nav-item ua-user-only"><button class="nav-link" type="button" data-view="logins" title="{{ mn ? 'Нэвтрэлт, гарах, байгууллага солих, амжилтгүй оролдлого' : 'Sign-ins, sign-outs, organization switches, failed attempts' }}"><i class="bi bi-box-arrow-in-right"></i> {{ mn ? 'Нэвтрэлт' : 'Sign-ins' }}</button></li>
+    {% if 'emails' not in hidden_views %}
+    <li class="nav-item ua-user-only"><button class="nav-link" type="button" data-view="emails" title="{{ mn ? 'Хэрэглэгчийн имэйл рүү илгээсэн имэйл' : 'Emails sent to the user' }}"><i class="bi bi-envelope"></i> {{ mn ? 'Хүлээн авсан имэйл' : 'Emails received' }}</button></li>
+    {% endif %}
+    {% if 'deleted' not in hidden_views %}
+    <li class="nav-item ua-user-only"><button class="nav-link" type="button" data-view="deleted" title="{{ mn ? 'Хэрэглэгчийн устгасан бичлэг (Хогийн сав)' : 'Records the user deleted (Trash)' }}"><i class="bi bi-trash"></i> {{ mn ? 'Устгасан бичлэг' : 'Deleted records' }}</button></li>
+    {% endif %}
+</ul>
+<ul class="list-group" id="ua-list"></ul>
+<div class="text-center my-3">
+    <div class="spinner-border spinner-border-sm text-primary" id="ua-spinner" style="display:none"></div>
+    <button class="btn btn-sm btn-outline-secondary" type="button" id="ua-more" style="display:none">{{ mn ? 'Цааш үзэх' : 'Load more' }}</button>
+    <div class="small text-muted" id="ua-empty" style="display:none"></div>
+</div>
+
+<script type="text/javascript">
+document.addEventListener('DOMContentLoaded', function () {
+    const isMn = document.documentElement.lang === 'mn';
+    const T = (m, e) => isMn ? m : e;
+    const users = {{ users|json_encode|raw }};
+    const retrieveUrl = `{{ 'user-activity-retrieve'|link }}`;
+    const exportUrl = `{{ 'user-activity-export'|link }}`;
+    const exportLimit = {{ export_limit }};
+    const $ = id => document.getElementById(id);
+    const search = $('ua-user-search');
+    const results = $('ua-user-results');
+    const list = $('ua-list');
+    const spinner = $('ua-spinner');
+    const more = $('ua-more');
+    const empty = $('ua-empty');
+    let selected = null;
+    let offset = 0;
+    let loading = false;
+    let mode = 'user';
+    let view = 'actions';
+    /* Хүсэлт бүрийн дугаар - tab / шүүлт солиход хоцорсон хариуг хаяна */
+    let seq = 0;
+
+    const levelClass = {
+        notice: 'list-group-item-light', info: 'list-group-item-primary', error: 'list-group-item-danger',
+        warning: 'list-group-item-warning', alert: 'list-group-item-info', debug: 'list-group-item-secondary'
+    };
+
+    /* Горим, tab-аас хамаарах шүүлтүүдийг идэвхжүүлэх / идэвхгүй болгох */
+    function syncControls() {
+        $('ua-org-box').style.display = mode === 'org' ? '' : 'none';
+        $('ua-user-optional').style.display = mode === 'org' ? '' : 'none';
+        document.querySelectorAll('.ua-user-only').forEach(li => li.style.display = mode === 'org' ? 'none' : '');
+        /* Устгасан бичлэг trash-аас уншдаг тул логийн хүснэгтийн шүүлт хамаарахгүй;
+           үйлдлийн төрлийн шүүлт зөвхөн "Хийсэн үйлдэл" tab-д */
+        $('ua-table').disabled = view === 'deleted';
+        $('ua-group').disabled = view !== 'actions';
+        renderSelected();
+    }
+
+    function renderSelected() {
+        const box = $('ua-selected');
+        box.innerHTML = '';
+        if (!selected) return;
+        const badge = document.createElement('span');
+        badge.className = 'badge text-bg-primary fs-6 d-inline-flex align-items-center gap-2';
+        badge.textContent = `${selected.name} (${selected.username})`;
+        if (mode === 'org') {
+            /* Байгууллагаар горимд хэрэглэгч заавал биш - арилгах товчтой */
+            const x = document.createElement('button');
+            x.type = 'button';
+            x.className = 'btn-close btn-close-white';
+            x.style.fontSize = '.6rem';
+            x.addEventListener('click', () => { selected = null; reload(); });
+            badge.append(x);
+        }
+        box.append(badge);
+    }
+
+    document.querySelectorAll('#ua-modes [data-mode]').forEach(b => b.addEventListener('click', () => {
+        document.querySelectorAll('#ua-modes [data-mode]').forEach(x => {
+            x.classList.toggle('btn-primary', x === b);
+            x.classList.toggle('btn-outline-primary', x !== b);
+        });
+        mode = b.dataset.mode;
+        /* Байгууллагаар горимд зөвхөн "Хийсэн үйлдэл" */
+        view = 'actions';
+        document.querySelectorAll('#ua-views .nav-link').forEach(x => x.classList.toggle('active', x.dataset.view === 'actions'));
+        syncControls();
+        reload(true);
+    }));
+
+    document.querySelectorAll('#ua-views [data-view]').forEach(b => b.addEventListener('click', () => {
+        document.querySelectorAll('#ua-views .nav-link').forEach(x => x.classList.toggle('active', x === b));
+        view = b.dataset.view;
+        syncControls();
+        reload(true);
+    }));
+
+    search.addEventListener('input', () => {
+        const q = search.value.trim().toLowerCase();
+        if (q.length < 2) { results.innerHTML = ''; return; }
+        const found = users.filter(u => u.name.toLowerCase().includes(q) || u.username.toLowerCase().includes(q) || (u.email ?? '').toLowerCase().includes(q)).slice(0, 30);
+        results.innerHTML = found.map(u => `<button type="button" class="list-group-item list-group-item-action py-1" data-id="${u.id}">`
+            + `${escapeHtml(u.name)} <span class="text-muted">(${escapeHtml(u.username)}) &lt;${escapeHtml(u.email ?? '')}&gt;</span>`
+            + (u.active ? '' : ` <span class="badge text-bg-secondary">${T('идэвхгүй', 'inactive')}</span>`) + '</button>').join('')
+            || `<div class="list-group-item text-muted py-1">${T('Олдсонгүй', 'Not found')}</div>`;
+    });
+    results.addEventListener('click', e => {
+        const b = e.target.closest('[data-id]');
+        if (!b) return;
+        selected = users.find(u => u.id === parseInt(b.dataset.id, 10)) ?? null;
+        search.value = '';
+        results.innerHTML = '';
+        reload();
+    });
+    $('ua-apply').addEventListener('click', () => reload());
+    more.addEventListener('click', load);
+
+    /* Байгууллагаар горимд шүүлт хийгдсэн бол Шүүх товч идэвхгүй болж, байгууллага
+       (эсвэл бусад шүүлт) өөрчлөгдөхөд дахин идэвхжинэ - ижил шүүлтийг давтахгүй */
+    let appliedKey = null;
+    function updateApply() {
+        $('ua-apply').disabled = mode === 'org' && appliedKey !== null && appliedKey === params().toString();
+    }
+    ['ua-org', 'ua-group', 'ua-table', 'ua-from', 'ua-to'].forEach(id => $(id).addEventListener('change', updateApply));
+
+    /* Хүсэлтийн параметр - retrieve ба export ижил шүүлттэй */
+    function params(extra) {
+        return new URLSearchParams(Object.assign({
+            mode: mode,
+            org_id: mode === 'org' ? $('ua-org').value : '',
+            user_id: selected ? selected.id : '',
+            view: view,
+            group: view === 'actions' ? $('ua-group').value : '',
+            table: view === 'deleted' ? '' : $('ua-table').value,
+            from: $('ua-from').value,
+            to: $('ua-to').value
+        }, extra ?? {}));
+    }
+    const ready = () => mode === 'org' || selected !== null;
+
+    function reload(quiet) {
+        renderSelected();
+        list.innerHTML = '';
+        offset = 0;
+        seq++;
+        loading = false;
+        spinner.style.display = 'none';
+        more.style.display = 'none';
+        empty.style.display = 'none';
+        appliedKey = null;
+        if (!ready()) {
+            updateApply();
+            if (!quiet) Notify('warning', `{{ 'user'|text|e('js') }}`, T('Хэрэглэгч сонгоно уу', 'Select a user'));
+            return;
+        }
+        appliedKey = params().toString();
+        updateApply();
+        load();
+    }
+
+    function load() {
+        if (loading || !ready()) return;
+        loading = true;
+        const mySeq = seq;
+        spinner.style.display = 'inline-block';
+        more.style.display = 'none';
+        fetch(`${retrieveUrl}?${params({ offset: offset })}`)
+            .then(res => res.json().then(json => {
+                if (!res.ok) throw new Error(json.message ?? `HTTP ${res.status}`);
+                return json;
+            }))
+            .then(data => {
+                if (mySeq !== seq) return;
+                const rows = data.rows ?? [];
+                rows.forEach(append);
+                offset += rows.length;
+                if (rows.length >= (data.limit ?? 50)) {
+                    more.style.display = '';
+                } else {
+                    empty.textContent = offset === 0 ? T('Үйлдэл олдсонгүй', 'No activity found') : T('Цааш бүртгэл байхгүй', 'No more entries');
+                    empty.style.display = 'block';
+                }
+            })
+            .catch(err => { if (mySeq === seq) Notify('danger', `{{ 'error'|text|e('js') }}`, err.message); })
+            .finally(() => {
+                if (mySeq !== seq) return;
+                loading = false;
+                spinner.style.display = 'none';
+            });
+    }
+
+    /* CSV: ижил шүүлтээр, хамгийн ихдээ exportLimit мөр. Алдаатай бол (403 г.м.)
+       JSON ирэх тул эхлээд fetch-ээр шалгаж, дараа нь blob-оор татуулна */
+    $('ua-export').addEventListener('click', () => {
+        if (!ready()) {
+            Notify('warning', `{{ 'user'|text|e('js') }}`, T('Хэрэглэгч сонгоно уу', 'Select a user'));
+            return;
+        }
+        const btn = $('ua-export');
+        btn.disabled = true;
+        fetch(`${exportUrl}?${params()}`)
+            .then(res => {
+                if (!res.ok) return res.json().catch(() => ({})).then(j => { throw new Error(j.message ?? `HTTP ${res.status}`); });
+                const name = (res.headers.get('Content-Disposition') ?? '').match(/filename="([^"]+)"/)?.[1] ?? 'audit.csv';
+                return res.blob().then(blob => {
+                    const a = document.createElement('a');
+                    a.href = URL.createObjectURL(blob);
+                    a.download = name;
+                    document.body.append(a);
+                    a.click();
+                    a.remove();
+                    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+                    Notify('success', 'CSV', T(`Татлаа (хамгийн ихдээ ${exportLimit} мөр)`, `Downloaded (at most ${exportLimit} rows)`));
+                });
+            })
+            .catch(err => Notify('danger', `{{ 'error'|text|e('js') }}`, err.message))
+            .finally(() => btn.disabled = false);
+    });
+
+    /* Нэг мөр: огноо, хүснэгт, мессеж, action, хэн хийсэн, Act As - дарвал context (JSON) нээгдэнэ.
+       Бүх утгыг textContent-оор бичнэ (лог дотор хэрэглэгчийн оруулсан утга байж болно) */
+    function append(log) {
+        const li = document.createElement('li');
+        li.className = `list-group-item ${levelClass[log.level] ?? 'list-group-item-dark'}`;
+        const head = document.createElement('div');
+        head.className = 'd-flex flex-wrap gap-2 align-items-baseline';
+        head.setAttribute('role', 'button');
+
+        const time = document.createElement('span');
+        time.className = 'font-monospace small';
+        time.textContent = log.created_at;
+        const table = document.createElement('span');
+        table.className = 'badge text-bg-secondary';
+        table.textContent = log.table;
+        const msg = document.createElement('span');
+        msg.className = 'flex-grow-1';
+        msg.textContent = new DOMParser().parseFromString(String(log.message ?? ''), 'text/html').body.textContent;
+        const action = document.createElement('span');
+        action.className = 'text-muted small';
+        action.textContent = log.context?.action ?? '';
+        head.append(time, table, msg, action);
+        /* Байгууллагаар горимд хэн хийсэн нь чухал */
+        const actor = log.context?.auth_user?.username;
+        if (mode === 'org' && actor) {
+            const who = document.createElement('span');
+            who.className = 'badge text-bg-info';
+            who.textContent = actor;
+            head.append(who);
+        }
+        if (log.context?.auth_user?.act_as) {
+            const actAs = document.createElement('span');
+            actAs.className = 'badge text-bg-warning';
+            actAs.textContent = `Act As: ${typeof log.context.auth_user.act_as === 'object' ? JSON.stringify(log.context.auth_user.act_as) : log.context.auth_user.act_as}`;
+            head.append(actAs);
+        }
+
+        const pre = document.createElement('pre');
+        pre.className = 'small bg-body border rounded p-2 mt-2 mb-0';
+        pre.style.display = 'none';
+        pre.style.whiteSpace = 'pre-wrap';
+        pre.style.wordBreak = 'break-all';
+        pre.textContent = JSON.stringify(log.context, null, 2);
+        head.addEventListener('click', () => pre.style.display = pre.style.display === 'none' ? 'block' : 'none');
+
+        li.append(head, pre);
+        list.appendChild(li);
+    }
+
+    syncControls();
+});
+</script>

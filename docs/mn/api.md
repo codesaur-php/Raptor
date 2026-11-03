@@ -877,6 +877,19 @@ PSR-3 стандартын лог систем. Өгөгдлийн санд ха
 | `/dashboard/logs/view` | GET | `logs-view` |
 | `/dashboard/logs/retrieve` | POST | `logs-retrieve` |
 | `/dashboard/logs/error-log-read` | GET | `error-log-read` |
+| `/dashboard/user-activity` | GET | `user-activity` |
+| `/dashboard/user-activity/retrieve` | GET | `user-activity-retrieve` |
+| `/dashboard/user-activity/export` | GET | `user-activity-export` |
+
+`/user-activity` нь санаатайгаар `/logs`-оос гадна: sidebar prefix-ээр (`href.startsWith`) идэвхжүүлдэг тул `/logs/...` байвал Хандалтын протокол ч идэвхтэй болно.
+
+### LogsController - Хэрэглэгчийн үйл ажиллагаа
+
+| Method | Тайлбар |
+|--------|---------|
+| `userActivity()` | Хуудас: хэрэглэгчийн жагсаалт (идэвхгүй нь ч орно; системийн бус байгууллагад зөвхөн тэр байгууллагын гишүүд), логийн хүснэгтүүд. `system_audit` эрх шаардана |
+| `userActivityExport()` | Ижил query-гийн (`auditQuery()` + `auditRows()`) CSV, хамгийн ихдээ `AUDIT_EXPORT_LIMIT` (10000) мөр, UTF-8 BOM, `=` `+` `-` `@` tab CR-ээр эхэлсэн нүдний урд `'`. `user-activity-export`-г мөрийн тоотой логт бичнэ |
+| `userActivityRetrieve()` | JSON `{rows, limit}`. Query: `mode` (`user` анхдагч, эсвэл `org`: `org_id` байгууллагын бүх гишүүний үйлдэл, `COALESCE(record_organization_id, auth_user.organization_id)`-аар, `user_id` нь заавал биш - үйлдэл хийсэн хүнээр шүүнэ, зөвхөн `view=actions`; бусад байгууллагын аудиторын `org_id` нь өөрийн идэвхтэй байгууллага, өөр бол 403, `system_coder`-ийн үйлдэл орохгүй), `user_id` (`user` горимд заавал), `view` (`AUDIT_VIEWS`: `actions`, `received`, `logins`, `emails`, `deleted`), `group` (зөвхөн `actions`-д: `ACTION_GROUPS`-ийн түлхүүр - `create`, `update`, `delete`, `view`, `session`; бүр нь action нэрс + LIKE загвартай, тогтмолоос орно, client-ээс биш), `table`, `from`, `to` (`YYYY-MM-DD`), `offset`; 50 мөр, шинэ нь эхэнд. Логийн view-үүд тохирох `*_log` хүснэгтүүдийг нэг `UNION ALL`-аар уншина (хүснэгтийн нэр зөвхөн DB-ийн жагсаалтаас, client-ээс шууд орохгүй), мөр бүрийг `Logger::normalizeLogRecord()`-аар (одоо public) форматлана; `deleted` нь `trash`-аас уншина. Системийн бус байгууллагаар нэвтэрсэн бол хэрэглэгч тэр байгууллагын гишүүн, `system_coder` биш байх ёстой (403), `actions` / `received` нь зөвхөн тэр `auth_user.organization_id`-тай бүртгэлийг, `logins` нь зөвхөн тэр байгууллага руу орсон / гарсан / амжилтгүй оролдлогыг буцаана, `UNSCOPABLE_VIEWS` (`emails`, `deleted`) 403. Эхний хуудас `user-activity-view`-г `target_user_id` / `target_organization_id`, шүүлтийн хамт логт бичнэ. Бүх шалгалт, байгууллагын дүрэм `auditQuery()`-д, export-тэй хуваалцана |
 
 ---
 
@@ -895,9 +908,11 @@ PSR-3 стандартын лог систем. Өгөгдлийн санд ха
 | Method | Тайлбар |
 |--------|---------|
 | `index()` | Хуудас: дүрүүд хүлээн авагчийн тоотой, хайлтад хэрэглэгчийн жагсаалт. `system_mail_send` эрх шаардана |
-| `send()` | POST, хоёр горимтой. `mode=prepare` `{subject, body, role_ids, user_ids}`: хүлээн авагчийг сервер тогтоож (идэвхтэй, зөв имэйлтэй, давхардалгүй, хамгийн ихдээ `MAX_RECIPIENTS` 1000) илгээхгүйгээр `{broadcast_id, recipients, ids, batch_size}` буцаана; `mail-broadcast-start` (бүтэн текст) логт бичнэ. `mode=batch` `{subject, body, broadcast_id, user_ids}` (хамгийн ихдээ `BATCH_SIZE` 20 id): id бүрийг дахин шалгаж (идэвхгүй / хасагдсан / хүрээнээс гадуурх нь алгасагдана) хүн бүрт имэйл илгээн `{sent, failed, skipped}` буцаана; `mail-broadcast` логт бичнэ |
+| `send()` | POST, хоёр горимтой. `mode=prepare` `{subject, body, role_ids, user_ids}`: хүлээн авагчийг сервер тогтоож (идэвхтэй, зөв имэйлтэй, давхардалгүй, хамгийн ихдээ `MAX_RECIPIENTS` 1000) илгээхгүйгээр `{broadcast_id, recipients, ids, batch_size, preview: {email, subject}}` буцаана - гарчиг, агуулгыг эхний хүлээн авагчаар туршиж рэндэрлэнэ (алдаатай template -> 400); `mail-broadcast-start` (бүтэн текст) логт бичнэ. `mode=batch` `{subject, body, broadcast_id, user_ids, role_ids}` (хамгийн ихдээ `BATCH_SIZE` 20 id; хэнд илгээхийг зөвхөн `user_ids` тогтооно, `role_ids` нь зөвхөн `role` хувьсагчийн утгыг тодорхойлно): id бүрийг дахин шалгаж (идэвхгүй / хасагдсан / өөр байгууллагын нь алгасагдана) хүн бүрт гарчиг, агуулгыг тэр хүний өөрийн мэдээллээр тусад нь рэндэрлэж имэйл илгээн `{sent, failed, skipped}` буцаана; `mail-broadcast` логт бичнэ |
+| `personalize()` | Private. Гарчиг / агуулгыг `MemoryTemplate`-ээр рэндэрлэнэ (autoescape унтраалттай - гарчиг энгийн текст, рэндэрлэсэн агуулгыг `bodyHtml()` бүхэлд нь escape хийнэ), зөвхөн скаляр хувьсагчтай: `name`, `first_name`, `last_name`, `username`, `email`, `phone`, `role`, `role_description`, `roles`, `organization`, `sender_name`, `sender_email`, `site`, `date`. Тодорхойгүй хувьсагч хоосон болно |
+| `enrich()` | Private. Нэмэлт query шаарддаг template өгөгдөл: хүлээн авагч бүрт байгаа сонгосон дүрүүд (`role` = хуудсан дээрх дарааллаар эхнийх, `role_description`, `roles`) ба идэвхтэй байгууллагууд (системийн бус байгууллагаар нэвтэрсэн бол зөвхөн тэр байгууллага) |
 
-Байгууллагын хүрээ: `system_coder` эсвэл системийн байгууллагаар (`id=1`) нэвтэрсэн хэрэглэгч бүх хэрэглэгчид хүрнэ; бусад нь зөвхөн одоогийн байгууллагын гишүүдэд (`organizations_users`) - дүрийн тоо, хэрэглэгчийн жагсаалт, хүлээн авагчийн query бүгдэд.
+Байгууллага дотроо илгээх: `system_coder` эсвэл системийн байгууллагаар (`id=1`) нэвтэрсэн хэрэглэгч бүх хэрэглэгчид хүрнэ; бусад нь зөвхөн одоогийн байгууллагын гишүүдэд (`organizations_users`) - дүрийн тоо, хэрэглэгчийн жагсаалт, хүлээн авагчийн query бүгдэд.
 
 ### MailRouter - Маршрутууд
 

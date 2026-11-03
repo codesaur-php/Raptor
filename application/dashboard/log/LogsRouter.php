@@ -69,5 +69,15 @@ class LogsRouter extends Router
         $this->POST('/logs/retrieve', [LogsController::class, 'retrieve'])->name('logs-retrieve')->middleware([CsrfMiddleware::class]);
 
         $this->GET('/logs/error-log-read', [LogsController::class, 'errorLogRead'])->name('error-log-read');
+
+        /**
+         * Хэрэглэгчийн үйл ажиллагаа (audit trail, system_audit эрх).
+         * Зөвхөн уншдаг GET маршрутууд тул CsrfMiddleware шаардлагагүй.
+         * /logs-оос гадна байрлуулсан: sidebar prefix-ээр (href.startsWith) идэвхжүүлдэг
+         * тул /logs/... байвал "Хандалтын протокол" цэс ч идэвхтэй болно.
+         */
+        $this->GET('/user-activity', [LogsController::class, 'userActivity'])->name('user-activity');
+        $this->GET('/user-activity/retrieve', [LogsController::class, 'userActivityRetrieve'])->name('user-activity-retrieve');
+        $this->GET('/user-activity/export', [LogsController::class, 'userActivityExport'])->name('user-activity-export');
     }
 }

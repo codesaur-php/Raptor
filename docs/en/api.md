@@ -877,6 +877,19 @@ Writes a log entry.
 | `/dashboard/logs/view` | GET | `logs-view` |
 | `/dashboard/logs/retrieve` | POST | `logs-retrieve` |
 | `/dashboard/logs/error-log-read` | GET | `error-log-read` |
+| `/dashboard/user-activity` | GET | `user-activity` |
+| `/dashboard/user-activity/retrieve` | GET | `user-activity-retrieve` |
+| `/dashboard/user-activity/export` | GET | `user-activity-export` |
+
+`/user-activity` is deliberately outside `/logs`: sidebar activation is prefix-based (`href.startsWith`), so a `/logs/...` path would also highlight Access logs.
+
+### LogsController - User activity
+
+| Method | Description |
+|--------|-------------|
+| `userActivity()` | Page: user list (incl. deactivated users, organization-scoped) and log tables. Requires `system_audit` |
+| `userActivityExport()` | CSV download of the same query (`auditQuery()` + `auditRows()`), at most `AUDIT_EXPORT_LIMIT` (10000) rows, UTF-8 BOM, cells starting with `=` `+` `-` `@` tab CR prefixed with `'`. Logs `user-activity-export` with the row count |
+| `userActivityRetrieve()` | JSON `{rows, limit}`. Query: `mode` (`user` default, or `org`: every member's actions in `org_id`, matched by `COALESCE(record_organization_id, auth_user.organization_id)`, `user_id` then optional as an actor filter, only `view=actions`; a scoped auditor's `org_id` is forced to their active organization, another one is 403, `system_coder` actors are excluded), `user_id` (required in `user` mode), `view` (`AUDIT_VIEWS`: `actions`, `received`, `logins`, `emails`, `deleted`), `group` (`actions` only: a key of `ACTION_GROUPS` - `create`, `update`, `delete`, `view`, `session`; each maps to exact action names + LIKE patterns, inlined from the constant, never from the client), `table`, `from`, `to` (`YYYY-MM-DD`), `offset`; 50 rows, newest first. Log views run one `UNION ALL` over the matching `*_log` tables (table names only from the database list, never from the client) and format rows with `Logger::normalizeLogRecord()` (now public); `deleted` reads `trash`. Outside the system organization the user must be a member of the current organization and not a `system_coder` (403), `actions` / `received` only return entries with that `auth_user.organization_id`, `logins` only switches into it / sign-outs from it / failed attempts, and `UNSCOPABLE_VIEWS` (`emails`, `deleted`) return 403. The first page logs `user-activity-view` with `target_user_id` / `target_organization_id` and the filter. All validation and scope rules live in `auditQuery()`, shared with the export |
 
 ---
 
@@ -895,7 +908,9 @@ Sends email. `send()` selects transport via `RAPTOR_MAIL_TRANSPORT` env var: `br
 | Method | Description |
 |--------|-------------|
 | `index()` | Page: roles with recipient counts, user list for search. Requires `system_mail_send` |
-| `send()` | POST, two modes. `mode=prepare` `{subject, body, role_ids, user_ids}`: resolves recipients on the server (active users with a valid email, deduplicated, max `MAX_RECIPIENTS` 1000) and returns `{broadcast_id, recipients, ids, batch_size}` without sending; logs `mail-broadcast-start` (full text). `mode=batch` `{subject, body, broadcast_id, user_ids}` (at most `BATCH_SIZE` 20 ids): re-resolves every id (inactive / removed / out-of-scope ids are skipped), sends one email each and returns `{sent, failed, skipped}`; logs `mail-broadcast` |
+| `send()` | POST, two modes. `mode=prepare` `{subject, body, role_ids, user_ids}`: resolves recipients on the server (active users with a valid email, deduplicated, max `MAX_RECIPIENTS` 1000) and returns `{broadcast_id, recipients, ids, batch_size, preview: {email, subject}}` without sending - the subject and body are test-rendered for the first recipient (a broken template -> 400); logs `mail-broadcast-start` (full text). `mode=batch` `{subject, body, broadcast_id, user_ids, role_ids}` (at most `BATCH_SIZE` 20 ids; who gets the email is decided by `user_ids` alone, `role_ids` only decide what the `role` variables show): re-resolves every id (inactive / removed / out-of-scope ids are skipped), renders the subject and body separately for each recipient with that user's own details, sends one email each and returns `{sent, failed, skipped}`; logs `mail-broadcast` |
+| `personalize()` | Private. Renders the subject / body as a `MemoryTemplate` (autoescape off - the subject is plain text, `bodyHtml()` escapes the rendered body as a whole) with scalar variables only: `name`, `first_name`, `last_name`, `username`, `email`, `phone`, `role`, `role_description`, `roles`, `organization`, `sender_name`, `sender_email`, `site`, `date`. An unknown variable renders empty |
+| `enrich()` | Private. Adds the template data that needs extra queries: the selected roles each recipient has (`role` = first in page order, `role_description`, `roles`) and the active organizations (only the scoped one outside the system organization) |
 
 Organization scope: `system_coder` or a user signed in to the system organization (`id=1`) reaches all users; anyone else only members of the current organization (`organizations_users`) - in the role counts, the user list and the recipient query.
 

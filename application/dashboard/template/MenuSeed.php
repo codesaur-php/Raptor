@@ -201,6 +201,16 @@ class MenuSeed
             $model->insert(
                 [
                     'parent_id' => $system['id'],
+                    'position' => '932',
+                    'permission' => 'system_audit',
+                    'icon' => 'bi bi-person-lines-fill',
+                    'href' => "$path$mount/user-activity"
+                ],
+                ['mn' => ['title' => 'Хэрэглэгчийн үйл ажиллагаа'], 'en' => ['title' => 'User activity']]
+            );
+            $model->insert(
+                [
+                    'parent_id' => $system['id'],
                     'position' => '935',
                     'permission' => 'system_mail_send',
                     'icon' => 'bi bi-envelope-paper',

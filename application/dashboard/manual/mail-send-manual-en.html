@@ -40,6 +40,52 @@
 
 <div class="card shadow-sm mb-4">
     <div class="card-body">
+        <h4 class="text-primary mb-3"><i class="bi bi-braces"></i> Recipient details through the template</h4>
+        <p>
+            Both the <strong>subject</strong> and the <strong>message</strong> go through the template engine: the variables below are replaced
+            with each recipient's own details in the email that person receives. Every recipient gets a separately rendered email, so one send can
+            address everyone by name. Clicking a variable on the page inserts it at the cursor of the last focused field.
+        </p>
+        <table class="table table-bordered table-sm">
+            <thead class="table-light">
+                <tr><th>Variable</th><th>Value</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><code>&#123;&#123; name &#125;&#125;</code></td><td>Full name (username when empty)</td></tr>
+                <tr><td><code>&#123;&#123; first_name &#125;&#125;</code></td><td>First name</td></tr>
+                <tr><td><code>&#123;&#123; last_name &#125;&#125;</code></td><td>Last name</td></tr>
+                <tr><td><code>&#123;&#123; username &#125;&#125;</code></td><td>Username</td></tr>
+                <tr><td><code>&#123;&#123; email &#125;&#125;</code></td><td>The recipient's email address</td></tr>
+                <tr><td><code>&#123;&#123; phone &#125;&#125;</code></td><td>Phone number</td></tr>
+                <tr><td><code>&#123;&#123; organization &#125;&#125;</code></td><td>The recipient's organization (comma-separated when several; only that organization when you are signed in to a non-system organization)</td></tr>
+                <tr><td><code>&#123;&#123; role &#125;&#125;</code></td><td>When selected <strong>by role</strong>, that role's name (the first in page order when the user has several selected roles). Empty for individually selected users</td></tr>
+                <tr><td><code>&#123;&#123; role_description &#125;&#125;</code></td><td>That role's description</td></tr>
+                <tr><td><code>&#123;&#123; roles &#125;&#125;</code></td><td>All selected roles the recipient has, comma-separated</td></tr>
+                <tr><td><code>&#123;&#123; sender_name &#125;&#125;</code></td><td>Sender - your name, the admin sending the email</td></tr>
+                <tr><td><code>&#123;&#123; sender_email &#125;&#125;</code></td><td>Sender email</td></tr>
+                <tr><td><code>&#123;&#123; site &#125;&#125;</code></td><td>Website name (Settings)</td></tr>
+                <tr><td><code>&#123;&#123; date &#125;&#125;</code></td><td>Today's date (YYYY-MM-DD)</td></tr>
+            </tbody>
+        </table>
+        <p class="mb-1"><strong>Example</strong></p>
+        <pre class="border rounded p-2 small mb-2">Subject:  &#123;&#123; site &#125;&#125; - good news, &#123;&#123; first_name &#125;&#125;!
+Message:  Hello, &#123;&#123; name &#125;&#125;!
+          The dashboard has a brand-new search - press Ctrl+K and find anything in a second.
+          &#123;% if role %&#125;As &#123;&#123; role &#125;&#125;, you can try it right away on your own content.&#123;% endif %&#125;
+          Thank you for being with us - have a wonderful day!
+          &#123;&#123; sender_name &#125;&#125; (&#123;&#123; organization &#125;&#125;)</pre>
+        <ul class="mb-0">
+            <li>Conditions and filters work: <code>&#123;% if first_name %&#125;&#123;&#123; first_name &#125;&#125;&#123;% else %&#125;&#123;&#123; username &#125;&#125;&#123;% endif %&#125;</code>, <code>&#123;&#123; name|upper &#125;&#125;</code></li>
+            <li>An unknown variable (e.g. a misspelled <code>&#123;&#123; frist_name &#125;&#125;</code>) renders as empty text - check before sending</li>
+            <li>After <strong>Send</strong>, the confirmation shows an <strong>example subject</strong> rendered for the first recipient; if the template is broken, nothing is sent and an error is shown</li>
+            <li>The message stays plain text: variable values never turn into HTML and are shown safely</li>
+            <li>The access log stores the source text with the variables (not each recipient's rendered version)</li>
+        </ul>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
         <h4 class="text-primary mb-3"><i class="bi bi-building"></i> Organization scope</h4>
         <ul class="mb-0">
             <li>Signed in to the <strong>system organization</strong> (or a <code>system_coder</code>) - you can send to all users</li>

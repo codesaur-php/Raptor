@@ -94,6 +94,11 @@ class ReferenceInitial
                         . 'Веб систем нь өөрийн вебсайтын хэрэглэх нөхцлийг дахин авч хэлэлцэн мэдэгдэл хийхгүйгээр хэдийд ч өөрчлөх эрхтэй болно.'
                         . '<h5>8. Захирагдах хууль</h5>'
                         . 'Веб систем, вебсайттай холбоотой аливаа зарга нэхэмжлэлийг Монгол Улсын хуулийн дагуу шийдвэрлүүлнэ.'
+                        . '<h5>9. Үйлдлийн бүртгэл</h5>'
+                        . 'Аюулгүй байдал, хариуцлагыг хангах зорилгоор системд нэвтрэх, гарах, мэдээлэл үүсгэх, засах, устгах, харах зэрэг '
+                        . 'таны үйлдлүүд огноо, цаг, IP хаяг, хөтчийн мэдээллийн хамт бүртгэгдэнэ. '
+                        . 'Системийг ашигласнаар та энэхүү бүртгэлийг хүлээн зөвшөөрч байна. '
+                        . 'Юу бүртгэгдэж, хэн, ямар зорилгоор харж болохыг Хувийн мэдээлэл нууцлалын бодлогоос үзнэ үү.'
                 ],
                 'en' => [
                     'title' => 'Web Site Terms and Conditions of Use',
@@ -131,6 +136,11 @@ class ReferenceInitial
                         . 'Web system may revise these terms of use for its web site at any time without notice.'
                         . '<h5>8. Governing Law</h5>'
                         . 'Any claim relating to web site shall be governed by the laws of Mongolia without regard to its conflict of law provisions.'
+                        . '<h5>9. Activity Logging</h5>'
+                        . 'For security and accountability, your actions in the system - signing in and out, creating, editing, deleting and viewing information - '
+                        . 'are recorded together with the date, time, IP address and browser information. '
+                        . 'By using the system you accept this logging. '
+                        . 'See the Privacy Policy for what is recorded, who may view it and for what purpose.'
                 ]
             ]
         );
@@ -156,6 +166,21 @@ class ReferenceInitial
                         . '<li>Бид хувийн мэдээллийг алдагдал болон хулгайлалтаас хамгаалах болно.</li>'
                         . '<li>Хэрэглэгчидээ хувийн мэдээллийн нууцлалын талаарх мэдээллээр хангах болно.</li>'
                         . '</ul>'
+                        . '<h5>Үйлдлийн бүртгэл (аудит)</h5>'
+                        . 'Системийн аюулгүй байдал, хариуцлагыг хангахын тулд хэрэглэгчийн үйлдлийг бүртгэдэг:'
+                        . '<ul>'
+                        . '<li><strong>Юу бүртгэгддэг:</strong> нэвтрэх, гарах, амжилтгүй нэвтрэх оролдлого, байгууллага солих; '
+                        . 'мэдээлэл үүсгэх, засах, устгах, харах; засварт өөрчлөгдсөн талбаруудын хуучин, шинэ утга; танд илгээсэн имэйл. '
+                        . 'Устгасан мэдээллийг сэргээх боломжтойгоор хогийн саванд хадгална.</li>'
+                        . '<li><strong>Хамт хадгалагдах мэдээлэл:</strong> огноо, цаг, IP хаяг, хөтчийн (user agent) мэдээлэл, нэвтэрсэн байгууллага. '
+                        . 'Нууц үг, токен зэрэг нууц утгыг бүртгэлд далдалж хадгалдаг.</li>'
+                        . '<li><strong>Зорилго:</strong> аюулгүй байдлын зөрчил илрүүлэх, алдаа засах, хэн юу хийснийг тодорхойлох. '
+                        . 'Маркетинг болон ажилтныг тасралтгүй хянах зорилгоор ашиглахгүй.</li>'
+                        . '<li><strong>Хэн харж болох:</strong> зөвхөн тусгай эрх олгогдсон администратор; системийн бус байгууллагын администратор зөвхөн өөрийн байгууллага дотроо. '
+                        . 'Бүртгэлийг хэн, хэзээ харсан нь өөрөө бүртгэгдэнэ.</li>'
+                        . '<li><strong>Хадгалах хугацаа:</strong> дээрх зорилгод шаардлагатай болон хуульд заасан хугацаанд.</li>'
+                        . '<li>Өөрийн үйлдлийн бүртгэлийн талаар мэдээлэл авах хүсэлтийг системийн администраторт гаргаж болно.</li>'
+                        . '</ul>'
                 ],
                 'en' => [
                     'title' => 'Privacy Policy',
@@ -171,6 +196,21 @@ class ReferenceInitial
                         . '<li>Personal data should be relevant to the purposes for which it is to be used, and should be accurate, complete, and up-to-date.</li>'
                         . '<li>We will protect personal information by reasonable security safeguards against loss or theft.</li>'
                         . '<li>We will make readily available to customers information about our policies and practices relating to the management of personal information.</li>'
+                        . '</ul>'
+                        . '<h5>Activity Logging (Audit)</h5>'
+                        . 'To keep the system secure and accountable, user actions are recorded:'
+                        . '<ul>'
+                        . '<li><strong>What is recorded:</strong> signing in and out, failed sign-in attempts, switching organizations; '
+                        . 'creating, editing, deleting and viewing information; the old and new values of fields changed by an edit; emails sent to you. '
+                        . 'Deleted information is kept in a recoverable trash.</li>'
+                        . '<li><strong>Recorded with it:</strong> date, time, IP address, browser (user agent) information and the organization you were signed in to. '
+                        . 'Secret values such as passwords and tokens are masked in the records.</li>'
+                        . '<li><strong>Purpose:</strong> detecting security incidents, troubleshooting and establishing who did what. '
+                        . 'It is not used for marketing or for continuous monitoring of staff.</li>'
+                        . '<li><strong>Who may view it:</strong> only administrators granted a dedicated permission; an administrator of a non-system organization only within their own organization. '
+                        . 'Who viewed the records and when is itself recorded.</li>'
+                        . '<li><strong>Retention:</strong> as long as necessary for these purposes and as required by law.</li>'
+                        . '<li>You may ask the system administrator for information about the records of your own activity.</li>'
                         . '</ul>'
                 ]
             ]
