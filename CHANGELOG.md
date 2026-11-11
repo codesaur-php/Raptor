@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 
 ---
 
+## [5.9.1] - 2026-11-09
+[5.9.1]: https://github.com/codesaur-php/Raptor/compare/v5.9.0...v5.9.1
+
+### Security
+
+- **The dashboard can no longer be embedded in an iframe on another domain (clickjacking protection).** Full dashboard HTML pages (`dashboardTemplate()`, login / reset-password, the dashboard error page) now send `Content-Security-Policy: object-src 'none'; base-uri 'self'; frame-ancestors 'self'`. A site that frames its own dashboard from another domain must add that domain to `frame-ancestors` in `Dashboard\ContentSecurityPolicy::DASHBOARD`.
+- **Minimal CSP on the public web.** `webTemplate()` pages and the web error page send `Content-Security-Policy: object-src 'none'; base-uri 'self'` (blocks `<object>` / `<embed>` plugins and `<base href>` hijacking). No `frame-ancestors` - the public site can still be embedded by other sites.
+- Deliberately no `script-src` / `style-src` / `img-src` / `frame-src` / `default-src`: inline scripts, CDNs and the YouTube / Facebook / Maps iframes in content keep working. JSON and file responses (inline PDFs in the preview iframe) get no CSP. An existing `Content-Security-Policy` header is never overwritten, so a project can send its own stricter policy. New class `Dashboard\ContentSecurityPolicy`; guarded by `tests/Unit/Middleware/ContentSecurityPolicyTest.php`; CLAUDE.md section "Content-Security-Policy (minimal)".
+
+### Fixed
+
+- **Protected file names with non-ASCII characters (Cyrillic etc.) were garbled in the browser tab and the saved file name.** `ProtectedFilesController::read()` wrote the raw UTF-8 name into `Content-Disposition: filename="..."`, which browsers decode as ISO-8859-1 (`Шунх...` showed as `Ð¨ÑƒÐ½Ñ…...`). The header now carries an ASCII fallback `filename` (non-ASCII, `"` and `\` replaced with `_`) plus the RFC 5987 / RFC 6266 `filename*=UTF-8''<percent-encoded>` that every current browser prefers. Guarded by `ProtectedFilesAuthTest::testContentDispositionCarriesUtf8FileName()`. Existing projects carry their own copy of the controller (`application/` is project code) - apply the same few lines there if they serve non-ASCII file names from `/protected`.
+
 ## [5.9.0] - 2026-11-03
 [5.9.0]: https://github.com/codesaur-php/Raptor/compare/v5.8.0...v5.9.0
 

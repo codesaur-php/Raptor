@@ -72,6 +72,10 @@ trait DashboardTrait
      */
     public function dashboardTemplate(string $template, array $vars = []): FileTemplate
     {
+        // Dashboard-ын CSP (frame-ancestors 'self' - clickjacking). Зөвхөн HTML
+        // хуудасны замд илгээнэ - ContentSecurityPolicy-ийн тайлбарыг үз.
+        \Dashboard\ContentSecurityPolicy::send(\Dashboard\ContentSecurityPolicy::DASHBOARD);
+
         $dashboard = $this->template(__DIR__ . '/dashboard.html');
         $dashboard->set('sidemenu', $this->getUserMenu());
         $dashboard->set('user_organizations', $this->getUserOrganizations());

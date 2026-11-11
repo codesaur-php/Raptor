@@ -4,6 +4,7 @@ namespace Web\Template;
 
 use codesaur\Template\FileTemplate;
 
+use Dashboard\ContentSecurityPolicy;
 use Dashboard\Content\PagesModel;
 
 /**
@@ -63,6 +64,10 @@ class TemplateController extends \Dashboard\Controller
      */
     public function webTemplate(string $template, array $vars = []): FileTemplate
     {
+        // Web-ийн CSP (frame-ancestors-гүй - сайтыг бусад сайт iframe-д оруулж болно).
+        // Зөвхөн HTML хуудасны замд илгээнэ - ContentSecurityPolicy-ийн тайлбарыг үз.
+        ContentSecurityPolicy::send(ContentSecurityPolicy::WEB);
+
         $index = $this->template(__DIR__ . '/index.html');
         $content = $this->template($template, $vars);
         $content->addFilter('basename', fn(string $path): string => \rawurldecode(\basename($path)));

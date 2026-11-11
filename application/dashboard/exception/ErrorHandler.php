@@ -7,6 +7,8 @@ use codesaur\Template\FileTemplate;
 use codesaur\Http\Application\ExceptionHandler as Base;
 use codesaur\Http\Application\ExceptionHandlerInterface;
 
+use Dashboard\ContentSecurityPolicy;
+
 /**
  * Class ErrorHandler
  * -----------------------------------------------
@@ -106,6 +108,7 @@ class ErrorHandler implements ExceptionHandlerInterface
             'message' => new Markup($html)
         ];
 
+        ContentSecurityPolicy::send(ContentSecurityPolicy::DASHBOARD);
         (new FileTemplate($errorTemplate, $vars))->render();
     }
 }

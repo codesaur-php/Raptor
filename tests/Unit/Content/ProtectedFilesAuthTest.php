@@ -72,6 +72,17 @@ class ProtectedFilesAuthTest extends RaptorTestCase
         $this->assertFalse($this->callAuthorize($controller, 'contracts/5/secret.pdf'));
     }
 
+    public function testContentDispositionCarriesUtf8FileName(): void
+    {
+        // Кирилл файлын нэр header-т шууд бичигдвэл браузер ISO-8859-1 гэж
+        // тайлж таб / хадгалах нэр эвдэрдэг - RFC 5987 filename* заавал байна.
+        $source = \file_get_contents(
+            \dirname(__DIR__, 3) . '/application/dashboard/file/ProtectedFilesController.php'
+        );
+        $this->assertStringContainsString("filename*=UTF-8''", $source);
+        $this->assertStringContainsString('\rawurlencode($downloadName)', $source);
+    }
+
     public function testReadCallsAuthorizeBeforeServing(): void
     {
         $source = \file_get_contents(

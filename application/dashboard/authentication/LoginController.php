@@ -7,6 +7,7 @@ use Psr\Log\LogLevel;
 use codesaur\DataObject\Constants;
 use codesaur\Template\MemoryTemplate;
 
+use Dashboard\ContentSecurityPolicy;
 use Dashboard\User\UsersModel;
 use Dashboard\Organization\OrganizationModel;
 use Dashboard\Organization\OrganizationUserModel;
@@ -175,7 +176,8 @@ class LoginController extends \Dashboard\Controller
      */
     private function renderLogin(?array $flash = null)
     {
-        // 3) Login template-г ачаалах
+        // 3) Login template-г ачаалах (dashboard-ын CSP-тэй - ContentSecurityPolicy)
+        ContentSecurityPolicy::send(ContentSecurityPolicy::DASHBOARD);
         $login = $this->template(__DIR__ . '/login.html');
 
         // Signup имэйл баталгаажуулалт зэрэг үйлдлийн үр дүнг alert хэлбэрээр харуулах
@@ -1196,6 +1198,7 @@ class LoginController extends \Dashboard\Controller
         } finally {
             // 4) Template рэндерлэх - эхлээд settings, дараа нь action-ий хувьсагчид
             //    (error title гэх мэт) settings-ийн ижил нэртэй утгыг (title) дарна
+            ContentSecurityPolicy::send(ContentSecurityPolicy::DASHBOARD);
             $login_reset = $this->template(__DIR__ . '/login-reset-password.html');
             foreach ($this->getAttribute('settings', []) as $key => $value) {
                 $login_reset->set($key, $value);
@@ -1378,6 +1381,7 @@ class LoginController extends \Dashboard\Controller
         } finally {
             // 7) UI render - эхлээд settings, дараа нь $vars (success title нь
             //    settings-ийн title-г дарна)
+            ContentSecurityPolicy::send(ContentSecurityPolicy::DASHBOARD);
             $login_reset = $this->template(__DIR__ . '/login-reset-password.html');
             foreach ($this->getAttribute('settings', []) as $key => $value) {
                 $login_reset->set($key, $value);

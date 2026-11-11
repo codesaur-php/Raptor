@@ -49,6 +49,21 @@ namespace Dashboard\File;
  *       return true;
  *   }
  *
+ * Анхаар: дээрх жишээ шиг зөвхөн "өөрийн байгууллагын файл" гэсэн дүрэм
+ * бичихдээ бусад байгууллагын бичлэгийг үзэх эрхтэй хэрэглэгчийг мартаж
+ * болохгүй. Жишээ нь модулийн хуудас нэг хэрэглэгчид А байгууллагын бичлэгийг
+ * харуулдаг бол энэ hook ч тэр хэрэглэгчид А байгууллагын файлыг нээлгэх
+ * ёстой. Эс бөгөөс хэрэглэгч бичлэгийг хардаг ч хавсралт файл дээр нь
+ * дарахад 403 гарна.
+ *
+ * Мөн Act As горимд хэрэглэгчийн дүр солигддог ч байгууллага нь солигддоггүй.
+ * Тиймээс байгууллагаас хамаардаг ийм алдаа Act As-аар шалгахад илрэхгүй.
+ *
+ * Coupling (English): when this hook restricts files to the user's own organization,
+ * also allow every user who can see other organizations' records in the module's
+ * pages - otherwise they see the record but its attachment returns 403. Act As changes
+ * the role, not the organization, so it does not reveal this kind of mismatch.
+ *
  * --------------------------------------------------------------
  * FilesController-ийг удамшуулдаг (extends)
  * --------------------------------------------------------------
@@ -225,7 +240,15 @@ class ProtectedFilesController extends FilesController
             \header("Content-Type: $mimeType");
             // URL нь өргөтгөлгүй (/protected/file) тул filename өгснөөр татах үед
             // зөв нэр/өргөтгөлтэй болж хадгалагдана (дэмждэг браузер inline харуулна).
-            \header('Content-Disposition: inline; filename="' . \basename($realFile) . '"');
+            // Header нь ISO-8859-1 гэж тайлагддаг тул кирилл (UTF-8) нэрийг шууд бичвэл
+            // браузерын таб / хадгалах нэр эвдэрнэ. RFC 6266/5987: ASCII fallback
+            // filename + UTF-8 percent-encode хийсэн filename* (браузер үүнийг давуу үзнэ).
+            $downloadName = \basename($realFile);
+            $asciiName = \preg_replace('/[^\x20-\x7E]|["\\\\]/u', '_', $downloadName) ?? 'file';
+            \header(
+                'Content-Disposition: inline; filename="' . $asciiName . '"; '
+                . "filename*=UTF-8''" . \rawurlencode($downloadName)
+            );
             \header('Content-Length: ' . \filesize($realFile));
             \readfile($realFile);
         } catch (\Throwable $err) {
