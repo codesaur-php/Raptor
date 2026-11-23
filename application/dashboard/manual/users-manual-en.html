@@ -207,8 +207,11 @@
     <div class="card-body">
         <h4 class="text-primary mb-3"><i class="bi bi-key"></i> Password</h4>
         <ul>
-            <li>Users can change their own password</li>
-            <li>Users with <code>system_coder</code> permission can change other users' passwords</li>
+            <li>Every signed-in user can change their own password from the account menu (avatar, top right) - <strong>Change password</strong>. No access to the users list and no reset email is needed</li>
+            <li>Changing your own password asks for the <strong>current password</strong>, then the new password twice. A wrong current password is rejected and logged; after 5 wrong attempts within 15 minutes, try again later</li>
+            <li>After any password change you stay signed in on this device, but every other device / browser of that user is signed out, and the user gets a "Your password was changed" email (<code>password-changed</code> template). When a <code>system_coder</code> changed it, the email says it was changed by a system administrator</li>
+            <li>Users with <code>system_coder</code> permission can change other users' passwords (key button in the list) without knowing the current one. Only root can change root's password</li>
+            <li>Forgot your password and cannot sign in? Use <strong>Forgot password?</strong> on the login page</li>
         </ul>
     </div>
 </div>
@@ -250,6 +253,18 @@
                     <td>Requester</td>
                     <td><code>forgotten-password-reset</code></td>
                     <td>Password reset link, email address</td>
+                </tr>
+                <tr>
+                    <td>Password changed (own change, system_coder reset or forgot-password link)</td>
+                    <td>Account owner</td>
+                    <td><code>password-changed</code></td>
+                    <td>Username, email, date, IP address, login link</td>
+                </tr>
+                <tr>
+                    <td>Roles or organizations changed</td>
+                    <td>The user</td>
+                    <td><code>access-changed</code></td>
+                    <td>Roles / organizations added and removed, date, login link</td>
                 </tr>
                 <tr>
                     <td>Signup approval</td>

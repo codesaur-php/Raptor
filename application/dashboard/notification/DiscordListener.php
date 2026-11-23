@@ -80,6 +80,13 @@ class DiscordListener
                 $event->username, $event->email,
                 $this->notifier->user
             );
+        } elseif ($event->action === 'access_changed') {
+            $this->notifier->userAccessChanged(
+                $event->username,
+                $event->details['roles_added'] ?? [],
+                $event->details['roles_removed'] ?? [],
+                $this->notifier->user
+            );
         }
     }
 

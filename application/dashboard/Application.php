@@ -104,11 +104,14 @@ class Application extends \codesaur\Http\Application\Application
         // Method-той ижил request normalization тул эрт ажиллана.
         $this->use(new BodyEncodingMiddleware());
 
-        // 4. Session (/act-as/ - RBAC\ActAsController session-д Act As горимыг бичнэ)
+        // 4. Session (/act-as/ - RBAC\ActAsController session-д Act As горимыг бичнэ;
+        //    POST /users/set/password/ - өөрийн нууц үгийг сольсны дараа UsersController
+        //    одоогийн session-ий JWT-г шинэ нууц үгийн тамгатай дахин бичнэ)
         $this->use(new SessionMiddleware(
             fn(string $path, string $method): bool =>
                 \str_contains($path, '/login')
                 || \str_contains($path, '/act-as/')
+                || ($method === 'POST' && \str_contains($path, '/users/set/password/'))
                 || empty($_SESSION['CSRF_TOKEN'])
         ));
 

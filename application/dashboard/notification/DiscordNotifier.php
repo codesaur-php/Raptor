@@ -14,6 +14,7 @@ use codesaur\Http\Client\CurlClient;
  *
  *   - Хэрэглэгчийн бүртгэлийн хүсэлт (userSignupRequest)
  *   - Хэрэглэгч баталгаажсан (userApproved)
+ *   - Өндөр эрхтэй дүр олгогдсон / хасагдсан (userAccessChanged)
  *   - Шинэ захиалга (newOrder)
  *   - Захиалгын статус өөрчлөгдсөн (orderStatusChanged)
  *   - Шинэ хөгжүүлэлтийн хүсэлт (newDevRequest)
@@ -166,6 +167,36 @@ class DiscordNotifier
             '✅ User Approved',
             "**$username** has been approved and can now log in.",
             self::COLOR_SUCCESS,
+            $fields,
+        );
+    }
+
+    /**
+     * Хэрэглэгчид өндөр эрхтэй дүр (coder эсвэл хандалт удирдах эрхтэй) олгогдсон /
+     * хасагдсан тухай мэдэгдэл - эрхийн өөрчлөлтийг админууд шууд харна.
+     *
+     * @param string   $username Хэрэглэгчийн нэр
+     * @param string[] $added    Олгогдсон дүрүүд ("alias_name (тайлбар)")
+     * @param string[] $removed  Хасагдсан дүрүүд ("alias_name (тайлбар)")
+     * @param string   $admin    Өөрчилсөн админы нэр
+     */
+    public function userAccessChanged(string $username, array $added, array $removed, string $admin = ''): void
+    {
+        $fields = [['name' => 'User', 'value' => $username, 'inline' => true]];
+        if (!empty($added)) {
+            $fields[] = ['name' => 'Granted', 'value' => \mb_substr(\implode("\n", $added), 0, 1024), 'inline' => true];
+        }
+        if (!empty($removed)) {
+            $fields[] = ['name' => 'Revoked', 'value' => \mb_substr(\implode("\n", $removed), 0, 1024), 'inline' => true];
+        }
+        if ($admin !== '') {
+            $fields[] = ['name' => 'Changed by', 'value' => $admin, 'inline' => true];
+        }
+
+        $this->send(
+            '🛡️ Privileged Role Changed',
+            "Access-management roles of **$username** have changed.",
+            empty($added) ? self::COLOR_INFO : self::COLOR_WARNING,
             $fields,
         );
     }

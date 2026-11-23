@@ -29,6 +29,8 @@ class ReferenceInitial
      *  - tos                      - Ашиглах нөхцөл (Terms of Service)
      *  - pp                       - Нууцлалын бодлого (Privacy Policy)
      *  - forgotten-password-reset - Нууц үг сэргээх имэйл загвар
+     *  - password-changed         - Нууц үг солигдсон тухай мэдэгдэл имэйл
+     *  - access-changed           - Хандах эрх (дүр / байгууллага) өөрчлөгдсөн тухай имэйл
      *  - request-new-user         - Шинэ хэрэглэгчийн хүсэлт имэйл
      *  - approve-new-user         - Бүртгэл баталгаажсан имэйл
      *  - dev-request-new          - Шинэ хөгжүүлэлтийн хүсэлт имэйл
@@ -248,6 +250,89 @@ class ReferenceInitial
                         . '<p> </p>'
                         . '<p>If you did not request a new password, please let us know immediately by replying to this email.</p>'
                         . '<p>This password reset is only valid for the next {{ minutes }} minutes.</p>'
+                        . '<p> </p>'
+                        . '<p>Yours,</p>'
+                        . '<p>Support Team</p>'
+                ]
+            ]
+        );
+
+        // -------------------------------------------------------
+        // 3a. Нууц үг солигдсон тухай мэдэгдэл имэйл
+        //     (PasswordChangedNotification - өөрөө сольсон, system_coder сольсон,
+        //     "Нууц үгээ мартсан уу?" холбоосоор сэргээсэн аль ч үед)
+        // -------------------------------------------------------
+        $model->insert(
+            ['keyword' => 'password-changed', 'category' => 'email'],
+            [
+                'mn' => [
+                    'title' => 'Таны нууц үг солигдлоо',
+                    'content' =>
+                        '<p>Сайн байна уу, {{ username }}!</p>'
+                        . '{% if by_admin %}'
+                        . '<p>Таны {{ email }} хаягтай хэрэглэгчийн нууц үгийг системийн админ {{ date }}-нд сольсон. Бусад төхөөрөмж дээрх нэвтрэлт автоматаар дууссан.</p>'
+                        . '<p>Шинэ нууц үгээ системийн админаас авна уу. Энэ өөрчлөлтийн талаар мэдээгүй бол системийн админтай холбогдоно уу.</p>'
+                        . '{% else %}'
+                        . '<p>Таны {{ email }} хаягтай хэрэглэгчийн нууц үг {{ date }}-нд солигдлоо (IP хаяг: {{ ip }}). Бусад төхөөрөмж дээрх нэвтрэлт автоматаар дууссан.</p>'
+                        . '<p>Хэрэв та өөрөө солиогүй бол нэвтрэх хуудасны "Нууц үгээ мартсан уу?" холбоосоор нууц үгээ даруй шинэчилж, системийн админд мэдэгдэнэ үү:</p>'
+                        . '{% endif %}'
+                        . '<p>{{ login }}</p>'
+                        . '<p> </p>'
+                        . '<p>Хүндэтгэсэн,</p>'
+                        . '<p>Хөгжүүлэгчдийн баг.</p>'
+                ],
+                'en' => [
+                    'title' => 'Your password was changed',
+                    'content' =>
+                        '<p>Hello {{ username }},</p>'
+                        . '{% if by_admin %}'
+                        . '<p>The password of your account {{ email }} was changed by a system administrator on {{ date }}. Sessions on your other devices have been signed out.</p>'
+                        . '<p>Get your new password from the system administrator. If you were not expecting this change, contact the system administrator.</p>'
+                        . '{% else %}'
+                        . '<p>The password of your account {{ email }} was changed on {{ date }} (IP address: {{ ip }}). Sessions on your other devices have been signed out.</p>'
+                        . '<p>If you did not do this, reset your password right away with "Forgot password?" on the login page and let the system administrator know:</p>'
+                        . '{% endif %}'
+                        . '<p>{{ login }}</p>'
+                        . '<p> </p>'
+                        . '<p>Yours,</p>'
+                        . '<p>Support Team</p>'
+                ]
+            ]
+        );
+
+        // -------------------------------------------------------
+        // 3b. Хандах эрх (дүр / байгууллага) өөрчлөгдсөн тухай мэдэгдэл имэйл
+        //     (UsersController::notifyAccessChanged() - setRole, setOrganization, update)
+        // -------------------------------------------------------
+        $model->insert(
+            ['keyword' => 'access-changed', 'category' => 'email'],
+            [
+                'mn' => [
+                    'title' => 'Таны хандах эрх өөрчлөгдлөө',
+                    'content' =>
+                        '<p>Сайн байна уу, {{ username }}!</p>'
+                        . '<p>Таны {{ email }} хаягтай хэрэглэгчийн хандах эрх {{ date }}-нд өөрчлөгдлөө:</p>'
+                        . '{% if roles_added %}<p>Нэмэгдсэн дүр: {{ roles_added }}</p>{% endif %}'
+                        . '{% if roles_removed %}<p>Хасагдсан дүр: {{ roles_removed }}</p>{% endif %}'
+                        . '{% if orgs_added %}<p>Нэмэгдсэн байгууллага: {{ orgs_added }}</p>{% endif %}'
+                        . '{% if orgs_removed %}<p>Хасагдсан байгууллага: {{ orgs_removed }}</p>{% endif %}'
+                        . '<p>Өөрчлөлт шууд хүчинтэй болсон. Энэ өөрчлөлтийн талаар мэдээгүй бол системийн админтай холбогдоно уу.</p>'
+                        . '<p>{{ login }}</p>'
+                        . '<p> </p>'
+                        . '<p>Хүндэтгэсэн,</p>'
+                        . '<p>Хөгжүүлэгчдийн баг.</p>'
+                ],
+                'en' => [
+                    'title' => 'Your access was changed',
+                    'content' =>
+                        '<p>Hello {{ username }},</p>'
+                        . '<p>The access of your account {{ email }} was changed on {{ date }}:</p>'
+                        . '{% if roles_added %}<p>Roles added: {{ roles_added }}</p>{% endif %}'
+                        . '{% if roles_removed %}<p>Roles removed: {{ roles_removed }}</p>{% endif %}'
+                        . '{% if orgs_added %}<p>Organizations added: {{ orgs_added }}</p>{% endif %}'
+                        . '{% if orgs_removed %}<p>Organizations removed: {{ orgs_removed }}</p>{% endif %}'
+                        . '<p>The change is already in effect. If you were not expecting it, contact the system administrator.</p>'
+                        . '<p>{{ login }}</p>'
                         . '<p> </p>'
                         . '<p>Yours,</p>'
                         . '<p>Support Team</p>'

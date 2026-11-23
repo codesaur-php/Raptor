@@ -1235,10 +1235,10 @@ Checks the PHP serving the current web request against a known advisory. `HomeCo
 The `BACKPORTS` patched version whose base equals the package or is followed by `.` + SRU number, otherwise `null`.
 
 #### `runtime(): array`
-`sapi` (`PHP_SAPI`), `ini` (per `MITIGATION` key: `value`, `required`, `ok`), `mitigated` (all `ok`), `ini_file` (`php_ini_loaded_file()`), `user_ini` (`user_ini.filename`).
+`sapi` (`PHP_SAPI`), `ini` (per `MITIGATION` key that exists in the running PHP - `ini_get()` not `false`: `value`, `required`, `ok`), `mitigated` (all listed `ok`), `ini_file` (`php_ini_loaded_file()`), `user_ini` (`user_ini.filename`).
 
 #### `iniMatches(string $actual, string $required): bool`
-On/Off values compare regardless of spelling (`''`, `0`, `off` = Off); other values compare as exact strings.
+On/Off values compare regardless of spelling (`''`, `0`, `off` = Off; `1`, `on` = On); other values compare as exact strings.
 
 ---
 

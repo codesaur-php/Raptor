@@ -22,27 +22,43 @@ namespace Dashboard\Home;
 final class PhpSecurityStatus
 {
     /** Эмзэг байдлын нэр (мэдэгдэлд харагдана). */
-    public const ADVISORY = 'PHP2Shell (CVE-2026-109618, CVE-2026-109619)';
+    public const ADVISORY = 'PHP security release 2026-11-19 (18 CVEs, incl. CVE-2026-129289, CVE-2026-129474, CVE-2026-115560)';
 
-    /** Салбар бүрийн засвартай хамгийн бага хувилбар; жагсаалтаас хуучин салбар засвар авахгүй (эмзэг). */
-    public const PATCHED = ['8.2' => '8.2.35', '8.3' => '8.3.36', '8.4' => '8.4.27', '8.5' => '8.5.12'];
+    /**
+     * Салбар бүрийн засвартай хамгийн бага хувилбар; жагсаалтаас хуучин салбар засвар авахгүй (эмзэг).
+     * Эдгээр хувилбар өмнөх зөвлөмжүүдийн (PHP2Shell - 8.x.35/36/27/12) засварыг агуулдаг.
+     */
+    public const PATCHED = ['8.2' => '8.2.36', '8.3' => '8.3.37', '8.4' => '8.4.28', '8.5' => '8.5.13'];
 
-    /** Түр хамгаалалт: ini тохиргоо => шаардлагатай утга. Бүгд таарвал mitigated. */
-    public const MITIGATION = ['session.upload_progress.enabled' => 'Off', 'memory_limit' => '-1'];
+    /**
+     * Түр хамгаалалт: ini тохиргоо => шаардлагатай утга. Ажиллаж буй PHP-д байхгүй
+     * тохиргоог (ini_get() false - fatal_error_backtraces нь зөвхөн 8.5-д) шалгахгүй.
+     * Бусад нь бүгд таарвал mitigated. ini_get()-ээр уншигддаггүй хамгаалалт
+     * (nginx fastcgi_keep_conn, Apache enablereuse, FPM pool catch_workers_output)
+     * энд биш, docs/{en,mn}/PHP-SECURITY.md-д бичигдэнэ.
+     */
+    public const MITIGATION = [
+        'session.upload_progress.enabled' => 'Off',
+        'zend.exception_ignore_args' => 'On',
+        'fatal_error_backtraces' => 'Off'
+    ];
 
     /**
      * Дистрибьюторын backport: багцын хувилбарын суурь (SRU дугааргүй) => засвартай
      * хамгийн бага багцын хувилбар. Ubuntu засварыг upstream-ийн шинэ хувилбар руу
      * шилжүүлэлгүй хуучин хувилбартаа нөхдөг (24.04: 8.3.6 хэвээр), тиймээс upstream
      * харьцуулалт засвартай серверийг эмзэг гэж дүгнэнэ. Debian засвартай upstream
-     * хувилбар руу шилждэг (8.2.35-1~deb12u1) тул PATCHED-ээр зөв танигдана.
-     * Эх сурвалж: дистрибьюторын аюулгүй байдлын мэдэгдэл (энд USN-8948-1).
+     * хувилбар руу шилждэг (8.2.xx-1~deb12uN хэлбэр) тул PATCHED-ээр зөв танигдана.
+     * Эх сурвалж: Ubuntu CVE tracker, Launchpad-ийн багцын changelog (2026-11-20-нд
+     * -security pocket-д гарсан; энэ удаа USN дугаар холбогдоогүй).
+     * Ubuntu 22.04-ийн php8.1 8.1.2-1ubuntu2.29 нь CVE-2026-129289, CVE-2026-126714-ийг
+     * засдаг ч CVE-2026-115560-ийг changelog-доо агуулаагүй тул жагсаалтад ороогүй -
+     * засвар гарвал нэмнэ (тэр болтол session.upload_progress.enabled = Off).
      */
     public const BACKPORTS = [
-        '8.1.2-1ubuntu2' => '8.1.2-1ubuntu2.28',             // Ubuntu 22.04 LTS
-        '8.3.6-0ubuntu0.24.04' => '8.3.6-0ubuntu0.24.04.13', // Ubuntu 24.04 LTS
-        '8.5.4-0ubuntu1' => '8.5.4-0ubuntu1.5',              // Ubuntu 26.04 LTS
-        '8.5.9-0ubuntu2' => '8.5.9-0ubuntu2.1'               // Ubuntu 26.10
+        '8.3.6-0ubuntu0.24.04' => '8.3.6-0ubuntu0.24.04.14', // Ubuntu 24.04 LTS
+        '8.5.4-0ubuntu1' => '8.5.4-0ubuntu1.6',              // Ubuntu 26.04 LTS
+        '8.5.9-0ubuntu2' => '8.5.9-0ubuntu2.2'               // Ubuntu 26.10
     ];
 
     /**
@@ -157,7 +173,8 @@ final class PhpSecurityStatus
 
     /**
      * Энэ HTTP хүсэлтэд үйлчилж буй PHP-ийн ажиллах горим (SAPI), түр хамгаалалтын
-     * тохиргооны бодит утга, ачаалагдсан php.ini болон хэрэглэгчийн ini файлын нэр.
+     * тохиргооны бодит утга (энэ PHP-д байгаа тохиргоо л), ачаалагдсан php.ini болон
+     * хэрэглэгчийн ini файлын нэр.
      * SAPI нь тохиргоог хаана хийхийг заана (apache2handler - php.ini / Apache config,
      * fpm-fcgi - FPM pool, cgi-fcgi / litespeed - php.ini / .user.ini).
      *
@@ -169,7 +186,11 @@ final class PhpSecurityStatus
         $ini = [];
         foreach (self::MITIGATION as $key => $required) {
             $value = \ini_get($key);
-            $value = $value === false ? '-' : (string)$value;
+            if ($value === false) {
+                /* Энэ PHP-д байхгүй тохиргоо (өөр салбар / ачаалагдаагүй extension) хамааралгүй */
+                continue;
+            }
+            $value = (string)$value;
             $ini[$key] = ['value' => $value, 'required' => $required, 'ok' => self::iniMatches($value, $required)];
         }
         $loaded = \php_ini_loaded_file();

@@ -8,6 +8,7 @@ use codesaur\DataObject\Constants;
 use codesaur\Template\MemoryTemplate;
 
 use Dashboard\Authentication\ForgotModel;
+use Dashboard\Authentication\JWTAuthMiddleware;
 use Dashboard\Authentication\SignupModel;
 use Dashboard\File\FileController;
 use Dashboard\Organization\OrganizationModel;
@@ -107,7 +108,8 @@ use Dashboard\Log\Logger;
 class UsersController extends FileController
 {
     use \Dashboard\Template\DashboardTrait;
-    
+    use PasswordChangedNotification;
+
     /**
      * Хэрэглэгчдийн жагсаалтын Dashboard хуудсыг нээх
      *
@@ -471,7 +473,7 @@ class UsersController extends FileController
      *  2) PUT /users/update/{id}
      *      - Backend логик: хэрэглэгчийн өгөгдлийг update хийх
      *      - username, email давхардал шалгах
-     *      - password хоосон бол орхих, шинэ орж ирвэл hash хийх
+     *      - password-г хүлээж авахгүй (setPassword()-оор л солигдоно)
      *      - RBAC roles + Organizations-г configure хийх
      *      - Зураг upload хийх
      *      - Ямар талбар өөрчлөгдсөнийг "updates" массивт бүртгэх
@@ -535,10 +537,12 @@ class UsersController extends FileController
                 }
                 $payload['email'] = $this->normalizeEmail($body['email']);
 
-                // Нууц үг ирсэн бол hash хийнэ
-                if (!empty($body['password'])) {
-                    $payload['password'] = \password_hash($body['password'], \PASSWORD_BCRYPT);
-                }
+                // Нууц үгийг энд хүлээж авахгүй - зөвхөн setPassword()-оор (өөрийнх бол
+                // одоогийн нууц үгийг шалгана). Энд хүлээж авбал тэр шалгалтыг тойрно.
+                //
+                // Security (English): password is intentionally NOT in the whitelist - it is
+                // changed only through setPassword(), which verifies the current password for
+                // one's own account. Accepting it here would bypass that check.
 
                 // Organizations / Roles талбар формд байгаа үед л (эрхтэй үед template
                 // render хийдэг) тохируулна - талбар ирээгүй бол одоогийнхыг устгахгүй
@@ -617,7 +621,9 @@ class UsersController extends FileController
                 ) {
                     $updates[] = 'roles-configure';
                 }
-                
+                // Дүр / байгууллага аль хэдийн бичигдсэн - нэг и-мэйлээр нэгтгэж мэдэгдэнэ
+                $this->notifyAccessChanged($id);
+
                 if (empty($updates)) {
                     throw new \InvalidArgumentException('No update!');
                 }
@@ -1534,13 +1540,88 @@ class UsersController extends FileController
     }
 
     /**
+     * Өөрийн нууц үгийг солихдоо одоогийн нууц үгээ зөв оруулсан эсэхийг шалгана.
+     * system_coder бусдын нууц үгийг солиход (тухайн хэрэглэгчийн нууц үгийг мэдэхгүй) шаардахгүй.
+     *
+     * Security (English): changing one's OWN password always requires the current
+     * password - otherwise a hijacked or unattended session could lock the real owner
+     * out by setting a new password. A system_coder resetting someone else's
+     * password does not know it, so the check applies only when $id is the actor.
+     *
+     * @throws \Exception 403 - одоогийн нууц үг буруу эсвэл хоосон
+     */
+    private function assertCurrentPassword(int $id, array $record, array $body): void
+    {
+        if ($this->getUserId() != $id) {
+            return;
+        }
+        $current = (string)($body['password_current'] ?? '');
+        if ($current === '' || !\password_verify($current, (string)($record['password'] ?? ''))) {
+            throw new \Exception($this->text('current-password-incorrect'), 403);
+        }
+    }
+
+    /** Өөрийн нууц үг солиход одоогийн нууц үгийг буруу оруулах дээд тоо (PASSWORD_ATTEMPT_MINUTES дотор). */
+    public const PASSWORD_ATTEMPT_LIMIT = 5;
+
+    /** Буруу оролдлогыг тоолох хугацаа (минут). */
+    public const PASSWORD_ATTEMPT_MINUTES = 15;
+
+    /**
+     * Өөрийн нууц үг солиход одоогийн нууц үгийг таах оролдлогыг хязгаарлана:
+     * сүүлийн PASSWORD_ATTEMPT_MINUTES минутад users_log-д бичигдсэн буруу
+     * оролдлого (action=set-password, error.code=403, хэрэглэгч өөрөө) лимитэд
+     * хүрсэн бол 429. Зөвхөн нэвтэрсэн хэрэглэгчийн өөрийн нууц үг солих
+     * үйлдлийг хаадаг тул нэвтрэлтэд нөлөөгүй (бусдыг түгжих боломжгүй).
+     *
+     * @throws \Exception 429
+     */
+    private function assertPasswordAttemptsAllowed(int $id): void
+    {
+        $table = (new UsersModel($this->pdo))->getName() . '_log';
+        if ($this->getDriverName() === Constants::DRIVER_PGSQL) {
+            $sql = "SELECT COUNT(*) as cnt FROM $table " .
+                   "WHERE level = 'error' " .
+                   "AND created_at > :since " .
+                   "AND (context::jsonb)->>'action' = 'set-password' " .
+                   "AND (context::jsonb)->>'record_id' = :id " .
+                   "AND (context::jsonb)->'auth_user'->>'id' = :uid " .
+                   "AND (context::jsonb)->'error'->>'code' = '403'";
+        } else {
+            $sql = "SELECT COUNT(*) as cnt FROM $table " .
+                   "WHERE level = 'error' " .
+                   "AND created_at > :since " .
+                   "AND JSON_UNQUOTE(JSON_EXTRACT(context, '$.action')) = 'set-password' " .
+                   "AND JSON_UNQUOTE(JSON_EXTRACT(context, '$.record_id')) = :id " .
+                   "AND JSON_UNQUOTE(JSON_EXTRACT(context, '$.auth_user.id')) = :uid " .
+                   "AND JSON_UNQUOTE(JSON_EXTRACT(context, '$.error.code')) = '403'";
+        }
+        try {
+            $stmt = $this->prepare($sql);
+            $stmt->bindValue(':id', (string)$id);
+            $stmt->bindValue(':uid', (string)$id);
+            // Logger created_at-ийг PHP-ийн date()-ээр бичдэг тул хязгаарыг PHP-д тооцно (DB NOW()-ийн цагийн бүс өөр байж болно)
+            $stmt->bindValue(':since', \date('Y-m-d H:i:s', \time() - self::PASSWORD_ATTEMPT_MINUTES * 60));
+            $stmt->execute();
+            $count = (int)($stmt->fetch()['cnt'] ?? 0);
+        } catch (\PDOException) {
+            // users_log хараахан үүсээгүй - шалгах зүйлгүй
+            return;
+        }
+        if ($count >= self::PASSWORD_ATTEMPT_LIMIT) {
+            throw new \Exception($this->text('too-many-password-attempts'), 429);
+        }
+    }
+
+    /**
      * setPassword(int $id)
      * ---------------------
      * Тухайн хэрэглэгчийн нууц үгийг солих функц.
      *
      * Хэн ашиглах вэ?
-     *   Хэрэглэгч өөрийн нууц үгийг солих
-     *   system_coder эрхтэй хэрэглэгч бусдын нууц үгийг солих
+     *   Хэрэглэгч өөрийн нууц үгийг солих (account dropdown -> Нууц үг солих;
+     *     одоогийн нууц үгээ оруулна - assertCurrentPassword())
+     *   system_coder эрхтэй хэрэглэгч бусдын нууц үгийг солих (одоогийн нууц үг шаардахгүй)
      *      - Гэхдээ system_coder байсан ч:
      *         if ($id == 1 && $this->getUserId() != 1)
      *         -> хориглоно (root password-г зөвхөн root өөрөө солино)
@@ -1549,6 +1630,7 @@ class UsersController extends FileController
      *   1) Хэрэглэгч эрхтэй эсэхийг шалгах
      *   2) Хэрэв POST бол:
      *       - password + password_retype ижил эсэхийг баталгаажуулах
+     *       - өөрийнх бол password_current-ийг шалгах
      *       - password_hash -> updateById
      *       - JSON success рендерлэх
      *   3) Хэрэв GET бол modal HTML-г зурах
@@ -1593,22 +1675,49 @@ class UsersController extends FileController
                 // POST -> нууц үг солих
                 // ---------------------------------------------------------
                 $parsedBody = $this->getParsedBody();
-                $password = $parsedBody['password'] ?? null;            
+                $password = $parsedBody['password'] ?? null;
                 $password_retype = $parsedBody['password_retype'] ?? null;
                 if (empty($password) || $password != $password_retype) {
                     throw new \Exception($this->text('password-must-match'), 400);
                 }
+                $isSelf = $this->getUserId() == $id;
+                if ($isSelf) {
+                    $this->assertPasswordAttemptsAllowed($id);
+                }
+                $this->assertCurrentPassword($id, $record, $parsedBody);
+                $hash = \password_hash($password, \PASSWORD_BCRYPT);
                 $updated = $model->updateById(
                     $id,
                     [
                         'updated_by' => $this->getUserId(),
                         'updated_at' => \date('Y-m-d H:i:s'),
-                        'password' => \password_hash($password, \PASSWORD_BCRYPT)
+                        'password' => $hash
                     ]
                 );
                 if (empty($updated)) {
                     throw new \Exception("Can't reset user [{$record['username']}] password", 500);
                 }
+                // Нууц үг солигдмогц хэрэглэгчийн бүх JWT-ийн тамга таарахаа больж,
+                // бусад төхөөрөмж дээрх session дуусна (JWTAuthMiddleware). Өөрийнх бол
+                // энэ session-ийг шинэ тамгатай токеноор үргэлжлүүлж, session ID-г
+                // шинэчилнэ (Application.php-ийн SessionMiddleware энэ POST-д session-ийг
+                // бичигдэх боломжтой үлдээдэг).
+                //
+                // Coupling (English): the session stays writable for this POST only
+                // because of the '/users/set/password/' rule in Dashboard\Application's
+                // SessionMiddleware closure - without it the current session would be
+                // signed out together with the others.
+                if ($isSelf && \session_status() === \PHP_SESSION_ACTIVE) {
+                    \session_regenerate_id(true);
+                    $_SESSION['RAPTOR_JWT'] = (new JWTAuthMiddleware())->issue(
+                        ['id' => $id, 'password' => $hash],
+                        (int)$this->getUser()->organization['id']
+                    );
+                    // Session-д бичих зүйл дууссан - түгжээг суллана. Үгүй бол дараах
+                    // SMTP илгээлтийн турш хэрэглэгчийн бусад хүсэлт (таб, AJAX) хүлээнэ.
+                    \session_write_close();
+                }
+                $this->notifyPasswordChanged($record, null, !$isSelf);
                 $this->respondJSON([
                     'status'  => 'success',
                     'title'   => $this->text('success'),
@@ -1620,7 +1729,10 @@ class UsersController extends FileController
                 // ---------------------------------------------------------
                 $this->template(
                     __DIR__ . '/user-set-password-modal.html',
-                    ['profile' => $record]
+                    [
+                        'profile' => $record,
+                        'is_self' => $this->getUserId() == $id
+                    ]
                 )->render();
             }
         } catch (\Throwable $err) {
@@ -1721,6 +1833,7 @@ class UsersController extends FileController
                 if (!$this->configureOrgs($id, $post_organizations)) {
                     throw new \Exception('No updates');
                 }
+                $this->notifyAccessChanged($id);
                 return $this->respondJSON([
                     'status'  => 'success',
                     'title'   => $this->text('success'),
@@ -2082,9 +2195,10 @@ class UsersController extends FileController
                 } elseif ($row['organization_id'] == 1 && $id == 1) {
                     // ROOT USER -> organization_id = 1-ийг хэзээ ч хасахгүй!
                     // can't strip root user from system organization!
-                } elseif ($orgUserModel->deleteById($row['id'])) { 
+                } elseif ($orgUserModel->deleteById($row['id'])) {
                     // Байгууллагаас хаслаа
                     $configured = true;
+                    $this->accessChanges['orgs_removed'][(int)$row['organization_id']] = (string)$row['organization_name'];
                     // strip лог бичих 
                     $logger->log(
                         LogLevel::ALERT,
@@ -2100,7 +2214,8 @@ class UsersController extends FileController
                     ['user_id' => $id, 'organization_id' => $org_id, 'created_by' => $this->getUserId()]))
                 ) {
                     $configured = true;
-                    // set лог бичих 
+                    $this->accessChanges['orgs_added'][(int)$org_id] = '';
+                    // set лог бичих
                     $logger->log(
                         LogLevel::ALERT,
                         '{organization_id}-р байгууллагад {user_id}-р хэрэглэгчийг нэмлээ',
@@ -2189,7 +2304,8 @@ class UsersController extends FileController
                 if (!$this->configureRoles($id, $post_roles)) {
                     throw new \Exception('No updates');
                 }
-                
+                $this->notifyAccessChanged($id);
+
                 $this->respondJSON([
                     'status'  => 'success',
                     'title'   => $this->text('success'),
@@ -2402,7 +2518,8 @@ class UsersController extends FileController
                 
                 if ($userRoleModel->deleteById($row['id'])) {
                     $configured = true;
-                    
+                    $this->accessChanges['roles_removed'][] = (int)$row['role_id'];
+
                     // strip log хийж үлдээх
                     $logger->log(
                         LogLevel::ALERT,
@@ -2424,7 +2541,8 @@ class UsersController extends FileController
                 
                 if (!empty($userRoleModel->insert(['user_id' => $id, 'role_id' => $role_id]))) {
                     $configured = true;
-                    
+                    $this->accessChanges['roles_added'][] = (int)$role_id;
+
                     // set log хийж үлдээх
                     $logger->log(
                         LogLevel::ALERT,
@@ -2442,6 +2560,143 @@ class UsersController extends FileController
             $this->invalidateCache("rbac.$id");
         }
         return $configured;
+    }
+
+    /**
+     * configureRoles() / configureOrgs()-ийн бодит өөрчлөлтүүд (notifyAccessChanged() уншаад цэвэрлэнэ).
+     *
+     * @var array{roles_added?:int[], roles_removed?:int[], orgs_added?:array<int,string>, orgs_removed?:array<int,string>}
+     */
+    private array $accessChanges = [];
+
+    /**
+     * Хэрэглэгчийн дүр / байгууллагын өөрчлөлтийг мэдэгдэнэ:
+     *   - хэрэглэгчид и-мэйл ('access-changed' загвар) - нэмэгдсэн, хасагдсан дүр
+     *     болон байгууллагын жагсаалттай, өөрчлөлт бүрд
+     *   - Discord-д админуудад (UserEvent 'access_changed') - зөвхөн өндөр эрхтэй
+     *     дүр (coder эсвэл Permissions::MANAGEMENT эрхтэй) олгогдсон / хасагдсан үед
+     *     (NIST SP 800-53 AC-2(4))
+     * Дүр / байгууллага бичдэг action бүр (setRole, setOrganization, update)
+     * configure*()-ийн дараа дуудна. Мэдэгдэл алдаа өгсөн ч өөрчлөлтийг буцаахгүй.
+     *
+     * Coupling (English): every action that calls configureRoles() /
+     * configureOrgs() must call this afterwards - those two methods only record
+     * the changes in $accessChanges, this method sends and clears them
+     * (guarded by tests/Unit/Controller/AccessChangeNotificationTest.php).
+     */
+    private function notifyAccessChanged(int $id): void
+    {
+        $changes = $this->accessChanges;
+        $this->accessChanges = [];
+        if (empty($changes)) {
+            return;
+        }
+        try {
+            $user = (new UsersModel($this->pdo))->getRowWhere(['id' => $id]);
+            if (empty($user)) {
+                return;
+            }
+
+            // Дүрийн нэр (alias_name) болон өндөр эрхтэй эсэх
+            $roleIds = \array_values(\array_unique(\array_merge(
+                $changes['roles_added'] ?? [], $changes['roles_removed'] ?? []
+            )));
+            $roleKeys = [];
+            $privileged = [];
+            if (!empty($roleIds)) {
+                $in = \implode(',', \array_map('intval', $roleIds));
+                $roles = new Roles($this->pdo);
+                foreach ($this->query("SELECT id, alias, name, description FROM {$roles->getName()} WHERE id IN ($in)")->fetchAll() as $r) {
+                    // Нэр + тайлбар: энгийн хэрэглэгч "system_editor"-оос илүү тайлбараар ойлгоно
+                    $description = \trim((string)($r['description'] ?? ''));
+                    $roleKeys[(int)$r['id']] = "{$r['alias']}_{$r['name']}" . ($description !== '' ? " ($description)" : '');
+                }
+                // coder (id=1) болон хандалт удирдах эрхтэй дүрүүд
+                $privileged = \in_array(1, $roleIds, true) ? [1 => true] : [];
+                $conds = [];
+                foreach (Permissions::MANAGEMENT as $key) {
+                    [$alias, $name] = \explode('_', $key, 2);
+                    $conds[] = "(p.alias = " . $this->quote($alias) . " AND p.name = " . $this->quote($name) . ")";
+                }
+                $rp = new RolePermission($this->pdo);
+                $perm = new Permissions($this->pdo);
+                $sql = "SELECT DISTINCT rp.role_id FROM {$rp->getName()} rp " .
+                    "INNER JOIN {$perm->getName()} p ON rp.permission_id = p.id " .
+                    "WHERE rp.role_id IN ($in) AND (" . \implode(' OR ', $conds) . ")";
+                foreach ($this->query($sql)->fetchAll() as $r) {
+                    $privileged[(int)$r['role_id']] = true;
+                }
+            }
+            $label = static fn(array $ids): array =>
+                \array_values(\array_map(fn(int $rid): string => $roleKeys[$rid] ?? "#$rid", $ids));
+
+            // Нэмэгдсэн байгууллагын нэр
+            $orgsAdded = $changes['orgs_added'] ?? [];
+            if (!empty($orgsAdded)) {
+                $orgModel = new OrganizationModel($this->pdo);
+                $in = \implode(',', \array_map('intval', \array_keys($orgsAdded)));
+                foreach ($this->query("SELECT id, name FROM {$orgModel->getName()} WHERE id IN ($in)")->fetchAll() as $o) {
+                    $orgsAdded[(int)$o['id']] = (string)$o['name'];
+                }
+            }
+            $orgLabel = static fn(array $orgs): array =>
+                \array_values(\array_map(fn($name, $oid) => $name !== '' ? $name : "#$oid", $orgs, \array_keys($orgs)));
+
+            $summary = [
+                'roles_added' => $label($changes['roles_added'] ?? []),
+                'roles_removed' => $label($changes['roles_removed'] ?? []),
+                'orgs_added' => $orgLabel($orgsAdded),
+                'orgs_removed' => $orgLabel($changes['orgs_removed'] ?? [])
+            ];
+
+            $this->mailAccessChanged($user, $summary);
+
+            // Өндөр эрхтэй дүрийн өөрчлөлт -> Discord (админуудад)
+            $privAdded = $label(\array_values(\array_filter($changes['roles_added'] ?? [], fn($rid) => isset($privileged[$rid]))));
+            $privRemoved = $label(\array_values(\array_filter($changes['roles_removed'] ?? [], fn($rid) => isset($privileged[$rid]))));
+            if (!empty($privAdded) || !empty($privRemoved)) {
+                $this->dispatch(new \Dashboard\Notification\UserEvent(
+                    'access_changed',
+                    (string)$user['username'],
+                    (string)$user['email'],
+                    ['roles_added' => $privAdded, 'roles_removed' => $privRemoved]
+                ));
+            }
+        } catch (\Throwable $err) {
+            \error_log('access-changed notification: ' . $err->getMessage());
+        }
+    }
+
+    /**
+     * 'access-changed' загвараар хэрэглэгчид и-мэйл илгээнэ. Загвар байхгүй эсвэл
+     * и-мэйл буруу бол чимээгүй алгасна.
+     *
+     * @param array $summary roles_added, roles_removed, orgs_added, orgs_removed (нэрсийн жагсаалт)
+     */
+    private function mailAccessChanged(array $user, array $summary): void
+    {
+        $email = (string)($user['email'] ?? '');
+        if (\filter_var($email, \FILTER_VALIDATE_EMAIL) === false) {
+            return;
+        }
+        $template = $this->getService('template_service')
+            ?->getByKeyword('access-changed', $this->getLanguageCode());
+        if (empty($template['content'])) {
+            return;
+        }
+        $body = new MemoryTemplate();
+        $body->source($template['content']);
+        $body->set('username', $user['username'] ?? '');
+        $body->set('email', $email);
+        $body->set('date', \date('Y-m-d H:i'));
+        $body->set('login', $this->generateRouteLink('login', [], true));
+        // Тайлбар, байгууллагын нэрэнд таслал орж болох тул "; "-ээр тусгаарлана
+        foreach ($summary as $key => $names) {
+            $body->set($key, \implode('; ', $names));
+        }
+        $this->getService('mailer')
+            ->mail($email, null, $template['title'], $body->output())
+            ->send();
     }
 
     /**

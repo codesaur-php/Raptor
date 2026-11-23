@@ -1236,10 +1236,10 @@ Dashboard ерөнхий хайлт - topbar хайлтын modal (Ctrl+K)-ий�
 Суурь нь багцтай яг таарах эсвэл `.` + SRU дугаараар үргэлжлэх `BACKPORTS`-ийн засвартай хувилбар, үгүй бол `null`.
 
 #### `runtime(): array`
-`sapi` (`PHP_SAPI`), `ini` (`MITIGATION`-ийн түлхүүр бүрээр: `value`, `required`, `ok`), `mitigated` (бүгд `ok`), `ini_file` (`php_ini_loaded_file()`), `user_ini` (`user_ini.filename`).
+`sapi` (`PHP_SAPI`), `ini` (ажиллаж буй PHP-д байгаа - `ini_get()` нь `false` биш - `MITIGATION`-ийн түлхүүр бүрээр: `value`, `required`, `ok`), `mitigated` (жагсаалтын бүгд `ok`), `ini_file` (`php_ini_loaded_file()`), `user_ini` (`user_ini.filename`).
 
 #### `iniMatches(string $actual, string $required): bool`
-On/Off утгыг бичлэгээс үл хамааран харьцуулна (`''`, `0`, `off` = Off); бусад утгыг яг тэнцүү мөрөөр харьцуулна.
+On/Off утгыг бичлэгээс үл хамааран харьцуулна (`''`, `0`, `off` = Off; `1`, `on` = On); бусад утгыг яг тэнцүү мөрөөр харьцуулна.
 
 ---
 

@@ -57,6 +57,12 @@ class JWTAuthMiddleware implements MiddlewareInterface
     public const ACT_AS_LIFETIME = 3600;
 
     /**
+     * Нууц үгийн тамгыг агуулах JWT claim. Утга нь нууц үгийн hash-ийн
+     * HMAC (passwordFingerprint()) - hash өөрөө токенд орохгүй.
+     */
+    public const PASSWORD_CLAIM = 'pwd';
+
+    /**
      * JWT нууц түлхүүрийг ENV-аас уншина.
      * Хэрвээ тохируулагдаагүй бол Authentication-ийг шууд зогсооно.
      *
@@ -145,6 +151,38 @@ class JWTAuthMiddleware implements MiddlewareInterface
         // getSecret() нь түлхүүрийн уртыг шалгана (HS256-ийн хувьд >= 32 байт)
         // firebase/php-jwt 7.x-д encode() нь string түлхүүрийг хүлээн авна
         return JWT::encode($payload, $this->getSecret(), $this->getAlgorithm());
+    }
+
+    /**
+     * Хэрэглэгчийн session-д зориулсан JWT үүсгэнэ. Нэвтрэх, байгууллага солих,
+     * өөрийн нууц үг солих бүх зам энийг ашиглана - токенд нууц үгийн тамга
+     * (PASSWORD_CLAIM) заавал орно, process() түүнийг хүсэлт бүрд шалгана.
+     *
+     * Critical (English): every session JWT must be issued through this method so
+     * it carries the password fingerprint. process() rejects a token whose
+     * fingerprint no longer matches the stored password hash - that is what ends
+     * the user's other sessions after a password change or reset.
+     *
+     * @param array $user           users мөр (id, password - bcrypt hash)
+     * @param int   $organizationId Нэвтэрч буй байгууллага
+     */
+    public function issue(array $user, int $organizationId): string
+    {
+        return $this->generate([
+            'user_id' => (int)$user['id'],
+            'organization_id' => $organizationId,
+            self::PASSWORD_CLAIM => $this->passwordFingerprint((string)($user['password'] ?? ''))
+        ]);
+    }
+
+    /**
+     * Нууц үгийн hash-ийн HMAC-SHA256 (JWT secret-ээр, эхний 32 hex). Нууц үг
+     * солигдоход hash өөрчлөгдөж тамга таарахаа больдог. HMAC тул токеноос hash-ийг
+     * сэргээх боломжгүй.
+     */
+    public function passwordFingerprint(string $passwordHash): string
+    {
+        return \substr(\hash_hmac('sha256', $passwordHash, $this->getSecret()), 0, 32);
     }
 
     /**
@@ -244,6 +282,18 @@ class JWTAuthMiddleware implements MiddlewareInterface
             ]);
             if (!isset($profile['id'])) {
                 throw new \RuntimeException('Хэрэглэгч олдсонгүй.', 404);
+            }
+            // Нууц үг солигдсон (эсвэл тамгагүй хуучин) токен хүчингүй - хэрэглэгчийн
+            // бусад төхөөрөмж дээрх session нууц үг солигдмогц дуусна.
+            //
+            // Security (English): a token whose password fingerprint does not match
+            // the current hash (password changed / reset, or a token without the
+            // claim) is rejected, which signs the user out of every other session.
+            if (!\hash_equals(
+                $this->passwordFingerprint((string)($profile['password'] ?? '')),
+                (string)($result[self::PASSWORD_CLAIM] ?? '')
+            )) {
+                throw new \RuntimeException('Нууц үг солигдсон тул JWT хүчингүй.', 401);
             }
             unset($profile['password']);
 

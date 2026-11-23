@@ -152,7 +152,7 @@
                     <!-- Separator: quick icons | user -->
                     <span class="topbar-sep"></span>
                     <!-- Account dropdown (avatar + нэр): толгойд нэр / email / байгууллага,
-                         дараа нь Миний профайл, хамгийн доор Гарах. Logout нь dropdown доторх
+                         дараа нь Миний профайл, Нууц үг солих, хамгийн доор Гарах. Logout нь dropdown доторх
                          хоёр алхамт үйлдэл тул тусдаа баталгаажуулалт асуухгүй -->
                     <div class="dropdown topbar-user">
                         <button class="d-flex align-items-center text-white bg-transparent border-0 p-0 dropdown-toggle"
@@ -179,6 +179,14 @@
                                 <a class="dropdown-item d-flex align-items-center"
                                    href="{{ 'user-update'|link({'id': user.profile['id']}) }}">
                                     <i class="bi bi-person me-2"></i>{{ 'my-profile'|text }}
+                                </a>
+                            </li>
+                            <!-- Өөрийн нууц үг солих (одоогийн нууц үгээ оруулна) - users жагсаалт, и-мэйлгүйгээр -->
+                            <li>
+                                <a class="dropdown-item d-flex align-items-center"
+                                   href="{{ 'user-set-password'|link({'id': user.profile['id']}) }}"
+                                   data-bs-target="#static-modal" data-bs-toggle="modal">
+                                    <i class="bi bi-key me-2"></i>{{ 'change-password'|text }}
                                 </a>
                             </li>
                             <!-- Act As (act_as_available - жинхэнэ эрхээр: coder, system_rbac эсвэл 2+ ролтой;

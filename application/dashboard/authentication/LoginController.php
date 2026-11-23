@@ -41,6 +41,7 @@ use Dashboard\Organization\OrganizationUserModel;
 class LoginController extends \Dashboard\Controller
 {
     use \Dashboard\SpamProtectionTrait;
+    use \Dashboard\User\PasswordChangedNotification;
     // =========================================================================
     // Authentication: Login / Logout / Organization
     // =========================================================================
@@ -338,7 +339,7 @@ class LoginController extends \Dashboard\Controller
             }
 
             // 7) JWT үүсгэх
-            $_SESSION['RAPTOR_JWT'] = (new JWTAuthMiddleware())->generate($login_info);
+            $_SESSION['RAPTOR_JWT'] = (new JWTAuthMiddleware())->issue($user, (int)$login_info['organization_id']);
 
             // 8) CSRF token
             $_SESSION['CSRF_TOKEN'] = \bin2hex(\random_bytes(32));
@@ -534,11 +535,12 @@ class LoginController extends \Dashboard\Controller
             }
 
             // 7) JWT токен шинэчлэх
-            $jwt = (new JWTAuthMiddleware())->generate([
-                'user_id'         => $user_id,
-                'organization_id' => $id
-            ]);
-            $_SESSION['RAPTOR_JWT'] = $jwt;
+            //    Нууц үгийн тамга орохын тулд хэрэглэгчийн мөрийг (password hash) уншина
+            $account = (new UsersModel($this->pdo))->getRowWhere(['id' => $user_id, 'is_active' => 1]);
+            if (empty($account)) {
+                throw new \Exception('Invalid user', 404);
+            }
+            $_SESSION['RAPTOR_JWT'] = (new JWTAuthMiddleware())->issue($account, $id);
 
             // CSRF token шинэчлэх
             if (empty($_SESSION['CSRF_TOKEN'])) {
@@ -1265,6 +1267,7 @@ class LoginController extends \Dashboard\Controller
      *
      * 6) ForgotModel токеныг идэвхгүй болгох
      *    - deactivateById()
+     *    - "password-changed" мэдэгдэл и-мэйл (PasswordChangedNotification)
      *
      * 7) Template render
      *    - success эсвэл error дагуу login-reset-password.html template
@@ -1369,6 +1372,10 @@ class LoginController extends \Dashboard\Controller
             // Token-г идэвхгүй болгох (нэг удаагийн хэрэглээ) - устгахгүй тул
             // forgot-index-modal жагсаалтад "used" төлөвт харагдана
             $model->deactivateById($forgot['id'], ['updated_at' => \date('Y-m-d H:i:s')]);
+
+            // 6a) "Таны нууц үг солигдлоо" мэдэгдэл - сэргээх хүсэлтийн хэлээр
+            //    (холбоос өөр хүний гарт орсон бол эзэн нь шууд мэднэ)
+            $this->notifyPasswordChanged($user, $forgot['code'] ?? null);
 
             // UI-д харуулах success хувьсагч
             $vars = [
@@ -1580,7 +1587,7 @@ class LoginController extends \Dashboard\Controller
             $sql = "SELECT COUNT(*) as cnt FROM dashboard_log " .
                    "WHERE (context::jsonb)->>'action' = 'login' " .
                    "AND level = 'error' " .
-                   "AND created_at > NOW() - INTERVAL '15 minutes' " .
+                   "AND created_at > :since " .
                    "AND (" .
                    "  (context::jsonb)->'server_request'->>'remote_addr' = :ip " .
                    "  OR (context::jsonb)->'server_request'->'body'->>'username' = :username" .
@@ -1589,7 +1596,7 @@ class LoginController extends \Dashboard\Controller
             $sql = "SELECT COUNT(*) as cnt FROM dashboard_log " .
                    "WHERE JSON_UNQUOTE(JSON_EXTRACT(context, '$.action')) = 'login' " .
                    "AND level = 'error' " .
-                   "AND created_at > DATE_SUB(NOW(), INTERVAL 15 MINUTE) " .
+                   "AND created_at > :since " .
                    "AND (" .
                    "  JSON_UNQUOTE(JSON_EXTRACT(context, '$.server_request.remote_addr')) = :ip " .
                    "  OR JSON_UNQUOTE(JSON_EXTRACT(context, '$.server_request.body.username')) = :username" .
@@ -1600,6 +1607,14 @@ class LoginController extends \Dashboard\Controller
             $stmt = $this->prepare($sql);
             $stmt->bindValue(':ip', $ip);
             $stmt->bindValue(':username', $username);
+            // Logger created_at-ийг PHP-ийн date()-ээр бичдэг тул хугацааны хязгаарыг
+            // PHP-д тооцно - DB-ийн NOW() өөр цагийн бүстэй байвал тоолол алдагдана.
+            //
+            // Critical (English): log rows get created_at from PHP's date(), so the
+            // window start must come from the same clock. Comparing with the DB's
+            // NOW() breaks when PHP and the DB run in different time zones (rows
+            // look hours old -> nothing counted, or recent forever -> long lockout).
+            $stmt->bindValue(':since', \date('Y-m-d H:i:s', \time() - 15 * 60));
             $stmt->execute();
             $count = (int) ($stmt->fetch()['cnt'] ?? 0);
         } catch (\PDOException) {

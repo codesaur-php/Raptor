@@ -80,6 +80,7 @@ class TextInitial
         $model->insert(['keyword' => 'category', 'type' => 'sys-defined'], ['mn' => ['text' => 'Ангилал'], 'en' => ['text' => 'Category']]);
         $model->insert(['keyword' => 'change', 'type' => 'sys-defined'], ['mn' => ['text' => 'Өөрчлөх'], 'en' => ['text' => 'Change']]);
         $model->insert(['keyword' => 'change-child-pages-language-first', 'type' => 'sys-defined'], ['mn' => ['text' => 'Дэд хуудсуудын хэл шинэ хэлтэй нийцэхгүй байна - эхлээд дэд хуудсуудын хэлийг солино уу'], 'en' => ['text' => 'Child pages do not match the new language - change the child pages first']]);
+        $model->insert(['keyword' => 'change-password', 'type' => 'sys-defined'], ['mn' => ['text' => 'Нууц үг солих'], 'en' => ['text' => 'Change password']]);
         $model->insert(['keyword' => 'checkout', 'type' => 'sys-defined'], ['mn' => ['text' => 'Захиалга баталгаажуулах'], 'en' => ['text' => 'Checkout']]);
         $model->insert(['keyword' => 'choose', 'type' => 'sys-defined'], ['mn' => ['text' => 'Сонгох'], 'en' => ['text' => 'Choose']]);
         $model->insert(['keyword' => 'clear-sample-data', 'type' => 'sys-defined'], ['mn' => ['text' => 'Жишиг дата цэвэрлэх'], 'en' => ['text' => 'Clear sample data']]);
@@ -107,6 +108,8 @@ class TextInitial
 
         $model->insert(['keyword' => 'created-at', 'type' => 'sys-defined'], ['mn' => ['text' => 'Үүсгэсэн огноо'], 'en' => ['text' => 'Created at']]);
         $model->insert(['keyword' => 'created-by', 'type' => 'sys-defined'], ['mn' => ['text' => 'Үүсгэсэн хэрэглэгч'], 'en' => ['text' => 'Created by']]);
+        $model->insert(['keyword' => 'current-password', 'type' => 'sys-defined'], ['mn' => ['text' => 'Одоогийн нууц үг'], 'en' => ['text' => 'Current password']]);
+        $model->insert(['keyword' => 'current-password-incorrect', 'type' => 'sys-defined'], ['mn' => ['text' => 'Одоогийн нууц үг буруу байна'], 'en' => ['text' => 'The current password is incorrect']]);
         $model->insert(['keyword' => 'customer', 'type' => 'sys-defined'], ['mn' => ['text' => 'Захиалагч'], 'en' => ['text' => 'Customer']]);
         $model->insert(['keyword' => 'dashboard', 'type' => 'sys-defined'], ['mn' => ['text' => 'Хянах самбар'], 'en' => ['text' => 'Dashboard']]);
         $model->insert(['keyword' => 'data-delete-cannot-undo', 'type' => 'sys-defined'], ['mn' => ['text' => 'Бүх дата устгагдана. Энэ үйлдлийг буцаах боломжгүй!'], 'en' => ['text' => 'All data will be deleted. This action cannot be undone!']]);
@@ -353,6 +356,7 @@ class TextInitial
 
         $model->insert(['keyword' => 'to-complete-registration-check-email', 'type' => 'sys-defined'], ['mn' => ['text' => 'Танд баярлалаа. Бүртгэлээ баталгаажуулахын тулд заасан имейлээ шалгана уу'], 'en' => ['text' => 'Thank you. To complete your registration please check your email']]);
         $model->insert(['keyword' => 'too-many-login-attempts', 'type' => 'sys-defined'], ['mn' => ['text' => 'Нэвтрэх оролдлого хэт олон удаа хийгдсэн байна. Түр хүлээнэ үү.'], 'en' => ['text' => 'Too many login attempts. Please try again later.']]);
+        $model->insert(['keyword' => 'too-many-password-attempts', 'type' => 'sys-defined'], ['mn' => ['text' => 'Одоогийн нууц үгийг хэт олон удаа буруу оруулсан байна. 15 минутын дараа дахин оролдоно уу.'], 'en' => ['text' => 'Too many wrong current password attempts. Please try again in 15 minutes.']]);
         $model->insert(['keyword' => 'too-many-recipients', 'type' => 'sys-defined'], ['mn' => ['text' => 'Нэг удаад илгээх хүлээн авагч хэт олон байна'], 'en' => ['text' => 'Too many recipients at once']]);
         $model->insert(['keyword' => 'total', 'type' => 'sys-defined'], ['mn' => ['text' => 'Нийт'], 'en' => ['text' => 'Total']]);
         $model->insert(['keyword' => 'type', 'type' => 'sys-defined'], ['mn' => ['text' => 'Төрөл'], 'en' => ['text' => 'Type']]);
